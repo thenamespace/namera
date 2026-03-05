@@ -18,7 +18,7 @@ const items = [
     },
   },
   {
-    href: "/dashboard",
+    href: "/dashboard/assets",
     icon: CardholderIcon,
     title: "Assets",
     tooltip: {

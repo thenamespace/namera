@@ -20,7 +20,7 @@ import {
 
 const items = [
   {
-    href: "/dashboard",
+    href: "/dashboard/security",
     icon: ShieldCheckIcon,
     title: "Security",
     tooltip: {
@@ -28,7 +28,7 @@ const items = [
     },
   },
   {
-    href: "/dashboard",
+    href: "/dashboard/settings",
     icon: GearSixIcon,
     title: "Settings",
     tooltip: {

@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { useHotkeySequence } from "@tanstack/react-hotkeys";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
   FlaskIcon,
@@ -22,7 +23,7 @@ import {
 
 const items = [
   {
-    href: "/dashboard",
+    href: "/dashboard/session-keys",
     icon: KeyIcon,
     title: "Session Keys",
     tooltip: {
@@ -31,7 +32,7 @@ const items = [
     },
   },
   {
-    href: "/dashboard",
+    href: "/dashboard/permissions",
     icon: FlaskIcon,
     title: "Permissions",
     tooltip: {
@@ -40,7 +41,7 @@ const items = [
     },
   },
   {
-    href: "/dashboard",
+    href: "/dashboard/activity",
     icon: PulseIcon,
     title: "Activity",
     tooltip: {
@@ -51,6 +52,26 @@ const items = [
 ] as const;
 
 export const CoreGroup = () => {
+  const navigate = useNavigate();
+
+  useHotkeySequence(["G", "S"], () => {
+    navigate({
+      to: "/dashboard/session-keys",
+    });
+  });
+
+  useHotkeySequence(["G", "P"], () => {
+    navigate({
+      to: "/dashboard/permissions",
+    });
+  });
+
+  useHotkeySequence(["G", "A"], () => {
+    navigate({
+      to: "/dashboard/activity",
+    });
+  });
+
   return (
     <SidebarGroup>
       <Collapsible className="flex w-full flex-col gap-2" defaultOpen={true}>

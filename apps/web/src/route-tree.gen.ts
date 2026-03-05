@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from "./app/__root";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
+import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
+import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
+import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/security/index";
+import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
+import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
+import { Route as DashboardActivityIndexRouteImport } from "./app/dashboard/activity/index";
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
@@ -28,28 +34,105 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: "/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
+  id: "/settings/",
+  path: "/settings/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DashboardSessionKeysIndexRoute =
+  DashboardSessionKeysIndexRouteImport.update({
+    id: "/session-keys/",
+    path: "/session-keys/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
+const DashboardSecurityIndexRoute = DashboardSecurityIndexRouteImport.update({
+  id: "/security/",
+  path: "/security/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DashboardPermissionsIndexRoute =
+  DashboardPermissionsIndexRouteImport.update({
+    id: "/permissions/",
+    path: "/permissions/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
+const DashboardAssetsIndexRoute = DashboardAssetsIndexRouteImport.update({
+  id: "/assets/",
+  path: "/assets/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DashboardActivityIndexRoute = DashboardActivityIndexRouteImport.update({
+  id: "/activity/",
+  path: "/activity/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/dashboard/activity/": typeof DashboardActivityIndexRoute;
+  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
+  "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
+  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
+  "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
+  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardIndexRoute;
+  "/dashboard/activity": typeof DashboardActivityIndexRoute;
+  "/dashboard/assets": typeof DashboardAssetsIndexRoute;
+  "/dashboard/permissions": typeof DashboardPermissionsIndexRoute;
+  "/dashboard/security": typeof DashboardSecurityIndexRoute;
+  "/dashboard/session-keys": typeof DashboardSessionKeysIndexRoute;
+  "/dashboard/settings": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/dashboard/activity/": typeof DashboardActivityIndexRoute;
+  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
+  "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
+  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
+  "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
+  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/dashboard" | "/dashboard/";
+  fullPaths:
+    | "/"
+    | "/dashboard"
+    | "/dashboard/"
+    | "/dashboard/activity/"
+    | "/dashboard/assets/"
+    | "/dashboard/permissions/"
+    | "/dashboard/security/"
+    | "/dashboard/session-keys/"
+    | "/dashboard/settings/";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/dashboard";
-  id: "__root__" | "/" | "/dashboard" | "/dashboard/";
+  to:
+    | "/"
+    | "/dashboard"
+    | "/dashboard/activity"
+    | "/dashboard/assets"
+    | "/dashboard/permissions"
+    | "/dashboard/security"
+    | "/dashboard/session-keys"
+    | "/dashboard/settings";
+  id:
+    | "__root__"
+    | "/"
+    | "/dashboard"
+    | "/dashboard/"
+    | "/dashboard/activity/"
+    | "/dashboard/assets/"
+    | "/dashboard/permissions/"
+    | "/dashboard/security/"
+    | "/dashboard/session-keys/"
+    | "/dashboard/settings/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -80,15 +163,69 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/settings/": {
+      id: "/dashboard/settings/";
+      path: "/settings";
+      fullPath: "/dashboard/settings/";
+      preLoaderRoute: typeof DashboardSettingsIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/session-keys/": {
+      id: "/dashboard/session-keys/";
+      path: "/session-keys";
+      fullPath: "/dashboard/session-keys/";
+      preLoaderRoute: typeof DashboardSessionKeysIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/security/": {
+      id: "/dashboard/security/";
+      path: "/security";
+      fullPath: "/dashboard/security/";
+      preLoaderRoute: typeof DashboardSecurityIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/permissions/": {
+      id: "/dashboard/permissions/";
+      path: "/permissions";
+      fullPath: "/dashboard/permissions/";
+      preLoaderRoute: typeof DashboardPermissionsIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/assets/": {
+      id: "/dashboard/assets/";
+      path: "/assets";
+      fullPath: "/dashboard/assets/";
+      preLoaderRoute: typeof DashboardAssetsIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/activity/": {
+      id: "/dashboard/activity/";
+      path: "/activity";
+      fullPath: "/dashboard/activity/";
+      preLoaderRoute: typeof DashboardActivityIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
   }
 }
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute;
+  DashboardActivityIndexRoute: typeof DashboardActivityIndexRoute;
+  DashboardAssetsIndexRoute: typeof DashboardAssetsIndexRoute;
+  DashboardPermissionsIndexRoute: typeof DashboardPermissionsIndexRoute;
+  DashboardSecurityIndexRoute: typeof DashboardSecurityIndexRoute;
+  DashboardSessionKeysIndexRoute: typeof DashboardSessionKeysIndexRoute;
+  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute;
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardActivityIndexRoute: DashboardActivityIndexRoute,
+  DashboardAssetsIndexRoute: DashboardAssetsIndexRoute,
+  DashboardPermissionsIndexRoute: DashboardPermissionsIndexRoute,
+  DashboardSecurityIndexRoute: DashboardSecurityIndexRoute,
+  DashboardSessionKeysIndexRoute: DashboardSessionKeysIndexRoute,
+  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
 };
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
