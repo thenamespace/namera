@@ -1,12 +1,18 @@
 {
   "dependencies": {
+    "@metamask/sdk": "^0.34.0",
+    "@rainbow-me/rainbowkit": "^2.2.10",
     "@repo/ui": "workspace:*",
     "@tailwindcss/vite": "^4.2.0",
+    "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-router": "^1.161.4",
     "@tanstack/router-plugin": "^1.161.4",
+    "effect": "^3.19.19",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "tailwindcss": "^4.2.0"
+    "tailwindcss": "^4.2.0",
+    "viem": "^2.47.0",
+    "wagmi": "^3.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.4",

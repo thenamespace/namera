@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 
 import "@repo/ui/globals.css";
+import "@rainbow-me/rainbowkit/styles.css";
 
 import { routeTree } from "./route-tree.gen";
 

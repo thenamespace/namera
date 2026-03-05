@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { Button } from "@repo/ui/components/button";
+import { ConnectButton } from "@/components";
 
 export const Home = () => {
   return (
     <div>
-      <Button>Button</Button>
+      <ConnectButton />
     </div>
   );
 };
