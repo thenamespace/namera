@@ -4,13 +4,15 @@
     "components": "@/components",
     "hooks": "@repo/ui/hooks",
     "lib": "@repo/ui/lib",
-    "ui": "@repo/ui/components",
+    "ui": "@repo/ui/components/ui",
     "utils": "@repo/ui/lib/utils"
   },
   "iconLibrary": "phosphor",
   "menuAccent": "subtle",
   "menuColor": "default",
-  "registries": {},
+  "registries": {
+    "@ss-components": "https://shadcnstudio.com/r/components/{name}.json"
+  },
   "rsc": false,
   "rtl": false,
   "style": "base-nova",

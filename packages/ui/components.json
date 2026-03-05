@@ -4,7 +4,7 @@
     "components": "@repo/ui/components",
     "hooks": "@repo/ui/hooks",
     "lib": "@repo/ui/lib",
-    "ui": "@repo/ui/components",
+    "ui": "@repo/ui/components/ui",
     "utils": "@repo/ui/lib/utils"
   },
   "iconLibrary": "phosphor",
