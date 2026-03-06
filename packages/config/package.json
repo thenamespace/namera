@@ -17,6 +17,7 @@
     "./tsconfig/app/vite": "./tsconfig/vite.json",
     "./tsconfig/library/browser": "./tsconfig/browser-library.json",
     "./tsconfig/library/bun": "./tsconfig/bun-library.json",
+    "./tsconfig/library/neutral": "./tsconfig/library.json",
     "./tsconfig/library/node": "./tsconfig/node-library.json",
     "./tsconfig/library/react": "./tsconfig/react-library.json",
     "./tsdown": "./tsdown/shared.ts",

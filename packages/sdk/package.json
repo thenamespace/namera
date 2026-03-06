@@ -3,6 +3,11 @@
   "bugs": {
     "url": "https://github.com/envoy1084/turbo-effect-starter/issues"
   },
+  "dependencies": {
+    "@zerodev/ecdsa-validator": "^5.4.9",
+    "@zerodev/sdk": "^5.5.7",
+    "viem": "^2.47.0"
+  },
   "description": "",
   "devDependencies": {
     "@effect/vitest": "^0.27.0",
