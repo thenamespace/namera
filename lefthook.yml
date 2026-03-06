@@ -1,15 +1,15 @@
 pre-commit:
  commands:
   biome-check:
-   run: bun format && bun lint
+   run: pnpm format && pnpm lint
    stage_fixed: true
 
 commit-msg:
  commands:
   lint-commit-msg:
-   run: bun commitlint --edit
+   run: pnpm commitlint --edit
 
 pre-push:
  commands:
   check:
-   run: bun format && bun lint
+   run: pnpm format && pnpm lint

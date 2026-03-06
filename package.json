@@ -18,9 +18,9 @@
   },
   "homepage": "https://github.com/envoy1084/turbo-effect-starter#readme",
   "keywords": [],
-  "license": "ISC",
+  "license": "MIT",
   "name": "turbo-effect-starter",
-  "packageManager": "bun@1.3.9",
+  "packageManager": "pnpm@10.15.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoy1084/turbo-effect-starter.git"
@@ -29,10 +29,10 @@
     "build": "turbo build",
     "commitlint": "commitlint --edit",
     "dev": "turbo dev",
-    "format": "bunx --bun biome format --write",
-    "format:check": "bunx --bun biome format",
-    "lint": "bunx --bun biome check --write",
-    "lint:check": "bunx --bun biome check",
+    "format": "pnpm exec biome format --write",
+    "format:check": "pnpm exec biome format",
+    "lint": "pnpm exec biome check --write",
+    "lint:check": "pnpm exec biome check",
     "lint:write": "turbo lint:write",
     "prepare": "lefthook install"
   },
