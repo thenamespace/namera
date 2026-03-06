@@ -1,3 +1,3 @@
 export * from "./account";
-export * from "./policies";
-export * from "./session-keys";
+export * from "./policy";
+export * from "./session-key";
