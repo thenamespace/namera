@@ -1,10 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import {
-  GearSixIcon,
-  ShieldCheckIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react";
+import { IdentificationBadgeIcon, TriangleIcon } from "@phosphor-icons/react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,27 +13,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@repo/ui/components/ui/sidebar";
+import { McpIcon } from "@repo/ui/icons";
 
 const items = [
   {
-    href: "/dashboard/security",
-    icon: ShieldCheckIcon,
-    title: "Security",
+    href: "/dashboard",
+    icon: IdentificationBadgeIcon,
+    title: "Identity",
     tooltip: {
-      text: "security",
+      text: "agent identity",
     },
   },
   {
-    href: "/dashboard/settings",
-    icon: GearSixIcon,
-    title: "Settings",
+    href: "/dashboard",
+    icon: McpIcon,
+    title: "MCP",
     tooltip: {
-      text: "settings",
+      text: "mcp",
     },
   },
 ] as const;
 
-export const AdminGroup = () => {
+export const AgentGroup = () => {
   return (
     <SidebarGroup>
       <Collapsible className="flex w-full flex-col gap-1" defaultOpen={true}>
@@ -47,7 +44,7 @@ export const AdminGroup = () => {
             <SidebarGroupLabel className="h-5 select-none cursor-pointer flex flex-row gap-1.5 items-center" />
           }
         >
-          Admin
+          Agents
           <TriangleIcon
             className="rotate-90 size-2! group-data-panel-open:rotate-180 transition-all"
             weight="fill"
@@ -59,7 +56,9 @@ export const AdminGroup = () => {
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   render={<Link to={item.href} />}
-                  tooltip={`Go to ${item.tooltip.text}`}
+                  tooltip={{
+                    children: <div>Go to {item.tooltip.text}</div>,
+                  }}
                 >
                   <item.icon />
                   <span>{item.title}</span>

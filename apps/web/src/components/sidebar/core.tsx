@@ -74,20 +74,20 @@ export const CoreGroup = () => {
 
   return (
     <SidebarGroup>
-      <Collapsible className="flex w-full flex-col gap-2" defaultOpen={true}>
+      <Collapsible className="flex w-full flex-col gap-1" defaultOpen={true}>
         <CollapsibleTrigger
           className="group"
           render={
             <SidebarGroupLabel className="h-5 select-none cursor-pointer flex flex-row gap-1.5 items-center" />
           }
         >
-          Observability
+          Core Actions
           <TriangleIcon
             className="rotate-90 size-2! group-data-panel-open:rotate-180 transition-all"
             weight="fill"
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="flex [&[hidden]:not([hidden='until-found'])]:hidden h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all ease-out data-ending-style:h-0 data-starting-style:h-0 duration-300">
+        <CollapsibleContent className="flex [&[hidden]:not([hidden='until-found'])]:hidden h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all ease-out data-ending-style:h-0 data-starting-style:h-0 duration-150">
           <SidebarMenu>
             {items.map((item) => (
               <SidebarMenuItem key={item.title}>
