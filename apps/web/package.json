@@ -7,8 +7,9 @@
     "@tailwindcss/vite": "^4.2.0",
     "@tanstack/react-hotkeys": "^0.3.1",
     "@tanstack/react-query": "^5.90.21",
-    "@tanstack/react-router": "^1.161.4",
-    "@tanstack/router-plugin": "^1.161.4",
+    "@tanstack/react-router": "^1.166.2",
+    "@tanstack/react-start": "^1.166.2",
+    "@tanstack/router-plugin": "^1.166.2",
     "effect": "^3.19.19",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -35,7 +36,7 @@
     "dev": "vite dev",
     "format": "biome format",
     "lint": "biome lint",
-    "preview": "vite preview",
+    "start": "node .output/server/index.mjs",
     "test": "vitest run"
   },
   "type": "module"
