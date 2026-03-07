@@ -1,0 +1,58 @@
+import { use, useEffect, useId, useState } from "react";
+
+export function Mermaid({ chart }: { chart: string }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return;
+  return <MermaidContent chart={chart} />;
+}
+
+const cache = new Map<string, Promise<unknown>>();
+
+function cachePromise<T>(
+  key: string,
+  setPromise: () => Promise<T>,
+): Promise<T> {
+  const cached = cache.get(key);
+  if (cached) return cached as Promise<T>;
+
+  const promise = setPromise();
+  cache.set(key, promise);
+  return promise;
+}
+
+function MermaidContent({ chart }: { chart: string }) {
+  const id = useId();
+  const { default: mermaid } = use(
+    cachePromise("mermaid", () => import("mermaid")),
+  );
+
+  mermaid.initialize({
+    fontFamily: "inherit",
+    securityLevel: "loose",
+    startOnLoad: false,
+    theme: "dark",
+    themeCSS: "margin: 1.5rem auto 0;",
+  });
+
+  const { svg, bindFunctions } = use(
+    cachePromise(`${chart}-dark`, () => {
+      return mermaid.render(id, chart.replaceAll("\\n", "\n"));
+    }),
+  );
+
+  return (
+    <div
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: safe
+      // biome-ignore lint/style/useNamingConvention: safe
+      dangerouslySetInnerHTML={{ __html: svg }}
+      ref={(container) => {
+        if (container) bindFunctions?.(container);
+      }}
+    />
+  );
+}

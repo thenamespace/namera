@@ -6,7 +6,7 @@ import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { SidebarIcon } from "@phosphor-icons/react";
+import { SidebarIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Separator } from "@repo/ui/components/ui/separator";

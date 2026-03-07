@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { CardholderIcon, HeadCircuitIcon } from "@phosphor-icons/react";
+import { CardholderIcon, HeadCircuitIcon } from "@phosphor-icons/react/ssr";
 import {
   SidebarGroup,
   SidebarMenu,

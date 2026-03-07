@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from "./app/__root";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
+import { Route as DocsSplatRouteImport } from "./app/docs/$";
+import { Route as ApiSearchRouteImport } from "./app/api/search";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
 import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/security/index";
@@ -33,6 +35,16 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DocsSplatRoute = DocsSplatRouteImport.update({
+  id: "/docs/$",
+  path: "/docs/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiSearchRoute = ApiSearchRouteImport.update({
+  id: "/api/search",
+  path: "/api/search",
+  getParentRoute: () => rootRouteImport,
 } as any);
 const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
   id: "/settings/",
@@ -70,6 +82,8 @@ const DashboardActivityIndexRoute = DashboardActivityIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/api/search": typeof ApiSearchRoute;
+  "/docs/$": typeof DocsSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
@@ -80,6 +94,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/api/search": typeof ApiSearchRoute;
+  "/docs/$": typeof DocsSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
   "/dashboard/activity": typeof DashboardActivityIndexRoute;
   "/dashboard/assets": typeof DashboardAssetsIndexRoute;
@@ -92,6 +108,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/api/search": typeof ApiSearchRoute;
+  "/docs/$": typeof DocsSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
@@ -105,6 +123,8 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/api/search"
+    | "/docs/$"
     | "/dashboard/"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
@@ -115,6 +135,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/api/search"
+    | "/docs/$"
     | "/dashboard"
     | "/dashboard/activity"
     | "/dashboard/assets"
@@ -126,6 +148,8 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/api/search"
+    | "/docs/$"
     | "/dashboard/"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
@@ -138,6 +162,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  ApiSearchRoute: typeof ApiSearchRoute;
+  DocsSplatRoute: typeof DocsSplatRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -162,6 +188,20 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/";
       preLoaderRoute: typeof DashboardIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
+    };
+    "/docs/$": {
+      id: "/docs/$";
+      path: "/docs/$";
+      fullPath: "/docs/$";
+      preLoaderRoute: typeof DocsSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/search": {
+      id: "/api/search";
+      path: "/api/search";
+      fullPath: "/api/search";
+      preLoaderRoute: typeof ApiSearchRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     "/dashboard/settings/": {
       id: "/dashboard/settings/";
@@ -235,6 +275,8 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  ApiSearchRoute: ApiSearchRoute,
+  DocsSplatRoute: DocsSplatRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

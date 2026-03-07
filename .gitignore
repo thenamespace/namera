@@ -91,6 +91,7 @@ next-env.d.ts
 
 # tanstack
 .tanstack
+.output
 
 # -------------------------------------
 # Rust

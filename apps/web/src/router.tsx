@@ -11,3 +11,10 @@ export function getRouter() {
 
   return router;
 }
+
+declare module "@tanstack/react-router" {
+  // biome-ignore lint/style/useConsistentTypeDefinitions: safe
+  interface Register {
+    router: ReturnType<typeof getRouter>;
+  }
+}

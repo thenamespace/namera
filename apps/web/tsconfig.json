@@ -4,9 +4,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@repo/ui/*": ["../../packages/ui/src/*"]
+      "@repo/ui/*": ["../../packages/ui/src/*"],
+      "fumadocs-mdx:collections/*": [".source/*"]
     },
     "types": ["vite/client"]
   },
-  "extends": "@repo/config/tsconfig/app/vite"
+  "extends": "@repo/config/tsconfig/app/vite",
+  "include": ["**/*.ts", "**/*.tsx"]
 }

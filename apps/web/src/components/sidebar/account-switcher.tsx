@@ -8,7 +8,7 @@ import {
   CaretUpDownIcon,
   FinnTheHumanIcon,
   PlusIcon,
-} from "@phosphor-icons/react";
+} from "@phosphor-icons/react/ssr";
 import {
   DropdownMenu,
   DropdownMenuContent,

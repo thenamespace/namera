@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 
-import { IdentificationBadgeIcon, TriangleIcon } from "@phosphor-icons/react";
+import {
+  IdentificationBadgeIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
 import {
   Collapsible,
   CollapsibleContent,
