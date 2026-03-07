@@ -1,11 +1,18 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
+export const githubDetails = {
+  org: "envoy1084",
+  repo: "turbo-effect-starter",
+};
+
 export const baseOptions = (): BaseLayoutProps => {
   return {
-    githubUrl: "https://github.com/envoy1084/turbo-effect-starter",
-
+    githubUrl: `https://github.com/${githubDetails.org}}/${githubDetails.repo}`,
     nav: {
-      title: "Tanstack Start",
+      title: "Sietch",
+    },
+    searchToggle: {
+      enabled: true,
     },
     themeSwitch: { enabled: false },
   };

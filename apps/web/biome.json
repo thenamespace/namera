@@ -6,7 +6,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/app/**/*.tsx"],
+      "includes": ["src/app/**/*.tsx", "src/app/**/*.ts"],
       "linter": {
         "rules": {
           "style": {

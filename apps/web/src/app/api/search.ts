@@ -5,6 +5,16 @@ import { createFromSource } from "fumadocs-core/search/server";
 import { source } from "@/lib/fumadocs/source";
 
 const server = createFromSource(source, {
+  buildIndex(page) {
+    return {
+      description: page.data.description,
+      id: page.url,
+      structuredData: page.data.structuredData,
+      tag: page.slugs[0],
+      title: page.data.title,
+      url: page.url,
+    };
+  },
   language: "english",
 });
 

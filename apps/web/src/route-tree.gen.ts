@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
+import { Route as LlmsDottxtRouteImport } from "./app/llms[.]txt";
+import { Route as LlmsFullDottxtRouteImport } from "./app/llms-full[.]txt";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
@@ -20,7 +22,18 @@ import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/secu
 import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
 import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
 import { Route as DashboardActivityIndexRouteImport } from "./app/dashboard/activity/index";
+import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
 
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: "/llms.txt",
+  path: "/llms.txt",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: "/llms-full.txt",
+  path: "/llms-full.txt",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
   path: "/dashboard",
@@ -78,13 +91,21 @@ const DashboardActivityIndexRoute = DashboardActivityIndexRouteImport.update({
   path: "/activity/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const LlmsDotmdxDocsSplatRoute = LlmsDotmdxDocsSplatRouteImport.update({
+  id: "/llms.mdx/docs/$",
+  path: "/llms.mdx/docs/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/llms-full.txt": typeof LlmsFullDottxtRoute;
+  "/llms.txt": typeof LlmsDottxtRoute;
   "/api/search": typeof ApiSearchRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
   "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
@@ -94,9 +115,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/llms-full.txt": typeof LlmsFullDottxtRoute;
+  "/llms.txt": typeof LlmsDottxtRoute;
   "/api/search": typeof ApiSearchRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
+  "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
   "/dashboard/activity": typeof DashboardActivityIndexRoute;
   "/dashboard/assets": typeof DashboardAssetsIndexRoute;
   "/dashboard/permissions": typeof DashboardPermissionsIndexRoute;
@@ -108,9 +132,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/llms-full.txt": typeof LlmsFullDottxtRoute;
+  "/llms.txt": typeof LlmsDottxtRoute;
   "/api/search": typeof ApiSearchRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
   "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
@@ -123,9 +150,12 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/llms-full.txt"
+    | "/llms.txt"
     | "/api/search"
     | "/docs/$"
     | "/dashboard/"
+    | "/llms.mdx/docs/$"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
     | "/dashboard/permissions/"
@@ -135,9 +165,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/llms-full.txt"
+    | "/llms.txt"
     | "/api/search"
     | "/docs/$"
     | "/dashboard"
+    | "/llms.mdx/docs/$"
     | "/dashboard/activity"
     | "/dashboard/assets"
     | "/dashboard/permissions"
@@ -148,9 +181,12 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/llms-full.txt"
+    | "/llms.txt"
     | "/api/search"
     | "/docs/$"
     | "/dashboard/"
+    | "/llms.mdx/docs/$"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
     | "/dashboard/permissions/"
@@ -162,12 +198,29 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute;
+  LlmsDottxtRoute: typeof LlmsDottxtRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
+  LlmsDotmdxDocsSplatRoute: typeof LlmsDotmdxDocsSplatRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/llms.txt": {
+      id: "/llms.txt";
+      path: "/llms.txt";
+      fullPath: "/llms.txt";
+      preLoaderRoute: typeof LlmsDottxtRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/llms-full.txt": {
+      id: "/llms-full.txt";
+      path: "/llms-full.txt";
+      fullPath: "/llms-full.txt";
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/dashboard": {
       id: "/dashboard";
       path: "/dashboard";
@@ -245,6 +298,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardActivityIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/llms.mdx/docs/$": {
+      id: "/llms.mdx/docs/$";
+      path: "/llms.mdx/docs/$";
+      fullPath: "/llms.mdx/docs/$";
+      preLoaderRoute: typeof LlmsDotmdxDocsSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -275,18 +335,22 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   ApiSearchRoute: ApiSearchRoute,
   DocsSplatRoute: DocsSplatRoute,
+  LlmsDotmdxDocsSplatRoute: LlmsDotmdxDocsSplatRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>();
 
 import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
+import type { startInstance } from "./start.ts";
 declare module "@tanstack/react-start" {
   interface Register {
     ssr: true;
     router: Awaited<ReturnType<typeof getRouter>>;
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
   }
 }

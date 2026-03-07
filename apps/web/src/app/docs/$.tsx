@@ -4,9 +4,12 @@ import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
 import { getMDXComponents } from "@repo/ui/components/fumadocs/mdx-components";
+import {
+  LLMCopyButton,
+  ViewOptions,
+} from "@repo/ui/components/fumadocs/page-actions";
 import { cn } from "@repo/ui/lib/utils";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
-import { InlineTOC } from "fumadocs-ui/components/inline-toc";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
   DocsBody,
@@ -17,7 +20,7 @@ import {
 
 import browserCollections from "fumadocs-mdx:collections/browser";
 
-import { baseOptions, getSection } from "@/lib/fumadocs/shared";
+import { baseOptions, getSection, githubDetails } from "@/lib/fumadocs/shared";
 import { source } from "@/lib/fumadocs/source";
 
 export const Route = createFileRoute("/docs/$")({
@@ -41,11 +44,18 @@ const serverLoader = createServerFn({
     return {
       pageTree: await source.serializePageTree(source.getPageTree()),
       path: page.path,
+      url: page.url,
     };
   });
 
 const clientLoader = browserCollections.docs.createClientLoader({
-  component({ toc, frontmatter, default: MDX }, _props: undefined) {
+  component(
+    { toc, frontmatter, default: MDX },
+    page: {
+      url: string;
+      path: string;
+    },
+  ) {
     return (
       <DocsPage
         tableOfContent={{
@@ -55,7 +65,13 @@ const clientLoader = browserCollections.docs.createClientLoader({
       >
         <DocsTitle>{frontmatter.title}</DocsTitle>
         <DocsDescription>{frontmatter.description}</DocsDescription>
-        <InlineTOC items={toc}>Table of Contents</InlineTOC>
+        <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+          <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
+          <ViewOptions
+            githubUrl={`https://github.com/${githubDetails.org}/${githubDetails.repo}/blob/main/apps/web/src/docs/${page.path}`}
+            markdownUrl={`${page.url}.mdx`}
+          />
+        </div>
         <DocsBody>
           <MDX components={getMDXComponents()} />
         </DocsBody>
@@ -104,7 +120,12 @@ function Page() {
         }}
         tree={data.pageTree}
       >
-        <Suspense>{clientLoader.useContent(data.path)}</Suspense>
+        <Suspense>
+          {clientLoader.useContent(data.path, {
+            path: data.path,
+            url: data.url,
+          })}
+        </Suspense>
       </DocsLayout>
     </div>
   );

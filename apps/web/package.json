@@ -23,9 +23,6 @@
     "wagmi": "^3.5.0",
     "zod": "^4.3.6"
   },
-  "dependency": {
-    "fumadocs-ui": "npm:@fumadocs/base-ui@latest"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.4.4",
     "@tanstack/router-plugin": "^1.161.4",

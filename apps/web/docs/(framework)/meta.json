@@ -1,5 +1,7 @@
 {
+  "description": "Programmable Session Keys",
   "icon": "BuildingIcon",
+  "pages": ["---Introduction---", "index", "info", "..."],
   "root": true,
   "title": "Framework"
 }

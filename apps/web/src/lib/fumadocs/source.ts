@@ -24,5 +24,6 @@ export const source = loader({
 
     return;
   },
+  plugins: [],
   source: docs.toFumadocsSource(),
 });

@@ -173,3 +173,11 @@
     cursor: pointer;
   }
 }
+
+.root {
+  isolation: isolate;
+}
+
+body {
+  position: relative;
+}
