@@ -2,14 +2,14 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export const githubDetails = {
   org: "envoy1084",
-  repo: "turbo-effect-starter",
+  repo: "agent-wallet",
 };
 
 export const baseOptions = (): BaseLayoutProps => {
   return {
     githubUrl: `https://github.com/${githubDetails.org}}/${githubDetails.repo}`,
     nav: {
-      title: "Sietch",
+      title: "Indorse",
     },
     searchToggle: {
       enabled: true,

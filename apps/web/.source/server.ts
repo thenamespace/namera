@@ -6,7 +6,17 @@ import type * as Config from '../source.config';
 const create = server<typeof Config, import("fumadocs-mdx/runtime/types").InternalTypeConfig & {
   DocData: {
   }
-}>({"doc":{"passthroughs":["extractedReferences"]}});
+} & {
+  DocData: {
+    docs: {
+      /**
+       * Last modified date of document file, obtained from version control.
+       *
+       */
+      lastModified?: Date;
+    },
+  }
+}>({"doc":{"passthroughs":["extractedReferences","lastModified"]}});
 
 export const docs = await create.docs("docs", "docs", import.meta.glob(["./**/*.{json,yaml}"], {
   "base": "./../docs",

@@ -8,9 +8,9 @@ import {
 } from "@tanstack/react-router";
 
 import rainbowkitCss from "@rainbow-me/rainbowkit/styles.css?url";
-import appCss from "@repo/ui/globals.css?url";
 
 import { ProviderTree } from "@/providers";
+import appCss from "@/styles/globals.css?url";
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
