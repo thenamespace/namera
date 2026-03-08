@@ -22,6 +22,7 @@
   "keywords": [],
   "license": "MIT",
   "name": "@repo/package-template",
+  "private": "true",
   "repository": {
     "type": "git",
     "url": "https://github.com/envoy1084/turbo-effect-starter"
