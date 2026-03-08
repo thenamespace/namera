@@ -21,13 +21,15 @@ const PgLive = PgClient.layerConfig({
   },
 });
 
-export const makeDatabase = pgDrizzle.make({ relations });
+export const makeDatabase = pgDrizzle
+  .make({ relations })
+  .pipe(Effect.provide(pgDrizzle.DefaultServices));
 
-export type DatabaseType = Effect.Effect.Success<typeof makeDatabase>;
+export type DatabaseShape = Effect.Effect.Success<typeof makeDatabase>;
 
 export class Database extends Context.Tag("Database")<
   Database,
-  DatabaseType
+  DatabaseShape
 >() {}
 
 const DatabaseLayer = Layer.effect(

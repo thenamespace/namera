@@ -4,9 +4,11 @@
     "url": "https://github.com/envoy1084/agent-wallet/issues"
   },
   "dependencies": {
-    "drizzle-orm": "1.0.0-beta.16-ea816b6",
-    "effect": "^3.19.19",
-    "uuid": "^13.0.0"
+    "@effect/sql-pg": "^0.50.3",
+    "@repo/database": "workspace:*",
+    "@repo/schema": "workspace:*",
+    "@repo/utils": "workspace:*",
+    "effect": "^3.19.19"
   },
   "description": "",
   "devDependencies": {
@@ -24,7 +26,8 @@
   "homepage": "https://github.com/envoy1084/agent-wallet#readme",
   "keywords": [],
   "license": "MIT",
-  "name": "@repo/schema",
+  "main": "src/index.ts",
+  "name": "@repo/auth",
   "private": "true",
   "repository": {
     "type": "git",

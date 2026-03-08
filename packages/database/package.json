@@ -1,14 +1,14 @@
 {
   "author": "Vedant Chainani <vedant@envoy1084.xyz>",
   "bugs": {
-    "url": "https://github.com/envoy1084/megaphone/issues"
+    "url": "https://github.com/envoy1084/agent-wallet/issues"
   },
   "dependencies": {
     "@effect/sql": "^0.49.0",
     "@effect/sql-pg": "^0.50.3",
     "@repo/schema": "workspace:*",
     "drizzle-orm": "1.0.0-beta.16-ea816b6",
-    "effect": "^3.19.19",
+    "effect": "3.19.19",
     "pg": "^8.18.0"
   },
   "description": "",
@@ -17,19 +17,29 @@
     "@types/node": "^25.3.5",
     "@types/pg": "^8.16.0",
     "drizzle-kit": "1.0.0-beta.16-ea816b6",
+    "tsdown": "^0.21.0",
     "typescript": "^5.9.3"
   },
-  "homepage": "https://github.com/envoy1084/megaphone#readme",
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "homepage": "https://github.com/envoy1084/agent-wallet#readme",
   "keywords": [],
   "license": "MIT",
   "main": "src/index.ts",
-  "name": "@megaphone/database",
+  "name": "@repo/database",
   "private": "true",
   "repository": {
     "type": "git",
-    "url": "https://github.com/envoy1084/megaphone"
+    "url": "https://github.com/envoy1084/agent-wallet"
   },
-  "scripts": {},
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
   "sideEffects": false,
   "type": "module",
   "version": "0.0.0"

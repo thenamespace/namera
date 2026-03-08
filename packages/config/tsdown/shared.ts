@@ -6,7 +6,6 @@ const defaultConfig = defineConfig({
     enabled: true,
     sourcemap: true,
   },
-  external: ["@repo/*"],
   format: ["esm"],
   outDir: "dist",
   platform: "node",
