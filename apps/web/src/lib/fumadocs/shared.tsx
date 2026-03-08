@@ -10,6 +10,7 @@ export const baseOptions = (): BaseLayoutProps => {
     githubUrl: `https://github.com/${githubDetails.org}}/${githubDetails.repo}`,
     nav: {
       title: "Indorse",
+      url: "/dashboard",
     },
     searchToggle: {
       enabled: true,
