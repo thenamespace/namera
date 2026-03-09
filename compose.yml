@@ -16,6 +16,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  server:
+    image: agent-wallet-server
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:
