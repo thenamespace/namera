@@ -14,8 +14,8 @@
   "devDependencies": {
     "@effect/vitest": "^0.27.0",
     "@repo/config": "workspace:*",
-    "@types/node": "^22.19.15",
-    "tsdown": "^0.20.3",
+    "@types/node": "^25.3.5",
+    "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
