@@ -33,7 +33,11 @@
     "type": "git",
     "url": "https://github.com/envoy1084/agent-wallet"
   },
-  "scripts": {},
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
   "sideEffects": false,
   "type": "module",
   "version": "0.0.0"

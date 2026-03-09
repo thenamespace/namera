@@ -1,11 +1,18 @@
+import { sql } from "drizzle-orm";
 import {
   createInsertSchema,
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-orm/effect-schema";
-import { index, text } from "drizzle-orm/pg-core";
+import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 
-import { createTimestampField, generateUniqueId, timestamps } from "../common";
+import {
+  adminRole,
+  createTimestampField,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "../common";
 import { authSchema } from "./common";
 
 export const verification = authSchema.table(
@@ -20,7 +27,34 @@ export const verification = authSchema.table(
     value: text("value").notNull(),
     ...timestamps,
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)],
+  (table) => [
+    index("verification_identifier_idx").on(table.identifier),
+    pgPolicy("verification_user_select", {
+      as: "permissive",
+      to: userRole,
+      for: "select",
+      using: sql`true`,
+    }),
+    pgPolicy("verification_user_update", {
+      as: "permissive",
+      to: userRole,
+      for: "update",
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("verification_user_delete", {
+      as: "permissive",
+      to: userRole,
+      for: "delete",
+      using: sql`true`,
+    }),
+    pgPolicy("verification_admin_access", {
+      as: "permissive",
+      to: adminRole,
+      for: "all",
+      using: sql`true`,
+    }),
+  ],
 );
 
 export const VerificationSchema = createSelectSchema(verification);

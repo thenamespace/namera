@@ -1,11 +1,17 @@
+import { sql } from "drizzle-orm";
 import {
   createInsertSchema,
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-orm/effect-schema";
-import { index, text } from "drizzle-orm/pg-core";
+import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 
-import { createTimestampField, timestamps } from "../common";
+import {
+  adminRole,
+  createTimestampField,
+  timestamps,
+  userRole,
+} from "../common";
 import { authSchema } from "./common";
 import { UserId, user } from "./user";
 
@@ -34,7 +40,34 @@ export const account = authSchema.table(
       .references(() => user.id, { onDelete: "cascade" }),
     ...timestamps,
   },
-  (table) => [index("account_userId_idx").on(table.userId)],
+  (table) => [
+    index("account_userId_idx").on(table.userId),
+    pgPolicy("account_user_select", {
+      as: "permissive",
+      to: userRole,
+      for: "select",
+      using: sql`${table.userId} = auth_user_id()`,
+    }),
+    pgPolicy("account_user_update", {
+      as: "permissive",
+      to: userRole,
+      for: "update",
+      using: sql`${table.userId} = auth_user_id()`,
+      withCheck: sql`${table.userId} = auth_user_id()`,
+    }),
+    pgPolicy("account_user_delete", {
+      as: "permissive",
+      to: userRole,
+      for: "delete",
+      using: sql`${table.userId} = auth_user_id()`,
+    }),
+    pgPolicy("account_admin_access", {
+      as: "permissive",
+      to: adminRole,
+      for: "all",
+      using: sql`true`,
+    }),
+  ],
 );
 
 export const AccountSchema = createSelectSchema(account, {

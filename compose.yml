@@ -20,8 +20,16 @@ services:
     image: agent-wallet-server
     env_file:
       - .env
+    depends_on:
+      - postgres
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 1m
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:
