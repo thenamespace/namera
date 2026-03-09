@@ -1,13 +1,28 @@
 import { PgClient } from "@effect/sql-pg";
 import { relations } from "@repo/schema";
 import * as pgDrizzle from "drizzle-orm/effect-postgres";
-import { Config, Context, Effect, Layer } from "effect";
+import { Config, Context, Effect, Layer, Option } from "effect";
 import { types } from "pg";
 
-import { databaseConfig } from "./config";
+import { adminDatabaseConfig, databaseConfig } from "./config";
 
 const PgLive = PgClient.layerConfig({
   ...databaseConfig,
+  types: {
+    getTypeParser: Config.succeed((typeId, format) => {
+      if (
+        [1184, 1114, 1082, 1186, 1231, 1115, 1185, 1187, 1182].includes(typeId)
+      ) {
+        // biome-ignore lint/suspicious/noExplicitAny: safe
+        return (val: any) => val;
+      }
+      return types.getTypeParser(typeId, format);
+    }),
+  },
+});
+
+const PgAdminLive = PgClient.layerConfig({
+  ...adminDatabaseConfig,
   types: {
     getTypeParser: Config.succeed((typeId, format) => {
       if (
@@ -26,11 +41,28 @@ export const makeDatabase = pgDrizzle
   .pipe(Effect.provide(pgDrizzle.DefaultServices));
 
 export type DatabaseShape = Effect.Effect.Success<typeof makeDatabase>;
+export type TransactionShape = Parameters<
+  Parameters<DatabaseShape["transaction"]>[0]
+>[0];
 
 export class Database extends Context.Tag("Database")<
   Database,
   DatabaseShape
 >() {}
+
+export class TransactionClient extends Context.Tag("TransactionClient")<
+  TransactionClient,
+  TransactionShape
+>() {}
+
+export const TransactionOrDatabase = Effect.gen(function* () {
+  const tx = yield* Effect.serviceOption(TransactionClient);
+  if (Option.isSome(tx)) {
+    return tx.value;
+  }
+
+  return yield* Database;
+});
 
 const DatabaseLayer = Layer.effect(
   Database,
@@ -40,3 +72,16 @@ const DatabaseLayer = Layer.effect(
 );
 
 export const DatabaseLive = Layer.provideMerge(DatabaseLayer, PgLive);
+export const AdminDatabaseLive = Layer.provideMerge(DatabaseLayer, PgAdminLive);
+
+export const withTx = (tx: TransactionShape) =>
+  Effect.provideService(TransactionClient, tx);
+
+export const transaction = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  Effect.gen(function* () {
+    const db = yield* Database;
+
+    return yield* db.transaction((tx) =>
+      effect.pipe(Effect.provideService(TransactionClient, tx)),
+    );
+  });

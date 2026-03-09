@@ -2,6 +2,19 @@ import { Schema } from "effect";
 
 import { Email } from "@/common";
 
+export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()(
+  "MagicLinkError",
+  {
+    code: Schema.Union(
+      Schema.Literal("TOKEN_EXPIRED"),
+      Schema.Literal("SEND_EMAIL_FAILED"),
+      Schema.Literal("ATTEMPTS_EXCEEDED"),
+      Schema.Literal("TOKEN_NOT_FOUND"),
+    ),
+    message: Schema.optional(Schema.String),
+  },
+) {}
+
 export const SigInMagicLinkBody = Schema.Struct({
   callbackUrl: Schema.URL.annotations({
     description: "URL to redirect after magic link verification",

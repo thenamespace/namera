@@ -4,6 +4,6 @@ import { Effect } from "effect";
 
 const healthHandler = () => Effect.succeed("ok");
 
-export const HealthLive = HttpApiBuilder.group(api, "health", (handlers) =>
+export const HealthGroupLive = HttpApiBuilder.group(api, "health", (handlers) =>
   handlers.handle("health", healthHandler),
 );

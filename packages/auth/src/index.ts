@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./layers";
+export * from "./layer";

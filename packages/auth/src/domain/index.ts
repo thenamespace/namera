@@ -1,3 +1,0 @@
-type AuthRepository = {
-  user: {};
-};

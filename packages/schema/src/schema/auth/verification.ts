@@ -15,7 +15,7 @@ import {
 } from "../common";
 import { authSchema } from "./common";
 
-export const verification = authSchema.table(
+export const verification = authSchema.table.withRLS(
   "verification",
   {
     expiresAt: createTimestampField("expires_at", {
@@ -47,6 +47,12 @@ export const verification = authSchema.table(
       to: userRole,
       for: "delete",
       using: sql`true`,
+    }),
+    pgPolicy("verification_user_insert", {
+      as: "permissive",
+      to: userRole,
+      for: "insert",
+      withCheck: sql`true`,
     }),
     pgPolicy("verification_admin_access", {
       as: "permissive",

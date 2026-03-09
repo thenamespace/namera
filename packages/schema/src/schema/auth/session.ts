@@ -9,16 +9,17 @@ import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 import {
   adminRole,
   createTimestampField,
+  generateUniqueId,
   timestamps,
   userRole,
 } from "../common";
 import { authSchema } from "./common";
 import { UserId, user } from "./user";
 
-export const session = authSchema.table(
+export const session = authSchema.table.withRLS(
   "session",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().$defaultFn(generateUniqueId),
     ipAddress: text("ip_address"),
     token: text("token").notNull().unique(),
     userId: text("user_id")

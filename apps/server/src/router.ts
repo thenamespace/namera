@@ -1,15 +1,17 @@
-import { createServer } from "node:http";
-
 import { HttpApiBuilder, HttpMiddleware, HttpServer } from "@effect/platform";
-import { NodeHttpServer } from "@effect/platform-node";
+import { BunHttpServer } from "@effect/platform-bun";
 import { api } from "@repo/api";
 import { Config, Layer } from "effect";
 
-import { HealthLive } from "@/routes/health";
+import { HealthGroupLive } from "@/routes/health";
 
 import { Middlewares } from "./middlewares";
+import { AuthGroupLive } from "./routes/auth";
 
-const RepoApiLive = HttpApiBuilder.api(api).pipe(Layer.provide(HealthLive));
+const RepoApiLive = HttpApiBuilder.api(api).pipe(
+  Layer.provide(HealthGroupLive),
+  Layer.provide(AuthGroupLive),
+);
 
 export const HttpLive = HttpApiBuilder.serve(HttpMiddleware.logger).pipe(
   // Middlewares
@@ -18,8 +20,7 @@ export const HttpLive = HttpApiBuilder.serve(HttpMiddleware.logger).pipe(
   HttpServer.withLogAddress,
   // Set up the Node.js HTTP server
   Layer.provide(
-    NodeHttpServer.layerConfig(
-      createServer,
+    BunHttpServer.layerConfig(
       Config.all({
         port: Config.number("PORT").pipe(Config.withDefault(8080)),
       }),

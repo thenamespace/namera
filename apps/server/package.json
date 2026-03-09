@@ -5,9 +5,12 @@
   },
   "dependencies": {
     "@effect/platform": "^0.94.5",
-    "@effect/platform-node": "^0.104.1",
+    "@effect/platform-bun": "^0.87.1",
     "@repo/api": "workspace:*",
+    "@repo/auth": "workspace:*",
     "@repo/database": "workspace:*",
+    "@repo/domain": "workspace:*",
+    "@repo/schema": "workspace:*",
     "dotenv": "^17.3.1",
     "effect": "^3.19.19"
   },

@@ -12,6 +12,7 @@
   "references": [
     { "path": "../database" },
     { "path": "../schema" },
-    { "path": "../utils" }
+    { "path": "../utils" },
+    { "path": "../domain" }
   ]
 }

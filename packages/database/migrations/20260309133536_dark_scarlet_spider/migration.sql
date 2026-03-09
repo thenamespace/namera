@@ -1,5 +1,3 @@
-CREATE SCHEMA "auth";
---> statement-breakpoint
 CREATE TABLE "auth"."account" (
 	"id" text PRIMARY KEY,
 	"account_id" text NOT NULL,
@@ -69,4 +67,5 @@ CREATE POLICY "user_admin_access" ON "auth"."user" AS PERMISSIVE FOR ALL TO "app
 CREATE POLICY "verification_user_select" ON "auth"."verification" AS PERMISSIVE FOR SELECT TO "app_user" USING (true);--> statement-breakpoint
 CREATE POLICY "verification_user_update" ON "auth"."verification" AS PERMISSIVE FOR UPDATE TO "app_user" USING (true) WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "verification_user_delete" ON "auth"."verification" AS PERMISSIVE FOR DELETE TO "app_user" USING (true);--> statement-breakpoint
+CREATE POLICY "verification_user_insert" ON "auth"."verification" AS PERMISSIVE FOR INSERT TO "app_user" WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "verification_admin_access" ON "auth"."verification" AS PERMISSIVE FOR ALL TO "app_admin" USING (true);

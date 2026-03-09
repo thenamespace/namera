@@ -1,10 +1,6 @@
 {
   "ddl": [
     {
-      "entityType": "schemas",
-      "name": "auth"
-    },
-    {
       "entityType": "tables",
       "isRlsEnabled": true,
       "name": "account",
@@ -766,6 +762,17 @@
     {
       "as": "PERMISSIVE",
       "entityType": "policies",
+      "for": "INSERT",
+      "name": "verification_user_insert",
+      "roles": ["app_user"],
+      "schema": "auth",
+      "table": "verification",
+      "using": null,
+      "withCheck": "true"
+    },
+    {
+      "as": "PERMISSIVE",
+      "entityType": "policies",
       "for": "ALL",
       "name": "verification_admin_access",
       "roles": ["app_admin"],
@@ -776,8 +783,8 @@
     }
   ],
   "dialect": "postgres",
-  "id": "b74a4596-4d9a-48ca-9669-6544bee0e850",
-  "prevIds": ["08d036ae-15e5-44fc-973c-b574ff44e3f5"],
+  "id": "9facc280-1882-4a4d-b924-4e6081233241",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "renames": [],
   "version": "8"
 }

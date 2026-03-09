@@ -15,7 +15,7 @@ import {
 import { authSchema } from "./common";
 import { UserId, user } from "./user";
 
-export const account = authSchema.table(
+export const account = authSchema.table.withRLS(
   "account",
   {
     id: text("id").primaryKey(),

@@ -1,8 +1,10 @@
-import { Database } from "@repo/database";
-import {
-  type SigInMagicLinkBody,
-  type VerifyMagicLinkBody,
-  verification,
+import { AdminDatabaseLive, Database, withTx } from "@repo/database";
+import { AuthRepo } from "@repo/domain/auth";
+import type {
+  Session,
+  SigInMagicLinkBody,
+  User,
+  VerifyMagicLinkBody,
 } from "@repo/schema";
 import { base64Url } from "@repo/utils/base64";
 import { createHash } from "@repo/utils/hash";
@@ -11,20 +13,29 @@ import { Clock, Context, Data, Effect, Layer } from "effect";
 
 import { AuthConfig } from "@/config";
 
-class MagicLinkCreationFailed extends Data.TaggedError(
-  "MagicLinkCreationFailed",
-) {}
-
-class TokenNotFound extends Data.TaggedError("TokenNotFound") {}
-class TokenExpired extends Data.TaggedError("TokenExpired") {}
+class MagicLinkError extends Data.TaggedError("MagicLinkError")<{
+  code:
+    | "TOKEN_EXPIRED"
+    | "SEND_EMAIL_FAILED"
+    | "ATTEMPTS_EXCEEDED"
+    | "TOKEN_NOT_FOUND";
+  message?: string;
+}> {}
 
 export type MagicLinkShape = {
   signInMagicLink: (
     params: SigInMagicLinkBody,
-  ) => Effect.Effect<void, MagicLinkCreationFailed, Database>;
-  verifyMagicLink: (
-    params: VerifyMagicLinkBody,
-  ) => Effect.Effect<void, TokenNotFound | TokenExpired, Database>;
+  ) => Effect.Effect<void, MagicLinkError, AuthRepo>;
+  verifyMagicLink: (params: VerifyMagicLinkBody) => Effect.Effect<
+    {
+      isNewUser: boolean;
+      session: Session;
+      user: User;
+      token: string;
+    },
+    MagicLinkError,
+    AuthRepo
+  >;
 };
 
 export class MagicLink extends Context.Tag("MagicLink")<
@@ -34,7 +45,7 @@ export class MagicLink extends Context.Tag("MagicLink")<
 
 const signInMagicLink = (params: SigInMagicLinkBody) =>
   Effect.gen(function* () {
-    const db = yield* Database;
+    const authRepo = yield* AuthRepo;
     const config = yield* AuthConfig.pipe(Effect.orDie);
 
     const verificationToken = generateRandomString(32, "A-Z", "a-z");
@@ -51,22 +62,15 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
     );
 
     // Store Verification Token
-    yield* db
-      .insert(verification)
-      .values({
-        expiresAt,
-        identifier: hashed,
-        value: JSON.stringify({
-          attempt: 0,
-          email: params.email,
-          name: params.name,
-        }),
-      })
-      .pipe(
-        Effect.catchTag("EffectDrizzleQueryError", () =>
-          Effect.fail(new MagicLinkCreationFailed()),
-        ),
-      );
+    yield* authRepo.verification.createVerification({
+      expiresAt,
+      identifier: hashed,
+      value: JSON.stringify({
+        attempt: 0,
+        email: params.email,
+        name: params.name,
+      }),
+    });
 
     const url = new URL("/magic-link/verify", config.baseUrl);
     url.searchParams.set("token", verificationToken);
@@ -82,11 +86,12 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
 
     // TODO: Send Email
     yield* Effect.log("Magic Link: ", url.toString());
-  });
+  }).pipe(Effect.provide(AdminDatabaseLive.pipe(Layer.orDie)));
 
 const verifyMagicLink = (params: VerifyMagicLinkBody) =>
   Effect.gen(function* () {
     const db = yield* Database;
+    const authRepo = yield* AuthRepo;
 
     const hash = yield* Effect.promise(() =>
       createHash("SHA-256").digest(new TextEncoder().encode(params.token)),
@@ -95,29 +100,91 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
       padding: false,
     });
 
-    // Find Verification Token
-    const verification = yield* db.query.verification
-      .findFirst({
-        where: {
-          identifier: {
-            eq: hashed,
+    // Start Transaction
+    const res = yield* db.transaction((tx) =>
+      Effect.gen(function* () {
+        // Find Verification Token
+        const verificationValue = yield* authRepo.verification.findVerification(
+          {
+            identifier: hashed,
           },
-        },
-      })
-      .pipe(
-        Effect.catchTag("EffectDrizzleQueryError", () =>
-          Effect.fail(new TokenNotFound()),
-        ),
-      );
+        );
 
-    if (!verification) {
-      return yield* Effect.fail(new TokenNotFound());
-    }
+        if (!verificationValue) {
+          return yield* Effect.fail(
+            new MagicLinkError({ code: "TOKEN_NOT_FOUND" }),
+          );
+        }
 
-    if (verification.expiresAt < new Date()) {
-      return yield* Effect.fail(new TokenExpired());
-    }
-  });
+        if (verificationValue.expiresAt < new Date()) {
+          return yield* Effect.fail(
+            new MagicLinkError({ code: "TOKEN_EXPIRED" }),
+          );
+        }
+
+        const {
+          email,
+          name,
+          attempt = 0,
+        } = JSON.parse(verificationValue.value) as {
+          email: string;
+          name?: string | undefined;
+          attempt?: number | undefined;
+        };
+
+        // If attempts exceeded, delete the token and fail
+        if (attempt >= 5) {
+          yield* authRepo.verification.deleteVerification({
+            identifier: verificationValue.identifier,
+          });
+          return yield* Effect.fail(
+            new MagicLinkError({ code: "ATTEMPTS_EXCEEDED" }),
+          );
+        }
+
+        let isNewUser = false;
+        let user = yield* authRepo.user.findUserByEmail(email);
+
+        if (!user) {
+          user = yield* authRepo.user.createUser({
+            email: email,
+            emailVerified: true,
+            id: undefined,
+            name: name ?? "User",
+          });
+          isNewUser = true;
+        }
+
+        if (!user.emailVerified) {
+          yield* authRepo.user.updateUser(user.id, {
+            emailVerified: true,
+          });
+        }
+
+        // 7 days
+        const expiresAt = new Date(
+          (yield* Clock.currentTimeMillis) + 7 * 24 * 60 * 60 * 1000,
+        );
+        const token = generateRandomString(32, "A-Z", "a-z", "0-9");
+
+        const session = yield* authRepo.session.createSession({
+          expiresAt,
+          token,
+          userId: user.id,
+          // TODO: Pass IP and User Agent from params/headers
+        });
+
+        return {
+          isNewUser,
+          session,
+          token,
+          user,
+        };
+      }).pipe(withTx(tx)),
+    );
+
+    return res;
+  }).pipe(Effect.provide(AdminDatabaseLive.pipe(Layer.orDie)), Effect.orDie);
 
 export const MagicLinkLive = Layer.effect(
   MagicLink,
