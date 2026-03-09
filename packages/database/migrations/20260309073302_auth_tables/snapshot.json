@@ -263,19 +263,6 @@
       "typeSchema": null
     },
     {
-      "default": null,
-      "dimensions": 0,
-      "entityType": "columns",
-      "generated": null,
-      "identity": null,
-      "name": "active_organization_id",
-      "notNull": false,
-      "schema": "auth",
-      "table": "session",
-      "type": "text",
-      "typeSchema": null
-    },
-    {
       "default": "now()",
       "dimensions": 0,
       "entityType": "columns",
@@ -537,7 +524,7 @@
       ],
       "concurrently": false,
       "entityType": "indexes",
-      "isUnique": false,
+      "isUnique": true,
       "method": "btree",
       "name": "verification_identifier_idx",
       "nameExplicit": true,
@@ -789,7 +776,7 @@
     }
   ],
   "dialect": "postgres",
-  "id": "4c276771-5872-45df-ad9f-02fd93c8fc67",
+  "id": "b74a4596-4d9a-48ca-9669-6544bee0e850",
   "prevIds": ["08d036ae-15e5-44fc-973c-b574ff44e3f5"],
   "renames": [],
   "version": "8"

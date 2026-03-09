@@ -26,7 +26,6 @@ export const session = authSchema.table(
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
     userAgent: text("user_agent"),
-    activeOrganizationId: text("active_organization_id"),
     expiresAt: createTimestampField("expires_at", {
       mode: "date",
       withTimezone: true,

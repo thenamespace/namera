@@ -23,7 +23,6 @@ CREATE TABLE "auth"."session" (
 	"token" text NOT NULL UNIQUE,
 	"user_id" text NOT NULL,
 	"user_agent" text,
-	"active_organization_id" text,
 	"expires_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -53,7 +52,7 @@ CREATE TABLE "auth"."verification" (
 ALTER TABLE "auth"."verification" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE INDEX "account_userId_idx" ON "auth"."account" ("user_id");--> statement-breakpoint
 CREATE INDEX "session_userId_idx" ON "auth"."session" ("user_id");--> statement-breakpoint
-CREATE INDEX "verification_identifier_idx" ON "auth"."verification" ("identifier");--> statement-breakpoint
+CREATE UNIQUE INDEX "verification_identifier_idx" ON "auth"."verification" ("identifier");--> statement-breakpoint
 ALTER TABLE "auth"."account" ADD CONSTRAINT "account_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."user"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "auth"."session" ADD CONSTRAINT "session_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."user"("id") ON DELETE CASCADE;--> statement-breakpoint
 CREATE POLICY "account_user_select" ON "auth"."account" AS PERMISSIVE FOR SELECT TO "app_user" USING ("auth"."account"."user_id" = auth_user_id());--> statement-breakpoint

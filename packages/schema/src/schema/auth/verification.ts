@@ -4,7 +4,7 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-orm/effect-schema";
-import { index, pgPolicy, text } from "drizzle-orm/pg-core";
+import { pgPolicy, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -28,7 +28,7 @@ export const verification = authSchema.table(
     ...timestamps,
   },
   (table) => [
-    index("verification_identifier_idx").on(table.identifier),
+    uniqueIndex("verification_identifier_idx").on(table.identifier),
     pgPolicy("verification_user_select", {
       as: "permissive",
       to: userRole,

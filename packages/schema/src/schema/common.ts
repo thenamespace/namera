@@ -20,14 +20,5 @@ export const createTimestampField = (
   return timestamp(name, config).defaultNow().notNull();
 };
 
-export const userRole = pgRole("app_user", {
-  createDb: false,
-  createRole: false,
-  inherit: true,
-}).existing();
-
-export const adminRole = pgRole("app_admin", {
-  createDb: true,
-  createRole: true,
-  inherit: true,
-}).existing();
+export const userRole = pgRole("app_user").existing();
+export const adminRole = pgRole("app_admin").existing();
