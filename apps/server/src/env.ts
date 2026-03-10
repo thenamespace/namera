@@ -1,9 +1,12 @@
+import { AuthEnvConfig, type AuthEnvValues } from "@repo/auth";
 import { DatabaseConfig, type DatabaseEnvValues } from "@repo/database";
-import { type Config, ConfigProvider, Context, Layer } from "effect";
+import { Config, ConfigProvider, Context, Layer } from "effect";
 
-type EnvValues = DatabaseEnvValues;
+type EnvValues = DatabaseEnvValues & AuthEnvValues;
 
-const envConfig: Config.Config<EnvValues> = DatabaseConfig;
+const envConfig: Config.Config<EnvValues> = DatabaseConfig.pipe(
+  Config.zipWith(AuthEnvConfig, (a, b) => ({ ...a, ...b })),
+);
 
 export class Env extends Context.Tag("Auth")<Env, EnvValues>() {}
 

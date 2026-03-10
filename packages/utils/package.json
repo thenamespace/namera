@@ -14,7 +14,10 @@
     ".": "./src/index.ts",
     "./base64": "./src/base64.ts",
     "./hash": "./src/hash.ts",
-    "./random": "./src/random.ts"
+    "./random": "./src/random.ts",
+    "./trusted-origin": "./src/trusted-origin.ts",
+    "./url": "./src/url.ts",
+    "./wildcard": "./src/wildcard.ts"
   },
   "homepage": "https://github.com/envoy1084/agent-wallet#readme",
   "keywords": [],

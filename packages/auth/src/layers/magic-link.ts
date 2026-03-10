@@ -1,41 +1,29 @@
-import {
-  AdminDatabase,
-  AdminDatabaseLive,
-  type Database,
-  withTx,
-} from "@repo/database";
+import { AdminDatabase, type Database, withTx } from "@repo/database";
 import { AuthRepo } from "@repo/domain/auth";
-import type {
-  SigInMagicLinkBody,
-  VerifyMagicLinkBody,
-  VerifyMagicLinkResponse,
+import {
+  MagicLinkError,
+  type SigInMagicLinkBody,
+  type VerifyMagicLinkBody,
+  type VerifyMagicLinkResponse,
 } from "@repo/schema";
 import { base64Url } from "@repo/utils/base64";
 import { createHash } from "@repo/utils/hash";
 import { generateRandomString } from "@repo/utils/random";
-import { Clock, Context, Data, Effect, Layer } from "effect";
+import { Clock, Context, Duration, Effect, Layer } from "effect";
 
 import { AuthConfig } from "@/config";
-
-class MagicLinkError extends Data.TaggedError("MagicLinkError")<{
-  code:
-    | "TOKEN_EXPIRED"
-    | "SEND_EMAIL_FAILED"
-    | "ATTEMPTS_EXCEEDED"
-    | "TOKEN_NOT_FOUND";
-  message?: string;
-}> {}
+import { originCheck } from "@/helpers/origin";
 
 export type MagicLinkShape = {
   signInMagicLink: (
     params: SigInMagicLinkBody,
-  ) => Effect.Effect<void, MagicLinkError, AuthRepo | Database>;
+  ) => Effect.Effect<void, MagicLinkError, AuthRepo | Database | AuthConfig>;
   verifyMagicLink: (
     params: VerifyMagicLinkBody,
   ) => Effect.Effect<
     VerifyMagicLinkResponse,
     MagicLinkError,
-    AuthRepo | AdminDatabase | Database
+    AuthRepo | AdminDatabase | Database | AuthConfig
   >;
 };
 
@@ -47,7 +35,13 @@ export class MagicLink extends Context.Tag("MagicLink")<
 const signInMagicLink = (params: SigInMagicLinkBody) =>
   Effect.gen(function* () {
     const authRepo = yield* AuthRepo;
-    const config = yield* AuthConfig.pipe(Effect.orDie);
+    const config = yield* AuthConfig;
+
+    yield* originCheck([
+      { label: "callbackUrl", url: params.callbackUrl },
+      { label: "newUserCallbackUrl", url: params.newUserCallbackUrl },
+      { label: "errorCallbackUrl", url: params.errorCallbackUrl },
+    ]);
 
     const verificationToken = generateRandomString(32, "A-Z", "a-z");
     const hash = yield* Effect.promise(() =>
@@ -57,9 +51,9 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
       padding: false,
     });
 
-    // 15 minutes
     const expiresAt = new Date(
-      (yield* Clock.currentTimeMillis) + 15 * 60 * 1000,
+      (yield* Clock.currentTimeMillis) +
+        Duration.toMillis(config.emailVerification.expiresIn),
     );
 
     // Store Verification Token
@@ -73,7 +67,7 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
       }),
     });
 
-    const url = new URL("/auth/magic-link/verify", config.baseUrl);
+    const url = new URL("/auth/magic-link/verify", config.baseURL);
     url.searchParams.set("token", verificationToken);
     url.searchParams.set("callbackUrl", params.callbackUrl.toString());
     url.searchParams.set(
@@ -87,12 +81,13 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
 
     // TODO: Send Email
     yield* Effect.log("Magic Link: ", url.toString());
-  }).pipe(Effect.provide(AdminDatabaseLive.pipe(Layer.orDie)));
+  });
 
 const verifyMagicLink = (params: VerifyMagicLinkBody) =>
   Effect.gen(function* () {
     const db = yield* AdminDatabase;
     const authRepo = yield* AuthRepo;
+    const config = yield* AuthConfig;
 
     const hash = yield* Effect.promise(() =>
       createHash("SHA-256").digest(new TextEncoder().encode(params.token)),
@@ -176,18 +171,21 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           });
         }
 
-        // 7 days
-        // TODO: Make this configurable
-        const expiresAt = new Date(
-          (yield* Clock.currentTimeMillis) + 7 * 24 * 60 * 60 * 1000,
+        const sessionExpiredAt = new Date(
+          (yield* Clock.currentTimeMillis) +
+            Duration.toMillis(config.session.expiresIn),
         );
         const token = generateRandomString(32, "A-Z", "a-z", "0-9");
 
         const session = yield* authRepo.session.createSession({
-          expiresAt,
+          expiresAt: sessionExpiredAt,
           token,
           userId: user.id,
           // TODO: Pass IP and User Agent from params/headers
+        });
+
+        yield* authRepo.verification.deleteVerification({
+          identifier: verificationValue.identifier,
         });
 
         return {

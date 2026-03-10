@@ -11,6 +11,7 @@ export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()(
       Schema.Literal("SEND_EMAIL_FAILED"),
       Schema.Literal("ATTEMPTS_EXCEEDED"),
       Schema.Literal("TOKEN_NOT_FOUND"),
+      Schema.Literal("INVALID_ORIGIN"),
     ),
     message: Schema.optional(Schema.String),
   },

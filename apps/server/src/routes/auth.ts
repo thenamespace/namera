@@ -1,8 +1,8 @@
 import { HttpApiBuilder, HttpServerResponse } from "@effect/platform";
 import { api, CurrentUser } from "@repo/api";
-import { Auth } from "@repo/auth";
+import { Auth, AuthConfig } from "@repo/auth";
 import type { SigInMagicLinkBody, VerifyMagicLinkBody } from "@repo/schema";
-import { Duration, Effect } from "effect";
+import { Effect } from "effect";
 
 const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
   Effect.gen(function* () {
@@ -13,6 +13,7 @@ const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
 const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
   Effect.gen(function* () {
     const auth = yield* Auth;
+    const authConfig = yield* AuthConfig;
     const res = yield* auth.magicLink.verifyMagicLink(payload);
 
     const redirectUrl = res.isNewUser
@@ -22,13 +23,15 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
     return yield* HttpServerResponse.empty({ status: 302 })
       .pipe(
         HttpServerResponse.setHeader("Location", redirectUrl.toString()),
-        HttpServerResponse.setCookie("auth-token", res.token, {
-          // domain: "example.com",
+        HttpServerResponse.setCookie(authConfig.session.cookieName, res.token, {
+          ...(authConfig.session.domain
+            ? { domain: authConfig.session.domain }
+            : {}),
           httpOnly: true,
-          maxAge: Duration.days(7),
+          maxAge: authConfig.session.expiresIn,
           path: "/",
           sameSite: "lax",
-          secure: false,
+          secure: authConfig.session.secure,
         }),
       )
       .pipe(Effect.orDie);
