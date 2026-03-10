@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { Email } from "@/common";
+import { Email } from "../../common";
 
 export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()(
   "MagicLinkError",

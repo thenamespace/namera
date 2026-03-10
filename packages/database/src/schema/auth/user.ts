@@ -1,17 +1,9 @@
+import type { UserId } from "@repo/schema";
 import { sql } from "drizzle-orm";
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-orm/effect-schema";
 import { boolean, pgPolicy, text } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
 
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import { authSchema } from "./common";
-
-export const UserId = Schema.String.pipe(Schema.brand("UserId"));
-export type UserId = typeof UserId.Type;
 
 export const user = authSchema.table.withRLS(
   "user",
@@ -45,19 +37,3 @@ export const user = authSchema.table.withRLS(
     }),
   ],
 );
-
-export const UserSchema = createSelectSchema(user, {
-  id: () => UserId,
-});
-
-export const UserInsertSchema = createInsertSchema(user, {
-  id: () => Schema.UndefinedOr(UserId),
-});
-
-export const UserUpdateSchema = createUpdateSchema(user, {
-  id: () => UserId,
-});
-
-export type User = typeof UserSchema.Type;
-export type UserInsert = typeof UserInsertSchema.Type;
-export type UserUpdate = typeof UserUpdateSchema.Type;

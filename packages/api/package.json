@@ -25,7 +25,6 @@
     "type": "git",
     "url": "https://github.com/envoy1084/agent-wallet"
   },
-  "scripts": {},
   "sideEffects": false,
   "type": "module",
   "version": "0.0.0"

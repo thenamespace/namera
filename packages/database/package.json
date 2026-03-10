@@ -9,7 +9,8 @@
     "@repo/schema": "workspace:*",
     "drizzle-orm": "1.0.0-beta.16-ea816b6",
     "effect": "^3.19.19",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "uuid": "^13.0.0"
   },
   "description": "",
   "devDependencies": {

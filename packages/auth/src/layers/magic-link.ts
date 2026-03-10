@@ -72,16 +72,16 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
       }),
     });
 
-    const url = new URL("/magic-link/verify", config.baseUrl);
+    const url = new URL("/auth/magic-link/verify", config.baseUrl);
     url.searchParams.set("token", verificationToken);
-    url.searchParams.set("callbackUrl", params.callbackUrl.toString() ?? "/");
+    url.searchParams.set("callbackUrl", params.callbackUrl.toString());
     url.searchParams.set(
       "newUserCallbackUrl",
-      params.newUserCallbackUrl.toString() ?? "/",
+      params.newUserCallbackUrl.toString(),
     );
     url.searchParams.set(
       "errorCallbackUrl",
-      params.errorCallbackUrl.toString() ?? "/",
+      params.errorCallbackUrl.toString(),
     );
 
     // TODO: Send Email

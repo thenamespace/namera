@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-const emailRegex =
+export const emailRegex =
   /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-.]*)[a-z0-9_'+-]@([a-z0-9][a-z0-9-]*\.)+[a-z]{2,}$/i;
 
 export const Email = Schema.String.pipe(

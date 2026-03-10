@@ -1,10 +1,10 @@
 import { PgClient } from "@effect/sql-pg";
-import { relations } from "@repo/schema";
 import * as pgDrizzle from "drizzle-orm/effect-postgres";
 import { Config, Context, Effect, Layer, Option } from "effect";
 import { types } from "pg";
 
 import { adminDatabaseConfig, databaseConfig } from "./config";
+import { relations } from "./relations";
 
 const PgLive = PgClient.layerConfig({
   ...databaseConfig,

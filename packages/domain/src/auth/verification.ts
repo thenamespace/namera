@@ -1,9 +1,9 @@
-import { type Database, TransactionOrDatabase } from "@repo/database";
 import {
-  type Verification,
-  type VerificationInsert,
+  type Database,
+  TransactionOrDatabase,
   verification,
-} from "@repo/schema";
+} from "@repo/database";
+import type { Verification, VerificationInsert } from "@repo/schema";
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 

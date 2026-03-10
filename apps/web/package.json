@@ -1,8 +1,10 @@
 {
   "dependencies": {
+    "@effect/platform": "^0.94.5",
     "@metamask/sdk": "^0.34.0",
     "@phosphor-icons/react": "^2.1.10",
     "@rainbow-me/rainbowkit": "^2.2.10",
+    "@repo/api": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tailwindcss/vite": "^4.2.0",
     "@tanstack/react-hotkeys": "^0.3.1",
@@ -35,7 +37,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
-    "nitro": "^3.0.1-alpha.2",
+    "nitro": "npm:nitro-nightly@latest",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.1.1"
@@ -43,9 +45,9 @@
   "name": "web",
   "private": true,
   "scripts": {
-    "build": "bun run --bunx vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=6144' bun run --bunx vite build",
     "dev": "bun run --bunx vite dev",
-    "start": "node .output/server/index.mjs",
+    "start": "bun .output/server/index.mjs",
     "test": "vitest run"
   },
   "type": "module"

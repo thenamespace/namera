@@ -1,9 +1,4 @@
 import { sql } from "drizzle-orm";
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-orm/effect-schema";
 import { pgPolicy, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
@@ -62,11 +57,3 @@ export const verification = authSchema.table.withRLS(
     }),
   ],
 );
-
-export const VerificationSchema = createSelectSchema(verification);
-export const VerificationInsertSchema = createInsertSchema(verification);
-export const VerificationUpdateSchema = createUpdateSchema(verification);
-
-export type Verification = typeof VerificationSchema.Type;
-export type VerificationInsert = typeof VerificationInsertSchema.Type;
-export type VerificationUpdate = typeof VerificationUpdateSchema.Type;

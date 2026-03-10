@@ -28,10 +28,6 @@
     "type": "git",
     "url": "https://github.com/envoy1084/turbo-effect-starter"
   },
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch"
-  },
   "sideEffects": false,
   "type": "module",
   "version": "0.0.0"

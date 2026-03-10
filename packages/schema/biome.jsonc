@@ -10,7 +10,7 @@
           }
         }
       },
-      "includes": ["src/schema/**/*.ts", "src/relations/**/*.ts"]
+      "includes": ["src/schema/**/*.ts", "src/**/*.ts"]
     }
   ]
 }

@@ -1,13 +1,6 @@
-import { type Database, TransactionOrDatabase } from "@repo/database";
+import { type Database, TransactionOrDatabase, user } from "@repo/database";
 import type { UserId } from "@repo/schema";
-import {
-  Email,
-  type User,
-  type UserInsert,
-  UserInsertSchema,
-  type UserUpdate,
-  user,
-} from "@repo/schema";
+import { Email, type User, UserInsert, type UserUpdate } from "@repo/schema";
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
@@ -34,7 +27,7 @@ export const UserRepoLive = Layer.succeed(
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const parsed = yield* Schema.validate(UserInsertSchema)(params);
+        const parsed = yield* Schema.validate(UserInsert)(params);
 
         const res = yield* db.insert(user).values(parsed).returning();
 
@@ -61,7 +54,7 @@ export const UserRepoLive = Layer.succeed(
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const parsed = yield* Schema.validate(UserInsertSchema)(params);
+        const parsed = yield* Schema.validate(UserInsert)(params);
         yield* db.update(user).set(parsed).where(eq(user.id, id));
       }).pipe(Effect.orDie),
   }),

@@ -3,12 +3,29 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@repo/ui/components/ui/button";
 
 import { ConnectButton } from "@/components";
+import { health, signIn } from "@/lib/server";
 
 export const Home = () => {
   return (
     <div>
       <ConnectButton />
       <Button render={<Link to="/dashboard" />}>Dashboard</Button>
+      <Button
+        onClick={async () => {
+          const res = await health();
+          console.log("res", res);
+        }}
+      >
+        Health
+      </Button>
+      <Button
+        onClick={async () => {
+          const res = await signIn();
+          console.log("res", res);
+        }}
+      >
+        Health
+      </Button>
       <Button
         render={
           <Link

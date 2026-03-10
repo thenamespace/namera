@@ -10,5 +10,6 @@
     "types": ["vite/client"]
   },
   "extends": "@repo/config/tsconfig/app/vite",
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "references": [{ "path": "../../packages/api" }]
 }

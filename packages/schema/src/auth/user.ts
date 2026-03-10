@@ -1,0 +1,21 @@
+import { Schema } from "effect";
+
+import { UserId } from "../common";
+import { createInsertSchema, createUpdateSchema } from "./common";
+
+export const User = Schema.Struct({
+  id: UserId,
+  name: Schema.String,
+  email: Schema.String,
+  emailVerified: Schema.Boolean,
+  image: Schema.NullOr(Schema.String),
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
+});
+
+export const UserUpdate = createUpdateSchema(User);
+export const UserInsert = createInsertSchema(User, "name", "email");
+
+export type User = typeof User.Type;
+export type UserUpdate = typeof UserUpdate.Type;
+export type UserInsert = typeof UserInsert.Type;

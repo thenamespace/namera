@@ -10,6 +10,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import * as mdxConfig from "./source.config";
 
 const config = defineConfig({
+  optimizeDeps: {
+    exclude: ["effect", "@effect/platform", "@repo/api"],
+  },
   plugins: [
     mdx(mdxConfig),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
@@ -28,7 +31,7 @@ const config = defineConfig({
         semicolons: true,
       },
     }),
-    nitro(),
+    nitro({ preset: "bun" }),
     viteReact(),
   ],
   server: { port: 3000 },

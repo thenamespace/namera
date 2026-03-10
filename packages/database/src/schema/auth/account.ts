@@ -1,9 +1,5 @@
+import type { UserId } from "@repo/schema";
 import { sql } from "drizzle-orm";
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-orm/effect-schema";
 import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 
 import {
@@ -13,7 +9,7 @@ import {
   userRole,
 } from "../common";
 import { authSchema } from "./common";
-import { UserId, user } from "./user";
+import { user } from "./user";
 
 export const account = authSchema.table.withRLS(
   "account",
@@ -69,19 +65,3 @@ export const account = authSchema.table.withRLS(
     }),
   ],
 );
-
-export const AccountSchema = createSelectSchema(account, {
-  userId: () => UserId,
-});
-
-export const AccountInsertSchema = createInsertSchema(account, {
-  userId: () => UserId,
-});
-
-export const AccountUpdateSchema = createUpdateSchema(account, {
-  userId: () => UserId,
-});
-
-export type Account = typeof AccountSchema.Type;
-export type AccountInsert = typeof AccountInsertSchema.Type;
-export type AccountUpdate = typeof AccountUpdateSchema.Type;

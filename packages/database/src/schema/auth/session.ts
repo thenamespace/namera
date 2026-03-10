@@ -1,9 +1,5 @@
+import type { UserId } from "@repo/schema";
 import { sql } from "drizzle-orm";
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-orm/effect-schema";
 import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 
 import {
@@ -14,7 +10,7 @@ import {
   userRole,
 } from "../common";
 import { authSchema } from "./common";
-import { UserId, user } from "./user";
+import { user } from "./user";
 
 export const session = authSchema.table.withRLS(
   "session",
@@ -62,19 +58,3 @@ export const session = authSchema.table.withRLS(
     }),
   ],
 );
-
-export const SessionSchema = createSelectSchema(session, {
-  userId: () => UserId,
-});
-
-export const SessionInsertSchema = createInsertSchema(session, {
-  userId: () => UserId,
-});
-
-export const SessionUpdateSchema = createUpdateSchema(session, {
-  userId: () => UserId,
-});
-
-export type Session = typeof SessionSchema.Type;
-export type SessionInsert = typeof SessionInsertSchema.Type;
-export type SessionUpdate = typeof SessionUpdateSchema.Type;

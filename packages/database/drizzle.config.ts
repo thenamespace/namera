@@ -15,5 +15,5 @@ export default defineConfig({
     roles: true,
   },
   out: "./migrations",
-  schema: "../schema/src/schema/index.ts",
+  schema: "./src/schema/index.ts",
 });
