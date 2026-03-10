@@ -19,8 +19,6 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
       ? payload.newUserCallbackUrl
       : payload.callbackUrl;
 
-    yield* Effect.log("Redirecting to: ", redirectUrl.toString());
-
     return yield* HttpServerResponse.empty({ status: 302 })
       .pipe(
         HttpServerResponse.setHeader("Location", redirectUrl.toString()),

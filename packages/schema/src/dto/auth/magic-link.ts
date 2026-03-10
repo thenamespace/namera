@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 
+import { Session, User } from "../../auth";
 import { Email } from "../../common";
 
 export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()(
@@ -46,4 +47,12 @@ export const VerifyMagicLinkBody = Schema.Struct({
   }),
 }).pipe(Schema.extend(SigInMagicLinkBody.omit("name", "email")));
 
+export const VerifyMagicLinkResponse = Schema.Struct({
+  isNewUser: Schema.Boolean,
+  session: Session,
+  token: Schema.String,
+  user: User,
+});
+
 export type VerifyMagicLinkBody = typeof VerifyMagicLinkBody.Type;
+export type VerifyMagicLinkResponse = typeof VerifyMagicLinkResponse.Type;

@@ -50,6 +50,11 @@ export class Database extends Context.Tag("Database")<
   DatabaseShape
 >() {}
 
+export class AdminDatabase extends Context.Tag("AdminDatabase")<
+  AdminDatabase,
+  DatabaseShape
+>() {}
+
 export class TransactionClient extends Context.Tag("TransactionClient")<
   TransactionClient,
   TransactionShape
@@ -70,9 +75,18 @@ const DatabaseLayer = Layer.effect(
     return yield* makeDatabase;
   }),
 );
+const AdminDatabaseLayer = Layer.effect(
+  AdminDatabase,
+  Effect.gen(function* () {
+    return yield* makeDatabase;
+  }),
+);
 
 export const DatabaseLive = Layer.provideMerge(DatabaseLayer, PgLive);
-export const AdminDatabaseLive = Layer.provideMerge(DatabaseLayer, PgAdminLive);
+export const AdminDatabaseLive = Layer.provideMerge(
+  AdminDatabaseLayer,
+  PgAdminLive,
+);
 
 export const withTx = (tx: TransactionShape) =>
   Effect.provideService(TransactionClient, tx);

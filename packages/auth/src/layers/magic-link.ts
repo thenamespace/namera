@@ -1,10 +1,14 @@
-import { AdminDatabaseLive, Database, withTx } from "@repo/database";
+import {
+  AdminDatabase,
+  AdminDatabaseLive,
+  type Database,
+  withTx,
+} from "@repo/database";
 import { AuthRepo } from "@repo/domain/auth";
 import type {
-  Session,
   SigInMagicLinkBody,
-  User,
   VerifyMagicLinkBody,
+  VerifyMagicLinkResponse,
 } from "@repo/schema";
 import { base64Url } from "@repo/utils/base64";
 import { createHash } from "@repo/utils/hash";
@@ -25,16 +29,13 @@ class MagicLinkError extends Data.TaggedError("MagicLinkError")<{
 export type MagicLinkShape = {
   signInMagicLink: (
     params: SigInMagicLinkBody,
-  ) => Effect.Effect<void, MagicLinkError, AuthRepo>;
-  verifyMagicLink: (params: VerifyMagicLinkBody) => Effect.Effect<
-    {
-      isNewUser: boolean;
-      session: Session;
-      user: User;
-      token: string;
-    },
+  ) => Effect.Effect<void, MagicLinkError, AuthRepo | Database>;
+  verifyMagicLink: (
+    params: VerifyMagicLinkBody,
+  ) => Effect.Effect<
+    VerifyMagicLinkResponse,
     MagicLinkError,
-    AuthRepo
+    AuthRepo | AdminDatabase | Database
   >;
 };
 
@@ -90,7 +91,7 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
 
 const verifyMagicLink = (params: VerifyMagicLinkBody) =>
   Effect.gen(function* () {
-    const db = yield* Database;
+    const db = yield* AdminDatabase;
     const authRepo = yield* AuthRepo;
 
     const hash = yield* Effect.promise(() =>
@@ -199,7 +200,7 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
     );
 
     return res;
-  }).pipe(Effect.provide(AdminDatabaseLive.pipe(Layer.orDie)), Effect.orDie);
+  }).pipe(Effect.orDie);
 
 export const MagicLinkLive = Layer.effect(
   MagicLink,
