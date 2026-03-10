@@ -41,3 +41,11 @@ export const health = () =>
       return yield* client.health.health();
     }),
   );
+
+export const currentUser = () =>
+  runtime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* Api;
+      return yield* client.auth.currentUser();
+    }),
+  );

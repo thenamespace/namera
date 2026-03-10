@@ -5,7 +5,7 @@ import { Config, Layer } from "effect";
 
 import { HealthGroupLive } from "@/routes/health";
 
-import { Middlewares } from "./middlewares";
+import { openApiMiddleware, scalarMiddleware } from "./middlewares";
 import { AuthGroupLive } from "./routes/auth";
 
 const RepoApiLive = HttpApiBuilder.api(api).pipe(
@@ -14,8 +14,10 @@ const RepoApiLive = HttpApiBuilder.api(api).pipe(
 );
 
 export const HttpLive = HttpApiBuilder.serve(HttpMiddleware.logger).pipe(
-  // Middlewares
-  Layer.provide(Middlewares),
+  // Scalar API Reference
+  Layer.provideMerge(scalarMiddleware),
+  // OpenAPI Documentation
+  Layer.provideMerge(openApiMiddleware),
   // Log the server's listening address
   HttpServer.withLogAddress,
   // Set up the Node.js HTTP server

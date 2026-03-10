@@ -1,5 +1,5 @@
 import { HttpApiBuilder, HttpServerResponse } from "@effect/platform";
-import { api } from "@repo/api";
+import { api, CurrentUser } from "@repo/api";
 import { Auth } from "@repo/auth";
 import type { SigInMagicLinkBody, VerifyMagicLinkBody } from "@repo/schema";
 import { Duration, Effect } from "effect";
@@ -39,7 +39,11 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
 export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
     .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
-    .handle("magicLinkVerify", ({ payload }) =>
-      magicLinkVerifyHandler(payload),
+    .handle("magicLinkVerify", ({ payload }) => magicLinkVerifyHandler(payload))
+    .handle("currentUser", () =>
+      Effect.gen(function* () {
+        const res = yield* CurrentUser;
+        return res;
+      }),
     ),
 );

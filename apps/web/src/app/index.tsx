@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@repo/ui/components/ui/button";
 
 import { ConnectButton } from "@/components";
-import { health, signIn } from "@/lib/server";
+import { currentUser, health, signIn } from "@/lib/server";
 
 export const Home = () => {
   return (
@@ -24,7 +24,15 @@ export const Home = () => {
           console.log("res", res);
         }}
       >
-        Health
+        Sign In
+      </Button>
+      <Button
+        onClick={async () => {
+          const res = await currentUser();
+          console.log("res", res);
+        }}
+      >
+        Current User
       </Button>
       <Button
         render={

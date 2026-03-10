@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export const githubDetails = {
@@ -9,7 +11,11 @@ export const baseOptions = (): BaseLayoutProps => {
   return {
     githubUrl: `https://github.com/${githubDetails.org}}/${githubDetails.repo}`,
     nav: {
-      title: "Indorse",
+      title: (
+        <Link className="text-lg" to="/">
+          Namera
+        </Link>
+      ),
       url: "/dashboard",
     },
     searchToggle: {

@@ -10,13 +10,13 @@ import {
 } from "@repo/ui/components/fumadocs/page-actions";
 import { cn } from "@repo/ui/lib/utils";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
-import { DocsLayout } from "fumadocs-ui/layouts/docs";
+import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import {
   DocsBody,
   DocsDescription,
   DocsPage,
   DocsTitle,
-} from "fumadocs-ui/layouts/docs/page";
+} from "fumadocs-ui/layouts/notebook/page";
 
 import browserCollections from "fumadocs-mdx:collections/browser";
 

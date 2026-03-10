@@ -142,9 +142,22 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           );
         }
 
+        // Update Attempt Count
+        yield* authRepo.verification.updateVerification(
+          verificationValue.identifier,
+          {
+            value: JSON.stringify({
+              attempt: attempt + 1,
+              email,
+              name,
+            }),
+          },
+        );
+
         let isNewUser = false;
         let user = yield* authRepo.user.findUserByEmail(email);
 
+        // Create User if not found
         if (!user) {
           user = yield* authRepo.user.createUser({
             email: email,
@@ -155,6 +168,7 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           isNewUser = true;
         }
 
+        // Update Email Verified
         if (!user.emailVerified) {
           yield* authRepo.user.updateUser(user.id, {
             emailVerified: true,
@@ -162,6 +176,7 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
         }
 
         // 7 days
+        // TODO: Make this configurable
         const expiresAt = new Date(
           (yield* Clock.currentTimeMillis) + 7 * 24 * 60 * 60 * 1000,
         );

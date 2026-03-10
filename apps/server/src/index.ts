@@ -7,9 +7,11 @@ import { AuthRepoLive } from "@repo/domain/auth";
 import { Layer } from "effect";
 
 import { EnvLive } from "./env";
+import { Middlewares } from "./middlewares";
 import { HttpLive } from "./router";
 
 const app = HttpLive.pipe(
+  Layer.provideMerge(Middlewares),
   Layer.provideMerge(AuthLive),
   Layer.provideMerge(AuthRepoLive),
   Layer.provideMerge(DatabaseLive),

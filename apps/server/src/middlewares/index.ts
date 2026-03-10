@@ -1,6 +1,8 @@
 import { HttpApiBuilder, HttpApiScalar } from "@effect/platform";
 import { Layer } from "effect";
 
+import { authorizationMiddleware } from "./auth";
+
 const corsMiddleware = HttpApiBuilder.middlewareCors({
   allowedHeaders: [
     "Content-Type",
@@ -13,15 +15,14 @@ const corsMiddleware = HttpApiBuilder.middlewareCors({
   allowedOrigins: ["http://localhost:3000"],
   credentials: true,
 });
-const scalarMiddleware = HttpApiScalar.layer({
+export const scalarMiddleware = HttpApiScalar.layer({
   path: "/docs",
 });
-const openApiMiddleware = HttpApiBuilder.middlewareOpenApi({
+export const openApiMiddleware = HttpApiBuilder.middlewareOpenApi({
   path: "/openapi.json",
 });
 
 export const Middlewares = Layer.mergeAll(
   corsMiddleware,
-  scalarMiddleware,
-  openApiMiddleware,
+  authorizationMiddleware,
 );

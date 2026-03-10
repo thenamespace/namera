@@ -2,9 +2,12 @@ import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
 import {
   MagicLinkError,
   SigInMagicLinkBody,
+  User,
   VerifyMagicLinkBody,
 } from "@repo/schema";
 import { Schema } from "effect";
+
+import { Authorization } from "@/middlewares";
 
 export const authGroup = HttpApiGroup.make("auth")
   .add(
@@ -18,5 +21,10 @@ export const authGroup = HttpApiGroup.make("auth")
       .setPayload(VerifyMagicLinkBody)
       .addError(MagicLinkError, { status: 400 })
       .addSuccess(Schema.Void, { status: 302 }),
+  )
+  .add(
+    HttpApiEndpoint.get("currentUser", "/me")
+      .addSuccess(User, { status: 200 })
+      .middleware(Authorization),
   )
   .prefix("/auth");

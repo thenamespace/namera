@@ -3,7 +3,11 @@ import {
   TransactionOrDatabase,
   verification,
 } from "@repo/database";
-import type { Verification, VerificationInsert } from "@repo/schema";
+import type {
+  Verification,
+  VerificationInsert,
+  VerificationUpdate,
+} from "@repo/schema";
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 
@@ -17,6 +21,10 @@ export type VerificationRepoShape = {
   deleteVerification: (params: {
     identifier: string;
   }) => Effect.Effect<void, never, Database>;
+  updateVerification: (
+    identifier: string,
+    params: VerificationUpdate,
+  ) => Effect.Effect<void, never, Database>;
 };
 
 export class VerificationRepo extends Context.Tag("VerificationRepo")<
@@ -53,6 +61,15 @@ export const VerificationRepoLive = Layer.succeed(
         });
 
         return res;
+      }).pipe(Effect.orDie),
+
+    updateVerification: (identifier, params) =>
+      Effect.gen(function* () {
+        const db = yield* TransactionOrDatabase;
+        yield* db
+          .update(verification)
+          .set(params)
+          .where(eq(verification.id, identifier));
       }).pipe(Effect.orDie),
   }),
 );
