@@ -21,8 +21,9 @@ export const authorizationMiddleware = Layer.effect(
             })
             .pipe(Effect.catchAll(() => Effect.fail(new Unauthorized())));
 
-          if (!sessionDetails?.user)
+          if (!sessionDetails?.user || sessionDetails.expiresAt < new Date()) {
             return yield* Effect.fail(new Unauthorized());
+          }
 
           return sessionDetails.user;
         }),

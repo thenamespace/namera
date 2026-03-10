@@ -3,7 +3,7 @@ import "dotenv/config";
 import { BunRuntime } from "@effect/platform-bun";
 import { AuthConfigLive, AuthLive } from "@repo/auth";
 import { AdminDatabaseLive, DatabaseLive } from "@repo/database";
-import { AuthRepoLive } from "@repo/domain/auth";
+import { AuthRepoLive, SessionJanitorLive } from "@repo/domain/auth";
 import { Layer } from "effect";
 
 import { EnvLive } from "./env";
@@ -11,6 +11,7 @@ import { Middlewares } from "./middlewares";
 import { HttpLive } from "./router";
 
 const app = HttpLive.pipe(
+  Layer.provideMerge(SessionJanitorLive),
   Layer.provideMerge(AuthConfigLive),
   Layer.provideMerge(Middlewares),
   Layer.provideMerge(AuthLive),

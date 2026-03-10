@@ -37,14 +37,15 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
       .pipe(Effect.orDie);
   });
 
+const currentUserHandler = () =>
+  Effect.gen(function* () {
+    const res = yield* CurrentUser;
+    return res;
+  });
+
 export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
     .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
     .handle("magicLinkVerify", ({ payload }) => magicLinkVerifyHandler(payload))
-    .handle("currentUser", () =>
-      Effect.gen(function* () {
-        const res = yield* CurrentUser;
-        return res;
-      }),
-    ),
+    .handle("currentUser", () => currentUserHandler()),
 );

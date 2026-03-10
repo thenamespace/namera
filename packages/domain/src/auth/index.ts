@@ -37,3 +37,5 @@ export const AuthRepoLive = Layer.effect(
   Layer.provide(UserRepoLive),
   Layer.provide(SessionRepoLive),
 );
+
+export { SessionJanitorLive } from "./cleanup";
