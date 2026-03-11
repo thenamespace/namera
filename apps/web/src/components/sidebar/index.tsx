@@ -1,7 +1,7 @@
 import {
   SidebarContent,
   Sidebar as SidebarCore,
-} from "@repo/ui/components/ui/sidebar";
+} from "@namera-ai/ui/components/ui/sidebar";
 
 import { AdminGroup } from "./admin";
 import { AgentGroup } from "./agents";

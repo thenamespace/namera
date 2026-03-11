@@ -1,34 +1,34 @@
 {
   "author": "Vedant Chainani <vedant@envoy1084.xyz>",
   "bugs": {
-    "url": "https://github.com/envoy1084/agent-wallet/issues"
+    "url": "https://github.com/thenamespace/namera/issues"
   },
   "dependencies": {
     "@effect/sql-pg": "^0.50.3",
-    "@repo/database": "workspace:*",
-    "@repo/domain": "workspace:*",
-    "@repo/schema": "workspace:*",
-    "@repo/utils": "workspace:*",
+    "@namera-ai/database": "workspace:*",
+    "@namera-ai/domain": "workspace:*",
+    "@namera-ai/schema": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "effect": "^3.19.19"
   },
   "description": "",
   "devDependencies": {
-    "@repo/config": "workspace:*",
+    "@namera-ai/config": "workspace:*",
     "@types/bun": "^1.3.10",
     "typescript": "^5.9.3"
   },
   "exports": {
     ".": "./src/index.ts"
   },
-  "homepage": "https://github.com/envoy1084/agent-wallet#readme",
+  "homepage": "https://github.com/thenamespace/namera#readme",
   "keywords": [],
   "license": "MIT",
   "main": "src/index.ts",
-  "name": "@repo/auth",
+  "name": "@namera-ai/auth",
   "private": "true",
   "repository": {
     "type": "git",
-    "url": "https://github.com/envoy1084/agent-wallet"
+    "url": "https://github.com/thenamespace/namera"
   },
   "scripts": {},
   "sideEffects": false,

@@ -1,5 +1,5 @@
+import { Button } from "@namera-ai/ui/components/ui/button";
 import { ConnectButton as ConnectButtonCore } from "@rainbow-me/rainbowkit";
-import { Button } from "@repo/ui/components/ui/button";
 export const ConnectButton = () => {
   return (
     <ConnectButtonCore.Custom>

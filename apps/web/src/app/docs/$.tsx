@@ -3,12 +3,12 @@ import { Suspense } from "react";
 import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { getMDXComponents } from "@repo/ui/components/fumadocs/mdx-components";
+import { getMDXComponents } from "@namera-ai/ui/components/fumadocs/mdx-components";
 import {
   LLMCopyButton,
   ViewOptions,
-} from "@repo/ui/components/fumadocs/page-actions";
-import { cn } from "@repo/ui/lib/utils";
+} from "@namera-ai/ui/components/fumadocs/page-actions";
+import { cn } from "@namera-ai/ui/lib/utils";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import {

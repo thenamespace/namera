@@ -1,22 +1,22 @@
 import { Link } from "@tanstack/react-router";
 
 import {
-  GearSixIcon,
-  ShieldCheckIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@repo/ui/components/ui/collapsible";
+} from "@namera-ai/ui/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@repo/ui/components/ui/sidebar";
+} from "@namera-ai/ui/components/ui/sidebar";
+import {
+  GearSixIcon,
+  ShieldCheckIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
 
 const items = [
   {

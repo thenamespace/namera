@@ -1,5 +1,5 @@
-import { AuthEnvConfig, type AuthEnvValues } from "@repo/auth";
-import { DatabaseConfig, type DatabaseEnvValues } from "@repo/database";
+import { AuthEnvConfig, type AuthEnvValues } from "@namera-ai/auth";
+import { DatabaseConfig, type DatabaseEnvValues } from "@namera-ai/database";
 import { Config, ConfigProvider, Context, Layer } from "effect";
 
 type EnvValues = DatabaseEnvValues & AuthEnvValues;

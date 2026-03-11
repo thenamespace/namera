@@ -1,5 +1,5 @@
-import { Authorization, Unauthorized } from "@repo/api";
-import { AdminDatabase } from "@repo/database";
+import { Authorization, Unauthorized } from "@namera-ai/api";
+import { AdminDatabase } from "@namera-ai/database";
 import { Effect, Layer, Redacted } from "effect";
 
 export const authorizationMiddleware = Layer.effect(

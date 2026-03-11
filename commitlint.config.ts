@@ -7,9 +7,9 @@ export default {
       "always",
       [
         // Dependency-related changes
-        "deps",
+        "docs",
         // Websites-related changes
-        "web",
+        "dashboard",
         // UI related changes
         "ui",
       ],

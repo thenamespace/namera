@@ -1,12 +1,14 @@
 export type TypedArray =
-  | Uint8Array
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array;
+  | Uint8Array<ArrayBuffer>
+  | Int8Array<ArrayBuffer>
+  | Uint16Array<ArrayBuffer>
+  | Int16Array<ArrayBuffer>
+  | Uint32Array<ArrayBuffer>
+  | Int32Array<ArrayBuffer>
+  | Float32Array<ArrayBuffer>
+  | Float64Array<ArrayBuffer>
+  | BigInt64Array<ArrayBuffer>
+  | BigUint64Array<ArrayBuffer>;
 
 export type SHAFamily = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512";
 export type EncodingFormat =

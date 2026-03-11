@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import { cn } from "@repo/ui/lib/utils";
+import { cn } from "@namera-ai/ui/lib/utils";
 
 type PageHeaderProps = ComponentProps<"div"> & {
   header: ReactNode;

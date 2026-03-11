@@ -1,9 +1,9 @@
 import "dotenv/config";
 
 import { BunRuntime } from "@effect/platform-bun";
-import { AuthConfigLive, AuthLive } from "@repo/auth";
-import { AdminDatabaseLive, DatabaseLive } from "@repo/database";
-import { AuthRepoLive, SessionJanitorLive } from "@repo/domain/auth";
+import { AuthConfigLive, AuthLive } from "@namera-ai/auth";
+import { AdminDatabaseLive, DatabaseLive } from "@namera-ai/database";
+import { AuthRepoLive, SessionJanitorLive } from "@namera-ai/domain/auth";
 import { Layer } from "effect";
 
 import { EnvLive } from "./env";

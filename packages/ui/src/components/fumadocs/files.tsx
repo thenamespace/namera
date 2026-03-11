@@ -3,16 +3,16 @@
 import { type HTMLAttributes, type ReactNode, useState } from "react";
 
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@namera-ai/ui/components/ui/collapsible";
+import { cn } from "@namera-ai/ui/lib/utils";
+import {
   FileIcon,
   FolderIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react/ssr";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@repo/ui/components/ui/collapsible";
-import { cn } from "@repo/ui/lib/utils";
 import { cva } from "class-variance-authority";
 
 const itemVariants = cva(

@@ -1,6 +1,6 @@
 import { createElement } from "react";
 
-import * as internalIcons from "@repo/ui/icons";
+import * as internalIcons from "@namera-ai/ui/icons";
 import { loader } from "fumadocs-core/source";
 import { icons } from "lucide-react";
 

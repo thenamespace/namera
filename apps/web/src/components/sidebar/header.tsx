@@ -2,7 +2,7 @@ import {
   SidebarHeader,
   SidebarTrigger,
   useSidebar,
-} from "@repo/ui/components/ui/sidebar";
+} from "@namera-ai/ui/components/ui/sidebar";
 
 import { AccountSwitcher } from "./account-switcher";
 

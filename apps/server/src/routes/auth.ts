@@ -1,9 +1,12 @@
 import { HttpApiBuilder, HttpServerResponse } from "@effect/platform";
-import { AuthenticatedUser, api } from "@repo/api";
-import { Auth, AuthConfig } from "@repo/auth";
-import { AdminDatabase, withTx } from "@repo/database";
-import { AuthRepo } from "@repo/domain/auth";
-import type { SigInMagicLinkBody, VerifyMagicLinkBody } from "@repo/schema";
+import { AuthenticatedUser, api } from "@namera-ai/api";
+import { Auth, AuthConfig } from "@namera-ai/auth";
+import { AdminDatabase, withTx } from "@namera-ai/database";
+import { AuthRepo } from "@namera-ai/domain/auth";
+import type {
+  SigInMagicLinkBody,
+  VerifyMagicLinkBody,
+} from "@namera-ai/schema";
 import { Effect } from "effect";
 
 const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>

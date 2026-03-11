@@ -1,11 +1,11 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
   "aliases": {
-    "components": "@repo/ui/components",
-    "hooks": "@repo/ui/hooks",
-    "lib": "@repo/ui/lib",
-    "ui": "@repo/ui/components/ui",
-    "utils": "@repo/ui/lib/utils"
+    "components": "@namera-ai/ui/components",
+    "hooks": "@namera-ai/ui/hooks",
+    "lib": "@namera-ai/ui/lib",
+    "ui": "@namera-ai/ui/components/ui",
+    "utils": "@namera-ai/ui/lib/utils"
   },
   "iconLibrary": "phosphor",
   "menuAccent": "subtle",

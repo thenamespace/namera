@@ -1,4 +1,4 @@
-import type { UserId } from "@repo/schema";
+import type { UserId } from "@namera-ai/schema";
 import { sql } from "drizzle-orm";
 import { boolean, pgPolicy, text } from "drizzle-orm/pg-core";
 

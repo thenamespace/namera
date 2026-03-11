@@ -2,24 +2,24 @@ import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
-  FlaskIcon,
-  KeyIcon,
-  PulseIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@repo/ui/components/ui/collapsible";
-import { Kbd } from "@repo/ui/components/ui/kbd";
+} from "@namera-ai/ui/components/ui/collapsible";
+import { Kbd } from "@namera-ai/ui/components/ui/kbd";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@repo/ui/components/ui/sidebar";
+} from "@namera-ai/ui/components/ui/sidebar";
+import {
+  FlaskIcon,
+  KeyIcon,
+  PulseIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
 
 const items = [
   {

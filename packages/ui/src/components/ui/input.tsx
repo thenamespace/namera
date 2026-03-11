@@ -1,7 +1,7 @@
 import type * as react from "react";
 
 import { Input as InputPrimitive } from "@base-ui/react/input";
-import { cn } from "@repo/ui/lib/utils";
+import { cn } from "@namera-ai/ui/lib/utils";
 
 function Input({ className, type, ...props }: react.ComponentProps<"input">) {
   return (

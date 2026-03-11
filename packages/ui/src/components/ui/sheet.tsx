@@ -3,9 +3,9 @@
 import type * as react from "react";
 
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
+import { Button } from "@namera-ai/ui/components/ui/button";
+import { cn } from "@namera-ai/ui/lib/utils";
 import { XIcon } from "@phosphor-icons/react/ssr";
-import { Button } from "@repo/ui/components/ui/button";
-import { cn } from "@repo/ui/lib/utils";
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;

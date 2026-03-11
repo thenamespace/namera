@@ -5,11 +5,6 @@ import * as react from "react";
 import { formatForDisplay } from "@tanstack/react-hotkeys";
 
 import {
-  CaretUpDownIcon,
-  FinnTheHumanIcon,
-  PlusIcon,
-} from "@phosphor-icons/react/ssr";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -18,13 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu";
+} from "@namera-ai/ui/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@repo/ui/components/ui/sidebar";
+} from "@namera-ai/ui/components/ui/sidebar";
+import {
+  CaretUpDownIcon,
+  FinnTheHumanIcon,
+  PlusIcon,
+} from "@phosphor-icons/react/ssr";
 
 const accounts: {
   name: string;

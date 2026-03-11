@@ -20,16 +20,19 @@ const port = Flag.integer("port").pipe(
   Flag.withDescription("The port to listen on when using HTTP transport."),
 );
 
-const command = Command.make("@repo/mcp", { http, port }, ({ http, port }) =>
-  Effect.gen(function* () {
-    if (http) {
-      yield* Console.log("✅ Started MCP Server using HTTP transport");
-      yield* startHttpServer(port);
-    } else {
-      yield* Console.log("✅ Started MCP Server using stdio transport");
-      yield* startStdioServer();
-    }
-  }),
+const command = Command.make(
+  "@namera-ai/mcp",
+  { http, port },
+  ({ http, port }) =>
+    Effect.gen(function* () {
+      if (http) {
+        yield* Console.log("✅ Started MCP Server using HTTP transport");
+        yield* startHttpServer(port);
+      } else {
+        yield* Console.log("✅ Started MCP Server using stdio transport");
+        yield* startStdioServer();
+      }
+    }),
 );
 
 const cli = Command.run(command, {

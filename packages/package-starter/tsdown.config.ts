@@ -1,4 +1,4 @@
-import { createTsdownConfig } from "@repo/config/tsdown";
+import { createTsdownConfig } from "@namera-ai/config/tsdown";
 
 export default createTsdownConfig({
   entry: ["src/index.ts"],

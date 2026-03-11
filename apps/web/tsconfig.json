@@ -4,12 +4,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@repo/ui/*": ["../../packages/ui/src/*"],
+      "@namera-ai/ui/*": ["../../packages/ui/src/*"],
       "fumadocs-mdx:collections/*": [".source/*"]
     },
     "types": ["vite/client"]
   },
-  "extends": "@repo/config/tsconfig/app/vite",
+  "extends": "@namera-ai/config/tsconfig/app/vite",
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [{ "path": "../../packages/api" }]
 }

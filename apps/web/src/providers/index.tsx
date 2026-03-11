@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-import { TooltipProvider } from "@repo/ui/components/ui/tooltip";
+import { TooltipProvider } from "@namera-ai/ui/components/ui/tooltip";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 
 import { CustomSearchDialog } from "@/lib/fumadocs/search";

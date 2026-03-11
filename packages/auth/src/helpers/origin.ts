@@ -1,5 +1,5 @@
-import { MagicLinkError } from "@repo/schema";
-import { matchesOriginPattern } from "@repo/utils/trusted-origin";
+import { MagicLinkError } from "@namera-ai/schema";
+import { matchesOriginPattern } from "@namera-ai/utils/trusted-origin";
 import { Effect } from "effect";
 
 import { AuthConfig } from "@/config";

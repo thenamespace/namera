@@ -7,7 +7,7 @@
     }
   },
   "exclude": ["node_modules", "dist"],
-  "extends": "@repo/config/tsconfig/library/bun",
+  "extends": "@namera-ai/config/tsconfig/library/bun",
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [
     { "path": "../../packages/api" },

@@ -1,35 +1,20 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: agent-wallet-database
+    container_name: namera-database
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: agent-wallet
-      POSTGRES_USER: agent-wallet
-      POSTGRES_PASSWORD: agent-wallet
+      POSTGRES_DB: namera
+      POSTGRES_USER: namera
+      POSTGRES_PASSWORD: namera
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent-wallet -d agent-wallet"]
+      test: ["CMD-SHELL", "pg_isready -U namera -d namera"]
       interval: 5s
       timeout: 5s
       retries: 5
-  # server:
-  #   image: agent-wallet-server
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - postgres
-  #   ports:
-  #     - "8080:8080"
-  #   healthcheck:
-  #     test: ["CMD", "bun", "-e", "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)})"]
-  #     interval: 1m
-  #     timeout: 30s
-  #     retries: 5
-  #     start_period: 30s
-
 volumes:
   postgres_data:

@@ -1,5 +1,9 @@
-import { type Database, session, TransactionOrDatabase } from "@repo/database";
-import { type Session, SessionInsert, type UserId } from "@repo/schema";
+import {
+  type Database,
+  session,
+  TransactionOrDatabase,
+} from "@namera-ai/database";
+import { type Session, SessionInsert, type UserId } from "@namera-ai/schema";
 import { and, eq, ne } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 

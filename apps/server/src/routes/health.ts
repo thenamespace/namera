@@ -1,5 +1,5 @@
 import { HttpApiBuilder } from "@effect/platform";
-import { api } from "@repo/api";
+import { api } from "@namera-ai/api";
 import { Effect } from "effect";
 
 const healthHandler = () => Effect.succeed("ok");

@@ -1,6 +1,6 @@
 import { HttpApiBuilder, HttpMiddleware, HttpServer } from "@effect/platform";
 import { BunHttpServer } from "@effect/platform-bun";
-import { api } from "@repo/api";
+import { api } from "@namera-ai/api";
 import { Config, Layer } from "effect";
 
 import { HealthGroupLive } from "@/routes/health";

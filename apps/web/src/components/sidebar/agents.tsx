@@ -1,22 +1,22 @@
 import { Link } from "@tanstack/react-router";
 
 import {
-  IdentificationBadgeIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@repo/ui/components/ui/collapsible";
+} from "@namera-ai/ui/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@repo/ui/components/ui/sidebar";
-import { McpIcon } from "@repo/ui/icons";
+} from "@namera-ai/ui/components/ui/sidebar";
+import { McpIcon } from "@namera-ai/ui/icons";
+import {
+  IdentificationBadgeIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
 
 const items = [
   {

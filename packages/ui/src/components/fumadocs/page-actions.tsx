@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@namera-ai/ui/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@repo/ui/components/ui/popover";
+} from "@namera-ai/ui/components/ui/popover";
 import { useCopyButton } from "fumadocs-ui/utils/use-copy-button";
 import {
   Check,

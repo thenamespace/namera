@@ -1,4 +1,4 @@
-//https://github.com/axtgr/wildcard-match
+// https://github.com/axtgr/wildcard-match
 /** biome-ignore-all lint/style/noNonNullAssertion: safe */
 /** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: safe */
 

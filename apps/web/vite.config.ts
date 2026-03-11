@@ -11,7 +11,7 @@ import * as mdxConfig from "./source.config";
 
 const config = defineConfig({
   optimizeDeps: {
-    exclude: ["effect", "@effect/platform", "@repo/api"],
+    exclude: ["effect", "@effect/platform", "@namera-ai/api"],
   },
   plugins: [
     mdx(mdxConfig),

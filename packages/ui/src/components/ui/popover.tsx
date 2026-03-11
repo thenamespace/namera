@@ -1,7 +1,7 @@
 import type * as react from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import { cn } from "@repo/ui/lib/utils";
+import { cn } from "@namera-ai/ui/lib/utils";
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;

@@ -2,12 +2,12 @@ import {
   type Database,
   TransactionOrDatabase,
   verification,
-} from "@repo/database";
+} from "@namera-ai/database";
 import type {
   Verification,
   VerificationInsert,
   VerificationUpdate,
-} from "@repo/schema";
+} from "@namera-ai/schema";
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 

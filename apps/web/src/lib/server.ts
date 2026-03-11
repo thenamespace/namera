@@ -1,6 +1,6 @@
 import { FetchHttpClient, HttpApiClient } from "@effect/platform";
-import { api } from "@repo/api";
-import { Email } from "@repo/schema";
+import { api } from "@namera-ai/api";
+import { Email } from "@namera-ai/schema";
 import { Effect, Layer, ManagedRuntime } from "effect";
 
 const CustomFetchLive = FetchHttpClient.layer.pipe(

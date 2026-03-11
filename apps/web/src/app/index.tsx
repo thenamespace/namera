@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@namera-ai/ui/components/ui/button";
 
 import { ConnectButton } from "@/components";
 import { currentUser, health, signIn } from "@/lib/server";

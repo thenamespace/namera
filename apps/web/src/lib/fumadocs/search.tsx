@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { buttonVariants } from "@repo/ui/components/ui/button";
-import { cn } from "@repo/ui/lib/utils";
+import { buttonVariants } from "@namera-ai/ui/components/ui/button";
+import { cn } from "@namera-ai/ui/lib/utils";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import {
   SearchDialog,

@@ -29,7 +29,7 @@
     "./tsdown"
   ],
   "license": "MIT",
-  "name": "@repo/config",
+  "name": "@namera-ai/config",
   "private": "true",
   "type": "module",
   "version": "0.0.1"

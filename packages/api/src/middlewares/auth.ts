@@ -3,7 +3,7 @@ import {
   HttpApiSchema,
   HttpApiSecurity,
 } from "@effect/platform";
-import type { Session, User } from "@repo/schema";
+import type { Session, User } from "@namera-ai/schema";
 import { Context, Schema } from "effect";
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(

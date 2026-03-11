@@ -2,9 +2,9 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": { "@repo/ui/*": ["./src/*"] }
+    "paths": { "@namera-ai/ui/*": ["./src/*"] }
   },
   "exclude": ["node_modules", "dist"],
-  "extends": "@repo/config/tsconfig/library/react",
+  "extends": "@namera-ai/config/tsconfig/library/react",
   "include": ["**/*.ts", "**/*.tsx"]
 }

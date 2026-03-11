@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-import { SidebarProvider } from "@repo/ui/components/ui/sidebar";
+import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
 
 import { Sidebar } from "@/components/sidebar";
 

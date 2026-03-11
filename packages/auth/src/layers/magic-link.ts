@@ -1,14 +1,14 @@
-import { AdminDatabase, type Database, withTx } from "@repo/database";
-import { AuthRepo } from "@repo/domain/auth";
+import { AdminDatabase, type Database, withTx } from "@namera-ai/database";
+import { AuthRepo } from "@namera-ai/domain/auth";
 import {
   MagicLinkError,
   type SigInMagicLinkBody,
   type VerifyMagicLinkBody,
   type VerifyMagicLinkResponse,
-} from "@repo/schema";
-import { base64Url } from "@repo/utils/base64";
-import { createHash } from "@repo/utils/hash";
-import { generateRandomString } from "@repo/utils/random";
+} from "@namera-ai/schema";
+import { base64Url } from "@namera-ai/utils/base64";
+import { createHash } from "@namera-ai/utils/hash";
+import { generateRandomString } from "@namera-ai/utils/random";
 import { Clock, Context, Duration, Effect, Layer } from "effect";
 
 import { AuthConfig } from "@/config";

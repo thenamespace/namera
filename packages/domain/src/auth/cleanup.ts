@@ -1,4 +1,4 @@
-import { AdminDatabase, session } from "@repo/database";
+import { AdminDatabase, session } from "@namera-ai/database";
 import { lt } from "drizzle-orm";
 import { Duration, Effect, Layer, Schedule } from "effect";
 

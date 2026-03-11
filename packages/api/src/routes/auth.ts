@@ -5,7 +5,7 @@ import {
   SigInMagicLinkBody,
   User,
   VerifyMagicLinkBody,
-} from "@repo/schema";
+} from "@namera-ai/schema";
 import { Schema } from "effect";
 
 import { Authorization } from "@/middlewares";

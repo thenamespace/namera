@@ -1,7 +1,7 @@
 {
   "author": "Vedant Chainani <vedant@envoy1084.xyz>",
   "bugs": {
-    "url": "https://github.com/envoy1084/turbo-effect-starter/issues"
+    "url": "https://github.com/thenamespace/namera/issues"
   },
   "dependencies": {
     "@zerodev/ecdsa-validator": "^5.4.9",
@@ -13,7 +13,7 @@
   "description": "",
   "devDependencies": {
     "@effect/vitest": "^0.27.0",
-    "@repo/config": "workspace:*",
+    "@namera-ai/config": "workspace:*",
     "@types/node": "^25.3.5",
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
@@ -25,16 +25,16 @@
       "types": "./dist/index.d.mts"
     }
   },
-  "homepage": "https://github.com/envoy1084/turbo-effect-starter#readme",
+  "homepage": "https://github.com/thenamespace/namera#readme",
   "keywords": [],
   "license": "MIT",
-  "name": "@repo/core",
+  "name": "@namera-ai/core",
   "peerDependencies": {
     "viem": "^2.47.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/envoy1084/turbo-effect-starter"
+    "url": "https://github.com/thenamespace/namera"
   },
   "scripts": {
     "build": "tsdown",

@@ -1,6 +1,15 @@
-import { type Database, TransactionOrDatabase, user } from "@repo/database";
-import type { UserId } from "@repo/schema";
-import { Email, type User, UserInsert, type UserUpdate } from "@repo/schema";
+import {
+  type Database,
+  TransactionOrDatabase,
+  user,
+} from "@namera-ai/database";
+import type { UserId } from "@namera-ai/schema";
+import {
+  Email,
+  type User,
+  UserInsert,
+  type UserUpdate,
+} from "@namera-ai/schema";
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
