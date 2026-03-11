@@ -1,0 +1,7 @@
+{
+  "description": "Programmable Session Keys",
+  "icon": "BuildingIcon",
+  "pages": ["---Introduction---", "index", "what-is-namera", "..."],
+  "root": true,
+  "title": "Framework"
+}

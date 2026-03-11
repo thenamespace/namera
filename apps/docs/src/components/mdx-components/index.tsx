@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: safe */
-
 import * as twoslash from "fumadocs-twoslash/ui";
 import * as accordionComponents from "fumadocs-ui/components/accordion";
 import { ImageZoom } from "fumadocs-ui/components/image-zoom";
@@ -9,12 +7,12 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 
 import * as files from "./files";
-import { Mermaid } from "./mermaid";
+import * as mermaid from "./mermaid";
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     ...defaultMdxComponents,
-    Mermaid,
+    ...mermaid,
     ...files,
     ...tabsComponents,
     ...stepComponents,

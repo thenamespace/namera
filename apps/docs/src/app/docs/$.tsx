@@ -1,0 +1,132 @@
+import { Suspense } from "react";
+
+import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+
+import { cn } from "@namera-ai/ui/lib/utils";
+import { useFumadocsLoader } from "fumadocs-core/source/client";
+import { DocsLayout } from "fumadocs-ui/layouts/notebook";
+import {
+  DocsBody,
+  DocsDescription,
+  DocsPage,
+  DocsTitle,
+} from "fumadocs-ui/layouts/notebook/page";
+
+import browserCollections from "fumadocs-mdx:collections/browser";
+
+import { getMDXComponents } from "@/components";
+import {
+  LLMCopyButton,
+  ViewOptions,
+} from "@/components/mdx-components/page-actions";
+import { baseOptions, getSection, githubDetails } from "@/lib/shared";
+import { source } from "@/lib/source";
+
+export const Route = createFileRoute("/docs/$")({
+  component: Page,
+  loader: async ({ params }) => {
+    const slugs = params._splat?.split("/") ?? [];
+    const data = await serverLoader({ data: slugs });
+    await clientLoader.preload(data.path);
+    return data;
+  },
+});
+
+const serverLoader = createServerFn({
+  method: "GET",
+})
+  .inputValidator((slugs: string[]) => slugs)
+  .handler(async ({ data: slugs }) => {
+    const page = source.getPage(slugs);
+    if (!page) throw notFound();
+
+    return {
+      pageTree: await source.serializePageTree(source.getPageTree()),
+      path: page.path,
+      url: page.url,
+    };
+  });
+
+const clientLoader = browserCollections.docs.createClientLoader({
+  component(
+    { toc, frontmatter, default: MDX },
+    page: {
+      url: string;
+      path: string;
+    },
+  ) {
+    return (
+      <DocsPage
+        tableOfContent={{
+          style: "clerk",
+        }}
+        toc={toc}
+      >
+        <DocsTitle>{frontmatter.title}</DocsTitle>
+        <DocsDescription>{frontmatter.description}</DocsDescription>
+        <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+          <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
+          <ViewOptions
+            githubUrl={`https://github.com/${githubDetails.org}/${githubDetails.repo}/blob/main/apps/web/src/docs/${page.path}`}
+            markdownUrl={`${page.url}.mdx`}
+          />
+        </div>
+        <DocsBody>
+          <MDX components={getMDXComponents()} />
+        </DocsBody>
+      </DocsPage>
+    );
+  },
+});
+
+function Page() {
+  const p = useParams({ from: "/docs/$" });
+  const section = getSection(p._splat);
+  const data = useFumadocsLoader(Route.useLoaderData());
+
+  return (
+    <div className={cn(section)}>
+      <DocsLayout
+        {...baseOptions()}
+        sidebar={{
+          tabs: {
+            transform(option, node) {
+              const section =
+                (node.$id === "(framework)" ? "framework" : node.$id) ??
+                "framework";
+              const color = `var(--${section}-color, var(--color-fd-foreground))`;
+
+              return {
+                ...option,
+                icon: (
+                  <div
+                    className={cn(
+                      "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
+                      "text-(--tab-color) max-md:bg-(--tab-color)/10",
+                    )}
+                    style={
+                      {
+                        "--tab-color": color,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {option.icon}
+                  </div>
+                ),
+              };
+            },
+          },
+        }}
+        tree={data.pageTree}
+      >
+        <Suspense>
+          {clientLoader.useContent(data.path, {
+            path: data.path,
+            url: data.url,
+          })}
+        </Suspense>
+      </DocsLayout>
+    </div>
+  );
+}

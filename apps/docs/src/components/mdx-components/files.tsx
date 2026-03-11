@@ -13,11 +13,6 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react/ssr";
-import { cva } from "class-variance-authority";
-
-const itemVariants = cva(
-  "flex flex-row items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-fd-accent hover:text-fd-accent-foreground [&_svg]:size-4",
-);
 
 export function Files({
   className,
@@ -58,7 +53,12 @@ export function File({
   ...rest
 }: FileProps): React.ReactElement {
   return (
-    <div className={cn(itemVariants({ className }))} {...rest}>
+    <div
+      className={cn(
+        "flex flex-row items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-fd-accent hover:text-fd-accent-foreground [&_svg]:size-4",
+      )}
+      {...rest}
+    >
       {icon}
       {name}
     </div>
@@ -74,7 +74,11 @@ export function Folder({
 
   return (
     <Collapsible onOpenChange={setOpen} open={open} {...props}>
-      <CollapsibleTrigger className={cn(itemVariants({ className: "w-full" }))}>
+      <CollapsibleTrigger
+        className={cn(
+          "flex flex-row items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-fd-accent hover:text-fd-accent-foreground [&_svg]:size-4 w-full",
+        )}
+      >
         {open ? <FolderOpenIcon /> : <FolderIcon />}
         {name}
       </CollapsibleTrigger>
