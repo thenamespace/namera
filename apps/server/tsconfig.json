@@ -14,6 +14,7 @@
     { "path": "../../packages/database" },
     { "path": "../../packages/domain" },
     { "path": "../../packages/schema" },
-    { "path": "../../packages/auth" }
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/telemetry" }
   ]
 }

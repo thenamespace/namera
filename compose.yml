@@ -16,5 +16,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  telemetry:
+    image: grafana/otel-lgtm:latest
+    container_name: namera-telemetry
+    restart: unless-stopped
+    ports:
+      - "8000:3000"       # Dashboard
+      - "4317:4317"       # OTLP gRPC
+      - "4318:4318"       # OTLP HTTP
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - telemetry_data:/var/lib/grafana/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:3000/health | grep -q 'ok'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes:
   postgres_data:
+  telemetry_data:

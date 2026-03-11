@@ -11,6 +11,7 @@
     "@namera-ai/database": "workspace:*",
     "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "dotenv": "^17.3.1",
     "effect": "^3.19.19"
   },

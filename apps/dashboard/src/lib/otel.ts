@@ -1,5 +1,4 @@
-import { NodeSdk } from "@effect/opentelemetry";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { WebSdk } from "@effect/opentelemetry";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
@@ -9,11 +8,15 @@ import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
-import { Effect, Layer, Redacted } from "effect";
+import { Config, Effect, Layer, Redacted } from "effect";
 
-import { OtelConfig } from "./config";
+export const OtelConfig = Config.all({
+  baseUrl: Config.url("VITE_OTEL_BASE_URL"),
+  dataset: Config.string("OTEL_DATASET").pipe(Config.option),
+  token: Config.redacted("OTEL_API_TOKEN").pipe(Config.option),
+});
 
-export const OtelLive = Layer.unwrapEffect(
+export const OtelWebLive = Layer.unwrapEffect(
   Effect.gen(function* () {
     const config = yield* OtelConfig;
 
@@ -42,9 +45,8 @@ export const OtelLive = Layer.unwrapEffect(
       url: `${config.baseUrl}/v1/logs`,
     });
 
-    return NodeSdk.layer(() => {
+    return WebSdk.layer(() => {
       return {
-        instrumentations: [getNodeAutoInstrumentations()],
         logRecordProcessor: new BatchLogRecordProcessor(logExporter),
         metricReader: new PeriodicExportingMetricReader({
           exporter: metricExporter,
