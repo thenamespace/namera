@@ -1,23 +1,16 @@
-import {
-  NodeChildProcessSpawner,
-  NodeFileSystem,
-  NodePath,
-  NodeRuntime,
-  NodeStdio,
-  NodeTerminal,
-} from "@effect/platform-node";
+import { Command, Options } from "@effect/cli";
+import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import { Console, Effect } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
 
 import { startHttpServer, startStdioServer } from "./app";
 
-const http = Flag.boolean("http").pipe(
-  Flag.withDescription("Start the server using HTTP transport."),
+const http = Options.boolean("http").pipe(
+  Options.withDescription("Start the server using HTTP transport."),
 );
-const port = Flag.integer("port").pipe(
-  Flag.withDefault(3000),
-  Flag.withAlias("p"),
-  Flag.withDescription("The port to listen on when using HTTP transport."),
+const port = Options.integer("port").pipe(
+  Options.withDefault(3000),
+  Options.withAlias("p"),
+  Options.withDescription("The port to listen on when using HTTP transport."),
 );
 
 const command = Command.make(
@@ -36,15 +29,12 @@ const command = Command.make(
 );
 
 const cli = Command.run(command, {
+  name: "@namera-ai/mcp",
   version: "v0.0.1",
 });
 
-cli.pipe(
-  Effect.provide(NodeTerminal.layer),
-  Effect.provide(NodeChildProcessSpawner.layer),
-  Effect.provide(NodePath.layer),
-  Effect.provide(NodeFileSystem.layer),
-  Effect.provide(NodeStdio.layer),
+cli(process.argv).pipe(
+  Effect.provide(NodeContext.layer),
   Effect.scoped,
   NodeRuntime.runMain,
 );

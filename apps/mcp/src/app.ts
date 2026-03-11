@@ -1,12 +1,10 @@
 import { createServer } from "node:http";
 
-import { NodeHttpServer, NodeStdio } from "@effect/platform-node";
-import { Effect, Layer, Logger } from "effect";
-import { McpServer } from "effect/unstable/ai";
-import { HttpRouter } from "effect/unstable/http";
-import { RateLimiter } from "effect/unstable/persistence";
+import { McpServer } from "@effect/ai";
+import { HttpApiBuilder, HttpRouter } from "@effect/platform";
+import { NodeHttpServer, NodeSink, NodeStream } from "@effect/platform-node";
+import { Layer, Logger } from "effect";
 
-import { RateLimitMiddleware } from "./helpers";
 import { McpLive } from "./mcp";
 
 export const startStdioServer = () =>
@@ -15,25 +13,25 @@ export const startStdioServer = () =>
       Layer.provideMerge(
         McpServer.layerStdio({
           name: "MCP Server",
+          stdin: NodeStream.stdin,
+          stdout: NodeSink.stdout,
           version: "0.0.1",
         }),
       ),
-      Layer.provide(NodeStdio.layer),
-      Layer.provide(Layer.succeed(Logger.LogToStderr)(true)),
+      Layer.provide(Logger.add(Logger.prettyLogger({ stderr: true }))),
     ),
   );
 
-const McpRouter = McpLive.pipe(
-  Layer.provideMerge(
+const McpRouter = Layer.mergeAll(McpLive, HttpRouter.Default.serve()).pipe(
+  Layer.provide(
     McpServer.layerHttp({
       name: "MCP Server",
       path: "/mcp",
       version: "0.0.1",
     }),
   ),
-  Layer.provideMerge(RateLimitMiddleware),
-  Layer.provideMerge(
-    HttpRouter.cors({
+  Layer.provide(
+    HttpApiBuilder.middlewareCors({
       allowedHeaders: ["Content-Type", "Authorization", "mcp-protocol-version"],
       allowedMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedOrigins: ["*"],
@@ -44,10 +42,5 @@ const McpRouter = McpLive.pipe(
 
 export const startHttpServer = (port: number) =>
   Layer.launch(
-    HttpRouter.serve(McpRouter).pipe(
-      Layer.provideMerge(NodeHttpServer.layer(createServer, { port })),
-    ),
-  ).pipe(
-    Effect.provide(RateLimiter.layer),
-    Effect.provide(RateLimiter.layerStoreMemory),
+    McpRouter.pipe(Layer.provide(NodeHttpServer.layer(createServer, { port }))),
   );

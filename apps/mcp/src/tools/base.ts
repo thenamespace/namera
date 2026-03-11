@@ -1,14 +1,14 @@
+import { Tool, Toolkit } from "@effect/ai";
 import { Effect, Schema } from "effect";
-import { Tool, Toolkit } from "effect/unstable/ai";
 
 const Greet = Tool.make("greet", {
   description: "Greet a person",
   failure: Schema.Never,
-  parameters: Schema.Struct({
-    name: Schema.String.annotate({
+  parameters: {
+    name: Schema.String.annotations({
       description: "The name of the person to greet",
     }),
-  }),
+  },
   success: Schema.String,
 });
 

@@ -1,5 +1,5 @@
+import { McpServer } from "@effect/ai";
 import { Layer } from "effect";
-import { McpServer } from "effect/unstable/ai";
 
 import { BaseTools, BaseToolsHandlers } from "./tools";
 
