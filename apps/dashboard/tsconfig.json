@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@namera-ai/ui/*": ["../../packages/ui/src/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "extends": "@namera-ai/config/tsconfig/app/vite",
+  "include": ["**/*.ts", "**/*.tsx"],
+  "references": [{ "path": "../../packages/api" }]
+}

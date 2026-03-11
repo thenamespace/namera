@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "aliases": {
+    "components": "@/components",
+    "hooks": "@namera-ai/ui/hooks",
+    "lib": "@namera-ai/ui/lib",
+    "ui": "@namera-ai/ui/components/ui",
+    "utils": "@namera-ai/ui/lib/utils"
+  },
+  "iconLibrary": "phosphor",
+  "menuAccent": "subtle",
+  "menuColor": "default",
+  "rsc": false,
+  "rtl": false,
+  "style": "base-nova",
+  "tailwind": {
+    "baseColor": "neutral",
+    "config": "",
+    "css": "../../packages/ui/src/styles/globals.css",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "tsx": true
+}

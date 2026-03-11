@@ -29,7 +29,10 @@
     "type": "git",
     "url": "https://github.com/thenamespace/namera"
   },
-  "scripts": {},
+  "scripts": {
+    "dev": "bun src/index.ts --watch",
+    "start": "bun src/index.ts"
+  },
   "sideEffects": false,
   "type": "module",
   "version": "0.0.0"

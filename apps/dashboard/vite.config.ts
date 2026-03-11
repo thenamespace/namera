@@ -2,16 +2,12 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
-import mdx from "fumadocs-mdx/vite";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-import * as mdxConfig from "./source.config";
-
 const config = defineConfig({
   plugins: [
-    mdx(mdxConfig),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart({
@@ -28,12 +24,10 @@ const config = defineConfig({
         semicolons: true,
       },
     }),
-    nitro({
-      preset: "bun",
-    }),
+    nitro({ preset: "bun" }),
     viteReact(),
   ],
-  server: { port: 4000 },
+  server: { port: 3000 },
 });
 
 export default config;
