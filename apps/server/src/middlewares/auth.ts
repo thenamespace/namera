@@ -25,7 +25,8 @@ export const authorizationMiddleware = Layer.effect(
             return yield* Effect.fail(new Unauthorized());
           }
 
-          return sessionDetails.user;
+          const { user, ...session } = sessionDetails;
+          return { session, user };
         }),
     };
   }),

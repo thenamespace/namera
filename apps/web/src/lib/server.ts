@@ -1,5 +1,6 @@
 import { FetchHttpClient, HttpApiClient } from "@effect/platform";
 import { api } from "@repo/api";
+import { Email } from "@repo/schema";
 import { Effect, Layer, ManagedRuntime } from "effect";
 
 const CustomFetchLive = FetchHttpClient.layer.pipe(
@@ -25,7 +26,7 @@ export const signIn = () =>
       yield* client.auth.signInMagicLink({
         payload: {
           callbackUrl,
-          email: "vedant@test.com" as any,
+          email: Email.make("vedant@test.com"),
           errorCallbackUrl: callbackUrl,
           name: "Vedant",
           newUserCallbackUrl: callbackUrl,

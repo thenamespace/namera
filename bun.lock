@@ -59,6 +59,7 @@
         "@phosphor-icons/react": "^2.1.10",
         "@rainbow-me/rainbowkit": "^2.2.10",
         "@repo/api": "workspace:*",
+        "@repo/schema": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tailwindcss/vite": "^4.2.0",
         "@tanstack/react-hotkeys": "^0.3.1",

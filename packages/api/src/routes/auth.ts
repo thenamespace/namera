@@ -1,6 +1,7 @@
 import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
 import {
   MagicLinkError,
+  Session,
   SigInMagicLinkBody,
   User,
   VerifyMagicLinkBody,
@@ -25,6 +26,21 @@ export const authGroup = HttpApiGroup.make("auth")
   .add(
     HttpApiEndpoint.get("currentUser", "/me")
       .addSuccess(User, { status: 200 })
+      .middleware(Authorization),
+  )
+  .add(
+    HttpApiEndpoint.get("listSessions", "/sessions")
+      .addSuccess(Schema.Array(Session), { status: 200 })
+      .middleware(Authorization),
+  )
+  .add(
+    HttpApiEndpoint.del("logout", "/sessions/me")
+      .addSuccess(Schema.Void, { status: 200 })
+      .middleware(Authorization),
+  )
+  .add(
+    HttpApiEndpoint.del("revokeOtherSessions", "/sessions")
+      .addSuccess(Schema.Number, { status: 200 })
       .middleware(Authorization),
   )
   .prefix("/auth");

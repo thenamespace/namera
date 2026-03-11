@@ -1,6 +1,8 @@
 import { HttpApiBuilder, HttpServerResponse } from "@effect/platform";
-import { api, CurrentUser } from "@repo/api";
+import { AuthenticatedUser, api } from "@repo/api";
 import { Auth, AuthConfig } from "@repo/auth";
+import { AdminDatabase, withTx } from "@repo/database";
+import { AuthRepo } from "@repo/domain/auth";
 import type { SigInMagicLinkBody, VerifyMagicLinkBody } from "@repo/schema";
 import { Effect } from "effect";
 
@@ -39,13 +41,75 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
 
 const currentUserHandler = () =>
   Effect.gen(function* () {
-    const res = yield* CurrentUser;
-    return res;
+    const res = yield* AuthenticatedUser;
+    return res.user;
+  });
+
+const listSessionsHandler = () =>
+  Effect.gen(function* () {
+    const user = (yield* AuthenticatedUser).user;
+    const authRepo = yield* AuthRepo;
+    const db = yield* AdminDatabase;
+
+    const sessions = yield* db
+      .transaction((tx) =>
+        authRepo.session.findSessionsByUserId(user.id).pipe(withTx(tx)),
+      )
+      .pipe(Effect.orDie);
+
+    return sessions;
+  });
+
+const logoutHandler = () =>
+  Effect.gen(function* () {
+    const authUser = yield* AuthenticatedUser;
+    const authConfig = yield* AuthConfig;
+    const authRepo = yield* AuthRepo;
+    const db = yield* AdminDatabase;
+
+    yield* db
+      .transaction((tx) =>
+        authRepo.session.deleteSession(authUser.session.id).pipe(withTx(tx)),
+      )
+      .pipe(Effect.orDie);
+
+    return yield* HttpServerResponse.empty({ status: 200 }).pipe(
+      HttpServerResponse.expireCookie(authConfig.session.cookieName, {
+        path: "/",
+      }),
+      Effect.orDie,
+    );
+  });
+
+const revokeOtherSessionsHandler = () =>
+  Effect.gen(function* () {
+    const authUser = yield* AuthenticatedUser;
+    const authConfig = yield* AuthConfig;
+    const authRepo = yield* AuthRepo;
+    const db = yield* AdminDatabase;
+
+    yield* db
+      .transaction((tx) =>
+        authRepo.session
+          .deleteAllSessionsExcept(authUser.user.id, authUser.session.id)
+          .pipe(withTx(tx)),
+      )
+      .pipe(Effect.orDie);
+
+    return yield* HttpServerResponse.empty({ status: 200 }).pipe(
+      HttpServerResponse.expireCookie(authConfig.session.cookieName, {
+        path: "/",
+      }),
+      Effect.orDie,
+    );
   });
 
 export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
     .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
     .handle("magicLinkVerify", ({ payload }) => magicLinkVerifyHandler(payload))
-    .handle("currentUser", () => currentUserHandler()),
+    .handle("currentUser", () => currentUserHandler())
+    .handle("listSessions", () => listSessionsHandler())
+    .handle("logout", () => logoutHandler())
+    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler()),
 );
