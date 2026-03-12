@@ -16,6 +16,7 @@ Namera is a programmable session key layer for smart wallets. It enables wallets
 - `docs/`: Developer documentation. Built with Fumadocs + Tanstack Start.
 - `server/`: Primary backend. Built with Effect HTTP API Server.
 - `mcp/`: Model Context Protocol server. Built natively with Effect.
+- `cli`: CLI for managing accounts, sessions, wallets and running local MCP server. 
 
 ### `packages/` (Shared Internal Libraries + Published Packages)
 - `api/`: HTTP API Definitions for server.
