@@ -99,9 +99,6 @@
         "recommended": true,
         "useSingleJsDocAsterisk": "error"
       },
-      "nursery": {
-        "noUndeclaredEnvVars": "error"
-      },
       "performance": {
         "noAwaitInLoops": "error",
         "noBarrelFile": "off",
