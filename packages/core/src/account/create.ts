@@ -50,7 +50,7 @@ export const createEcdsaAccount = async <
   const { signer, client, chain, bundlerTransport, paymaster, index } = params;
 
   const kernelVersion = KERNEL_V3_2;
-  const entryPoint = getEntryPoint("0.9");
+  const entryPoint = getEntryPoint("0.7");
 
   const ecdsaValidator = await signerToEcdsaValidator(client, {
     entryPoint,
