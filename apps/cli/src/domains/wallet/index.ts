@@ -9,6 +9,7 @@ export const walletCommands = Command.make(
   {},
   () => Effect.void,
 ).pipe(
-  Command.withDescription("Manage Ethereum wallets."),
+  Command.withDescription("Wallet management utilities."),
+  Command.withAlias("w"),
   Command.withSubcommands([createWalletCommand, listWalletsCommand]),
 );

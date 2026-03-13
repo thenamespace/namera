@@ -3,7 +3,13 @@ import { Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
 
 import { subCommands } from "./domains";
-import { AliasManagerLive, ConfigManager, ConfigManagerLive } from "./layers";
+import {
+  AccountManagerLive,
+  AliasManagerLive,
+  ConfigManager,
+  ConfigManagerLive,
+  KeystoreManagerLive,
+} from "./layers";
 
 const command = Command.make("namera", {}, () => Effect.void).pipe(
   Command.withSubcommands([...subCommands]),
@@ -20,7 +26,9 @@ const main = Effect.gen(function* () {
   yield* cli;
 });
 
-const Layers = AliasManagerLive.pipe(
+const Layers = KeystoreManagerLive.pipe(
+  Layer.provideMerge(AccountManagerLive),
+  Layer.provideMerge(AliasManagerLive),
   Layer.provideMerge(ConfigManagerLive),
   Layer.provideMerge(NodeServices.layer),
 );

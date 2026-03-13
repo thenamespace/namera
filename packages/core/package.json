@@ -21,8 +21,8 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "homepage": "https://github.com/thenamespace/namera#readme",
@@ -30,7 +30,7 @@
   "license": "MIT",
   "name": "@namera-ai/core",
   "peerDependencies": {
-    "viem": "^2.47.0"
+    "viem": "^2.47.2"
   },
   "repository": {
     "type": "git",

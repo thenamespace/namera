@@ -3,12 +3,13 @@ import { Console, Effect, Option, Redacted } from "effect";
 import { Command, Flag, Prompt } from "effect/unstable/cli";
 import { v7 as uuid } from "uuid";
 
-import { AliasManager, ConfigManager } from "@/layers";
+import { AliasManager, ConfigManager, KeystoreManager } from "@/layers";
 
-export const createWalletHandler = (alias: Option.Option<string>) =>
+export const createWalletHandler = (_alias: Option.Option<string>) =>
   Effect.gen(function* () {
     const configManager = yield* ConfigManager;
     const aliasManager = yield* AliasManager;
+    const keystoreManager = yield* KeystoreManager;
 
     const identifier = uuid();
     const entityPath = yield* configManager.getEntityPath({
@@ -16,14 +17,36 @@ export const createWalletHandler = (alias: Option.Option<string>) =>
       type: "keystore",
     });
 
-    if (Option.isSome(alias)) {
+    let alias: string;
+
+    if (Option.isSome(_alias)) {
       yield* aliasManager.ensureUniqueAlias({
-        alias: alias.value,
+        alias: _alias.value,
         type: "keystore",
+      });
+      alias = _alias.value;
+    } else {
+      alias = yield* Prompt.text({
+        message: "Enter alias:",
+        validate: (value) =>
+          Effect.gen(function* () {
+            yield* aliasManager
+              .ensureUniqueAlias({
+                alias: value,
+                type: "keystore",
+              })
+              .pipe(
+                Effect.catchTag("AliasError", () =>
+                  Effect.fail("Alias already exists"),
+                ),
+              );
+
+            return value;
+          }),
       });
     }
 
-    const passwordPrompt = Prompt.password({
+    const password = yield* Prompt.password({
       message: "Enter password:",
       validate: (value) =>
         Effect.gen(function* () {
@@ -37,29 +60,15 @@ export const createWalletHandler = (alias: Option.Option<string>) =>
         }),
     });
 
-    const password = yield* passwordPrompt;
-
-    const keystore = yield* Effect.promise(() =>
+    const content = yield* Effect.promise(() =>
       Wallet.generate().toV3String(Redacted.value(password), {}),
     );
 
-    yield* configManager.addEntity({
-      data: keystore,
-      identifier,
-      type: "keystore",
-    });
-
-    if (Option.isSome(alias)) {
-      yield* aliasManager.setAlias({
-        alias: alias.value,
-        identifier,
-        type: "keystore",
-      });
-    }
+    yield* keystoreManager.createKeystore({ alias, content, identifier });
 
     yield* Console.log(
-      "✅ Successfully created wallet.",
-      `${alias._op === "Some" ? `\nAlias: ${alias.value}` : ""}`,
+      "\n✅ Successfully created wallet.",
+      `\nAlias: ${alias}`,
       `\nIdentifier: ${identifier}`,
       `\nPath: ${entityPath}`,
     );
@@ -76,11 +85,18 @@ export const createWalletCommand = Command.make(
   { alias },
   ({ alias }) => createWalletHandler(alias),
 ).pipe(
-  Command.withDescription("Create a new Ethereum wallet."),
+  Command.withAlias("c"),
+  Command.withDescription(
+    "Creates a random keypair and stores it to keystore.",
+  ),
   Command.withExamples([
     {
       command: "namera wallet create -a my-wallet",
-      description: "Create a new wallet with alias 'my-wallet'",
+      description: "Creates a new wallet with alias 'my-wallet'",
+    },
+    {
+      command: "namera wallet create",
+      description: "Creates a new wallet with alias prompt",
     },
   ]),
 );

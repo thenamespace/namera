@@ -1,3 +1,4 @@
+import { accountCommands } from "./account";
 import { walletCommands } from "./wallet";
 
-export const subCommands = [walletCommands] as const;
+export const subCommands = [walletCommands, accountCommands] as const;

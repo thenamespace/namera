@@ -7,6 +7,10 @@ import type { AliasType } from "@/types";
 export type ConfigManagerShape = {
   ensureConfigDirExists: () => Effect.Effect<string>;
   getConfigPath: () => Effect.Effect<string>;
+  checkEntityExists: (params: {
+    type: AliasType;
+    identifier: string;
+  }) => Effect.Effect<boolean>;
   getEntityPath: (params: {
     type: AliasType;
     identifier: string;
@@ -50,6 +54,17 @@ export const ConfigManagerLive = Layer.effect(
           );
 
           yield* fs.writeFileString(entityPath, params.data).pipe(Effect.orDie);
+        }),
+      checkEntityExists: (params) =>
+        Effect.gen(function* () {
+          const configPath = yield* getConfigPath();
+          const entityPath = path.join(
+            configPath,
+            `${params.type}s`,
+            params.identifier,
+          );
+
+          return yield* fs.exists(entityPath).pipe(Effect.orDie);
         }),
       ensureConfigDirExists: () =>
         Effect.gen(function* () {
@@ -120,7 +135,7 @@ export const ConfigManagerLive = Layer.effect(
           const configPath = yield* getConfigPath();
           const entityPath = path.join(
             configPath,
-            params.type,
+            `${params.type}s`,
             params.identifier,
           );
           return entityPath;
