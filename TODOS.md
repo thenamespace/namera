@@ -52,9 +52,23 @@
 ### CLI
 
 - [ ] Basic Project Scaffolding
+- [ ] Prompting Library
+  - [ ] Text Prompts
+  - [ ] Password Prompts
+  - [ ] Select Prompts
+  - [ ] Multi Select Prompts
+  - [ ] Confirm Prompts
 - [ ] Command Groups
-  - [ ] Account Creation
-  - [ ] Session Creation/Management
+  - [ ] Wallets
+    - [ ] Create Wallet
+    - [ ] List Wallets
+  - [ ] Accounts
+    - [ ] Create Account
+    - [ ] List Account
+  - [ ] Session Keys
+    - [ ] Create Session Key
+    - [ ] List Session Keys
+    - [ ] Revoke Session Key
   - [ ] Local MCP Spawning
 
 ### Server

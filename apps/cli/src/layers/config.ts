@@ -71,10 +71,10 @@ export const ConfigManagerLive = Layer.effect(
           const homeDir = yield* Effect.sync(() => os.homedir());
           const baseDir = path.join(homeDir, ".namera");
 
-          const subDirs = ["accounts", "sessions", "keystores", "aliases"];
+          const subDirs = ["accounts", "session-keys", "keystores", "aliases"];
           const subFiles = [
             "aliases/accounts.json",
-            "aliases/sessions.json",
+            "aliases/session-keys.json",
             "aliases/keystores.json",
           ];
 

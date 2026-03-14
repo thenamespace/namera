@@ -10,6 +10,7 @@ import {
   ConfigManagerLive,
   KeystoreManagerLive,
   PromptManagerLive,
+  SessionKeyManagerLive,
 } from "./layers";
 
 const command = Command.make("namera", {}, () => Effect.void).pipe(
@@ -27,7 +28,8 @@ const main = Effect.gen(function* () {
   yield* cli;
 });
 
-const Layers = KeystoreManagerLive.pipe(
+const Layers = SessionKeyManagerLive.pipe(
+  Layer.provideMerge(KeystoreManagerLive),
   Layer.provideMerge(PromptManagerLive),
   Layer.provideMerge(AccountManagerLive),
   Layer.provideMerge(AliasManagerLive),

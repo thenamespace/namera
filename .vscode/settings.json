@@ -14,6 +14,7 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "tailwindCSS.classAttributes": [
     "class",
     "className",
@@ -23,6 +24,5 @@
   "tailwindCSS.classFunctions": ["tw", "clsx", "cva"],
   "tailwindCSS.experimental.configFile": {
     "packages/ui/src/styles/globals.css": ["apps/**", "packages/**"]
-  },
-  "typescript.tsdk": "node_modules/typescript/lib"
+  }
 }

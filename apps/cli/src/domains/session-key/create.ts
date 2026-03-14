@@ -1,30 +1,44 @@
 import { Wallet } from "@ethereumjs/wallet";
 import { createSessionKey } from "@namera-ai/core";
-import { Effect, type Option, Redacted } from "effect";
+import { Console, Effect, type Option, Redacted } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { createPublicClient, hexToBytes, http } from "viem";
 import { sepolia } from "viem/chains";
 
 import {
   AccountManager,
+  AliasManager,
   ConfigManager,
   KeystoreManager,
   PromptManager,
+  SessionKeyManager,
+  type V3Keystore,
 } from "@/layers";
 
 import { cliPoliciesToPolicies } from "./helpers";
 import { getPoliciesFromUser } from "./prompts";
 
-const createSessionKeyHandler = (existingAccountAlias: Option.Option<string>) =>
+const createSessionKeyHandler = (
+  existingAccountAlias: Option.Option<string>,
+  existingAlias: Option.Option<string>,
+) =>
   Effect.gen(function* () {
     const configManager = yield* ConfigManager;
     const accountManager = yield* AccountManager;
+    const aliasManager = yield* AliasManager;
     const keystoreManager = yield* KeystoreManager;
     const promptManager = yield* PromptManager;
+    const sessionKeyManager = yield* SessionKeyManager;
 
     const account = yield* accountManager.selectAccount({
       existingAlias: existingAccountAlias,
       message: "Select the account to create the session key for",
+    });
+
+    const alias = yield* aliasManager.selectAlias({
+      existingAlias,
+      message: "Enter alias for the session key:",
+      type: "session-key",
     });
 
     const cliPolicies = yield* getPoliciesFromUser();
@@ -66,36 +80,52 @@ const createSessionKeyHandler = (existingAccountAlias: Option.Option<string>) =>
         }),
     });
 
-    const encSessionPrivateKey = yield* Effect.promise(() =>
-      Wallet.fromPrivateKey(
-        hexToBytes(sessionKey.sessionPrivateKey),
-      ).toV3String(Redacted.value(password)),
-    );
+    const encSessionPrivateKey = (yield* Effect.promise(() =>
+      Wallet.fromPrivateKey(hexToBytes(sessionKey.sessionPrivateKey)).toV3(
+        Redacted.value(password),
+      ),
+    )) as V3Keystore;
 
-    // TODO: Use fn from SessionKeyManager
-    yield* configManager.addEntity({
-      data: JSON.stringify({
-        encSessionPrivateKey,
-        serializedAccount: sessionKey.serializedAccount,
-        serializedPlugin: sessionKey.serializedPlugin,
-        sessionKeyAddress: sessionKey.sessionKeyAddress,
-        smartAccountIdentifier: account.identifier,
-      }),
-      identifier: sessionKey.sessionKeyAddress,
-      type: "session",
+    yield* sessionKeyManager.storeSessionKey(alias, {
+      encSessionPrivateKey,
+      serializedAccount: sessionKey.serializedAccount,
+      serializedPlugin: {
+        permissionId: sessionKey.serializedPlugin.permissionId,
+        policies: cliPolicies,
+      },
+      sessionKeyAddress: sessionKey.sessionKeyAddress,
+      smartAccountIdentifier: account.identifier,
     });
+
+    const entityPath = yield* configManager.getEntityPath({
+      identifier: sessionKey.sessionKeyAddress,
+      type: "session-key",
+    });
+
+    yield* Console.log(
+      "\n✅ Successfully created Session Key",
+      `\nAlias: ${alias}`,
+      `\nSmart Account Address: ${account.data.smartAccountAddress}`,
+      `\nAccount Address: ${sessionKey.sessionKeyAddress}`,
+      `\nPath: ${entityPath}`,
+    );
   });
 
 const account = Flag.string("account").pipe(
   Flag.optional,
   Flag.withDescription("The smart account alias to create the session key for"),
+);
+
+const alias = Flag.string("alias").pipe(
+  Flag.optional,
+  Flag.withDescription("Alias for the session key"),
   Flag.withAlias("a"),
 );
 
 export const createSessionKeyCommand = Command.make(
   "create",
-  { account },
-  ({ account }) => createSessionKeyHandler(account),
+  { account, alias },
+  ({ account, alias }) => createSessionKeyHandler(account, alias),
 ).pipe(
   Command.withDescription("Creates a new smart account for specified owner"),
   Command.withAlias("c"),

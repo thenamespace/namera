@@ -1,4 +1,4 @@
-export type AliasType = "account" | "session" | "keystore";
+export type AliasType = "account" | "session-key" | "keystore";
 
 export type IdentifierOrAlias =
   | {

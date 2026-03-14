@@ -106,13 +106,12 @@ export const getCallPolicyParams = Effect.gen(function* () {
   });
 
   // TODO: More stuff for smart contracts, like function signature, etc.
-
   const weiUnits = parseEther(maxLimit).toString();
 
   const res = allowedFunctions.map((f) => {
     return {
       data: {
-        abi,
+        abi: [f],
         functionName: f.name,
         selector: toFunctionSelector(f),
         target: address as Address,

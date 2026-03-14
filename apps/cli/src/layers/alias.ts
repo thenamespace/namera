@@ -12,9 +12,9 @@ import type { QuitError } from "effect/Terminal";
 import { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
 
-import { ConfigManager } from "./config";
+import type { AliasType } from "@/types";
 
-export type AliasType = "account" | "session" | "keystore";
+import { ConfigManager } from "./config";
 
 export class AliasError extends Data.TaggedError("AliasError")<{
   code: "AlreadyExists" | "NotFound";
