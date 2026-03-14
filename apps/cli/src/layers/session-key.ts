@@ -112,7 +112,7 @@ export const SessionKeyManagerLive = Layer.effect(
             Effect.gen(function* () {
               const data = yield* configManager.getEntity({
                 identifier,
-                type: "account",
+                type: "session-key",
               });
 
               const parsedData = yield* Effect.try({
