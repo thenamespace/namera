@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { Prompt } from "effect/unstable/cli";
 
 import { policyChoicePrompt } from "./base";
 import { getCallPolicyParams } from "./call";
@@ -16,13 +17,20 @@ export const getPoliciesFromUser = () =>
     const cliPolicies: PolicyDataType[] = [];
 
     while (true) {
-      // Todo: Pass prev policies to prompt, so that we can ensure that user does not add 2 timestamp policies, 2 sudo policies, etc.
-      const policyType = yield* policyChoicePrompt;
+      if (cliPolicies.length > 0) {
+        const addMore = yield* Prompt.confirm({
+          message: "Do you want to add another policy?",
+        });
+        if (!addMore) break;
+      }
+
+      const policyType = yield* policyChoicePrompt(cliPolicies);
 
       if (policyType === "timestamp") {
         const res = yield* getTimestampPolicyParams;
         cliPolicies.push(res);
       } else if (policyType === "call") {
+        // TODO: See if we can catch duplicates in gas policy
         const res = yield* getCallPolicyParams;
         cliPolicies.push(...res);
       } else if (policyType === "sudo") {

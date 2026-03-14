@@ -52,6 +52,18 @@ const createSessionKeyHandler = (existingAccountAlias: Option.Option<string>) =>
 
     const password = yield* promptManager.selectPassword({
       message: "Enter password to encrypt session key: ",
+      validate: (v) =>
+        Effect.gen(function* () {
+          yield* Effect.tryPromise({
+            catch: () => "Invalid Password",
+            try: () =>
+              Wallet.fromPrivateKey(
+                hexToBytes(sessionKey.sessionPrivateKey),
+              ).toV3String(v),
+          });
+
+          return v;
+        }),
     });
 
     const encSessionPrivateKey = yield* Effect.promise(() =>

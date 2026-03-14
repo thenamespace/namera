@@ -6,6 +6,7 @@ import type { Environment } from "effect/unstable/cli/Prompt";
 export type PromptManagerShape = {
   selectPassword: (params: {
     message: string;
+    validate?: (value: string) => Effect.Effect<string, string, never>;
   }) => Effect.Effect<Redacted.Redacted<string>, QuitError, Environment>;
 };
 
@@ -27,6 +28,8 @@ export const PromptManagerLive = Layer.effect(
                     "Password must be at least 8 characters long",
                   );
                 }
+
+                if (params.validate) v = yield* params.validate(v);
 
                 return v;
               }),

@@ -210,6 +210,15 @@ export const KeystoreManagerLive = Layer.effect(
 
           const password = yield* promptManager.selectPassword({
             message: "Enter password to unlock wallet: ",
+            validate: (v) =>
+              Effect.gen(function* () {
+                yield* Effect.tryPromise({
+                  catch: () => "Invalid Password",
+                  try: () => Wallet.fromV3(content, v),
+                });
+
+                return v;
+              }),
           });
 
           const res = yield* Effect.tryPromise({
