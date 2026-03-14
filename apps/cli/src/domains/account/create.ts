@@ -1,7 +1,6 @@
 import { getKernelAddressFromECDSA } from "@namera-ai/core";
 import { Console, Effect, Option } from "effect";
-import { Command, Flag, Prompt } from "effect/unstable/cli";
-import type { SelectChoice } from "effect/unstable/cli/Prompt";
+import { Command, Flag } from "effect/unstable/cli";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 
@@ -16,7 +15,7 @@ import type { LocalSmartAccount } from "@/schema";
 const createAccountHandler = (
   ownerAlias: Option.Option<string>,
   index: Option.Option<number>,
-  _alias: Option.Option<string>,
+  existingAlias: Option.Option<string>,
 ) =>
   Effect.gen(function* () {
     const aliasManager = yield* AliasManager;
@@ -25,71 +24,15 @@ const createAccountHandler = (
     const configManager = yield* ConfigManager;
 
     // Alias Prompt
-    const aliasPrompt = Prompt.text({
+    const alias = yield* aliasManager.selectAlias({
+      existingAlias,
       message: "Enter alias:",
-      validate: (value) =>
-        Effect.gen(function* () {
-          yield* aliasManager
-            .ensureUniqueAlias({
-              alias: value,
-              type: "account",
-            })
-            .pipe(
-              Effect.catchTag("AliasError", () =>
-                Effect.fail("Alias already exists"),
-              ),
-            );
-
-          return value;
-        }),
+      type: "account",
     });
 
-    let alias: string;
-    if (Option.isSome(_alias)) {
-      yield* aliasManager.ensureUniqueAlias({
-        alias: _alias.value,
-        type: "account",
-      });
-      alias = _alias.value;
-    } else {
-      alias = yield* aliasPrompt;
-    }
-
-    const keystores = yield* keystoreManager.listKeystores();
-    let identifier: string;
-
-    const identifierPrompt = Prompt.select({
-      choices: keystores
-        // biome-ignore lint/suspicious/useIterableCallbackReturn: safe
-        .map((v) => {
-          if (v._op === "Failure") return;
-          const { alias, keystore, identifier } = v.success;
-          const { address } = keystore;
-          return {
-            title: `${alias ? alias : ""} ${address ? `(0x${address})` : ""} ${
-              !alias ? identifier : ""
-            }(Local)`,
-            value: v.success.identifier,
-          };
-        })
-        .filter(Boolean) as SelectChoice<string>[],
-      message: "Select a owner wallet for this smart account",
-    });
-
-    if (Option.isSome(ownerAlias)) {
-      const id = yield* aliasManager.getIdentifier({
-        alias: ownerAlias.value,
-        type: "keystore",
-      });
-
-      if (id) identifier = id;
-      else identifier = yield* identifierPrompt;
-    } else {
-      identifier = yield* identifierPrompt;
-    }
-
-    const keystore = yield* keystoreManager.getKeystore({
-      identifier,
+    const keystore = yield* keystoreManager.selectKeystore({
+      alias: ownerAlias,
+      message: "Select the owner wallet for this smart account",
     });
 
     const accountIndex = Option.isSome(index) ? BigInt(index.value) : BigInt(0);
@@ -114,7 +57,7 @@ const createAccountHandler = (
       entrypointVersion: "0.7",
       index: Number(accountIndex),
       kernelVersion: "0.3.2",
-      ownerIdentifier: identifier,
+      ownerIdentifier: keystore.identifier,
       ownerType: "ecdsa",
       smartAccountAddress,
     };

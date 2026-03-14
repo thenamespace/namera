@@ -3,10 +3,14 @@ import {
   Effect,
   FileSystem,
   Layer,
+  Option,
   Path,
   Schema,
   ServiceMap,
 } from "effect";
+import type { QuitError } from "effect/Terminal";
+import { Prompt } from "effect/unstable/cli";
+import type { Environment } from "effect/unstable/cli/Prompt";
 
 import { ConfigManager } from "./config";
 
@@ -40,6 +44,11 @@ export type AliasManagerShape = {
     idToAlias: Map<string, string>;
     path: string;
   }>;
+  selectAlias: (params: {
+    type: AliasType;
+    message: string;
+    existingAlias: Option.Option<string>;
+  }) => Effect.Effect<string, QuitError, Environment>;
 };
 // Alias => Identifier
 const AliasFile = Schema.Record(
@@ -85,18 +94,57 @@ export const AliasManagerLive = Layer.effect(
         };
       });
 
-    return AliasManager.of({
-      ensureUniqueAlias: (params) =>
-        Effect.gen(function* () {
-          const { aliasToId } = yield* getAliasFile(params.type);
-          const exists = aliasToId.has(params.alias);
+    const ensureUniqueAlias = (params: { type: AliasType; alias: string }) =>
+      Effect.gen(function* () {
+        const { aliasToId } = yield* getAliasFile(params.type);
+        const exists = aliasToId.has(params.alias);
 
-          if (exists) {
-            return yield* Effect.fail(
-              new AliasError({ code: "AlreadyExists" }),
-            );
-          }
-        }),
+        if (exists) {
+          return yield* Effect.fail(new AliasError({ code: "AlreadyExists" }));
+        }
+      });
+
+    const selectAlias = (params: {
+      type: AliasType;
+      message: string;
+      existingAlias: Option.Option<string>;
+    }) =>
+      Effect.gen(function* () {
+        // Step 1: If existing alias, check uniqueness
+        let alias: string;
+
+        const aliasPrompt = Prompt.text({
+          message: params.message,
+          validate: (value) =>
+            Effect.gen(function* () {
+              yield* ensureUniqueAlias({
+                alias: value,
+                type: params.type,
+              }).pipe(
+                Effect.catchTag("AliasError", () =>
+                  Effect.fail("Alias already exists"),
+                ),
+              );
+
+              return value;
+            }),
+        });
+
+        if (Option.isSome(params.existingAlias)) {
+          const { aliasToId } = yield* getAliasFile(params.type);
+          const exists = aliasToId.has(params.existingAlias.value);
+
+          if (!exists) alias = params.existingAlias.value;
+          else alias = yield* aliasPrompt;
+        } else {
+          alias = yield* aliasPrompt;
+        }
+
+        return alias;
+      });
+
+    return AliasManager.of({
+      ensureUniqueAlias,
       getAlias: (params) =>
         Effect.gen(function* () {
           const { idToAlias } = yield* getAliasFile(params.type);
@@ -108,6 +156,7 @@ export const AliasManagerLive = Layer.effect(
           const { aliasToId } = yield* getAliasFile(params.type);
           return aliasToId.get(params.alias);
         }),
+      selectAlias,
       setAlias: (params) =>
         Effect.gen(function* () {
           const { aliasToId, path } = yield* getAliasFile(params.type);

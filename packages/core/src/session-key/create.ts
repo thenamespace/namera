@@ -1,7 +1,7 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import {
   deserializePermissionAccount,
-  type PermissionPlugin,
+  type PermissionData,
   type Policy,
   serializePermissionAccount,
   toPermissionValidator,
@@ -40,7 +40,7 @@ export type CreateSessionKeyParams<
 export type CreateSessionKeyResult = {
   sessionPrivateKey: Hex;
   sessionKeyAddress: Address;
-  permissionPlugin: PermissionPlugin;
+  serializedPlugin: PermissionData;
   serializedAccount: string;
 };
 
@@ -89,10 +89,11 @@ export const createSessionKey = async <
   });
 
   const serializedAccount = await serializePermissionAccount(sessionKeyAccount);
+  const serializedPlugin = permissionPlugin.getPluginSerializationParams();
 
   return {
-    permissionPlugin,
     serializedAccount,
+    serializedPlugin,
     sessionKeyAddress,
     sessionPrivateKey,
   };

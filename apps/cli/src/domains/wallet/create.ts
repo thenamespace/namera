@@ -1,15 +1,21 @@
 import { Wallet } from "@ethereumjs/wallet";
-import { Console, Effect, Option, Redacted } from "effect";
-import { Command, Flag, Prompt } from "effect/unstable/cli";
+import { Console, Effect, type Option, Redacted } from "effect";
+import { Command, Flag } from "effect/unstable/cli";
 import { v7 as uuid } from "uuid";
 
-import { AliasManager, ConfigManager, KeystoreManager } from "@/layers";
+import {
+  AliasManager,
+  ConfigManager,
+  KeystoreManager,
+  PromptManager,
+} from "@/layers";
 
-export const createWalletHandler = (_alias: Option.Option<string>) =>
+export const createWalletHandler = (existingAlias: Option.Option<string>) =>
   Effect.gen(function* () {
     const configManager = yield* ConfigManager;
     const aliasManager = yield* AliasManager;
     const keystoreManager = yield* KeystoreManager;
+    const promptManager = yield* PromptManager;
 
     const identifier = uuid();
     const entityPath = yield* configManager.getEntityPath({
@@ -17,47 +23,14 @@ export const createWalletHandler = (_alias: Option.Option<string>) =>
       type: "keystore",
     });
 
-    let alias: string;
+    const alias = yield* aliasManager.selectAlias({
+      existingAlias,
+      message: "Enter alias:",
+      type: "keystore",
+    });
 
-    if (Option.isSome(_alias)) {
-      yield* aliasManager.ensureUniqueAlias({
-        alias: _alias.value,
-        type: "keystore",
-      });
-      alias = _alias.value;
-    } else {
-      alias = yield* Prompt.text({
-        message: "Enter alias:",
-        validate: (value) =>
-          Effect.gen(function* () {
-            yield* aliasManager
-              .ensureUniqueAlias({
-                alias: value,
-                type: "keystore",
-              })
-              .pipe(
-                Effect.catchTag("AliasError", () =>
-                  Effect.fail("Alias already exists"),
-                ),
-              );
-
-            return value;
-          }),
-      });
-    }
-
-    const password = yield* Prompt.password({
+    const password = yield* promptManager.selectPassword({
       message: "Enter password:",
-      validate: (value) =>
-        Effect.gen(function* () {
-          if (value.length < 8) {
-            return yield* Effect.fail(
-              "Password must be at least 8 characters long",
-            );
-          }
-
-          return value;
-        }),
     });
 
     const content = yield* Effect.promise(() =>
