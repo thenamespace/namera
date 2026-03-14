@@ -1,8 +1,25 @@
-import { Data, Effect, Layer, Option, type Result, ServiceMap } from "effect";
+/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: safe */
+
+import { Wallet } from "@ethereumjs/wallet";
+import {
+  type BaseKernelAccountClient,
+  createSessionKeyClient,
+} from "@namera-ai/core";
+import {
+  Data,
+  Effect,
+  Layer,
+  Option,
+  Redacted,
+  type Result,
+  ServiceMap,
+} from "effect";
 import type { QuitError } from "effect/Terminal";
 import { Prompt } from "effect/unstable/cli";
 import type { Environment, SelectChoice } from "effect/unstable/cli/Prompt";
-import type { Address, Hex } from "viem";
+import { type Address, createPublicClient, type Hex, http } from "viem";
+import { type LocalAccount, privateKeyToAccount } from "viem/accounts";
+import { sepolia } from "viem/chains";
 
 import type { PolicyDataType } from "@/domains/session-key/prompts/types";
 import type { IdentifierOrAlias } from "@/types";
@@ -10,9 +27,16 @@ import type { IdentifierOrAlias } from "@/types";
 import { AliasManager } from "./alias";
 import { ConfigManager } from "./config";
 import type { V3Keystore } from "./keystore";
+import { PromptManager } from "./prompt";
 
 export class SessionKeyError extends Data.TaggedError("SessionKeyError")<{
-  code: "CreationFailed" | "NotFound" | "ParseError" | "KeyAlreadyExists";
+  code:
+    | "CreationFailed"
+    | "NotFound"
+    | "ParseError"
+    | "KeyAlreadyExists"
+    | "InvalidPassword"
+    | "ClientCreationFailed";
 }> {}
 
 export type LocalSessionKey = {
@@ -35,6 +59,16 @@ export type SessionKeyManagerShape = {
   getSessionKey: (
     params: IdentifierOrAlias,
   ) => Effect.Effect<LocalSessionKeyData, SessionKeyError>;
+  getSessionKeySigner: (
+    params: IdentifierOrAlias,
+  ) => Effect.Effect<LocalAccount, SessionKeyError | QuitError, Environment>;
+  getSessionKeyClient: (
+    params: IdentifierOrAlias,
+  ) => Effect.Effect<
+    BaseKernelAccountClient,
+    SessionKeyError | QuitError,
+    Environment
+  >;
   listSessionKeys: () => Effect.Effect<
     Result.Result<LocalSessionKeyData, SessionKeyError>[]
   >;
@@ -60,6 +94,7 @@ export const SessionKeyManagerLive = Layer.effect(
   Effect.gen(function* () {
     const configManager = yield* ConfigManager;
     const aliasManager = yield* AliasManager;
+    const promptManager = yield* PromptManager;
 
     const getSessionKey = (params: IdentifierOrAlias) =>
       Effect.gen(function* () {
@@ -178,8 +213,68 @@ export const SessionKeyManagerLive = Layer.effect(
         return key;
       });
 
+    const getSessionKeySigner = (params: IdentifierOrAlias) =>
+      Effect.gen(function* () {
+        const key = yield* getSessionKey(params);
+
+        const password = yield* promptManager.selectPassword({
+          message: "Enter password to unlock session key: ",
+          validate: (v) =>
+            Effect.gen(function* () {
+              yield* Effect.tryPromise({
+                catch: () => "Invalid Password",
+                try: () => Wallet.fromV3(key.data.encSessionPrivateKey, v),
+              });
+
+              return v;
+            }),
+        });
+
+        const res = yield* Effect.tryPromise({
+          catch: () => new SessionKeyError({ code: "InvalidPassword" }),
+          try: () =>
+            Wallet.fromV3(
+              key.data.encSessionPrivateKey,
+              Redacted.value(password),
+            ),
+        });
+
+        const signer = privateKeyToAccount(
+          res.getPrivateKeyString(),
+        ) as LocalAccount;
+
+        return signer;
+      });
+
+    const getSessionKeyClient = (params: IdentifierOrAlias) =>
+      Effect.gen(function* () {
+        const key = yield* getSessionKey(params);
+        const sessionKeySigner = yield* getSessionKeySigner(params);
+
+        const publicClient = createPublicClient({
+          chain: sepolia,
+          transport: http(),
+        });
+
+        const res = yield* Effect.tryPromise({
+          catch: () => new SessionKeyError({ code: "ClientCreationFailed" }),
+          try: () =>
+            createSessionKeyClient({
+              bundlerTransport: http(),
+              chain: sepolia,
+              client: publicClient,
+              serializedAccount: key.data.serializedAccount,
+              sessionKeySigner,
+            }),
+        });
+
+        return res;
+      });
+
     return SessionKeyManager.of({
       getSessionKey,
+      getSessionKeyClient,
+      getSessionKeySigner,
       listSessionKeys,
       selectSessionKey,
       storeSessionKey: (alias, params) =>

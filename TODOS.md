@@ -51,17 +51,22 @@
 
 ### CLI
 
-- [ ] Basic Project Scaffolding
-- [ ] Prompting Library
-  - [ ] Text Prompts
-  - [ ] Password Prompts
-  - [ ] Select Prompts
-  - [ ] Multi Select Prompts
-  - [ ] Confirm Prompts
+- [x] Basic Project Scaffolding
+- [x] Prompting Library
+  - [x] Text Prompts
+  - [x] Password Prompts
+  - [x] Select Prompts
+  - [x] Multi Select Prompts
+  - [x] Confirm Prompts
+  - [x] Date Prompts
+  - [x] File Prompts
+  - [x] Number Prompts
+  - [x] Ethereum Address Prompts
 - [ ] Command Groups
-  - [ ] Wallets
-    - [ ] Create Wallet
-    - [ ] List Wallets
+  - [x] Wallets
+    - [x] Create Wallet
+    - [x] List Wallets
+    - [ ] Decrypt Wallet
   - [ ] Accounts
     - [ ] Create Account
     - [ ] List Account
@@ -69,7 +74,7 @@
     - [ ] Create Session Key
     - [ ] List Session Keys
     - [ ] Revoke Session Key
-  - [ ] Local MCP Spawning
+  - [ ] Local MCP Server
 
 ### Server
 

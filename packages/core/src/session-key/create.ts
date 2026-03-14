@@ -108,7 +108,7 @@ export type CreateSessionKeyClientParams<
 > = {
   client: PublicClient<TClientTransport, TChain>;
   chain: TChain;
-  sessionPrivateKey: Hex;
+  sessionKeySigner: Signer;
   serializedAccount: string;
   bundlerTransport: TBundlerTransport;
   paymaster?: PaymasterClient<TPaymasterTransport, TRpcSchema>;
@@ -138,7 +138,7 @@ export const createSessionKeyClient = async <
   >
 > => {
   const {
-    sessionPrivateKey,
+    sessionKeySigner,
     client,
     serializedAccount,
     bundlerTransport,
@@ -149,8 +149,8 @@ export const createSessionKeyClient = async <
   const kernelVersion = KERNEL_V3_2;
   const entryPoint = getEntryPoint("0.7");
 
-  const sessionKeySigner = await toECDSASigner({
-    signer: privateKeyToAccount(sessionPrivateKey),
+  const sessionSigner = await toECDSASigner({
+    signer: sessionKeySigner,
   });
 
   const sessionKeyAccount = await deserializePermissionAccount(
@@ -158,7 +158,7 @@ export const createSessionKeyClient = async <
     entryPoint,
     kernelVersion,
     serializedAccount,
-    sessionKeySigner,
+    sessionSigner,
   );
 
   const kernelClient = createKernelAccountClient({
