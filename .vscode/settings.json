@@ -19,6 +19,7 @@
     "class",
     "className",
     "ngClass",
+    "tw",
     "class:list"
   ],
   "tailwindCSS.classFunctions": ["tw", "clsx", "cva"],

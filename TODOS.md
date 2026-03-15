@@ -62,19 +62,42 @@
   - [x] File Prompts
   - [x] Number Prompts
   - [x] Ethereum Address Prompts
-- [ ] Command Groups
+- [x] Command Groups
   - [x] Wallets
     - [x] Create Wallet
     - [x] List Wallets
     - [ ] Decrypt Wallet
-  - [ ] Accounts
-    - [ ] Create Account
-    - [ ] List Account
-  - [ ] Session Keys
-    - [ ] Create Session Key
-    - [ ] List Session Keys
+  - [x] Accounts
+    - [x] Create Account
+    - [x] List Accounts
+  - [x] Session Keys
+    - [x] Create Session Key
+      - [x] Sudo Policy
+      - [x] Timestamp Policy
+      - [x] Gas Policy
+      - [x] Call Policy
+      - [ ] Signature Policy
+      - [ ] Rate Limit Policy
+    - [x] List Session Keys
     - [ ] Revoke Session Key
-  - [ ] Local MCP Server
+  - [x] Local MCP Server
+    - [x] 1 Account, N Session Keys Server
+    - [x] Tools
+      - [x] Account Tools
+        - [x] `get_wallet_address`
+        - [ ] `get_balance`
+        - [ ] `get_token_balance`
+      - [ ] Transfer Tools
+        - [x] `native_transfer`
+        - [ ] `erc20_transfer`
+      - [ ] Transaction Tools
+        - [ ] `execute_transaction`
+        - [ ] `execute_batch`
+        - [ ] `simulate_transaction`
+        - [ ] `simulate_batch`
+      - [ ] Token Utilities
+        - [ ] `get_allowance`
+        - [ ] `approve_erc20`
 
 ### Server
 
@@ -109,3 +132,4 @@
     - [ ] Delete Permission Template
   - [ ] MCP Routes
     - [ ] OAuth 2.1 Scope Routes
+    - [ ] Tools (all from CLI and more)
