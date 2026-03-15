@@ -60,7 +60,9 @@ export type SessionKeyManagerShape = {
     params: IdentifierOrAlias,
   ) => Effect.Effect<LocalSessionKeyData, SessionKeyError>;
   getSessionKeySigner: (
-    params: IdentifierOrAlias,
+    params: IdentifierOrAlias & {
+      message?: string;
+    },
   ) => Effect.Effect<LocalAccount, SessionKeyError | QuitError, Environment>;
   getSessionKeyClient: (
     params: IdentifierOrAlias,
@@ -81,6 +83,13 @@ export type SessionKeyManagerShape = {
     message: string;
   }) => Effect.Effect<
     LocalSessionKeyData,
+    QuitError | SessionKeyError,
+    Environment
+  >;
+  multiSelectSessionKeys: (params: {
+    message: string;
+  }) => Effect.Effect<
+    LocalSessionKeyData[],
     QuitError | SessionKeyError,
     Environment
   >;
@@ -213,12 +222,36 @@ export const SessionKeyManagerLive = Layer.effect(
         return key;
       });
 
+    const multiSelectSessionKeys = (params: { message: string }) =>
+      Effect.gen(function* () {
+        const keys = yield* listSessionKeys();
+
+        const selected = yield* Prompt.multiSelect({
+          choices: keys
+            .map((k) => {
+              if (k._op === "Failure") return null;
+              const { alias, identifier } = k.success;
+              return {
+                description: identifier,
+                title: alias ?? identifier,
+                value: k.success,
+              };
+            })
+            .filter(
+              (a) => a !== null,
+            ) satisfies SelectChoice<LocalSessionKeyData>[],
+          message: params.message,
+        });
+
+        return selected;
+      });
+
     const getSessionKeySigner = (params: IdentifierOrAlias) =>
       Effect.gen(function* () {
         const key = yield* getSessionKey(params);
 
         const password = yield* promptManager.selectPassword({
-          message: "Enter password to unlock session key: ",
+          message: params.message ?? "Enter password to unlock session key: ",
           validate: (v) =>
             Effect.gen(function* () {
               yield* Effect.tryPromise({
@@ -276,6 +309,7 @@ export const SessionKeyManagerLive = Layer.effect(
       getSessionKeyClient,
       getSessionKeySigner,
       listSessionKeys,
+      multiSelectSessionKeys,
       selectSessionKey,
       storeSessionKey: (alias, params) =>
         Effect.gen(function* () {

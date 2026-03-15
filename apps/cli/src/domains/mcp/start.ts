@@ -1,25 +1,51 @@
 import { Effect, type Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
-import { SessionKeyClient, SessionKeyManager } from "@/layers";
+import {
+  AccountManager,
+  CurrentMcpContext,
+  type CurrentMcpContextShape,
+  SessionKeyManager,
+} from "@/layers";
 import { startHttpServer } from "@/mcp";
 
 export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
   Effect.gen(function* () {
+    const accountManager = yield* AccountManager;
     const sessionKeyManager = yield* SessionKeyManager;
 
-    const key = yield* sessionKeyManager.selectSessionKey({
+    // 1. Select Account
+    const account = yield* accountManager.selectAccount({
       existingAlias: sessionKeyAlias,
-      message: "Select the session key to use for the MCP server",
+      message: "Select the smart account to use for the MCP server",
     });
 
-    const client = yield* sessionKeyManager.getSessionKeyClient({
-      alias: key.alias ?? "",
+    // 2. Multi Select Session Keys
+    const sessionKeys = yield* sessionKeyManager.multiSelectSessionKeys({
+      message: "Select session keys to use for the MCP server",
     });
 
-    yield* Effect.log(client.account.address);
+    const keys: CurrentMcpContextShape["sessionKeys"] = [];
+
+    // 3. Get Private Keys
+    for (const key of sessionKeys) {
+      const signer = yield* sessionKeyManager.getSessionKeySigner({
+        identifier: key.identifier,
+        message: `Enter password for session key - ${key.alias ?? key.identifier}:`,
+      });
+
+      keys.push({
+        ...key.data,
+        signer,
+      });
+    }
+    const currentContext = CurrentMcpContext.of({
+      account,
+      sessionKeys: keys,
+    });
+
     yield* startHttpServer(8080).pipe(
-      Effect.provideService(SessionKeyClient, client),
+      Effect.provideService(CurrentMcpContext, currentContext),
     );
   });
 
