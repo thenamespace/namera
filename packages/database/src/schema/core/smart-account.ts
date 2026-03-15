@@ -26,6 +26,7 @@ export const smartAccount = pgTable.withRLS(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name"),
     entryPointVersion: text("entrypoint_version")
       .notNull()
       .$type<EntrypointVersion>(),
@@ -38,10 +39,7 @@ export const smartAccount = pgTable.withRLS(
   },
   (table) => [
     index("smart_account_userId_idx").on(table.userId),
-    uniqueIndex("owner_identifier_index_uidx").on([
-      table.ownerIdentifier,
-      table.ownerType,
-    ]),
+    uniqueIndex("smart_account_address_uidx").on(table.address),
     pgPolicy("smart_account_user_select", {
       as: "permissive",
       to: userRole,
@@ -54,12 +52,6 @@ export const smartAccount = pgTable.withRLS(
       for: "update",
       using: sql`${table.userId} = auth_user_id()`,
       withCheck: sql`${table.userId} = auth_user_id()`,
-    }),
-    pgPolicy("smart_account_user_delete", {
-      as: "permissive",
-      to: userRole,
-      for: "delete",
-      using: sql`${table.userId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_admin_access", {
       as: "permissive",

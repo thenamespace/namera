@@ -11,6 +11,7 @@ import {
 export const SmartAccount = Schema.Struct({
   id: Schema.String,
   userId: UserId,
+  name: Schema.optional(Schema.String),
   entryPointVersion: EntrypointVersion,
   kernelVersion: KernelVersion,
   index: Schema.Number.pipe(Schema.greaterThanOrEqualTo(0)),
