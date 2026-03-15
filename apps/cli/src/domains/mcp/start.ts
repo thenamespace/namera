@@ -1,7 +1,8 @@
 import { Effect, type Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
-import { SessionKeyManager } from "@/layers";
+import { SessionKeyClient, SessionKeyManager } from "@/layers";
+import { startHttpServer } from "@/mcp";
 
 export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
   Effect.gen(function* () {
@@ -17,6 +18,9 @@ export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
     });
 
     yield* Effect.log(client.account.address);
+    yield* startHttpServer(8080).pipe(
+      Effect.provideService(SessionKeyClient, client),
+    );
   });
 
 const sessionKey = Flag.string("session-key").pipe(

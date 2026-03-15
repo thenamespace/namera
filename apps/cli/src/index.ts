@@ -21,13 +21,6 @@ const cli = Command.run(command, {
   version: "v0.0.1",
 });
 
-const main = Effect.gen(function* () {
-  const configManager = yield* ConfigManager;
-  yield* configManager.ensureConfigDirExists();
-
-  yield* cli;
-});
-
 const Layers = SessionKeyManagerLive.pipe(
   Layer.provideMerge(KeystoreManagerLive),
   Layer.provideMerge(PromptManagerLive),
@@ -37,4 +30,11 @@ const Layers = SessionKeyManagerLive.pipe(
   Layer.provideMerge(NodeServices.layer),
 );
 
-main.pipe(Effect.provide(Layers), NodeRuntime.runMain);
+const main = Effect.gen(function* () {
+  const configManager = yield* ConfigManager;
+  yield* configManager.ensureConfigDirExists();
+
+  yield* cli;
+}).pipe(Effect.provide(Layers));
+
+main.pipe(NodeRuntime.runMain);
