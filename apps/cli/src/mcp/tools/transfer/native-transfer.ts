@@ -1,12 +1,11 @@
-import { createSessionKeyClient } from "@namera-ai/core";
 import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
-import { type Address, createPublicClient, http, parseUnits } from "viem";
-import { sepolia } from "viem/chains";
+import { type Address, parseUnits } from "viem";
 
 import { CurrentMcpContext } from "@/layers";
-import { InsufficientPermissions } from "@/mcp/common";
+import { InsufficientPermissions, SupportedChain } from "@/mcp/common";
 import { pickSessionKey } from "@/mcp/helpers";
+import { createKernelClient } from "@/mcp/helpers/session";
 
 export const NativeTransferToolParams = Schema.Struct({
   address: Schema.String.annotate({
@@ -14,6 +13,9 @@ export const NativeTransferToolParams = Schema.Struct({
   }),
   amount: Schema.String.annotate({
     description: "The amount of native tokens to transfer",
+  }),
+  chain: SupportedChain.annotate({
+    description: "The chain to use for the transfer.",
   }),
   unit: Schema.Literals(["wei", "gwei", "ether"]).annotate({
     description: "The unit of the amount to transfer",
@@ -54,20 +56,7 @@ export const nativeTransferHandler = (params: NativeTransferToolParams) =>
 
     if (sessionKey === undefined) return yield* new InsufficientPermissions();
 
-    const publicClient = createPublicClient({
-      chain: sepolia,
-      transport: http(),
-    });
-
-    const client = yield* Effect.promise(() =>
-      createSessionKeyClient({
-        bundlerTransport: http(),
-        chain: sepolia,
-        client: publicClient,
-        serializedAccount: sessionKey.serializedAccount,
-        sessionKeySigner: sessionKey.signer,
-      }),
-    );
+    const client = yield* createKernelClient(sessionKey, params.chain);
 
     const tx = yield* Effect.promise(() =>
       client.sendTransaction({

@@ -1,4 +1,4 @@
-import { Effect, type Option } from "effect";
+import { ConfigProvider, Effect, type Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import {
@@ -8,6 +8,7 @@ import {
   SessionKeyManager,
 } from "@/layers";
 import { startHttpServer } from "@/mcp";
+import { McpConfigLive } from "@/mcp/config";
 
 export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
   Effect.gen(function* () {
@@ -46,6 +47,11 @@ export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
 
     yield* startHttpServer(8080).pipe(
       Effect.provideService(CurrentMcpContext, currentContext),
+      Effect.provide(McpConfigLive),
+      Effect.provideService(
+        ConfigProvider.ConfigProvider,
+        ConfigProvider.fromEnv(),
+      ),
     );
   });
 
