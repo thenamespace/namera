@@ -1,8 +1,8 @@
 import { Layer } from "effect";
 import { McpServer } from "effect/unstable/ai";
 
-import { BaseTools, BaseToolsHandlers } from "./tools";
+import { AccountTools, AccountToolsHandlers } from "./tools/account";
 
-export const McpLive = McpServer.toolkit(BaseTools).pipe(
-  Layer.provideMerge(BaseToolsHandlers),
+export const McpLive = McpServer.toolkit(AccountTools).pipe(
+  Layer.provideMerge(AccountToolsHandlers),
 );
