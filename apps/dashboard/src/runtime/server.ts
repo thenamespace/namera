@@ -33,7 +33,6 @@ export const CustomHttpClientLive = Layer.effect(
         const isServer = typeof window === "undefined";
 
         if (isServer) {
-          console.log("Sending from server...");
           const token = getCookie("auth-token");
           if (token) {
             req = HttpClientRequest.setHeader(
@@ -42,8 +41,6 @@ export const CustomHttpClientLive = Layer.effect(
               `auth-token=${token}`,
             );
           }
-        } else {
-          console.log("Sending request from client...");
         }
 
         return req;
