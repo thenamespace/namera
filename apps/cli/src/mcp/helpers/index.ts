@@ -63,8 +63,19 @@ export const pickSessionKey = (params: PickSessionKeyParams) =>
       const data = params.operation.data;
       // For Transaction we have two cases:
 
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: safe
       const key = sessionKeys.filter((sk) => {
         const policies = sk.serializedPlugin.policies;
+
+        const timestampPolicies = policies.filter(
+          (p) => p.type === "timestamp",
+        );
+
+        for (const tPolicy of timestampPolicies) {
+          const now = new Date();
+          if (tPolicy.data.validAfter < now) return false;
+          if (tPolicy.data.validUntil > now) return false;
+        }
 
         // 1. Filter out keys which have a call policy
         const callPolicies = policies.filter((p) => p.type === "call");

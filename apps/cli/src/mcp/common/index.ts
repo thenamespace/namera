@@ -8,7 +8,7 @@ export class InsufficientPermissions extends Schema.TaggedErrorClass<Insufficien
   {},
 ) {}
 
-export const SupportedChain = Schema.Literals(["sepolia", "base-sepolia"]);
+export const SupportedChain = Schema.Literals(["sepolia"]);
 export type SupportedChain = typeof SupportedChain.Type;
 
 export const getChain = (chain: SupportedChain): Chain => {

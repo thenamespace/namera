@@ -1,6 +1,8 @@
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
+import { ConfigProvider, Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
+
+import "dotenv/config";
 
 import { subCommands } from "./domains";
 import {
@@ -35,6 +37,12 @@ const main = Effect.gen(function* () {
   yield* configManager.ensureConfigDirExists();
 
   yield* cli;
-}).pipe(Effect.provide(Layers));
+}).pipe(
+  Effect.provide(Layers),
+  Effect.provideService(
+    ConfigProvider.ConfigProvider,
+    ConfigProvider.fromEnv(),
+  ),
+);
 
 main.pipe(NodeRuntime.runMain);
