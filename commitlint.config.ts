@@ -6,12 +6,18 @@ export default {
       2,
       "always",
       [
-        // Dependency-related changes
-        "docs",
-        // Websites-related changes
+        "cli",
         "dashboard",
-        // UI related changes
+        "docs",
+        "mcp",
+        "server",
+        "api",
+        "auth",
+        "database",
+        "schema",
+        "telemetry",
         "ui",
+        "utils",
       ],
     ],
     "type-enum": [

@@ -2,6 +2,7 @@ import type {
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
+  SmartAccountId,
   SmartAccountOwnerType,
   UserId,
 } from "@namera-ai/schema";
@@ -21,7 +22,10 @@ import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 export const smartAccount = pgTable.withRLS(
   "smart_account",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(generateUniqueId)
+      .$type<SmartAccountId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
@@ -46,12 +50,25 @@ export const smartAccount = pgTable.withRLS(
       for: "select",
       using: sql`${table.userId} = auth_user_id()`,
     }),
+    pgPolicy("smart_account_user_insert", {
+      as: "permissive",
+      to: userRole,
+      for: "insert",
+      using: sql`${table.userId} = auth_user_id()`,
+      withCheck: sql`${table.userId} = auth_user_id()`,
+    }),
     pgPolicy("smart_account_user_update", {
       as: "permissive",
       to: userRole,
       for: "update",
       using: sql`${table.userId} = auth_user_id()`,
       withCheck: sql`${table.userId} = auth_user_id()`,
+    }),
+    pgPolicy("smart_account_user_delete", {
+      as: "permissive",
+      to: userRole,
+      for: "delete",
+      using: sql`${table.userId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_admin_access", {
       as: "permissive",

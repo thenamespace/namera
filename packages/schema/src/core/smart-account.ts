@@ -1,15 +1,18 @@
 import { Schema } from "effect";
 
 import {
+  createInsertSchema,
+  createUpdateSchema,
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
+  SmartAccountId,
   SmartAccountOwnerType,
   UserId,
-} from "../../common";
+} from "../common";
 
 export const SmartAccount = Schema.Struct({
-  id: Schema.String,
+  id: SmartAccountId,
   userId: UserId,
   name: Schema.optional(Schema.String),
   entryPointVersion: EntrypointVersion,
@@ -22,4 +25,20 @@ export const SmartAccount = Schema.Struct({
   updatedAt: Schema.Date,
 });
 
+export const SmartAccountUpdate = createUpdateSchema(SmartAccount);
+export const SmartAccountInsert = createInsertSchema(
+  SmartAccount,
+  "userId",
+  "name",
+  "address",
+  "entryPointVersion",
+  "kernelVersion",
+  "index",
+  "ownerType",
+  "ownerIdentifier",
+  "address",
+);
+
 export type SmartAccount = typeof SmartAccount.Type;
+export type SmartAccountUpdate = typeof SmartAccountUpdate.Type;
+export type SmartAccountInsert = typeof SmartAccountInsert.Type;

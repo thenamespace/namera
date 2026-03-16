@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 
-import { UserId } from "../common";
-import { createInsertSchema, createUpdateSchema } from "./common";
+import { createInsertSchema, createUpdateSchema, UserId } from "../common";
 
 export const Session = Schema.Struct({
   id: Schema.String,
