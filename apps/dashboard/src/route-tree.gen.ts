@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./app/__root";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
+import { Route as AuthIndexRouteImport } from "./app/auth/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
 import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/security/index";
@@ -33,6 +34,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => DashboardRouteRoute,
+} as any);
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: "/auth/",
+  path: "/auth/",
+  getParentRoute: () => rootRouteImport,
 } as any);
 const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
   id: "/settings/",
@@ -70,6 +76,7 @@ const DashboardActivityIndexRoute = DashboardActivityIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/auth": typeof AuthIndexRoute;
   "/dashboard": typeof DashboardIndexRoute;
   "/dashboard/activity": typeof DashboardActivityIndexRoute;
   "/dashboard/assets": typeof DashboardAssetsIndexRoute;
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/dashboard/activity/": typeof DashboardActivityIndexRoute;
   "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/auth/"
     | "/dashboard/"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/auth"
     | "/dashboard"
     | "/dashboard/activity"
     | "/dashboard/assets"
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/auth/"
     | "/dashboard/"
     | "/dashboard/activity/"
     | "/dashboard/assets/"
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  AuthIndexRoute: typeof AuthIndexRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -162,6 +175,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/";
       preLoaderRoute: typeof DashboardIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
+    };
+    "/auth/": {
+      id: "/auth/";
+      path: "/auth";
+      fullPath: "/auth/";
+      preLoaderRoute: typeof AuthIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     "/dashboard/settings/": {
       id: "/dashboard/settings/";
@@ -235,6 +255,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  AuthIndexRoute: AuthIndexRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
