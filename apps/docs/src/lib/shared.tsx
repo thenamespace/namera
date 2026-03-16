@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { NameraIcon } from "@namera-ai/ui/icons";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export const githubDetails = {
@@ -12,8 +13,9 @@ export const baseOptions = (): BaseLayoutProps => {
     githubUrl: `https://github.com/${githubDetails.org}}/${githubDetails.repo}`,
     nav: {
       title: (
-        <Link className="text-lg" to="/">
-          Namera
+        <Link className="text-lg flex flex-row gap-2 items-center px-1" to="/">
+          <NameraIcon className="size-5 fill-primary" />
+          <div className="text-secondary-foreground">Namera</div>
         </Link>
       ),
       url: "/dashboard",

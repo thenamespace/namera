@@ -20,18 +20,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@namera-ai/ui/components/ui/sidebar";
-import {
-  CaretUpDownIcon,
-  FinnTheHumanIcon,
-  PlusIcon,
-} from "@phosphor-icons/react/ssr";
+import { NameraIcon } from "@namera-ai/ui/icons";
+import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 
 const accounts: {
   name: string;
   logo: react.ElementType;
 }[] = [
   {
-    logo: FinnTheHumanIcon,
+    logo: NameraIcon,
     name: "EnvoyOS",
   },
 ];
@@ -57,7 +54,7 @@ export function AccountSwitcher() {
             }
           >
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <activeAccount.logo className="size-5" />
+              <activeAccount.logo className="size-5 fill-white" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeAccount.name}</span>
@@ -81,7 +78,7 @@ export function AccountSwitcher() {
                   onClick={() => setActiveAccount(account)}
                 >
                   <div className="flex size-6 items-center justify-center rounded-md border-border-light border">
-                    <account.logo className="size-3.5 shrink-0" />
+                    <account.logo className="size-3.5 shrink-0 fill-white" />
                   </div>
                   {account.name}
                   <DropdownMenuShortcut>

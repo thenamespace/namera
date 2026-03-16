@@ -1,9 +1,6 @@
 import { Schema } from "effect";
 
-export const EthereumAddress = Schema.TemplateLiteral(
-  "0x",
-  Schema.String.pipe(Schema.pattern(/^0x[0-9a-fA-F]{40}$/)),
-);
+export const EthereumAddress = Schema.TemplateLiteral("0x", Schema.String);
 
 export type EthereumAddress = typeof EthereumAddress.Type;
 

@@ -1,12 +1,12 @@
 import { Schema } from "effect";
 
-import { UserId } from "../common";
 import {
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
   SmartAccountOwnerType,
-} from "../common/aa";
+  UserId,
+} from "../../common";
 
 export const SmartAccount = Schema.Struct({
   id: Schema.String,
