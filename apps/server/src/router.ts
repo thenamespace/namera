@@ -1,4 +1,9 @@
-import { HttpApiBuilder, HttpMiddleware, HttpServer } from "@effect/platform";
+import {
+  FetchHttpClient,
+  HttpApiBuilder,
+  HttpMiddleware,
+  HttpServer,
+} from "@effect/platform";
 import { BunHttpServer } from "@effect/platform-bun";
 import { api } from "@namera-ai/api";
 import { AuthConfigLive, AuthLive } from "@namera-ai/auth";
@@ -16,10 +21,12 @@ import {
   scalarMiddleware,
 } from "./middlewares";
 import { AuthGroupLive } from "./routes/auth";
+import { RpcGroupLive } from "./routes/rpc";
 
 const RepoApiLive = HttpApiBuilder.api(api).pipe(
   Layer.provide(HealthGroupLive),
   Layer.provide(AuthGroupLive),
+  Layer.provide(RpcGroupLive),
 );
 
 const TracingMiddleware = HttpMiddleware.withTracerDisabledWhen((req) => {
@@ -50,6 +57,7 @@ export const HttpLive = HttpApiBuilder.serve(HttpMiddleware.logger).pipe(
   Layer.provide(AuthRepoLive),
   Layer.provide(AuthConfigLive),
   Layer.provide(EnvLive),
+  Layer.provide(FetchHttpClient.layer),
   // Layer.provide(OtelLive),
   TracingMiddleware,
   // Set up the Node.js HTTP server
