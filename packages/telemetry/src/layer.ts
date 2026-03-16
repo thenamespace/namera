@@ -51,7 +51,7 @@ export const OtelLive = Layer.unwrapEffect(
           exportIntervalMillis: 5000, // Export metrics every 5 seconds
         }),
         resource: {
-          serviceName: "namera",
+          serviceName: "namera-backend",
         },
         spanProcessor: [
           new BatchSpanProcessor(traceExporter),

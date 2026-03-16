@@ -254,22 +254,24 @@ function SidebarTrigger({
 
   return (
     <Tooltip>
-      <TooltipTrigger>
-        <Button
-          className={cn(className)}
-          data-sidebar="trigger"
-          data-slot="sidebar-trigger"
-          onClick={(event) => {
-            onClick?.(event);
-            toggleSidebar();
-          }}
-          size="icon"
-          variant="ghost"
-          {...props}
-        >
-          <SidebarIcon />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
+      <TooltipTrigger
+        render={
+          <Button
+            className={cn(className)}
+            data-sidebar="trigger"
+            data-slot="sidebar-trigger"
+            onClick={(event) => {
+              onClick?.(event);
+              toggleSidebar();
+            }}
+            size="icon"
+            variant="ghost"
+            {...props}
+          />
+        }
+      >
+        <SidebarIcon />
+        <span className="sr-only">Toggle Sidebar</span>
       </TooltipTrigger>
       <TooltipContent>
         <div className="flex flex-row gap-1 items-center">

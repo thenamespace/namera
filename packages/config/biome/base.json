@@ -94,6 +94,7 @@
         "recommended": true
       },
       "correctness": {
+        "noChildrenProp": "off",
         "noNestedComponentDefinitions": "error",
         "noReactPropAssignments": "error",
         "recommended": true,

@@ -1,4 +1,8 @@
-import { HttpApiBuilder, HttpApiScalar } from "@effect/platform";
+import {
+  HttpApiBuilder,
+  HttpApiScalar,
+  HttpMiddleware,
+} from "@effect/platform";
 import { Layer } from "effect";
 
 import { authorizationMiddleware } from "./auth";
@@ -15,6 +19,7 @@ const corsMiddleware = HttpApiBuilder.middlewareCors({
   allowedOrigins: ["http://localhost:3000"],
   credentials: true,
 });
+
 export const scalarMiddleware = HttpApiScalar.layer({
   path: "/docs",
 });

@@ -1,8 +1,9 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
 
 import { Sidebar } from "@/components/sidebar";
+import { getCurrentUser } from "@/server/actions";
 
 const DashboardLayout = () => {
   return (
@@ -18,5 +19,13 @@ const DashboardLayout = () => {
 };
 
 export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async () => {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw redirect({ to: "/auth" });
+    }
+
+    return currentUser;
+  },
   component: DashboardLayout,
 });

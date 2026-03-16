@@ -50,10 +50,10 @@ export const OtelWebLive = Layer.unwrapEffect(
         logRecordProcessor: new BatchLogRecordProcessor(logExporter),
         metricReader: new PeriodicExportingMetricReader({
           exporter: metricExporter,
-          exportIntervalMillis: 5000, // Export metrics every 5 seconds
+          exportIntervalMillis: 5000,
         }),
         resource: {
-          serviceName: "namera",
+          serviceName: "namera-frontend",
         },
         spanProcessor: [
           new BatchSpanProcessor(traceExporter),

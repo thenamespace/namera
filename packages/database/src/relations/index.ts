@@ -49,5 +49,17 @@ export const relations = defineRelations(
         to: r.sessionKey.smartAccountId,
       }),
     },
+    sessionKey: {
+      // one session key can have one user
+      user: r.one.user({
+        from: r.sessionKey.userId,
+        to: r.user.id,
+      }),
+      // one session key can have one smart account
+      smartAccount: r.one.smartAccount({
+        from: r.sessionKey.smartAccountId,
+        to: r.smartAccount.id,
+      }),
+    },
   }),
 );

@@ -1,6 +1,6 @@
 "use client";
 
-import * as react from "react";
+import { type ElementType, useState } from "react";
 
 import { formatForDisplay } from "@tanstack/react-hotkeys";
 
@@ -23,23 +23,16 @@ import {
 import { NameraIcon } from "@namera-ai/ui/icons";
 import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 
-const accounts: {
+type Account = {
   name: string;
-  logo: react.ElementType;
-}[] = [
-  {
-    logo: NameraIcon,
-    name: "EnvoyOS",
-  },
-];
+  logo: ElementType;
+};
+
+const accounts: Account[] = [];
 
 export function AccountSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeAccount, setActiveAccount] = react.useState(accounts[0]);
-
-  if (!activeAccount) {
-    return null;
-  }
+  const [activeAccount, setActiveAccount] = useState<Account | null>(null);
 
   return (
     <SidebarMenu>
@@ -54,10 +47,16 @@ export function AccountSwitcher() {
             }
           >
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <activeAccount.logo className="size-5 fill-white" />
+              {activeAccount ? (
+                <activeAccount.logo className="size-5 fill-white" />
+              ) : (
+                <NameraIcon className="size-5 fill-white" />
+              )}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{activeAccount.name}</span>
+              <span className="truncate font-medium">
+                {activeAccount ? activeAccount.name : "Namera"}
+              </span>
             </div>
             <CaretUpDownIcon className="ml-auto" />
           </DropdownMenuTrigger>

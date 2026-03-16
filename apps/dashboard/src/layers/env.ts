@@ -2,6 +2,8 @@ import { Config, ConfigProvider, Context, Effect, Layer } from "effect";
 
 export const EnvConfig = Config.all({
   backendUrl: Config.url("VITE_BACKEND_URL"),
+  baseUrl: Config.url("VITE_BASE_URL"),
+  otelUrl: Config.url("VITE_OTEL_BASE_URL"),
 });
 
 export type EnvShape = Config.Config.Success<typeof EnvConfig>;

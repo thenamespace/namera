@@ -15,7 +15,7 @@ export const authGroup = HttpApiGroup.make("auth")
     HttpApiEndpoint.post("signInMagicLink", "/sign-in/magic-link")
       .setPayload(SigInMagicLinkBody)
       .addError(MagicLinkError, { status: 400 })
-      .addSuccess(Schema.Any, { status: 200 }),
+      .addSuccess(Schema.Void, { status: 200 }),
   )
   .add(
     HttpApiEndpoint.get("magicLinkVerify", "/magic-link/verify")

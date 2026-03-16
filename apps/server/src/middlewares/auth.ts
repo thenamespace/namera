@@ -4,12 +4,12 @@ import { Effect, Layer, Redacted } from "effect";
 
 export const authorizationMiddleware = Layer.effect(
   Authorization,
-  Effect.gen(function* () {
+  Effect.fnUntraced(function* () {
     const db = yield* AdminDatabase;
 
     return {
-      authToken: (token) =>
-        Effect.gen(function* () {
+      authToken: (token: Redacted.Redacted<string>) => {
+        const fn = Effect.fnUntraced(function* () {
           const sessionDetails = yield* db.query.session
             .findFirst({
               where: {
@@ -27,7 +27,10 @@ export const authorizationMiddleware = Layer.effect(
 
           const { user, ...session } = sessionDetails;
           return { session, user };
-        }),
+        })();
+
+        return fn;
+      },
     };
-  }),
+  })(),
 );

@@ -60,7 +60,6 @@ export const sessionKey = pgTable.withRLS(
       as: "permissive",
       to: userRole,
       for: "insert",
-      using: sql`${table.userId} = auth_user_id()`,
       withCheck: sql`${table.userId} = auth_user_id()`,
     }),
     pgPolicy("session_key_user_delete", {

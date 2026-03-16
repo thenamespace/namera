@@ -6,6 +6,7 @@
   "dependencies": {
     "@effect/platform": "^0.94.5",
     "@effect/platform-bun": "^0.87.1",
+    "@effect/sql": "^0.49.0",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/auth": "workspace:*",
     "@namera-ai/database": "workspace:*",

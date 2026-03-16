@@ -54,7 +54,6 @@ export const smartAccount = pgTable.withRLS(
       as: "permissive",
       to: userRole,
       for: "insert",
-      using: sql`${table.userId} = auth_user_id()`,
       withCheck: sql`${table.userId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_user_update", {

@@ -43,6 +43,7 @@ export const AgentGroup = () => {
       <Collapsible className="flex w-full flex-col gap-1" defaultOpen={true}>
         <CollapsibleTrigger
           className="group"
+          nativeButton={false}
           render={
             <SidebarGroupLabel className="h-5 select-none cursor-pointer flex flex-row gap-1.5 items-center" />
           }

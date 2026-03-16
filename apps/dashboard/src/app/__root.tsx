@@ -13,11 +13,11 @@ import appCss from "@/styles/globals.css?url";
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning={true}>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning={true}>
         <div className="root">{children}</div>
         <Scripts />
       </body>

@@ -42,11 +42,10 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
       .pipe(Effect.orDie);
   });
 
-const currentUserHandler = () =>
-  Effect.gen(function* () {
-    const res = yield* AuthenticatedUser;
-    return res.user;
-  });
+const currentUserHandler = Effect.fnUntraced(function* () {
+  const res = yield* AuthenticatedUser;
+  return res.user;
+});
 
 const listSessionsHandler = () =>
   Effect.gen(function* () {
@@ -111,7 +110,7 @@ export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
     .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
     .handle("magicLinkVerify", ({ payload }) => magicLinkVerifyHandler(payload))
-    .handle("currentUser", () => currentUserHandler())
+    .handle("currentUser", currentUserHandler)
     .handle("listSessions", () => listSessionsHandler())
     .handle("logout", () => logoutHandler())
     .handle("revokeOtherSessions", () => revokeOtherSessionsHandler()),
