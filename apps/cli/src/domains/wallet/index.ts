@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
 import { createWalletCommand } from "./create";
+import { decryptWalletCommand } from "./decrypt";
 import { listWalletsCommand } from "./list";
 
 export const walletCommands = Command.make(
@@ -11,5 +12,9 @@ export const walletCommands = Command.make(
 ).pipe(
   Command.withDescription("Wallet management utilities."),
   Command.withAlias("w"),
-  Command.withSubcommands([createWalletCommand, listWalletsCommand]),
+  Command.withSubcommands([
+    createWalletCommand,
+    listWalletsCommand,
+    decryptWalletCommand,
+  ]),
 );

@@ -12,7 +12,7 @@ import {
 import type { QuitError } from "effect/Terminal";
 import { Prompt } from "effect/unstable/cli";
 import type { Environment, SelectChoice } from "effect/unstable/cli/Prompt";
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 import { type LocalAccount, privateKeyToAccount } from "viem/accounts";
 
 import type { IdentifierOrAlias } from "@/types";
@@ -55,6 +55,14 @@ export type KeystoreManagerShape = {
     alias: Option.Option<string>;
     message: string;
   }) => Effect.Effect<Keystore, KeystoreError | QuitError, Environment>;
+  decryptKeystore: (keystore: Keystore) => Effect.Effect<
+    {
+      address: Address;
+      privateKey: Hex;
+    },
+    KeystoreError | QuitError,
+    Environment
+  >;
 };
 
 export const KeystoreManager =
@@ -181,6 +189,32 @@ export const KeystoreManagerLive = Layer.effect(
         return res;
       });
 
+    const decryptKeystore = (keystore: Keystore) =>
+      Effect.gen(function* () {
+        const password = yield* promptManager.selectPassword({
+          message: "Enter password to unlock wallet: ",
+          validate: (v) =>
+            Effect.gen(function* () {
+              yield* Effect.tryPromise({
+                catch: () => "Invalid Password",
+                try: () => Wallet.fromV3(keystore.keystore, v),
+              });
+
+              return v;
+            }),
+        });
+
+        const res = yield* Effect.tryPromise({
+          catch: () => new KeystoreError({ code: "InvalidPassword" }),
+          try: () => Wallet.fromV3(keystore.keystore, Redacted.value(password)),
+        });
+
+        return {
+          address: res.getAddressString(),
+          privateKey: res.getPrivateKeyString(),
+        };
+      });
+
     return KeystoreManager.of({
       createKeystore: (params) =>
         Effect.gen(function* () {
@@ -200,6 +234,7 @@ export const KeystoreManagerLive = Layer.effect(
             })
             .pipe(Effect.orDie);
         }),
+      decryptKeystore,
       getKeystore,
       getKeystoreSigner: (params) =>
         Effect.gen(function* () {

@@ -59,9 +59,7 @@ export const createWalletCommand = Command.make(
   ({ alias }) => createWalletHandler(alias),
 ).pipe(
   Command.withAlias("c"),
-  Command.withDescription(
-    "Creates a random keypair and stores it to keystore.",
-  ),
+  Command.withDescription("Creates a random keypair and stores it to keystore"),
   Command.withExamples([
     {
       command: "namera wallet create -a my-wallet",
