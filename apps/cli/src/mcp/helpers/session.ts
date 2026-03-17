@@ -1,4 +1,4 @@
-import { createSessionKeyClient } from "@namera-ai/core";
+import { createEcdsaSessionKeyClient } from "@namera-ai/core/session-key";
 import { Effect, Redacted } from "effect";
 import { createPublicClient, http } from "viem";
 import { createPaymasterClient } from "viem/account-abstraction";
@@ -9,6 +9,7 @@ import { getChain, type SupportedChain } from "../common/index";
 import { McpConfig } from "../config";
 
 export const createKernelClient = (
+  smartAccount: CurrentMcpContextShape["account"],
   sessionKey: CurrentMcpContextShape["sessionKeys"][number],
   chain: SupportedChain,
 ) =>
@@ -33,14 +34,16 @@ export const createKernelClient = (
       : undefined;
 
     const client = yield* Effect.promise(() =>
-      createSessionKeyClient({
+      createEcdsaSessionKeyClient({
         bundlerTransport: http(
           bundlerUrl ? Redacted.value(bundlerUrl) : undefined,
         ),
         chain: c,
         client: publicClient,
+        entrypointVersion: smartAccount.data.entrypointVersion,
+        kernelVersion: smartAccount.data.kernelVersion,
         paymaster: paymasterClient,
-        serializedAccount: sessionKey.serializedAccount,
+        serializedAccount: sessionKey.data.serializedAccount,
         sessionKeySigner: sessionKey.signer,
       }),
     );

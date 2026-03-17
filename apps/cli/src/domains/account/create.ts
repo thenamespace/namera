@@ -1,4 +1,4 @@
-import { getKernelAddressFromECDSA } from "@namera-ai/core";
+import { getKernelAddressFromECDSA } from "@namera-ai/core/account";
 import { Console, Effect, Option } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { createPublicClient, http } from "viem";
@@ -44,11 +44,11 @@ const createAccountHandler = (
 
     const smartAccountAddress = yield* Effect.promise(() => {
       return getKernelAddressFromECDSA({
-        client,
-        entrypointVersion: "0.7",
+        entryPointVersion: "0.7",
         eoaAddress: keystore.keystore.address,
         index: accountIndex,
         kernelVersion: "0.3.2",
+        publicClient: client,
       });
     });
 

@@ -1,10 +1,8 @@
 /** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: safe */
 
 import { Wallet } from "@ethereumjs/wallet";
-import {
-  type BaseKernelAccountClient,
-  createSessionKeyClient,
-} from "@namera-ai/core";
+import type { PermissionAccountParams } from "@namera-ai/core/policy";
+import { deserializePermissionAccountParams } from "@namera-ai/core/session-key";
 import {
   Data,
   Effect,
@@ -17,11 +15,9 @@ import {
 import type { QuitError } from "effect/Terminal";
 import { Prompt } from "effect/unstable/cli";
 import type { Environment, SelectChoice } from "effect/unstable/cli/Prompt";
-import { type Address, createPublicClient, type Hex, http } from "viem";
+import type { Address } from "viem";
 import { type LocalAccount, privateKeyToAccount } from "viem/accounts";
-import { sepolia } from "viem/chains";
 
-import type { PolicyDataType } from "@/domains/session-key/prompts/types";
 import type { IdentifierOrAlias } from "@/types";
 
 import { AliasManager } from "./alias";
@@ -42,17 +38,16 @@ export class SessionKeyError extends Data.TaggedError("SessionKeyError")<{
 export type LocalSessionKey = {
   encSessionPrivateKey: V3Keystore;
   serializedAccount: string;
-  serializedPlugin: {
-    permissionId?: Hex;
-    policies: PolicyDataType[];
-  };
   sessionKeyAddress: Address;
   smartAccountIdentifier: string;
 };
+
 export type LocalSessionKeyData = {
   alias: string | undefined;
   identifier: string;
-  data: LocalSessionKey;
+  data: LocalSessionKey & {
+    accountParams: PermissionAccountParams;
+  };
 };
 
 export type SessionKeyManagerShape = {
@@ -64,13 +59,6 @@ export type SessionKeyManagerShape = {
       message?: string;
     },
   ) => Effect.Effect<LocalAccount, SessionKeyError | QuitError, Environment>;
-  getSessionKeyClient: (
-    params: IdentifierOrAlias,
-  ) => Effect.Effect<
-    BaseKernelAccountClient,
-    SessionKeyError | QuitError,
-    Environment
-  >;
   listSessionKeys: () => Effect.Effect<
     Result.Result<LocalSessionKeyData, SessionKeyError>[]
   >;
@@ -136,11 +124,16 @@ export const SessionKeyManagerLive = Layer.effect(
           type: "session-key",
         });
 
+        const accountParams = deserializePermissionAccountParams(data);
+
         return {
           alias,
-          data: parsed,
+          data: {
+            ...parsed,
+            accountParams,
+          },
           identifier: parsed.sessionKeyAddress,
-        };
+        } satisfies LocalSessionKeyData;
       });
 
     const listSessionKeys = () =>
@@ -166,9 +159,14 @@ export const SessionKeyManagerLive = Layer.effect(
 
               const alias = idToAlias.get(identifier);
 
+              const accountParams = deserializePermissionAccountParams(data);
+
               return {
                 alias,
-                data: parsedData,
+                data: {
+                  ...parsedData,
+                  accountParams,
+                },
                 identifier: parsedData.sessionKeyAddress,
               };
             }),
@@ -246,7 +244,11 @@ export const SessionKeyManagerLive = Layer.effect(
         return selected;
       });
 
-    const getSessionKeySigner = (params: IdentifierOrAlias) =>
+    const getSessionKeySigner = (
+      params: IdentifierOrAlias & {
+        message?: string;
+      },
+    ) =>
       Effect.gen(function* () {
         const key = yield* getSessionKey(params);
 
@@ -279,34 +281,8 @@ export const SessionKeyManagerLive = Layer.effect(
         return signer;
       });
 
-    const getSessionKeyClient = (params: IdentifierOrAlias) =>
-      Effect.gen(function* () {
-        const key = yield* getSessionKey(params);
-        const sessionKeySigner = yield* getSessionKeySigner(params);
-
-        const publicClient = createPublicClient({
-          chain: sepolia,
-          transport: http(),
-        });
-
-        const res = yield* Effect.tryPromise({
-          catch: () => new SessionKeyError({ code: "ClientCreationFailed" }),
-          try: () =>
-            createSessionKeyClient({
-              bundlerTransport: http(),
-              chain: sepolia,
-              client: publicClient,
-              serializedAccount: key.data.serializedAccount,
-              sessionKeySigner,
-            }),
-        });
-
-        return res;
-      });
-
     return SessionKeyManager.of({
       getSessionKey,
-      getSessionKeyClient,
       getSessionKeySigner,
       listSessionKeys,
       multiSelectSessionKeys,

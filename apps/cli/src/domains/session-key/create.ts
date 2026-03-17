@@ -1,5 +1,5 @@
 import { Wallet } from "@ethereumjs/wallet";
-import { createSessionKey } from "@namera-ai/core";
+import { createEcdsaSessionKey } from "@namera-ai/core/session-key";
 import { Console, Effect, type Option, Redacted } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 import { createPublicClient, hexToBytes, http } from "viem";
@@ -15,7 +15,7 @@ import {
   type V3Keystore,
 } from "@/layers";
 
-import { cliPoliciesToPolicies } from "./helpers";
+import { policyParamsToPolicies } from "./helpers";
 import { getPoliciesFromUser } from "./prompts";
 
 const createSessionKeyHandler = (
@@ -41,7 +41,7 @@ const createSessionKeyHandler = (
       type: "session-key",
     });
 
-    const cliPolicies = yield* getPoliciesFromUser();
+    const policyParams = yield* getPoliciesFromUser();
 
     const signer = yield* keystoreManager.getKeystoreSigner({
       identifier: account.data.ownerIdentifier,
@@ -53,12 +53,14 @@ const createSessionKeyHandler = (
       transport: http(),
     });
 
-    const policies = cliPoliciesToPolicies(cliPolicies);
+    const policies = policyParamsToPolicies(policyParams);
 
     const sessionKey = yield* Effect.promise(() =>
-      createSessionKey({
+      createEcdsaSessionKey({
         client: publicClient,
+        entrypointVersion: account.data.entrypointVersion,
         index: BigInt(account.data.index),
+        kernelVersion: account.data.kernelVersion,
         policies,
         signer,
       }),
@@ -89,10 +91,6 @@ const createSessionKeyHandler = (
     yield* sessionKeyManager.storeSessionKey(alias, {
       encSessionPrivateKey,
       serializedAccount: sessionKey.serializedAccount,
-      serializedPlugin: {
-        permissionId: sessionKey.serializedPlugin.permissionId,
-        policies: cliPolicies,
-      },
       sessionKeyAddress: sessionKey.sessionKeyAddress,
       smartAccountIdentifier: account.identifier,
     });

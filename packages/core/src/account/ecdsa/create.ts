@@ -1,7 +1,4 @@
-import {
-  getKernelAddressFromECDSA as getKernelAddressFromECDSACore,
-  signerToEcdsaValidator,
-} from "@zerodev/ecdsa-validator";
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import {
   createKernelAccount,
   createKernelAccountClient,
@@ -10,17 +7,22 @@ import {
 import { getEntryPoint } from "@zerodev/sdk/constants";
 import type { KERNEL_V3_VERSION_TYPE, Signer } from "@zerodev/sdk/types";
 import type {
-  Address,
   Chain,
   Client,
   EntryPointVersion,
-  PublicClient,
+  JsonRpcAccount,
+  LocalAccount,
   RpcSchema,
   Transport,
 } from "viem";
-import type { PaymasterClient, SmartAccount } from "viem/account-abstraction";
+import type {
+  GetPaymasterDataParameters,
+  GetPaymasterStubDataParameters,
+  PaymasterClient,
+  SmartAccount,
+} from "viem/account-abstraction";
 
-export type CreateAccountParams<
+export type CreateEcdsaAccountClientParams<
   TClientTransport extends Transport = Transport,
   TBundlerTransport extends Transport = Transport,
   TPaymasterTransport extends Transport = Transport,
@@ -28,7 +30,11 @@ export type CreateAccountParams<
   TRpcSchema extends RpcSchema | undefined = undefined,
 > = {
   signer: Signer;
-  client: PublicClient<TClientTransport, TChain>;
+  client: Client<
+    TClientTransport,
+    TChain,
+    JsonRpcAccount | LocalAccount | undefined
+  >;
   chain: TChain;
   bundlerTransport: TBundlerTransport;
   paymaster?: PaymasterClient<TPaymasterTransport, TRpcSchema>;
@@ -37,14 +43,14 @@ export type CreateAccountParams<
   entrypointVersion: EntryPointVersion;
 };
 
-export const createEcdsaAccount = async <
+export const createEcdsaAccountClient = async <
   TClientTransport extends Transport = Transport,
   TBundlerTransport extends Transport = Transport,
   TPaymasterTransport extends Transport = Transport,
   TChain extends Chain = Chain,
   TRpcSchema extends RpcSchema | undefined = undefined,
 >(
-  params: CreateAccountParams<
+  params: CreateEcdsaAccountClientParams<
     TClientTransport,
     TBundlerTransport,
     TPaymasterTransport,
@@ -65,7 +71,7 @@ export const createEcdsaAccount = async <
     client,
     chain,
     bundlerTransport,
-    paymaster,
+    paymaster: _paymaster,
     index,
     kernelVersion,
     entrypointVersion,
@@ -88,49 +94,25 @@ export const createEcdsaAccount = async <
     },
   });
 
+  const paymaster = _paymaster
+    ? {
+        getPaymasterData: (userOp: GetPaymasterDataParameters) => {
+          return _paymaster.getPaymasterData(userOp);
+        },
+        getPaymasterStubData: (userOp: GetPaymasterStubDataParameters) => {
+          return _paymaster.getPaymasterStubData(userOp);
+        },
+      }
+    : undefined;
+
   const kernelClient = createKernelAccountClient({
     account,
     bundlerTransport,
     chain,
     client,
-    paymaster: paymaster
-      ? {
-          getPaymasterData: (userOp) => {
-            return paymaster.getPaymasterData(userOp);
-          },
-          getPaymasterStubData: (userOp) => {
-            return paymaster.getPaymasterStubData(userOp);
-          },
-        }
-      : undefined,
+    name: "Namera Account Client",
+    paymaster,
   });
 
   return kernelClient;
 };
-
-export type GetKernelAddressParams<
-  TClientTransport extends Transport = Transport,
-  TChain extends Chain = Chain,
-> = {
-  client: PublicClient<TClientTransport, TChain>;
-  eoaAddress: Address;
-  index: bigint;
-  kernelVersion: KERNEL_V3_VERSION_TYPE;
-  entrypointVersion: EntryPointVersion;
-};
-
-export const getKernelAddressFromECDSA = async (
-  params: GetKernelAddressParams,
-): Promise<Address> => {
-  const { client, eoaAddress, index, kernelVersion, entrypointVersion } =
-    params;
-  return await getKernelAddressFromECDSACore({
-    entryPoint: getEntryPoint(entrypointVersion),
-    eoaAddress,
-    index,
-    kernelVersion,
-    publicClient: client,
-  });
-};
-
-export type { Signer } from "@zerodev/sdk/types";

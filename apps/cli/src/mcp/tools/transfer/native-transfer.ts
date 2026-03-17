@@ -4,8 +4,9 @@ import { type Address, parseUnits } from "viem";
 
 import { CurrentMcpContext } from "@/layers";
 import { InsufficientPermissions, SupportedChain } from "@/mcp/common";
-import { pickSessionKey } from "@/mcp/helpers";
 import { createKernelClient } from "@/mcp/helpers/session";
+
+import { getValidSessionKeys } from "../../helpers";
 
 export const NativeTransferToolParams = Schema.Struct({
   address: Schema.String.annotate({
@@ -35,6 +36,7 @@ export const NativeTransferTool = Tool.make("native_transfer", {
 
 export const nativeTransferHandler = (params: NativeTransferToolParams) =>
   Effect.gen(function* () {
+    const context = yield* CurrentMcpContext;
     const decimals = (() => {
       if (params.unit === "wei") return 1;
       if (params.unit === "gwei") return 9;
@@ -43,20 +45,27 @@ export const nativeTransferHandler = (params: NativeTransferToolParams) =>
 
     const value = parseUnits(params.amount, decimals);
 
-    const sessionKey = yield* pickSessionKey({
+    const validKeys = yield* getValidSessionKeys({
       operation: {
-        data: {
-          data: "0x",
-          target: params.address as Address,
-          value,
-        },
+        calls: [
+          {
+            data: "0x",
+            target: params.address as Address,
+            value,
+          },
+        ],
         intent: "transaction",
       },
     });
+    const sessionKey = validKeys[0];
 
     if (sessionKey === undefined) return yield* new InsufficientPermissions();
 
-    const client = yield* createKernelClient(sessionKey, params.chain);
+    const client = yield* createKernelClient(
+      context.account,
+      sessionKey,
+      params.chain,
+    );
 
     const tx = yield* Effect.promise(() =>
       client.sendTransaction({

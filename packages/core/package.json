@@ -12,17 +12,27 @@
   },
   "description": "",
   "devDependencies": {
-    "@effect/vitest": "^0.27.0",
     "@namera-ai/config": "workspace:*",
     "@types/node": "^25.3.5",
-    "tsdown": "^0.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "tsdown": "^0.21.4",
+    "typescript": "^5.9.3"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+    "./account": {
+      "import": "./dist/account.js",
+      "types": "./dist/account.d.ts"
+    },
+    "./policy": {
+      "import": "./dist/policy.js",
+      "types": "./dist/policy.d.ts"
+    },
+    "./session-key": {
+      "import": "./dist/session-key.js",
+      "types": "./dist/session-key.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
     }
   },
   "homepage": "https://github.com/thenamespace/namera#readme",

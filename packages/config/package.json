@@ -2,7 +2,7 @@
   "author": "Vedant Chainani <vednta@envoy1084.xyz>",
   "devDependencies": {
     "@biomejs/biome": "2.4.4",
-    "tsdown": "^0.20.3",
+    "tsdown": "^0.21.4",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
   },

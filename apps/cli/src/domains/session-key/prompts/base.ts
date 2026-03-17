@@ -1,9 +1,8 @@
+import type { Policy } from "@namera-ai/core/policy";
 import { Effect } from "effect";
 import { Prompt } from "effect/unstable/cli";
 
-import type { PolicyDataType } from "./types";
-
-export const policyChoicePrompt = (prevPolicies: PolicyDataType[]) =>
+export const policyChoicePrompt = (prevPolicies: Policy["policyParams"][]) =>
   Effect.gen(function* () {
     const hasSudoPolicy = prevPolicies.some((p) => p.type === "sudo");
     const hasTimestampPolicy = prevPolicies.some((p) => p.type === "timestamp");

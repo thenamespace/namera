@@ -1,7 +1,6 @@
+import type { TimestampPolicyParams } from "@namera-ai/core/policy";
 import { Effect } from "effect";
 import { Prompt } from "effect/unstable/cli";
-
-import type { TimestampPolicyData } from "./types";
 
 export const getTimestampPolicyParams = Effect.gen(function* () {
   const validAfter = yield* Prompt.date({
@@ -29,7 +28,8 @@ export const getTimestampPolicyParams = Effect.gen(function* () {
   });
 
   return {
-    data: { validAfter, validUntil },
     type: "timestamp",
-  } satisfies TimestampPolicyData;
+    validAfter: Math.floor(validAfter.getTime() / 1000),
+    validUntil: Math.floor(validUntil.getTime() / 1000),
+  } satisfies TimestampPolicyParams & { type: "timestamp" };
 });

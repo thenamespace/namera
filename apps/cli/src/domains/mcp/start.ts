@@ -36,7 +36,7 @@ export const startMcpHandler = (sessionKeyAlias: Option.Option<string>) =>
       });
 
       keys.push({
-        ...key.data,
+        ...key,
         signer,
       });
     }
