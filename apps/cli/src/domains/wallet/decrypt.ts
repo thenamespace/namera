@@ -33,11 +33,11 @@ export const decryptWalletCommand = Command.make(
   Command.withDescription("Decrypts a keystore to get the private key"),
   Command.withExamples([
     {
-      command: "namera wallet decrypt-keystore -a my-wallet",
+      command: "namera wallet decrypt -a my-wallet",
       description: "Decrypts the keystore with alias 'my-wallet'",
     },
     {
-      command: "namera wallet decrypt-keystore",
+      command: "namera wallet decrypt",
       description: "Decrypts the keystore with alias select prompt",
     },
   ]),
