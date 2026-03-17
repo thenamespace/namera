@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
 import { createAccountCommand } from "./create";
+import { accountInfoCommand } from "./info";
 import { listAccountsCommand } from "./list";
 
 export const accountCommands = Command.make(
@@ -11,5 +12,9 @@ export const accountCommands = Command.make(
 ).pipe(
   Command.withDescription("Smart Accounts management utilities."),
   Command.withAlias("a"),
-  Command.withSubcommands([createAccountCommand, listAccountsCommand]),
+  Command.withSubcommands([
+    createAccountCommand,
+    listAccountsCommand,
+    accountInfoCommand,
+  ]),
 );

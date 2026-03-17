@@ -9,7 +9,7 @@ export const walletInfoHandler = (existingAlias: Option.Option<string>) =>
 
     const keystore = yield* keystoreManager.selectKeystore({
       alias: existingAlias,
-      message: "Select wallet to decrypt:",
+      message: "Select wallet:",
     });
 
     yield* Console.log(`Address: ${keystore.keystore.address}`);
