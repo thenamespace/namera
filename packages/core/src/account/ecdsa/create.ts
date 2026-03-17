@@ -5,7 +5,7 @@ import {
   type KernelAccountClient,
 } from "@zerodev/sdk";
 import { getEntryPoint } from "@zerodev/sdk/constants";
-import type { KERNEL_V3_VERSION_TYPE, Signer } from "@zerodev/sdk/types";
+import type { GetKernelVersion, Signer } from "@zerodev/sdk/types";
 import type {
   Chain,
   Client,
@@ -28,6 +28,9 @@ export type CreateEcdsaAccountClientParams<
   TPaymasterTransport extends Transport = Transport,
   TChain extends Chain = Chain,
   TRpcSchema extends RpcSchema | undefined = undefined,
+  TEntrypointVersion extends EntryPointVersion = EntryPointVersion,
+  TKernelVersion extends
+    GetKernelVersion<TEntrypointVersion> = GetKernelVersion<TEntrypointVersion>,
 > = {
   signer: Signer;
   client: Client<
@@ -39,23 +42,27 @@ export type CreateEcdsaAccountClientParams<
   bundlerTransport: TBundlerTransport;
   paymaster?: PaymasterClient<TPaymasterTransport, TRpcSchema>;
   index?: bigint;
-  kernelVersion: KERNEL_V3_VERSION_TYPE;
-  entrypointVersion: EntryPointVersion;
+  entrypointVersion: TEntrypointVersion;
+  kernelVersion: TKernelVersion;
 };
 
 export const createEcdsaAccountClient = async <
-  TClientTransport extends Transport = Transport,
-  TBundlerTransport extends Transport = Transport,
-  TPaymasterTransport extends Transport = Transport,
-  TChain extends Chain = Chain,
-  TRpcSchema extends RpcSchema | undefined = undefined,
+  TClientTransport extends Transport,
+  TBundlerTransport extends Transport,
+  TPaymasterTransport extends Transport,
+  TChain extends Chain,
+  TRpcSchema extends RpcSchema | undefined,
+  TEntrypointVersion extends EntryPointVersion,
+  TKernelVersion extends GetKernelVersion<TEntrypointVersion>,
 >(
   params: CreateEcdsaAccountClientParams<
     TClientTransport,
     TBundlerTransport,
     TPaymasterTransport,
     TChain,
-    TRpcSchema
+    TRpcSchema,
+    TEntrypointVersion,
+    TKernelVersion
   >,
 ): Promise<
   KernelAccountClient<

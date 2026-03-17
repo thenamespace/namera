@@ -19,7 +19,7 @@ import type {
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-import type { EntryPointType, GetKernelVersion, Signer } from "@/types";
+import type { GetKernelVersion, Signer } from "@/types";
 
 export type CreateEcdsaSessionKeyParams<
   TClientTransport extends Transport = Transport,
@@ -62,8 +62,7 @@ export const createEcdsaSessionKey = async <
   const { signer, client, index, policies, kernelVersion, entrypointVersion } =
     params;
 
-  const entryPoint: EntryPointType<TEntrypointVersion> =
-    getEntryPoint(entrypointVersion);
+  const entryPoint = getEntryPoint(entrypointVersion);
 
   const ecdsaValidator = await signerToEcdsaValidator(client, {
     entryPoint,
@@ -89,15 +88,16 @@ export const createEcdsaSessionKey = async <
   });
 
   const sessionKeyAccount = await createKernelAccount(client, {
-    entryPoint: getEntryPoint("0.7"),
+    entryPoint,
     index,
-    kernelVersion: "0.3.1",
+    kernelVersion,
     plugins: {
       regular: permissionPlugin,
       sudo: ecdsaValidator,
     },
   });
 
+  // @ts-expect-error safe to ignore
   const serializedAccount = await serializePermissionAccount(sessionKeyAccount);
 
   return {

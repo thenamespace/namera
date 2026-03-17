@@ -124,7 +124,9 @@ export const SessionKeyManagerLive = Layer.effect(
           type: "session-key",
         });
 
-        const accountParams = deserializePermissionAccountParams(data);
+        const accountParams = deserializePermissionAccountParams(
+          parsed.serializedAccount,
+        );
 
         return {
           alias,
@@ -159,7 +161,9 @@ export const SessionKeyManagerLive = Layer.effect(
 
               const alias = idToAlias.get(identifier);
 
-              const accountParams = deserializePermissionAccountParams(data);
+              const accountParams = deserializePermissionAccountParams(
+                parsedData.serializedAccount,
+              );
 
               return {
                 alias,
