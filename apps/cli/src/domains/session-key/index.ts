@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
 import { createSessionKeyCommand } from "./create";
+// import { sessionKeyInfoCommand } from "./info";
 import { listSessionKeysCommand } from "./list";
 
 export const sessionKeyCommands = Command.make(
