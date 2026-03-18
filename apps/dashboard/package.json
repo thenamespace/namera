@@ -5,6 +5,7 @@
     "@metamask/sdk": "^0.34.0",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/schema": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@opentelemetry/exporter-logs-otlp-http": "^0.213.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.213.0",

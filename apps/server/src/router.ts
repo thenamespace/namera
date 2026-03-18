@@ -9,7 +9,8 @@ import { api } from "@namera-ai/api";
 import { AuthConfigLive, AuthLive } from "@namera-ai/auth";
 import { AdminDatabaseLive, DatabaseLive } from "@namera-ai/database";
 import { AuthRepoLive, SessionJanitorLive } from "@namera-ai/domain/auth";
-// import { OtelLive } from "@namera-ai/telemetry";
+import { SmartAccountRepoLive } from "@namera-ai/domain/smart-account";
+import { OtelLive } from "@namera-ai/telemetry/backend";
 import { Config, Layer } from "effect";
 
 import { HealthGroupLive } from "@/routes/health";
@@ -22,11 +23,13 @@ import {
 } from "./middlewares";
 import { AuthGroupLive } from "./routes/auth";
 import { RpcGroupLive } from "./routes/rpc";
+import { SmartAccountGroupLive } from "./routes/smart-account";
 
 const RepoApiLive = HttpApiBuilder.api(api).pipe(
   Layer.provide(HealthGroupLive),
   Layer.provide(AuthGroupLive),
   Layer.provide(RpcGroupLive),
+  Layer.provide(SmartAccountGroupLive),
 );
 
 const TracingMiddleware = HttpMiddleware.withTracerDisabledWhen((req) => {
@@ -35,6 +38,7 @@ const TracingMiddleware = HttpMiddleware.withTracerDisabledWhen((req) => {
   return (
     req.method === "OPTIONS" ||
     url.startsWith("/health") ||
+    url.startsWith("/rpc") ||
     url.includes("/auth/me")
   );
 });
@@ -56,9 +60,10 @@ export const HttpLive = HttpApiBuilder.serve(HttpMiddleware.logger).pipe(
   Layer.provide(AuthLive),
   Layer.provide(AuthRepoLive),
   Layer.provide(AuthConfigLive),
+  Layer.provide(SmartAccountRepoLive),
   Layer.provide(EnvLive),
   Layer.provide(FetchHttpClient.layer),
-  // Layer.provide(OtelLive),
+  Layer.provide(OtelLive),
   TracingMiddleware,
   // Set up the Node.js HTTP server
   Layer.provide(

@@ -3,7 +3,7 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { Effect } from "effect";
 import { http } from "viem";
 
-import { EnvClient } from "@/layers";
+import { ClientEnv } from "@/layers/env/client";
 import { clientRuntime } from "@/runtime/client";
 
 const chains = Object.values(supportedChains) as [
@@ -13,10 +13,10 @@ const chains = Object.values(supportedChains) as [
 
 const transports = clientRuntime.runSync(
   Effect.gen(function* () {
-    const env = yield* EnvClient;
+    const env = yield* ClientEnv;
     const transports = chains
       .map((c) => {
-        return { [c.id]: http(`${env.backendUrl}rpc/${c.id}`) };
+        return { [c.id]: http(`${env.backendUrl.toString()}rpc/${c.id}`) };
       })
       .reduce((acc, curr) => Object.assign(acc, curr), {});
 
@@ -26,7 +26,7 @@ const transports = clientRuntime.runSync(
 
 const projectId = clientRuntime.runSync(
   Effect.gen(function* () {
-    const env = yield* EnvClient;
+    const env = yield* ClientEnv;
     return env.reownProjectId;
   }),
 );

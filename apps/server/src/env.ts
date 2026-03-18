@@ -1,6 +1,9 @@
 import { AuthEnvConfig, type AuthEnvValues } from "@namera-ai/auth";
 import { DatabaseConfig, type DatabaseEnvValues } from "@namera-ai/database";
-import { OtelConfig, type OtelConfigEnvValues } from "@namera-ai/telemetry";
+import {
+  OtelConfig,
+  type OtelConfigEnvValues,
+} from "@namera-ai/telemetry/backend";
 import { Config, ConfigProvider, Context, Layer } from "effect";
 
 const ServerConfig = Config.all({

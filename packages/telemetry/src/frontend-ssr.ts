@@ -9,11 +9,17 @@ import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
-import { Effect, Layer, Redacted } from "effect";
+import { Config, Effect, Layer, Redacted } from "effect";
 
-import { OtelConfig } from "./config";
+export const OtelConfig = Config.all({
+  baseUrl: Config.url("OTEL_BASE_URL"),
+  dataset: Config.string("OTEL_DATASET").pipe(Config.option),
+  token: Config.redacted("OTEL_API_TOKEN").pipe(Config.option),
+});
 
-export const OtelLive = Layer.unwrapEffect(
+export type OtelConfigEnvValues = Config.Config.Success<typeof OtelConfig>;
+
+export const OtelServerLive = Layer.unwrapEffect(
   Effect.gen(function* () {
     const config = yield* OtelConfig;
 
@@ -29,17 +35,20 @@ export const OtelLive = Layer.unwrapEffect(
 
     const metricExporter = new OTLPMetricExporter({
       headers,
-      url: `${config.baseUrl}/v1/metrics`,
+      url: `${config.baseUrl.toString()}/v1/metrics`,
     });
+
+    const traceUrl = `${config.baseUrl.toString()}v1/traces`;
+    console.log("Trace URL", traceUrl);
 
     const traceExporter = new OTLPTraceExporter({
       headers,
-      url: `${config.baseUrl}/v1/traces`,
+      url: traceUrl,
     });
 
     const logExporter = new OTLPLogExporter({
       headers,
-      url: `${config.baseUrl}/v1/logs`,
+      url: `${config.baseUrl.toString()}/v1/logs`,
     });
 
     return NodeSdk.layer(() => {
@@ -51,7 +60,7 @@ export const OtelLive = Layer.unwrapEffect(
           exportIntervalMillis: 5000, // Export metrics every 5 seconds
         }),
         resource: {
-          serviceName: "namera-backend",
+          serviceName: "namera-frontend",
         },
         spanProcessor: [
           new BatchSpanProcessor(traceExporter),

@@ -1,4 +1,5 @@
 import { PgClient } from "@effect/sql-pg";
+import type { UserId } from "@namera-ai/schema";
 import * as pgDrizzle from "drizzle-orm/effect-postgres";
 import { Config, Context, Effect, Layer, Option } from "effect";
 import { types } from "pg";
@@ -98,4 +99,12 @@ export const transaction = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
     return yield* db.transaction((tx) =>
       effect.pipe(Effect.provideService(TransactionClient, tx)),
     );
+  });
+
+export const setCurrentUser = (userId: UserId) =>
+  Effect.gen(function* () {
+    const db = yield* TransactionOrDatabase;
+    yield* db
+      .execute(`SET LOCAL app.user_id = '${userId.toString()}'`)
+      .pipe(Effect.orDie);
   });

@@ -5,9 +5,11 @@ import {
   HttpClient,
   HttpClientRequest,
 } from "@effect/platform";
+import { OtelServerLive } from "@namera-ai/telemetry/frontend-ssr";
 import { Effect, Layer, ManagedRuntime } from "effect";
 
-import { ApiClientLive, EnvLive } from "@/layers";
+import { ApiClientLive } from "@/layers/api";
+import { ServerEnv, ServerEnvLive } from "@/layers/env/server";
 
 const CustomFetchLive = FetchHttpClient.layer.pipe(
   Layer.provide(
@@ -15,6 +17,13 @@ const CustomFetchLive = FetchHttpClient.layer.pipe(
       credentials: "include",
     }),
   ),
+);
+
+const ServerApiClient = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const env = yield* ServerEnv;
+    return ApiClientLive(env.backendUrl.toString());
+  }),
 );
 
 export const CustomHttpClientLive = Layer.effect(
@@ -49,10 +58,10 @@ export const CustomHttpClientLive = Layer.effect(
   }),
 );
 
-const Layers = ApiClientLive.pipe(
-  Layer.provideMerge(EnvLive),
+const Layers = ServerApiClient.pipe(
   Layer.provideMerge(CustomHttpClientLive),
   Layer.provideMerge(CustomFetchLive),
-  // Layer.provideMerge(OtelWebLive), // TODO: Add in future
+  Layer.provideMerge(OtelServerLive),
+  Layer.provideMerge(ServerEnvLive),
 );
 export const serverRuntime = ManagedRuntime.make(Layers);

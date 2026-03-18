@@ -4,7 +4,7 @@ import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
 
 import { NotFound } from "@/components/misc";
 import { Sidebar } from "@/components/sidebar";
-import { getCurrentUser } from "@/server/actions";
+import { getCurrentUser, listSmartAccounts } from "@/server/actions";
 
 const DashboardLayout = () => {
   return (
@@ -29,5 +29,9 @@ export const Route = createFileRoute("/dashboard")({
     return currentUser;
   },
   component: DashboardLayout,
+  loader: () => {
+    const accounts = listSmartAccounts();
+    return accounts;
+  },
   notFoundComponent: () => <NotFound />,
 });

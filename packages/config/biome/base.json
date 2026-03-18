@@ -98,7 +98,8 @@
         "noNestedComponentDefinitions": "error",
         "noReactPropAssignments": "error",
         "recommended": true,
-        "useSingleJsDocAsterisk": "error"
+        "useSingleJsDocAsterisk": "error",
+        "useYield": "off"
       },
       "performance": {
         "noAwaitInLoops": "error",

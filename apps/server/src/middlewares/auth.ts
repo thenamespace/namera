@@ -4,12 +4,12 @@ import { Effect, Layer, Redacted } from "effect";
 
 export const authorizationMiddleware = Layer.effect(
   Authorization,
-  Effect.fnUntraced(function* () {
+  Effect.gen(function* () {
     const db = yield* AdminDatabase;
 
     return {
-      authToken: (token: Redacted.Redacted<string>) => {
-        const fn = Effect.fnUntraced(function* () {
+      authToken: (token: Redacted.Redacted<string>) =>
+        Effect.gen(function* () {
           const sessionDetails = yield* db.query.session
             .findFirst({
               where: {
@@ -26,11 +26,10 @@ export const authorizationMiddleware = Layer.effect(
           }
 
           const { user, ...session } = sessionDetails;
-          return { session, user };
-        })();
 
-        return fn;
-      },
+          yield* Effect.annotateCurrentSpan("userId", user.id);
+          return { session, user };
+        }).pipe(Effect.withSpan("getCurrentUser")),
     };
-  })(),
+  }),
 );

@@ -3,7 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { SigInMagicLinkBody } from "@namera-ai/schema";
 import { Effect, Schema } from "effect";
 
-import { ApiClient, Env } from "@/layers";
+import { ApiClient } from "@/layers/api";
+import { ServerEnv } from "@/layers/env/server";
 import { serverRuntime } from "@/runtime/server";
 
 export const getCurrentUser = createServerFn({ method: "GET" }).handler(() =>
@@ -23,7 +24,7 @@ export const signInWithMagicLink = createServerFn({ method: "POST" })
     serverRuntime.runPromise(
       Effect.gen(function* () {
         const client = yield* ApiClient;
-        const env = yield* Env;
+        const env = yield* ServerEnv;
         const successCallback = new URL("/dashboard", env.baseUrl);
         successCallback.searchParams.set("success", "true");
 
