@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { SmartAccount } from "@/core";
+import { SmartAccount } from "../../core";
 
 export const CreateSmartAccountPayload = SmartAccount.pick(
   "name",

@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
 
+import { NotFound } from "@/components/misc";
 import { Sidebar } from "@/components/sidebar";
 import { getCurrentUser } from "@/server/actions";
 
@@ -28,4 +29,5 @@ export const Route = createFileRoute("/dashboard")({
     return currentUser;
   },
   component: DashboardLayout,
+  notFoundComponent: () => <NotFound />,
 });

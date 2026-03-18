@@ -12,4 +12,5 @@ const DashboardPage = () => {
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardPage,
+  errorComponent: () => <div>Some Error Occurred in dashboard</div>,
 });

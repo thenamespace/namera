@@ -4,10 +4,14 @@ import type { ReactNode } from "react";
 import {
   createRootRoute,
   HeadContent,
+  Link,
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
 
+import { Button } from "@namera-ai/ui/components/ui/button";
+
+import { NotFound } from "@/components/misc";
 import { ProviderTree } from "@/providers";
 import appCss from "@/styles/globals.css?url";
 
@@ -37,6 +41,7 @@ function RootComponent() {
 
 export const Route = createRootRoute({
   component: RootComponent,
+  errorComponent: () => <div>Some Error Occurred</div>,
   head: () => ({
     links: [{ href: appCss, rel: "stylesheet" }],
     meta: [
@@ -52,4 +57,13 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  notFoundComponent: () => (
+    <NotFound
+      extraContent={
+        <Button className="w-fit mx-auto my-2" render={<Link to="/" />}>
+          Go to Home
+        </Button>
+      }
+    />
+  ),
 });
