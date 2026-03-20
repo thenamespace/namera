@@ -30,7 +30,8 @@ export type Keystore = {
 export type DeepPaths<T> = {
   [K in keyof T & string]: T[K] extends Schema.Top
     ? K
-    : T[K] extends Record<string, any>
+    : // biome-ignore lint/suspicious/noExplicitAny: safe
+      T[K] extends Record<string, any>
       ? `${K}.${DeepPaths<T[K]>}`
       : never;
 }[keyof T & string];
