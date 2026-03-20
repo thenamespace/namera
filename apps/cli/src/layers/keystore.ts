@@ -15,22 +15,46 @@ import type { Keystore, V3Keystore } from "@/types";
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { PromptManager } from "./prompt";
 
+/**
+ * Effect service for keystore CRUD, selection, and decryption operations.
+ */
 export type KeystoreManager = {
+  /**
+   * Loads a keystore by alias and parses it into a typed keystore object.
+   *
+   * @param params - Alias for the keystore to load.
+   */
   getKeystore: (
     params: GetKeystoreParams,
   ) => Effect.Effect<Keystore, ConfigManagerError | KeystoreManagerError>;
+  /**
+   * Lists all stored keystores, parsing each into a typed keystore object.
+   */
   listKeystores: () => Effect.Effect<
     Keystore[],
     ConfigManagerError | KeystoreManagerError
   >;
+  /**
+   * Opens an interactive prompt to select a keystore from stored entries.
+   */
   selectKeystore: () => Effect.Effect<
     Keystore,
     ConfigManagerError | KeystoreManagerError | QuitError,
     Environment
   >;
+  /**
+   * Creates a new random wallet, encrypts it, and stores as a keystore.
+   *
+   * @param params - Alias and password used for the new keystore.
+   */
   createKeystore: (
     params: CreateKeystoreParams,
   ) => Effect.Effect<Keystore, ConfigManagerError | KeystoreManagerError>;
+  /**
+   * Decrypts a keystore and returns key material.
+   *
+   * @param params - Alias and password for the keystore to decrypt.
+   */
   decryptKeystore: (
     params: DecryptKeystoreParams,
   ) => Effect.Effect<
@@ -39,10 +63,16 @@ export type KeystoreManager = {
   >;
 };
 
+/**
+ * Service tag for resolving {@link KeystoreManager} from the Effect context.
+ */
 export const KeystoreManager = ServiceMap.Service<KeystoreManager>(
   "@namera-ai/cli/KeystoreManager",
 );
 
+/**
+ * Domain error for keystore management operations.
+ */
 export class KeystoreManagerError extends Data.TaggedError(
   "@namera-ai/cli/KeystoreManagerError",
 )<{
@@ -54,6 +84,9 @@ export class KeystoreManagerError extends Data.TaggedError(
   message: string;
 }> {}
 
+/**
+ * Live layer wiring the keystore manager with configuration and prompts.
+ */
 export const layer = Layer.effect(
   KeystoreManager,
   Effect.gen(function* () {

@@ -10,18 +10,27 @@ const keyColors = [
 const reset = "\x1b[0m";
 const bold = "\x1b[1m";
 
+/**
+ * Returns a shallow copy of an object with humanized key names.
+ */
 const transformKeys = (obj: Record<string, any>) => {
   return Object.fromEntries(
     Object.entries(obj).map(([k, v]) => [formatKey(k), v]),
   );
 };
 
+/**
+ * Humanizes a key by spacing words and title-casing tokens.
+ */
 const formatKey = (key: string) =>
   key
     .replace(/[_-]/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+/**
+ * Formats a primitive-like value for display.
+ */
 const formatValue = (value: any): string => {
   if (value === null) return "null";
 
@@ -44,9 +53,15 @@ const formatValue = (value: any): string => {
   return String(value);
 };
 
+/**
+ * Returns true when a value is a display-friendly primitive.
+ */
 const isPrimitive = (v: any) =>
   v === null || typeof v !== "object" || v instanceof Date;
 
+/**
+ * Determines whether an array contains only flat objects of primitives.
+ */
 const isFlatObjectArray = (arr: Record<string, any>[]) =>
   arr.length > 0 &&
   arr.every(
@@ -57,6 +72,12 @@ const isFlatObjectArray = (arr: Record<string, any>[]) =>
       Object.values(item).every(isPrimitive),
   );
 
+/**
+ * Formats objects or arrays into a human-friendly CLI display string.
+ *
+ * Uses colorized keys when printing objects, and falls back to tabular
+ * output for flat object arrays at the root level.
+ */
 export const prettyFormat = (
   input: Record<string, any> | Record<string, any>[],
   depth = 0,

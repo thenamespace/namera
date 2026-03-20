@@ -6,6 +6,9 @@ import { decryptKeystoreCommand } from "./decrypt";
 import { getKeystoreInfoCommand } from "./info";
 import { listKeystoresCommand } from "./list";
 
+/**
+ * Command group for keystore-related operations.
+ */
 export const keystoreCommands = Command.make(
   "keystore",
   {},

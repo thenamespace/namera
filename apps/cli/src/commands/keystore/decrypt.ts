@@ -70,6 +70,9 @@ const password = Flag.redacted("password").pipe(
   Flag.optional,
 );
 
+/**
+ * Command that decrypts a keystore and prints key material.
+ */
 export const decryptKeystoreCommand = Command.make(
   "decrypt",
   { alias, password },

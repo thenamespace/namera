@@ -24,6 +24,9 @@ const listKeystoreHandler = () =>
     yield* Console.log(output);
   });
 
+/**
+ * Command that lists all stored keystores.
+ */
 export const listKeystoresCommand = Command.make("list", {}, () =>
   listKeystoreHandler(),
 ).pipe(

@@ -51,6 +51,9 @@ const alias = Flag.string("alias").pipe(
   Flag.optional,
 );
 
+/**
+ * Command that returns metadata for a keystore.
+ */
 export const getKeystoreInfoCommand = Command.make(
   "info",
   { alias },

@@ -5,26 +5,63 @@ import type { SystemErrorTag } from "effect/PlatformError";
 
 import { type Entity, type EntityType, entityName } from "@/types";
 
+/**
+ * Effect service for managing the CLI configuration directory and stored entities.
+ */
 export type ConfigManager = {
+  /**
+   * Ensures the base config directory and entity subdirectories exist.
+   */
   ensureConfigDirExists: () => Effect.Effect<void, ConfigManagerError>;
+  /**
+   * Returns the absolute path to the CLI config directory.
+   */
   getConfigDirPath: () => Effect.Effect<string>;
+  /**
+   * Resolves the absolute storage path for a given entity alias and type.
+   *
+   * @param entity - Entity type and alias used to build the path.
+   */
   getEntityPath: <TEntityType extends EntityType>(
     entity: GetEntityParams<TEntityType>,
   ) => Effect.Effect<string>;
+  /**
+   * Checks if an entity exists at the expected storage path.
+   *
+   * @param entity - Entity type and alias to check.
+   */
   checkEntityExists: <TEntityType extends EntityType>(
     entity: GetEntityParams<TEntityType>,
   ) => Effect.Effect<boolean, ConfigManagerError>;
+  /**
+   * Loads a single entity by alias and returns its stored content and metadata.
+   *
+   * @param entity - Entity type and alias to load.
+   */
   getEntity: <TEntityType extends EntityType>(
     entity: GetEntityParams<TEntityType>,
   ) => Effect.Effect<Entity<TEntityType>, ConfigManagerError>;
+  /**
+   * Lists all entities stored for a given type.
+   *
+   * @param type - Entity type to enumerate.
+   */
   getEntitiesForType: <TEntityType extends EntityType>(
     type: TEntityType,
   ) => Effect.Effect<Entity<TEntityType>[], ConfigManagerError>;
+  /**
+   * Persists a new entity to disk.
+   *
+   * @param entity - Entity content and metadata to store.
+   */
   storeEntity: <TEntityType extends EntityType>(
     entity: Entity<TEntityType>,
   ) => Effect.Effect<Entity<TEntityType>, ConfigManagerError>;
 };
 
+/**
+ * Domain error for configuration and entity storage operations.
+ */
 export class ConfigManagerError extends Data.TaggedError(
   "@namera-ai/cli/ConfigManagerError",
 )<{
@@ -42,10 +79,16 @@ type GetEntityParams<TEntityType extends EntityType> = {
   alias: string;
 };
 
+/**
+ * Service tag for resolving {@link ConfigManager} from the Effect context.
+ */
 export const ConfigManager = ServiceMap.Service<ConfigManager>(
   "@namera-ai/cli/ConfigManager",
 );
 
+/**
+ * Live layer that persists CLI entities in the user's config directory.
+ */
 export const layer = Layer.effect(
   ConfigManager,
   Effect.gen(function* () {

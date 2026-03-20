@@ -9,6 +9,9 @@ import {
 } from "@/dto";
 import { extractPaths, getSchema } from "@/helpers/paths";
 
+/**
+ * Schema registry keyed by command path.
+ */
 const schemas = {
   keystore: {
     create: CreateKeystoreParams,
@@ -23,6 +26,9 @@ const command = Argument.choice("command", commands).pipe(
   Argument.withDescription("The command to get the schema for"),
 );
 
+/**
+ * Command that prints JSON Schema for a given CLI command.
+ */
 export const schemaCommand = Command.make(
   "schema",
   { command },

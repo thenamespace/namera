@@ -3,6 +3,12 @@ import { Schema } from "effect";
 
 import type { DeepPaths } from "@/types";
 
+/**
+ * Returns the value at a dot-delimited path within a nested object.
+ *
+ * @param obj - Object to traverse.
+ * @param path - Dot-delimited lookup path.
+ */
 export const getSchema = <
   T extends Record<string, any>,
   P extends DeepPaths<T>,
@@ -13,6 +19,12 @@ export const getSchema = <
   return path.split(".").reduce((acc, key) => acc[key], obj);
 };
 
+/**
+ * Extracts all dot-delimited paths that terminate at Effect schemas.
+ *
+ * @param obj - Object tree to scan.
+ * @param prefix - Internal prefix used to build nested paths.
+ */
 export const extractPaths = <T extends Record<string, any>>(
   obj: T,
   prefix = "",

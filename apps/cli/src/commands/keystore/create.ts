@@ -72,6 +72,9 @@ const password = Flag.redacted("password").pipe(
   Flag.optional,
 );
 
+/**
+ * Command that creates a new keystore and stores it locally.
+ */
 export const createKeystoreCommand = Command.make(
   "create",
   { alias, password },

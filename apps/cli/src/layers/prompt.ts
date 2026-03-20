@@ -6,22 +6,46 @@ import { type EntityType, entityName } from "@/types";
 
 import { ConfigManager } from "./config";
 
+/**
+ * Effect service for interactive CLI prompts.
+ */
 export type PromptManager = {
+  /**
+   * Prompts for an alias and validates it against existing storage.
+   *
+   * @param params - Prompt text, entity type, and expected alias semantics.
+   */
   aliasPrompt: (
     params: AliasPromptParams,
   ) => Effect.Effect<string, QuitError, Prompt.Environment>;
+  /**
+   * Prompts for a password, optionally validating the input.
+   *
+   * @param params - Prompt text and optional validator.
+   */
   passwordPrompt: (
     params: PasswordPromptParams,
   ) => Effect.Effect<Redacted.Redacted<string>, QuitError, Prompt.Environment>;
+  /**
+   * Prompts the user to select a value from a list of choices.
+   *
+   * @param params - Selection prompt options and choices.
+   */
   selectPrompt: <const A>(
     params: Prompt.SelectOptions<A>,
   ) => Effect.Effect<A, QuitError, Prompt.Environment>;
 };
 
+/**
+ * Service tag for resolving {@link PromptManager} from the Effect context.
+ */
 export const PromptManager = ServiceMap.Service<PromptManager>(
   "@namera-ai/cli/PromptManager",
 );
 
+/**
+ * Domain error for prompt-related failures.
+ */
 export class PromptManagerError extends Data.TaggedError(
   "@namera-ai/cli/PromptManagerError",
 )<{
@@ -29,17 +53,41 @@ export class PromptManagerError extends Data.TaggedError(
   message: string;
 }> {}
 
+/**
+ * Parameters for prompting a user for an entity alias.
+ */
 export type AliasPromptParams = {
+  /**
+   * Prompt message shown to the user.
+   */
   message: string;
+  /**
+   * Entity type used to validate alias existence.
+   */
   type: EntityType;
+  /**
+   * Whether the alias must be new or already exist.
+   */
   aliasType: "new" | "existing";
 };
 
+/**
+ * Parameters for prompting a user for a password.
+ */
 export type PasswordPromptParams = {
+  /**
+   * Prompt message shown to the user.
+   */
   message: string;
+  /**
+   * Optional validator returning the original value or a failure message.
+   */
   validate?: (v: string) => Effect.Effect<string, string, never>;
 };
 
+/**
+ * Live layer that validates and returns interactive prompt input.
+ */
 export const layer = Layer.effect(
   PromptManager,
   Effect.gen(function* () {
