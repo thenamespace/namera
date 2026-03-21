@@ -43,7 +43,10 @@ export const GetSmartAccountParams = Schema.Struct({
   }),
 });
 
+export const ListSmartAccountParams = Schema.Void;
+
 export type LocalSmartAccount = typeof LocalSmartAccount.Type;
 export type LocalSmartAccountData = typeof LocalSmartAccountData.Type;
 export type CreateSmartAccountParams = typeof CreateSmartAccountParams.Type;
 export type GetSmartAccountParams = typeof GetSmartAccountParams.Type;
+export type ListSmartAccountParams = typeof ListSmartAccountParams.Type;

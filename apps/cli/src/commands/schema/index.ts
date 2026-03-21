@@ -18,6 +18,7 @@ const schemas = {
   },
   "smart-account": {
     create: Dto.CreateSmartAccountParams,
+    list: Dto.ListSmartAccountParams,
   },
 };
 
