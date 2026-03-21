@@ -42,11 +42,17 @@ export const GetSmartAccountParams = Schema.Struct({
     description: "The alias of the smart account to retrieve",
   }),
 });
-
 export const ListSmartAccountParams = Schema.Void;
+
+export const GetSmartAccountInfoParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the smart account to retrieve",
+  }),
+});
 
 export type LocalSmartAccount = typeof LocalSmartAccount.Type;
 export type LocalSmartAccountData = typeof LocalSmartAccountData.Type;
 export type CreateSmartAccountParams = typeof CreateSmartAccountParams.Type;
 export type GetSmartAccountParams = typeof GetSmartAccountParams.Type;
 export type ListSmartAccountParams = typeof ListSmartAccountParams.Type;
+export type GetSmartAccountInfoParams = typeof GetSmartAccountInfoParams.Type;

@@ -1,5 +1,8 @@
 import { getKernelAddressFromECDSA } from "@namera-ai/core/account";
 import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
+import type { QuitError } from "effect/Terminal";
+import type { Prompt } from "effect/unstable/cli";
+import type { Environment } from "effect/unstable/cli/Prompt";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 
@@ -12,6 +15,7 @@ import {
 
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { KeystoreManager, type KeystoreManagerError } from "./keystore";
+import { PromptManager } from "./prompt";
 
 export type SmartAccountManager = {
   getSmartAccount: (
@@ -21,6 +25,13 @@ export type SmartAccountManager = {
     LocalSmartAccountData[],
     ConfigManagerError,
     never
+  >;
+  selectSmartAccount: (params: {
+    message: string;
+  }) => Effect.Effect<
+    LocalSmartAccountData,
+    ConfigManagerError | KeystoreManagerError | QuitError,
+    Environment
   >;
   createSmartAccount: (
     params: CreateSmartAccountParams,
@@ -47,6 +58,7 @@ export const layer = Layer.effect(
   Effect.gen(function* () {
     const configManager = yield* ConfigManager;
     const keystoreManager = yield* KeystoreManager;
+    const promptManager = yield* PromptManager;
 
     const getSmartAccount = (params: GetSmartAccountParams) =>
       Effect.gen(function* () {
@@ -166,10 +178,27 @@ export const layer = Layer.effect(
         return data;
       });
 
+    const selectSmartAccount = (params: { message: string }) =>
+      Effect.gen(function* () {
+        const keystores = yield* listSmartAccounts();
+
+        const res = yield* promptManager.selectPrompt({
+          message: params.message,
+          choices: keystores.map((k) => ({
+            title: k.alias,
+            value: k,
+            description: k.data.smartAccountAddress,
+          })) satisfies Prompt.SelectChoice<LocalSmartAccountData>[],
+        });
+
+        return res;
+      });
+
     return SmartAccountManager.of({
       createSmartAccount,
       getSmartAccount,
       listSmartAccounts,
+      selectSmartAccount,
     });
   }),
 );
