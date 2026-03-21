@@ -8,7 +8,7 @@ import {
   getChain,
   type SupportedChain,
   supportedChains,
-} from "@/schema/chain";
+} from "@/schema";
 
 import { PromptManager } from "./prompt";
 

@@ -1,13 +1,12 @@
 import { Schema } from "effect";
 
-import { SupportedChain } from "@/schema/chain";
-
 import {
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
   OwnerType,
-} from "./common";
+} from "@/schema";
+import { SupportedChain } from "@/schema/chain";
 
 export const LocalSmartAccount = Schema.Struct({
   entryPointVersion: EntrypointVersion,
