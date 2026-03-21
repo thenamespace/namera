@@ -50,9 +50,16 @@ export const GetSmartAccountInfoParams = Schema.Struct({
   }),
 });
 
+export const RemoveSmartAccountParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the smart account to remove",
+  }),
+});
+
 export type LocalSmartAccount = typeof LocalSmartAccount.Type;
 export type LocalSmartAccountData = typeof LocalSmartAccountData.Type;
 export type CreateSmartAccountParams = typeof CreateSmartAccountParams.Type;
 export type GetSmartAccountParams = typeof GetSmartAccountParams.Type;
 export type ListSmartAccountParams = typeof ListSmartAccountParams.Type;
 export type GetSmartAccountInfoParams = typeof GetSmartAccountInfoParams.Type;
+export type RemoveSmartAccountParams = typeof RemoveSmartAccountParams.Type;

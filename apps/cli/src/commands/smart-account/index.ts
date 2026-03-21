@@ -4,6 +4,7 @@ import { Command } from "effect/unstable/cli";
 import { createSmartAccountCommand } from "./create";
 import { getSmartAccountInfoCommand } from "./info";
 import { listSmartAccountsCommand } from "./list";
+import { removeSmartAccountCommand } from "./remove";
 
 /**
  * Command group for smart-account related operations.
@@ -19,5 +20,6 @@ export const smartAccountCommands = Command.make(
     createSmartAccountCommand,
     listSmartAccountsCommand,
     getSmartAccountInfoCommand,
+    removeSmartAccountCommand,
   ]),
 );

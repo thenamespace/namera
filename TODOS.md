@@ -42,9 +42,9 @@
     - [x] Remove Keystore
     - [x] Get Keystore
   - [ ] Smart Accounts
-    - [ ] Create Smart Account
-    - [ ] List Smart Accounts
-    - [ ] Get Smart Account
+    - [x] Create Smart Account
+    - [x] List Smart Accounts
+    - [x] Get Smart Account
     - [ ] Remove Smart Account
     - [ ] Get Smart Account Deployment Status (per chain)
     - [ ] Import Smart Account (assuming owner keystore is present)

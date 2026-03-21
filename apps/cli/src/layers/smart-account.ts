@@ -11,6 +11,7 @@ import {
   type GetSmartAccountParams,
   LocalSmartAccount,
   type LocalSmartAccountData,
+  type RemoveSmartAccountParams,
 } from "@/dto";
 
 import { ConfigManager, type ConfigManagerError } from "./config";
@@ -40,6 +41,13 @@ export type SmartAccountManager = {
     SmartAccountManagerError | ConfigManagerError | KeystoreManagerError,
     never
   >;
+  removeSmartAccount: (
+    params: RemoveSmartAccountParams,
+  ) => Effect.Effect<
+    void,
+    ConfigManagerError | SmartAccountManagerError,
+    never
+  >;
 };
 
 export const SmartAccountManager = ServiceMap.Service<SmartAccountManager>(
@@ -49,7 +57,10 @@ export const SmartAccountManager = ServiceMap.Service<SmartAccountManager>(
 export class SmartAccountManagerError extends Data.TaggedError(
   "@namera-ai/cli/SmartAccountManagerError",
 )<{
-  code: "KernelAddressGenerationError" | "SmartAccountAlreadyExists";
+  code:
+    | "KernelAddressGenerationError"
+    | "SmartAccountAlreadyExists"
+    | "SmartAccountNotFound";
   message: string;
 }> {}
 
@@ -194,11 +205,35 @@ export const layer = Layer.effect(
         return res;
       });
 
+    const removeSmartAccount = (params: RemoveSmartAccountParams) =>
+      Effect.gen(function* () {
+        // Check if alias exists
+        const exists = yield* configManager.checkEntityExists({
+          alias: params.alias,
+          type: "smart-account",
+        });
+
+        if (!exists) {
+          return yield* Effect.fail(
+            new SmartAccountManagerError({
+              code: "SmartAccountNotFound",
+              message: `Smart Account with alias ${params.alias} does not exist`,
+            }),
+          );
+        }
+
+        return yield* configManager.removeEntity({
+          alias: params.alias,
+          type: "smart-account",
+        });
+      });
+
     return SmartAccountManager.of({
       createSmartAccount,
       getSmartAccount,
       listSmartAccounts,
       selectSmartAccount,
+      removeSmartAccount,
     });
   }),
 );

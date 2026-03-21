@@ -20,6 +20,7 @@ const schemas = {
     create: Dto.CreateSmartAccountParams,
     list: Dto.ListSmartAccountParams,
     info: Dto.GetSmartAccountInfoParams,
+    remove: Dto.RemoveSmartAccountParams,
   },
 };
 
