@@ -9,6 +9,7 @@ import { mainnet } from "viem/chains";
 import {
   type CreateSmartAccountParams,
   type GetSmartAccountParams,
+  type GetSmartAccountStatusParams,
   LocalSmartAccount,
   type LocalSmartAccountData,
   type RemoveSmartAccountParams,
@@ -17,6 +18,7 @@ import {
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { KeystoreManager, type KeystoreManagerError } from "./keystore";
 import { PromptManager } from "./prompt";
+import { Web3Service } from "./web3";
 
 export type SmartAccountManager = {
   getSmartAccount: (
@@ -48,6 +50,9 @@ export type SmartAccountManager = {
     ConfigManagerError | SmartAccountManagerError,
     never
   >;
+  getSmartAccountStatus: (
+    params: GetSmartAccountStatusParams,
+  ) => Effect.Effect<boolean, ConfigManagerError, never>;
 };
 
 export const SmartAccountManager = ServiceMap.Service<SmartAccountManager>(
@@ -70,6 +75,7 @@ export const layer = Layer.effect(
     const configManager = yield* ConfigManager;
     const keystoreManager = yield* KeystoreManager;
     const promptManager = yield* PromptManager;
+    const web3Service = yield* Web3Service;
 
     const getSmartAccount = (params: GetSmartAccountParams) =>
       Effect.gen(function* () {
@@ -228,12 +234,31 @@ export const layer = Layer.effect(
         });
       });
 
+    const getSmartAccountStatus = (params: GetSmartAccountStatusParams) =>
+      Effect.gen(function* () {
+        const sa = yield* getSmartAccount({ alias: params.alias });
+
+        const publicClient = yield* web3Service.getPublicClient({
+          chain: params.chain,
+          rpcUrl: params.rpcUrl,
+        });
+
+        const code = yield* Effect.promise(() =>
+          publicClient.getCode({
+            address: sa.data.smartAccountAddress,
+          }),
+        );
+
+        return Boolean(code);
+      });
+
     return SmartAccountManager.of({
       createSmartAccount,
       getSmartAccount,
       listSmartAccounts,
       selectSmartAccount,
       removeSmartAccount,
+      getSmartAccountStatus,
     });
   }),
 );

@@ -101,6 +101,8 @@ export const createEcdsaAccountClient = async <
     },
   });
 
+  account.isDeployed;
+
   const paymaster = Paymaster
     ? {
         getPaymasterData: (userOp: GetPaymasterDataParameters) => {

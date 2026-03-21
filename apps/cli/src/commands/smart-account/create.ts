@@ -2,7 +2,7 @@ import { Console, Effect, type Option, Schema } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { CreateSmartAccountParams } from "@/dto";
-import { getGlobalFlags } from "@/global-flags";
+import { getGlobalFlags } from "@/flags/global";
 import {
   KeystoreManager,
   OutputFormatter,

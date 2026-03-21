@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import { SupportedChain } from "@/schema/chain";
+
 import {
   EntrypointVersion,
   EthereumAddress,
@@ -56,6 +58,19 @@ export const RemoveSmartAccountParams = Schema.Struct({
   }),
 });
 
+export const GetSmartAccountStatusParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the smart account",
+  }),
+  chain: SupportedChain.annotate({
+    description: "The chain to get the status for",
+  }),
+  rpcUrl: Schema.redact(Schema.String.pipe(Schema.optional)).annotate({
+    description: "The RPC URL to use for the chain",
+    default: "Public RPC URL",
+  }),
+});
+
 export type LocalSmartAccount = typeof LocalSmartAccount.Type;
 export type LocalSmartAccountData = typeof LocalSmartAccountData.Type;
 export type CreateSmartAccountParams = typeof CreateSmartAccountParams.Type;
@@ -63,3 +78,5 @@ export type GetSmartAccountParams = typeof GetSmartAccountParams.Type;
 export type ListSmartAccountParams = typeof ListSmartAccountParams.Type;
 export type GetSmartAccountInfoParams = typeof GetSmartAccountInfoParams.Type;
 export type RemoveSmartAccountParams = typeof RemoveSmartAccountParams.Type;
+export type GetSmartAccountStatusParams =
+  typeof GetSmartAccountStatusParams.Type;

@@ -5,6 +5,7 @@ import { createSmartAccountCommand } from "./create";
 import { getSmartAccountInfoCommand } from "./info";
 import { listSmartAccountsCommand } from "./list";
 import { removeSmartAccountCommand } from "./remove";
+import { getSmartAccountStatus } from "./status";
 
 /**
  * Command group for smart-account related operations.
@@ -21,5 +22,6 @@ export const smartAccountCommands = Command.make(
     listSmartAccountsCommand,
     getSmartAccountInfoCommand,
     removeSmartAccountCommand,
+    getSmartAccountStatus,
   ]),
 );

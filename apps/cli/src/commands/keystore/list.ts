@@ -1,7 +1,7 @@
 import { Console, Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
-import { getGlobalFlags } from "@/global-flags";
+import { getGlobalFlags } from "@/flags/global";
 import { KeystoreManager, OutputFormatter } from "@/layers";
 
 const listKeystoreHandler = () =>

@@ -45,8 +45,8 @@
     - [x] Create Smart Account
     - [x] List Smart Accounts
     - [x] Get Smart Account
-    - [ ] Remove Smart Account
-    - [ ] Get Smart Account Deployment Status (per chain)
+    - [x] Remove Smart Account
+    - [x] Get Smart Account Deployment Status (per chain)
     - [ ] Import Smart Account (assuming owner keystore is present)
   - [ ] Session Keys
     - [ ] Create Session Key
@@ -63,14 +63,14 @@
   - [x] Schemas
     - [x] Get CLI Command Params Schema
   - [ ] MCP Server
-    - [x] 1 Account, N Session Keys Server
-    - [x] Tools
-      - [x] Account Tools
-        - [x] `get_wallet_address`
+    - [ ] 1 Account, N Session Keys Server
+    - [ ] Tools
+      - [ ] Account Tools
+        - [ ] `get_wallet_address`
         - [ ] `get_balance`
         - [ ] `get_token_balance`
       - [ ] Transfer Tools
-        - [x] `native_transfer`
+        - [ ] `native_transfer`
         - [ ] `erc20_transfer`
       - [ ] Transaction Tools
         - [ ] `execute_transaction`

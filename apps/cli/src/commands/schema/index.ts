@@ -21,6 +21,7 @@ const schemas = {
     list: Dto.ListSmartAccountParams,
     info: Dto.GetSmartAccountInfoParams,
     remove: Dto.RemoveSmartAccountParams,
+    status: Dto.GetSmartAccountStatusParams,
   },
 };
 

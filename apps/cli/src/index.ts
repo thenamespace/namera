@@ -1,15 +1,18 @@
+import "dotenv/config";
+
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Effect, Layer } from "effect";
+import { ConfigProvider, Console, Effect, Layer } from "effect";
 import { Command } from "effect/unstable/cli";
 
 import { commands } from "./commands";
-import { globalFlags } from "./global-flags";
+import { globalFlags } from "./flags/global";
 import {
   ConfigManager,
   KeystoreManager,
   OutputFormatter,
   PromptManager,
   SmartAccountManager,
+  Web3Service,
 } from "./layers";
 
 const command = Command.make("namera", {}, () => Effect.void).pipe(
@@ -32,6 +35,7 @@ const command = Command.make("namera", {}, () => Effect.void).pipe(
 
 const Layers = SmartAccountManager.layer.pipe(
   Layer.provideMerge(KeystoreManager.layer),
+  Layer.provideMerge(Web3Service.layer),
   Layer.provideMerge(PromptManager.layer),
   Layer.provideMerge(ConfigManager.layer),
   Layer.provideMerge(OutputFormatter.layer),
@@ -47,6 +51,10 @@ const cli = Effect.gen(function* () {
   });
 }).pipe(
   Effect.provide(Layers),
+  Effect.provideService(
+    ConfigProvider.ConfigProvider,
+    ConfigProvider.fromEnv(),
+  ),
   Effect.catch((e) => Console.error(e.message)),
 );
 

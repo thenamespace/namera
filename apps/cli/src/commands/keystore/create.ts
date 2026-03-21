@@ -2,7 +2,7 @@ import { Console, Effect, type Option, Redacted, Schema } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { CreateKeystoreParams } from "@/dto";
-import { getGlobalFlags } from "@/global-flags";
+import { getGlobalFlags } from "@/flags/global";
 import { KeystoreManager, OutputFormatter, PromptManager } from "@/layers";
 
 const createKeystoreHandler = (
