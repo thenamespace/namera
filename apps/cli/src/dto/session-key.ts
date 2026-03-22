@@ -15,6 +15,12 @@ export const SessionKey = Schema.Struct({
   ),
 }).mapFields(Struct.assign(Keystore.fields));
 
+export const SessionKeyData = Schema.Struct({
+  alias: Schema.String,
+  data: SessionKey,
+  path: Schema.String,
+});
+
 export const CreateSessionKeyParams = Schema.Struct({
   alias: Schema.String.annotate({
     description: "The alias of the session key to create",
@@ -34,12 +40,20 @@ export const CreateSessionKeyParams = Schema.Struct({
   }),
 });
 
-export const SessionKeyData = Schema.Struct({
-  alias: Schema.String,
-  data: SessionKey,
-  path: Schema.String,
+export const GetSessionKeyParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the session key to retrieve",
+  }),
+});
+
+export const ListSessionKeysParams = Schema.Struct({
+  smartAccount: Schema.optional(Schema.String).annotate({
+    description: "The alias of the smart account to list session keys for",
+  }),
 });
 
 export type SessionKey = typeof SessionKey.Type;
 export type SessionKeyData = typeof SessionKeyData.Type;
 export type CreateSessionKeyParams = typeof CreateSessionKeyParams.Type;
+export type GetSessionKeyParams = typeof GetSessionKeyParams.Type;
+export type ListSessionKeysParams = typeof ListSessionKeysParams.Type;

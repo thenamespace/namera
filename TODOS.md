@@ -27,12 +27,12 @@
   - [x] Text Prompts
   - [x] Password Prompts
   - [x] Select Prompts
-  - [ ] Multi Select Prompts
-  - [ ] Confirm Prompts
-  - [ ] Date Prompts
-  - [ ] File Prompts
-  - [ ] Number Prompts
-  - [x] Ethereum Address/Private Key Prompts
+  - [x] Multi Select Prompts
+  - [x] Confirm Prompts
+  - [x] Date Prompts
+  - [x] File Prompts
+  - [x] Number Prompts
+  - [x] Ethereum Address/Private Key/Hex Prompts
 - [x] Command Groups
   - [x] Keystores
     - [x] Create Keystore
@@ -41,21 +41,21 @@
     - [x] Import Keystore
     - [x] Remove Keystore
     - [x] Get Keystore
-  - [ ] Smart Accounts
+  - [x] Smart Accounts
     - [x] Create Smart Account
     - [x] List Smart Accounts
     - [x] Get Smart Account
     - [x] Remove Smart Account
     - [x] Get Smart Account Deployment Status (per chain)
     - [x] Import Smart Account (assuming owner keystore is present)
-  - [ ] Session Keys
-    - [ ] Create Session Key
-      - [ ] Sudo Policy
-      - [ ] Timestamp Policy
-      - [ ] Gas Policy
-      - [ ] Call Policy
-      - [ ] Signature Policy
-      - [ ] Rate Limit Policy
+  - [x] Session Keys
+    - [x] Create Session Key
+      - [x] Sudo Policy
+      - [x] Timestamp Policy
+      - [x] Gas Policy
+      - [x] Call Policy
+      - [x] Signature Policy
+      - [x] Rate Limit Policy
     - [ ] Get Session Key
     - [ ] List Session Keys (All and per Smart Account)
     - [ ] Revoke Session Key

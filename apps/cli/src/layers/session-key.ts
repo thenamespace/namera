@@ -1,17 +1,21 @@
 import { Wallet } from "@ethereumjs/wallet";
 import { createEcdsaSessionKey } from "@namera-ai/core/session-key";
-import { Data, Effect, Layer, ServiceMap } from "effect";
+import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
 import { hexToBytes } from "viem";
 
-import type {
-  CreateSessionKeyParams,
-  Keystore,
+import {
+  type CreateSessionKeyParams,
+  type Keystore,
   SessionKey,
-  SessionKeyData,
+  type SessionKeyData,
 } from "@/dto";
 import { policyParamsToPolicies } from "@/helpers/policy";
 import { chainIdToChainName } from "@/schema";
 
+import type {
+  GetSessionKeyParams,
+  ListSessionKeysParams,
+} from "../dto/session-key";
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { KeystoreManager, type KeystoreManagerError } from "./keystore";
 import { SmartAccountManager } from "./smart-account";
@@ -24,6 +28,18 @@ export type SessionKeyManager = {
     SessionKeyData,
     SessionKeyManagerError | ConfigManagerError | KeystoreManagerError
   >;
+  getSessionKey: (
+    params: GetSessionKeyParams,
+  ) => Effect.Effect<
+    SessionKeyData,
+    SessionKeyManagerError | ConfigManagerError
+  >;
+  listSessionKeys: (
+    params: ListSessionKeysParams,
+  ) => Effect.Effect<
+    SessionKeyData[],
+    ConfigManagerError | SessionKeyManagerError
+  >;
 };
 export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
   "@namera-ai/cli/SessionKeyManager",
@@ -32,7 +48,7 @@ export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
 export class SessionKeyManagerError extends Data.TaggedError(
   "@namera-ai/cli/SessionKeyManagerError",
 )<{
-  code: "EncryptionError" | "SessionKeyAlreadyExists";
+  code: "EncryptionError" | "SessionKeyAlreadyExists" | "SessionKeyParseError";
   message: string;
 }> {}
 
@@ -114,8 +130,6 @@ export const layer = Layer.effect(
           ...encData,
         };
 
-        // Store Now
-
         yield* configManager.storeEntity({
           alias: params.alias,
           content: JSON.stringify(data),
@@ -130,6 +144,83 @@ export const layer = Layer.effect(
         } satisfies SessionKeyData;
       });
 
-    return SessionKeyManager.of({ createSessionKey });
+    const getSessionKey = (params: GetSessionKeyParams) =>
+      Effect.gen(function* () {
+        const res = yield* configManager.getEntity({
+          alias: params.alias,
+          type: "session-key",
+        });
+
+        const parsed = Schema.decodeUnknownOption(
+          Schema.fromJsonString(SessionKey),
+        )(res.content);
+
+        if (parsed._tag === "None") {
+          return yield* Effect.fail(
+            new SessionKeyManagerError({
+              code: "SessionKeyParseError",
+              message: "Unable to parse session key",
+            }),
+          );
+        }
+
+        const data: SessionKeyData = {
+          alias: res.alias,
+          data: parsed.value,
+          path: res.path,
+        };
+
+        return data;
+      });
+
+    const listSessionKeys = (params: ListSessionKeysParams) =>
+      Effect.gen(function* () {
+        const res = yield* configManager.getEntitiesForType("session-key");
+
+        const effects = res.map((entity) =>
+          Effect.gen(function* () {
+            const parsed = Schema.decodeUnknownOption(
+              Schema.fromJsonString(SessionKey),
+            )(entity.content);
+
+            if (parsed._tag === "None") {
+              return yield* Effect.fail(
+                new SessionKeyManagerError({
+                  code: "SessionKeyParseError",
+                  message: "Unable to parse session key",
+                }),
+              );
+            }
+
+            const data: SessionKeyData = {
+              alias: entity.alias,
+              data: parsed.value,
+              path: entity.path,
+            };
+
+            return data;
+          }),
+        );
+
+        const allKeys = yield* Effect.all(effects, {
+          concurrency: "unbounded",
+        });
+        // .map((d) => (d._op === "Success" ? d.success : undefined))
+        // .filter(Boolean) as SessionKeyData[];
+
+        if (params.smartAccount) {
+          return allKeys.filter(
+            (k) => k.data.smartAccountAlias === params.smartAccount,
+          );
+        }
+
+        return allKeys;
+      });
+
+    return SessionKeyManager.of({
+      createSessionKey,
+      getSessionKey,
+      listSessionKeys,
+    });
   }),
 );

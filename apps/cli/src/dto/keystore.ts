@@ -5,7 +5,7 @@ import { EthereumAddress } from "@/schema";
 export const Keystore = Schema.Struct({
   version: Schema.Number,
   id: Schema.String,
-  address: EthereumAddress,
+  address: Schema.String,
   crypto: Schema.Any,
 });
 

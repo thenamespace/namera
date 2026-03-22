@@ -26,6 +26,7 @@ const schemas = {
   },
   "session-key": {
     create: Dto.CreateSessionKeyParams,
+    list: Dto.ListSessionKeysParams,
   },
 };
 
