@@ -23,6 +23,7 @@ export type PromptManager = {
    * Prompts for a password, optionally validating the input.
    *
    * @param params - Prompt text and optional validator.
+   * @returns The redacted password.
    */
   passwordPrompt: (
     params: PasswordPromptParams,
@@ -31,6 +32,7 @@ export type PromptManager = {
    * Prompts the user to select a value from a list of choices.
    *
    * @param params - Selection prompt options and choices.
+   * @returns The selected value.
    */
   selectPrompt: <const A>(
     params: Prompt.SelectOptions<A>,
@@ -39,6 +41,7 @@ export type PromptManager = {
    * Prompts the user to enter a hex value.
    *
    * @param params - Prompt text and expected length of the hex value.
+   * @returns The hex value entered by the user.
    */
   hexPrompt: <TRedacted extends boolean>(
     params: HexPromptParams<TRedacted>,
@@ -47,6 +50,15 @@ export type PromptManager = {
     QuitError,
     Prompt.Environment
   >;
+  /**
+   * Prompt the user to select multiple options from a list.
+   *
+   * @param params - Prompt options and multi-select options.
+   * @returns A list of selected options.
+   */
+  multiSelectPrompt: <const A>(
+    params: Prompt.SelectOptions<A> & Prompt.MultiSelectOptions,
+  ) => Effect.Effect<A[], QuitError, Prompt.Environment>;
 };
 
 /**
@@ -190,6 +202,13 @@ export const layer = Layer.effect(
         return yield* Prompt.select(params);
       });
 
+    const multiSelectPrompt = <const A>(
+      params: Prompt.SelectOptions<A> & Prompt.MultiSelectOptions,
+    ) =>
+      Effect.gen(function* () {
+        return yield* Prompt.multiSelect(params);
+      });
+
     function hexPrompt(
       params: HexPromptParams<true>,
     ): Effect.Effect<Redacted.Redacted<Hex>, QuitError, Prompt.Environment>;
@@ -240,6 +259,7 @@ export const layer = Layer.effect(
       passwordPrompt,
       selectPrompt,
       hexPrompt,
+      multiSelectPrompt,
     });
   }),
 );

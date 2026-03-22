@@ -25,6 +25,9 @@ export type Web3Service = {
   selectChain: (params: {
     message: string;
   }) => Effect.Effect<SupportedChain, QuitError, Prompt.Environment>;
+  multiSelectChain: (params: {
+    message: string;
+  }) => Effect.Effect<SupportedChain[], QuitError, Prompt.Environment>;
 };
 
 type GetPublicClientParams = {
@@ -88,6 +91,21 @@ export const layer = Layer.effect(
         return res;
       });
 
-    return Web3Service.of({ getPublicClient, selectChain });
+    const multiSelectChain = (params: { message: string }) =>
+      Effect.gen(function* () {
+        const chains = Object.values(supportedChains) as ChainWithMetadata[];
+
+        const res = yield* promptManager.multiSelectPrompt({
+          message: params.message,
+          choices: chains.map((c) => ({
+            title: c.name,
+            value: c.key as SupportedChain,
+          })) satisfies Prompt.SelectChoice<SupportedChain>[],
+        });
+
+        return res;
+      });
+
+    return Web3Service.of({ getPublicClient, selectChain, multiSelectChain });
   }),
 );
