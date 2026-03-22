@@ -1,7 +1,14 @@
 import { Config, Effect, Layer, Redacted, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
-import { createPublicClient, http, type PublicClient } from "viem";
+import {
+  type Chain,
+  type Client,
+  createPublicClient,
+  type HttpTransport,
+  http,
+  type PublicClient,
+} from "viem";
 
 import {
   type ChainWithMetadata,
@@ -15,7 +22,7 @@ import { PromptManager } from "./prompt";
 export type Web3Service = {
   getPublicClient: (
     params: GetPublicClientParams,
-  ) => Effect.Effect<PublicClient>;
+  ) => Effect.Effect<Client<HttpTransport, Chain, undefined>>;
   selectChain: (params: {
     message: string;
   }) => Effect.Effect<SupportedChain, QuitError, Prompt.Environment>;

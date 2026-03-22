@@ -157,3 +157,13 @@ export const getChainFromId = (
 ): ChainWithMetadata | undefined => {
   return Object.values(supportedChains).find((c) => c.id === chainId);
 };
+
+export const chainIdToChainName = (chainId: number) => {
+  const chain = getChainFromId(chainId);
+
+  if (!chain) {
+    throw new Error(`Chain with id ${chainId} not found`);
+  }
+
+  return chain.key as SupportedChain;
+};

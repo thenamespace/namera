@@ -1,6 +1,4 @@
-import type { Wallet as EthereumJSWallet } from "@ethereumjs/wallet";
 import type { Schema } from "effect";
-import type { Address } from "viem";
 
 export type EntityType = "smart-account" | "session-key" | "keystore";
 
@@ -15,16 +13,6 @@ export type Entity<TEntityType extends EntityType> = {
   content: string;
   alias: string;
   type: TEntityType;
-};
-
-export type V3Keystore = Awaited<
-  ReturnType<Awaited<ReturnType<(typeof EthereumJSWallet)["fromV3"]>>["toV3"]>
-> & { address: Address };
-
-export type Keystore = {
-  path: string;
-  alias: string;
-  data: V3Keystore;
 };
 
 export type DeepPaths<T> = {

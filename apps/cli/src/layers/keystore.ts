@@ -3,17 +3,20 @@ import { Data, Effect, Layer, Redacted, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
-import { type Hex, hexToBytes } from "viem";
+import { type Hex, hexToBytes, toHex } from "viem";
+import { type LocalAccount, privateKeyToAccount } from "viem/accounts";
 
 import type {
   CreateKeystoreParams,
   DecryptKeystoreParams,
   DecryptKeystoreResponse,
   GetKeystoreParams,
+  GetSignerParams,
   ImportKeystoreParams,
+  Keystore,
+  KeystoreData,
   RemoveKeystoreParams,
 } from "@/dto";
-import type { Keystore, V3Keystore } from "@/types";
 
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { PromptManager } from "./prompt";
@@ -23,18 +26,18 @@ import { PromptManager } from "./prompt";
  */
 export type KeystoreManager = {
   /**
-   * Loads a keystore by alias and parses it into a typed keystore object.
+   * Loads a keystore by alias and parses it into a typed keystore data object.
    *
    * @param params - Alias for the keystore to load.
    */
   getKeystore: (
     params: GetKeystoreParams,
-  ) => Effect.Effect<Keystore, ConfigManagerError | KeystoreManagerError>;
+  ) => Effect.Effect<KeystoreData, ConfigManagerError | KeystoreManagerError>;
   /**
-   * Lists all stored keystores, parsing each into a typed keystore object.
+   * Lists all stored keystores, parsing each into a typed keystore data object.
    */
   listKeystores: () => Effect.Effect<
-    Keystore[],
+    KeystoreData[],
     ConfigManagerError | KeystoreManagerError
   >;
   /**
@@ -45,7 +48,7 @@ export type KeystoreManager = {
   selectKeystore: (params: {
     message: string;
   }) => Effect.Effect<
-    Keystore,
+    KeystoreData,
     ConfigManagerError | KeystoreManagerError | QuitError,
     Environment
   >;
@@ -56,7 +59,7 @@ export type KeystoreManager = {
    */
   createKeystore: (
     params: CreateKeystoreParams,
-  ) => Effect.Effect<Keystore, ConfigManagerError | KeystoreManagerError>;
+  ) => Effect.Effect<KeystoreData, ConfigManagerError | KeystoreManagerError>;
   /**
    * Decrypts a keystore and returns key material.
    *
@@ -76,7 +79,7 @@ export type KeystoreManager = {
   importKeystore: (
     params: ImportKeystoreParams,
   ) => Effect.Effect<
-    Keystore,
+    KeystoreData,
     ConfigManagerError | KeystoreManagerError,
     never
   >;
@@ -88,6 +91,9 @@ export type KeystoreManager = {
   removeKeystore: (params: {
     readonly alias: string;
   }) => Effect.Effect<void, ConfigManagerError | KeystoreManagerError, never>;
+  getSigner: (
+    params: GetSignerParams,
+  ) => Effect.Effect<LocalAccount, ConfigManagerError | KeystoreManagerError>;
 };
 
 /**
@@ -134,10 +140,10 @@ export const layer = Layer.effect(
               code: "KeystoreParseError",
               message: "Unable to parse keystore",
             }),
-          try: () => JSON.parse(res.content) as V3Keystore,
+          try: () => JSON.parse(res.content) as Keystore,
         });
 
-        const wallet: Keystore = {
+        const wallet: KeystoreData = {
           alias: res.alias,
           data: {
             ...parsedKeystore,
@@ -161,10 +167,10 @@ export const layer = Layer.effect(
                   code: "KeystoreParseError",
                   message: "Unable to parse keystore",
                 }),
-              try: () => JSON.parse(entity.content) as V3Keystore,
+              try: () => JSON.parse(entity.content) as Keystore,
             });
 
-            const wallet: Keystore = {
+            const wallet: KeystoreData = {
               alias: entity.alias,
               data: {
                 ...parsedKeystore,
@@ -225,10 +231,10 @@ export const layer = Layer.effect(
               code: "KeystoreParseError",
               message: "Unable to parse keystore",
             }),
-          try: () => JSON.parse(keystoreString) as V3Keystore,
+          try: () => JSON.parse(keystoreString) as Keystore,
         });
 
-        const data: Keystore = {
+        const data: KeystoreData = {
           alias: params.alias,
           data: keystore,
           path: entityPath,
@@ -270,7 +276,7 @@ export const layer = Layer.effect(
             title: k.alias,
             value: k,
             description: k.data.address,
-          })) satisfies Prompt.SelectChoice<Keystore>[],
+          })) satisfies Prompt.SelectChoice<KeystoreData>[],
         });
 
         return res;
@@ -324,10 +330,10 @@ export const layer = Layer.effect(
               code: "KeystoreParseError",
               message: "Unable to parse keystore",
             }),
-          try: () => JSON.parse(keystoreString) as V3Keystore,
+          try: () => JSON.parse(keystoreString) as Keystore,
         });
 
-        const data: Keystore = {
+        const data: KeystoreData = {
           alias: params.alias,
           data: keystore,
           path: entityPath,
@@ -359,6 +365,24 @@ export const layer = Layer.effect(
         });
       });
 
+    const getSigner = (params: GetSignerParams) =>
+      Effect.gen(function* () {
+        const keystore = yield* getKeystore({ alias: params.alias });
+
+        const wallet = yield* Effect.tryPromise({
+          catch: () =>
+            new KeystoreManagerError({
+              code: "KeystoreDecryptionFailed",
+              message: "Failed to decrypt keystore",
+            }),
+          try: () => EthereumJSWallet.fromV3(keystore.data, params.password),
+        });
+
+        return privateKeyToAccount(
+          toHex(wallet.getPrivateKey()),
+        ) as LocalAccount;
+      });
+
     return KeystoreManager.of({
       createKeystore,
       decryptKeystore,
@@ -367,6 +391,7 @@ export const layer = Layer.effect(
       selectKeystore,
       importKeystore,
       removeKeystore,
+      getSigner,
     });
   }),
 );
