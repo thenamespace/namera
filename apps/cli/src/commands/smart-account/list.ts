@@ -27,7 +27,7 @@ const handler = () =>
   });
 
 /**
- * Command that lists all stored smart accounts.
+ * Command that lists all locally stored smart accounts.
  */
 export const listSmartAccountsCommand = Command.make("list", {}, () =>
   handler(),

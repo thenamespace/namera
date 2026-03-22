@@ -9,7 +9,9 @@ import { removeSmartAccountCommand } from "./remove";
 import { getSmartAccountStatus } from "./status";
 
 /**
- * Command group for smart-account related operations.
+ * Root command group for smart-account lifecycle actions.
+ *
+ * Includes create, list, info, remove, status, and import subcommands.
  */
 export const smartAccountCommands = Command.make(
   "smart-account",

@@ -42,6 +42,9 @@ const handler = () =>
     yield* Console.log(output);
   });
 
+/**
+ * Command that imports a smart account using JSON params only.
+ */
 export const importSmartAccountCommand = Command.make("import", {}, () =>
   handler(),
 ).pipe(

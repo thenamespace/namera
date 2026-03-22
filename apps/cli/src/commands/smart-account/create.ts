@@ -31,7 +31,7 @@ const handler = (
     } else {
       let alias: string;
       let ownerAlias: string;
-      let index: number;
+      let index: bigint;
 
       if (flagAlias._tag === "Some") {
         alias = flagAlias.value;
@@ -52,9 +52,9 @@ const handler = (
       }
 
       if (flagIndex._tag === "Some") {
-        index = flagIndex.value;
+        index = BigInt(flagIndex.value);
       } else {
-        index = 0;
+        index = 0n;
       }
 
       params = { alias, ownerAlias, index };
@@ -94,7 +94,9 @@ const index = Flag.integer("index").pipe(
 );
 
 /**
- * Command that creates a new smart-account and stores it locally.
+ * Command that creates a new smart account and stores it locally.
+ *
+ * Accepts alias, owner alias, and index via flags or JSON params.
  */
 export const createSmartAccountCommand = Command.make(
   "create",

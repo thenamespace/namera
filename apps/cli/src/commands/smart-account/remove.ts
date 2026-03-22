@@ -47,6 +47,9 @@ const alias = Flag.string("alias").pipe(
   Flag.optional,
 );
 
+/**
+ * Command that removes a locally stored smart account by alias.
+ */
 export const removeSmartAccountCommand = Command.make(
   "remove",
   { alias },

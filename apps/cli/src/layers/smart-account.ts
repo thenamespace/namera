@@ -22,14 +22,31 @@ import { PromptManager } from "./prompt";
 import { Web3Service } from "./web3";
 
 export type SmartAccountManager = {
+  /**
+   * Loads a smart account by alias and parses the stored JSON payload.
+   *
+   * @param params  Alias of the smart account to load.
+   * @returns The parsed smart account data.
+   */
   getSmartAccount: (
     params: GetSmartAccountParams,
   ) => Effect.Effect<LocalSmartAccountData, ConfigManagerError, never>;
+  /**
+   * Lists all locally stored smart accounts.
+   *
+   * @returns The list of smart account data.
+   */
   listSmartAccounts: () => Effect.Effect<
     LocalSmartAccountData[],
     ConfigManagerError,
     never
   >;
+  /**
+   * Prompts the user to select a smart account from local storage.
+   *
+   * @param params - Prompt message to display.
+   * @returns The selected smart account data.
+   */
   selectSmartAccount: (params: {
     message: string;
   }) => Effect.Effect<
@@ -37,6 +54,12 @@ export type SmartAccountManager = {
     ConfigManagerError | KeystoreManagerError | QuitError,
     Environment
   >;
+  /**
+   * Creates a new smart account derived from a local keystore and index.
+   *
+   * @param params - Alias, owner alias, and optional index for derivation.
+   * @returns The created smart account data.
+   */
   createSmartAccount: (
     params: CreateSmartAccountParams,
   ) => Effect.Effect<
@@ -44,6 +67,11 @@ export type SmartAccountManager = {
     SmartAccountManagerError | ConfigManagerError | KeystoreManagerError,
     never
   >;
+  /**
+   * Removes a locally stored smart account by alias.
+   *
+   * @param params - Alias of the smart account to remove.
+   */
   removeSmartAccount: (
     params: RemoveSmartAccountParams,
   ) => Effect.Effect<
@@ -51,9 +79,21 @@ export type SmartAccountManager = {
     ConfigManagerError | SmartAccountManagerError,
     never
   >;
+  /**
+   * Checks if a smart account is deployed on the specified chain.
+   *
+   * @param params - Alias plus chain and optional RPC URL.
+   * @returns Whether the smart account is deployed.
+   */
   getSmartAccountStatus: (
     params: GetSmartAccountStatusParams,
   ) => Effect.Effect<boolean, ConfigManagerError, never>;
+  /**
+   * Imports a smart account with precomputed metadata and address.
+   *
+   * @param params - Smart account metadata and alias to store.
+   * @returns The imported smart account data.
+   */
   importSmartAccount: (
     params: ImportSmartAccountParams,
   ) => Effect.Effect<
@@ -63,10 +103,16 @@ export type SmartAccountManager = {
   >;
 };
 
+/**
+ * Service tag for resolving {@link SmartAccountManager} from the Effect context.
+ */
 export const SmartAccountManager = ServiceMap.Service<SmartAccountManager>(
   "@namera-ai/cli/SmartAccountManager",
 );
 
+/**
+ * Domain error for smart account lifecycle operations.
+ */
 export class SmartAccountManagerError extends Data.TaggedError(
   "@namera-ai/cli/SmartAccountManagerError",
 )<{
@@ -78,6 +124,9 @@ export class SmartAccountManagerError extends Data.TaggedError(
   message: string;
 }> {}
 
+/**
+ * Live layer that manages smart account storage and derivation.
+ */
 export const layer = Layer.effect(
   SmartAccountManager,
   Effect.gen(function* () {

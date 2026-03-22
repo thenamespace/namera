@@ -56,7 +56,9 @@ const alias = Flag.string("alias").pipe(
 );
 
 /**
- * Command that returns information for a smart account.
+ * Command that returns stored metadata for a smart account.
+ *
+ * Accepts alias via flag or JSON params, otherwise prompts for selection.
  */
 export const getSmartAccountInfoCommand = Command.make(
   "info",

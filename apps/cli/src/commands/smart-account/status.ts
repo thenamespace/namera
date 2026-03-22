@@ -65,6 +65,9 @@ const alias = Flag.string("alias").pipe(
   Flag.optional,
 );
 
+/**
+ * Command that checks deployment status of a smart account on a chain.
+ */
 export const getSmartAccountStatus = Command.make(
   "status",
   {
