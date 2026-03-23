@@ -56,10 +56,10 @@
       - [x] Call Policy
       - [x] Signature Policy
       - [x] Rate Limit Policy
-    - [ ] Get Session Key
-    - [ ] List Session Keys (All and per Smart Account)
+    - [x] Get Session Key
+    - [x] List Session Keys (All and per Smart Account)
     - [ ] Revoke Session Key
-    - [ ] Get Session Key Installation Status (per chain)   
+    - [x] Get Session Key Installation Status (per chain) (need to test)
   - [x] Schemas
     - [x] Get CLI Command Params Schema
   - [ ] MCP Server

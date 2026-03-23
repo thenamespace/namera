@@ -1,5 +1,8 @@
 import { Wallet } from "@ethereumjs/wallet";
-import { createEcdsaSessionKey } from "@namera-ai/core/session-key";
+import {
+  createEcdsaSessionKey,
+  isSessionKeyInstalled,
+} from "@namera-ai/core/session-key";
 import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
@@ -16,6 +19,7 @@ import { chainIdToChainName } from "@/schema";
 
 import type {
   GetSessionKeyParams,
+  GetSessionKeyStatusParams,
   ListSessionKeysParams,
 } from "../dto/session-key";
 import { ConfigManager, type ConfigManagerError } from "./config";
@@ -49,6 +53,13 @@ export type SessionKeyManager = {
     SessionKeyData,
     ConfigManagerError | SessionKeyManagerError | QuitError,
     Prompt.Environment
+  >;
+  getSessionKeyStatus: (
+    params: GetSessionKeyStatusParams,
+  ) => Effect.Effect<
+    boolean,
+    ConfigManagerError | SessionKeyManagerError,
+    never
   >;
 };
 export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
@@ -244,11 +255,36 @@ export const layer = Layer.effect(
         return res;
       });
 
+    const getSessionKeyStatus = (params: GetSessionKeyStatusParams) =>
+      Effect.gen(function* () {
+        const sessionKey = yield* getSessionKey({ alias: params.alias });
+        const sa = yield* smartAccountManager.getSmartAccount({
+          alias: sessionKey.data.smartAccountAlias,
+        });
+
+        const publicClient = yield* web3Service.getPublicClient({
+          chain: params.chain,
+          rpcUrl: params.rpcUrl,
+        });
+
+        const res = yield* Effect.tryPromise({
+          try: () =>
+            isSessionKeyInstalled(publicClient, {
+              accountAddress: sa.data.smartAccountAddress,
+              sessionKeyAddress: sessionKey.data.sessionKeyAddress,
+            }),
+          catch: () => false,
+        }).pipe(Effect.catch(() => Effect.succeed(false)));
+
+        return res;
+      });
+
     return SessionKeyManager.of({
       createSessionKey,
       getSessionKey,
       listSessionKeys,
       selectSessionKey,
+      getSessionKeyStatus,
     });
   }),
 );

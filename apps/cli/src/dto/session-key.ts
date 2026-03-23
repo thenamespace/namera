@@ -1,12 +1,12 @@
 import { Schema, Struct } from "effect";
 
-import { PolicyParams, SupportedChain } from "@/schema";
+import { EthereumAddress, PolicyParams, SupportedChain } from "@/schema";
 
 import { Keystore } from "./keystore";
 
 export const SessionKey = Schema.Struct({
   smartAccountAlias: Schema.String,
-  sessionKeyAddress: Schema.String,
+  sessionKeyAddress: EthereumAddress,
   serializedAccounts: Schema.Array(
     Schema.Struct({
       chain: SupportedChain,
@@ -58,9 +58,23 @@ export const GetSessionKeyInfoParams = Schema.Struct({
   }),
 });
 
+export const GetSessionKeyStatusParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the session key to retrieve",
+  }),
+  chain: SupportedChain.annotate({
+    description: "The chain to retrieve the session key status for",
+  }),
+  rpcUrl: Schema.redact(Schema.String.pipe(Schema.optional)).annotate({
+    description: "The RPC URL to use for the chain",
+    default: "Public RPC URL",
+  }),
+});
+
 export type SessionKey = typeof SessionKey.Type;
 export type SessionKeyData = typeof SessionKeyData.Type;
 export type CreateSessionKeyParams = typeof CreateSessionKeyParams.Type;
 export type GetSessionKeyParams = typeof GetSessionKeyParams.Type;
 export type ListSessionKeysParams = typeof ListSessionKeysParams.Type;
 export type GetSessionKeyInfoParams = typeof GetSessionKeyInfoParams.Type;
+export type GetSessionKeyStatusParams = typeof GetSessionKeyStatusParams.Type;

@@ -1,6 +1,7 @@
 import type { PermissionAccountParams } from "@zerodev/permissions";
 
 export * from "./ecdsa";
+export * from "./status";
 
 export function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
   const binString = atob(base64);

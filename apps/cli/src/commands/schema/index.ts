@@ -28,6 +28,7 @@ const schemas = {
     create: Dto.CreateSessionKeyParams,
     list: Dto.ListSessionKeysParams,
     info: Dto.GetSessionKeyInfoParams,
+    status: Dto.GetSessionKeyStatusParams,
   },
 };
 

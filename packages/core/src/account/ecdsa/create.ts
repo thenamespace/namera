@@ -123,5 +123,7 @@ export const createEcdsaAccountClient = async <
     paymaster,
   });
 
+  kernelClient;
+
   return kernelClient;
 };
