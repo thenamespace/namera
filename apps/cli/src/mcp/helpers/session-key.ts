@@ -5,14 +5,20 @@ import type {
   SignatureCallerPolicyParams,
   TimestampPolicyParams,
 } from "@namera-ai/core/policy";
-import { deserializePermissionAccountParams } from "@namera-ai/core/session-key";
+import {
+  createEcdsaSessionKeyClient,
+  deserializePermissionAccountParams,
+} from "@namera-ai/core/session-key";
 import { Effect } from "effect";
+import { http } from "viem";
 
 import type { SessionKeyData } from "@/dto";
-import { McpContext } from "@/layers";
+import { McpContext, Web3Service } from "@/layers";
 import { getChain } from "@/schema";
 
+import { chainIdToChainName } from "../../schema/chain";
 import type { AnyOperation, PolicyMap } from "../types";
+import { InsufficientPermissions } from "./common";
 
 type PolicyParams = Policy["policyParams"];
 
@@ -191,4 +197,53 @@ export const getValidSessionKeys = (params: GetValidSessionKeysParams) =>
     });
 
     return validKeys;
+  });
+
+export const getSessionKeyClient = (params: GetValidSessionKeysParams) =>
+  Effect.gen(function* () {
+    const context = yield* McpContext.McpContext;
+    const { sessionKeys, smartAccount } = context;
+
+    const validKeys = sessionKeys.filter((sk) => {
+      return evaluateSessionKey(sk, params.operation);
+    });
+
+    const key = validKeys[0];
+
+    if (!key) return yield* Effect.fail(new InsufficientPermissions());
+
+    const web3Service = yield* Web3Service.Web3Service;
+
+    let chainId: number;
+
+    if (params.operation.intent === "read") {
+      chainId = params.operation.chainId;
+    } else if (params.operation.intent === "sign") {
+      chainId = params.operation.chainId;
+    } else {
+      chainId = params.operation.calls[0]?.chainId ?? 1;
+    }
+
+    const chainName = chainIdToChainName(chainId);
+    const chain = getChain(chainName);
+    const publicClient = yield* web3Service.getPublicClient({
+      chain: chainName,
+    });
+    const serializedAccount =
+      key.data.serializedAccounts.find((a) => a.chain === chainName)
+        ?.serializedAccount ?? "";
+
+    const accountClient = yield* Effect.promise(() =>
+      createEcdsaSessionKeyClient({
+        bundlerTransport: http(),
+        chain,
+        client: publicClient,
+        entrypointVersion: smartAccount.entryPointVersion,
+        kernelVersion: smartAccount.kernelVersion,
+        serializedAccount,
+        sessionKeySigner: key.signer,
+      }),
+    );
+
+    return accountClient;
   });
