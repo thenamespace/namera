@@ -3,10 +3,11 @@ import {
   createEcdsaSessionKey,
   isSessionKeyInstalled,
 } from "@namera-ai/core/session-key";
-import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
+import { Data, Effect, Layer, type Redacted, Schema, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
-import { hexToBytes } from "viem";
+import { hexToBytes, toHex } from "viem";
+import { type LocalAccount, privateKeyToAccount } from "viem/accounts";
 
 import {
   type CreateSessionKeyParams,
@@ -61,6 +62,30 @@ export type SessionKeyManager = {
     ConfigManagerError | SessionKeyManagerError,
     never
   >;
+  multiSelectSessionKeys: (params: {
+    message: string;
+    smartAccount?: string;
+  }) => Effect.Effect<
+    SessionKeyData[],
+    ConfigManagerError | SessionKeyManagerError | QuitError,
+    Prompt.Environment
+  >;
+  getSessionKeyPassword: (params: {
+    alias: string;
+    message: string;
+  }) => Effect.Effect<
+    Redacted.Redacted<string>,
+    SessionKeyManagerError | ConfigManagerError | QuitError,
+    Prompt.Environment
+  >;
+  getSessionKeySigner: (params: {
+    alias: string;
+    password: string;
+  }) => Effect.Effect<
+    SessionKeyData & { signer: LocalAccount },
+    SessionKeyManagerError | ConfigManagerError | QuitError,
+    never
+  >;
 };
 export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
   "@namera-ai/cli/SessionKeyManager",
@@ -69,7 +94,11 @@ export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
 export class SessionKeyManagerError extends Data.TaggedError(
   "@namera-ai/cli/SessionKeyManagerError",
 )<{
-  code: "EncryptionError" | "SessionKeyAlreadyExists" | "SessionKeyParseError";
+  code:
+    | "EncryptionError"
+    | "SessionKeyAlreadyExists"
+    | "SessionKeyParseError"
+    | "DecryptError";
   message: string;
 }> {}
 
@@ -279,12 +308,89 @@ export const layer = Layer.effect(
         return res;
       });
 
+    const multiSelectSessionKeys = (params: {
+      message: string;
+      smartAccount?: string;
+    }) =>
+      Effect.gen(function* () {
+        const allKeys = yield* listSessionKeys({
+          smartAccount: params.smartAccount,
+        });
+
+        const res = yield* promptManager.multiSelectPrompt({
+          message: params.message,
+          choices: allKeys.map((k) => ({
+            title: k.alias,
+            value: k,
+            description: `${k.data.sessionKeyAddress} (${k.data.smartAccountAlias})`,
+          })) satisfies Prompt.SelectChoice<SessionKeyData>[],
+          min: 1,
+        });
+
+        return res;
+      });
+
+    const getSessionKeyPassword = (params: {
+      alias: string;
+      message: string;
+    }) =>
+      Effect.gen(function* () {
+        const key = yield* getSessionKey({ alias: params.alias });
+
+        const password = yield* promptManager.passwordPrompt({
+          message: params.message,
+          validate: (v) =>
+            Effect.gen(function* () {
+              if (v.trim() === "") {
+                return yield* Effect.fail("Password cannot be empty");
+              }
+
+              yield* Effect.tryPromise({
+                try: () => Wallet.fromV3(key.data, v),
+                catch: () =>
+                  new SessionKeyManagerError({
+                    code: "DecryptError",
+                    message: `Invalid password for session key ${params.alias}`,
+                  }),
+              }).pipe(Effect.catch(() => Effect.fail("Invalid password")));
+
+              return v;
+            }),
+        });
+
+        return password;
+      });
+
+    const getSessionKeySigner = (params: { alias: string; password: string }) =>
+      Effect.gen(function* () {
+        const key = yield* getSessionKey({ alias: params.alias });
+
+        const signer = yield* Effect.tryPromise({
+          try: async () => {
+            const wallet = await Wallet.fromV3(key.data, params.password);
+            return privateKeyToAccount(
+              toHex(wallet.getPrivateKey()),
+            ) as LocalAccount;
+          },
+          catch: () =>
+            new SessionKeyManagerError({
+              code: "DecryptError",
+              message: `Invalid password for session key ${params.alias}`,
+            }),
+        });
+
+        return { ...key, signer };
+      });
+
     return SessionKeyManager.of({
       createSessionKey,
       getSessionKey,
       listSessionKeys,
       selectSessionKey,
       getSessionKeyStatus,
+      multiSelectSessionKeys,
+      getSessionKeyPassword,
+      getSessionKeySigner,
     });
   }),
 );

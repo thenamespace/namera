@@ -4,7 +4,7 @@ import type { LocalAccount } from "viem";
 import type { LocalSmartAccount, SessionKeyData } from "@/dto";
 
 export type McpContext = {
-  account: LocalSmartAccount;
+  smartAccount: LocalSmartAccount;
   sessionKeys: (SessionKeyData & {
     signer: LocalAccount;
   })[];

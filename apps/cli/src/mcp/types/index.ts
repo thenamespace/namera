@@ -14,6 +14,7 @@ export type Operation<TIntent extends Intent, TData> = TData & {
   intent: TIntent;
 };
 
+// biome-ignore lint/complexity/noBannedTypes: ok
 export type ReadOperation = Operation<"read", {}>;
 export type SignOperation = Operation<
   "sign",

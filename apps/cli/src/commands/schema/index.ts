@@ -30,6 +30,9 @@ const schemas = {
     info: Dto.GetSessionKeyInfoParams,
     status: Dto.GetSessionKeyStatusParams,
   },
+  mcp: {
+    start: Dto.StartMcpServerParams,
+  },
 };
 
 const commands = extractPaths(schemas);

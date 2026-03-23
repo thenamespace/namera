@@ -64,11 +64,11 @@
     - [x] Get Session Key Installation Status (per chain) (need to test)
   - [x] Schemas
     - [x] Get CLI Command Params Schema
-  - [ ] MCP Server
-    - [ ] 1 Account, N Session Keys Server
-    - [ ] Tools
-      - [ ] Account Tools
-        - [ ] `get_wallet_address`
+  - [x] MCP Server
+    - [x] 1 Account, N Session Keys Server
+    - [x] Tools
+      - [x] Account Tools
+        - [x] `get_wallet_address`
         - [ ] `get_balance`
         - [ ] `get_token_balance`
       - [ ] Transfer Tools

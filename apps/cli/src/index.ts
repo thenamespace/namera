@@ -9,6 +9,7 @@ import { globalFlags } from "./flags/global";
 import {
   ConfigManager,
   KeystoreManager,
+  McpManager,
   OutputFormatter,
   PromptManager,
   SessionKeyManager,
@@ -34,7 +35,8 @@ const command = Command.make("namera", {}, () => Effect.void).pipe(
   ]),
 );
 
-const Layers = SessionKeyManager.layer.pipe(
+const Layers = McpManager.layer.pipe(
+  Layer.provideMerge(SessionKeyManager.layer),
   Layer.provideMerge(SmartAccountManager.layer),
   Layer.provideMerge(KeystoreManager.layer),
   Layer.provideMerge(Web3Service.layer),
