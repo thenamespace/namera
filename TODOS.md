@@ -59,6 +59,8 @@
     - [x] Get Session Key
     - [x] List Session Keys (All and per Smart Account)
     - [ ] Revoke Session Key
+    - [ ] Import Session Key
+    - [ ] Remove Session Key
     - [x] Get Session Key Installation Status (per chain) (need to test)
   - [x] Schemas
     - [x] Get CLI Command Params Schema
@@ -80,3 +82,4 @@
       - [ ] Token Utilities
         - [ ] `get_allowance`
         - [ ] `approve_erc20`
+- [ ] Audit Code
