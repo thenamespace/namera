@@ -5,12 +5,7 @@ import { parseUnits } from "viem";
 import { McpContext } from "@/layers/mcp-context";
 import { Web3Service } from "@/layers/web3";
 import { getSessionKeyClient, InsufficientPermissions } from "@/mcp/helpers";
-import {
-  BigIntFromString,
-  EthereumAddress,
-  getChain,
-  SupportedChain,
-} from "@/schema";
+import { EthereumAddress, getChain, SupportedChain } from "@/schema";
 
 export const NativeTransferToolParams = Schema.Struct({
   chain: SupportedChain.annotate({
@@ -19,7 +14,7 @@ export const NativeTransferToolParams = Schema.Struct({
   address: EthereumAddress.annotate({
     description: "The ethereum address to transfer to",
   }),
-  amount: BigIntFromString.annotate({
+  amount: Schema.String.annotate({
     description: "The amount of native tokens to transfer",
   }),
   unit: Schema.Literals(["wei", "gwei", "ether"]),

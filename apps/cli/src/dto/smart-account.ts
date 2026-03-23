@@ -31,6 +31,9 @@ export const CreateSmartAccountParams = Schema.Struct({
   ownerAlias: Schema.String.annotate({
     description: "The alias of the owner keystore",
   }),
+  ownerPassword: Schema.redact(Schema.String).annotate({
+    description: "The password of the owner keystore",
+  }),
   index: Schema.optional(
     BigIntFromString.check(Schema.makeFilter((v) => v >= 0n)),
   ).annotate({

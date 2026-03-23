@@ -1,10 +1,7 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: safe */
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator";
 import {
   type Policy,
   serializeMultiChainPermissionAccounts,
-  serializePermissionAccount,
   toPermissionValidator,
 } from "@zerodev/permissions";
 import { toECDSASigner } from "@zerodev/permissions/signers";
@@ -84,112 +81,61 @@ export const createEcdsaSessionKey = async <
     throw new Error("At least 1 client is required");
   }
 
-  let result: {
-    sessionPrivateKey: Hex;
-    sessionKeyAddress: Address;
-    serializedAccounts: {
-      chainId: number;
-      serializedAccount: string;
-    }[];
-  };
+  // Multichain Session Key
 
-  if (clients.length === 1 && clients[0]) {
-    // Singe Chain Session Key
-    const client = clients[0];
+  const accounts = await Promise.all(
+    clients.map(async (client) => {
+      const multichainValidator = await toMultiChainECDSAValidator(client, {
+        entryPoint,
+        kernelVersion: kernelVersion,
+        signer,
+      });
 
-    const ecdsaValidator = await signerToEcdsaValidator(client, {
-      entryPoint,
-      kernelVersion,
-      signer,
-    });
+      const permissionPlugin = await toPermissionValidator(client, {
+        entryPoint,
+        kernelVersion,
+        policies,
+        signer: emptySessionKeySigner,
+      });
 
-    const permissionPlugin = await toPermissionValidator(client, {
-      entryPoint,
-      kernelVersion,
-      policies,
-      signer: emptySessionKeySigner,
-    });
-
-    const sessionKeyAccount = await createKernelAccount(client, {
-      entryPoint,
-      index,
-      kernelVersion,
-      plugins: {
-        regular: permissionPlugin,
-        sudo: ecdsaValidator,
-      },
-    });
-
-    const serializedAccount =
-      // @ts-expect-error safe to ignore
-      await serializePermissionAccount(sessionKeyAccount);
-
-    result = {
-      serializedAccounts: [
-        {
-          chainId: client.chain!.id,
-          serializedAccount: serializedAccount,
+      const kernelAccount = await createKernelAccount(client, {
+        entryPoint,
+        index,
+        kernelVersion,
+        plugins: {
+          regular: permissionPlugin,
+          sudo: multichainValidator,
         },
-      ],
-      sessionKeyAddress,
-      sessionPrivateKey,
-    };
-  } else {
-    // Multichain Session Key
+      });
 
-    const accounts = await Promise.all(
-      clients.map(async (client) => {
-        const multichainValidator = await toMultiChainECDSAValidator(client, {
-          entryPoint,
-          kernelVersion: kernelVersion,
-          signer,
-        });
-
-        const permissionPlugin = await toPermissionValidator(client, {
-          entryPoint,
-          kernelVersion,
-          policies,
-          signer: emptySessionKeySigner,
-        });
-
-        const kernelAccount = await createKernelAccount(client, {
-          entryPoint,
-          index,
-          kernelVersion,
-          plugins: {
-            regular: permissionPlugin,
-            sudo: multichainValidator,
-          },
-        });
-
-        return {
-          kernelAccount,
-        };
-      }),
-    );
-
-    const approvals = await serializeMultiChainPermissionAccounts(
-      accounts.map((account) => {
-        return {
-          // biome-ignore lint/suspicious/noExplicitAny: safe
-          account: account.kernelAccount as any,
-        };
-      }),
-    );
-
-    const serializedAccounts = accounts.map((account, i) => {
       return {
-        chainId: account.kernelAccount.client.chain!.id,
-        serializedAccount: approvals[i] as string,
+        kernelAccount,
       };
-    });
+    }),
+  );
 
-    result = {
-      serializedAccounts,
-      sessionKeyAddress,
-      sessionPrivateKey,
+  const approvals = await serializeMultiChainPermissionAccounts(
+    accounts.map((account) => {
+      return {
+        // biome-ignore lint/suspicious/noExplicitAny: safe
+        account: account.kernelAccount as any,
+      };
+    }),
+  );
+
+  const serializedAccounts = accounts.map((account, i) => {
+    return {
+      // biome-ignore lint/style/noNonNullAssertion: safe
+      chainId: account.kernelAccount.client.chain!.id,
+      serializedAccount: approvals[i] as string,
     };
-  }
+  });
+
+  const result = {
+    serializedAccounts,
+    sessionKeyAddress,
+    sessionPrivateKey,
+  };
 
   return result;
 };

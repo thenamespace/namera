@@ -10,7 +10,6 @@ import {
   deserializePermissionAccountParams,
 } from "@namera-ai/core/session-key";
 import { Effect } from "effect";
-import { http } from "viem";
 
 import type { SessionKeyData } from "@/dto";
 import { McpContext, Web3Service } from "@/layers";
@@ -229,13 +228,16 @@ export const getSessionKeyClient = (params: GetValidSessionKeysParams) =>
     const publicClient = yield* web3Service.getPublicClient({
       chain: chainName,
     });
+    const bundlerTransport = yield* web3Service.getBundlerTransport({
+      chain: chainName,
+    });
     const serializedAccount =
       key.data.serializedAccounts.find((a) => a.chain === chainName)
         ?.serializedAccount ?? "";
 
     const accountClient = yield* Effect.promise(() =>
       createEcdsaSessionKeyClient({
-        bundlerTransport: http(),
+        bundlerTransport,
         chain,
         client: publicClient,
         entrypointVersion: smartAccount.entryPointVersion,

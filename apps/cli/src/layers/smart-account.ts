@@ -1,14 +1,9 @@
-import { getKernelAddressFromECDSA } from "@namera-ai/core/account";
+import { createEcdsaAccountClient } from "@namera-ai/core/account";
 import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
-import {
-  type Address,
-  createPublicClient,
-  http,
-  type PublicClient,
-} from "viem";
+import { createPublicClient, http, type PublicClient } from "viem";
 import { mainnet } from "viem/chains";
 
 import {
@@ -192,6 +187,11 @@ export const layer = Layer.effect(
           alias: params.ownerAlias,
         });
 
+        const ownerSigner = yield* keystoreManager.getSigner({
+          alias: params.ownerAlias,
+          password: params.ownerPassword,
+        });
+
         // Doesn't matter because public client is only needed for 0.6 entrypoints
         const publicClient = createPublicClient({
           chain: mainnet,
@@ -202,16 +202,16 @@ export const layer = Layer.effect(
         const kernelVersion = "0.3.2";
         const index = BigInt(params.index ?? 0);
         const ownerType = "ecdsa";
-        const eoaAddress = ownerKeystore.data.address as Address;
 
-        const saAddress = yield* Effect.tryPromise({
+        const res = yield* Effect.tryPromise({
           try: () =>
-            getKernelAddressFromECDSA({
-              entryPointVersion,
-              eoaAddress,
+            createEcdsaAccountClient({
+              bundlerTransport: http(),
+              chain: mainnet,
+              client: publicClient,
+              entrypointVersion: entryPointVersion,
               kernelVersion,
-              index,
-              publicClient,
+              signer: ownerSigner,
             }),
           catch: () =>
             new SmartAccountManagerError({
@@ -219,6 +219,8 @@ export const layer = Layer.effect(
               message: `Unable to compute smart account address for Address: ${ownerKeystore.data.address} and Index: ${params.index}`,
             }),
         });
+
+        const saAddress = res.account.address;
 
         const exists = existingAccounts.find(
           (d) => d.data.smartAccountAddress === saAddress,
@@ -248,9 +250,11 @@ export const layer = Layer.effect(
           alias: params.alias,
         };
 
+        const encoded = Schema.encodeSync(LocalSmartAccount)(saData);
+
         yield* configManager.storeEntity({
           alias: params.alias,
-          content: JSON.stringify(saData),
+          content: JSON.stringify(encoded),
           path: entityPath,
           type: "smart-account",
         });
@@ -276,23 +280,10 @@ export const layer = Layer.effect(
 
     const removeSmartAccount = (params: RemoveSmartAccountParams) =>
       Effect.gen(function* () {
-        // Check if alias exists
-        const exists = yield* configManager.checkEntityExists({
-          alias: params.alias,
-          type: "smart-account",
-        });
-
-        if (!exists) {
-          return yield* Effect.fail(
-            new SmartAccountManagerError({
-              code: "SmartAccountNotFound",
-              message: `Smart Account with alias ${params.alias} does not exist`,
-            }),
-          );
-        }
+        const sa = yield* getSmartAccount({ alias: params.alias });
 
         return yield* configManager.removeEntity({
-          alias: params.alias,
+          alias: sa.alias,
           type: "smart-account",
         });
       });
@@ -344,7 +335,7 @@ export const layer = Layer.effect(
 
         yield* configManager.storeEntity({
           alias: params.alias,
-          content: JSON.stringify(rest),
+          content: JSON.stringify(Schema.encodeSync(LocalSmartAccount)(rest)),
           path: entityPath,
           type: "smart-account",
         });

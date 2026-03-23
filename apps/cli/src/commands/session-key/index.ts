@@ -4,6 +4,7 @@ import { Command } from "effect/unstable/cli";
 import { createSessionKeyCommand } from "./create";
 import { getSessionKeyInfoCommand } from "./info";
 import { listSessionKeysCommand } from "./list";
+import { removeSessionKeyCommand } from "./remove";
 import { getSessionKeyStatusCommand } from "./status";
 
 /**
@@ -21,5 +22,6 @@ export const sessionKeyCommands = Command.make(
     listSessionKeysCommand,
     getSessionKeyInfoCommand,
     getSessionKeyStatusCommand,
+    removeSessionKeyCommand,
   ]),
 );

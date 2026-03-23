@@ -1,4 +1,4 @@
-import { Wallet as EthereumJSWallet } from "@ethereumjs/wallet";
+import { Wallet as EthereumJSWallet, Wallet } from "@ethereumjs/wallet";
 import { Data, Effect, Layer, Redacted, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
@@ -94,6 +94,20 @@ export type KeystoreManager = {
   getSigner: (
     params: GetSignerParams,
   ) => Effect.Effect<LocalAccount, ConfigManagerError | KeystoreManagerError>;
+  /**
+   * Prompts the user to enter the password for a keystore.
+   *
+   * @param params - Alias of the keystore and message to display.
+   * @returns The password for the keystore.
+   */
+  getKeystorePassword: (params: {
+    alias: string;
+    message: string;
+  }) => Effect.Effect<
+    Redacted.Redacted<string>,
+    ConfigManagerError | KeystoreManagerError | QuitError,
+    Prompt.Environment
+  >;
 };
 
 /**
@@ -114,7 +128,8 @@ export class KeystoreManagerError extends Data.TaggedError(
     | "KeystoreAlreadyExists"
     | "KeystoreCreationFailed"
     | "KeystoreDecryptionFailed"
-    | "KeystoreNotFound";
+    | "KeystoreNotFound"
+    | "DecryptError";
   message: string;
 }> {}
 
@@ -236,7 +251,10 @@ export const layer = Layer.effect(
 
         const data: KeystoreData = {
           alias: params.alias,
-          data: keystore,
+          data: {
+            ...keystore,
+            address: `0x${keystore.address}`,
+          },
           path: entityPath,
         };
 
@@ -383,6 +401,34 @@ export const layer = Layer.effect(
         ) as LocalAccount;
       });
 
+    const getKeystorePassword = (params: { alias: string; message: string }) =>
+      Effect.gen(function* () {
+        const keystore = yield* getKeystore({ alias: params.alias });
+
+        const password = yield* promptManager.passwordPrompt({
+          message: params.message,
+          validate: (v) =>
+            Effect.gen(function* () {
+              if (v.trim() === "") {
+                return yield* Effect.fail("Password cannot be empty");
+              }
+
+              yield* Effect.tryPromise({
+                try: () => Wallet.fromV3(keystore.data, v),
+                catch: () =>
+                  new KeystoreManagerError({
+                    code: "DecryptError",
+                    message: `Invalid password for keystore ${params.alias}`,
+                  }),
+              }).pipe(Effect.catch(() => Effect.fail("Invalid password")));
+
+              return v;
+            }),
+        });
+
+        return password;
+      });
+
     return KeystoreManager.of({
       createKeystore,
       decryptKeystore,
@@ -392,6 +438,7 @@ export const layer = Layer.effect(
       importKeystore,
       removeKeystore,
       getSigner,
+      getKeystorePassword,
     });
   }),
 );

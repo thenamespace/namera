@@ -71,6 +71,12 @@ export const GetSessionKeyStatusParams = Schema.Struct({
   }),
 });
 
+export const RemoveSessionKeyParams = Schema.Struct({
+  alias: Schema.String.annotate({
+    description: "The alias of the session key to remove",
+  }),
+});
+
 export type SessionKey = typeof SessionKey.Type;
 export type SessionKeyData = typeof SessionKeyData.Type;
 export type CreateSessionKeyParams = typeof CreateSessionKeyParams.Type;
@@ -78,3 +84,4 @@ export type GetSessionKeyParams = typeof GetSessionKeyParams.Type;
 export type ListSessionKeysParams = typeof ListSessionKeysParams.Type;
 export type GetSessionKeyInfoParams = typeof GetSessionKeyInfoParams.Type;
 export type GetSessionKeyStatusParams = typeof GetSessionKeyStatusParams.Type;
+export type RemoveSessionKeyParams = typeof RemoveSessionKeyParams.Type;

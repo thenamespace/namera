@@ -22,6 +22,7 @@ import type {
   GetSessionKeyParams,
   GetSessionKeyStatusParams,
   ListSessionKeysParams,
+  RemoveSessionKeyParams,
 } from "../dto/session-key";
 import { ConfigManager, type ConfigManagerError } from "./config";
 import { KeystoreManager, type KeystoreManagerError } from "./keystore";
@@ -86,6 +87,9 @@ export type SessionKeyManager = {
     SessionKeyManagerError | ConfigManagerError | QuitError,
     never
   >;
+  removeSessionKey: (params: {
+    readonly alias: string;
+  }) => Effect.Effect<void, SessionKeyManagerError | ConfigManagerError, never>;
 };
 export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
   "@namera-ai/cli/SessionKeyManager",
@@ -382,6 +386,16 @@ export const layer = Layer.effect(
         return { ...key, signer };
       });
 
+    const removeSessionKey = (params: RemoveSessionKeyParams) =>
+      Effect.gen(function* () {
+        const key = yield* getSessionKey({ alias: params.alias });
+
+        return yield* configManager.removeEntity({
+          alias: key.alias,
+          type: "session-key",
+        });
+      });
+
     return SessionKeyManager.of({
       createSessionKey,
       getSessionKey,
@@ -391,6 +405,7 @@ export const layer = Layer.effect(
       multiSelectSessionKeys,
       getSessionKeyPassword,
       getSessionKeySigner,
+      removeSessionKey,
     });
   }),
 );

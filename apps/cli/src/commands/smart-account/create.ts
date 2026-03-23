@@ -1,4 +1,4 @@
-import { Console, Effect, type Option, Schema } from "effect";
+import { Console, Effect, type Option, Redacted, Schema } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { CreateSmartAccountParams } from "@/dto";
@@ -13,6 +13,7 @@ import {
 const handler = (
   flagAlias: Option.Option<string>,
   flagOwnerAlias: Option.Option<string>,
+  flagOwnerPassword: Option.Option<Redacted.Redacted<string>>,
   flagIndex: Option.Option<number>,
 ) =>
   Effect.gen(function* () {
@@ -31,6 +32,7 @@ const handler = (
     } else {
       let alias: string;
       let ownerAlias: string;
+      let ownerPassword: Redacted.Redacted<string>;
       let index: bigint;
 
       if (flagAlias._tag === "Some") {
@@ -51,13 +53,27 @@ const handler = (
         })).alias;
       }
 
+      if (flagOwnerPassword._tag === "Some") {
+        ownerPassword = flagOwnerPassword.value;
+      } else {
+        ownerPassword = yield* keystoreManager.getKeystorePassword({
+          alias: ownerAlias,
+          message: `Enter password for owner (${ownerAlias}):`,
+        });
+      }
+
       if (flagIndex._tag === "Some") {
         index = BigInt(flagIndex.value);
       } else {
         index = 0n;
       }
 
-      params = { alias, ownerAlias, index };
+      params = {
+        alias,
+        ownerAlias,
+        index,
+        ownerPassword: Redacted.value(ownerPassword),
+      };
     }
 
     const res = yield* smartAccountManager.createSmartAccount(params);
@@ -87,6 +103,12 @@ const ownerAlias = Flag.string("owner-alias").pipe(
   Flag.optional,
 );
 
+const ownerPassword = Flag.redacted("owner-password").pipe(
+  Flag.withDescription("The password of the owner keystore"),
+  Flag.withAlias("op"),
+  Flag.optional,
+);
+
 const index = Flag.integer("index").pipe(
   Flag.withDescription("The index of the smart account"),
   Flag.withAlias("i"),
@@ -100,8 +122,9 @@ const index = Flag.integer("index").pipe(
  */
 export const createSmartAccountCommand = Command.make(
   "create",
-  { alias, ownerAlias, index },
-  ({ alias, ownerAlias, index }) => handler(alias, ownerAlias, index),
+  { alias, ownerAlias, ownerPassword, index },
+  ({ alias, ownerAlias, ownerPassword, index }) =>
+    handler(alias, ownerAlias, ownerPassword, index),
 ).pipe(
   Command.withAlias("c"),
   Command.withDescription("Creates a new smart account"),

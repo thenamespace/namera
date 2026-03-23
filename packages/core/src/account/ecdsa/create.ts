@@ -1,4 +1,4 @@
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
+import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator";
 import {
   createKernelAccount,
   createKernelAccountClient,
@@ -86,9 +86,9 @@ export const createEcdsaAccountClient = async <
 
   const entryPoint = getEntryPoint(entrypointVersion);
 
-  const ecdsaValidator = await signerToEcdsaValidator(client, {
+  const validator = await toMultiChainECDSAValidator(client, {
     entryPoint,
-    kernelVersion,
+    kernelVersion: kernelVersion,
     signer,
   });
 
@@ -97,11 +97,9 @@ export const createEcdsaAccountClient = async <
     index,
     kernelVersion,
     plugins: {
-      sudo: ecdsaValidator,
+      sudo: validator,
     },
   });
-
-  account.isDeployed;
 
   const paymaster = Paymaster
     ? {
