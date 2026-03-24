@@ -7,11 +7,9 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-import * as mdxConfig from "./source.config";
-
 const config = defineConfig({
   plugins: [
-    mdx(mdxConfig),
+    mdx(await import("./source.config")),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart({
