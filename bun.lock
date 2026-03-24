@@ -45,6 +45,8 @@
         "@standard-schema/spec": "^1.1.0",
         "@tailwindcss/vite": "^4.2.0",
         "@takumi-rs/core": "^1.0.0-beta.16",
+        "@takumi-rs/core-darwin-arm64": "^1.0.0-beta.16",
+        "@takumi-rs/core-linux-x64-gnu": "^1.0.0-beta.16",
         "@takumi-rs/image-response": "^1.0.0-beta.16",
         "@tanstack/react-router": "^1.168.3",
         "@tanstack/react-start": "^1.167.5",
@@ -143,9 +145,6 @@
         "typescript": "^5.9.3",
       },
     },
-  },
-  "patchedDependencies": {
-    "@takumi-rs/wasm@1.0.0-beta.16": "patches/@takumi-rs%2Fwasm@1.0.0-beta.16.patch",
   },
   "packages": {
     "@adraffy/ens-normalize": ["@adraffy/ens-normalize@1.11.1", "", {}, "sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ=="],

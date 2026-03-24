@@ -7,7 +7,12 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const takumiDeps = ["@takumi-rs/image-response", "@takumi-rs/core"];
+const takumiDeps = [
+  "@takumi-rs/image-response",
+  "@takumi-rs/core",
+  "@takumi-rs/core-darwin-arm64",
+  "@takumi-rs/core-linux-x64-gnu",
+];
 
 const config = defineConfig({
   optimizeDeps: {
