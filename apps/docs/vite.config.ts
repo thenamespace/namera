@@ -7,7 +7,12 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const takumiDeps = ["@takumi-rs/image-response", "@takumi-rs/core"];
+
 const config = defineConfig({
+  optimizeDeps: {
+    exclude: takumiDeps,
+  },
   plugins: [
     mdx(await import("./source.config")),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
@@ -26,10 +31,15 @@ const config = defineConfig({
         semicolons: true,
       },
     }),
-    nitro(),
+    nitro({
+      traceDeps: takumiDeps,
+    }),
     viteReact(),
   ],
   server: { port: 4000 },
+  ssr: {
+    external: takumiDeps,
+  },
 });
 
 export default config;

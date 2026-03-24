@@ -1,0 +1,17 @@
+diff --git a/bundlers/node.mjs b/bundlers/node.mjs
+index ab8e04c3e39b793e282ad0533b2a500062cecfb4..5958eaa67eba1515d94de4dd8c286547b98d7aa8 100644
+--- a/bundlers/node.mjs
++++ b/bundlers/node.mjs
+@@ -1,9 +1,9 @@
+ import { readFileSync } from "node:fs";
+-import { initSync } from "../pkg/takumi_wasm";
++import { initSync } from "../pkg/takumi_wasm.js";
+ 
+ const wasmBytes = readFileSync(new URL("../pkg/takumi_wasm_bg.wasm", import.meta.url));
+ 
+ initSync({ module: wasmBytes });
+ 
+-export * from "../pkg/takumi_wasm";
+-export { default } from "../pkg/takumi_wasm";
++export * from "../pkg/takumi_wasm.js";
++export { default } from "../pkg/takumi_wasm.js";
