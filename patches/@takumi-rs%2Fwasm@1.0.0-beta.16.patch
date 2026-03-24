@@ -1,3 +1,6 @@
+diff --git a/node_modules/@takumi-rs/wasm/.bun-tag-5a5129472229e336 b/.bun-tag-5a5129472229e336
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/bundlers/node.mjs b/bundlers/node.mjs
 index ab8e04c3e39b793e282ad0533b2a500062cecfb4..5958eaa67eba1515d94de4dd8c286547b98d7aa8 100644
 --- a/bundlers/node.mjs
@@ -15,3 +18,15 @@ index ab8e04c3e39b793e282ad0533b2a500062cecfb4..5958eaa67eba1515d94de4dd8c286547
 -export { default } from "../pkg/takumi_wasm";
 +export * from "../pkg/takumi_wasm.js";
 +export { default } from "../pkg/takumi_wasm.js";
+diff --git a/package.json b/package.json
+index a7f736e2e9202a675e2cae4ad44e1dd95fcc3204..cbca5817052a86de9bd47e237b32f535b99af3be 100644
+--- a/package.json
++++ b/package.json
+@@ -9,6 +9,7 @@
+     "rendering",
+     "webassembly"
+   ],
++  "type": "module",
+   "license": "(MIT OR Apache-2.0)",
+   "author": {
+     "name": "Kane Wang",
