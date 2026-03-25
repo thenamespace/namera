@@ -48,6 +48,7 @@
         "@takumi-rs/core-darwin-arm64": "^1.0.0-beta.16",
         "@takumi-rs/core-linux-x64-gnu": "^1.0.0-beta.16",
         "@takumi-rs/image-response": "^1.0.0-beta.16",
+        "@tanstack/react-hotkeys": "^0.7.0",
         "@tanstack/react-router": "^1.168.3",
         "@tanstack/react-start": "^1.167.5",
         "@tanstack/router-plugin": "^1.167.4",
@@ -720,9 +721,9 @@
 
     "@tanstack/history": ["@tanstack/history@1.161.6", "", {}, "sha512-NaOGLRrddszbQj9upGat6HG/4TKvXLvu+osAIgfxPYA+eIvYKv8GKDJOrY2D3/U9MRnKfMWD7bU4jeD4xmqyIg=="],
 
-    "@tanstack/hotkeys": ["@tanstack/hotkeys@0.4.2", "", { "dependencies": { "@tanstack/store": "^0.9.2" } }, "sha512-dCCu6Q91wZ2Mz7Vb+tzzpbKH0cSY9JXqJS7ZyouxewNL8oVmI228P9BmP94/1255g5WjPS+njenyrbWVeEQP5Q=="],
+    "@tanstack/hotkeys": ["@tanstack/hotkeys@0.5.0", "", { "dependencies": { "@tanstack/store": "^0.9.2" } }, "sha512-OByddYW3N7Y9yHOWzf5cR7mqq1OKa9S1DMGLciUAlmZrt1xw31GpbauabcO0FicAkaDa7AqFm7+gXX93PVmxrA=="],
 
-    "@tanstack/react-hotkeys": ["@tanstack/react-hotkeys@0.4.2", "", { "dependencies": { "@tanstack/hotkeys": "0.4.2", "@tanstack/react-store": "^0.9.2" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-7AMAmX+l1k0tHCaDgT5lHHF0cmtrmK0aaKxR6DliSdAVVjfmyraPZQapLwpyNKoTKNYIROj+2Wg+OvWYP52Oog=="],
+    "@tanstack/react-hotkeys": ["@tanstack/react-hotkeys@0.7.0", "", { "dependencies": { "@tanstack/hotkeys": "0.5.0", "@tanstack/react-store": "^0.9.2" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-vlP/vQaf/DP0vK7AsfNfsjDUwVFrTCMBFBD5OpRA3oMH+7yTc/YvPHCDaZXxoOjA5bohVyXWoginurKn9n5zmw=="],
 
     "@tanstack/react-router": ["@tanstack/react-router@1.168.3", "", { "dependencies": { "@tanstack/history": "1.161.6", "@tanstack/react-store": "^0.9.2", "@tanstack/router-core": "1.168.3", "isbot": "^5.1.22" }, "peerDependencies": { "react": ">=18.0.0 || >=19.0.0", "react-dom": ">=18.0.0 || >=19.0.0" } }, "sha512-hMWXhckeaSvjepHT5x9tUYJVXMvT/kUjaVHOUDmCfyOBtjxJNYJKbEWClXoopGwWlHjRTAzhsndhnQQRbIiKmA=="],
 
@@ -2348,6 +2349,8 @@
 
     "@namera-ai/docs/effect": ["effect@3.21.0", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ=="],
 
+    "@namera-ai/ui/@tanstack/react-hotkeys": ["@tanstack/react-hotkeys@0.4.2", "", { "dependencies": { "@tanstack/hotkeys": "0.4.2", "@tanstack/react-store": "^0.9.2" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-7AMAmX+l1k0tHCaDgT5lHHF0cmtrmK0aaKxR6DliSdAVVjfmyraPZQapLwpyNKoTKNYIROj+2Wg+OvWYP52Oog=="],
+
     "@radix-ui/react-collection/@radix-ui/react-slot": ["@radix-ui/react-slot@1.2.3", "", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-aeNmHnBxbi2St0au6VBVC7JXFlhLlOnvIIlePNniyUNAClzmtAUEY8/pBiK3iHjufOlwA+c20/8jngo7xcrg8A=="],
 
     "@radix-ui/react-dialog/@radix-ui/react-slot": ["@radix-ui/react-slot@1.2.3", "", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-aeNmHnBxbi2St0au6VBVC7JXFlhLlOnvIIlePNniyUNAClzmtAUEY8/pBiK3iHjufOlwA+c20/8jngo7xcrg8A=="],
@@ -2501,6 +2504,8 @@
     "@namera-ai/docs/@biomejs/biome/@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.4.4", "", { "os": "win32", "cpu": "x64" }, "sha512-gnOHKVPFAAPrpoPt2t+Q6FZ7RPry/FDV3GcpU53P3PtLNnQjBmKyN2Vh/JtqXet+H4pme8CC76rScwdjDcT1/A=="],
 
     "@namera-ai/docs/effect/fast-check": ["fast-check@3.23.2", "", { "dependencies": { "pure-rand": "^6.1.0" } }, "sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A=="],
+
+    "@namera-ai/ui/@tanstack/react-hotkeys/@tanstack/hotkeys": ["@tanstack/hotkeys@0.4.2", "", { "dependencies": { "@tanstack/store": "^0.9.2" } }, "sha512-dCCu6Q91wZ2Mz7Vb+tzzpbKH0cSY9JXqJS7ZyouxewNL8oVmI228P9BmP94/1255g5WjPS+njenyrbWVeEQP5Q=="],
 
     "@tanstack/start-plugin-core/@babel/code-frame/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.28.5", "", {}, "sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q=="],
 

@@ -8,6 +8,13 @@ const create = browser<typeof Config, import("fumadocs-mdx/runtime/types").Inter
   }
 } & {
   DocData: {
+    blog: {
+      /**
+       * Last modified date of document file, obtained from version control.
+       *
+       */
+      lastModified?: Date;
+    },
     docs: {
       /**
        * Last modified date of document file, obtained from version control.
@@ -18,8 +25,15 @@ const create = browser<typeof Config, import("fumadocs-mdx/runtime/types").Inter
   }
 }>();
 const browserCollections = {
+  blog: create.doc("blog", import.meta.glob(["./**/*.{mdx,md}"], {
+    "base": "./../content/blog",
+    "query": {
+      "collection": "blog"
+    },
+    "eager": false
+  })),
   docs: create.doc("docs", import.meta.glob(["./**/*.{mdx,md}"], {
-    "base": "./../content",
+    "base": "./../content/docs",
     "query": {
       "collection": "docs"
     },

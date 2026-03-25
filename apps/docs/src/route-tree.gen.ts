@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from "./app/__root";
 import { Route as LlmsDottxtRouteImport } from "./app/llms[.]txt";
 import { Route as LlmsFullDottxtRouteImport } from "./app/llms-full[.]txt";
 import { Route as IndexRouteImport } from "./app/index";
+import { Route as BlogIndexRouteImport } from "./app/blog/index";
 import { Route as DocsSplatRouteImport } from "./app/docs/$";
+import { Route as BlogSlugRouteImport } from "./app/blog/$slug";
 import { Route as ApiSearchRouteImport } from "./app/api/search";
 import { Route as ApiOgRouteImport } from "./app/api/og";
 import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
@@ -32,9 +34,19 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: "/blog/",
+  path: "/blog/",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: "/docs/$",
   path: "/docs/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: "/blog/$slug",
+  path: "/blog/$slug",
   getParentRoute: () => rootRouteImport,
 } as any);
 const ApiSearchRoute = ApiSearchRouteImport.update({
@@ -59,7 +71,9 @@ export interface FileRoutesByFullPath {
   "/llms.txt": typeof LlmsDottxtRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
+  "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
+  "/blog/": typeof BlogIndexRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRoutesByTo {
@@ -68,7 +82,9 @@ export interface FileRoutesByTo {
   "/llms.txt": typeof LlmsDottxtRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
+  "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
+  "/blog": typeof BlogIndexRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRoutesById {
@@ -78,7 +94,9 @@ export interface FileRoutesById {
   "/llms.txt": typeof LlmsDottxtRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
+  "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
+  "/blog/": typeof BlogIndexRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRouteTypes {
@@ -89,7 +107,9 @@ export interface FileRouteTypes {
     | "/llms.txt"
     | "/api/og"
     | "/api/search"
+    | "/blog/$slug"
     | "/docs/$"
+    | "/blog/"
     | "/llms.mdx/docs/$";
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -98,7 +118,9 @@ export interface FileRouteTypes {
     | "/llms.txt"
     | "/api/og"
     | "/api/search"
+    | "/blog/$slug"
     | "/docs/$"
+    | "/blog"
     | "/llms.mdx/docs/$";
   id:
     | "__root__"
@@ -107,7 +129,9 @@ export interface FileRouteTypes {
     | "/llms.txt"
     | "/api/og"
     | "/api/search"
+    | "/blog/$slug"
     | "/docs/$"
+    | "/blog/"
     | "/llms.mdx/docs/$";
   fileRoutesById: FileRoutesById;
 }
@@ -117,7 +141,9 @@ export interface RootRouteChildren {
   LlmsDottxtRoute: typeof LlmsDottxtRoute;
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
+  BlogSlugRoute: typeof BlogSlugRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
+  BlogIndexRoute: typeof BlogIndexRoute;
   LlmsDotmdxDocsSplatRoute: typeof LlmsDotmdxDocsSplatRoute;
 }
 
@@ -144,11 +170,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/blog/": {
+      id: "/blog/";
+      path: "/blog";
+      fullPath: "/blog/";
+      preLoaderRoute: typeof BlogIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/docs/$": {
       id: "/docs/$";
       path: "/docs/$";
       fullPath: "/docs/$";
       preLoaderRoute: typeof DocsSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/blog/$slug": {
+      id: "/blog/$slug";
+      path: "/blog/$slug";
+      fullPath: "/blog/$slug";
+      preLoaderRoute: typeof BlogSlugRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/api/search": {
@@ -181,7 +221,9 @@ const rootRouteChildren: RootRouteChildren = {
   LlmsDottxtRoute: LlmsDottxtRoute,
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
+  BlogSlugRoute: BlogSlugRoute,
   DocsSplatRoute: DocsSplatRoute,
+  BlogIndexRoute: BlogIndexRoute,
   LlmsDotmdxDocsSplatRoute: LlmsDotmdxDocsSplatRoute,
 };
 export const routeTree = rootRouteImport

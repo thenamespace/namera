@@ -39,7 +39,7 @@ const handler = (flagAlias: Option.Option<string>) =>
       alias: res.alias,
       address: res.data.smartAccountAddress,
       owner: res.data.ownerAlias,
-      index: res.data.index,
+      index: Number(res.data.index),
       kernelVersion: res.data.kernelVersion,
     };
 

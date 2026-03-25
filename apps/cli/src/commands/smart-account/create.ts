@@ -81,7 +81,7 @@ const handler = (
     const data = {
       address: res.data.smartAccountAddress,
       kernelVersion: res.data.kernelVersion,
-      index: res.data.index,
+      index: Number(res.data.index),
       owner: res.data.ownerAlias,
     };
 

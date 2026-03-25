@@ -16,6 +16,9 @@ import {
   BuildingIcon,
   CurrencyEthIcon,
   LegoIcon,
+  NewspaperIcon,
+  PenNibIcon,
+  ScrollIcon,
   TerminalIcon,
 } from "@phosphor-icons/react";
 
@@ -49,6 +52,24 @@ const platformContents = [
     path: "x402",
     tagline: "Native onchain payments",
     title: "x402 Payments",
+  },
+];
+
+const companyItems = [
+  {
+    icon: ScrollIcon,
+    path: "",
+    title: "Guides",
+  },
+  {
+    icon: PenNibIcon,
+    path: "",
+    title: "Blog",
+  },
+  {
+    icon: NewspaperIcon,
+    path: "",
+    title: "Changelog",
   },
 ];
 
@@ -147,6 +168,32 @@ export const Menu = () => {
           >
             Documentation
           </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuTrigger>Company</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <ul className="w-54">
+              {companyItems.map((item) => (
+                <li key={item.title}>
+                  <NavigationMenuLink
+                    className="hover:bg-[#727DA1]/15 text-neutral-200"
+                    render={
+                      // biome-ignore lint/style/useNamingConvention: safe
+                      <Link params={{ _splat: item.path }} to="/docs/$" />
+                    }
+                  >
+                    <div className="flex flex-row gap-2 items-center">
+                      <item.icon
+                        className="size-5 fill-accent-foreground"
+                        weight="fill"
+                      />
+                      <div className="text-sm">{item.title}</div>
+                    </div>
+                  </NavigationMenuLink>
+                </li>
+              ))}
+            </ul>
+          </NavigationMenuContent>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>

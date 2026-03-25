@@ -16,7 +16,7 @@ const handler = () =>
       alias: d.alias,
       address: d.data.smartAccountAddress,
       owner: d.data.ownerAlias,
-      index: d.data.index,
+      index: Number(d.data.index),
       kernelVersion: d.data.kernelVersion,
     }));
 

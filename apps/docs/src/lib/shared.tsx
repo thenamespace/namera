@@ -37,6 +37,26 @@ export const baseOptions = (): BaseLayoutProps => {
   };
 };
 
+export const blogBaseOptions = (): BaseLayoutProps => {
+  return {
+    nav: {
+      // @ts-expect-error safe
+      mode: "top",
+      title: (
+        <div className="text-lg flex flex-row gap-2 items-center px-1 text-[#C9D3EE]">
+          <NameraIcon className="size-4.5 fill-[#C9D3EE]" />
+          <div className="font-normal">Namera</div>
+        </div>
+      ),
+      transparentMode: "top",
+    },
+    searchToggle: {
+      enabled: true,
+    },
+    themeSwitch: { enabled: false },
+  };
+};
+
 const tabs = ["framework", "core", "cli", "mcp", "x402"] as const;
 type Tab = (typeof tabs)[number];
 

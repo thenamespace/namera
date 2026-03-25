@@ -3,18 +3,33 @@ import {
   remarkMdxFiles,
   remarkMdxMermaid,
 } from "fumadocs-core/mdx-plugins";
+import { pageSchema } from "fumadocs-core/source/schema";
 import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import lastModified from "fumadocs-mdx/plugins/last-modified";
 import { transformerTwoslash } from "fumadocs-twoslash";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import z from "zod";
 
 export const docs = defineDocs({
-  dir: "content",
+  dir: "content/docs",
   docs: {
     postprocess: {
       includeProcessedMarkdown: true,
     },
+  },
+});
+
+export const blog = defineDocs({
+  dir: "content/blog",
+  docs: {
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
+    schema: pageSchema.extend({
+      author: z.string(),
+      date: z.iso.date().or(z.date()),
+    }),
   },
 });
 

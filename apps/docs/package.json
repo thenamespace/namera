@@ -8,6 +8,7 @@
     "@takumi-rs/core-darwin-arm64": "^1.0.0-beta.16",
     "@takumi-rs/core-linux-x64-gnu": "^1.0.0-beta.16",
     "@takumi-rs/image-response": "^1.0.0-beta.16",
+    "@tanstack/react-hotkeys": "^0.7.0",
     "@tanstack/react-router": "^1.168.3",
     "@tanstack/react-start": "^1.167.5",
     "@tanstack/router-plugin": "^1.167.4",
