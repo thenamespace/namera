@@ -20,24 +20,24 @@ import {
   LLMCopyButton,
   ViewOptions,
 } from "@/components/mdx-components/page-actions";
+import { getReadingTime } from "@/lib/helpers/blog";
+import { generateDocsSeo } from "@/lib/seo/docs";
 import { baseOptions, getSection, githubDetails } from "@/lib/shared";
 import { source } from "@/lib/source";
+import type { DocsMetadata } from "@/types";
 
 export const Route = createFileRoute("/docs/$")({
   component: Page,
-  head: () => ({
-    meta: [
-      {
-        title: "Documentation | Namera",
-      },
-      { content: "/api/og", property: "og:image" },
-    ],
-  }),
   loader: async ({ params }) => {
     const slugs = params._splat?.split("/") ?? [];
     const data = await serverLoader({ data: slugs });
     await clientLoader.preload(data.path);
     return data;
+  },
+  head: ({ loaderData }) => {
+    // biome-ignore lint/style/noNonNullAssertion: safe
+    const { metadata } = loaderData!;
+    return generateDocsSeo(metadata);
   },
 });
 
@@ -49,8 +49,21 @@ const serverLoader = createServerFn({
     const page = source.getPage(slugs);
     if (!page) throw notFound();
 
+    const text = await page.data.getText("processed");
+    const readingTime = getReadingTime(text);
+
+    const metadata: DocsMetadata = {
+      title: page.data.title,
+      description: page.data.description,
+      lastModified: page.data.lastModified ?? new Date(),
+      readingTime,
+      slugs: page.slugs,
+      url: page.url,
+    };
+
     return {
       pageTree: await source.serializePageTree(source.getPageTree()),
+      metadata,
       path: page.path,
       url: page.url,
     };

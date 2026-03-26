@@ -28,6 +28,7 @@ export const blog = defineDocs({
     },
     schema: pageSchema.extend({
       author: z.string(),
+      authorUrl: z.string().optional(),
       date: z.iso.date().or(z.date()),
     }),
   },

@@ -63,7 +63,7 @@ const companyItems = [
   },
   {
     icon: PenNibIcon,
-    path: "",
+    path: "/blog",
     title: "Blog",
   },
   {
@@ -179,7 +179,7 @@ export const Menu = () => {
                     className="hover:bg-[#727DA1]/15 text-neutral-200"
                     render={
                       // biome-ignore lint/style/useNamingConvention: safe
-                      <Link params={{ _splat: item.path }} to="/docs/$" />
+                      <Link params={{ _splat: item.path }} to={item.path} />
                     }
                   >
                     <div className="flex flex-row gap-2 items-center">

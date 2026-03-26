@@ -6,6 +6,13 @@
   },
   "overrides": [
     {
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "off"
+          }
+        }
+      },
       "includes": ["src/app/**/*.tsx", "src/app/**/*.ts"],
       "linter": {
         "rules": {

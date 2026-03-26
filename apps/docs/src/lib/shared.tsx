@@ -57,21 +57,21 @@ export const blogBaseOptions = (): BaseLayoutProps => {
   };
 };
 
-const tabs = ["framework", "core", "cli", "mcp", "x402"] as const;
+const tabs = ["protocol", "core", "cli", "mcp", "x402"] as const;
 type Tab = (typeof tabs)[number];
 
 export const getSection = (path: string | undefined): Tab => {
-  if (!path) return "framework";
+  if (!path) return "protocol";
   // (framework)/index.mdx
   const [dir] = path.split("/", 1);
-  if (!dir) return "framework";
+  if (!dir) return "protocol";
   return (
     ({
-      "(framework)": "framework",
+      "(protocol)": "protocol",
       cli: "cli",
       core: "core",
       mcp: "mcp",
       x402: "x402",
-    }[dir] as Tab) ?? "framework"
+    }[dir] as Tab) ?? "protocol"
   );
 };

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from "./app/__root";
 import { Route as LlmsDottxtRouteImport } from "./app/llms[.]txt";
 import { Route as LlmsFullDottxtRouteImport } from "./app/llms-full[.]txt";
+import { Route as BlogRouteRouteImport } from "./app/blog/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as BlogIndexRouteImport } from "./app/blog/index";
 import { Route as DocsSplatRouteImport } from "./app/docs/$";
@@ -29,15 +30,20 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
   path: "/llms-full.txt",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BlogRouteRoute = BlogRouteRouteImport.update({
+  id: "/blog",
+  path: "/blog",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any);
 const BlogIndexRoute = BlogIndexRouteImport.update({
-  id: "/blog/",
-  path: "/blog/",
-  getParentRoute: () => rootRouteImport,
+  id: "/",
+  path: "/",
+  getParentRoute: () => BlogRouteRoute,
 } as any);
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: "/docs/$",
@@ -45,9 +51,9 @@ const DocsSplatRoute = DocsSplatRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any);
 const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: "/blog/$slug",
-  path: "/blog/$slug",
-  getParentRoute: () => rootRouteImport,
+  id: "/$slug",
+  path: "/$slug",
+  getParentRoute: () => BlogRouteRoute,
 } as any);
 const ApiSearchRoute = ApiSearchRouteImport.update({
   id: "/api/search",
@@ -67,6 +73,7 @@ const LlmsDotmdxDocsSplatRoute = LlmsDotmdxDocsSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
+  "/blog": typeof BlogRouteRouteWithChildren;
   "/llms-full.txt": typeof LlmsFullDottxtRoute;
   "/llms.txt": typeof LlmsDottxtRoute;
   "/api/og": typeof ApiOgRoute;
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
+  "/blog": typeof BlogRouteRouteWithChildren;
   "/llms-full.txt": typeof LlmsFullDottxtRoute;
   "/llms.txt": typeof LlmsDottxtRoute;
   "/api/og": typeof ApiOgRoute;
@@ -103,6 +111,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | "/"
+    | "/blog"
     | "/llms-full.txt"
     | "/llms.txt"
     | "/api/og"
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/"
+    | "/blog"
     | "/llms-full.txt"
     | "/llms.txt"
     | "/api/og"
@@ -137,13 +147,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
+  BlogRouteRoute: typeof BlogRouteRouteWithChildren;
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute;
   LlmsDottxtRoute: typeof LlmsDottxtRoute;
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
-  BlogSlugRoute: typeof BlogSlugRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
-  BlogIndexRoute: typeof BlogIndexRoute;
   LlmsDotmdxDocsSplatRoute: typeof LlmsDotmdxDocsSplatRoute;
 }
 
@@ -163,6 +172,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LlmsFullDottxtRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/blog": {
+      id: "/blog";
+      path: "/blog";
+      fullPath: "/blog";
+      preLoaderRoute: typeof BlogRouteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/": {
       id: "/";
       path: "/";
@@ -172,10 +188,10 @@ declare module "@tanstack/react-router" {
     };
     "/blog/": {
       id: "/blog/";
-      path: "/blog";
+      path: "/";
       fullPath: "/blog/";
       preLoaderRoute: typeof BlogIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
+      parentRoute: typeof BlogRouteRoute;
     };
     "/docs/$": {
       id: "/docs/$";
@@ -186,10 +202,10 @@ declare module "@tanstack/react-router" {
     };
     "/blog/$slug": {
       id: "/blog/$slug";
-      path: "/blog/$slug";
+      path: "/$slug";
       fullPath: "/blog/$slug";
       preLoaderRoute: typeof BlogSlugRouteImport;
-      parentRoute: typeof rootRouteImport;
+      parentRoute: typeof BlogRouteRoute;
     };
     "/api/search": {
       id: "/api/search";
@@ -215,15 +231,28 @@ declare module "@tanstack/react-router" {
   }
 }
 
+interface BlogRouteRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute;
+  BlogIndexRoute: typeof BlogIndexRoute;
+}
+
+const BlogRouteRouteChildren: BlogRouteRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
+};
+
+const BlogRouteRouteWithChildren = BlogRouteRoute._addFileChildren(
+  BlogRouteRouteChildren,
+);
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BlogRouteRoute: BlogRouteRouteWithChildren,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
-  BlogSlugRoute: BlogSlugRoute,
   DocsSplatRoute: DocsSplatRoute,
-  BlogIndexRoute: BlogIndexRoute,
   LlmsDotmdxDocsSplatRoute: LlmsDotmdxDocsSplatRoute,
 };
 export const routeTree = rootRouteImport

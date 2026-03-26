@@ -195,7 +195,7 @@ body {
   box-shadow: 0px 1px 3px 0px rgba(255, 255, 255, 0.25) inset;
 }
 
-@utility heading-gradient {
+.heading-gradient {
   font-feature-settings:
     "salt" on,
     "ss02" on;
