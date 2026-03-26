@@ -1,7 +1,6 @@
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { Navbar } from "@/components";
 import { sourceBlog } from "@/lib/source";
 
 import { BlogCard, BlogHero } from "./-components";
@@ -34,7 +33,6 @@ const BlogHomePage = () => {
   const data = useLoaderData({ from: "/blog/" });
   return (
     <div>
-      <Navbar />
       <BlogHero />
       <div className="px-4 mx-auto max-w-3xl flex flex-col py-12 w-full divide-y">
         {data.contents.map((blog) => (
