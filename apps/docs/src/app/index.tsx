@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Footer, Navbar } from "@/components";
 import { Hr } from "@/components/misc";
-import { Hero, HowItWorks, UseCases } from "@/sections";
+import { Faqs, Hero, HowItWorks, UseCases } from "@/sections";
 import { Products } from "@/sections/products";
 
 const Home = () => {
@@ -15,7 +15,9 @@ const Home = () => {
       <Hr />
       <HowItWorks />
       <Hr />
-      <UseCases />
+      {/* <UseCases /> */}
+      {/* <Hr /> */}
+      <Faqs />
       <Hr />
       <div className="h-screen" />
       <Footer />
