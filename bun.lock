@@ -40,6 +40,7 @@
     "apps/docs": {
       "name": "@namera-ai/docs",
       "dependencies": {
+        "@namera-ai/core": "workspace:*",
         "@namera-ai/ui": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",
         "@standard-schema/spec": "^1.1.0",

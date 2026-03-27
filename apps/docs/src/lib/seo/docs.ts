@@ -48,7 +48,7 @@ export const generateDocsSeo = (metadata: DocsMetadata) => {
   return {
     links: [{ href: canonicalUrl.toString(), rel: "canonical" }],
     meta: [
-      { title: `${metadata.title} | Namera` },
+      { title: `${metadata.title} | Namera Documentation` },
       { content: metadata.description, name: "description" },
       { content: "index, follow", name: "robots" },
       // Open Graph

@@ -48,6 +48,9 @@ export default defineConfig({
       ],
     },
     rehypePlugins: (v) => [rehypeKatex, ...v],
+    remarkNpmOptions: {
+      persist: { id: "package-manager" },
+    },
     remarkPlugins: [remarkMdxMermaid, remarkMdxFiles, remarkMath],
   },
   plugins: [

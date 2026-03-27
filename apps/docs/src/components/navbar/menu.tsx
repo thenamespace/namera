@@ -42,12 +42,14 @@ const platformContents = [
     title: "CLI",
   },
   {
+    comingSoon: true,
     icon: McpIcon,
     path: "mcp",
     tagline: "Secure agent execution",
     title: "MCP",
   },
   {
+    comingSoon: true,
     icon: CurrencyEthIcon,
     path: "x402",
     tagline: "Native onchain payments",
@@ -123,18 +125,22 @@ export const Menu = () => {
                   <NavigationMenuLink
                     className="hover:bg-[#727DA1]/15 text-neutral-200"
                     render={
-                      // biome-ignore lint/style/useNamingConvention: safe
-                      <Link params={{ _splat: content.path }} to="/docs/$" />
+                      <Link
+                        disabled={content.comingSoon}
+                        // biome-ignore lint/style/useNamingConvention: safe
+                        params={{ _splat: content.path }}
+                        to="/docs/$"
+                      />
                     }
                   >
-                    <div className="flex flex-row gap-2 items-center">
+                    <div className="flex flex-row gap-2 items-start">
                       <content.icon
-                        className="size-6 fill-[url(#gradient-primary)]"
+                        className="size-6 fill-[url(#gradient-primary)] mt-1"
                         weight="fill"
                       />
                       <div className="flex flex-col">
                         <div className="text-sm">{content.title}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground">
                           {content.tagline}
                         </div>
                       </div>

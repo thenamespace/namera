@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { createFileRoute, notFound, useParams } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
 import { cn } from "@namera-ai/ui/lib/utils";
@@ -9,7 +9,7 @@ import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import {
   DocsBody,
   DocsDescription,
-  DocsPage,
+  DocsPage as DocsPageCore,
   DocsTitle,
 } from "fumadocs-ui/layouts/notebook/page";
 
@@ -22,24 +22,9 @@ import {
 } from "@/components/mdx-components/page-actions";
 import { getReadingTime } from "@/lib/helpers/blog";
 import { generateDocsSeo } from "@/lib/seo/docs";
-import { baseOptions, getSection, githubDetails } from "@/lib/shared";
+import { baseOptions, githubDetails } from "@/lib/shared";
 import { source } from "@/lib/source";
 import type { DocsMetadata } from "@/types";
-
-export const Route = createFileRoute("/docs/$")({
-  component: Page,
-  loader: async ({ params }) => {
-    const slugs = params._splat?.split("/") ?? [];
-    const data = await serverLoader({ data: slugs });
-    await clientLoader.preload(data.path);
-    return data;
-  },
-  head: ({ loaderData }) => {
-    // biome-ignore lint/style/noNonNullAssertion: safe
-    const { metadata } = loaderData!;
-    return generateDocsSeo(metadata);
-  },
-});
 
 const serverLoader = createServerFn({
   method: "GET",
@@ -78,15 +63,17 @@ const clientLoader = browserCollections.docs.createClientLoader({
     },
   ) {
     return (
-      <DocsPage
+      <DocsPageCore
         tableOfContent={{
           style: "clerk",
         }}
         toc={toc}
       >
         <DocsTitle>{frontmatter.title}</DocsTitle>
-        <DocsDescription>{frontmatter.description}</DocsDescription>
-        <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+        <DocsDescription className="my-0">
+          {frontmatter.description}
+        </DocsDescription>
+        <div className="flex flex-row gap-2 items-center border-b pt-2 pb-4">
           <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
           <ViewOptions
             githubUrl={`https://github.com/${githubDetails.org}/${githubDetails.repo}/blob/main/apps/docs/src/docs/${page.path}`}
@@ -96,59 +83,70 @@ const clientLoader = browserCollections.docs.createClientLoader({
         <DocsBody>
           <MDX components={getMDXComponents()} />
         </DocsBody>
-      </DocsPage>
+      </DocsPageCore>
     );
   },
 });
 
-function Page() {
-  const p = useParams({ from: "/docs/$" });
-  const section = getSection(p._splat);
+const DocsPage = () => {
   const data = useFumadocsLoader(Route.useLoaderData());
 
   return (
-    <div className={cn(section)}>
-      <DocsLayout
-        {...baseOptions()}
-        sidebar={{
-          tabs: {
-            transform(option, node) {
-              const section =
-                (node.$id === "(framework)" ? "framework" : node.$id) ??
-                "framework";
-              const color = `var(--${section}-color, var(--color-fd-foreground))`;
+    <DocsLayout
+      {...baseOptions()}
+      sidebar={{
+        tabs: {
+          transform(option, node) {
+            const section =
+              (node.$id === "(framework)" ? "framework" : node.$id) ??
+              "framework";
+            const color = `var(--${section}-color, var(--color-fd-foreground))`;
 
-              return {
-                ...option,
-                icon: (
-                  <div
-                    className={cn(
-                      "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
-                      "text-(--tab-color) max-md:bg-(--tab-color)/10",
-                    )}
-                    style={
-                      {
-                        "--tab-color": color,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {option.icon}
-                  </div>
-                ),
-              };
-            },
+            return {
+              ...option,
+              icon: (
+                <div
+                  className={cn(
+                    "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
+                    "text-(--tab-color) max-md:bg-(--tab-color)/10",
+                  )}
+                  style={
+                    {
+                      "--tab-color": color,
+                    } as React.CSSProperties
+                  }
+                >
+                  {option.icon}
+                </div>
+              ),
+            };
           },
-        }}
-        tabMode="navbar"
-        tree={data.pageTree}
-      >
-        <Suspense>
-          {clientLoader.useContent(data.path, {
-            path: data.path,
-            url: data.url,
-          })}
-        </Suspense>
-      </DocsLayout>
-    </div>
+        },
+      }}
+      tabMode="navbar"
+      tree={data.pageTree}
+    >
+      <Suspense>
+        {clientLoader.useContent(data.path, {
+          path: data.path,
+          url: data.url,
+        })}
+      </Suspense>
+    </DocsLayout>
   );
-}
+};
+
+export const Route = createFileRoute("/docs/$")({
+  component: DocsPage,
+  loader: async ({ params }) => {
+    const slugs = params._splat?.split("/") ?? [];
+    const data = await serverLoader({ data: slugs });
+    await clientLoader.preload(data.path);
+    return data;
+  },
+  head: ({ loaderData }) => {
+    // biome-ignore lint/style/noNonNullAssertion: safe
+    const { metadata } = loaderData!;
+    return generateDocsSeo(metadata);
+  },
+});
