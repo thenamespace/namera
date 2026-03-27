@@ -43,7 +43,7 @@ export const Products = () => {
         className="px-4 max-w-6xl mx-auto my-24 flex flex-col gap-12"
         id="products"
       >
-        <h2 className="font-helveticaDisplay text-3xl sm:text-4xl md:text-5xl heading-gradient text-center pb-2">
+        <h2 className="font-helveticaDisplay text-3xl sm:text-4xl heading-gradient text-center pb-2">
           Everything you need to
           <br />
           build agent wallets
