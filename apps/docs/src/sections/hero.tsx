@@ -16,8 +16,7 @@ export const Hero = () => {
         <div className="flex flex-col gap-4">
           <h1 className="pt-32 font-helveticaDisplay heading-gradient pb-2 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
             Programmable wallets
-            <br />
-            for autonomous agents
+            <br /> for autonomous agents
           </h1>
           <div className="max-w-lg mx-auto text-center flex flex-col gap-8">
             <p className="text-sm text-muted-foreground font-normal sm:text-base md:text-lg">

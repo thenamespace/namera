@@ -68,7 +68,7 @@ export const Faqs = () => {
         <Accordion className="border rounded-2xl p-6" defaultValue={[]}>
           {faqs.map((faq) => (
             <AccordionItem className="py-1" key={faq.key} value={faq.key}>
-              <AccordionTrigger className="text-base sm:text-lg font-normal">
+              <AccordionTrigger className="text-base sm:text-lg font-normal hover:no-underline">
                 {faq.question}
               </AccordionTrigger>
               <AccordionContent className="text-neutral-200 text-sm sm:text-base font-light">
