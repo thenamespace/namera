@@ -1,0 +1,41 @@
+---
+title: Installation
+icon: WrenchIcon
+description: Install Namera SDK via your package manager, CDN, or build from source.
+---
+
+## Package Manager
+
+Install the required packages.
+
+```npm
+npm i @namera-ai/sdk viem
+```
+
+- [Viem](https://viem.sh/) is a TypeScript interface for Ethereum that performs blockchain operations.
+- [TypeScript](https://wagmi.sh/react/typescript) is optional, but highly recommended.
+
+
+## CDN
+
+If you're not using a package manager, you can also use Wagmi via an ESM-compatible CDN such as [esm.sh](https://esm.sh). Simply add a `<script type="module">` tag to the bottom of your HTML file with the following content.
+
+```html
+<script type="module">
+    import { createClient } from 'https://esm.sh/viem@2.x'
+    import { createEcdsaAccountClient } from 'https://esm.sh/@namera-ai/sdk/account'
+</script>
+```
+
+## Building from Source
+
+If you'd like to build Namera SDK from source, you can do so by cloning the repository and running the following command.
+
+```bash
+gh repo clone thenamespace/namera
+cd namera
+bun install
+bun run build
+cd packages/sdk
+bun link --global
+```

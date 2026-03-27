@@ -1,0 +1,60 @@
+---
+title: Getting Started
+icon: RocketLaunchIcon
+description: Get started with Namera SDK and create your first smart wallet in just a few lines of code.
+---
+
+## Installation
+
+To install Namera SDK, you can use the following command:
+
+```npm
+npm install @namera-ai/sdk viem
+```
+
+- [Viem](https://viem.sh/) is a TypeScript interface for Ethereum that performs blockchain operations.
+
+## Setup Public Client
+
+Before you can use Namera SDK, you need to set up a public client. This client will be used to interact with the Ethereum network.
+
+```ts
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+```
+
+## Create Signer
+
+Next, you need to create a signer. A signer is an object that can sign transactions and messages. It can be one of `EIP1193Provider`, `WalletClient`, `LocalAccount`, or `SmartAccount`.
+
+```ts
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+
+const signer = privateKeyToAccount(generatePrivateKey());
+```
+
+## Create Smart Account Client
+
+Now that you have a public client and a signer, you can create an ECDSA Smart Account client.
+
+```ts
+import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+
+const client = await createEcdsaAccountClient({
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  signer,
+});
+
+// Get the address of the smart account
+const saAddress = client.account.address;
+```
+

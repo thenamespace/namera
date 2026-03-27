@@ -1,5 +1,15 @@
 {
   "icon": "LegoIcon",
+  "pages": [
+    "---Introduction---",
+    "index",
+    "installation",
+    "getting-started",
+    "---Smart Accounts---",
+    "...smart-accounts",
+    "---Session Keys---",
+    "...session-keys"
+  ],
   "root": true,
   "title": "SDK"
 }
