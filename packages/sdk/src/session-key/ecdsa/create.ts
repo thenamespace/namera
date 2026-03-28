@@ -21,8 +21,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import type { GetKernelVersion, Signer } from "@/types";
 
-export type CreateEcdsaSessionKeyParams<
-  TClientTransport extends Transport = Transport,
+export type CreateMultiChainEcdsaSessionKeyParams<
   TChain extends Chain = Chain,
   TEntrypointVersion extends EntryPointVersion = EntryPointVersion,
   TKernelVersion extends
@@ -30,7 +29,7 @@ export type CreateEcdsaSessionKeyParams<
 > = {
   signer: Signer;
   clients: Client<
-    TClientTransport,
+    Transport,
     TChain,
     JsonRpcAccount | LocalAccount | undefined
   >[];
@@ -40,7 +39,7 @@ export type CreateEcdsaSessionKeyParams<
   kernelVersion: TKernelVersion;
 };
 
-export type CreateEcdsaSessionKeyResult = {
+export type CreateMultiChainEcdsaSessionKeyResult = {
   sessionPrivateKey: Hex;
   sessionKeyAddress: Address;
   serializedAccounts: {
@@ -49,19 +48,17 @@ export type CreateEcdsaSessionKeyResult = {
   }[];
 };
 
-export const createEcdsaSessionKey = async <
-  TClientTransport extends Transport,
+export const createMultiChainEcdsaSessionKey = async <
   TChain extends Chain,
   TEntrypointVersion extends EntryPointVersion,
   TKernelVersion extends GetKernelVersion<TEntrypointVersion>,
 >(
-  params: CreateEcdsaSessionKeyParams<
-    TClientTransport,
+  params: CreateMultiChainEcdsaSessionKeyParams<
     TChain,
     TEntrypointVersion,
     TKernelVersion
   >,
-): Promise<CreateEcdsaSessionKeyResult> => {
+): Promise<CreateMultiChainEcdsaSessionKeyResult> => {
   const { signer, clients, index, policies, kernelVersion, entrypointVersion } =
     params;
 

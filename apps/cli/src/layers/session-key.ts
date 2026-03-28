@@ -1,6 +1,6 @@
 import { Wallet } from "@ethereumjs/wallet";
 import {
-  createEcdsaSessionKey,
+  createMultiChainEcdsaSessionKey,
   isSessionKeyInstalled,
 } from "@namera-ai/sdk/session-key";
 import { Data, Effect, Layer, type Redacted, Schema, ServiceMap } from "effect";
@@ -152,7 +152,7 @@ export const layer = Layer.effect(
         );
 
         const res = yield* Effect.promise(() =>
-          createEcdsaSessionKey({
+          createMultiChainEcdsaSessionKey({
             clients,
             entrypointVersion: sa.data.entryPointVersion,
             kernelVersion: sa.data.kernelVersion,

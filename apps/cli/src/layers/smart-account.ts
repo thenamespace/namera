@@ -1,4 +1,4 @@
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
 import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
@@ -205,7 +205,7 @@ export const layer = Layer.effect(
 
         const res = yield* Effect.tryPromise({
           try: () =>
-            createEcdsaAccountClient({
+            createMultiChainEcdsaAccountClient({
               bundlerTransport: http(),
               chain: mainnet,
               client: publicClient,

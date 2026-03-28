@@ -1,1 +1,1 @@
-export * from "./ecdsa";
+export * from "./multichain-ecdsa";

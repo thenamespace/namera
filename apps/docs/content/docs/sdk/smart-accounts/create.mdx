@@ -1,16 +1,16 @@
 ---
 title: Create Smart Account
-description: Create a Smart Account with ECDSA validator
+description: Create a Smart Account with Multi-Chain ECDSA validator
 ---
 
-When you create a smart account, you can choose from a variety of validators to define how the account validates UserOps. In this tutorial, we will be using the ECDSA validator, which works like a normal EOA by validating signatures from a ECDSA private key.
+When you create a smart account, you can choose from a variety of validators to define how the account validates UserOps. In this tutorial, we will be using the Multi-Chain ECDSA validator, which works like a normal EOA by validating signatures from a ECDSA private key, but also supports sending multiple UserOps across multiple chains using a single signature.
 
 ---
 
 ## Import
 
 ```ts
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
 ```
 ---
 
@@ -25,11 +25,11 @@ In this example, we will be using the `LocalAccount`.
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { publicClient, bundlerClient } from './clients';
 import { mainnet } from 'viem/chains';
-import { createEcdsaAccountClient } from '@namera-ai/sdk/account';
+import { createMultiChainEcdsaAccountClient } from '@namera-ai/sdk/account';
 
 const signer = privateKeyToAccount(generatePrivateKey());
 
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
   client: publicClient,
@@ -58,7 +58,7 @@ export const publicClient = createPublicClient({
 Create a new ECDSA Smart Account client on Ethereum Mainnet with local signer and paymaster.
 
 ```ts title="index.ts"
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
 import { createPublicClient, http } from "viem";
 import { createPaymasterClient } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -75,7 +75,7 @@ const paymaster = createPaymasterClient({
 
 const signer = privateKeyToAccount(generatePrivateKey());
 
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
   client: publicClient,
@@ -97,7 +97,7 @@ const saAddress = client.account.address; // Smart Account Address
 - **Type:** `Signer` | `OneOf<EIP1193Provider, WalletClient, LocalAccount, SmartAccount>`
 
 ```ts title="index.ts"
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   signer: walletClient, // [!code focus]
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
@@ -146,7 +146,7 @@ import { mainnet } from "viem/chains";
 - **Type:** `EntrypointVersion` => `"0.6" | "0.7" | "0.8" | "0.9"{:ts}`
 
 ```ts title="index.ts"
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   signer: walletClient,
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
@@ -162,7 +162,7 @@ const client = await createEcdsaAccountClient({
 > Note: Kernel 0.2.x supports only Entrypoint 0.6. For Kernel 0.3.x, you can use Entrypoint 0.7 or 0.8.
 
 ```ts title="index.ts"
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   signer: walletClient,
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
@@ -175,9 +175,9 @@ const client = await createEcdsaAccountClient({
 ### index
 
 ```ts title="index.ts"
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
 
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   signer: walletClient,
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
@@ -194,14 +194,14 @@ const client = await createEcdsaAccountClient({
 
 ```ts title="index.ts"
 import { createPaymasterClient } from "viem/account-abstraction";  // [!code focus]
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
 
 const paymaster = createPaymasterClient({  // [!code focus]
   transport: http("ZERO_DEV_PAYMASTER_URL"),  // [!code focus]
 });  // [!code focus]
 
 
-const client = await createEcdsaAccountClient({
+const client = await createMultiChainEcdsaAccountClient({
   signer: walletClient,
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
@@ -210,5 +210,30 @@ const client = await createEcdsaAccountClient({
   kernelVersion: "0.3.2",
   index: 0n,
   paymaster: paymasterClient, // [!code focus]
+});
+```
+
+
+## FAQs
+
+### When I create a account, is it deployed onchain?
+
+No, accounts are not deployed onchain yet. Your account is deployed automatically when you send the first UserOp. You can create an infinite number of such account objects without paying any gas.
+
+### Can I create multiple accounts from the same signer?
+
+Yes, you can do so by providing an index when you create the account object.
+
+```ts title="index.ts"
+import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
+
+const client = await createMultiChainEcdsaAccountClient({
+  signer: walletClient,
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  index: 0n, // [!code focus]
 });
 ```

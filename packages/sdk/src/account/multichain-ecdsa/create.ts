@@ -22,7 +22,7 @@ import type {
   SmartAccount,
 } from "viem/account-abstraction";
 
-export type CreateEcdsaAccountClientParams<
+export type CreateMultiChainEcdsaAccountClientParams<
   TClientTransport extends Transport = Transport,
   TBundlerTransport extends Transport = Transport,
   TPaymasterTransport extends Transport = Transport,
@@ -46,7 +46,7 @@ export type CreateEcdsaAccountClientParams<
   kernelVersion: TKernelVersion;
 };
 
-export const createEcdsaAccountClient = async <
+export const createMultiChainEcdsaAccountClient = async <
   TClientTransport extends Transport,
   TBundlerTransport extends Transport,
   TPaymasterTransport extends Transport,
@@ -55,7 +55,7 @@ export const createEcdsaAccountClient = async <
   TEntrypointVersion extends EntryPointVersion,
   TKernelVersion extends GetKernelVersion<TEntrypointVersion>,
 >(
-  params: CreateEcdsaAccountClientParams<
+  params: CreateMultiChainEcdsaAccountClientParams<
     TClientTransport,
     TBundlerTransport,
     TPaymasterTransport,
