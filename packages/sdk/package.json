@@ -24,6 +24,10 @@
       "import": "./dist/account.js",
       "types": "./dist/account.d.ts"
     },
+    "./passkey": {
+      "import": "./dist/passkey.js",
+      "types": "./dist/passkey.d.ts"
+    },
     "./policy": {
       "import": "./dist/policy.js",
       "types": "./dist/policy.d.ts"
