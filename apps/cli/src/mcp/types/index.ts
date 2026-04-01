@@ -6,7 +6,9 @@ import type {
   SudoPolicyParams,
   TimestampPolicyParams,
 } from "@namera-ai/sdk/policy";
-import type { Address, Hex } from "viem";
+import type { Address } from "viem";
+
+import type { Batch } from "@/schema/tx";
 
 export type Intent = "sign" | "transaction" | "read";
 
@@ -30,12 +32,7 @@ export type SignOperation = Operation<
 export type WriteOperation = Operation<
   "transaction",
   {
-    calls: {
-      chainId: number;
-      target: Address;
-      value: bigint;
-      data: Hex;
-    }[];
+    batches: Batch[];
   }
 >;
 

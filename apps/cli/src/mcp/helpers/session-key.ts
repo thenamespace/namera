@@ -6,7 +6,7 @@ import type {
   TimestampPolicyParams,
 } from "@namera-ai/sdk/policy";
 import {
-  createEcdsaSessionKeyClient,
+  createSessionKeyClient,
   deserializePermissionAccountParams,
 } from "@namera-ai/sdk/session-key";
 import { Effect } from "effect";
@@ -99,34 +99,38 @@ export function evaluateCall(
   const permissions = policy.permissions ?? [];
   if (permissions.length === 0) return false;
 
-  const { calls } = operation;
-  if (!calls || calls.length === 0) return false;
+  const { batches } = operation;
 
-  return calls.every((call) => {
-    const { target, value, data, chainId } = call;
+  if (batches.length === 0) return false;
 
-    if (!chainIds.includes(chainId)) return false;
+  return batches.every((batch) => {
+    const { calls, chainId } = batch;
 
-    return permissions.some((p) => {
-      if (p.target !== target) return false;
-      const valueLimit = p.valueLimit ?? 0n;
-      if (value > valueLimit) return false;
+    return calls.every((call) => {
+      const { to, value = 0n, data } = call;
+      if (!chainIds.includes(chainId)) return false;
 
-      const isContractCall = data.length >= 10;
+      return permissions.some((p) => {
+        if (p.target !== to) return false;
+        const valueLimit = p.valueLimit ?? 0n;
+        if (value > valueLimit) return false;
 
-      if ("functionName" in p) {
-        if (!isContractCall) return false;
-        if (!p.selector) return false;
+        const isContractCall = data.length >= 10;
 
-        const selector = data.slice(0, 10);
-        if (selector !== p.selector) return false;
+        if ("functionName" in p) {
+          if (!isContractCall) return false;
+          if (!p.selector) return false;
 
-        // TODO: param rules
+          const selector = data.slice(0, 10);
+          if (selector !== p.selector) return false;
+
+          // TODO: param rules
+          return true;
+        }
+
+        // EOA
         return true;
-      }
-
-      // EOA
-      return true;
+      });
     });
   });
 }
@@ -220,7 +224,7 @@ export const getSessionKeyClient = (params: GetValidSessionKeysParams) =>
     } else if (params.operation.intent === "sign") {
       chainId = params.operation.chainId;
     } else {
-      chainId = params.operation.calls[0]?.chainId ?? 1;
+      chainId = params.operation.batches[0]?.chainId ?? 1;
     }
 
     const chainName = chainIdToChainName(chainId);
@@ -236,7 +240,8 @@ export const getSessionKeyClient = (params: GetValidSessionKeysParams) =>
         ?.serializedAccount ?? "";
 
     const accountClient = yield* Effect.promise(() =>
-      createEcdsaSessionKeyClient({
+      createSessionKeyClient({
+        type: "ecdsa",
         bundlerTransport,
         chain,
         client: publicClient,

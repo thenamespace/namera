@@ -1,3 +1,4 @@
+import { executeTransaction } from "@namera-ai/sdk/transaction";
 import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 import { parseUnits } from "viem";
@@ -5,7 +6,8 @@ import { parseUnits } from "viem";
 import { McpContext } from "@/layers/mcp-context";
 import { Web3Service } from "@/layers/web3";
 import { getSessionKeyClient, InsufficientPermissions } from "@/mcp/helpers";
-import { EthereumAddress, getChain, SupportedChain } from "@/schema";
+import { EthereumAddress, getChain, type Hex, SupportedChain } from "@/schema";
+import type { Batch } from "@/schema/tx";
 
 export const NativeTransferToolParams = Schema.Struct({
   chain: SupportedChain.annotate({
@@ -41,28 +43,34 @@ export const nativeTransferToolHandler = (params: NativeTransferToolParams) =>
     };
 
     const amount = parseUnits(params.amount.toString(), decimals());
+    const chain = getChain(params.chain);
 
-    const client = yield* getSessionKeyClient({
-      operation: {
-        intent: "transaction",
+    const batches: Batch[] = [
+      {
+        chainId: chain.id,
         calls: [
           {
-            target: params.address,
+            to: params.address,
             value: amount,
-            chainId: getChain(params.chain).id,
             data: "0x",
           },
         ],
       },
+    ];
+
+    const client = yield* getSessionKeyClient({
+      operation: {
+        intent: "transaction",
+        batches,
+      },
     });
 
-    const tx = yield* Effect.promise(() =>
-      client.sendTransaction({
-        to: params.address,
-        value: amount,
-        data: "0x",
+    const txHashes = yield* Effect.promise(() =>
+      executeTransaction({
+        clients: [client],
+        batches,
       }),
     );
 
-    return tx;
+    return txHashes[0]?.receipt.transactionHash as Hex;
   });

@@ -11,14 +11,12 @@
 - [x] Mermaid Diagrams
 - [x] Workspaces like structure for docs
 - [x] Dynamic OG Image Generation
-- [ ] Home Page
+- [x] Home Page
+  - [ ] Illustrations
 - [ ] Writing Docs
-  - [ ] Framework Docs
+  - [ ] Protocol Docs
   - [ ] CLI Docs
-  - [ ] MCP Docs
   - [ ] Core Docs
-  - [ ] x402 Docs
-  - [ ] MPP Docs
 
 ### CLI
 
@@ -60,7 +58,7 @@
     - [x] List Session Keys (All and per Smart Account)
     - [ ] Revoke Session Key
     - [ ] Import Session Key
-    - [ ] Remove Session Key
+    - [x] Remove Session Key
     - [x] Get Session Key Installation Status (per chain) (need to test)
   - [x] Schemas
     - [x] Get CLI Command Params Schema
@@ -71,12 +69,10 @@
         - [x] `get_wallet_address`
         - [x] `get_balance`
       - [ ] Read Operations
-        - [ ] 
+        - [ ] `read_contract`
       - [ ] Transfer Tools
         - [x] `native_transfer`
-        - [ ] `erc20_transfer`
-      - [ ] Transaction Tools
-        - [ ] `execute_transaction`
-        - [ ] `execute_batch`
+      - [x] Transaction Tools
+        - [x] `execute_transaction`
 - [ ] Audit Code
 
