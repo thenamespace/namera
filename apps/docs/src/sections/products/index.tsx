@@ -1,32 +1,47 @@
+import {
+  CliIcon,
+  MachinePaymentsIcon,
+  PlatformIcon,
+  StarIcon,
+  ToolkitIcon,
+  x402Icon,
+} from "./icons";
+
 const products = [
   {
+    icon: PlatformIcon,
     tagline:
       "A fully managed backend for wallets and session keys, handling agent access and execution.",
     title: "Platform",
   },
   {
+    icon: ToolkitIcon,
     tagline:
       "Integrate wallet capabilities into any app or workflow, using simple, composable building blocks.",
     title: "Developer toolkit",
   },
   {
+    icon: CliIcon,
     tagline:
       "A local-first interface for operating wallets and execution flows, with full control from your terminal.",
     title: "Local CLI",
   },
   {
+    icon: StarIcon,
     tagline:
       "Expose wallet functionality to agents in a structured way, enabling controlled and reliable interaction.",
     title: "MCP Server",
   },
   {
+    icon: x402Icon,
     tagline:
       "Integrate onchain payments directly into your systems, with support for conditional execution.",
     title: "x402 Payments",
   },
   {
+    icon: MachinePaymentsIcon,
     tagline:
-      "Support for Stripe’s machine payments protocol, enabling agents to pay and transact using crypto.",
+      "Support for Stripe's machine payments protocol, enabling agents to pay and transact using crypto.",
     title: "Machine payments (MPP)",
   },
 ];
@@ -55,13 +70,9 @@ export const Products = () => {
 
 const ProductCard = (product: Product) => {
   return (
-    <div className="flex-1 border rounded-xl overflow-hidden border-[#727DA1]/10 bg-[#0F101A] min-w-full sm:min-w-84 sm:max-w-84 relative min-h-84">
-      <img
-        alt=""
-        className="w-full h-full object-cover aspect-video"
-        src="/assets/product-card.png"
-      />
-      <div className="flex flex-col gap-2 p-4 absolute bottom-2 mx-4">
+    <div className="flex-1 border rounded-xl min-w-full sm:min-w-84 sm:max-w-84 relative py-6 px-6 flex gap-6 flex-col">
+      <product.icon className="size-12 fill-[url(#gradient-primary)]" />
+      <div className="flex flex-col gap-2 ">
         <div className="text-white">{product.title}</div>
         <p className="font-light text-neutral-200">{product.tagline}</p>
       </div>

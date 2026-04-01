@@ -51,7 +51,7 @@
 
 :root {
   --background: #0b0c14;
-  --foreground: oklch(0.9848 0 0);
+  --foreground: #fafafa;
 
   --card: #10101a;
   --card-foreground: oklch(0.9848 0 0);
@@ -63,7 +63,7 @@
   --primary-foreground: oklch(1 0 0);
 
   --secondary: oklch(0.2246 0.0161 280.0366);
-  --secondary-foreground: oklch(0.9087 0.0181 279.0338);
+  --secondary-foreground: #dee0ed;
 
   --muted: #151623;
   --muted-foreground: #9d9faf;

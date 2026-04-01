@@ -43,7 +43,7 @@ export default defineConfig({
       langs: ["js", "jsx", "ts", "tsx", "json", "bash"],
       themes: {
         dark: "one-dark-pro",
-        light: "github-light-default",
+        light: "one-dark-pro",
       },
       transformers: [
         ...(rehypeCodeDefaultOptions.transformers ?? []),
