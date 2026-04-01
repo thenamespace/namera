@@ -17,11 +17,15 @@ export const Navbar = () => {
           <Menu />
         </div>
         <div className="flex flex-row items-center gap-2">
-          <Button size="sm" variant="ghost">
+          {/* <Button size="sm" variant="ghost">
             Sign in
-          </Button>
-          <Button className="cta-button" size="sm">
-            Sign up
+          </Button> */}
+          <Button
+            className="cta-button"
+            render={<Link to="/docs/$" />}
+            size="sm"
+          >
+            Get Started
           </Button>
         </div>
       </div>

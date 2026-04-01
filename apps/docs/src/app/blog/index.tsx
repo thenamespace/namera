@@ -34,7 +34,7 @@ const BlogHomePage = () => {
   return (
     <div>
       <BlogHero />
-      <div className="px-4 mx-auto max-w-3xl flex flex-col py-12 w-full divide-y">
+      <div className="px-4 mx-auto max-w-3xl flex flex-col py-12 w-full divide-y min-h-[40dvh]">
         {data.contents.map((blog) => (
           <BlogCard {...blog} key={blog.slug} />
         ))}

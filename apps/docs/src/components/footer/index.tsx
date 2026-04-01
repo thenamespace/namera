@@ -25,7 +25,7 @@ const socials = [
     title: "Discord",
   },
   {
-    href: "https://t.me/namera_ai",
+    href: "https://t.me/namera_devs",
     icon: TelegramLogoIcon,
     title: "Telegram",
   },
@@ -61,7 +61,7 @@ export const FooterDesktop = () => {
             </div>
             <div className="flex flex-row gap-4 items-center">
               <a
-                className="text-neutral-200 text-[15px]"
+                className="text-neutral-200 text-sm font-light"
                 href="mailto:hi@namera.ai"
                 rel="noreferrer"
                 target="_blank"

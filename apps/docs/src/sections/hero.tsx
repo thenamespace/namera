@@ -1,5 +1,5 @@
-import { Button } from "@namera-ai/ui/components/ui/button";
-import { Input } from "@namera-ai/ui/components/ui/input";
+// import { Button } from "@namera-ai/ui/components/ui/button";
+// import { Input } from "@namera-ai/ui/components/ui/input";
 
 export const Hero = () => {
   return (
@@ -18,12 +18,12 @@ export const Hero = () => {
             Programmable wallets
             <br /> for autonomous agents
           </h1>
-          <div className="max-w-lg mx-auto text-center flex flex-col gap-8">
+          <div className="max-w-lg mx-auto text-center flex flex-col gap-8 pb-12">
             <p className="text-sm text-muted-foreground font-normal sm:text-base md:text-lg">
               Define fine-grained permissions with session keys and let agents
               execute transactions on your behalf.
             </p>
-            <div className="flex flex-col gap-2 mx-auto sm:flex-row">
+            {/* <div className="flex flex-col gap-2 mx-auto sm:flex-row">
               <Input
                 className="h-10 w-[20rem] px-3"
                 placeholder="Your email address"
@@ -32,7 +32,7 @@ export const Hero = () => {
               <Button className="cta-button" size="xl">
                 Get Started
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

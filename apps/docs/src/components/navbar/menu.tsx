@@ -11,10 +11,10 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@namera-ai/ui/components/ui/navigation-menu";
-import { McpIcon } from "@namera-ai/ui/icons";
+// import { McpIcon } from "@namera-ai/ui/icons";
 import {
   BuildingIcon,
-  CurrencyEthIcon,
+  // CurrencyEthIcon,
   LegoIcon,
   NewspaperIcon,
   PenNibIcon,
@@ -41,20 +41,20 @@ const platformContents = [
     tagline: "Manage keys locally",
     title: "CLI",
   },
-  {
-    comingSoon: true,
-    icon: McpIcon,
-    path: "mcp",
-    tagline: "Secure agent execution",
-    title: "MCP",
-  },
-  {
-    comingSoon: true,
-    icon: CurrencyEthIcon,
-    path: "x402",
-    tagline: "Native onchain payments",
-    title: "x402 Payments",
-  },
+  // {
+  //   comingSoon: true,
+  //   icon: McpIcon,
+  //   path: "mcp",
+  //   tagline: "Secure agent execution",
+  //   title: "MCP",
+  // },
+  // {
+  //   comingSoon: true,
+  //   icon: CurrencyEthIcon,
+  //   path: "x402",
+  //   tagline: "Native onchain payments",
+  //   title: "x402 Payments",
+  // },
 ];
 
 const companyItems = [
@@ -126,7 +126,6 @@ export const Menu = () => {
                     className="hover:bg-[#727DA1]/15 text-neutral-200"
                     render={
                       <Link
-                        disabled={content.comingSoon}
                         // biome-ignore lint/style/useNamingConvention: safe
                         params={{ _splat: content.path }}
                         to="/docs/$"
@@ -151,7 +150,7 @@ export const Menu = () => {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        <NavigationMenuItem className="hidden md:flex">
+        {/* <NavigationMenuItem className="hidden md:flex">
           <NavigationMenuTrigger>Getting Started</NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-100 gap-2 md:w-125 md:grid-cols-2 lg:w-150">
@@ -166,7 +165,7 @@ export const Menu = () => {
               ))}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem>
+        </NavigationMenuItem> */}
         <NavigationMenuItem className="hidden sm:flex">
           <NavigationMenuLink
             className={navigationMenuTriggerStyle()}
@@ -175,7 +174,7 @@ export const Menu = () => {
             Documentation
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
+        {/* <NavigationMenuItem>
           <NavigationMenuTrigger>Company</NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="w-54">
@@ -200,7 +199,7 @@ export const Menu = () => {
               ))}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem>
+        </NavigationMenuItem> */}
       </NavigationMenuList>
     </NavigationMenu>
   );

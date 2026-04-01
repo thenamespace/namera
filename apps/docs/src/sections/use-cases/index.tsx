@@ -5,7 +5,7 @@ import { NodeGraph } from "./graph";
 
 export const UseCases = () => {
   return (
-    <section className="relative min-h-[90dvh] w-screen overflow-hidden cursor-grab active:cursor-grabbing py-24 max-w-7xl mx-auto mb-10">
+    <section className="relative h-[70dvh] sm:min-h-[90dvh] w-screen overflow-hidden cursor-grab active:cursor-grabbing py-24 max-w-7xl mx-auto mb-10">
       <h2 className="sr-only">The Agent Economy</h2>
       <div className="pointer-events-none absolute left-[10%] top-[45%] flex -translate-y-1/2 text-5xl tracking-wide md:text-7xl heading-gradient font-helveticaDisplay z-11 pb-2">
         The Agent

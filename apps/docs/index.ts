@@ -1,4 +1,4 @@
-import { createMultiChainEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createAccountClient } from "@namera-ai/sdk/account";
 import { createPublicClient, http } from "viem";
 import { createPaymasterClient } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -15,7 +15,7 @@ const paymaster = createPaymasterClient({
 
 const signer = privateKeyToAccount(generatePrivateKey());
 
-const client = await createMultiChainEcdsaAccountClient({
+const client = await createAccountClient({
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
   client: publicClient,
@@ -23,6 +23,7 @@ const client = await createMultiChainEcdsaAccountClient({
   kernelVersion: "0.3.2",
   paymaster,
   signer,
+  type: "ecdsa",
 });
 
 client.prepareUserOperation;

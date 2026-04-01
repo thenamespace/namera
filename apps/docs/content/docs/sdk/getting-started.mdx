@@ -43,9 +43,10 @@ const signer = privateKeyToAccount(generatePrivateKey());
 Now that you have a public client and a signer, you can create an ECDSA Smart Account client.
 
 ```ts
-import { createEcdsaAccountClient } from "@namera-ai/sdk/account";
+import { createAccountClient } from "@namera-ai/sdk/account";
 
-const client = await createEcdsaAccountClient({
+const client = await createAccountClient({
+  type: "ecdsa",
   bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
   chain: mainnet,
   client: publicClient,
