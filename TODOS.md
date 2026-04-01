@@ -68,9 +68,9 @@
       - [x] Account Tools
         - [x] `get_wallet_address`
         - [x] `get_balance`
-      - [ ] Read Operations
-        - [ ] `read_contract`
-      - [ ] Transfer Tools
+      - [x] Read Operations
+        - [x] `read_contract`
+      - [x] Transfer Tools
         - [x] `native_transfer`
       - [x] Transaction Tools
         - [x] `execute_transaction`

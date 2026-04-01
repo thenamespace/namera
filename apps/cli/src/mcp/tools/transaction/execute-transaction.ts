@@ -13,7 +13,7 @@ export const ExecuteTransactionToolParams = Batch;
 export type ExecuteTransactionToolParams =
   typeof ExecuteTransactionToolParams.Type;
 
-export const NativeTransferTool = Tool.make("execute_transaction", {
+export const ExecuteTransactionTool = Tool.make("execute_transaction", {
   dependencies: [McpContext, Web3Service],
   description: "Send transactions.",
   failure: InsufficientPermissions,

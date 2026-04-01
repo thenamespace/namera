@@ -2,14 +2,22 @@ import { Layer } from "effect";
 import { McpServer } from "effect/unstable/ai";
 
 import { AccountTools, AccountToolsHandlers } from "./tools/account";
-import { TransferTools, TransferToolsHandlers } from "./tools/transfer";
+import { ReadTools, ReadToolsHandlers } from "./tools/read";
+import {
+  TransactionTools,
+  TransactionToolsHandlers,
+} from "./tools/transaction";
 
 const Account = Layer.effectDiscard(
   McpServer.registerToolkit(AccountTools),
 ).pipe(Layer.provideMerge(AccountToolsHandlers));
 
 const Transfer = Layer.effectDiscard(
-  McpServer.registerToolkit(TransferTools),
-).pipe(Layer.provideMerge(TransferToolsHandlers));
+  McpServer.registerToolkit(TransactionTools),
+).pipe(Layer.provideMerge(TransactionToolsHandlers));
 
-export const McpLive = Layer.mergeAll(Account, Transfer);
+const Read = Layer.effectDiscard(McpServer.registerToolkit(ReadTools)).pipe(
+  Layer.provideMerge(ReadToolsHandlers),
+);
+
+export const McpLive = Layer.mergeAll(Account, Transfer, Read);
