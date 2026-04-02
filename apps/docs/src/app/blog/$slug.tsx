@@ -1,8 +1,9 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
+import { usePostHog } from "@posthog/react";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { InlineTOC } from "fumadocs-ui/components/inline-toc";
 import { DocsBody } from "fumadocs-ui/layouts/notebook/page";
@@ -87,6 +88,16 @@ const clientLoader = browserCollections.blog.createClientLoader({
 
 function Page() {
   const data = useFumadocsLoader(Route.useLoaderData());
+  const posthog = usePostHog();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-fire when slug changes
+  useEffect(() => {
+    posthog.capture("blog_post_viewed", {
+      slug: data.metadata.slug,
+      title: data.metadata.title,
+      author: data.metadata.author.name,
+    });
+  }, [data.metadata.slug]);
 
   return (
     <Suspense>{clientLoader.useContent(data.path, data.metadata)}</Suspense>

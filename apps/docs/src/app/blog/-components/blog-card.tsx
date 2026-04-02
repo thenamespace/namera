@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
+import { usePostHog } from "@posthog/react";
+
 type BlogCardProps = {
   title: string;
   description?: string;
@@ -10,10 +12,19 @@ type BlogCardProps = {
 };
 
 export const BlogCard = (props: BlogCardProps) => {
+  const posthog = usePostHog();
+
   return (
     <div className="py-3">
       <Link
         className="hover:bg-muted transition-all p-4 rounded-xl gap-3 flex flex-col"
+        onClick={() =>
+          posthog.capture("blog_card_clicked", {
+            slug: props.slug,
+            title: props.title,
+            author: props.author,
+          })
+        }
         params={{ slug: props.slug }}
         to="/blog/$slug"
       >

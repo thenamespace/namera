@@ -20,6 +20,7 @@ import { Route as BlogSlugRouteImport } from "./app/blog/$slug";
 import { Route as ApiSearchRouteImport } from "./app/api/search";
 import { Route as ApiOgRouteImport } from "./app/api/og";
 import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
+import { Route as ApiPhSplatRouteImport } from "./app/api/ph/$";
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: "/sitemap.xml",
@@ -76,6 +77,11 @@ const LlmsDotmdxDocsSplatRoute = LlmsDotmdxDocsSplatRouteImport.update({
   path: "/llms.mdx/docs/$",
   getParentRoute: () => rootRouteImport,
 } as any);
+const ApiPhSplatRoute = ApiPhSplatRouteImport.update({
+  id: "/api/ph/$",
+  path: "/api/ph/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog/": typeof BlogIndexRoute;
+  "/api/ph/$": typeof ApiPhSplatRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRoutesByTo {
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog": typeof BlogIndexRoute;
+  "/api/ph/$": typeof ApiPhSplatRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRoutesById {
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   "/blog/$slug": typeof BlogSlugRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog/": typeof BlogIndexRoute;
+  "/api/ph/$": typeof ApiPhSplatRoute;
   "/llms.mdx/docs/$": typeof LlmsDotmdxDocsSplatRoute;
 }
 export interface FileRouteTypes {
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | "/blog/$slug"
     | "/docs/$"
     | "/blog/"
+    | "/api/ph/$"
     | "/llms.mdx/docs/$";
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | "/blog/$slug"
     | "/docs/$"
     | "/blog"
+    | "/api/ph/$"
     | "/llms.mdx/docs/$";
   id:
     | "__root__"
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | "/blog/$slug"
     | "/docs/$"
     | "/blog/"
+    | "/api/ph/$"
     | "/llms.mdx/docs/$";
   fileRoutesById: FileRoutesById;
 }
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
+  ApiPhSplatRoute: typeof ApiPhSplatRoute;
   LlmsDotmdxDocsSplatRoute: typeof LlmsDotmdxDocsSplatRoute;
 }
 
@@ -248,6 +261,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LlmsDotmdxDocsSplatRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/api/ph/$": {
+      id: "/api/ph/$";
+      path: "/api/ph/$";
+      fullPath: "/api/ph/$";
+      preLoaderRoute: typeof ApiPhSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -274,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
   DocsSplatRoute: DocsSplatRoute,
+  ApiPhSplatRoute: ApiPhSplatRoute,
   LlmsDotmdxDocsSplatRoute: LlmsDotmdxDocsSplatRoute,
 };
 export const routeTree = rootRouteImport

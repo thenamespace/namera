@@ -41,7 +41,9 @@ const config = defineConfig({
     }),
     viteReact(),
   ],
-  server: { port: 4000 },
+  server: {
+    port: 4000,
+  },
   ssr: {
     external: takumiDeps,
   },

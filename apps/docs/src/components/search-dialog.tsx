@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { buttonVariants } from "@namera-ai/ui/components/ui/button";
 import { cn } from "@namera-ai/ui/lib/utils";
+import { usePostHog } from "@posthog/react";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import {
   SearchDialog,
@@ -57,6 +58,7 @@ const items = [
 ];
 
 export const CustomSearchDialog = (props: SharedProps) => {
+  const posthog = usePostHog();
   const [open, setOpen] = useState(false);
   const [tag, setTag] = useState<string | undefined>();
   const { search, setSearch, query } = useDocsSearch({
@@ -112,6 +114,9 @@ export const CustomSearchDialog = (props: SharedProps) => {
                       e.preventDefault();
                       setTag(item.value);
                       setOpen(false);
+                      posthog.capture("search_filter_changed", {
+                        filter: item.name,
+                      });
                     }}
                     type="button"
                   >

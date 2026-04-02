@@ -2,8 +2,11 @@ import { Link } from "@tanstack/react-router";
 
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { NameraIcon } from "@namera-ai/ui/icons";
+import { usePostHog } from "@posthog/react";
 
 export const CallToAction = () => {
+  const posthog = usePostHog();
+
   return (
     <section
       className="relative mx-auto h-120 flex flex-col items-center justify-center gap-4"
@@ -29,7 +32,18 @@ export const CallToAction = () => {
       <div className="flex flex-row items-center gap-4 pt-4">
         <Button
           className="cta-button px-4"
-          render={<Link params={{}} to="/docs/$" />}
+          nativeButton={false}
+          render={
+            <Link
+              onClick={() =>
+                posthog.capture("cta_get_started_clicked", {
+                  location: "cta",
+                })
+              }
+              params={{}}
+              to="/docs/$"
+            />
+          }
           size="lg"
         >
           Get Started

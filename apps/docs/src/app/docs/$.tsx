@@ -1,9 +1,10 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
 import { cn } from "@namera-ai/ui/lib/utils";
+import { usePostHog } from "@posthog/react";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import {
@@ -90,6 +91,16 @@ const clientLoader = browserCollections.docs.createClientLoader({
 
 const DocsPage = () => {
   const data = useFumadocsLoader(Route.useLoaderData());
+  const posthog = usePostHog();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-fire when URL changes
+  useEffect(() => {
+    posthog.capture("docs_page_viewed", {
+      title: data.metadata.title,
+      url: data.url,
+      slugs: data.metadata.slugs,
+    });
+  }, [data.url]);
 
   return (
     <DocsLayout
