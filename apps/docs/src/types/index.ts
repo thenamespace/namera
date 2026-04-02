@@ -25,4 +25,5 @@ export type DocsMetadata = {
   readingTime: ReadingTimeResult;
   slugs: string[];
   url: string;
+  keywords?: string;
 };

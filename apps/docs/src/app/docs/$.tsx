@@ -45,6 +45,7 @@ const serverLoader = createServerFn({
       readingTime,
       slugs: page.slugs,
       url: page.url,
+      keywords: page.data.keywords,
     };
 
     return {

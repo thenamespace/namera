@@ -8,16 +8,34 @@ const formatSlugToName = (slug: string) => {
     .join(" ");
 };
 
+const getCategory = (slug?: string) => {
+  const categoryMap: Record<string, string> = {
+    cli: "CLI",
+    sdk: "SDK",
+  };
+
+  return slug ? categoryMap[slug] : undefined;
+};
+
 export const generateDocsSeo = (metadata: DocsMetadata) => {
   const baseUrl = env.baseUrl;
   const canonicalUrl = new URL(`/docs/${metadata.slugs.join("/")}`, baseUrl);
   const dateModified = metadata.lastModified.toISOString();
 
+  const keywords = metadata.keywords
+    ? metadata.keywords.split(",").map((v) => v.trim())
+    : [];
+
+  const category = getCategory(metadata.slugs[0]);
+  const paths = ["Documentation", category, metadata.title]
+    .filter(Boolean)
+    .join(",");
+
   const ogImage = new URL("/api/og", baseUrl);
   ogImage.searchParams.set("type", "docs");
   ogImage.searchParams.set("description", metadata.description ?? "");
   ogImage.searchParams.set("lastUpdatedDate", dateModified);
-  ogImage.searchParams.set("paths", `Documentation,${metadata.title}`);
+  ogImage.searchParams.set("paths", paths);
   ogImage.searchParams.set("readTime", metadata.readingTime.minutes.toString());
   ogImage.searchParams.set("title", metadata.title);
 
@@ -51,6 +69,7 @@ export const generateDocsSeo = (metadata: DocsMetadata) => {
       { title: `${metadata.title} | Namera Documentation` },
       { content: metadata.description, name: "description" },
       { content: "index, follow", name: "robots" },
+      { content: keywords.join(", "), name: "keywords" },
       // Open Graph
       { content: "Namera", property: "og:site_name" },
       { content: "website", property: "og:type" },

@@ -1,6 +1,398 @@
 ---
 title: Getting Started
 icon: RocketLaunchIcon
-description: Getting started
+description: End-to-end, agent-first walkthrough for Namera CLI and MCP.
+keywords: namera cli, getting started, mcp, smart account, session key, policies
 ---
 
+This guide is a complete, start-to-finish flow. You will install the CLI, create a keystore, create a smart account, create a session key with policies, verify onchain status, and run the MCP server for agent tooling.
+
+## Install the CLI
+
+Install globally:
+
+```npm
+npm i -g @namera-ai/cli
+```
+
+Or run without global install:
+
+```npm
+npx @namera-ai/cli --help
+```
+
+For all install options, see [`Installation`](/docs/cli/installation).
+
+## Verify installation
+
+```bash
+namera --help
+```
+
+## Create a keystore
+
+Create your encrypted keystore (interactive prompts):
+
+```bash
+namera keystore create
+```
+
+Expected output (pretty format):
+
+```text
+Alias: my-owner
+Address: 0x...
+Path: /.../keystores/my-owner.json
+```
+
+Non-interactive example:
+
+```bash
+namera keystore create --alias my-owner --password my-password
+```
+
+## Create a smart account
+
+Create a smart account owned by that keystore:
+
+```bash
+namera smart-account create --alias my-smart --owner-alias my-owner
+```
+
+Expected output:
+
+```text
+Address: 0x...
+KernelVersion: 0.3.2
+Index: 0
+Owner: my-owner
+```
+
+If you skip `--owner-password`, the CLI prompts you for it.
+
+## Create a session key
+
+Session keys are scoped permissions for agents. Create one for your smart account:
+
+```bash
+namera session-key create --alias my-session-key --smart-account my-smart
+```
+
+During the interactive flow, you will:
+
+- Select chains
+- Set a session key password
+- Enter the owner keystore password
+- Configure policies (or choose `sudo` for full access)
+
+### Policy types and examples
+
+Policies define what the key can do. You can add multiple policies, or use `sudo` for full access.
+
+Sudo policy:
+
+```json
+{ "type": "sudo" }
+```
+
+Timestamp policy:
+
+```json
+{ "type": "timestamp", "validAfter": 1719916800, "validUntil": 1722604800 }
+```
+
+Gas policy:
+
+```json
+{ "type": "gas", "amount": "100000000000000000", "enforcePaymaster": false }
+```
+
+Rate limit policy:
+
+```json
+{ "type": "rate-limit", "interval": 3600, "count": 10, "startAt": 1720000000 }
+```
+
+Signature caller policy:
+
+```json
+{ "type": "signature-caller", "allowedCallers": ["0xabc...", "0xdef..."] }
+```
+
+Call policy (manual permission):
+
+```json
+{
+  "type": "call",
+  "policyVersion": "0.0.4",
+  "permissions": [
+    {
+      "target": "0x1111111111111111111111111111111111111111",
+      "valueLimit": "1000000000000000000"
+    }
+  ]
+}
+```
+
+If you want to pass policies programmatically, use params mode:
+
+```bash
+namera session-key create --params '{"alias":"my-session-key","smartAccountAlias":"my-smart","chains":["eth-mainnet"],"sessionKeyPassword":"session-password","ownerKeystorePassword":"owner-password","policyParams":[{"type":"sudo"}]}'
+```
+
+## Check status
+
+Check whether the smart account is deployed on a chain:
+
+```bash
+namera smart-account status --alias my-smart --chain eth-mainnet
+```
+
+Check whether the session key is installed on a chain:
+
+```bash
+namera session-key status --alias my-session-key --chain eth-mainnet
+```
+
+## Start the MCP server
+
+### Stdio transport (default)
+
+```bash
+namera mcp start --smart-account my-smart --session-key my-session-key=my-session-password
+```
+
+This runs as a local stdio server for tools that spawn MCP processes.
+
+### HTTP transport
+
+```bash
+namera mcp start --smart-account my-smart --session-key my-session-key=my-session-password --transport http --port 8080
+```
+
+The server is available at:
+
+```text
+http://localhost:8080/mcp
+```
+
+## Connect MCP to your agent
+
+Use the local URL (`http://localhost:8080/mcp`) or the stdio command depending on your client.
+
+<Accordions type="multiple">
+  <Accordion title="Cursor">
+  Add to `~/.cursor/mcp.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "namera": {
+        "url": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+  </Accordion>
+  <Accordion title="VS Code">
+  Add to `.vscode/mcp.json`:
+
+  ```json
+  {
+    "servers": {
+      "namera": {
+        "type": "http",
+        "url": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+  </Accordion>
+
+  <Accordion title="Claude Code">
+  ```bash
+  claude mcp add --transport http namera http://localhost:8080/mcp
+  ```
+  </Accordion>
+
+  <Accordion title="Claude Desktop">
+  Add to your config file:
+  - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+  ```json
+  {
+    "mcpServers": {
+      "namera": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "mcp-remote",
+          "http://localhost:8080/mcp"
+        ]
+      }
+    }
+  }
+  ```
+  </Accordion>
+
+  <Accordion title="OpenCode">
+  Add to your `opencode.json`:
+
+  ```json
+  {
+    "mcp": {
+      "namera": {
+        "type": "remote",
+        "url": "http://localhost:8080/mcp",
+        "enabled": true
+      }
+    }
+  }
+  ```
+  </Accordion>
+  <Accordion title="Codex">
+  ```bash
+  codex mcp add ens --url http://localhost:8080/mcp
+  ```
+  </Accordion>
+  <Accordion title="Antigravity">
+  Open the MCP Store panel (from the "..." dropdown in the side panel), then add a custom server with:
+
+  ```
+  http://localhost:8080/mcp
+  ```
+  </Accordion>
+  <Accordion title="Windsurf">
+  Add to `~/.codeium/windsurf/mcp_config.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "ens": {
+        "serverUrl": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+  </Accordion>
+  <Accordion title="Zed">
+  Add to your Zed settings:
+
+  ```json
+  {
+    "context_servers": {
+      "ens": {
+        "url": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+  </Accordion>
+  <Accordion title="Gemini CLI">
+  Add to `~/.gemini/settings.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "ens": {
+        "httpUrl": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+  </Accordion>
+  <Accordion title="Warp">
+  Go to **Settings** > **MCP Servers** > **Add MCP Server** and add:
+
+  ```json
+  {
+    "ens": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+  ```
+  </Accordion>
+
+  <Accordion title="Other Clients">
+  For clients that support HTTP MCP:
+
+  ```json
+  {
+    "mcpServers": {
+      "namera": {
+        "url": "http://localhost:8080/mcp"
+      }
+    }
+  }
+  ```
+
+  For clients that need `mcp-remote`:
+
+  ```json
+  {
+    "mcpServers": {
+      "namera": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "http://localhost:8080/mcp"]
+      }
+    }
+  }
+  ```
+  </Accordion>
+</Accordions>
+
+### Environment Variables
+
+You can pass chain specific environment variables while starting the MCP server. For example:
+
+```bash
+# Ethereum Mainnet
+export ETH_MAINNET_RPC_URL="https://mainnet.infura.io/v3/YOUR-PROJECT-ID"
+export ETH_MAINNET_BUNDLER_URL="https://rpc.zerodev.app/api/v3/<api-token>/chain/1"
+export ETH_MAINNET_PAYMASTER_URL="https://rpc.zerodev.app/api/v3/<api-token>/chain/1"
+
+# Polygon Mainnet
+export POLYGON_MAINNET_RPC_URL="https://polygon-rpc.com"
+export POLYGON_MAINNET_BUNDLER_URL="https://rpc.zerodev.app/api/v3/<api-token>/chain/137"
+export POLYGON_MAINNET_PAYMASTER_URL="https://rpc.zerodev.app/api/v3/<api-token>/chain/137"
+
+# ... and more
+```
+
+For list of supported chains and their chain IDs, see [Supported Chains](/docs/cli/supported-chains).
+
+By default, the MCP server will use the default public RPC URL and Pimlico DefaultBundler URL. `https://public.pimlico.io/v2/{chain_id}/rpc`
+
+## Available Tools
+
+| Tool | Description |
+| ---- | ----------- |
+| `get_wallet_address` | Return the smart account address |
+| `get_balance` | Get native balance for a chain and address |
+| `read_contract` | Read a contract method |
+| `native_transfer` | Transfer native tokens |
+| `execute_transaction` | Execute a batch transaction |
+
+## Example prompts for agents
+
+Use prompts like these in your agent client:
+
+```markdown
+1️⃣ Basic Address Lookup
+> Get my wallet address.
+
+2️⃣ Basic Balance Check
+> Check my ETH balance on mainnet.
+
+3️⃣ Contract Read
+> Read USDC totalSupply on Ethereum using the USDC ABI.
+
+4️⃣ Send Tokens
+> Send 0.01 ETH to 0xabc... on mainnet.
+
+5️⃣ Execute Transaction Batch
+> send 0.001 eth to 0xabc... and 10 usdc to 0xdef... on mainnet.
+```
+
+For advanced use, tighten policies when creating session keys so the agent can only do what you intend.

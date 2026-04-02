@@ -10,7 +10,9 @@
     "smart-account",
     "session-key",
     "schema",
-    "mcp"
+    "mcp",
+    "---FAQs---",
+    "supported-chains"
   ],
   "root": true,
   "title": "CLI"

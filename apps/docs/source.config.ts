@@ -19,6 +19,9 @@ export const docs = defineDocs({
     postprocess: {
       includeProcessedMarkdown: true,
     },
+    schema: pageSchema.extend({
+      keywords: z.string().optional(),
+    }),
   },
 });
 

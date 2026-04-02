@@ -1,6 +1,48 @@
 ---
 title: Installation
 icon: WrenchIcon
-description: Install namera cli
+description: Install the Namera CLI using package manager, or build from source.
+keywords: namera cli, installation, npm, pnpm, yarn, bun, cli package
 ---
 
+Install the Namera CLI to manage keystores, smart accounts, session keys, and MCP from the terminal.
+
+## Package manager
+
+Install the CLI globally with your preferred package manager.
+
+```npm
+npm i -g @namera-ai/cli
+```
+
+Verify installation:
+
+```bash
+namera --help
+```
+
+## Use without global install
+
+You can also run the CLI through your package manager without installing globally:
+
+```npm
+npx @namera-ai/cli --help
+```
+
+## Build from source
+
+If you want the latest changes or to contribute, build from source:
+
+```bash
+gh repo clone thenamespace/namera
+cd namera
+bun install
+cd apps/cli
+bun run build
+```
+
+Run the CLI from the repo:
+
+```bash
+bun run start -- --help
+```
