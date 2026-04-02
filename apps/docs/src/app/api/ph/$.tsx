@@ -57,7 +57,9 @@ const handleProxy = async (request: Request) => {
     responseHeaders.delete("content-length");
   }
 
-  return new Response(body, {
+  const isBodylessStatus = [204, 205, 304].includes(response.status);
+
+  return new Response(isBodylessStatus ? null : body, {
     status: response.status,
     statusText: response.statusText,
     headers: responseHeaders,
