@@ -1,0 +1,96 @@
+---
+title: keystore import
+description: Import a keystore from an existing private key.
+Keywords: keystore, import, private key, wallet, encryption, namera cli
+---
+
+Imports an existing private key, encrypts it with a password, and stores it as a local keystore entry.
+
+## Usage
+
+```bash
+namera keystore import [--alias <name>] [--password <password>] [--private-key <hex>]
+```
+
+Aliases:
+
+- Group alias: `namera k`
+- Command alias: `import` -> `i`
+
+## Flags
+
+- `--alias`, `-a`: Keystore alias to import
+- `--password`, `-p`: Password used to encrypt the keystore
+- `--private-key`: Private key to import (hex string)
+
+Global flags:
+
+- `--params`: Raw JSON parameters for agent-driven execution
+- `--output`, `-o`: `pretty`, `json`, or `ndjson`
+- `--quite`, `-q`: Suppress output
+
+If any required value is missing, the CLI prompts you. When prompted, the private key must be a 32-byte hex string.
+
+## Params mode (agents)
+
+Use `--params` with the JSON schema for the command:
+
+```bash
+namera schema keystore.import
+```
+
+Expected shape:
+
+```json
+{
+  "alias": "my-wallet",
+  "privateKey": "0x...",
+  "password": "my-password"
+}
+```
+
+## Output
+
+On success, the command returns:
+
+- `alias`: Keystore alias
+- `address`: Derived address
+- `path`: Filesystem path to the keystore
+
+## Examples
+
+Interactive (prompt for alias, password, private key):
+
+```bash
+namera keystore import
+```
+
+Partial flags (prompt for missing fields):
+
+```bash
+namera keystore import --alias my-wallet
+```
+
+Full flags:
+
+```bash
+namera keystore import -a my-wallet -p my-password --private-key 0x1234...
+```
+
+Params mode (agents):
+
+```bash
+namera keystore import --params '{"alias":"my-wallet","privateKey":"0x1234...","password":"my-password"}'
+```
+
+Short aliases:
+
+```bash
+namera k i -a my-wallet -p my-password --private-key 0x1234...
+```
+
+Schema lookup:
+
+```bash
+namera schema keystore.import
+```

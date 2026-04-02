@@ -1,0 +1,4 @@
+{
+  "pages": ["index", "create", "import", "list", "info", "decrypt", "remove"],
+  "title": "Keystore"
+}

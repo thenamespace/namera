@@ -1,0 +1,97 @@
+---
+title: keystore decrypt
+description: Decrypt a keystore and print key material.
+Keywords: keystore, decrypt, private key, public key, security, namera cli
+---
+
+Decrypts a local keystore and prints the derived keys. This command outputs sensitive material.
+
+## Usage
+
+```bash
+namera keystore decrypt [--alias <name>] [--password <password>]
+```
+
+Aliases:
+
+- Group alias: `namera k`
+- Command alias: `decrypt` -> `d`
+
+## Flags
+
+- `--alias`, `-a`: Keystore alias to decrypt
+- `--password`, `-p`: Password used to decrypt the keystore
+
+Global flags:
+
+- `--params`: Raw JSON parameters for agent-driven execution
+- `--output`, `-o`: `pretty`, `json`, or `ndjson`
+- `--quite`, `-q`: Suppress output
+
+If a value is missing, the CLI prompts you. If `--alias` is missing, you select a keystore.
+
+## Params mode (agents)
+
+Use `--params` with the JSON schema for the command:
+
+```bash
+namera schema keystore.decrypt
+```
+
+Expected shape:
+
+```json
+{
+  "alias": "my-wallet",
+  "password": "my-password"
+}
+```
+
+## Output
+
+On success, the command returns:
+
+- `alias`: Keystore alias
+- `address`: Derived address
+- `publicKey`: Public key
+- `privateKey`: Private key (sensitive)
+
+Use `--output json` for machine parsing and consider `--quite` if you only need the exit status.
+
+## Examples
+
+Interactive (prompt for alias and password):
+
+```bash
+namera keystore decrypt
+```
+
+Partial flags (prompt for password):
+
+```bash
+namera keystore decrypt --alias my-wallet
+```
+
+Full flags:
+
+```bash
+namera keystore decrypt -a my-wallet -p my-password
+```
+
+Params mode (agents):
+
+```bash
+namera keystore decrypt --params '{"alias":"my-wallet","password":"my-password"}'
+```
+
+Short aliases:
+
+```bash
+namera k d -a my-wallet -p my-password
+```
+
+Schema lookup:
+
+```bash
+namera schema keystore.decrypt
+```

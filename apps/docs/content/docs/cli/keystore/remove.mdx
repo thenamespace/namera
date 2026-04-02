@@ -1,0 +1,84 @@
+---
+title: keystore remove
+description: Remove a keystore from local storage.
+Keywords: keystore, remove, delete, wallet, namera cli
+---
+
+Removes a keystore from disk by alias.
+
+## Usage
+
+```bash
+namera keystore remove [--alias <name>]
+```
+
+Aliases:
+
+- Group alias: `namera k`
+- Command alias: `remove` -> `rm`
+
+## Flags
+
+- `--alias`, `-a`: Keystore alias to remove
+
+Global flags:
+
+- `--params`: Raw JSON parameters for agent-driven execution
+- `--output`, `-o`: `pretty`, `json`, or `ndjson`
+- `--quite`, `-q`: Suppress output
+
+If `--alias` is missing, the CLI will prompt you to select a keystore.
+
+## Params mode (agents)
+
+Use `--params` with the JSON schema for the command:
+
+```bash
+namera schema keystore.remove
+```
+
+Expected shape:
+
+```json
+{
+  "alias": "my-wallet"
+}
+```
+
+## Output
+
+On success, the command returns:
+
+- `success`: `true`
+
+## Examples
+
+Interactive (select a keystore):
+
+```bash
+namera keystore remove
+```
+
+Partial flags (no prompt):
+
+```bash
+namera keystore remove --alias my-wallet
+```
+
+Params mode (agents):
+
+```bash
+namera keystore remove --params '{"alias":"my-wallet"}'
+```
+
+Short aliases:
+
+```bash
+namera k rm -a my-wallet
+```
+
+Schema lookup:
+
+```bash
+namera schema keystore.remove
+```

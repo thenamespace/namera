@@ -1,5 +1,6 @@
 {
   "icon": "TerminalIcon",
+  "pages": ["---Introduction---", "index", "---Keystore---", "...keystore"],
   "root": true,
   "title": "CLI"
 }

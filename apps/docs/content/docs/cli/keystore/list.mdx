@@ -1,0 +1,76 @@
+---
+title: keystore list
+description: List all locally stored keystores.
+Keywords: keystore, list, wallet, inventory, namera cli
+---
+
+Lists every keystore stored on disk and prints basic metadata.
+
+## Usage
+
+```bash
+namera keystore list
+```
+
+Aliases:
+
+- Group alias: `namera k`
+- Command alias: `list` -> `ls`
+
+## Flags
+
+This command has no command-specific flags.
+
+Global flags:
+
+- `--params`: Raw JSON parameters for agent-driven execution (empty object)
+- `--output`, `-o`: `pretty`, `json`, or `ndjson`
+- `--quite`, `-q`: Suppress output
+
+## Params mode (agents)
+
+The list command takes no parameters. The schema is still available:
+
+```bash
+namera schema keystore.list
+```
+
+If you must pass params, use an empty object:
+
+```bash
+namera keystore list --params '{}'
+```
+
+## Output
+
+Each item includes:
+
+- `alias`: Keystore alias
+- `address`: Derived address
+- `path`: Filesystem path to the keystore
+
+## Examples
+
+Default output:
+
+```bash
+namera keystore list
+```
+
+NDJSON output:
+
+```bash
+namera keystore list --output ndjson
+```
+
+Short aliases:
+
+```bash
+namera k ls
+```
+
+Schema lookup:
+
+```bash
+namera schema keystore.list
+```

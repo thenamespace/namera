@@ -1,0 +1,86 @@
+---
+title: keystore info
+description: Show metadata for a single keystore.
+Keywords: keystore, info, metadata, wallet, namera cli
+---
+
+Fetches metadata for a single keystore by alias.
+
+## Usage
+
+```bash
+namera keystore info [--alias <name>]
+```
+
+Aliases:
+
+- Group alias: `namera k`
+- Command alias: none
+
+## Flags
+
+- `--alias`, `-a`: Keystore alias to look up
+
+Global flags:
+
+- `--params`: Raw JSON parameters for agent-driven execution
+- `--output`, `-o`: `pretty`, `json`, or `ndjson`
+- `--quite`, `-q`: Suppress output
+
+If `--alias` is missing, the CLI will prompt you to select a keystore.
+
+## Params mode (agents)
+
+Use `--params` with the JSON schema for the command:
+
+```bash
+namera schema keystore.info
+```
+
+Expected shape:
+
+```json
+{
+  "alias": "my-wallet"
+}
+```
+
+## Output
+
+On success, the command returns:
+
+- `alias`: Keystore alias
+- `address`: Derived address
+- `path`: Filesystem path to the keystore
+
+## Examples
+
+Interactive (select a keystore):
+
+```bash
+namera keystore info
+```
+
+Partial flags (no prompt):
+
+```bash
+namera keystore info --alias my-wallet
+```
+
+Params mode (agents):
+
+```bash
+namera keystore info --params '{"alias":"my-wallet"}'
+```
+
+Short alias group:
+
+```bash
+namera k info -a my-wallet
+```
+
+Schema lookup:
+
+```bash
+namera schema keystore.info
+```
