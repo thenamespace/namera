@@ -4,10 +4,8 @@ import { EthereumAddress, PolicyParams, SupportedChain } from "@/schema";
 
 import { Keystore } from "./keystore";
 
-export const SessionKey = Schema.Struct({
+const BaseSessionKey = Schema.Struct({
   smartAccountAlias: Schema.String,
-  sessionKeyType: Schema.Literals(["ecdsa", "passkey", "multisig"]),
-  sessionKeyAddress: EthereumAddress,
   serializedAccounts: Schema.Array(
     Schema.Struct({
       chain: SupportedChain,
@@ -15,6 +13,19 @@ export const SessionKey = Schema.Struct({
     }),
   ),
 }).mapFields(Struct.assign(Keystore.fields));
+
+const EcdsaSessionKey = Schema.Struct({
+  sessionKeyType: Schema.Literal("ecdsa"),
+  sessionKeyAddress: EthereumAddress,
+  smartAccountAlias: Schema.String,
+}).mapFields(Struct.assign(BaseSessionKey.fields));
+
+const PasskeySessionKey = Schema.Struct({
+  sessionKeyType: Schema.Literal("passkey"),
+  passKeyName: Schema.String,
+}).mapFields(Struct.assign(BaseSessionKey.fields));
+
+export const SessionKey = Schema.Union([EcdsaSessionKey, PasskeySessionKey]);
 
 export const SessionKeyData = Schema.Struct({
   alias: Schema.String,

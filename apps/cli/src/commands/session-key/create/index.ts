@@ -97,7 +97,13 @@ const handler = (
     const res = yield* sessionKeyManager.createSessionKey(params);
 
     const data = {
-      sessionKeyAddress: res.data.sessionKeyAddress,
+      ...(res.data.sessionKeyType === "ecdsa"
+        ? {
+            sessionKeyAddress: res.data.sessionKeyAddress,
+          }
+        : {
+            passKeyName: res.data.passKeyName,
+          }),
       smartAccount: res.data.smartAccountAlias,
       chains: res.data.serializedAccounts.map((a) => getChain(a.chain).name),
     };

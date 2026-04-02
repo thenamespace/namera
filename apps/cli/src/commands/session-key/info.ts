@@ -39,7 +39,13 @@ const handler = (flagAlias: Option.Option<string>) =>
 
     const data = {
       alias: res.alias,
-      address: res.data.sessionKeyAddress,
+      ...(res.data.sessionKeyType === "ecdsa"
+        ? {
+            address: res.data.sessionKeyAddress,
+          }
+        : {
+            passKeyName: res.data.passKeyName,
+          }),
       smartAccount: res.data.smartAccountAlias,
       chains: res.data.serializedAccounts
         .map((a) => getChain(a.chain).name)

@@ -292,7 +292,7 @@ export const layer = Layer.effect(
           choices: sessionKeys.map((sk) => ({
             title: sk.alias,
             value: sk,
-            description: `${sk.data.sessionKeyAddress} (${sk.data.smartAccountAlias})`,
+            description: `${sk.data.sessionKeyType === "ecdsa" ? sk.data.sessionKeyAddress : sk.data.passKeyName} (${sk.data.smartAccountAlias})`,
           })) satisfies Prompt.SelectChoice<SessionKeyData>[],
         });
 
@@ -311,11 +311,21 @@ export const layer = Layer.effect(
           rpcUrl: params.rpcUrl,
         });
 
+        if (sessionKey.data.sessionKeyType !== "ecdsa") {
+          return yield* Effect.fail(
+            new SessionKeyManagerError({
+              code: "SessionKeyParseError",
+              message: "Only ECDSA session keys have an on-chain status",
+            }),
+          );
+        }
+        const sessionKeyAddress = sessionKey.data.sessionKeyAddress;
+
         const res = yield* Effect.tryPromise({
           try: () =>
             isSessionKeyInstalled(publicClient, {
               accountAddress: sa.data.smartAccountAddress,
-              sessionKeyAddress: sessionKey.data.sessionKeyAddress,
+              sessionKeyAddress,
             }),
           catch: () => false,
         }).pipe(Effect.catch(() => Effect.succeed(false)));
@@ -337,7 +347,7 @@ export const layer = Layer.effect(
           choices: allKeys.map((k) => ({
             title: k.alias,
             value: k,
-            description: `${k.data.sessionKeyAddress} (${k.data.smartAccountAlias})`,
+            description: `${k.data.sessionKeyType === "ecdsa" ? k.data.sessionKeyAddress : k.data.passKeyName} (${k.data.smartAccountAlias})`,
           })) satisfies Prompt.SelectChoice<SessionKeyData>[],
           min: 1,
         });
