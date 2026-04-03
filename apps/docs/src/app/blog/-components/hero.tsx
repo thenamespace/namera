@@ -17,12 +17,13 @@ export const BlogHero = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const [value, setValue] = useState(search.query);
+  const [value, setValue] = useState(search.query ?? "");
 
   const updateQuery = useDebounceCallback((value: string) => {
-    if (value === search.query) return;
+    if (value === (search.query ?? "")) return;
     const trimmed = value.trim();
-    if (trimmed === "" && trimmed === search.query) return;
+    if (trimmed === "" && !search.query) return;
+
     navigate({
       to: "/blog",
       search: (prev) => ({
@@ -49,7 +50,6 @@ export const BlogHero = () => {
         </p>
         <InputGroup className="h-12 max-w-sm w-full">
           <InputGroupInput
-            defaultValue={search.query}
             onChange={(e) => {
               const value = e.target.value;
               setValue(value);

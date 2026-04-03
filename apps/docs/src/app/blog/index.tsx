@@ -112,7 +112,9 @@ const BlogHomePage = () => {
           <PaginationItem>
             <Button
               className="hover:bg-[#1F2433] bg-[#171824]"
-              disabled={data.currentPage === data.totalPages}
+              disabled={
+                data.currentPage >= data.totalPages || data.totalPages === 0
+              }
               onClick={() =>
                 goToPage(Math.min(data.totalPages, data.currentPage + 1))
               }

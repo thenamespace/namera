@@ -72,7 +72,7 @@ export const getPaginationRange = ({
   totalPages: number;
   siblingCount?: number;
 }) => {
-  const totalNumbers = siblingCount * 2;
+  const totalNumbers = siblingCount * 2 + 5;
 
   if (totalPages <= totalNumbers) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
