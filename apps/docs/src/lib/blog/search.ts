@@ -5,8 +5,8 @@ import type { BlogCardProps } from "@/types";
 export const BlogSearchParams = Schema.toStandardSchemaV1(
   Schema.Struct({
     from: Schema.optional(Schema.String),
-    limit: Schema.optional(Schema.Int),
-    page: Schema.optional(Schema.Int),
+    limit: Schema.optional(Schema.Int.check(Schema.isGreaterThan(0))),
+    page: Schema.optional(Schema.Int.check(Schema.isGreaterThan(0))),
     query: Schema.optional(Schema.String),
     to: Schema.optional(Schema.String),
   }),
