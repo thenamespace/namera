@@ -24,10 +24,17 @@ const applyFilters = (
       if (!item.title.toLowerCase().includes(q)) return false;
     }
 
-    if (filters.from && item.datePublished < new Date(filters.from))
-      return false;
+    if (filters.from) {
+      const fromDate = new Date(filters.from);
+      if (!Number.isNaN(fromDate.getTime()) && item.datePublished < fromDate)
+        return false;
+    }
 
-    if (filters.to && item.datePublished > new Date(filters.to)) return false;
+    if (filters.to) {
+      const toDate = new Date(filters.to);
+      if (!Number.isNaN(toDate.getTime()) && item.datePublished > toDate)
+        return false;
+    }
 
     return true;
   });
@@ -45,19 +52,13 @@ export const getPaginatedBlogs = (
 
   const total = data.length;
   const totalPages = Math.ceil(total / limit);
-  const hasNextPage = totalPages > page;
-  const hasPrevPage = page > 1;
-
-  const start = (page - 1) * limit;
-  const end = start + limit;
-
-  const items = data.slice(start, end);
+  const clampedPage = Math.min(page, totalPages);
 
   return {
-    currentPage: page,
-    hasNextPage,
-    hasPrevPage,
-    items,
+    currentPage: clampedPage,
+    hasNextPage: totalPages > clampedPage,
+    hasPrevPage: clampedPage > 1,
+    items: data.slice((clampedPage - 1) * limit, clampedPage * limit),
     total,
     totalPages,
   };
