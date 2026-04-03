@@ -20,9 +20,9 @@ const socials = [
     title: "Twitter",
   },
   {
-    href: "mailto:hi@namera.ai",
+    href: "mailto:hey@namera.ai",
     icon: EnvelopeIcon,
-    title: "Discord",
+    title: "Email",
   },
   {
     href: "https://t.me/namera_devs",
@@ -62,12 +62,12 @@ export const FooterDesktop = () => {
             <div className="flex flex-row gap-4 items-center">
               <a
                 className="text-neutral-200 text-sm font-light"
-                href="mailto:hi@namera.ai"
+                href="mailto:hey@namera.ai"
                 rel="noreferrer"
                 target="_blank"
                 title="Contact us"
               >
-                hi@namera.ai
+                hey@namera.ai
               </a>
               <div className="border-r border-neutral-400 h-4" />
               <div className="flex flex-row items-center gap-3">
