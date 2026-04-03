@@ -88,8 +88,8 @@ export const FooterDesktop = () => {
           </div>
           <div className="flex flex-row items-center justify-between border-border/50 py-3 px-3 text-neutral-300 ">
             <div className="flex flex-row gap-4 items-center text-xs">
-              <Link to="/">Terms of Service</Link>
-              <Link to="/">Privacy Policy</Link>
+              <Link to="/terms">Terms of Service</Link>
+              <Link to="/privacy-policy">Privacy Policy</Link>
             </div>
             <div className="text-xs">© 2026 Namespace Inc.</div>
           </div>
@@ -107,8 +107,8 @@ export const FooterMobile = () => {
         <div className="text-white text-xl font-medium">Namera</div>
       </div>
       <div className="flex flex-row gap-4 items-center text-xs text-neutral-300">
-        <Link to="/">Terms of Service</Link>
-        <Link to="/">Privacy Policy</Link>
+        <Link to="/terms">Terms of Service</Link>
+        <Link to="/privacy-policy">Privacy Policy</Link>
       </div>
       <div className="flex flex-col items-center justify-center gap-2">
         <div className="flex flex-row items-center gap-3">

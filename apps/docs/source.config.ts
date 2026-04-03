@@ -39,6 +39,15 @@ export const blog = defineDocs({
   },
 });
 
+export const miscDocuments = defineDocs({
+  dir: "content/misc",
+  docs: {
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
+  },
+});
+
 export default defineConfig({
   mdxOptions: {
     rehypeCodeOptions: {

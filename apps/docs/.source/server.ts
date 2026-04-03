@@ -22,6 +22,13 @@ const create = server<typeof Config, import("fumadocs-mdx/runtime/types").Intern
        */
       lastModified?: Date;
     },
+    miscDocuments: {
+      /**
+       * Last modified date of document file, obtained from version control.
+       *
+       */
+      lastModified?: Date;
+    },
   }
 }>({"doc":{"passthroughs":["extractedReferences","lastModified"]}});
 
@@ -51,6 +58,21 @@ export const docs = await create.docs("docs", "content/docs", import.meta.glob([
   "base": "./../content/docs",
   "query": {
     "collection": "docs"
+  },
+  "eager": true
+}));
+
+export const miscDocuments = await create.docs("miscDocuments", "content/misc", import.meta.glob(["./**/*.{json,yaml}"], {
+  "base": "./../content/misc",
+  "query": {
+    "collection": "miscDocuments"
+  },
+  "import": "default",
+  "eager": true
+}), import.meta.glob(["./**/*.{mdx,md}"], {
+  "base": "./../content/misc",
+  "query": {
+    "collection": "miscDocuments"
   },
   "eager": true
 }));

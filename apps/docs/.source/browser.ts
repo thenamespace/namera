@@ -22,6 +22,13 @@ const create = browser<typeof Config, import("fumadocs-mdx/runtime/types").Inter
        */
       lastModified?: Date;
     },
+    miscDocuments: {
+      /**
+       * Last modified date of document file, obtained from version control.
+       *
+       */
+      lastModified?: Date;
+    },
   }
 }>();
 const browserCollections = {
@@ -36,6 +43,13 @@ const browserCollections = {
     "base": "./../content/docs",
     "query": {
       "collection": "docs"
+    },
+    "eager": false
+  })),
+  miscDocuments: create.doc("miscDocuments", import.meta.glob(["./**/*.{mdx,md}"], {
+    "base": "./../content/misc",
+    "query": {
+      "collection": "miscDocuments"
     },
     "eager": false
   })),

@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
+import { Route as TermsRouteImport } from "./app/terms";
 import { Route as SitemapDotxmlRouteImport } from "./app/sitemap[.]xml";
+import { Route as PrivacyPolicyRouteImport } from "./app/privacy-policy";
 import { Route as LlmsDottxtRouteImport } from "./app/llms[.]txt";
 import { Route as LlmsFullDottxtRouteImport } from "./app/llms-full[.]txt";
 import { Route as BlogRouteRouteImport } from "./app/blog/route";
@@ -22,9 +24,19 @@ import { Route as ApiOgRouteImport } from "./app/api/og";
 import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
 import { Route as ApiPhSplatRouteImport } from "./app/api/ph/$";
 
+const TermsRoute = TermsRouteImport.update({
+  id: "/terms",
+  path: "/terms",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: "/sitemap.xml",
   path: "/sitemap.xml",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: "/privacy-policy",
+  path: "/privacy-policy",
   getParentRoute: () => rootRouteImport,
 } as any);
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
@@ -88,7 +100,9 @@ export interface FileRoutesByFullPath {
   "/blog": typeof BlogRouteRouteWithChildren;
   "/llms-full.txt": typeof LlmsFullDottxtRoute;
   "/llms.txt": typeof LlmsDottxtRoute;
+  "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
+  "/terms": typeof TermsRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -101,7 +115,9 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/llms-full.txt": typeof LlmsFullDottxtRoute;
   "/llms.txt": typeof LlmsDottxtRoute;
+  "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
+  "/terms": typeof TermsRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -116,7 +132,9 @@ export interface FileRoutesById {
   "/blog": typeof BlogRouteRouteWithChildren;
   "/llms-full.txt": typeof LlmsFullDottxtRoute;
   "/llms.txt": typeof LlmsDottxtRoute;
+  "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
+  "/terms": typeof TermsRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -132,7 +150,9 @@ export interface FileRouteTypes {
     | "/blog"
     | "/llms-full.txt"
     | "/llms.txt"
+    | "/privacy-policy"
     | "/sitemap.xml"
+    | "/terms"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -145,7 +165,9 @@ export interface FileRouteTypes {
     | "/"
     | "/llms-full.txt"
     | "/llms.txt"
+    | "/privacy-policy"
     | "/sitemap.xml"
+    | "/terms"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -159,7 +181,9 @@ export interface FileRouteTypes {
     | "/blog"
     | "/llms-full.txt"
     | "/llms.txt"
+    | "/privacy-policy"
     | "/sitemap.xml"
+    | "/terms"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -174,7 +198,9 @@ export interface RootRouteChildren {
   BlogRouteRoute: typeof BlogRouteRouteWithChildren;
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute;
   LlmsDottxtRoute: typeof LlmsDottxtRoute;
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute;
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute;
+  TermsRoute: typeof TermsRoute;
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
@@ -184,11 +210,25 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/terms": {
+      id: "/terms";
+      path: "/terms";
+      fullPath: "/terms";
+      preLoaderRoute: typeof TermsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/sitemap.xml": {
       id: "/sitemap.xml";
       path: "/sitemap.xml";
       fullPath: "/sitemap.xml";
       preLoaderRoute: typeof SitemapDotxmlRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/privacy-policy": {
+      id: "/privacy-policy";
+      path: "/privacy-policy";
+      fullPath: "/privacy-policy";
+      preLoaderRoute: typeof PrivacyPolicyRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/llms.txt": {
@@ -290,7 +330,9 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRouteRoute: BlogRouteRouteWithChildren,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
   DocsSplatRoute: DocsSplatRoute,

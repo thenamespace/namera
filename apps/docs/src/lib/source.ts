@@ -4,7 +4,7 @@ import * as internalIcons from "@namera-ai/ui/icons";
 import { loader } from "fumadocs-core/source";
 import { icons as lucideIcons } from "lucide-react";
 
-import { blog, docs } from "fumadocs-mdx:collections/server";
+import { blog, docs, miscDocuments } from "fumadocs-mdx:collections/server";
 
 import * as icons from "./icons";
 
@@ -36,4 +36,11 @@ export const sourceBlog = loader({
   icon: iconLoader,
   plugins: [],
   source: blog.toFumadocsSource(),
+});
+
+export const sourceMisc = loader({
+  baseUrl: "/",
+  icon: iconLoader,
+  plugins: [],
+  source: miscDocuments.toFumadocsSource(),
 });
