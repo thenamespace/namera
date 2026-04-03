@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { env } from "@/lib/env";
-import { source, sourceBlog } from "@/lib/source";
+import { source, sourceBlog, sourceMisc } from "@/lib/source";
 
 const getDocs = () => {
   const res = source.getPages();
@@ -14,6 +14,15 @@ const getDocs = () => {
 
 const getBlogPosts = () => {
   const res = sourceBlog.getPages();
+
+  return res.map((page) => ({
+    updatedAt: page.data.lastModified ?? new Date(),
+    url: page.url,
+  }));
+};
+
+const getLegalPages = () => {
+  const res = sourceMisc.getPages();
 
   return res.map((page) => ({
     updatedAt: page.data.lastModified ?? new Date(),
@@ -43,6 +52,13 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: () => {
         const docs = getDocs();
         const blogs = getBlogPosts();
+        const legalPages = getLegalPages();
+
+        const latestBlogPostDate = blogs.reduce(
+          (acc, cur) => (cur.updatedAt > acc ? cur.updatedAt : acc),
+          new Date(0),
+        );
+
         const now = new Date().toISOString();
         const staticUrls = [
           {
@@ -51,14 +67,9 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: 1.0,
           },
           {
-            loc: new URL("/terms-of-service", env.baseUrl).toString(),
-            lastmod: now,
-            priority: 0.3,
-          },
-          {
-            loc: new URL("/privacy-policy", env.baseUrl).toString(),
-            lastmod: now,
-            priority: 0.3,
+            loc: new URL("/blog", env.baseUrl).toString(),
+            lastmod: latestBlogPostDate.toISOString(),
+            priority: 0.7,
           },
         ];
 
@@ -78,6 +89,7 @@ export const Route = createFileRoute("/sitemap.xml")({
 
   ${buildUrls(docs, 0.9)}
   ${buildUrls(blogs, 0.7)}
+  ${buildUrls(legalPages, 0.3)}
 
 </urlset>`.trim();
 
