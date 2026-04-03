@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { useHotkey } from "@tanstack/react-hotkeys";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import {
   InputGroup,
@@ -9,12 +10,31 @@ import {
 } from "@namera-ai/ui/components/ui/input-group";
 import { Kbd } from "@namera-ai/ui/components/ui/kbd";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { useDebounceCallback } from "usehooks-ts";
 
 export const BlogHero = () => {
+  const search = useSearch({ from: "/blog/" });
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
-  useHotkey("/", (e) => {
-    console.log(e);
+  const [value, setValue] = useState(search.query);
+
+  const updateQuery = useDebounceCallback((value: string) => {
+    if (value === search.query) return;
+    const trimmed = value.trim();
+    if (trimmed === "" && trimmed === search.query) return;
+    navigate({
+      to: "/blog",
+      search: (prev) => ({
+        ...prev,
+        query: trimmed,
+        page: 1,
+      }),
+      replace: true,
+    });
+  }, 300);
+
+  useHotkey("/", () => {
     inputRef.current?.focus();
   });
 
@@ -28,7 +48,17 @@ export const BlogHero = () => {
           Explore the latest updates and insights from the Namera team.
         </p>
         <InputGroup className="h-12 max-w-sm w-full">
-          <InputGroupInput placeholder="Search blog..." ref={inputRef} />
+          <InputGroupInput
+            defaultValue={search.query}
+            onChange={(e) => {
+              const value = e.target.value;
+              setValue(value);
+              updateQuery(value);
+            }}
+            placeholder="Search blog..."
+            ref={inputRef}
+            value={value}
+          />
           <InputGroupAddon className="pl-3 pr-1">
             <MagnifyingGlassIcon />
           </InputGroupAddon>

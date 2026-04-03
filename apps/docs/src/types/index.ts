@@ -27,3 +27,12 @@ export type DocsMetadata = {
   url: string;
   keywords?: string;
 };
+
+export type BlogCardProps = {
+  title: string;
+  description?: string;
+  author: string;
+  datePublished: Date;
+  lastModified: Date;
+  slug: string;
+};
