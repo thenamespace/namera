@@ -66,7 +66,7 @@ export const LegalPage = ({ toc, mdx: MDX, metadata }: LegalPageProps) => {
           src="/assets/crescent-bottom.png"
         />
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-8">
-          <h1 className="text-3xl md:text-5xl font-helveticaDisplay heading-gradient">
+          <h1 className="text-3xl md:text-5xl font-helveticaDisplay heading-gradient pb-2">
             {metadata.title}
           </h1>
           <p className="font-base text-muted-foreground">
