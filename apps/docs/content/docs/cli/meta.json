@@ -1,4 +1,5 @@
 {
+  "description": "Manage keys locally",
   "icon": "TerminalIcon",
   "pages": [
     "---Introduction---",

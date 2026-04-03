@@ -45,16 +45,16 @@ const items = [
     name: "CLI",
     value: "cli",
   },
-  {
-    description: "Only results about MCP",
-    name: "MCP",
-    value: "mcp",
-  },
-  {
-    description: "Only results about x402",
-    name: "x402",
-    value: "x402",
-  },
+  // {
+  //   description: "Only results about MCP",
+  //   name: "MCP",
+  //   value: "mcp",
+  // },
+  // {
+  //   description: "Only results about x402",
+  //   name: "x402",
+  //   value: "x402",
+  // },
 ];
 
 export const CustomSearchDialog = (props: SharedProps) => {

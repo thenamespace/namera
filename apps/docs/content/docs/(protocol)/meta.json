@@ -1,5 +1,5 @@
 {
-  "description": "Programmable Session Keys",
+  "description": "Agent-native wallet layer",
   "icon": "BuildingIcon",
   "pages": ["---Introduction---", "index", "why-namera", "---Guides---", "..."],
   "root": true,

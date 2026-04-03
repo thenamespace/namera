@@ -1,4 +1,5 @@
 import { NameraIcon } from "@namera-ai/ui/icons";
+import { TelegramLogoIcon, XLogoIcon } from "@phosphor-icons/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export const githubDetails = {
@@ -12,6 +13,20 @@ export const baseOptions = (): BaseLayoutProps => {
   return {
     githubUrl: `https://github.com/${githubDetails.org}/${githubDetails.repo}`,
     links: [
+      {
+        icon: <TelegramLogoIcon />,
+        label: "Telegram",
+        text: "Telegram",
+        type: "icon",
+        url: "https://t.me/namera_devs",
+      },
+      {
+        icon: <XLogoIcon />,
+        label: "X",
+        text: "X",
+        type: "icon",
+        url: "https://x.com/namera_ai",
+      },
       // {
       //   children: (
       //     <GithubInfo owner={githubDetails.org} repo={githubDetails.repo} />

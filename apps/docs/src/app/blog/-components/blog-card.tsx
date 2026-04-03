@@ -2,14 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { usePostHog } from "@posthog/react";
 
-type BlogCardProps = {
-  title: string;
-  description?: string;
-  author: string;
-  datePublished: Date;
-  lastModified: Date;
-  slug: string;
-};
+import type { BlogCardProps } from "@/types";
 
 export const BlogCard = (props: BlogCardProps) => {
   const posthog = usePostHog();
