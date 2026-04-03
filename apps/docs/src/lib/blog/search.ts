@@ -52,7 +52,7 @@ export const getPaginatedBlogs = (
 
   const total = data.length;
   const totalPages = Math.ceil(total / limit);
-  const clampedPage = Math.min(page, totalPages);
+  const clampedPage = totalPages === 0 ? 1 : Math.min(page, totalPages);
 
   return {
     currentPage: clampedPage,
