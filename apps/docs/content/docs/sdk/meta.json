@@ -9,7 +9,9 @@
     "---Smart Accounts---",
     "...smart-accounts",
     "---Session Keys---",
-    "...session-keys"
+    "...session-keys",
+    "---Guides---",
+    "...guides"
   ],
   "root": true,
   "title": "SDK"
