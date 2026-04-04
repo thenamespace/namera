@@ -52,10 +52,30 @@ const program = Effect.gen(function* () {
       );
 
       yield* fs.makeDirectory(dirPath, { recursive: true });
-      const filePath = path.join(dirPath, `${date}.mdx`);
+
+      let fileIndex = 0;
+      let fileName = `${date}.mdx`;
+      let filePath = path.join(dirPath, fileName);
+
+      while (true) {
+        const fileExists = yield* fs.exists(filePath);
+        if (fileExists) {
+          // If the file already exists, increment the index and try again.
+          fileIndex++;
+          fileName = `${date}-${fileIndex}.mdx`;
+          filePath = path.join(dirPath, fileName);
+          continue;
+        }
+        break;
+      }
+
+      const displayTitle =
+        fileIndex === 0
+          ? `${pkg} Release - ${date}`
+          : `${pkg} Release - ${date} (Update ${fileIndex + 1})`;
 
       let content = `---
-title: ${pkg} Release - ${date}
+title: ${displayTitle}
 date: ${date}
 ---\n\n`;
 
