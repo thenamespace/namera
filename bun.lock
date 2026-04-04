@@ -4,10 +4,6 @@
   "workspaces": {
     "": {
       "name": "namera",
-      "dependencies": {
-        "@effect/platform-bun": "^4.0.0-beta.43",
-        "effect": "^4.0.0-beta.43",
-      },
       "devDependencies": {
         "@biomejs/biome": "2.4.8",
         "@changesets/changelog-github": "^0.6.0",
@@ -16,7 +12,9 @@
         "@commitlint/cli": "^20.5.0",
         "@commitlint/config-conventional": "^20.5.0",
         "@effect/language-service": "^0.84.3",
+        "@effect/platform-bun": "^4.0.0-beta.43",
         "@namera-ai/config": "workspace:*",
+        "effect": "^4.0.0-beta.43",
         "lefthook": "^2.1.4",
         "turbo": "^2.8.18",
         "typescript": "^5.9.3",
