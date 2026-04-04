@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/thenamespace/namera#readme",
   "keywords": [],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "name": "@namera-ai/ui",
   "private": "true",
   "repository": {

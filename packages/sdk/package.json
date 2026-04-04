@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/thenamespace/namera#readme",
   "keywords": [],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "name": "@namera-ai/sdk",
   "peerDependencies": {
     "viem": "^2.47.2"
