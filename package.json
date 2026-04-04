@@ -3,12 +3,19 @@
   "bugs": {
     "url": "https://github.com/thenamespace/namera/issues"
   },
+  "dependencies": {
+    "@effect/platform-bun": "^4.0.0-beta.43",
+    "effect": "^4.0.0-beta.43"
+  },
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
+    "@changesets/read": "^0.6.7",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@effect/language-service": "^0.80.0",
+    "@effect/language-service": "^0.84.3",
     "@namera-ai/config": "workspace:*",
     "lefthook": "^2.1.4",
     "turbo": "^2.8.18",
@@ -28,13 +35,16 @@
   },
   "scripts": {
     "build": "turbo build",
+    "changeset": "changeset",
     "commitlint": "commitlint --edit",
     "dev": "turbo dev",
     "format": "bunx --bun biome format --write",
     "format:check": "bunx --bun biome format",
     "lint": "bunx --bun biome check --write",
     "lint:check": "bunx --bun biome check",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "release": "bun run build && changeset publish",
+    "version": "bun scripts/changelog.ts && changeset version"
   },
   "version": "1.0.0",
   "workspaces": [

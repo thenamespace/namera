@@ -26,7 +26,6 @@
   "keywords": [],
   "license": "MIT",
   "name": "@namera-ai/cli",
-  "private": "true",
   "repository": {
     "type": "git",
     "url": "https://github.com/thenamespace/namera"

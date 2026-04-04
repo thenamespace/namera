@@ -1,5 +1,5 @@
 {
-  "author": "Vedant Chainani <vednta@namespace.ninja>",
+  "author": "Vedant Chainani <vedant@namespace.ninja>",
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
     "tsdown": "^0.21.4",
