@@ -1,11 +1,13 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@1.6.4/schema.json",
-  "access": "public",
+  "access": "restricted",
   "baseBranch": "main",
   "changelog": [
     "@changesets/changelog-github",
     { "repo": "thenamespace/namera" }
   ],
+  "commit": false,
+  "fixed": [["@namera-ai/*"]],
   "privatePackages": false,
   "snapshot": {
     "prereleaseTemplate": "{tag}-{commit}",
