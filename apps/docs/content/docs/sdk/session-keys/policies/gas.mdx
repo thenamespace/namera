@@ -1,4 +1,77 @@
 ---
 title: Gas Policy
+description: Restrict total gas spend and enforce paymaster usage for session keys.
+keywords: gas policy, session keys, paymaster, gas limits, zerodev, namera, account abstraction
 ---
 
+## What this policy does
+
+The gas policy caps how much gas a session key can spend **in total** across all UserOps. It can also require that a paymaster is used, or force a specific paymaster address. This is useful for budgeting automation and preventing a delegated key from burning unlimited gas.
+
+This policy is enforced at validation time: if a UserOp would exceed the remaining gas allowance, or violates the paymaster constraints, it is rejected.
+
+---
+
+## Code examples
+
+### 1) Cap total gas spend
+
+Use `allowed` to set a total gas budget (in wei) across **all** UserOps sent by the session key.
+
+```ts
+import { toGasPolicy } from "@namera-ai/sdk/policy";
+import { parseEther } from "viem";
+
+const gasPolicy = toGasPolicy({
+  allowed: parseEther("0.1"),
+});
+```
+
+### 2) Require a paymaster
+
+Use `enforcePaymaster` to ensure the session key can only send UserOps that include paymaster data.
+
+```ts
+import { toGasPolicy } from "@namera-ai/sdk/policy";
+
+const gasPolicy = toGasPolicy({
+  enforcePaymaster: true,
+});
+```
+
+### 3) Require a specific paymaster
+
+Use `allowedPaymaster` to lock the session key to a single paymaster address.
+
+```ts
+import { toGasPolicy } from "@namera-ai/sdk/policy";
+
+const gasPolicy = toGasPolicy({
+  allowedPaymaster: "0x1234...",
+});
+```
+
+Add the policy to the `policies` array when creating a session key. See [Create Session Key](/docs/sdk/session-keys/create) or [Create Passkey Session Key](/docs/sdk/session-keys/create-passkey-session-key) for the full flow.
+
+---
+
+## Real-world use cases
+
+- **Automation budget:** cap a trading bot at 0.05 ETH worth of gas for the week.
+- **Subscription enforcement:** require all UserOps to be sponsored by your paymaster to keep UX gasless.
+- **Partner integrations:** allow an external service to execute actions, but only when using your approved paymaster.
+
+---
+
+## When to use and when not to use
+
+Use when:
+
+- You want a hard cap on total gas usage by a session key.
+- You need to enforce gas sponsorship or a specific paymaster.
+- You are delegating access to an untrusted or semi‑trusted agent.
+
+Avoid when:
+
+- You need unrestricted gas usage (e.g., internal admin workflows).
+- Your use case already enforces strict call‑level limits and gas budget is not a concern.
