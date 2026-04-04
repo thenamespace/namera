@@ -14,7 +14,7 @@ This policy is enforced at validation time: if a UserOp would exceed the remaini
 
 ## Code examples
 
-### 1) Cap total gas spend
+### Cap total gas spend
 
 Use `allowed` to set a total gas budget (in wei) across **all** UserOps sent by the session key.
 
@@ -27,7 +27,7 @@ const gasPolicy = toGasPolicy({
 });
 ```
 
-### 2) Require a paymaster
+### Require a paymaster
 
 Use `enforcePaymaster` to ensure the session key can only send UserOps that include paymaster data.
 
@@ -39,7 +39,7 @@ const gasPolicy = toGasPolicy({
 });
 ```
 
-### 3) Require a specific paymaster
+### Require a specific paymaster
 
 Use `allowedPaymaster` to lock the session key to a single paymaster address.
 

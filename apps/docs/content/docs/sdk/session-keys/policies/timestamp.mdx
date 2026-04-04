@@ -1,0 +1,58 @@
+---
+title: Timestamp Policy
+description: Restrict a session key to a specific time window using timestamps.
+keywords: timestamp policy, time window, session keys, permissions, zerodev, namera, account abstraction
+---
+
+## What this policy does
+
+The timestamp policy limits **when** a session key is valid. You can define a start time (`validAfter`), an end time (`validUntil`), or both. If the current block time is outside the window, the UserOp is rejected.
+
+This is useful for time‑boxed access like campaigns, scheduled automation, or temporary approvals. Timestamps are in **seconds since Unix epoch**.
+
+---
+
+## Code example
+
+```ts
+import { toTimestampPolicy } from "@namera-ai/sdk/policy";
+
+// Timestamps are in seconds since Unix epoch
+const validAfter = Math.floor(Date.parse("2026-01-01T00:00:00Z") / 1000);
+const validUntil = Math.floor(Date.parse("2027-01-01T00:00:00Z") / 1000);
+
+const timestampPolicy = toTimestampPolicy({
+  validAfter,
+  validUntil,
+});
+```
+
+**Argument behavior:**
+
+- `validAfter` sets the start of the window. If omitted, the key is valid immediately.
+- `validUntil` sets the end of the window. If omitted, the key never expires.
+- Provide both for a bounded window, or one to create a start‑only or end‑only constraint.
+
+Add the policy to the `policies` array when creating a session key. See [Create Session Key](/docs/sdk/session-keys/create) or [Create Passkey Session Key](/docs/sdk/session-keys/create-passkey-session-key) for the full flow.
+
+---
+
+## Real-world use cases
+
+- **Campaign windows:** enable a key only during a mint or promo period.
+- **Scheduled automation:** allow a bot to run between specific dates.
+- **Temporary access:** issue a session key to a contractor that auto‑expires.
+
+---
+
+## When to use and when not to use
+
+Use when:
+
+- You need access that starts in the future or expires automatically.
+- You want to limit long‑lived keys without manual revocation.
+
+Avoid when:
+
+- The workflow must be long‑term and uninterrupted.
+- You rely on precise sub‑second timing (timestamps are second‑granularity and depend on block time).
