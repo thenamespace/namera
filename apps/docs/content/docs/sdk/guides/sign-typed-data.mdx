@@ -1,3 +1,166 @@
 ---
 title: Sign Typed Data
+description: Sign and verify EIP-712 typed data with smart accounts using ERC-6492.
+keywords: sign typed data, EIP-712, ERC-1271, ERC-6492, smart account, account abstraction, namera
 ---
+
+Typed data signatures follow EIP-712: a structured payload with a domain separator that prevents replay across chains and contracts. With smart accounts, the signature is produced by the account client, but verification must use **ERC-1271** on deployed accounts and **ERC-6492** for undeployed accounts. The recommended approach is to always verify with ERC-6492 so the same flow works before and after deployment.
+
+---
+
+## Understanding EIP-712 with smart accounts
+
+EIP-712 signs a deterministic hash of `{ domain, types, primaryType, message }`. The `domain` carries context like `chainId` and `verifyingContract` so the signature is only valid for that specific protocol or contract. The `types` section defines the shape of the message, and `primaryType` selects the top-level type to encode.
+
+Smart accounts are contracts, not EOAs, so verification is not `ecrecover` + address match. Use ERC-6492 to verify the signature against the smart account address. If the account is deployed, ERC-6492 behaves like ERC-1271. If it is not deployed yet, ERC-6492 wraps deployment metadata so the signature can still be validated.
+
+---
+
+## Usage
+
+```ts title="index.ts" tab="index.ts"
+import { verifyEIP6492Signature } from "@namera-ai/sdk";
+import { hashTypedData } from "viem";
+import { publicClient, smartAccountClient } from "./clients";
+import { typedData } from "./typed-data";
+
+const signature = await smartAccountClient.signTypedData(typedData);
+
+const isVerified = await verifyEIP6492Signature({
+  client: publicClient,
+  hash: hashTypedData(typedData),
+  signature,
+  signer: smartAccountClient.account.address,
+});
+
+console.log(isVerified); // true
+```
+
+```ts title="typed-data.ts" tab="typed-data.ts"
+export const domain = {
+  chainId: 1,
+  name: "Ether Mail",
+  verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+  version: "1",
+} as const;
+
+export const types = {
+  Mail: [
+    { name: "from", type: "Person" },
+    { name: "to", type: "Person" },
+    { name: "contents", type: "string" },
+  ],
+  Person: [
+    { name: "name", type: "string" },
+    { name: "wallet", type: "address" },
+  ],
+} as const;
+
+export const typedData = {
+  domain,
+  message: {
+    contents: "Hello!",
+    from: {
+      name: "Alice",
+      wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+    },
+    to: {
+      name: "Bob",
+      wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+    },
+  },
+  primaryType: "Mail",
+  types,
+} as const;
+```
+
+```ts title="clients.ts" tab="clients.ts"
+import { createAccountClient } from "@namera-ai/sdk/account";
+import { createPublicClient, http } from "viem";
+import { createPaymasterClient } from "viem/account-abstraction";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+
+const paymaster = createPaymasterClient({
+  transport: http("ZERO_DEV_PAYMASTER_URL"),
+});
+
+const signer = privateKeyToAccount(generatePrivateKey());
+
+export const smartAccountClient = await createAccountClient({
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  paymaster,
+  signer,
+  type: "ecdsa",
+});
+```
+
+---
+
+## Examples
+
+### Verify a counterfactual account
+
+ERC-6492 allows the verifier to validate a signature even if the account is not deployed yet. Use the smart account address returned by the client and the typed data hash.
+
+```ts
+const isVerified = await verifyEIP6492Signature({
+  client: publicClient,
+  hash: hashTypedData(typedData),
+  signature,
+  signer: smartAccountClient.account.address,
+});
+```
+
+### Define a protocol-specific typed payload
+
+The `domain` is where you bind the signature to a chain and contract. The example below is a minimal Permit-style shape that a token contract could verify on-chain.
+
+```ts
+const permitDomain = {
+  chainId: 1,
+  name: "USD Coin",
+  verifyingContract: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  version: "2",
+} as const;
+
+const permitTypes = {
+  Permit: [
+    { name: "owner", type: "address" },
+    { name: "spender", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+} as const;
+
+const permitData = {
+  domain: permitDomain,
+  message: {
+    owner: smartAccountClient.account.address,
+    spender: "0x1111111254EEB25477B68fb85Ed929f73A960582",
+    value: 1n,
+    nonce: 0n,
+    deadline: 1700000000n,
+  },
+  primaryType: "Permit",
+  types: permitTypes,
+} as const;
+```
+
+---
+
+## References
+
+- [Sign messages](/docs/sdk/guides/sign-message)
+- [Create a smart account](/docs/sdk/smart-accounts/create)
+- [Create a session key](/docs/sdk/session-keys/create)
