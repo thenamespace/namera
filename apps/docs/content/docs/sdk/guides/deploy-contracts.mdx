@@ -1,3 +1,197 @@
 ---
 title: Deploy Contracts
+description: Deploy Solidity contracts from a smart account using account abstraction.
+keywords: deploy contract, smart account, account abstraction, encodeDeployData, viem, bundler, paymaster, namera
 ---
+
+Deploying a contract with a smart account uses the same EVM rules as an EOA deployment, but the transaction is wrapped in a UserOperation. You encode the deployment init code with `encodeDeployData`, then send it through the smart account client. The contract is created from the smart account address, so the smart account is the deployer.
+
+---
+
+## Understanding deployments with smart accounts
+
+Contract creation happens when the transaction payload contains **init code** instead of a `to` address. `encodeDeployData` builds that init code from your contract ABI, bytecode, and constructor args. The smart account client packages this into a UserOperation, and the bundler submits it on-chain. If you configure a paymaster, gas can be sponsored; otherwise the smart account pays gas normally.
+
+The deployed address is derived from the smart account and its nonce, just like EOA deployments. If you need a deterministic address, you should deploy via a CREATE2 factory, but the flow below covers the standard CREATE-based deployment path.
+
+---
+
+## Usage
+
+```ts title="index.ts" tab="index.ts"
+import { encodeDeployData } from "viem";
+import { CounterAbi, CounterBytecode } from "./contract";
+import { publicClient, smartAccountClient } from "./clients";
+
+const deployData = encodeDeployData({
+  abi: CounterAbi,
+  args: [1n],
+  bytecode: CounterBytecode,
+});
+
+const txHash = await smartAccountClient.sendTransaction({
+  callData: deployData,
+});
+
+console.log({
+  txHash,
+  deployer: smartAccountClient.account.address,
+  chainId: publicClient.chain.id,
+});
+```
+
+```ts title="clients.ts" tab="clients.ts"
+import { createAccountClient } from "@namera-ai/sdk/account";
+import { createPublicClient, http } from "viem";
+import { createPaymasterClient } from "viem/account-abstraction";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+
+const paymaster = createPaymasterClient({
+  transport: http("ZERO_DEV_PAYMASTER_URL"),
+});
+
+const signer = privateKeyToAccount(generatePrivateKey());
+
+export const smartAccountClient = await createAccountClient({
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  paymaster,
+  signer,
+  type: "ecdsa",
+});
+```
+
+```ts title="contract.ts" tab="contract.ts"
+export const CounterBytecode =
+  "0x6080604052348015600e575f5ffd5b506040516103583803806103588339818101604052810190602e9190606b565b805f81905550506091565b5f5ffd5b5f819050919050565b604d81603d565b81146056575f5ffd5b50565b5f815190506065816046565b92915050565b5f60208284031215607d57607c6039565b5b5f6088848285016059565b91505092915050565b6102ba8061009e5f395ff3fe608060405234801561000f575f5ffd5b506004361061004a575f3560e01c806306661abd1461004e5780632baeceb71461006c578063a87d942c14610076578063d09de08a14610094575b5f5ffd5b61005661009e565b604051610063919061013a565b60405180910390f35b6100746100a3565b005b61007e610100565b60405161008b919061013a565b60405180910390f35b61009c610108565b005b5f5481565b5f5f54116100e6576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016100dd906101d3565b60405180910390fd5b60015f5f8282546100f7919061021e565b92505081905550565b5f5f54905090565b60015f5f8282546101199190610251565b92505081905550565b5f819050919050565b61013481610122565b82525050565b5f60208201905061014d5f83018461012b565b92915050565b5f82825260208201905092915050565b7f436f756e7465723a2063616e6e6f742064656372656d656e742062656c6f77205f8201527f7a65726f00000000000000000000000000000000000000000000000000000000602082015250565b5f6101bd602483610153565b91506101c882610163565b604082019050919050565b5f6020820190508181035f8301526101ea816101b1565b9050919050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61022882610122565b915061023383610122565b925082820390508181111561024b5761024a6101f1565b5b92915050565b5f61025b82610122565b915061026683610122565b925082820190508082111561027e5761027d6101f1565b5b9291505056fea2646970667358221220e2edbcab079efd06000c43d3022329c4afbfc7d09a2e97dff08d85a0cc53bbb864736f6c634300081e0033";
+
+export const CounterAbi = [
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_initialValue",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [],
+    name: "count",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "decrement",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getCount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "increment",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
+```
+
+```solidity title="Counter.sol" tab="Counter.sol"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Counter {
+    uint256 public count;
+
+    constructor(uint256 _initialValue) {
+        count = _initialValue;
+    }
+
+    function increment() public {
+        count += 1;
+    }
+
+    function decrement() public {
+        require(count > 0, "Counter: cannot decrement below zero");
+        count -= 1;
+    }
+
+    function getCount() public view returns (uint256) {
+        return count;
+    }
+}
+```
+
+---
+
+## Examples
+
+### Deploy with a different constructor value
+
+Change the constructor args to set the initial state at deployment time.
+
+```ts
+const deployData = encodeDeployData({
+  abi: CounterAbi,
+  args: [42n],
+  bytecode: CounterBytecode,
+});
+
+const txHash = await smartAccountClient.sendTransaction({
+  callData: deployData,
+});
+```
+
+### Use compiled artifacts
+
+If you compile with Foundry or Hardhat, you can feed the JSON artifact directly into `encodeDeployData`.
+
+```ts
+import CounterArtifact from "./Counter.json";
+
+const deployData = encodeDeployData({
+  abi: CounterArtifact.abi,
+  args: [1n],
+  bytecode: CounterArtifact.bytecode,
+});
+```
+
+---
+
+## References
+
+- [Create a smart account](/docs/sdk/smart-accounts/create)
+- [Create a session key](/docs/sdk/session-keys/create)
