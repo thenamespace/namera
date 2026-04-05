@@ -11,7 +11,7 @@ import type { MDXComponents } from "mdx/types";
 import * as files from "./files";
 import * as mermaid from "./mermaid";
 
-export function getMDXComponents(components?: MDXComponents): MDXComponents {
+export function getMDXComponents(): MDXComponents {
   return {
     ...defaultMdxComponents,
     ...mermaid,
@@ -20,7 +20,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     ...stepComponents,
     ...accordionComponents,
     ...twoslash,
-    ...components,
     ...typeTable,
     img: (props) => <ImageZoom {...props} />,
     pre: ({ ref: _ref, ...props }) => (

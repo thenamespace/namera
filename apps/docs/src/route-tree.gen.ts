@@ -21,6 +21,7 @@ import { Route as DocsSplatRouteImport } from "./app/docs/$";
 import { Route as BlogSlugRouteImport } from "./app/blog/$slug";
 import { Route as ApiSearchRouteImport } from "./app/api/search";
 import { Route as ApiOgRouteImport } from "./app/api/og";
+import { Route as ApiChatRouteImport } from "./app/api/chat";
 import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
 import { Route as ApiPhSplatRouteImport } from "./app/api/ph/$";
 
@@ -84,6 +85,11 @@ const ApiOgRoute = ApiOgRouteImport.update({
   path: "/api/og",
   getParentRoute: () => rootRouteImport,
 } as any);
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: "/api/chat",
+  path: "/api/chat",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LlmsDotmdxDocsSplatRoute = LlmsDotmdxDocsSplatRouteImport.update({
   id: "/llms.mdx/docs/$",
   path: "/llms.mdx/docs/$",
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
+  "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
+  "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
+  "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
+    | "/api/chat"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
+    | "/api/chat"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
+    | "/api/chat"
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute;
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute;
   TermsRoute: typeof TermsRoute;
+  ApiChatRoute: typeof ApiChatRoute;
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
   DocsSplatRoute: typeof DocsSplatRoute;
@@ -294,6 +307,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ApiOgRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/api/chat": {
+      id: "/api/chat";
+      path: "/api/chat";
+      fullPath: "/api/chat";
+      preLoaderRoute: typeof ApiChatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/llms.mdx/docs/$": {
       id: "/llms.mdx/docs/$";
       path: "/llms.mdx/docs/$";
@@ -333,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  ApiChatRoute: ApiChatRoute,
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,
   DocsSplatRoute: DocsSplatRoute,

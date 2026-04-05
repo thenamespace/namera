@@ -17,6 +17,7 @@ import {
 import browserCollections from "fumadocs-mdx:collections/browser";
 
 import { getMDXComponents } from "@/components";
+import { AISearch, AISearchPanel } from "@/components/ai/search";
 import {
   LLMCopyButton,
   ViewOptions,
@@ -104,47 +105,39 @@ const DocsPage = () => {
   }, [data.url]);
 
   return (
-    <DocsLayout
-      {...baseOptions()}
-      sidebar={{
-        tabs: {
-          transform(option, node) {
-            const section =
-              (node.$id === "(framework)" ? "framework" : node.$id) ??
-              "framework";
-            const color = `var(--${section}-color, var(--color-fd-foreground))`;
-
-            return {
-              ...option,
-              icon: (
-                <div
-                  className={cn(
-                    "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
-                    "text-(--tab-color) max-md:bg-(--tab-color)/10",
-                  )}
-                  style={
-                    {
-                      "--tab-color": color,
-                    } as React.CSSProperties
-                  }
-                >
-                  {option.icon}
-                </div>
-              ),
-            };
+    <AISearch>
+      <DocsLayout
+        {...baseOptions()}
+        sidebar={{
+          tabs: {
+            transform(option) {
+              return {
+                ...option,
+                icon: (
+                  <div
+                    className={cn(
+                      "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
+                    )}
+                  >
+                    {option.icon}
+                  </div>
+                ),
+              };
+            },
           },
-        },
-      }}
-      tabMode="navbar"
-      tree={data.pageTree}
-    >
-      <Suspense>
-        {clientLoader.useContent(data.path, {
-          path: data.path,
-          url: data.url,
-        })}
-      </Suspense>
-    </DocsLayout>
+        }}
+        tabMode="navbar"
+        tree={data.pageTree}
+      >
+        <AISearchPanel />
+        <Suspense>
+          {clientLoader.useContent(data.path, {
+            path: data.path,
+            url: data.url,
+          })}
+        </Suspense>
+      </DocsLayout>
+    </AISearch>
   );
 };
 

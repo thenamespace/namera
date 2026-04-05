@@ -1,25 +1,32 @@
+import { Button } from "@namera-ai/ui/components/ui/button";
 import { NameraIcon } from "@namera-ai/ui/icons";
-import { TelegramLogoIcon, XLogoIcon } from "@phosphor-icons/react";
+import { SparkleIcon, XLogoIcon } from "@phosphor-icons/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+
+import { useAISearchContext } from "@/components/ai/search/context";
 
 export const githubDetails = {
   org: "thenamespace",
   repo: "namera",
 };
 
-// import { GithubInfo } from "fumadocs-ui/components/github-info";
+const AskAIButton = () => {
+  const { setOpen, open } = useAISearchContext();
+
+  if (open) return null;
+
+  return (
+    <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <SparkleIcon />
+      Ask AI
+    </Button>
+  );
+};
 
 export const baseOptions = (): BaseLayoutProps => {
   return {
     githubUrl: `https://github.com/${githubDetails.org}/${githubDetails.repo}`,
     links: [
-      {
-        icon: <TelegramLogoIcon />,
-        label: "Telegram",
-        text: "Telegram",
-        type: "icon",
-        url: "https://t.me/namera_devs",
-      },
       {
         icon: <XLogoIcon />,
         label: "X",
@@ -27,12 +34,10 @@ export const baseOptions = (): BaseLayoutProps => {
         type: "icon",
         url: "https://x.com/namera_ai",
       },
-      // {
-      //   children: (
-      //     <GithubInfo owner={githubDetails.org} repo={githubDetails.repo} />
-      //   ),
-      //   type: "custom",
-      // },
+      {
+        children: <AskAIButton />,
+        type: "custom",
+      },
     ],
     nav: {
       // @ts-expect-error safe

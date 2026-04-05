@@ -57,7 +57,7 @@ const platformContents = [
   // },
 ];
 
-const companyItems = [
+export const companyItems = [
   {
     icon: ScrollIcon,
     path: "",
@@ -75,7 +75,11 @@ const companyItems = [
   },
 ];
 
-const components: { title: string; href: string; description: string }[] = [
+export const components: {
+  title: string;
+  href: string;
+  description: string;
+}[] = [
   {
     description:
       "A modal dialog that interrupts the user with important content and expects a response.",
@@ -205,7 +209,7 @@ export const Menu = () => {
   );
 };
 
-function ListItem({
+export function ListItem({
   title,
   children,
   href,
