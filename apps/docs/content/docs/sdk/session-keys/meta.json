@@ -5,6 +5,6 @@
     "create-passkey-session-key",
     "policies",
     "status",
-    "serialize"
+    "revoke"
   ]
 }

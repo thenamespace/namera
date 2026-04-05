@@ -1,0 +1,205 @@
+---
+title: Revoke Session Key
+description: Revoke a session key from a smart account.
+keywords: revoke session key, session key removal, account abstraction, zerodev, namera
+---
+
+Revoking a session key removes its permissions from the account. This action must be executed by the **owner account client** (the primary signer), not by the session key itself. You also need the `serializedAccount` returned when the session key was created so the account can identify which key to revoke.
+
+---
+
+## Import
+
+```ts
+import { createAccountClient } from "@namera-ai/sdk/account";
+import { revokeSessionKey } from "@namera-ai/sdk/session-key";
+```
+
+---
+
+## Usage
+
+```ts title="index.ts" tab="index.ts"
+import { createAccountClient } from "@namera-ai/sdk/account";
+import { revokeSessionKey } from "@namera-ai/sdk/session-key";
+import { http } from "viem";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
+import { publicClient } from "./clients";
+
+const ownerSigner = privateKeyToAccount(generatePrivateKey());
+
+const ownerClient = await createAccountClient({
+  type: "ecdsa",
+  signer: ownerSigner,
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+});
+
+const sessionPrivateKey = "0xYOUR_SESSION_PRIVATE_KEY";
+const sessionKeySigner = privateKeyToAccount(sessionPrivateKey);
+
+const txHash = await revokeSessionKey({
+  type: "ecdsa",
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  signer: sessionKeySigner,
+});
+```
+
+```ts title="clients.ts" tab="clients.ts"
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+```
+
+---
+
+## Examples
+
+Revoke a session key using a paymaster.
+
+```ts title="index.ts"
+import { createAccountClient } from "@namera-ai/sdk/account";
+import { revokeSessionKey } from "@namera-ai/sdk/session-key";
+import { createPublicClient, http } from "viem";
+import { createPaymasterClient } from "viem/account-abstraction";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+
+const paymaster = createPaymasterClient({
+  transport: http("ZERO_DEV_PAYMASTER_URL"),
+});
+
+const ownerSigner = privateKeyToAccount(generatePrivateKey());
+
+const ownerClient = await createAccountClient({
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  paymaster,
+  signer: ownerSigner,
+  type: "ecdsa",
+});
+
+const sessionPrivateKey = "0xYOUR_SESSION_PRIVATE_KEY";
+const sessionKeySigner = privateKeyToAccount(sessionPrivateKey);
+
+const txHash = await revokeSessionKey({
+  type: "ecdsa",
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  signer: sessionKeySigner,
+});
+```
+
+:::warning
+The Bundler URL above is a public endpoint. Please do not use it in production as you will likely be rate-limited. Consider using [Pimlico's Bundler](https://www.pimlico.io/), [Biconomy's Bundler](https://www.biconomy.io/), or another Bundler service.
+:::
+
+---
+
+## Parameters
+
+### type
+
+- **Value:** `"ecdsa" | "passkey"`
+
+```ts title="index.ts"
+const txHash = await revokeSessionKey({
+  type: "ecdsa", // or "passkey" [!code focus]
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  signer: sessionKeySigner,
+});
+```
+
+### client
+
+- The **owner account client** that controls the smart account.
+- Must be created with the primary signer (not the session key).
+
+### serializedAccount
+
+- The serialized session key account returned by `createSessionKey`.
+
+### signer
+
+- Only required when `type="ecdsa"`.
+- The session key signer corresponding to the session key being revoked.
+
+```ts title="index.ts"
+const txHash = await revokeSessionKey({
+  type: "ecdsa",
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  signer: sessionKeySigner, // [!code focus]
+});
+```
+
+### webAuthnKey
+
+- Only required when `type="passkey"`.
+- The WebAuthn key used by the passkey session key.
+
+```ts title="index.ts"
+const txHash = await revokeSessionKey({
+  type: "passkey",
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  webAuthnKey, // [!code focus]
+});
+```
+
+### entrypointVersion
+
+- **Type:** `EntrypointVersion` => `"0.6" | "0.7" | "0.8" | "0.9"{:ts}`
+
+```ts twoslash title="index.ts"
+// @noErrors
+import { EntryPointVersion } from "viem/account-abstraction"; // [!code focus]
+//          ^?
+```
+
+### kernelVersion
+
+- **Type:** `KernelVersion` => `"0.0.2" | "0.2.2" | "0.2.3" | "0.2.4" | "0.3.1" | "0.3.2" | "0.3.3"{:ts}`
+
+> Note: Kernel 0.2.x supports only Entrypoint 0.6. For Kernel 0.3.x, you can use Entrypoint 0.7 or 0.8.
+
+```ts title="index.ts"
+const txHash = await revokeSessionKey({
+  type: "ecdsa",
+  client: ownerClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",  // [!code focus]
+  serializedAccount: "SERIALIZED_SESSION_KEY_ACCOUNT",
+  signer: sessionKeySigner,
+});
+```
+
+For session key creation context, see [Create Session Key](/docs/sdk/session-keys/create) or [Create Passkey Session Key](/docs/sdk/session-keys/create-passkey-session-key).

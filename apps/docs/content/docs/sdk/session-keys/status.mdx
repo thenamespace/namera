@@ -1,4 +1,35 @@
 ---
 title: Session Key Status
+description: Check whether a session key is installed on a smart account.
+keywords: session key status, installed session key, zerodev plugins, account abstraction, namera
 ---
 
+When a session key is created, you can use its address immediately in a counterfactual way. But the validator plugin is not installed onchain until the first UserOp with that session key is executed. `isSessionKeyInstalled` queries the account to see if the plugin is already present.
+
+`isSessionKeyInstalled` tells you whether a session key is already installed on a smart account. ZeroDev plugins are **lazy installed**, which means the session key validator is only deployed when the account sends its first UserOp that uses that session key. This helper lets you check that state so you can decide whether to prompt the user for a first transaction.
+
+---
+
+## Usage
+
+```ts title="index.ts" tab="index.ts"
+import { isSessionKeyInstalled } from "@namera-ai/sdk/session-key";
+import { publicClient } from "./clients";
+
+const isInstalled = await isSessionKeyInstalled(publicClient, {
+  accountAddress: "0x_SMART_ACCOUNT_ADDRESS",
+  sessionKeyAddress: "0x_SESSION_KEY_ADDRESS",
+});
+```
+
+```ts title="clients.ts" tab="clients.ts"
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+});
+```
+
+If `isInstalled` is `false`, the session key has not been installed yet. The first UserOp signed by that key will install it. There is no additional transaction needed for installing a session key.

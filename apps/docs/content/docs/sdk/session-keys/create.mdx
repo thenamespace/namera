@@ -73,7 +73,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount,
-  sessionKeySigner,
+  signer: sessionKeySigner,
 });
 
 // Use sessionKeyClient to send UserOps with the session key.
@@ -154,7 +154,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount,
-  sessionKeySigner,
+  signer: sessionKeySigner,
   type: "ecdsa",
 });
 
@@ -366,7 +366,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount, // [!code focus]
-  sessionKeySigner,
+  signer: sessionKeySigner,
 });
 ```
 
@@ -387,7 +387,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount,
-  sessionKeySigner, // [!code focus]
+  signer: sessionKeySigner, // [!code focus]
 });
 ```
 
@@ -418,7 +418,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount,
-  sessionKeySigner,
+  signer: sessionKeySigner,
 });
 ```
 
@@ -450,7 +450,7 @@ const sessionKeyClient = await createSessionKeyClient({
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
   serializedAccount,
-  sessionKeySigner,
+  signer: sessionKeySigner,
   paymaster: paymasterClient, // [!code focus]
 });
 ```

@@ -13,7 +13,11 @@ import type {
 import type { PaymasterClient } from "viem/account-abstraction";
 
 import type { AccountType } from "@/account";
-import type { GetKernelVersion, Signer } from "@/types";
+import type {
+  BaseKernelAccountClient,
+  GetKernelVersion,
+  Signer,
+} from "@/types";
 
 export type SessionKeyType = "ecdsa" | "passkey";
 
@@ -94,4 +98,17 @@ export type CreateSessionKeyClientParams<
   paymaster?: PaymasterClient<TPaymasterTransport, TRpcSchema>;
   entrypointVersion: TEntrypointVersion;
   kernelVersion: TKernelVersion;
+} & SessionKeyAccountParamsMap[TSessionKeyType];
+
+export type RevokeSessionKeyParams<
+  TSessionKeyType extends SessionKeyType = SessionKeyType,
+  TEntrypointVersion extends EntryPointVersion = EntryPointVersion,
+  TKernelVersion extends
+    GetKernelVersion<TEntrypointVersion> = GetKernelVersion<TEntrypointVersion>,
+> = {
+  type: TSessionKeyType;
+  entrypointVersion: TEntrypointVersion;
+  kernelVersion: TKernelVersion;
+  serializedAccount: string;
+  client: BaseKernelAccountClient;
 } & SessionKeyAccountParamsMap[TSessionKeyType];
