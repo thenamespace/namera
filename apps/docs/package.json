@@ -41,6 +41,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "remark-rehype": "^11.1.2",
+    "shiki": "^4.0.2",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
     "three": "^0.183.2",
@@ -67,7 +68,7 @@
   "name": "@namera-ai/docs",
   "private": true,
   "scripts": {
-    "build": "bun run --bunx vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=6144' bun run --bunx vite build",
     "dev": "bun run --bunx vite dev",
     "start": "PORT=4000 node .output/server/index.mjs",
     "test": "vitest run"

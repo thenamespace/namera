@@ -15,6 +15,9 @@ const takumiDeps = [
 ];
 
 const config = defineConfig({
+  build: {
+    sourcemap: false,
+  },
   optimizeDeps: {
     exclude: takumiDeps,
   },
