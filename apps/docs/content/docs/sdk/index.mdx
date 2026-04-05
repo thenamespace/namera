@@ -1,6 +1,58 @@
 ---
 title: Introduction
-icon: HandWavingIcon
-description: Welcome to Namera SDK Documentation
+description: Namera SDK provides a clean TypeScript API for creating smart accounts, issuing scoped session keys, and executing transactions across chains.
+keywords: namera sdk, smart account, session key, account abstraction, policies, multichain, agents
 ---
 
+Namera SDK is a TypeScript library for building with smart accounts. It gives you a focused API for creating accounts, issuing scoped session keys, and executing transactions across chains. Instead of wiring together low-level contract calls and plugin installations, you get a set of functions that handle the complexity and let you focus on your application logic.
+
+## What Namera SDK provides
+
+**Smart account creation** lets you create accounts with ECDSA or passkey validators. The account address is deterministic and can be used immediately, even before the contract is deployed onchain. You get a client that exposes the full account abstraction interface: signing, sending UserOps, and managing the account lifecycle.
+
+**Session keys** are delegated keys that can sign transactions on behalf of a smart account, but only within explicit policy boundaries. You issue a session key to a bot, dapp, or agent and attach onchain rules that define what it can do. ECDSA session keys support multi-chain approval with a single signature, while passkey session keys use WebAuthn credentials for user-prompted approvals.
+
+**Policies** are the rule set attached to session keys. Multiple policies can be combined, and all must pass for a transaction to be valid. Call policies restrict which contracts and functions can be invoked, gas policies cap total spend, signature policies limit offchain message validation, rate-limit policies throttle frequency, and timestamp policies constrain when the key is valid. Sudo policy grants full permissions for trusted internal systems.
+
+**Transaction execution** uses a lane-based model where you describe calls grouped into batches and optionally spread across chains. Each batch becomes a UserOperation, and the SDK manages nonces per lane so you can run independent actions in parallel or keep ordered flows atomic. Multi-chain execution routes batches to matching clients and returns receipts for each path.
+
+**Signing utilities** cover ERC-6492 message and typed data signatures, which work for both deployed and undeployed smart accounts. The same verification flow handles counterfactual and deployed states, so you do not need separate logic for pre-deployment signatures.
+
+## How the pieces fit together
+
+The typical flow starts with a public client and a signer. You create a smart account client, which gives you a deterministic account address and the ability to send transactions. From there, you issue session keys with policies for any agent or integration that needs access. The session key client is built from the serialized account and can execute transactions within the policy bounds.
+
+```ts
+const accountClient = await createAccountClient({ type: "ecdsa", signer, ... });
+const sessionKey = await createSessionKey({ policies, signer, ... });
+const sessionKeyClient = await createSessionKeyClient({ serializedAccount, signer: sessionKeySigner, ... });
+const receipts = await executeTransaction({ batches, clients: [sessionKeyClient] });
+```
+
+The validator plugin is installed lazily on the first transaction, so there is no separate deployment step. You can check installation status at any time, and revocation is always done by the owner client to prevent compromised session keys from extending their own access.
+
+## Architecture
+
+The SDK is organized around focused entry points that match the lifecycle of smart account operations.
+
+- `@namera-ai/sdk/account` — smart account creation and management
+- `@namera-ai/sdk/session-key` — session key creation, status checks, and revocation
+- `@namera-ai/sdk/policy` — policy builders for call, gas, signature, rate-limit, timestamp, and sudo
+- `@namera-ai/sdk/transaction` — batched and multi-chain transaction execution
+- `@namera-ai/sdk/passkey` — WebAuthn utilities for passkey accounts and session keys
+
+Each entry point exports only what you need for that part of the flow, so your imports stay focused and your bundle stays small.
+
+## Quick start
+
+The fastest way to get started is to follow the [Getting Started](/docs/sdk/getting-started) guide, which walks through installation, account creation, session key setup, and transaction execution in a single flow.
+
+If you want to jump straight into a specific topic:
+
+- [Create an ECDSA smart account](/docs/sdk/smart-accounts/create)
+- [Create a passkey smart account](/docs/sdk/smart-accounts/create-passkey-account)
+- [Create an ECDSA session key](/docs/sdk/session-keys/create)
+- [Session key policies](/docs/sdk/session-keys/policies)
+- [Send transactions](/docs/sdk/guides/send-transaction)
+- [Sign messages](/docs/sdk/guides/sign-message)
+- [Sign typed data](/docs/sdk/guides/sign-typed-data)

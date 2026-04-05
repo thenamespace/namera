@@ -1,61 +1,242 @@
 ---
 title: Getting Started
-icon: RocketLaunchIcon
-description: Get started with Namera SDK and create your first smart wallet in just a few lines of code.
+description: Build your first smart account, issue a scoped session key, and send a transaction with the Namera SDK.
+keywords: getting started, smart account, session key, account abstraction, zerodev, namera, tutorial
+---
+
+This guide walks you through the full lifecycle of using Namera: installing the SDK, creating a smart account, issuing a session key with policies, and sending a transaction. By the end, you will have a working setup that mirrors how a production agent or dapp delegates and executes onchain actions.
+
+The flow we cover matches a real-world pattern: a trading bot that can only swap on Uniswap within a daily budget. You will see how each piece fits together and why the architecture is built this way.
+
 ---
 
 ## Installation
 
-To install Namera SDK, you can use the following command:
+Install the Namera SDK alongside viem, which provides the underlying Ethereum primitives.
 
-```npm
+```bash
 npm install @namera-ai/sdk viem
 ```
 
-- [Viem](https://viem.sh/) is a TypeScript interface for Ethereum that performs blockchain operations.
+Viem handles public client creation, chain definitions, and calldata encoding. Namera builds on top of it to add smart account creation, session key management, and transaction execution.
 
-## Setup Public Client
+---
 
-Before you can use Namera SDK, you need to set up a public client. This client will be used to interact with the Ethereum network.
+## Set up the public client
+
+The public client reads from the blockchain and is shared across all Namera operations. It does not hold any keys or sign anything.
 
 ```ts
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 
-const publicClient = createPublicClient({
+export const publicClient = createPublicClient({
   chain: mainnet,
   transport: http(),
 });
 ```
 
-## Create Signer
+In production, point the transport to a reliable RPC provider. The public client is used to query state, verify signatures, and check session key installation status.
 
-Next, you need to create a signer. A signer is an object that can sign transactions and messages. It can be one of `EIP1193Provider`, `WalletClient`, `LocalAccount`, or `SmartAccount`.
+---
 
-```ts
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+## Create the smart account
 
-const signer = privateKeyToAccount(generatePrivateKey());
-```
-
-## Create Smart Account Client
-
-Now that you have a public client and a signer, you can create an ECDSA Smart Account client.
+A smart account is a contract that validates and executes transactions through onchain logic. You choose a validator to define how signatures are verified. The ECDSA validator works like a normal EOA but also supports multi-chain execution via a single Merkle root signature.
 
 ```ts
 import { createAccountClient } from "@namera-ai/sdk/account";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-const client = await createAccountClient({
+const signer = privateKeyToAccount(generatePrivateKey());
+
+const accountClient = await createAccountClient({
   type: "ecdsa",
-  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"), // Public Pimlico RPC
+  signer,
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"),
   chain: mainnet,
   client: publicClient,
   entrypointVersion: "0.7",
   kernelVersion: "0.3.2",
+});
+
+const accountAddress = accountClient.account.address;
+```
+
+The account address is deterministic and can be used immediately, even before the contract is deployed onchain. This counterfactual property lets you reference the address in other systems, attach session keys, or pre-fund it before the first transaction.
+
+The bundler URL above is a public endpoint meant for experimentation. In production, use a dedicated bundler service from Pimlico, Biconomy, or another provider to avoid rate limits.
+
+---
+
+## Create a session key with policies
+
+Session keys are delegated keys that can sign UserOperations on behalf of the smart account, but only within explicit policy boundaries. Instead of sharing the primary signer with a bot or dapp, you issue a session key with tight onchain rules.
+
+Here is a realistic example: a trading bot that can only call Uniswap's swap function, with a gas cap and a time window.
+
+```ts
+import { createSessionKey, createSessionKeyClient } from "@namera-ai/sdk/session-key";
+import { toCallPolicy, CallPolicyVersion, ParamCondition } from "@namera-ai/sdk/policy";
+import { toGasPolicy } from "@namera-ai/sdk/policy";
+import { toTimestampPolicy } from "@namera-ai/sdk/policy";
+import { parseEther } from "viem";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+
+const sessionPrivateKey = generatePrivateKey();
+const sessionKeySigner = privateKeyToAccount(sessionPrivateKey);
+```
+
+First, define the policies that govern what the session key can do. The call policy restricts which contract and function can be invoked, the gas policy caps total spend, and the timestamp policy limits when the key is valid.
+
+```ts
+const uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+
+const callPolicy = toCallPolicy({
+  permissions: [
+    {
+      target: uniswapRouter,
+      valueLimit: 0n,
+    },
+  ],
+  policyVersion: CallPolicyVersion.V0_0_5,
+});
+
+const gasPolicy = toGasPolicy({
+  allowed: parseEther("0.1"),
+});
+
+const validUntil = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
+const timestampPolicy = toTimestampPolicy({
+  validUntil,
+});
+```
+
+Now create the session key. The owner signer signs the permission payload, and the result contains a serialized account that can be used to build a session key client.
+
+```ts
+const sessionKey = await createSessionKey({
+  type: "ecdsa",
+  accountType: "ecdsa",
+  clients: [publicClient],
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  policies: [callPolicy, gasPolicy, timestampPolicy],
+  sessionPrivateKey,
   signer,
 });
 
-// Get the address of the smart account
-const saAddress = client.account.address;
+const serializedAccount = sessionKey.serializedAccounts[0]
+  ?.serializedAccount as string;
 ```
 
+Finally, build the session key client. This client can send UserOperations within the policy limits without needing the primary signer.
+
+```ts
+const sessionKeyClient = await createSessionKeyClient({
+  type: "ecdsa",
+  bundlerTransport: http("https://public.pimlico.io/v2/1/rpc"),
+  chain: mainnet,
+  client: publicClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount,
+  signer: sessionKeySigner,
+});
+```
+
+The session key client is now ready to execute transactions. The policies are enforced onchain, so even if the session key is compromised, the attacker can only call the Uniswap router and cannot exceed the gas cap or use the key after the time window expires.
+
+---
+
+## Send a transaction
+
+Transactions are sent through the `executeTransaction` function, which accepts batches of calls and routes them to the correct account client. Each batch becomes a UserOperation, and the function returns receipts for each execution path.
+
+Here is how the session key client sends a swap through the Uniswap router.
+
+```ts
+import { executeTransaction } from "@namera-ai/sdk/transaction";
+import { encodeFunctionData } from "viem";
+
+const swapData = encodeFunctionData({
+  abi: uniswapRouterAbi,
+  functionName: "exactInputSingle",
+  args: [{ /* swap params */ }],
+});
+
+const receipts = await executeTransaction({
+  batches: [
+    {
+      chainId: mainnet.id,
+      calls: [
+        {
+          to: uniswapRouter,
+          data: swapData,
+        },
+      ],
+    },
+  ],
+  clients: [sessionKeyClient],
+});
+
+const receipt = receipts[0];
+console.log(receipt?.success);
+```
+
+The `executeTransaction` function supports more than single calls. You can batch multiple calls atomically, run independent actions in parallel using nonce lanes, or execute across multiple chains with a single request. Each batch returns a receipt, and failed submissions return `null` for that entry.
+
+For a deeper dive into batching, parallelism, and multi-chain execution, see the [Send Transactions](/docs/sdk/guides/send-transaction) guide.
+
+---
+
+## What happens onchain
+
+When the session key sends its first UserOperation, the ZeroDev validator plugin is installed lazily on the smart account. There is no separate deployment transaction needed. The plugin validates the session key's signature against the policies signed by the owner, and if all checks pass, the calls execute.
+
+You can check whether a session key is already installed before sending the first transaction.
+
+```ts
+import { isSessionKeyInstalled } from "@namera-ai/sdk/session-key";
+
+const isInstalled = await isSessionKeyInstalled(publicClient, {
+  accountAddress,
+  sessionKeyAddress: sessionKeySigner.address,
+});
+```
+
+If `isInstalled` is `false`, the first UserOp will install the plugin automatically. If it is `true`, the session key is already active and can execute immediately.
+
+---
+
+## Revoking a session key
+
+Revoking a session key removes its permissions from the account. This action must be executed by the owner account client, not by the session key itself.
+
+```ts
+import { revokeSessionKey } from "@namera-ai/sdk/session-key";
+
+await revokeSessionKey({
+  type: "ecdsa",
+  client: accountClient,
+  entrypointVersion: "0.7",
+  kernelVersion: "0.3.2",
+  serializedAccount,
+  signer: sessionKeySigner,
+});
+```
+
+Revocation is important for lifecycle management. If a session key is compromised, or if an integration no longer needs access, revoking it prevents any further execution. The timestamp and rate-limit policies provide automatic expiration, but revocation is the fastest way to cut off access.
+
+---
+
+## Next steps
+
+- [Create an ECDSA smart account](/docs/sdk/smart-accounts/create)
+- [Create a passkey smart account](/docs/sdk/smart-accounts/create-passkey-account)
+- [Create an ECDSA session key](/docs/sdk/session-keys/create)
+- [Create a passkey session key](/docs/sdk/session-keys/create-passkey-session-key)
+- [Session key policies](/docs/sdk/session-keys/policies)
+- [Send transactions](/docs/sdk/guides/send-transaction)
+- [Sign messages](/docs/sdk/guides/sign-message)
+- [Sign typed data](/docs/sdk/guides/sign-typed-data)

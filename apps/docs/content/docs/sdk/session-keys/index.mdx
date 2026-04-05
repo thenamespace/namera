@@ -1,4 +1,100 @@
 ---
 title: Introduction
+description: Delegate scoped permissions to agents and apps with session keys.
+keywords: session keys, delegated permissions, policies, smart account, account abstraction, zerodev, namera
 ---
 
+Session keys are delegated keys that can sign UserOperations on behalf of a smart account **only within explicit policy boundaries**. Instead of sharing the primary signer with a dapp or automation agent, you issue a session key with tight onchain rules: what can be called, when it can be called, how often it can be called, and how much gas it can spend.
+
+This is the default security model for Namera agents. A session key is a capability with guardrails, not a second owner.
+
+---
+
+## Why session keys
+
+Smart accounts are programmable, but you still need a safe way to delegate execution. Session keys keep the primary signer offline while still enabling automation, and they scope permissions per integration or agent so you can enforce least‑privilege execution directly onchain. If a key leaks, you revoke it without rotating the owner, which keeps the account stable and avoids broad access downtime.
+
+A typical example is a portfolio bot that rebalances once a day. You can allow only a specific swap function, cap gas spend, and rate‑limit to one UserOp per day. The bot can operate unattended, but cannot drain funds or call arbitrary contracts.
+
+---
+
+## How session keys work in Namera
+
+Namera uses ZeroDev’s validator plugins to install session key permissions on the smart account. The owner signs a permission payload, and the session key uses that payload to authorize UserOps.
+
+Every UserOp signed by a session key is validated against its policies onchain. The validator plugin is installed lazily the first time the session key is used, so you can generate a session key address and attach it to permissions before any transaction is sent. This makes it easy to pre‑provision access for an agent and only pay onchain costs when it actually executes.
+
+---
+
+## Session key types
+
+Namera supports two session key flavors, each optimized for different UX and security tradeoffs.
+
+### ECDSA session keys (recommended)
+
+ECDSA session keys are private-key based and support **multi‑chain approval**. With the multichain ECDSA validator, the owner signs a single Merkle root that covers per‑chain permissions, and each chain verifies the session key with a proof. This gives you one approval for many chains and keeps permissions consistent across networks.
+
+This is the best fit for automation and agent backends. For example, a trading service that operates on Ethereum and Base can be granted the same session key once, and then the service can execute across both chains without repeated prompts.
+
+### Passkey session keys
+
+Passkey session keys use WebAuthn credentials (Face ID / Touch ID) instead of a raw private key. This is ideal for user‑driven approvals where you want device‑level authentication.
+
+Use passkeys when you want a consumer‑grade flow where users approve permission grants with a device prompt, such as a mobile app that lets a user authorize a limited allowance for a subscription. Passkey session keys require **one approval per chain**, so if you need a single approval across multiple chains, use ECDSA session keys instead.
+
+---
+
+## Policies at a glance
+
+Policies are the rule set attached to a session key. Multiple policies can be combined, and all must pass for a UserOp to be valid.
+
+The most common policy is a call policy that restricts which contracts, functions, and argument values can be used. A gas policy caps total gas usage or enforces a specific paymaster. Signature, rate‑limit, and timestamp policies handle offchain approvals, throttling, and time windows, while sudo grants full permissions for trusted internal systems.
+
+Here is a minimal policy shape that allows only a single token transfer with a capped amount:
+
+```ts
+import { CallPolicyVersion, ParamCondition, toCallPolicy } from "@namera-ai/sdk/policy";
+import { erc20Abi, parseUnits } from "viem";
+
+const policy = toCallPolicy({
+  permissions: [
+    {
+      target: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      abi: erc20Abi,
+      functionName: "transfer",
+      args: [
+        null,
+        { condition: ParamCondition.LESS_THAN_OR_EQUAL, value: parseUnits("100", 6) },
+      ],
+      valueLimit: 0n,
+    },
+  ],
+  policyVersion: CallPolicyVersion.V0_0_5,
+});
+```
+
+---
+
+## Typical workflows
+
+Session keys are ideal for automation bots that need long‑lived access. A rebalancing bot can be given a call policy for a specific DEX router and a rate‑limit policy that allows one action per day. Subscriptions are another common use case: allow a payment contract call once per month and cap the total gas, so the user never gets a surprise spend. For protocol integrations, you can issue a dedicated key per partner and lock it to only the functions they need, which keeps the permission surface small and auditable.
+
+---
+
+## Lifecycle
+
+Session keys have a simple lifecycle: create the key, use it through a session key client, check installation status when needed, and revoke it once access should end. The first UserOp installs the validator plugin automatically, so the most common flow is to create the session key, run the first authorized action, and then operate normally. Revocation is always done by the owner client, which prevents a compromised session key from extending its own access.
+
+Here is a small mental model of the flow:
+
+```ts
+const sessionKey = await createSessionKey({ policies, signer, type: "ecdsa", ... });
+const sessionKeyClient = await createSessionKeyClient({ serializedAccount, signer: sessionKeySigner, ... });
+await sessionKeyClient.sendTransaction({ callData });
+```
+
+---
+
+## Next steps
+
+If you want a multi‑chain key with a single approval, start with [Create an ECDSA session key](/docs/sdk/session-keys/create). If you want user‑prompted approvals, use [Create a passkey session key](/docs/sdk/session-keys/create-passkey-session-key). To design guardrails, see [Session key policies](/docs/sdk/session-keys/policies). For lifecycle management, check [Session key status](/docs/sdk/session-keys/status) and [Revoke a session key](/docs/sdk/session-keys/revoke).
