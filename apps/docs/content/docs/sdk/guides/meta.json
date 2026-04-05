@@ -2,9 +2,7 @@
   "pages": [
     "sign-message",
     "sign-typed-data",
-    "transaction",
-    "deploy-contracts",
-    "sponsor",
-    "connect-smart-account"
+    "send-transaction",
+    "deploy-contract"
   ]
 }
