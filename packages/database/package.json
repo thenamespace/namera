@@ -1,0 +1,31 @@
+{
+  "name": "@namera-ai/database",
+  "version": "0.0.0",
+  "private": "true",
+  "keywords": [],
+  "homepage": "https://github.com/thenamespace/namera-core#readme",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera-core/issues"
+  },
+  "license": "MIT",
+  "author": "Vedant Chainani <vedant@namespace.ninja>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thenamespace/namera-core"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {},
+  "dependencies": {
+    "@effect/sql-pg": "4.0.0-beta.42",
+    "drizzle-orm": "1.0.0-beta.20",
+    "effect": "4.0.0-beta.42",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@namera-ai/config": "workspace:*",
+    "@types/bun": "^1.3.11",
+    "@types/pg": "^8.20.0",
+    "typescript": "^6.0.2"
+  }
+}
