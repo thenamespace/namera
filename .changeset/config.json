@@ -7,7 +7,7 @@
     { "repo": "thenamespace/namera" }
   ],
   "commit": false,
-  "fixed": [["@namera-ai/*"]],
+  "fixed": [["@namera-ai/sdk", "@namera-ai/cli"]],
   "privatePackages": false,
   "snapshot": {
     "prereleaseTemplate": "{tag}-{commit}",

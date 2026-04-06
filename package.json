@@ -24,6 +24,7 @@
   "license": "Apache-2.0",
   "name": "namera",
   "packageManager": "bun@1.3.9",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thenamespace/namera.git"
@@ -41,7 +42,7 @@
     "release": "bun run build && changeset publish",
     "version": "changeset version"
   },
-  "version": "1.0.0",
+  "version": "0.0.0",
   "workspaces": [
     "apps/*",
     "packages/*"
