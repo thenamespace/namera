@@ -1,1 +1,3 @@
-export const hello = () => "hello world";
+export * from "./core";
+export * from "./schema";
+export * from "./config";
