@@ -8,7 +8,11 @@
   ],
   "commit": false,
   "fixed": [],
-  "ignore": [],
+  "ignore": [
+    "@namera-ai/config",
+    "@namera-ai/package-template",
+    "@namera-ai/ui"
+  ],
   "linked": [],
   "updateInternalDependencies": "patch"
 }
