@@ -1,0 +1,39 @@
+{
+  "name": "@namera-ai/telemetry",
+  "version": "0.1.0",
+  "private": "true",
+  "keywords": [],
+  "homepage": "https://github.com/thenamespace/namera-core#readme",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera-core/issues"
+  },
+  "license": "MIT",
+  "author": "Vedant Chainani <vedant@namespace.ninja>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thenamespace/namera-core"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@effect/opentelemetry": "^4.0.0-beta.43",
+    "@opentelemetry/auto-instrumentations-node": "^0.72.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.59.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.214.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.214.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/sdk-logs": "^0.214.0",
+    "@opentelemetry/sdk-metrics": "^2.6.1",
+    "@opentelemetry/sdk-trace-base": "^2.6.1",
+    "effect": "^4.0.0-beta.43"
+  },
+  "devDependencies": {
+    "@namera-ai/config": "workspace:*",
+    "@types/bun": "^1.3.11",
+    "typescript": "^6.0.2"
+  }
+}
