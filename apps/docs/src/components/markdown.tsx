@@ -1,136 +1,136 @@
-/** biome-ignore-all lint/style/useNamingConvention: safe */
-import {
-  Children,
-  type ComponentProps,
-  type ReactElement,
-  type ReactNode,
-  Suspense,
-  use,
-  useDeferredValue,
-} from "react";
-import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+// /** biome-ignore-all lint/style/useNamingConvention: safe */
+// import {
+//   Children,
+//   type ComponentProps,
+//   type ReactElement,
+//   type ReactNode,
+//   Suspense,
+//   use,
+//   useDeferredValue,
+// } from "react";
+// import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 
-import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
-import defaultMdxComponents from "fumadocs-ui/mdx";
-import type { ElementContent, Root, RootContent } from "hast";
-import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import { remark } from "remark";
-import remarkGfm from "remark-gfm";
-import remarkRehype from "remark-rehype";
-import { visit } from "unist-util-visit";
+// import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
+// import defaultMdxComponents from "fumadocs-ui/mdx";
+// import type { ElementContent, Root, RootContent } from "hast";
+// import { toJsxRuntime } from "hast-util-to-jsx-runtime";
+// import { remark } from "remark";
+// import remarkGfm from "remark-gfm";
+// import remarkRehype from "remark-rehype";
+// import { visit } from "unist-util-visit";
 
-export type Processor = {
-  process: (content: string) => Promise<ReactNode>;
-};
+// export type Processor = {
+//   process: (content: string) => Promise<ReactNode>;
+// };
 
-export function rehypeWrapWords() {
-  return (tree: Root) => {
-    visit(tree, ["text", "element"], (node, index, parent) => {
-      if (node.type === "element" && node.tagName === "pre") return "skip";
-      if (node.type !== "text" || !parent || index === undefined) return;
+// export function rehypeWrapWords() {
+//   return (tree: Root) => {
+//     visit(tree, ["text", "element"], (node, index, parent) => {
+//       if (node.type === "element" && node.tagName === "pre") return "skip";
+//       if (node.type !== "text" || !parent || index === undefined) return;
 
-      const words = node.value.split(/(?=\s)/);
+//       const words = node.value.split(/(?=\s)/);
 
-      // Create new span nodes for each word and whitespace
-      const newNodes: ElementContent[] = words.flatMap((word) => {
-        if (word.length === 0) return [];
+//       // Create new span nodes for each word and whitespace
+//       const newNodes: ElementContent[] = words.flatMap((word) => {
+//         if (word.length === 0) return [];
 
-        return {
-          children: [{ type: "text", value: word }],
-          properties: {
-            class: "animate-fd-fade-in",
-          },
-          tagName: "span",
-          type: "element",
-        };
-      });
+//         return {
+//           children: [{ type: "text", value: word }],
+//           properties: {
+//             class: "animate-fd-fade-in",
+//           },
+//           tagName: "span",
+//           type: "element",
+//         };
+//       });
 
-      Object.assign(node, {
-        children: newNodes,
-        properties: {},
-        tagName: "span",
-        type: "element",
-      } satisfies RootContent);
-      return "skip";
-    });
-  };
-}
+//       Object.assign(node, {
+//         children: newNodes,
+//         properties: {},
+//         tagName: "span",
+//         type: "element",
+//       } satisfies RootContent);
+//       return "skip";
+//     });
+//   };
+// }
 
-function createProcessor(): Processor {
-  const processor = remark()
-    .use(remarkGfm)
-    .use(remarkRehype)
-    .use(rehypeWrapWords);
+// function createProcessor(): Processor {
+//   const processor = remark()
+//     .use(remarkGfm)
+//     .use(remarkRehype)
+//     .use(rehypeWrapWords);
 
-  return {
-    async process(content) {
-      const nodes = processor.parse({ value: content });
-      const hast = await processor.run(nodes);
+//   return {
+//     async process(content) {
+//       const nodes = processor.parse({ value: content });
+//       const hast = await processor.run(nodes);
 
-      return toJsxRuntime(hast, {
-        components: {
-          ...defaultMdxComponents,
-          img: undefined, // use JSX
-          pre: Pre,
-        },
-        development: false,
-        Fragment,
-        jsx,
-        jsxs,
-      });
-    },
-  };
-}
+//       return toJsxRuntime(hast, {
+//         components: {
+//           ...defaultMdxComponents,
+//           img: undefined, // use JSX
+//           pre: Pre,
+//         },
+//         development: false,
+//         Fragment,
+//         jsx,
+//         jsxs,
+//       });
+//     },
+//   };
+// }
 
-function Pre(props: ComponentProps<"pre">) {
-  const code = Children.only(props.children) as ReactElement;
-  const codeProps = code.props as ComponentProps<"code">;
-  const content = codeProps.children;
-  if (typeof content !== "string") return null;
+// function Pre(props: ComponentProps<"pre">) {
+//   const code = Children.only(props.children) as ReactElement;
+//   const codeProps = code.props as ComponentProps<"code">;
+//   const content = codeProps.children;
+//   if (typeof content !== "string") return null;
 
-  let lang =
-    codeProps.className
-      ?.split(" ")
-      .find((v) => v.startsWith("language-"))
-      ?.slice("language-".length) ?? "text";
+//   let lang =
+//     codeProps.className
+//       ?.split(" ")
+//       .find((v) => v.startsWith("language-"))
+//       ?.slice("language-".length) ?? "text";
 
-  if (lang === "mdx") lang = "md";
+//   if (lang === "mdx") lang = "md";
 
-  return (
-    <DynamicCodeBlock
-      code={content.trimEnd()}
-      codeblock={{
-        className: "shadow-none text-sm font-geist-mono",
-      }}
-      lang={lang}
-    />
-  );
-}
+//   return (
+//     <DynamicCodeBlock
+//       code={content.trimEnd()}
+//       codeblock={{
+//         className: "shadow-none text-sm font-geist-mono",
+//       }}
+//       lang={lang}
+//     />
+//   );
+// }
 
-const processor = createProcessor();
+// const processor = createProcessor();
 
-export function Markdown({ text }: { text: string }) {
-  const deferredText = useDeferredValue(text);
+// export function Markdown({ text }: { text: string }) {
+//   const deferredText = useDeferredValue(text);
 
-  return (
-    <Suspense fallback={<p className="invisible">{text}</p>}>
-      <Renderer text={deferredText} />
-    </Suspense>
-  );
-}
+//   return (
+//     <Suspense fallback={<p className="invisible">{text}</p>}>
+//       <Renderer text={deferredText} />
+//     </Suspense>
+//   );
+// }
 
-const MAX_CACHE = 200;
-const cache = new Map<string, Promise<ReactNode>>();
+// const MAX_CACHE = 200;
+// const cache = new Map<string, Promise<ReactNode>>();
 
-function Renderer({ text }: { text: string }) {
-  const result = cache.get(text) ?? processor.process(text);
-  if (!cache.has(text)) {
-    if (cache.size >= MAX_CACHE) {
-      // evict the oldest entry
-      // biome-ignore lint/style/noNonNullAssertion: safe
-      cache.delete(cache.keys().next().value!);
-    }
-    cache.set(text, result);
-  }
-  return use(result);
-}
+// function Renderer({ text }: { text: string }) {
+//   const result = cache.get(text) ?? processor.process(text);
+//   if (!cache.has(text)) {
+//     if (cache.size >= MAX_CACHE) {
+//       // evict the oldest entry
+//       // biome-ignore lint/style/noNonNullAssertion: safe
+//       cache.delete(cache.keys().next().value!);
+//     }
+//     cache.set(text, result);
+//   }
+//   return use(result);
+// }

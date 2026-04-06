@@ -1,6 +1,5 @@
-import { Button } from "@namera-ai/ui/components/ui/button";
 import { NameraIcon } from "@namera-ai/ui/icons";
-import { SparkleIcon, XLogoIcon } from "@phosphor-icons/react";
+import { XLogoIcon } from "@phosphor-icons/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 // import { useAISearchContext } from "@/components/ai/search/context";
