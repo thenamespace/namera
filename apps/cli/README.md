@@ -2,9 +2,6 @@
 
 Namera CLI gives agents controlled access to smart accounts with session keys and scoped permissions, running fully local and agent-first across chains.
 
-> [!IMPORTANT]
-> This CLI is under active development. Expect changes as we approach v1.
-
 <p>
   <a href="https://www.npmjs.com/package/@namera-ai/cli"><img src="https://img.shields.io/npm/v/@namera-ai/cli" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@namera-ai/cli"><img src="https://img.shields.io/npm/dm/@namera-ai/cli" alt="npm downloads"></a>

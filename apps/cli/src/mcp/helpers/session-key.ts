@@ -248,7 +248,7 @@ export const getSessionKeyClient = (params: GetValidSessionKeysParams) =>
         entrypointVersion: smartAccount.entryPointVersion,
         kernelVersion: smartAccount.kernelVersion,
         serializedAccount,
-        sessionKeySigner: key.signer,
+        signer: key.signer,
       }),
     );
 
