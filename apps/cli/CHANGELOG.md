@@ -1,5 +1,11 @@
 # @namera-ai/cli
 
+## 0.1.2
+
+### Patch Changes
+
+- [`0644fc0`](https://github.com/thenamespace/namera/commit/0644fc0af2b33640f9ab336b27af148dd47950fc) Thanks [@envoy1084](https://github.com/envoy1084)! - Add `tslib` as a dependency, for `@zerodev/webauth-key` to work
+
 ## 0.1.1
 
 ### Patch Changes
