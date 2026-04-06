@@ -1,4 +1,5 @@
 import type { ViteUserConfig } from "vitest/config";
+
 import tsconfigPaths from "vite-tsconfig-paths";
 import { mergeConfig } from "vitest/config";
 

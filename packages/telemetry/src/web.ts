@@ -15,20 +15,16 @@ export const layer = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* OtelConfig;
 
-    const metricsUrl = new URL("/v1/metrics", config.otelBaseUrl);
-    const traceUrl = new URL("/v1/traces", config.otelBaseUrl);
-    const logsUrl = new URL("/v1/logs", config.otelBaseUrl);
-
     const metricExporter = new OTLPMetricExporter({
-      url: metricsUrl.toString(),
+      url: config.metricsUrl.toString(),
     });
 
     const traceExporter = new OTLPTraceExporter({
-      url: traceUrl.toString(),
+      url: config.traceUrl.toString(),
     });
 
     const logExporter = new OTLPLogExporter({
-      url: logsUrl.toString(),
+      url: config.logsUrl.toString(),
     });
 
     return NodeSdk.layer(() => {

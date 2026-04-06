@@ -22,9 +22,8 @@ export const oxFmtConfig = defineConfig({
     order: "asc",
     ignoreCase: true,
     sortSideEffects: false,
-    partitionByNewline: true,
     partitionByComment: true,
-    newlinesBetween: false,
+    newlinesBetween: true,
     internalPattern: ["~/", "@/", "@namera-ai/"],
     customGroups: [
       {
@@ -35,6 +34,10 @@ export const oxFmtConfig = defineConfig({
         groupName: "tanstack",
         elementNamePattern: ["@tanstack/*"],
       },
+      {
+        groupName: "effect",
+        elementNamePattern: ["effect", "@effect/*"],
+      },
     ],
     groups: [
       "type-builtin",
@@ -43,6 +46,7 @@ export const oxFmtConfig = defineConfig({
       "builtin",
       "framework",
       "tanstack",
+      "effect",
       "external",
       ["internal", "subpath"],
       ["parent", "sibling", "index"],
