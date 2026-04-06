@@ -1,17 +1,16 @@
 {
-  "author": "Vedant Chainani <vednta@envoy1084.xyz>",
-  "devDependencies": {
-    "@biomejs/biome": "2.4.4",
-    "tsdown": "^0.21.4",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.0.18"
-  },
+  "name": "@namera-ai/config",
+  "version": "1.0.0",
+  "private": "true",
+  "license": "Apache-2.0",
+  "author": "Vedant Chainani <vedant@namespace.ninja>",
+  "files": [
+    "./tsconfig",
+    "./tsdown",
+    "./oxc"
+  ],
+  "type": "module",
   "exports": {
-    "./biome": "./biome/base.json",
-    "./biome/base": "./biome/base.json",
-    "./biome/next": "./biome/next.json",
-    "./biome/react": "./biome/react.json",
-    "./biome/test": "./biome/test.json",
     "./tsconfig/app/next": "./tsconfig/next.json",
     "./tsconfig/app/react": "./tsconfig/react.json",
     "./tsconfig/app/vite": "./tsconfig/vite.json",
@@ -21,16 +20,18 @@
     "./tsconfig/library/node": "./tsconfig/node-library.json",
     "./tsconfig/library/react": "./tsconfig/react-library.json",
     "./tsdown": "./tsdown/shared.ts",
-    "./vitest": "./vitest/shared.ts"
+    "./vitest": "./vitest/shared.ts",
+    "./oxc/fmt": "./oxc/fmt.ts",
+    "./oxc/base": "./oxc/base.ts",
+    "./oxc/react": "./oxc/react.ts",
+    "./oxc/next": "./oxc/next.ts",
+    "./oxc/test": "./oxc/test.ts"
   },
-  "files": [
-    "./biome",
-    "./tsconfig",
-    "./tsdown"
-  ],
-  "license": "MIT",
-  "name": "@namera-ai/config",
-  "private": "true",
-  "type": "module",
-  "version": "0.0.1"
+  "devDependencies": {
+    "oxfmt": "^0.43.0",
+    "oxlint": "^1.58.0",
+    "tsdown": "^0.21.4",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.0"
+  }
 }
