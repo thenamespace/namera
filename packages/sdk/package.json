@@ -72,6 +72,9 @@
   "peerDependencies": {
     "viem": "^2.47.2"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/thenamespace/namera"
