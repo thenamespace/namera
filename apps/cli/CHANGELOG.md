@@ -1,5 +1,11 @@
 # @namera-ai/cli
 
+## 0.1.1
+
+### Patch Changes
+
+- [`aa767ef`](https://github.com/thenamespace/namera/commit/aa767ef1d86c38e07b2e75ae4aa7ff1be4ea8d4d) Thanks [@envoy1084](https://github.com/envoy1084)! - Fix broken npm install caused by `workspace:*` dependencies being published.
+
 ## 0.1.0
 
 ### Minor Changes
