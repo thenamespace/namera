@@ -4,6 +4,9 @@
   "private": "true",
   "type": "module",
   "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {},
   "dependencies": {
     "@namera-ai/schema": "workspace:*",
