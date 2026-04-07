@@ -2,11 +2,11 @@ import { useState } from "react";
 
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { NameraIcon } from "@namera-ai/ui/icons";
 import { useStep } from "usehooks-ts";
 
+import { getCurrentUser } from "@/actions";
 import { TransitionWrapper } from "@/components/wrappers";
-import { getCurrentUser } from "@/server/actions";
+import { NameraIcon } from "@namera-ai/ui/icons";
 
 import { ConfirmStep, MagicLinkForm } from "./-components";
 
@@ -16,8 +16,8 @@ const AuthPage = () => {
 
   return (
     <div className="flex items-center justify-center pt-[30dvh]">
-      <div className="flex flex-col gap-6 justify-between items-center max-w-xs w-full">
-        <NameraIcon className="size-14 fill-foreground" />
+      <div className="flex w-full max-w-xs flex-col items-center justify-between gap-6">
+        <NameraIcon className="fill-foreground size-14" />
         <TransitionWrapper
           className="w-full px-2"
           stepKey={`auth-step-${currentStep}`}

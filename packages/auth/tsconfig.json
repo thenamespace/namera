@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
@@ -11,8 +10,8 @@
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [
     { "path": "../database" },
+    { "path": "../domain" },
     { "path": "../schema" },
-    { "path": "../utils" },
-    { "path": "../domain" }
+    { "path": "../utils" }
   ]
 }

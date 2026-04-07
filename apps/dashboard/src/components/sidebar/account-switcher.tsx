@@ -4,6 +4,8 @@ import { type ElementType, useState } from "react";
 
 import { formatForDisplay } from "@tanstack/react-hotkeys";
 
+import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react/ssr";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +23,6 @@ import {
   useSidebar,
 } from "@namera-ai/ui/components/ui/sidebar";
 import { NameraIcon } from "@namera-ai/ui/icons";
-import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 
 type Account = {
   name: string;
@@ -46,7 +47,7 @@ export function AccountSwitcher() {
               />
             }
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
               {activeAccount ? (
                 <activeAccount.logo className="size-5 fill-white" />
               ) : (
@@ -67,7 +68,7 @@ export function AccountSwitcher() {
             sideOffset={4}
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
+              <DropdownMenuLabel className="text-muted-foreground text-xs">
                 Accounts
               </DropdownMenuLabel>
               {accounts.map((account, index) => (
@@ -76,7 +77,7 @@ export function AccountSwitcher() {
                   key={account.name}
                   onClick={() => setActiveAccount(account)}
                 >
-                  <div className="flex size-6 items-center justify-center rounded-md border-border-light border">
+                  <div className="border-border-light flex size-6 items-center justify-center rounded-md border">
                     <account.logo className="size-3.5 shrink-0 fill-white" />
                   </div>
                   {account.name}
@@ -87,10 +88,10 @@ export function AccountSwitcher() {
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent border-border-light">
+                <div className="border-border-light flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <PlusIcon className="size-4" />
                 </div>
-                <div className="font-medium text-muted-foreground">
+                <div className="text-muted-foreground font-medium">
                   Create account
                 </div>
               </DropdownMenuItem>

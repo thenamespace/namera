@@ -1,1 +1,2 @@
-export * from "./connect-wallet";
+export * from "./connect-button";
+export * from "./sidebar";

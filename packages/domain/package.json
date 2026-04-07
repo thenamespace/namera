@@ -1,35 +1,22 @@
 {
-  "author": "Vedant Chainani <vedant@envoy1084.xyz>",
-  "bugs": {
-    "url": "https://github.com/thenamespace/namera/issues"
+  "name": "@namera-ai/domain",
+  "version": "0.1.0",
+  "private": "true",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
   },
+  "scripts": {},
   "dependencies": {
     "@namera-ai/database": "workspace:*",
     "@namera-ai/schema": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.16-ea816b6",
-    "effect": "^3.19.19"
+    "drizzle-orm": "1.0.0-beta.20",
+    "effect": "4.0.0-beta.42"
   },
-  "description": "",
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "^1.3.10",
-    "typescript": "^5.9.3"
-  },
-  "exports": {
-    ".": "./src/index.ts",
-    "./auth": "./src/auth/index.ts",
-    "./smart-account": "./src/core/smart-account.ts"
-  },
-  "homepage": "https://github.com/thenamespace/namera#readme",
-  "keywords": [],
-  "license": "MIT",
-  "name": "@namera-ai/domain",
-  "private": "true",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thenamespace/namera"
-  },
-  "sideEffects": false,
-  "type": "module",
-  "version": "0.0.0"
+    "@types/bun": "^1.3.11",
+    "typescript": "^6.0.2"
+  }
 }

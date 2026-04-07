@@ -1,19 +1,21 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect, Layer, ServiceMap } from "effect";
 
-import { MagicLink, MagicLinkLive, type MagicLinkShape } from "./layers";
+import * as AuthConfig from "./config";
+import * as MagicLink from "./services/magic-link";
 
-export type AuthShape = {
-  magicLink: MagicLinkShape;
+export type Auth = {
+  magicLink: MagicLink.MagicLink;
 };
-
-export class Auth extends Context.Tag("Auth")<Auth, AuthShape>() {}
-
-export const AuthLive = Layer.effect(
+export const Auth = ServiceMap.Service<Auth>("Auth");
+export const layer = Layer.effect(
   Auth,
   Effect.gen(function* () {
-    const magicLink = yield* MagicLink;
+    const magicLink = yield* MagicLink.MagicLink;
     return Auth.of({
       magicLink,
     });
   }),
-).pipe(Layer.provide(MagicLinkLive));
+).pipe(
+  Layer.provideMerge(MagicLink.layer),
+  Layer.provideMerge(AuthConfig.layer),
+);

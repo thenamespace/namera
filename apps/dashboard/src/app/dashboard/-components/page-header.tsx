@@ -15,7 +15,7 @@ export const PageHeader = ({
   return (
     <div
       className={cn(
-        "flex flex-row items-center justify-between border-b-[0.5px] h-10 px-6",
+        "flex h-10 flex-row items-center justify-between border-b-[0.5px] px-6",
         className,
       )}
       {...props}

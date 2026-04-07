@@ -1,49 +1,36 @@
-import { type ChainWithMetadata, supportedChains } from "@namera-ai/schema";
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { Effect } from "effect";
 import { http } from "viem";
 
-import { ClientEnv } from "@/layers/env/client";
-import { clientRuntime } from "@/runtime/client";
+import { env } from "@/env";
+import { type ChainWithMetadata, supportedChains } from "@namera-ai/schema";
 
 const chains = Object.values(supportedChains) as [
   ChainWithMetadata,
   ...ChainWithMetadata[],
 ];
 
-const transports = clientRuntime.runSync(
-  Effect.gen(function* () {
-    const env = yield* ClientEnv;
-    const transports = chains
-      .map((c) => {
-        return { [c.id]: http(`${env.backendUrl.toString()}rpc/${c.id}`) };
-      })
-      .reduce((acc, curr) => Object.assign(acc, curr), {});
+const transports = chains
+  .map((c) => {
+    return {
+      [c.id]: http(new URL(`/rpc/${c.id}`, env.backendUrl).toString()),
+    };
+  })
+  .reduce((acc, curr) => Object.assign(acc, curr), {});
 
-    return transports;
-  }),
-);
-
-const projectId = clientRuntime.runSync(
-  Effect.gen(function* () {
-    const env = yield* ClientEnv;
-    return env.reownProjectId;
-  }),
-);
+const projectId = env.reownProjectId;
 
 export const wagmiConfig = getDefaultConfig({
   appDescription: "",
   appIcon: "https://namera.ai/logo.svg",
   appName: "Namera",
-  appUrl: "https://namera.ai",
+  appUrl: "https://dashboard.namera.ai",
   chains,
   projectId,
-  ssr: true,
+  ssr: false,
   transports,
 });
 
 declare module "wagmi" {
-  // biome-ignore lint/style/useConsistentTypeDefinitions: needed for override
   interface Register {
     config: typeof wagmiConfig;
   }

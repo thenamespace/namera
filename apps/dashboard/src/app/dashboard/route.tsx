@@ -1,17 +1,16 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
-
+import { getCurrentUser } from "@/actions";
 import { NotFound } from "@/components/misc";
 import { Sidebar } from "@/components/sidebar";
-import { getCurrentUser, listSmartAccounts } from "@/server/actions";
+import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
 
 const DashboardLayout = () => {
   return (
     <div className="bg-sidebar">
       <SidebarProvider>
         <Sidebar />
-        <div className="bg-background w-full m-1 border-border rounded-xl border-[0.5px]">
+        <div className="bg-background border-border m-1 w-full rounded-xl border-[0.5px]">
           <Outlet />
         </div>
       </SidebarProvider>
@@ -29,9 +28,6 @@ export const Route = createFileRoute("/dashboard")({
     return currentUser;
   },
   component: DashboardLayout,
-  loader: () => {
-    const accounts = listSmartAccounts();
-    return accounts;
-  },
+  loader: () => {},
   notFoundComponent: () => <NotFound />,
 });

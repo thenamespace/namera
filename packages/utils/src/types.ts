@@ -6,9 +6,7 @@ export type TypedArray =
   | Uint32Array<ArrayBuffer>
   | Int32Array<ArrayBuffer>
   | Float32Array<ArrayBuffer>
-  | Float64Array<ArrayBuffer>
-  | BigInt64Array<ArrayBuffer>
-  | BigUint64Array<ArrayBuffer>;
+  | Float64Array<ArrayBuffer>;
 
 export type SHAFamily = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512";
 export type EncodingFormat =

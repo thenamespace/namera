@@ -1,12 +1,13 @@
 import { Link } from "@tanstack/react-router";
 
+import { CardholderIcon, HeadCircuitIcon } from "@phosphor-icons/react/ssr";
+
 import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
-import { CardholderIcon, HeadCircuitIcon } from "@phosphor-icons/react/ssr";
 
 const items = [
   {

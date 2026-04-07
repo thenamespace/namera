@@ -1,19 +1,19 @@
-// src/router.tsx
-import { createRouter } from "@tanstack/react-router";
+import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 
 import { routeTree } from "./route-tree.gen";
 
 export function getRouter() {
-  const router = createRouter({
+  const router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
+    defaultPreload: "intent",
+    defaultPreloadStaleTime: 0,
   });
 
   return router;
 }
 
 declare module "@tanstack/react-router" {
-  // biome-ignore lint/style/useConsistentTypeDefinitions: safe
   interface Register {
     router: ReturnType<typeof getRouter>;
   }

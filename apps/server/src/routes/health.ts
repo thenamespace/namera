@@ -1,9 +1,9 @@
-import { HttpApiBuilder } from "@effect/platform";
-import { api } from "@namera-ai/api";
 import { Effect } from "effect";
 
-const healthHandler = () => Effect.succeed("ok");
+import { HttpApiBuilder } from "effect/unstable/httpapi";
+
+import { api } from "@namera-ai/api";
 
 export const HealthGroupLive = HttpApiBuilder.group(api, "health", (handlers) =>
-  handlers.handle("health", healthHandler),
+  handlers.handle("health", () => Effect.succeed({ status: "ok" })),
 );

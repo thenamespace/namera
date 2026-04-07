@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 @source "../../../../packages/ui/src/**/*.{js,ts,jsx,tsx}";
 
 @custom-variant dark (&:is(.dark *));
@@ -138,22 +137,6 @@
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-
-  --framework-color: var(--primary);
-  --core-color: #fff383;
-  --cli-color: #a9ceff;
-}
-
-.framework {
-  --color-fd-primary: var(--framework-color);
-}
-
-.core {
-  --color-fd-primary: var(--core-color);
-}
-
-.cli {
-  --color-fd-primary: var(--cli-color);
 }
 
 @layer base {
@@ -162,7 +145,7 @@
   }
   body {
     letter-spacing: var(--tracking-normal);
-    @apply font-sans bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
   html {
     @apply font-sans;

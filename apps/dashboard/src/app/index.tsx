@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { Button } from "@namera-ai/ui/components/ui/button";
-
 import { ConnectButton } from "@/components";
+import { Button } from "@namera-ai/ui/components/ui/button";
 
 export const Home = () => {
   return (

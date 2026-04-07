@@ -1,30 +1,23 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect, Layer, ServiceMap } from "effect";
 
-import { SessionRepo, SessionRepoLive, type SessionRepoShape } from "./session";
-import { UserRepo, UserRepoLive, type UserRepoShape } from "./user";
-import {
-  VerificationRepo,
-  VerificationRepoLive,
-  type VerificationRepoShape,
-} from "./verification";
+import * as SessionRepo from "./session";
+import * as UserRepo from "./user";
+import * as VerificationRepo from "./verification";
 
-export type AuthRepoShape = {
-  verification: VerificationRepoShape;
-  user: UserRepoShape;
-  session: SessionRepoShape;
+export type AuthRepo = {
+  verification: VerificationRepo.VerificationRepo;
+  user: UserRepo.UserRepo;
+  session: SessionRepo.SessionRepo;
 };
 
-export class AuthRepo extends Context.Tag("AuthRepo")<
-  AuthRepo,
-  AuthRepoShape
->() {}
+export const AuthRepo = ServiceMap.Service<AuthRepo>("AuthRepo");
 
-export const AuthRepoLive = Layer.effect(
+export const layer = Layer.effect(
   AuthRepo,
   Effect.gen(function* () {
-    const verification = yield* VerificationRepo;
-    const user = yield* UserRepo;
-    const session = yield* SessionRepo;
+    const verification = yield* VerificationRepo.VerificationRepo;
+    const user = yield* UserRepo.UserRepo;
+    const session = yield* SessionRepo.SessionRepo;
 
     return AuthRepo.of({
       session,
@@ -33,9 +26,7 @@ export const AuthRepoLive = Layer.effect(
     });
   }),
 ).pipe(
-  Layer.provide(VerificationRepoLive),
-  Layer.provide(UserRepoLive),
-  Layer.provide(SessionRepoLive),
+  Layer.provide(VerificationRepo.layer),
+  Layer.provide(UserRepo.layer),
+  Layer.provide(SessionRepo.layer),
 );
-
-export { SessionJanitorLive } from "./cleanup";

@@ -1,34 +1,20 @@
 {
-  "author": "Vedant Chainani <vedant@envoy1084.xyz>",
-  "bugs": {
-    "url": "https://github.com/thenamespace/namera/issues"
-  },
-  "dependencies": {
-    "drizzle-orm": "1.0.0-beta.16-ea816b6",
-    "effect": "^3.19.19",
-    "uuid": "^13.0.0",
-    "viem": "^2.47.4"
-  },
-  "description": "",
-  "devDependencies": {
-    "@namera-ai/config": "workspace:*",
-    "@types/bun": "^1.3.10",
-    "typescript": "^5.9.3"
-  },
+  "name": "@namera-ai/schema",
+  "version": "0.1.0",
+  "private": "true",
+  "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },
-  "homepage": "https://github.com/thenamespace/namera#readme",
-  "keywords": [],
-  "license": "MIT",
-  "name": "@namera-ai/schema",
-  "private": "true",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thenamespace/namera"
-  },
   "scripts": {},
-  "sideEffects": false,
-  "type": "module",
-  "version": "0.0.0"
+  "dependencies": {
+    "effect": "4.0.0-beta.42",
+    "viem": "^2.47.10"
+  },
+  "devDependencies": {
+    "@namera-ai/config": "workspace:*",
+    "@types/bun": "^1.3.11",
+    "typescript": "^6.0.2"
+  }
 }

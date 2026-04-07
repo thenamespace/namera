@@ -1,38 +1,39 @@
-import {
-  type Database,
-  TransactionOrDatabase,
-  verification,
-} from "@namera-ai/database";
 import type {
   Verification,
   VerificationInsert,
   VerificationUpdate,
 } from "@namera-ai/schema";
-import { eq } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect";
 
-export type VerificationRepoShape = {
+import { Effect, Layer, ServiceMap } from "effect";
+
+import { eq } from "drizzle-orm";
+
+import {
+  type Database,
+  TransactionOrDatabase,
+  verification,
+} from "@namera-ai/database";
+
+export type VerificationRepo = {
   createVerification: (
     params: VerificationInsert,
-  ) => Effect.Effect<void, never, Database>;
+  ) => Effect.Effect<void, never, Database.Database>;
   findVerification: (params: {
     identifier: string;
-  }) => Effect.Effect<Verification | undefined, never, Database>;
+  }) => Effect.Effect<Verification | undefined, never, Database.Database>;
   deleteVerification: (params: {
     identifier: string;
-  }) => Effect.Effect<void, never, Database>;
+  }) => Effect.Effect<void, never, Database.Database>;
   updateVerification: (
     identifier: string,
     params: VerificationUpdate,
-  ) => Effect.Effect<void, never, Database>;
+  ) => Effect.Effect<void, never, Database.Database>;
 };
 
-export class VerificationRepo extends Context.Tag("VerificationRepo")<
-  VerificationRepo,
-  VerificationRepoShape
->() {}
+export const VerificationRepo =
+  ServiceMap.Service<VerificationRepo>("VerificationRepo");
 
-export const VerificationRepoLive = Layer.succeed(
+export const layer = Layer.succeed(
   VerificationRepo,
   VerificationRepo.of({
     createVerification: (params) =>

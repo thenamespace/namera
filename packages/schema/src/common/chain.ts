@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import {
   arbitrum,
   arbitrumSepolia,
@@ -136,14 +137,10 @@ const supportedTestnetChains = {
 type SupportedTestnetChain = keyof typeof supportedMainnetChains;
 type SupportedMainnetChain = keyof typeof supportedTestnetChains;
 
-export const SupportedChain = Schema.Union(
-  ...(Object.keys(supportedMainnetChains) as SupportedMainnetChain[]).map(
-    (key) => Schema.Literal(key),
-  ),
-  ...(Object.keys(supportedTestnetChains) as SupportedTestnetChain[]).map(
-    (key) => Schema.Literal(key),
-  ),
-);
+export const SupportedChain = Schema.Literals([
+  ...(Object.keys(supportedMainnetChains) as SupportedMainnetChain[]),
+  ...(Object.keys(supportedTestnetChains) as SupportedTestnetChain[]),
+]);
 
 export type SupportedChain = typeof SupportedChain.Type;
 

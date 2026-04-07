@@ -1,4 +1,12 @@
-import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
+import { Schema } from "effect";
+
+import {
+  HttpApiEndpoint,
+  HttpApiGroup,
+  HttpApiSchema,
+} from "effect/unstable/httpapi";
+
+import { Authorization, Unauthorized } from "@/middlewares";
 import {
   MagicLinkError,
   Session,
@@ -6,41 +14,44 @@ import {
   User,
   VerifyMagicLinkBody,
 } from "@namera-ai/schema";
-import { Schema } from "effect";
-
-import { Authorization } from "@/middlewares";
 
 export const authGroup = HttpApiGroup.make("auth")
   .add(
-    HttpApiEndpoint.post("signInMagicLink", "/sign-in/magic-link")
-      .setPayload(SigInMagicLinkBody)
-      .addError(MagicLinkError, { status: 400 })
-      .addSuccess(Schema.Void, { status: 200 }),
+    HttpApiEndpoint.post("signInMagicLink", "/magic-link/sign-in", {
+      payload: SigInMagicLinkBody,
+      error: MagicLinkError,
+      success: Schema.Void,
+    }),
   )
   .add(
-    HttpApiEndpoint.get("magicLinkVerify", "/magic-link/verify")
-      .setPayload(VerifyMagicLinkBody)
-      .addError(MagicLinkError, { status: 400 })
-      .addSuccess(Schema.Void, { status: 302 }),
+    HttpApiEndpoint.get("magicLinkVerify", "/magic-link/verify", {
+      success: Schema.Void.pipe(HttpApiSchema.status(302)),
+      error: MagicLinkError.pipe(HttpApiSchema.status(400)),
+      query: VerifyMagicLinkBody,
+    }),
   )
   .add(
-    HttpApiEndpoint.get("currentUser", "/me")
-      .addSuccess(User, { status: 200 })
-      .middleware(Authorization),
+    HttpApiEndpoint.get("currentUser", "/me", {
+      success: User.pipe(HttpApiSchema.status(200)),
+      error: Unauthorized.pipe(HttpApiSchema.status(401)),
+    }).middleware(Authorization),
   )
   .add(
-    HttpApiEndpoint.get("listSessions", "/sessions")
-      .addSuccess(Schema.Array(Session), { status: 200 })
-      .middleware(Authorization),
+    HttpApiEndpoint.get("listSessions", "/sessions", {
+      success: Schema.Array(Session).pipe(HttpApiSchema.status(200)),
+      error: Unauthorized.pipe(HttpApiSchema.status(401)),
+    }).middleware(Authorization),
   )
   .add(
-    HttpApiEndpoint.del("logout", "/sessions/me")
-      .addSuccess(Schema.Void, { status: 200 })
-      .middleware(Authorization),
+    HttpApiEndpoint.delete("logout", "/sessions/me", {
+      success: Schema.Void.pipe(HttpApiSchema.status(200)),
+      error: Unauthorized.pipe(HttpApiSchema.status(401)),
+    }).middleware(Authorization),
   )
   .add(
-    HttpApiEndpoint.del("revokeOtherSessions", "/sessions")
-      .addSuccess(Schema.Number, { status: 200 })
-      .middleware(Authorization),
+    HttpApiEndpoint.post("revokeOtherSessions", "/sessions", {
+      success: Schema.Number.pipe(HttpApiSchema.status(200)),
+      error: Unauthorized.pipe(HttpApiSchema.status(401)),
+    }).middleware(Authorization),
   )
   .prefix("/auth");

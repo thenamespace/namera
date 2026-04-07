@@ -1,12 +1,8 @@
-import { Config, Context, Duration, Effect, Layer } from "effect";
+import { Duration, Effect, Layer, ServiceMap } from "effect";
 
-export const AuthEnvConfig = Config.all({
-  baseURL: Config.url("AUTH_BASE_URL"),
-  isProd: Config.boolean("IS_PROD"), // TODO: Change this to something global
-});
+import { AuthEnv } from "./env";
 
-export type AuthEnvValues = Config.Config.Success<typeof AuthEnvConfig>;
-export type AuthConfigShape = AuthEnvValues & {
+export type AuthConfig = AuthEnv & {
   trustedOrigins: string[];
   emailVerification: {
     expiresIn: Duration.Duration;
@@ -25,15 +21,12 @@ export type AuthConfigShape = AuthEnvValues & {
   };
 };
 
-export class AuthConfig extends Context.Tag("AuthConfig")<
-  AuthConfig,
-  AuthConfigShape
->() {}
+export const AuthConfig = ServiceMap.Service<AuthConfig>("AuthConfig");
 
-export const AuthConfigLive = Layer.effect(
+export const layer = Layer.effect(
   AuthConfig,
   Effect.gen(function* () {
-    const env = yield* AuthEnvConfig;
+    const env = yield* AuthEnv;
     const isProd = env.isProd;
 
     const trustedOrigins = (() => {

@@ -3,9 +3,10 @@ import type {
   EthereumAddress,
   KernelVersion,
   SmartAccountId,
-  SmartAccountOwnerType,
+  OwnerType,
   UserId,
 } from "@namera-ai/schema";
+
 import { sql } from "drizzle-orm";
 import {
   index,
@@ -37,7 +38,7 @@ export const smartAccount = pgTable.withRLS(
     kernelVersion: text("kernel_version").notNull().$type<KernelVersion>(),
     index: integer("index").notNull(),
     address: text("address").notNull().$type<EthereumAddress>(),
-    ownerType: text("owner_type").notNull().$type<SmartAccountOwnerType>(),
+    ownerType: text("owner_type").notNull().$type<OwnerType>(),
     ownerIdentifier: text("owner_identifier").notNull(),
     ...timestamps,
   },

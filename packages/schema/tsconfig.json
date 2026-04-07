@@ -1,12 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "exclude": ["node_modules", "dist"],
-  "extends": "@namera-ai/config/tsconfig/library/neutral",
+  "extends": "@namera-ai/config/tsconfig/library/bun",
   "include": ["**/*.ts", "**/*.tsx"]
 }

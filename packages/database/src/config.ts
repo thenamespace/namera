@@ -18,8 +18,5 @@ export const adminDatabaseConfig = {
 
 export const DatabaseConfig = Config.all(databaseConfig);
 export const AdminDatabaseConfig = Config.all(adminDatabaseConfig);
-
-export type DatabaseEnvValues = Config.Config.Success<typeof DatabaseConfig>;
-export type AdminDatabaseEnvValues = Config.Config.Success<
-  typeof AdminDatabaseConfig
->;
+export type DatabaseEnvValues = Config.Success<typeof DatabaseConfig>;
+export type AdminDatabaseEnvValues = Config.Success<typeof AdminDatabaseConfig>;

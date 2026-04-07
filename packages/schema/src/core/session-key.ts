@@ -1,8 +1,8 @@
 import { Schema } from "effect";
 
+import { createInsertSchema, createUpdateSchema } from "@/helpers";
+
 import {
-  createInsertSchema,
-  createUpdateSchema,
   EthereumAddress,
   SessionKeyId,
   SmartAccountId,
@@ -10,6 +10,7 @@ import {
   UserId,
 } from "../common";
 
+// TODO: update this...
 export const SessionKey = Schema.Struct({
   id: SessionKeyId,
   userId: UserId,

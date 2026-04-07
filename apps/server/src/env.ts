@@ -1,31 +1,17 @@
-import { AuthEnvConfig, type AuthEnvValues } from "@namera-ai/auth";
-import { DatabaseConfig, type DatabaseEnvValues } from "@namera-ai/database";
-import {
-  OtelConfig,
-  type OtelConfigEnvValues,
-} from "@namera-ai/telemetry/backend";
-import { Config, ConfigProvider, Context, Layer } from "effect";
+import { Config, Effect, Layer, ServiceMap } from "effect";
 
 const ServerConfig = Config.all({
   alchemyApiKey: Config.redacted("ALCHEMY_API_KEY"),
 });
 
-type ServerEnvValues = Config.Config.Success<typeof ServerConfig>;
+type Env = Config.Success<typeof ServerConfig>;
 
-type EnvValues = DatabaseEnvValues &
-  AuthEnvValues &
-  OtelConfigEnvValues &
-  ServerEnvValues;
+export const Env = ServiceMap.Service<Env>("Env");
 
-const envConfig: Config.Config<EnvValues> = DatabaseConfig.pipe(
-  Config.zipWith(AuthEnvConfig, (a, b) => ({ ...a, ...b })),
-  Config.zipWith(OtelConfig, (a, b) => ({ ...a, ...b })),
-  Config.zipWith(ServerConfig, (a, b) => ({ ...a, ...b })),
-);
-
-export class Env extends Context.Tag("Env")<Env, EnvValues>() {}
-
-export const EnvLive = Layer.merge(
-  Layer.setConfigProvider(ConfigProvider.fromEnv()),
-  Layer.effect(Env, envConfig),
+export const layer = Layer.effect(
+  Env,
+  Effect.gen(function* () {
+    const config = yield* ServerConfig;
+    return config;
+  }),
 );

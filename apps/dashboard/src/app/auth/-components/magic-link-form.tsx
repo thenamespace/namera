@@ -1,15 +1,14 @@
 import { useForm } from "@tanstack/react-form";
-import { useServerFn } from "@tanstack/react-start";
 
+import { Schema } from "effect";
+
+import { signInWithMagicLink } from "@/actions";
 import { Email } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Field, FieldError } from "@namera-ai/ui/components/ui/field";
 import { Input } from "@namera-ai/ui/components/ui/input";
-import { Schema } from "effect";
 
-import { signInWithMagicLink } from "@/server/actions";
-
-const AuthFormSchema = Schema.standardSchemaV1(
+const AuthFormSchema = Schema.toStandardSchemaV1(
   Schema.Struct({
     email: Email,
   }),
@@ -22,17 +21,14 @@ type MagicLinkFormProps = {
 };
 
 export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
-  const signIn = useServerFn(signInWithMagicLink);
   const form = useForm({
     defaultValues: {
       email: "",
     },
     onSubmit: async ({ value }) => {
-      await signIn({
-        data: {
-          email: value.email,
-          name: "Vedant",
-        },
+      await signInWithMagicLink({
+        email: Email.makeUnsafe(value.email),
+        name: "Vedant",
       });
       await new Promise((resolve) => setTimeout(resolve, 3000));
       onSubmit(value);
@@ -44,14 +40,14 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
 
   return (
     <form
-      className="w-full flex flex-col gap-3"
+      className="flex w-full flex-col gap-3"
       id="auth-form"
       onSubmit={(e) => {
         e.preventDefault();
         form.handleSubmit();
       }}
     >
-      <div className="text-lg text-card-foreground text-center">
+      <div className="text-card-foreground text-center text-lg">
         Get started with Namera
       </div>
       <form.Field

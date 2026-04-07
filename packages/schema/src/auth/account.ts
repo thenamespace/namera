@@ -1,6 +1,8 @@
 import { Schema } from "effect";
 
-import { createInsertSchema, createUpdateSchema, UserId } from "../common";
+import { createInsertSchema, createUpdateSchema } from "@/helpers";
+
+import { UserId } from "../common";
 
 export const Account = Schema.Struct({
   id: Schema.String,

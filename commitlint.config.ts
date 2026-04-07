@@ -2,24 +2,7 @@ export default {
   extends: ["@commitlint/config-conventional"],
   rules: {
     "scope-empty": [1, "never"],
-    "scope-enum": [
-      2,
-      "always",
-      [
-        "cli",
-        "dashboard",
-        "docs",
-        "mcp",
-        "server",
-        "api",
-        "auth",
-        "database",
-        "schema",
-        "telemetry",
-        "ui",
-        "utils",
-      ],
-    ],
+    "scope-enum": [2, "always", ["config", "web", "ui"]],
     "type-enum": [
       2,
       "always",

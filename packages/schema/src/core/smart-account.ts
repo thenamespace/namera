@@ -1,13 +1,13 @@
 import { Schema } from "effect";
 
+import { createInsertSchema, createUpdateSchema } from "@/helpers";
+
 import {
-  createInsertSchema,
-  createUpdateSchema,
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
   SmartAccountId,
-  SmartAccountOwnerType,
+  OwnerType,
   UserId,
 } from "../common";
 
@@ -17,9 +17,9 @@ export const SmartAccount = Schema.Struct({
   name: Schema.NullOr(Schema.String),
   entryPointVersion: EntrypointVersion,
   kernelVersion: KernelVersion,
-  index: Schema.Number.pipe(Schema.greaterThanOrEqualTo(0)),
+  index: Schema.Number.check(Schema.isGreaterThanOrEqualTo(0)),
   address: EthereumAddress,
-  ownerType: SmartAccountOwnerType,
+  ownerType: OwnerType,
   ownerIdentifier: Schema.String, // Should be address for ecdsa, and passkey credential id for passkey
   createdAt: Schema.Date,
   updatedAt: Schema.Date,

@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { createInsertSchema, createUpdateSchema } from "../common";
+import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 export const Verification = Schema.Struct({
   id: Schema.String,

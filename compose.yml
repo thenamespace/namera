@@ -21,9 +21,9 @@ services:
     container_name: namera-telemetry
     restart: unless-stopped
     ports:
-      - "8000:3000"       # Dashboard
-      - "4317:4317"       # OTLP gRPC
-      - "4318:4318"       # OTLP HTTP
+      - "8000:3000" # Dashboard
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin

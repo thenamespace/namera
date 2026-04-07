@@ -2,6 +2,13 @@ import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
+  FlaskIcon,
+  KeyIcon,
+  PulseIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
+
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -14,12 +21,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
-import {
-  FlaskIcon,
-  KeyIcon,
-  PulseIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
 
 const items = [
   {
@@ -79,16 +80,16 @@ export const CoreGroup = () => {
           className="group"
           nativeButton={false}
           render={
-            <SidebarGroupLabel className="h-5 select-none cursor-pointer flex flex-row gap-1.5 items-center" />
+            <SidebarGroupLabel className="flex h-5 cursor-pointer flex-row items-center gap-1.5 select-none" />
           }
         >
           Core Actions
           <TriangleIcon
-            className="rotate-90 size-2! group-data-panel-open:rotate-180 transition-all"
+            className="size-2! rotate-90 transition-all group-data-panel-open:rotate-180"
             weight="fill"
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="flex [&[hidden]:not([hidden='until-found'])]:hidden h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all ease-out data-ending-style:h-0 data-starting-style:h-0 duration-150">
+        <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
           <SidebarMenu>
             {items.map((item) => (
               <SidebarMenuItem key={item.title}>
@@ -96,7 +97,7 @@ export const CoreGroup = () => {
                   render={<Link to={item.href} />}
                   tooltip={{
                     children: (
-                      <div className="flex flex-row gap-1 items-center">
+                      <div className="flex flex-row items-center gap-1">
                         <div>Go to {item.tooltip.text}</div>
                         <div>
                           <Kbd>G</Kbd> then <Kbd>{item.tooltip.hotKey}</Kbd>

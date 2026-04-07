@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react";
 
-import { cn } from "@namera-ai/ui/lib/utils";
 import {
   AnimatePresence,
   type HTMLMotionProps,
@@ -8,6 +7,8 @@ import {
   type Transition,
   type Variants,
 } from "motion/react";
+
+import { cn } from "@namera-ai/ui/lib/utils";
 
 const springConfig: Transition = {
   damping: 30,
@@ -66,7 +67,7 @@ export const TransitionWrapper = ({
       <AnimatePresence mode="wait">
         <motion.div
           animate="animate"
-          className="w-full h-full"
+          className="h-full w-full"
           exit="exit"
           initial="initial"
           key={stepKey}

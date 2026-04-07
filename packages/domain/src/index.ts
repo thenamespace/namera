@@ -1,5 +1,2 @@
-import { Layer } from "effect";
-
-import { AuthRepoLive } from "./auth";
-
-export const DomainLive = Layer.mergeAll(AuthRepoLive);
+export * as AuthRepo from "./auth";
+export * as Domain from "./layer";

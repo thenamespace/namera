@@ -9,16 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
+import { Route as AuthIndexRouteImport } from "./app/auth/index";
+import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
-import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
-import { Route as AuthIndexRouteImport } from "./app/auth/index";
-import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
-import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
-import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/security/index";
-import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
-import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
-import { Route as DashboardActivityIndexRouteImport } from "./app/dashboard/activity/index";
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
@@ -40,61 +34,17 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: "/auth/",
   getParentRoute: () => rootRouteImport,
 } as any);
-const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
-  id: "/settings/",
-  path: "/settings/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
-const DashboardSessionKeysIndexRoute =
-  DashboardSessionKeysIndexRouteImport.update({
-    id: "/session-keys/",
-    path: "/session-keys/",
-    getParentRoute: () => DashboardRouteRoute,
-  } as any);
-const DashboardSecurityIndexRoute = DashboardSecurityIndexRouteImport.update({
-  id: "/security/",
-  path: "/security/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
-const DashboardPermissionsIndexRoute =
-  DashboardPermissionsIndexRouteImport.update({
-    id: "/permissions/",
-    path: "/permissions/",
-    getParentRoute: () => DashboardRouteRoute,
-  } as any);
-const DashboardAssetsIndexRoute = DashboardAssetsIndexRouteImport.update({
-  id: "/assets/",
-  path: "/assets/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
-const DashboardActivityIndexRoute = DashboardActivityIndexRouteImport.update({
-  id: "/activity/",
-  path: "/activity/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/activity/": typeof DashboardActivityIndexRoute;
-  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
-  "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
-  "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
-  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/auth": typeof AuthIndexRoute;
   "/dashboard": typeof DashboardIndexRoute;
-  "/dashboard/activity": typeof DashboardActivityIndexRoute;
-  "/dashboard/assets": typeof DashboardAssetsIndexRoute;
-  "/dashboard/permissions": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security": typeof DashboardSecurityIndexRoute;
-  "/dashboard/session-keys": typeof DashboardSessionKeysIndexRoute;
-  "/dashboard/settings": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -102,49 +52,13 @@ export interface FileRoutesById {
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/activity/": typeof DashboardActivityIndexRoute;
-  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
-  "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
-  "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
-  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths:
-    | "/"
-    | "/dashboard"
-    | "/auth/"
-    | "/dashboard/"
-    | "/dashboard/activity/"
-    | "/dashboard/assets/"
-    | "/dashboard/permissions/"
-    | "/dashboard/security/"
-    | "/dashboard/session-keys/"
-    | "/dashboard/settings/";
+  fullPaths: "/" | "/dashboard" | "/auth/" | "/dashboard/";
   fileRoutesByTo: FileRoutesByTo;
-  to:
-    | "/"
-    | "/auth"
-    | "/dashboard"
-    | "/dashboard/activity"
-    | "/dashboard/assets"
-    | "/dashboard/permissions"
-    | "/dashboard/security"
-    | "/dashboard/session-keys"
-    | "/dashboard/settings";
-  id:
-    | "__root__"
-    | "/"
-    | "/dashboard"
-    | "/auth/"
-    | "/dashboard/"
-    | "/dashboard/activity/"
-    | "/dashboard/assets/"
-    | "/dashboard/permissions/"
-    | "/dashboard/security/"
-    | "/dashboard/session-keys/"
-    | "/dashboard/settings/";
+  to: "/" | "/auth" | "/dashboard";
+  id: "__root__" | "/" | "/dashboard" | "/auth/" | "/dashboard/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -183,69 +97,15 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/dashboard/settings/": {
-      id: "/dashboard/settings/";
-      path: "/settings";
-      fullPath: "/dashboard/settings/";
-      preLoaderRoute: typeof DashboardSettingsIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/session-keys/": {
-      id: "/dashboard/session-keys/";
-      path: "/session-keys";
-      fullPath: "/dashboard/session-keys/";
-      preLoaderRoute: typeof DashboardSessionKeysIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/security/": {
-      id: "/dashboard/security/";
-      path: "/security";
-      fullPath: "/dashboard/security/";
-      preLoaderRoute: typeof DashboardSecurityIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/permissions/": {
-      id: "/dashboard/permissions/";
-      path: "/permissions";
-      fullPath: "/dashboard/permissions/";
-      preLoaderRoute: typeof DashboardPermissionsIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/assets/": {
-      id: "/dashboard/assets/";
-      path: "/assets";
-      fullPath: "/dashboard/assets/";
-      preLoaderRoute: typeof DashboardAssetsIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/activity/": {
-      id: "/dashboard/activity/";
-      path: "/activity";
-      fullPath: "/dashboard/activity/";
-      preLoaderRoute: typeof DashboardActivityIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
   }
 }
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute;
-  DashboardActivityIndexRoute: typeof DashboardActivityIndexRoute;
-  DashboardAssetsIndexRoute: typeof DashboardAssetsIndexRoute;
-  DashboardPermissionsIndexRoute: typeof DashboardPermissionsIndexRoute;
-  DashboardSecurityIndexRoute: typeof DashboardSecurityIndexRoute;
-  DashboardSessionKeysIndexRoute: typeof DashboardSessionKeysIndexRoute;
-  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute;
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardActivityIndexRoute: DashboardActivityIndexRoute,
-  DashboardAssetsIndexRoute: DashboardAssetsIndexRoute,
-  DashboardPermissionsIndexRoute: DashboardPermissionsIndexRoute,
-  DashboardSecurityIndexRoute: DashboardSecurityIndexRoute,
-  DashboardSessionKeysIndexRoute: DashboardSessionKeysIndexRoute,
-  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
 };
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
@@ -260,12 +120,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>();
-
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
-  interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
-  }
-}

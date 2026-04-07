@@ -1,53 +1,52 @@
+import { Layer, ServiceMap, Effect, Schema } from "effect";
+
+import { eq } from "drizzle-orm";
+
 import {
-  type Database,
   TransactionOrDatabase,
   user,
+  type Database,
 } from "@namera-ai/database";
-import type { UserId } from "@namera-ai/schema";
 import {
   Email,
-  type User,
   UserInsert,
-  type UserUpdate,
+  UserUpdate,
+  type User,
+  type UserId,
 } from "@namera-ai/schema";
-import { eq } from "drizzle-orm";
-import { Context, Effect, Layer, Schema } from "effect";
 
-export type UserRepoShape = {
+export type UserRepo = {
   findUserByEmail: (
     email: string,
-  ) => Effect.Effect<User | undefined, never, Database>;
-  createUser: (params: UserInsert) => Effect.Effect<User, never, Database>;
+  ) => Effect.Effect<User | undefined, never, Database.Database>;
+  createUser: (
+    params: UserInsert,
+  ) => Effect.Effect<User, never, Database.Database>;
   updateUser: (
     id: UserId,
     params: UserUpdate,
-  ) => Effect.Effect<void, never, Database>;
+  ) => Effect.Effect<void, never, Database.Database>;
 };
 
-export class UserRepo extends Context.Tag("UserRepo")<
-  UserRepo,
-  UserRepoShape
->() {}
-
-export const UserRepoLive = Layer.succeed(
+export const UserRepo = ServiceMap.Service<UserRepo>("UserRepo");
+export const layer = Layer.succeed(
   UserRepo,
   UserRepo.of({
     createUser: (params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const parsed = yield* Schema.validate(UserInsert)(params);
+        const parsed = Schema.decodeSync(UserInsert)(params);
 
         const res = yield* db.insert(user).values(parsed).returning();
 
-        // biome-ignore lint/style/noNonNullAssertion: safe
         return res[0]!;
       }).pipe(Effect.orDie),
     findUserByEmail: (email) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const parsedEmail = yield* Schema.validate(Email)(email);
+        const parsedEmail = Schema.decodeSync(Email)(email);
 
         const res = yield* db.query.user.findFirst({
           where: {
@@ -63,7 +62,7 @@ export const UserRepoLive = Layer.succeed(
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const parsed = yield* Schema.validate(UserInsert)(params);
+        const parsed = Schema.decodeSync(UserUpdate)(params);
         yield* db.update(user).set(parsed).where(eq(user.id, id));
       }).pipe(Effect.orDie),
   }),

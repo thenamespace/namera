@@ -1,17 +1,20 @@
-import { HttpApiBuilder, HttpBody, HttpClient } from "@effect/platform";
-import { api } from "@namera-ai/api";
-import { getChainFromId, RpcError, UnsupportedChain } from "@namera-ai/schema";
 import { Effect, Redacted } from "effect";
 
-import { Env } from "@/env";
+import { HttpBody, HttpClient } from "effect/unstable/http";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
+
+import { api } from "@namera-ai/api";
+import { getChainFromId, RpcError, UnsupportedChain } from "@namera-ai/schema";
+
+import * as Env from "../env";
 
 export const RpcGroupLive = HttpApiBuilder.group(api, "rpc", (handlers) =>
-  handlers.handle("proxy", ({ path, payload }) =>
+  handlers.handle("proxy", ({ params, payload }) =>
     Effect.gen(function* () {
       const client = yield* HttpClient.HttpClient;
-      const env = yield* Env;
-      const chainId = path.chainId;
+      const env = yield* Env.Env;
 
+      const chainId = params.chainId;
       const chain = getChainFromId(chainId);
 
       if (!chain) return yield* Effect.fail(new UnsupportedChain({ chainId }));
@@ -25,7 +28,7 @@ export const RpcGroupLive = HttpApiBuilder.group(api, "rpc", (handlers) =>
           body: HttpBody.raw(JSON.stringify(payload)),
         })
         .pipe(
-          Effect.catchAll((e) =>
+          Effect.catch((e) =>
             Effect.fail(
               new RpcError({
                 message: e.message,
@@ -37,7 +40,7 @@ export const RpcGroupLive = HttpApiBuilder.group(api, "rpc", (handlers) =>
         );
 
       const body = yield* res.json.pipe(
-        Effect.catchTag("ResponseError", (e) =>
+        Effect.catchTag("HttpClientError", (e) =>
           Effect.fail(
             new RpcError({
               message: e.message,

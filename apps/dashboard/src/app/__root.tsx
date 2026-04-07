@@ -1,41 +1,19 @@
 /// <reference types="vite/client" />
-import type { ReactNode } from "react";
 
-import {
-  createRootRoute,
-  HeadContent,
-  Link,
-  Outlet,
-  Scripts,
-} from "@tanstack/react-router";
-
-import { Button } from "@namera-ai/ui/components/ui/button";
+import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 
 import { NotFound } from "@/components/misc";
 import { ProviderTree } from "@/providers";
-import appCss from "@/styles/globals.css?url";
+import { Button } from "@namera-ai/ui/components/ui/button";
 
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <html lang="en" suppressHydrationWarning={true}>
-      <head>
-        <HeadContent />
-      </head>
-      <body suppressHydrationWarning={true}>
-        <div className="root">{children}</div>
-        <Scripts />
-      </body>
-    </html>
-  );
-}
+// oxlint-disable-next-line import/no-unassigned-import
+import "../styles/globals.css";
 
 function RootComponent() {
   return (
-    <RootDocument>
-      <ProviderTree>
-        <Outlet />
-      </ProviderTree>
-    </RootDocument>
+    <ProviderTree>
+      <Outlet />
+    </ProviderTree>
   );
 }
 
@@ -43,7 +21,6 @@ export const Route = createRootRoute({
   component: RootComponent,
   errorComponent: () => <div>Some Error Occurred</div>,
   head: () => ({
-    links: [{ href: appCss, rel: "stylesheet" }],
     meta: [
       {
         charSet: "utf-8",
@@ -60,7 +37,7 @@ export const Route = createRootRoute({
   notFoundComponent: () => (
     <NotFound
       extraContent={
-        <Button className="w-fit mx-auto my-2" render={<Link to="/" />}>
+        <Button className="mx-auto my-2 w-fit" render={<Link to="/" />}>
           Go to Home
         </Button>
       }

@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 
 import {
+  GearSixIcon,
+  ShieldCheckIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
+
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -12,11 +18,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
-import {
-  GearSixIcon,
-  ShieldCheckIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
 
 const items = [
   {
@@ -45,16 +46,16 @@ export const AdminGroup = () => {
           className="group"
           nativeButton={false}
           render={
-            <SidebarGroupLabel className="h-5 select-none cursor-pointer flex flex-row gap-1.5 items-center" />
+            <SidebarGroupLabel className="flex h-5 cursor-pointer flex-row items-center gap-1.5 select-none" />
           }
         >
           Admin
           <TriangleIcon
-            className="rotate-90 size-2! group-data-panel-open:rotate-180 transition-all"
+            className="size-2! rotate-90 transition-all group-data-panel-open:rotate-180"
             weight="fill"
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="flex [&[hidden]:not([hidden='until-found'])]:hidden h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all ease-out data-ending-style:h-0 data-starting-style:h-0 duration-150">
+        <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
           <SidebarMenu>
             {items.map((item) => (
               <SidebarMenuItem key={item.title}>

@@ -1,33 +1,12 @@
-import {
-  HttpApiBuilder,
-  HttpApiScalar,
-  HttpMiddleware,
-} from "@effect/platform";
 import { Layer } from "effect";
 
-import { authorizationMiddleware } from "./auth";
+import { AuthMiddleware } from "./auth";
+import { CorsMiddleware } from "./cors";
+import { ScalarMiddleware } from "./scalar";
+import { TracingMiddleware } from "./tracing";
 
-const corsMiddleware = HttpApiBuilder.middlewareCors({
-  allowedHeaders: [
-    "Content-Type",
-    "Accept",
-    "Authorization",
-    "Traceparent",
-    "b3",
-  ],
-  allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedOrigins: ["http://localhost:3000"],
-  credentials: true,
-});
-
-export const scalarMiddleware = HttpApiScalar.layer({
-  path: "/docs",
-});
-export const openApiMiddleware = HttpApiBuilder.middlewareOpenApi({
-  path: "/openapi.json",
-});
-
-export const Middlewares = Layer.mergeAll(
-  corsMiddleware,
-  authorizationMiddleware,
+export const Middlewares = ScalarMiddleware.pipe(
+  Layer.provideMerge(AuthMiddleware),
+  Layer.provide(CorsMiddleware),
+  Layer.provide(TracingMiddleware),
 );

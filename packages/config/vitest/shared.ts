@@ -1,13 +1,11 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import type { ViteUserConfig } from "vitest/config";
+
+import tsconfigPaths from "vite-tsconfig-paths";
 import { mergeConfig } from "vitest/config";
 
 const isCI = process.env.CI === "true";
 
 export const shared: ViteUserConfig = {
-  esbuild: {
-    target: "es2020",
-  },
   plugins: [tsconfigPaths()],
   test: {
     coverage: {
@@ -40,6 +38,6 @@ export const shared: ViteUserConfig = {
   },
 };
 
-export function createVitestConfig(config?: ViteUserConfig) {
+export function createVitestConfig(config?: ViteUserConfig): ViteUserConfig {
   return mergeConfig(shared, config ?? {});
 }

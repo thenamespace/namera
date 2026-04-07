@@ -1,9 +1,11 @@
 import { Schema } from "effect";
 
-import { createInsertSchema, createUpdateSchema, UserId } from "../common";
+import { createInsertSchema, createUpdateSchema } from "@/helpers";
+
+import { SessionId, UserId } from "../common";
 
 export const Session = Schema.Struct({
-  id: Schema.String,
+  id: SessionId,
   ipAddress: Schema.NullOr(Schema.String),
   token: Schema.String,
   createdAt: Schema.Date,

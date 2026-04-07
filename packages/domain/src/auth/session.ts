@@ -1,41 +1,47 @@
+import { Effect, Layer, Schema, ServiceMap } from "effect";
+
+import { and, eq, ne } from "drizzle-orm";
+
 import {
   type Database,
   session,
   TransactionOrDatabase,
 } from "@namera-ai/database";
-import { type Session, SessionInsert, type UserId } from "@namera-ai/schema";
-import { and, eq, ne } from "drizzle-orm";
-import { Context, Effect, Layer, Schema } from "effect";
+import {
+  type Session,
+  SessionId,
+  SessionInsert,
+  type UserId,
+} from "@namera-ai/schema";
 
-export type SessionRepoShape = {
+export type SessionRepo = {
   createSession: (
     data: SessionInsert,
-  ) => Effect.Effect<Session, never, Database>;
+  ) => Effect.Effect<Session, never, Database.Database>;
   findSessionByToken: (
     token: string,
-  ) => Effect.Effect<Session | undefined, never, Database>;
+  ) => Effect.Effect<Session | undefined, never, Database.Database>;
   findSessionsByUserId: (
     userId: UserId,
-  ) => Effect.Effect<Session[], never, Database>;
-  deleteSession: (id: string) => Effect.Effect<void, never, Database>;
+  ) => Effect.Effect<Session[], never, Database.Database>;
+  deleteSession: (
+    id: SessionId,
+  ) => Effect.Effect<void, never, Database.Database>;
   deleteAllSessionsExcept: (
     userId: UserId,
-    exceptSessionId: string,
-  ) => Effect.Effect<void, never, Database>;
+    exceptSessionId: SessionId,
+  ) => Effect.Effect<void, never, Database.Database>;
 };
 
-export class SessionRepo extends Context.Tag("SessionRepo")<
-  SessionRepo,
-  SessionRepoShape
->() {}
+export const SessionRepo = ServiceMap.Service<SessionRepo>("SessionRepo");
 
-export const SessionRepoLive = Layer.succeed(
+export const layer = Layer.succeed(
   SessionRepo,
   SessionRepo.of({
     createSession: (data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        const parsed = yield* Schema.validate(SessionInsert)(data);
+        const parsed = Schema.decodeSync(SessionInsert)(data);
         const res = yield* db.insert(session).values(parsed);
         // biome-ignore lint/style/noNonNullAssertion: safe
         return res[0]!;

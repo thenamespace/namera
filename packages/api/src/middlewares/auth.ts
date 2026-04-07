@@ -1,37 +1,34 @@
-import {
-  HttpApiMiddleware,
-  HttpApiSchema,
-  HttpApiSecurity,
-} from "@effect/platform";
 import type { Session, User } from "@namera-ai/schema";
-import { Context, Schema } from "effect";
 
-export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
+import { Schema, ServiceMap } from "effect";
+
+import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
+
+export class Unauthorized extends Schema.TaggedErrorClass<Unauthorized>()(
   "Unauthorized",
   {},
-  HttpApiSchema.annotations({ status: 401 }),
+  { httpApiStatus: 401 },
 ) {}
 
-export class AuthenticatedUser extends Context.Tag("AuthenticatedUser")<
+export class AuthenticatedUser extends ServiceMap.Service<
   AuthenticatedUser,
   {
     user: User;
     session: Session;
   }
->() {}
+>()("AuthenticatedUser") {}
 
-export const security = HttpApiSecurity.apiKey({
-  in: "cookie",
-  key: "auth-token",
-});
-
-export class Authorization extends HttpApiMiddleware.Tag<Authorization>()(
-  "Authorization",
+export class Authorization extends HttpApiMiddleware.Service<
+  Authorization,
   {
-    failure: Unauthorized,
-    provides: AuthenticatedUser,
-    security: {
-      authToken: security,
-    },
+    provides: AuthenticatedUser;
+  }
+>()("Authorization", {
+  error: Unauthorized,
+  security: {
+    authToken: HttpApiSecurity.apiKey({
+      in: "cookie",
+      key: "auth-token",
+    }),
   },
-) {}
+}) {}
