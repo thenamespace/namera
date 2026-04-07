@@ -12,7 +12,11 @@ export const Verification = Schema.Struct({
 });
 
 export const VerificationUpdate = createUpdateSchema(Verification);
-export const VerificationInsert = createInsertSchema(Verification, "identifier", "value");
+export const VerificationInsert = createInsertSchema(
+  Verification,
+  "identifier",
+  "value",
+);
 
 export type Verification = typeof Verification.Type;
 export type VerificationUpdate = typeof VerificationUpdate.Type;

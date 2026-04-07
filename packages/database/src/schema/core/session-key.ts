@@ -7,7 +7,13 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, pgPolicy, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgPolicy,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
@@ -16,7 +22,10 @@ import { smartAccount } from "./smart-account";
 export const sessionKey = pgTable.withRLS(
   "session_key",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SessionKeyId>(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(generateUniqueId)
+      .$type<SessionKeyId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()

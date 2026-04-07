@@ -1,16 +1,22 @@
-import type { UserId } from "@namera-ai/schema";
+import type { SessionId, UserId } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 
-import { adminRole, createTimestampField, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  adminRole,
+  createTimestampField,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "../common";
 import { authSchema } from "./common";
 import { user } from "./user";
 
 export const session = authSchema.table.withRLS(
   "session",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId),
+    id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SessionId>(),
     ipAddress: text("ip_address"),
     token: text("token").notNull().unique(),
     userId: text("user_id")

@@ -1,6 +1,13 @@
 import { defineRelations } from "drizzle-orm";
 
-import { account, session, sessionKey, smartAccount, user, verification } from "../schema";
+import {
+  account,
+  session,
+  sessionKey,
+  smartAccount,
+  user,
+  verification,
+} from "../schema";
 
 export const relations = defineRelations(
   { account, session, user, verification, smartAccount, sessionKey },

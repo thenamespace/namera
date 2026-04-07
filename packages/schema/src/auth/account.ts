@@ -21,7 +21,13 @@ export const Account = Schema.Struct({
 });
 
 export const AccountUpdate = createUpdateSchema(Account);
-export const AccountInsert = createInsertSchema(Account, "id", "accountId", "providerId", "userId");
+export const AccountInsert = createInsertSchema(
+  Account,
+  "id",
+  "accountId",
+  "providerId",
+  "userId",
+);
 
 export type Account = typeof Account.Type;
 export type AccountUpdate = typeof AccountUpdate.Type;

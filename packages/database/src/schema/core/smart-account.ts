@@ -8,7 +8,14 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, integer, pgPolicy, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgPolicy,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
@@ -16,13 +23,18 @@ import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 export const smartAccount = pgTable.withRLS(
   "smart_account",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SmartAccountId>(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(generateUniqueId)
+      .$type<SmartAccountId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name"),
-    entryPointVersion: text("entrypoint_version").notNull().$type<EntrypointVersion>(),
+    entryPointVersion: text("entrypoint_version")
+      .notNull()
+      .$type<EntrypointVersion>(),
     kernelVersion: text("kernel_version").notNull().$type<KernelVersion>(),
     index: integer("index").notNull(),
     address: text("address").notNull().$type<EthereumAddress>(),

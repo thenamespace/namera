@@ -15,10 +15,14 @@ function expandAlphabet(alphabet: Alphabet): string {
   }
 }
 
-export function createRandomStringGenerator<A extends Alphabet>(...baseAlphabets: A[]) {
+export function createRandomStringGenerator<A extends Alphabet>(
+  ...baseAlphabets: A[]
+) {
   const baseCharSet = baseAlphabets.map(expandAlphabet).join("");
   if (baseCharSet.length === 0) {
-    throw new Error("No valid characters provided for random string generation.");
+    throw new Error(
+      "No valid characters provided for random string generation.",
+    );
   }
 
   const baseCharSetLength = baseCharSet.length;
@@ -63,4 +67,9 @@ export function createRandomStringGenerator<A extends Alphabet>(...baseAlphabets
   };
 }
 
-export const generateRandomString = createRandomStringGenerator("a-z", "0-9", "A-Z", "-_");
+export const generateRandomString = createRandomStringGenerator(
+  "a-z",
+  "0-9",
+  "A-Z",
+  "-_",
+);

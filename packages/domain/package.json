@@ -1,0 +1,19 @@
+{
+  "name": "@namera-ai/domain",
+  "version": "0.1.0",
+  "private": "true",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {},
+  "dependencies": {
+    "@namera-ai/database": "workspace:*",
+    "@namera-ai/schema": "workspace:*",
+    "drizzle-orm": "1.0.0-beta.20",
+    "effect": "4.0.0-beta.42"
+  },
+  "devDependencies": {
+    "@namera-ai/config": "workspace:*",
+    "@types/bun": "^1.3.11",
+    "typescript": "^6.0.2"
+  }
+}

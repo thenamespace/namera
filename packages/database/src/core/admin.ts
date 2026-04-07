@@ -10,7 +10,9 @@ const PgAdminLive = PgClient.layerConfig({
   ...adminDatabaseConfig,
   types: {
     getTypeParser: Config.succeed((typeId, format) => {
-      if ([1184, 1114, 1082, 1186, 1231, 1115, 1185, 1187, 1182].includes(typeId)) {
+      if (
+        [1184, 1114, 1082, 1186, 1231, 1115, 1185, 1187, 1182].includes(typeId)
+      ) {
         return (val: any) => val;
       }
       return types.getTypeParser(typeId, format);
@@ -20,4 +22,7 @@ const PgAdminLive = PgClient.layerConfig({
 
 const AdminDatabase = ServiceMap.Service<Database>("AdminDatabase");
 
-export const layer = Layer.provideMerge(Layer.effect(AdminDatabase, makeDatabase), PgAdminLive);
+export const layer = Layer.provideMerge(
+  Layer.effect(AdminDatabase, makeDatabase),
+  PgAdminLive,
+);

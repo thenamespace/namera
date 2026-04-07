@@ -1,7 +1,13 @@
 import { sql } from "drizzle-orm";
 import { pgPolicy, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { adminRole, createTimestampField, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  adminRole,
+  createTimestampField,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "../common";
 import { authSchema } from "./common";
 
 export const verification = authSchema.table.withRLS(

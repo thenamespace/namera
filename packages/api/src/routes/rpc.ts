@@ -1,6 +1,10 @@
 import { Schema } from "effect";
 
-import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
+import {
+  HttpApiEndpoint,
+  HttpApiGroup,
+  HttpApiSchema,
+} from "effect/unstable/httpapi";
 
 import { RpcError, UnsupportedChain } from "@namera-ai/schema";
 

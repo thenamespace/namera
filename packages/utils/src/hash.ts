@@ -4,7 +4,8 @@ import type { EncodingFormat, SHAFamily, TypedArray } from "./types";
 
 export function getWebcryptoSubtle(): SubtleCrypto {
   const cr = typeof globalThis !== "undefined" && (globalThis as any).crypto;
-  if (cr && typeof cr.subtle === "object" && cr.subtle != null) return cr.subtle;
+  if (cr && typeof cr.subtle === "object" && cr.subtle != null)
+    return cr.subtle;
   throw new Error("crypto.subtle must be defined");
 }
 
@@ -22,11 +23,17 @@ export function createHash<Encoding extends EncodingFormat = "none">(
 
       if (encoding === "hex") {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const hashHex = hashArray
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
         return hashHex as any;
       }
 
-      if (encoding === "base64" || encoding === "base64url" || encoding === "base64urlnopad") {
+      if (
+        encoding === "base64" ||
+        encoding === "base64url" ||
+        encoding === "base64urlnopad"
+      ) {
         if (encoding.includes("url")) {
           return base64Url.encode(hashBuffer, {
             padding: encoding !== "base64urlnopad",

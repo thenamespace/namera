@@ -6,7 +6,11 @@ function getAlphabet(urlSafe: boolean): string {
     : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 }
 
-function base64Encode(data: Uint8Array, alphabet: string, padding: boolean): string {
+function base64Encode(
+  data: Uint8Array,
+  alphabet: string,
+  padding: boolean,
+): string {
   let result = "";
   let buffer = 0;
   let shift = 0;
@@ -69,9 +73,15 @@ export const base64 = {
     const alphabet = getAlphabet(urlSafe);
     return base64Decode(data, alphabet);
   },
-  encode(data: ArrayBuffer | TypedArray | string, options: { padding?: boolean } = {}) {
+  encode(
+    data: ArrayBuffer | TypedArray | string,
+    options: { padding?: boolean } = {},
+  ) {
     const alphabet = getAlphabet(false);
-    const buffer = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+    const buffer =
+      typeof data === "string"
+        ? new TextEncoder().encode(data)
+        : new Uint8Array(data);
     return base64Encode(buffer, alphabet, options.padding ?? true);
   },
 };
@@ -82,9 +92,15 @@ export const base64Url = {
     const alphabet = getAlphabet(urlSafe);
     return base64Decode(data, alphabet);
   },
-  encode(data: ArrayBuffer | TypedArray | string, options: { padding?: boolean } = {}) {
+  encode(
+    data: ArrayBuffer | TypedArray | string,
+    options: { padding?: boolean } = {},
+  ) {
     const alphabet = getAlphabet(true);
-    const buffer = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+    const buffer =
+      typeof data === "string"
+        ? new TextEncoder().encode(data)
+        : new Uint8Array(data);
     return base64Encode(buffer, alphabet, options.padding ?? true);
   },
 };

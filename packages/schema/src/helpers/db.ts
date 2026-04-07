@@ -14,7 +14,9 @@ export const createInsertSchema = <
   schema: Schema.Struct<Fields>,
   ...keys: Keys
 ) => {
-  const partial = schema.mapFields(Struct.omit(keys)).mapFields(Struct.map(Schema.optional));
+  const partial = schema
+    .mapFields(Struct.omit(keys))
+    .mapFields(Struct.map(Schema.optional));
   const picked = schema.mapFields(Struct.pick(keys));
   return picked.mapFields(Struct.assign(partial.fields));
 };

@@ -1,7 +1,7 @@
 import { defineConfig } from "oxfmt";
 
 export const oxFmtConfig = defineConfig({
-  printWidth: 100,
+  printWidth: 80,
   tabWidth: 2,
   useTabs: false,
   semi: true,
@@ -28,7 +28,14 @@ export const oxFmtConfig = defineConfig({
     customGroups: [
       {
         groupName: "framework",
-        elementNamePattern: ["react", "react/*", "react-dom", "react-dom/*", "next", "next/*"],
+        elementNamePattern: [
+          "react",
+          "react/*",
+          "react-dom",
+          "react-dom/*",
+          "next",
+          "next/*",
+        ],
       },
       {
         groupName: "tanstack",

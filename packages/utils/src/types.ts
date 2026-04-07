@@ -9,4 +9,9 @@ export type TypedArray =
   | Float64Array<ArrayBuffer>;
 
 export type SHAFamily = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512";
-export type EncodingFormat = "hex" | "base64" | "base64url" | "base64urlnopad" | "none";
+export type EncodingFormat =
+  | "hex"
+  | "base64"
+  | "base64url"
+  | "base64urlnopad"
+  | "none";

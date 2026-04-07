@@ -153,6 +153,8 @@ export const getChain = (chain: SupportedChain): ChainWithMetadata => {
   return supportedChains[chain];
 };
 
-export const getChainFromId = (chainId: number): ChainWithMetadata | undefined => {
+export const getChainFromId = (
+  chainId: number,
+): ChainWithMetadata | undefined => {
   return Object.values(supportedChains).find((c) => c.id === chainId);
 };
