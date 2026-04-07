@@ -9,8 +9,8 @@ export const globalOutput = GlobalFlag.setting("output")({
   ),
 });
 
-export const globalQuite = GlobalFlag.setting("quite")({
-  flag: Flag.boolean("quite").pipe(
+export const globalQuiet = GlobalFlag.setting("quiet")({
+  flag: Flag.boolean("quiet").pipe(
     Flag.withAlias("q"),
     Flag.withDefault(false),
     Flag.withDescription("Do not print output"),
@@ -27,10 +27,10 @@ export const globalParams = GlobalFlag.setting("params")({
 export const getGlobalFlags = () =>
   Effect.gen(function* () {
     const out = yield* globalOutput;
-    const quite = yield* globalQuite;
+    const quiet = yield* globalQuiet;
     const params = yield* globalParams;
 
-    return { out, params, quite };
+    return { out, params, quiet };
   });
 
-export const globalFlags = [globalOutput, globalQuite, globalParams];
+export const globalFlags = [globalOutput, globalQuiet, globalParams];

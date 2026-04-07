@@ -85,7 +85,7 @@ const handler = (
       owner: res.data.ownerAlias,
     };
 
-    if (globalFlags.quite) return;
+    if (globalFlags.quiet) return;
 
     const output = yield* outputFormatter.format(data, globalFlags.out);
     yield* Console.log(output);

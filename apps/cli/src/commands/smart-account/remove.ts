@@ -36,7 +36,7 @@ const handler = (flagAlias: Option.Option<string>) =>
 
     const data = { success: true };
 
-    if (globalFlags.quite) return;
+    if (globalFlags.quiet) return;
     const output = yield* outputFormatter.format(data, globalFlags.out);
     yield* Console.log(output);
   });

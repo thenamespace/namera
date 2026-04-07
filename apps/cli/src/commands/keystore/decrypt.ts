@@ -55,7 +55,7 @@ const handler = (
       privateKey: Redacted.value(res.privateKey),
     };
 
-    if (globalFlags.quite) return;
+    if (globalFlags.quiet) return;
     const output = yield* outputFormatter.format(data, globalFlags.out);
     yield* Console.log(output);
   });
