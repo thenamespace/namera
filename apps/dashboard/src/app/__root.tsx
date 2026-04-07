@@ -1,13 +1,46 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+/// <reference types="vite/client" />
 
-export const Route = createRootRoute({
-  component: RootComponent,
-});
+import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+
+import { NotFound } from "@/components/misc";
+import { ProviderTree } from "@/providers";
+import { Button } from "@namera-ai/ui/components/ui/button";
+
+// oxlint-disable-next-line import/no-unassigned-import
+import "../styles/globals.css";
 
 function RootComponent() {
   return (
-    <>
+    <ProviderTree>
       <Outlet />
-    </>
+    </ProviderTree>
   );
 }
+
+export const Route = createRootRoute({
+  component: RootComponent,
+  errorComponent: () => <div>Some Error Occurred</div>,
+  head: () => ({
+    meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        content: "width=device-width, initial-scale=1",
+        name: "viewport",
+      },
+      {
+        title: "TanStack Start Starter",
+      },
+    ],
+  }),
+  notFoundComponent: () => (
+    <NotFound
+      extraContent={
+        <Button className="mx-auto my-2 w-fit" render={<Link to="/" />}>
+          Go to Home
+        </Button>
+      }
+    />
+  ),
+});
