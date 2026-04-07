@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/domain",
+  "name": "@namera-ai/auth",
   "version": "0.1.0",
   "private": "true",
   "type": "module",
@@ -10,8 +10,9 @@
   "scripts": {},
   "dependencies": {
     "@namera-ai/database": "workspace:*",
+    "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.20",
+    "@namera-ai/utils": "workspace:*",
     "effect": "4.0.0-beta.42"
   },
   "devDependencies": {

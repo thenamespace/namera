@@ -19,9 +19,8 @@ const PgAdminLive = PgClient.layerConfig({
     }),
   },
 });
-
-const AdminDatabase = ServiceMap.Service<Database>("AdminDatabase");
-
+export type AdminDatabase = Database;
+export const AdminDatabase = ServiceMap.Service<AdminDatabase>("AdminDatabase");
 export const layer = Layer.provideMerge(
   Layer.effect(AdminDatabase, makeDatabase),
   PgAdminLive,
