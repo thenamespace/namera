@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { ConfigProvider, Console, Effect, Layer } from "effect";
-import { Command } from "effect/unstable/cli";
+import { CliError, Command } from "effect/unstable/cli";
 
 import { commands } from "./commands";
 import { globalFlags } from "./flags/global";
@@ -17,7 +17,14 @@ import {
   Web3Service,
 } from "./layers";
 
-const command = Command.make("namera", {}, () => Effect.void).pipe(
+const command = Command.make("namera", {}, () =>
+  Effect.fail(
+    new CliError.ShowHelp({
+      commandPath: ["namera"],
+      errors: [],
+    }),
+  ),
+).pipe(
   Command.withDescription(
     "Programmable Session keys for Smart Contracts Accounts.",
   ),
@@ -59,7 +66,8 @@ const cli = Effect.gen(function* () {
     ConfigProvider.ConfigProvider,
     ConfigProvider.fromEnv(),
   ),
-  Effect.catch((e) => Console.error(e.message)),
+  Effect.catchTag("ShowHelp", () => Effect.succeed(void 0)),
+  Effect.catch((e) => Console.error(e)),
 );
 
 // @ts-expect-error - TODO: fix this

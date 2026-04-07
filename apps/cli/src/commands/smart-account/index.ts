@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { Command } from "effect/unstable/cli";
+import { CliError, Command } from "effect/unstable/cli";
 
 import { createSmartAccountCommand } from "./create";
 import { importSmartAccountCommand } from "./import";
@@ -13,10 +13,13 @@ import { getSmartAccountStatus } from "./status";
  *
  * Includes create, list, info, remove, status, and import subcommands.
  */
-export const smartAccountCommands = Command.make(
-  "smart-account",
-  {},
-  () => Effect.void,
+export const smartAccountCommands = Command.make("smart-account", {}, () =>
+  Effect.fail(
+    new CliError.ShowHelp({
+      commandPath: ["namera", "smart-account"],
+      errors: [],
+    }),
+  ),
 ).pipe(
   Command.withAlias("sa"),
   Command.withDescription("Smart Account management utilities."),
