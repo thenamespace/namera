@@ -1,13 +1,12 @@
 import { Effect, Layer, ServiceMap } from "effect";
 
+import * as AuthConfig from "./config";
 import * as MagicLink from "./services/magic-link";
 
 export type Auth = {
   magicLink: MagicLink.MagicLink;
 };
-
 export const Auth = ServiceMap.Service<Auth>("Auth");
-
 export const layer = Layer.effect(
   Auth,
   Effect.gen(function* () {
@@ -16,4 +15,7 @@ export const layer = Layer.effect(
       magicLink,
     });
   }),
-).pipe(Layer.provide(MagicLink.layer));
+).pipe(
+  Layer.provideMerge(MagicLink.layer),
+  Layer.provideMerge(AuthConfig.layer),
+);

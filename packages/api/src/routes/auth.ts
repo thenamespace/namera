@@ -6,7 +6,7 @@ import {
   HttpApiSchema,
 } from "effect/unstable/httpapi";
 
-import { Unauthorized } from "@/middlewares";
+import { Authorization, Unauthorized } from "@/middlewares";
 import {
   MagicLinkError,
   Session,
@@ -15,21 +15,24 @@ import {
   VerifyMagicLinkBody,
 } from "@namera-ai/schema";
 
-export const authGroup = HttpApiGroup.make("auth")
+export const magicLinkGroup = HttpApiGroup.make("magicLink")
   .add(
-    HttpApiEndpoint.post("signInMagicLink", "/sign-in/magic-link", {
+    HttpApiEndpoint.post("signInMagicLink", "/sign-in", {
       payload: SigInMagicLinkBody,
       error: MagicLinkError,
       success: Schema.Void,
     }),
   )
   .add(
-    HttpApiEndpoint.get("magicLinkVerify", "/magic-link/verify", {
+    HttpApiEndpoint.get("magicLinkVerify", "/verify", {
       success: Schema.Void.pipe(HttpApiSchema.status(302)),
       error: MagicLinkError.pipe(HttpApiSchema.status(400)),
       query: VerifyMagicLinkBody,
     }),
   )
+  .prefix("/auth/magic-link");
+
+export const authGroup = HttpApiGroup.make("auth")
   .add(
     HttpApiEndpoint.get("currentUser", "/me", {
       success: User.pipe(HttpApiSchema.status(200)),
@@ -54,4 +57,5 @@ export const authGroup = HttpApiGroup.make("auth")
       error: Unauthorized.pipe(HttpApiSchema.status(401)),
     }),
   )
+  .middleware(Authorization)
   .prefix("/auth");
