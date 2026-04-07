@@ -2,17 +2,6 @@
   "name": "@namera-ai/telemetry",
   "version": "0.1.0",
   "private": "true",
-  "keywords": [],
-  "homepage": "https://github.com/thenamespace/namera-core#readme",
-  "bugs": {
-    "url": "https://github.com/thenamespace/namera-core/issues"
-  },
-  "license": "MIT",
-  "author": "Vedant Chainani <vedant@namespace.ninja>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thenamespace/namera-core"
-  },
   "type": "module",
   "sideEffects": false,
   "exports": {
