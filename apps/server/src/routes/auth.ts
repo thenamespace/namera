@@ -119,16 +119,7 @@ export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
     .handle("currentUser", currentUserHandler)
     .handle("listSessions", () => listSessionsHandler())
     .handle("logout", () => logoutHandler())
-    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler()),
-);
-
-export const MagicLinkGroupLive = HttpApiBuilder.group(
-  api,
-  "magicLink",
-  (handlers) =>
-    handlers
-      .handle("signInMagicLink", ({ payload }) =>
-        signInMagicLinkHandler(payload),
-      )
-      .handle("magicLinkVerify", ({ query }) => magicLinkVerifyHandler(query)),
+    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler())
+    .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
+    .handle("magicLinkVerify", ({ query }) => magicLinkVerifyHandler(query)),
 );

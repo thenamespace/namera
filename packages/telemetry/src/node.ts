@@ -9,11 +9,11 @@ import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 
-import { OtelConfig } from "./config";
+import * as OtelConfig from "./config";
 
 export const layer = Layer.unwrap(
   Effect.gen(function* () {
-    const config = yield* OtelConfig;
+    const config = yield* OtelConfig.OtelConfig;
 
     const metricExporter = new OTLPMetricExporter({
       url: config.metricsUrl.toString(),
@@ -42,4 +42,4 @@ export const layer = Layer.unwrap(
       };
     });
   }),
-);
+).pipe(Layer.provide(OtelConfig.layer));

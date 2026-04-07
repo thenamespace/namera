@@ -11,27 +11,20 @@ import { api } from "@namera-ai/api";
 import { Auth } from "@namera-ai/auth";
 import { AdminDatabase, Database } from "@namera-ai/database";
 import { Domain } from "@namera-ai/domain";
+import { OtelNode } from "@namera-ai/telemetry";
 
 import * as Env from "./env";
 import { Middlewares } from "./middlewares";
-import { AuthMiddleware } from "./middlewares/auth";
-import {
-  AuthGroupLive,
-  MagicLinkGroupLive,
-  HealthGroupLive,
-  RpcGroupLive,
-} from "./routes";
+import { AuthGroupLive, HealthGroupLive, RpcGroupLive } from "./routes";
 
 const NameraApiLive = Layer.mergeAll(
   HealthGroupLive,
   RpcGroupLive,
   AuthGroupLive,
-  MagicLinkGroupLive,
 );
 
 const app = HttpApiBuilder.layer(api).pipe(
   Layer.provide(NameraApiLive),
-  Layer.provide(AuthMiddleware),
   Layer.provide(Middlewares),
   HttpRouter.serve,
   Layer.provide(BunHttpServer.layer({ port: 8080 })),
@@ -39,6 +32,7 @@ const app = HttpApiBuilder.layer(api).pipe(
   Layer.provide(AdminDatabase.layer),
   Layer.provide(Auth.layer),
   Layer.provide(Domain.layer),
+  Layer.provide(OtelNode.layer),
   Layer.provide(FetchHttpClient.layer),
   Layer.provide(Env.layer),
 );

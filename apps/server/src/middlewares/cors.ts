@@ -1,6 +1,6 @@
-import { HttpMiddleware } from "effect/unstable/http";
+import { HttpRouter } from "effect/unstable/http";
 
-export const CorsMiddleware = HttpMiddleware.cors({
+export const CorsMiddleware = HttpRouter.cors({
   allowedHeaders: [
     "Content-Type",
     "Accept",
