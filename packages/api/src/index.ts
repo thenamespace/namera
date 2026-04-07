@@ -1,1 +1,2 @@
-export const hello = () => "hello world";
+export * from "./routes";
+export * from "./middlewares";

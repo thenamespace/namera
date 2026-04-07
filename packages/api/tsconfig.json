@@ -7,5 +7,6 @@
   },
   "exclude": ["node_modules", "dist"],
   "extends": "@namera-ai/config/tsconfig/library/bun",
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "references": [{ "path": "../schema" }]
 }
