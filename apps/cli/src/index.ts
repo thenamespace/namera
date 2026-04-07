@@ -67,7 +67,7 @@ const cli = Effect.gen(function* () {
     ConfigProvider.fromEnv(),
   ),
   Effect.catchTag("ShowHelp", () => Effect.succeed(void 0)),
-  Effect.catch((e) => Console.error(e)),
+  Effect.catch((e) => Console.error(e.message)),
 );
 
 // @ts-expect-error - TODO: fix this
