@@ -1,8 +1,11 @@
 @import "@namera-ai/ui/globals.css";
 @import "fumadocs-ui/css/shadcn.css";
+@import "streamdown/styles.css";
 @import "fumadocs-ui/css/preset.css";
 @import "fumadocs-twoslash/twoslash.css";
 @import "katex/dist/katex.css";
+@source "../node_modules/streamdown/dist/*.js";
+@source "../node_modules/@streamdown/code/dist/*.js";
 
 pre:has(.line.focused) .line {
   opacity: 0.35;

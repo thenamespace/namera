@@ -1,6 +1,7 @@
 import { Config, ConfigProvider, Effect } from "effect";
 
 const ServerEnv = Config.all({
+  githubToken: Config.string("GITHUB_TOKEN"),
   openRouterApiKey: Config.string("OPENROUTER_API_KEY"),
   openRouterModel: Config.string("OPENROUTER_MODEL"),
 });
