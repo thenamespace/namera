@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
@@ -7,11 +7,18 @@ import {
   EthereumAddress,
   KernelVersion,
   SmartAccountId,
-  OwnerType,
   UserId,
 } from "../common";
 
-export const SmartAccount = Schema.Struct({
+export const EcdsaOwner = Schema.Struct({
+  address: EthereumAddress,
+});
+
+export const PasskeyOwner = Schema.Struct({
+  credentialId: Schema.String,
+});
+
+const BaseSmartAccount = Schema.Struct({
   id: SmartAccountId,
   userId: UserId,
   name: Schema.NullOr(Schema.String),
@@ -19,15 +26,39 @@ export const SmartAccount = Schema.Struct({
   kernelVersion: KernelVersion,
   index: Schema.Number.check(Schema.isGreaterThanOrEqualTo(0)),
   address: EthereumAddress,
-  ownerType: OwnerType,
-  ownerIdentifier: Schema.String, // Should be address for ecdsa, and passkey credential id for passkey
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
 });
 
-export const SmartAccountUpdate = createUpdateSchema(SmartAccount);
-export const SmartAccountInsert = createInsertSchema(
-  SmartAccount,
+const EcdsaSmartAccount = BaseSmartAccount.mapFields(
+  Struct.assign({
+    ownerType: Schema.Literal("ecdsa"),
+    owner: EcdsaOwner,
+  }),
+);
+
+const PasskeySmartAccount = BaseSmartAccount.mapFields(
+  Struct.assign({
+    ownerType: Schema.Literal("passkey"),
+    owner: PasskeyOwner,
+  }),
+);
+
+export const SmartAccountOwner = Schema.Union([EcdsaOwner, PasskeyOwner]);
+
+export const SmartAccount = Schema.Union(
+  [EcdsaSmartAccount, PasskeySmartAccount],
+  {
+    mode: "oneOf",
+  },
+);
+
+export const SmartAccountUpdate = Schema.Union([
+  createUpdateSchema(EcdsaSmartAccount),
+  createUpdateSchema(PasskeySmartAccount),
+]);
+
+const requiredInsertKeys = [
   "userId",
   "name",
   "address",
@@ -35,10 +66,15 @@ export const SmartAccountInsert = createInsertSchema(
   "kernelVersion",
   "index",
   "ownerType",
-  "ownerIdentifier",
-  "address",
-);
+  "owner",
+] as const;
+
+export const SmartAccountInsert = Schema.Union([
+  createInsertSchema(EcdsaSmartAccount, ...requiredInsertKeys),
+  createInsertSchema(PasskeySmartAccount, ...requiredInsertKeys),
+]);
 
 export type SmartAccount = typeof SmartAccount.Type;
 export type SmartAccountUpdate = typeof SmartAccountUpdate.Type;
 export type SmartAccountInsert = typeof SmartAccountInsert.Type;
+export type SmartAccountOwner = typeof SmartAccountOwner.Type;

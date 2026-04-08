@@ -5,12 +5,14 @@ import type {
   SmartAccountId,
   OwnerType,
   UserId,
+  SmartAccountOwner,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import {
   index,
   integer,
+  jsonb,
   pgPolicy,
   pgTable,
   text,
@@ -39,7 +41,7 @@ export const smartAccount = pgTable.withRLS(
     index: integer("index").notNull(),
     address: text("address").notNull().$type<EthereumAddress>(),
     ownerType: text("owner_type").notNull().$type<OwnerType>(),
-    ownerIdentifier: text("owner_identifier").notNull(),
+    owner: jsonb("owner").notNull().$type<SmartAccountOwner>(),
     ...timestamps,
   },
   (table) => [
