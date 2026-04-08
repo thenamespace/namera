@@ -9,7 +9,7 @@ import {
 
 import { getGithubReleases } from "@/lib/github";
 
-import { Changelog } from "./-components/changelog";
+import { Changelog } from "./-components";
 
 const ChangelogPage = () => {
   const messages = Route.useLoaderData();

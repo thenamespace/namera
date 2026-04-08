@@ -33,6 +33,7 @@
     "rehype-katex": "^7.0.1",
     "remark-directive": "^4.0.0",
     "remark-math": "^6.0.0",
+    "streamdown": "^2.5.0",
     "tailwindcss": "^4.2.2",
     "three": "^0.183.2",
     "twoslash": "^0.3.6",

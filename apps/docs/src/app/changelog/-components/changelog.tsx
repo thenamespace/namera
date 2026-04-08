@@ -5,9 +5,8 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { code } from "@streamdown/code";
 import { Streamdown } from "streamdown";
 
+import { getMDXComponents } from "@/components/mdx-components";
 import type { GithubReleaseMessage } from "@/lib/github";
-
-import { getMDXComponents } from "../../../components/mdx-components/index";
 
 const Markdown = ({ text }: { text: string }) => {
   return (
