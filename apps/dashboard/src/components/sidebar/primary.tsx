@@ -35,7 +35,17 @@ export const PrimaryGroup = () => {
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton
-              render={<Link to={item.href} />}
+              render={
+                <Link
+                  to={item.href}
+                  activeOptions={{
+                    exact: true,
+                  }}
+                  activeProps={{
+                    className: "bg-sidebar-accent",
+                  }}
+                />
+              }
               tooltip={`Go to ${item.tooltip.text}`}
             >
               <item.icon />

@@ -21,7 +21,7 @@ import { McpIcon } from "@namera-ai/ui/icons";
 
 const items = [
   {
-    href: "/dashboard",
+    href: "/dashboard/identity",
     icon: IdentificationBadgeIcon,
     title: "Identity",
     tooltip: {
@@ -29,7 +29,7 @@ const items = [
     },
   },
   {
-    href: "/dashboard",
+    href: "/dashboard/mcp",
     icon: McpIcon,
     title: "MCP",
     tooltip: {
@@ -60,7 +60,17 @@ export const AgentGroup = () => {
             {items.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
-                  render={<Link to={item.href} />}
+                  render={
+                    <Link
+                      to={item.href}
+                      activeOptions={{
+                        exact: true,
+                      }}
+                      activeProps={{
+                        className: "bg-sidebar-accent",
+                      }}
+                    />
+                  }
                   tooltip={{
                     children: <div>Go to {item.tooltip.text}</div>,
                   }}

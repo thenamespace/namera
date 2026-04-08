@@ -460,7 +460,7 @@ function SidebarGroupContent({
 function SidebarMenu({ className, ...props }: react.ComponentProps<"ul">) {
   return (
     <ul
-      className={cn("flex w-full min-w-0 flex-col gap-0", className)}
+      className={cn("flex w-full min-w-0 flex-col gap-1", className)}
       data-sidebar="menu"
       data-slot="sidebar-menu"
       {...props}
@@ -480,7 +480,7 @@ function SidebarMenuItem({ className, ...props }: react.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "ring-sidebar-ring hover:bg-sidebar-accent hover:[&_svg]:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:font-medium [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+  "ring-sidebar-ring hover:bg-sidebar-accent hover:[&_svg]:text-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:font-medium [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   {
     defaultVariants: {
       size: "default",

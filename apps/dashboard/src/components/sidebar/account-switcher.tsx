@@ -47,7 +47,7 @@ export function AccountSwitcher() {
               />
             }
           >
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-md">
               {activeAccount ? (
                 <activeAccount.logo className="size-5 fill-white" />
               ) : (
@@ -77,7 +77,7 @@ export function AccountSwitcher() {
                   key={account.name}
                   onClick={() => setActiveAccount(account)}
                 >
-                  <div className="border-border-light flex size-6 items-center justify-center rounded-md border">
+                  <div className="flex size-6 items-center justify-center rounded-md border">
                     <account.logo className="size-3.5 shrink-0 fill-white" />
                   </div>
                   {account.name}
@@ -88,7 +88,7 @@ export function AccountSwitcher() {
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2 p-2">
-                <div className="border-border-light flex size-6 items-center justify-center rounded-md border bg-transparent">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <PlusIcon className="size-4" />
                 </div>
                 <div className="text-muted-foreground font-medium">
