@@ -1,19 +1,14 @@
 import type {
-  EthereumAddress,
+  SerializedAccount,
+  SessionKeyData,
   SessionKeyId,
+  SessionKeyType,
   SmartAccountId,
-  SupportedChain,
   UserId,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import {
-  index,
-  pgPolicy,
-  pgTable,
-  text,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { index, json, pgPolicy, pgTable, text } from "drizzle-orm/pg-core";
 
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
@@ -26,24 +21,24 @@ export const sessionKey = pgTable.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<SessionKeyId>(),
+    type: text("type").notNull().$type<SessionKeyType>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name"),
-    address: text("address").notNull().$type<EthereumAddress>(),
     smartAccountId: text("smart_account_id")
       .notNull()
       .$type<SmartAccountId>()
       .references(() => smartAccount.id, { onDelete: "cascade" }),
-    serializedAccount: text("serialized_account").notNull(),
-    encSessionPrivateKey: text("enc_session_private_key").notNull(),
-    chain: text("chain").notNull().$type<SupportedChain>(),
+    serializedAccounts: json("serialized_accounts")
+      .notNull()
+      .$type<SerializedAccount[]>(),
+    data: json("data").notNull().$type<SessionKeyData>(),
     ...timestamps,
   },
   (table) => [
     index("session_key_userId_idx").on(table.userId),
-    uniqueIndex("session_key_address_uidx").on(table.address),
     pgPolicy("session_key_user_select", {
       as: "permissive",
       to: userRole,
