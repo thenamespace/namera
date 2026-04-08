@@ -53,12 +53,10 @@ export const SmartAccount = Schema.Union(
   },
 );
 
-export const SmartAccountUpdate = Schema.Union([
-  createUpdateSchema(EcdsaSmartAccount),
-  createUpdateSchema(PasskeySmartAccount),
-]);
+const SmartAccountUpdate = createUpdateSchema(SmartAccount);
 
-const requiredInsertKeys = [
+export const SmartAccountInsert = createInsertSchema(
+  SmartAccount,
   "userId",
   "name",
   "address",
@@ -67,12 +65,7 @@ const requiredInsertKeys = [
   "index",
   "ownerType",
   "owner",
-] as const;
-
-export const SmartAccountInsert = Schema.Union([
-  createInsertSchema(EcdsaSmartAccount, ...requiredInsertKeys),
-  createInsertSchema(PasskeySmartAccount, ...requiredInsertKeys),
-]);
+);
 
 export type SmartAccount = typeof SmartAccount.Type;
 export type SmartAccountUpdate = typeof SmartAccountUpdate.Type;
