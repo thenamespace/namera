@@ -10,7 +10,6 @@ import {
   baseSepolia,
   type Chain,
   celo,
-  celoSepolia,
   mainnet,
   monad,
   monadTestnet,
@@ -24,9 +23,20 @@ import {
   tempoModerato,
   unichain,
   unichainSepolia,
-  zora,
-  zoraSepolia,
+  tempo,
+  gnosis,
+  gnosisChiado,
+  linea,
+  lineaSepolia,
+  megaeth,
+  megaethTestnet,
 } from "viem/chains";
+
+// Available Chains to add in the future
+// - Berachain
+// - Blast
+// - BOB
+// - Mantle
 
 export type ChainWithMetadata = Chain & {
   key: string;
@@ -48,10 +58,6 @@ const supportedMainnetChains = {
   "arb-mainnet": {
     ...arbitrum,
     key: "arb-mainnet",
-  },
-  "zora-mainnet": {
-    ...zora,
-    key: "zora-mainnet",
   },
   "base-mainnet": {
     ...base,
@@ -77,6 +83,22 @@ const supportedMainnetChains = {
     ...monad,
     key: "monad-mainnet",
   },
+  "tempo-mainnet": {
+    ...tempo,
+    key: "tempo-mainnet",
+  },
+  "gnosis-mainnet": {
+    ...gnosis,
+    key: "gnosis-mainnet",
+  },
+  "linea-mainnet": {
+    ...linea,
+    key: "linea-mainnet",
+  },
+  "megaeth-mainnet": {
+    ...megaeth,
+    key: "megaeth-mainnet",
+  },
 } as const;
 
 const supportedTestnetChains = {
@@ -95,10 +117,6 @@ const supportedTestnetChains = {
   "arb-sepolia": {
     ...arbitrumSepolia,
     key: "arb-sepolia",
-  },
-  "zora-sepolia": {
-    ...zoraSepolia,
-    key: "zora-sepolia",
   },
   "base-sepolia": {
     ...baseSepolia,
@@ -120,10 +138,6 @@ const supportedTestnetChains = {
     ...monadTestnet,
     key: "monad-testnet",
   },
-  "celo-sepolia": {
-    ...celoSepolia,
-    key: "celo-sepolia",
-  },
   "scroll-sepolia": {
     ...scrollSepolia,
     key: "scroll-sepolia",
@@ -131,6 +145,18 @@ const supportedTestnetChains = {
   "arc-testnet": {
     ...arcTestnet,
     key: "arc-testnet",
+  },
+  "gnosis-chiado": {
+    ...gnosisChiado,
+    key: "gnosis-chiado",
+  },
+  "linea-sepolia": {
+    ...lineaSepolia,
+    key: "linea-sepolia",
+  },
+  "megaeth-testnet": {
+    ...megaethTestnet,
+    key: "megaeth-testnet",
   },
 } as const;
 
