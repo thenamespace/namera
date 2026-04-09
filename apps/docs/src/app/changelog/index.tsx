@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+/** biome-ignore-all lint/a11y/useAnchorContent: safe */
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { NameraIcon } from "@namera-ai/ui/icons";
@@ -32,7 +33,18 @@ const ChangelogPage = () => {
             Every release shipped to Namera, straight from GitHub.
           </p>
           <hr className="border-t my-2" />
-          <Button className="w-fit px-0" variant="link">
+          <Button
+            className="w-fit px-0"
+            render={
+              <a
+                href="https://github.com/thenamespace/namera/releases"
+                rel="noopener noreferrer"
+                target="_blank"
+                title="GitHub Releases"
+              />
+            }
+            variant="link"
+          >
             <GithubLogoIcon />
             GitHub Releases
           </Button>
@@ -42,7 +54,6 @@ const ChangelogPage = () => {
         <div className="absolute  top-4 right-4 flex flex-row items-center gap-2">
           <Button
             render={
-              // biome-ignore lint/a11y/useAnchorContent: safe
               <a
                 content="GitHub"
                 href="https://github.com/thenamespace/namera"
@@ -56,7 +67,7 @@ const ChangelogPage = () => {
             <GithubLogoIcon />
             GitHub
           </Button>
-          <Button>Home</Button>
+          <Button render={<Link to="/" />}>Home</Button>
         </div>
         <div className="flex flex-row items-center gap-4">
           <div className="text-sm text-muted-foreground">CHANGELOG</div>

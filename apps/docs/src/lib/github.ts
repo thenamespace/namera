@@ -33,24 +33,27 @@ function getContent(content: string) {
     if (line.trim().startsWith("- ")) {
       const mainContent = line.split(";")[0];
       const context = line.split(";")[2];
-      const mentionMatches =
-        (context ?? line)?.match(/@([A-Za-z0-9-]+)/g) ?? [];
-      if (mentionMatches.length === 0) {
-        return (mainContent || line).replace(/&nbsp/g, "");
+
+      const text = context ?? line;
+
+      const matches = [...text.matchAll(/\[@([A-Za-z0-9-]+)\]\([^)]+\)/g)].map(
+        (m) => m[1] || m[2] || "",
+      );
+
+      if (matches.length === 0) {
+        return (mainContent || line).replace(/&nbsp;/g, "");
       }
 
-      const packages = ["namera-ai", "zerodev"];
-      const mentions = mentionMatches
+      const mentions = matches
         .map((match) => {
-          const username = match.slice(1);
-          if (packages.includes(username)) return null;
+          const username = match;
           const avatarUrl = `https://github.com/${username}.png`;
           return `[![${match}](${avatarUrl})](https://github.com/${username})`;
         })
         .filter(Boolean);
       return (
-        (mainContent || line).replace(/&nbsp/g, "") +
-        " \u2013 " +
+        (mainContent || line).replace(/&nbsp;/g, "") +
+        " - " +
         mentions.join(" ")
       );
     }
@@ -66,12 +69,14 @@ export const getGithubReleases = createServerFn({ method: "GET" }).handler(
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          ...(process.env.GITHUB_TOKEN && {
-            Authorization: `Bearer ${serverEnv.githubToken}`,
-          }),
+          Authorization: `Bearer ${serverEnv.githubToken}`,
         },
       },
     );
+
+    if (!res.ok) {
+      return [];
+    }
 
     const releases = (await res.json()) as GitHubRelease[];
     const EXPANDABLE_LINE_THRESHOLD = 15;

@@ -16,10 +16,9 @@ const Markdown = ({ text }: { text: string }) => {
         ...getMDXComponents(),
         img: (props) => (
           <img
-            className="inline-block w-5 h-5 rounded-full opacity-80 mx-0.5"
+            className="inline-block size-5 rounded-full opacity-80 "
             {...props}
             alt={props.alt || ""}
-            style={{ maxWidth: "100%" }}
           />
         ),
       }}
@@ -72,7 +71,7 @@ export const Changelog = (release: GithubReleaseMessage) => {
         <div className="relative">
           <div
             className={cn(
-              "max-w-3xl prose prose-p:my-0",
+              "max-w-3xl prose prose-p:my-0 px-2",
               release.expandable &&
                 !isExpanded &&
                 "max-h-100 overflow-y-hidden",

@@ -18,7 +18,6 @@ import {
   LegoIcon,
   NewspaperIcon,
   PenNibIcon,
-  ScrollIcon,
   TerminalIcon,
 } from "@phosphor-icons/react";
 
@@ -57,12 +56,7 @@ const platformContents = [
   // },
 ];
 
-export const companyItems = [
-  {
-    icon: ScrollIcon,
-    path: "",
-    title: "Guides",
-  },
+export const resources = [
   {
     icon: PenNibIcon,
     path: "/blog",
@@ -70,7 +64,7 @@ export const companyItems = [
   },
   {
     icon: NewspaperIcon,
-    path: "",
+    path: "/changelog",
     title: "Changelog",
   },
 ];
@@ -178,18 +172,15 @@ export const Menu = () => {
             Documentation
           </NavigationMenuLink>
         </NavigationMenuItem>
-        {/* <NavigationMenuItem>
-          <NavigationMenuTrigger>Company</NavigationMenuTrigger>
+        <NavigationMenuItem>
+          <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="w-54">
-              {companyItems.map((item) => (
+              {resources.map((item) => (
                 <li key={item.title}>
                   <NavigationMenuLink
                     className="hover:bg-[#727DA1]/15 text-neutral-200"
-                    render={
-                      // biome-ignore lint/style/useNamingConvention: safe
-                      <Link params={{ _splat: item.path }} to={item.path} />
-                    }
+                    render={<Link to={item.path} />}
                   >
                     <div className="flex flex-row gap-2 items-center">
                       <item.icon
@@ -203,7 +194,7 @@ export const Menu = () => {
               ))}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
   );
