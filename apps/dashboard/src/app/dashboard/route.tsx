@@ -10,7 +10,7 @@ const DashboardLayout = () => {
     <div className="bg-sidebar">
       <SidebarProvider>
         <Sidebar />
-        <div className="border-border m-1 w-full rounded-xl border-[0.5px] bg-[#12121C]">
+        <div className="border-border m-1 w-full rounded-xl border-[0.5px] bg-[#0F0F10]">
           <Outlet />
         </div>
       </SidebarProvider>

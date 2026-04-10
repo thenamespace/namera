@@ -2,6 +2,7 @@ import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
+  AddressBookIcon,
   FlaskIcon,
   KeyIcon,
   PulseIcon,
@@ -23,6 +24,15 @@ import {
 } from "@namera-ai/ui/components/ui/sidebar";
 
 const items = [
+  {
+    href: "/dashboard/accounts",
+    icon: AddressBookIcon,
+    title: "Accounts",
+    tooltip: {
+      hotKey: "A",
+      text: "accounts",
+    },
+  },
   {
     href: "/dashboard/session-keys",
     icon: KeyIcon,
@@ -46,7 +56,6 @@ const items = [
     icon: PulseIcon,
     title: "Activity",
     tooltip: {
-      hotKey: "A",
       text: "activity",
     },
   },
@@ -98,7 +107,7 @@ export const CoreGroup = () => {
                     <Link
                       to={item.href}
                       activeOptions={{
-                        exact: true,
+                        exact: false,
                       }}
                       activeProps={{
                         className: "bg-sidebar-accent",
@@ -109,9 +118,11 @@ export const CoreGroup = () => {
                     children: (
                       <div className="flex flex-row items-center gap-1">
                         <div>Go to {item.tooltip.text}</div>
-                        <div>
-                          <Kbd>G</Kbd> then <Kbd>{item.tooltip.hotKey}</Kbd>
-                        </div>
+                        {"hotKey" in item.tooltip && (
+                          <div>
+                            <Kbd>G</Kbd> then <Kbd>{item.tooltip.hotKey}</Kbd>
+                          </div>
+                        )}
                       </div>
                     ),
                   }}
