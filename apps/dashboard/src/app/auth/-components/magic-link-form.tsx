@@ -1,6 +1,7 @@
-import { useForm } from "@tanstack/react-form";
-
 import { Schema } from "effect";
+
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { useForm, Controller } from "react-hook-form";
 
 import { signInWithMagicLink } from "@/actions";
 import { Email } from "@namera-ai/schema";
@@ -14,7 +15,7 @@ const AuthFormSchema = Schema.toStandardSchemaV1(
   }),
 );
 
-type AuthForm = typeof AuthFormSchema.Encoded;
+type AuthForm = typeof AuthFormSchema.Type;
 
 type MagicLinkFormProps = {
   onSubmit: (value: AuthForm) => void;
@@ -25,35 +26,29 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
     defaultValues: {
       email: "",
     },
-    onSubmit: async ({ value }) => {
-      await signInWithMagicLink({
-        email: Email.makeUnsafe(value.email),
-        name: "Vedant",
-      });
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      onSubmit(value);
-    },
-    validators: {
-      onSubmit: AuthFormSchema,
-    },
+    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(AuthFormSchema)),
   });
+
+  const handleSubmit = async (value: AuthForm) => {
+    await signInWithMagicLink({
+      email: Email.makeUnsafe(value.email),
+      name: "Vedant",
+    });
+    onSubmit(value);
+  };
 
   return (
     <form
       className="flex w-full flex-col gap-3"
       id="auth-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        form.handleSubmit();
-      }}
+      onSubmit={form.handleSubmit(handleSubmit)}
     >
       <div className="text-card-foreground text-center text-lg">
         Get started with Namera
       </div>
-      <form.Field
-        children={(field) => {
-          const isInvalid =
-            field.state.meta.isTouched && !field.state.meta.isValid;
+      <Controller
+        render={({ field, fieldState }) => {
+          const isInvalid = fieldState.invalid;
           return (
             <Field data-invalid={isInvalid}>
               <Input
@@ -61,31 +56,26 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
                 autoComplete="email"
                 className="h-9"
                 id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
+                {...field}
                 placeholder="richard@piedpiper.com"
                 spellCheck={false}
-                value={field.state.value}
               />
-              {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              {isInvalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           );
         }}
         name="email"
       />
-      <form.Subscribe
-        children={({ canSubmit, isSubmitting }) => (
-          <Button
-            className="w-full"
-            disabled={!canSubmit || isSubmitting}
-            size="lg"
-            type="submit"
-          >
-            Sign in with Email
-          </Button>
-        )}
-      />
+      <Button
+        className="w-full"
+        disabled={
+          form.formState.isValid === false || form.formState.isSubmitting
+        }
+        size="lg"
+        type="submit"
+      >
+        Sign in with Email
+      </Button>
     </form>
   );
 };

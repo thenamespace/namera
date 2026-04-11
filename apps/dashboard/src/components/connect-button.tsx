@@ -1,7 +1,11 @@
+import { SignOutIcon } from "@phosphor-icons/react/dist/ssr";
 import { ConnectButton as ConnectButtonCore } from "@rainbow-me/rainbowkit";
+import Avvvatars from "avvvatars-react";
+import { useDisconnect } from "wagmi";
 
 import { Button } from "@namera-ai/ui/components/ui/button";
 export const ConnectButton = () => {
+  const { mutateAsync: disconnect } = useDisconnect();
   return (
     <ConnectButtonCore.Custom>
       {({
@@ -21,6 +25,7 @@ export const ConnectButton = () => {
           account &&
           chain &&
           (!authenticationStatus || authenticationStatus === "authenticated");
+
         return (
           <div
             {...(!ready && {
@@ -48,39 +53,35 @@ export const ConnectButton = () => {
                 );
               }
               return (
-                <div style={{ display: "flex", gap: 12 }}>
+                <div className="flex flex-row gap-1">
                   <Button
-                    onClick={openChainModal}
-                    style={{ alignItems: "center", display: "flex" }}
+                    onClick={openAccountModal}
                     type="button"
+                    variant="secondary"
                   >
-                    {chain.hasIcon && (
-                      <div
-                        style={{
-                          background: chain.iconBackground,
-                          borderRadius: 999,
-                          height: 12,
-                          marginRight: 4,
-                          overflow: "hidden",
-                          width: 12,
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? "Chain icon"}
-                            src={chain.iconUrl}
-                            style={{ height: 12, width: 12 }}
-                          />
-                        )}
-                      </div>
+                    {account.ensAvatar ? (
+                      <img
+                        src={account.ensAvatar}
+                        alt="ENS Avatar"
+                        className="size-5 rounded-full"
+                      />
+                    ) : (
+                      <Avvvatars
+                        value={account.address}
+                        style="shape"
+                        size={20}
+                      />
                     )}
-                    {chain.name}
-                  </Button>
-                  <Button onClick={openAccountModal} type="button">
+
                     {account.displayName}
-                    {account.displayBalance
-                      ? ` (${account.displayBalance})`
-                      : ""}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={async () => await disconnect()}
+                  >
+                    <SignOutIcon />
                   </Button>
                 </div>
               );
