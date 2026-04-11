@@ -109,19 +109,24 @@ const IconPickerComponent = ({
   );
 };
 
-const IconPicker = ({ onChange }: { onChange: (icon: string) => void }) => {
+const IconPicker = ({
+  value,
+  onChange,
+}: {
+  onChange: (icon: string) => void;
+  value: string;
+}) => {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<null | string>(null);
 
   return (
     <Dialog open={open} onOpenChange={(e) => setOpen(e)}>
       <DialogTrigger
         render={<Button variant="secondary" className="h-9 max-w-9" />}
       >
-        {selected ? (
+        {value ? (
           <IconRenderer
             className="text-muted-foreground size-4.5"
-            icon={selected}
+            icon={value}
           />
         ) : (
           <PencilSimpleIcon className="text-muted-foreground size-4.5" />
@@ -135,7 +140,6 @@ const IconPicker = ({ onChange }: { onChange: (icon: string) => void }) => {
           <TabsContent value="icon" className="p-2">
             <IconPickerComponent
               onChange={(icon) => {
-                setSelected(icon);
                 onChange(icon);
                 setOpen(false);
               }}

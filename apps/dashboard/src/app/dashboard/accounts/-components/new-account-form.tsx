@@ -43,7 +43,7 @@ export const NewAccountForm = () => {
   const form = useForm<NewAccount, NewAccountEncoded>({
     defaultValues: {
       metadata: {
-        icon: "Namera",
+        icon: "wallet",
         name: "",
       },
     },
@@ -92,7 +92,10 @@ export const NewAccountForm = () => {
                     Recommended size is 256x256px
                   </div>
                 </div>
-                <IconPicker onChange={(icon) => field.onChange(icon)} />
+                <IconPicker
+                  value={field.value}
+                  onChange={(icon) => field.onChange(icon)}
+                />
                 {isInvalid && <FieldError errors={[fieldState.error]} />}
               </Field>
             );
