@@ -15,12 +15,18 @@ import { OtelNode } from "@namera-ai/telemetry";
 
 import * as Env from "./env";
 import { Middlewares } from "./middlewares";
-import { AuthGroupLive, HealthGroupLive, RpcGroupLive } from "./routes";
+import {
+  AuthGroupLive,
+  HealthGroupLive,
+  RpcGroupLive,
+  SmartAccountGroupLive,
+} from "./routes";
 
 const NameraApiLive = Layer.mergeAll(
   HealthGroupLive,
   RpcGroupLive,
   AuthGroupLive,
+  SmartAccountGroupLive,
 );
 
 const app = HttpApiBuilder.layer(api).pipe(
