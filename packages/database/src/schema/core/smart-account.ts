@@ -6,12 +6,14 @@ import type {
   OwnerType,
   UserId,
   SmartAccountOwner,
+  SmartAccountMetadata,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import {
   index,
   integer,
+  json,
   pgPolicy,
   pgTable,
   text,
@@ -32,7 +34,7 @@ export const smartAccount = pgTable.withRLS(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
-    name: text("name"),
+    metadata: json("metadata").notNull().$type<SmartAccountMetadata>(),
     entryPointVersion: text("entrypoint_version")
       .notNull()
       .$type<EntrypointVersion>(),

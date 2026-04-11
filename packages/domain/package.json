@@ -11,8 +11,10 @@
   "dependencies": {
     "@namera-ai/database": "workspace:*",
     "@namera-ai/schema": "workspace:*",
+    "@namera-ai/sdk": "^0.1.0",
     "drizzle-orm": "1.0.0-beta.20",
-    "effect": "4.0.0-beta.42"
+    "effect": "4.0.0-beta.42",
+    "viem": "^2.47.12"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",

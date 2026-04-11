@@ -1,3 +1,5 @@
+import type { UserId } from "@namera-ai/schema";
+
 import { Effect, ServiceMap } from "effect";
 
 import type { Database } from "./layer";
