@@ -24,7 +24,10 @@ import { Input } from "@namera-ai/ui/components/ui/input";
 const NewAccount = Schema.toStandardSchemaV1(
   Schema.Struct({
     metadata: Schema.Struct({
-      icon: Schema.String,
+      icon: Schema.Struct({
+        type: Schema.Literals(["icon", "emoji"]),
+        value: Schema.String,
+      }),
       name: Schema.String.check(
         Schema.isLengthBetween(4, 255, {
           message: "Name must be between 4 and 255 characters long",
@@ -43,7 +46,10 @@ export const NewAccountForm = () => {
   const form = useForm<NewAccount, NewAccountEncoded>({
     defaultValues: {
       metadata: {
-        icon: "wallet",
+        icon: {
+          type: "icon",
+          value: "wallet",
+        },
         name: "",
       },
     },

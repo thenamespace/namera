@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from "react";
 
-import { PencilSimpleIcon } from "@phosphor-icons/react";
-
 import { Button } from "@namera-ai/ui/components/ui/button";
 import {
   Dialog,
@@ -21,7 +19,13 @@ import {
   TooltipTrigger,
 } from "@namera-ai/ui/components/ui/tooltip";
 
-import { iconMap, ICON_DATA, type IconData } from "./data";
+import { ICON_DATA, iconMap, type IconData } from "./data";
+import { EmojiPickerComponent } from "./emoji";
+
+type Icon = {
+  type: "icon" | "emoji";
+  value: string;
+};
 
 const useIconPicker = (): {
   search: string;
@@ -51,7 +55,7 @@ const IconRenderer = ({
 }: {
   icon: string;
 } & React.ComponentPropsWithoutRef<"svg">) => {
-  const IconComponent = iconMap[icon]?.Icon;
+  const IconComponent = iconMap[icon]?.icon;
 
   if (!IconComponent) {
     return null;
@@ -63,7 +67,7 @@ const IconRenderer = ({
 const IconPickerComponent = ({
   onChange,
 }: {
-  onChange: (icon: string) => void;
+  onChange: (icon: Icon) => void;
 }) => {
   const { search, setSearch, icons } = useIconPicker();
 
@@ -86,7 +90,7 @@ const IconPickerComponent = ({
                   role="button"
                   variant="ghost"
                   size="icon"
-                  onClick={() => onChange(name)}
+                  onClick={() => onChange({ type: "icon", value: name })}
                 />
               }
             >
@@ -113,8 +117,8 @@ const IconPicker = ({
   value,
   onChange,
 }: {
-  onChange: (icon: string) => void;
-  value: string;
+  onChange: (icon: Icon) => void;
+  value: Icon;
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -123,22 +127,31 @@ const IconPicker = ({
       <DialogTrigger
         render={<Button variant="secondary" className="h-9 max-w-9" />}
       >
-        {value ? (
+        {value.type === "icon" ? (
           <IconRenderer
             className="text-muted-foreground size-4.5"
-            icon={value}
+            icon={value.value}
           />
         ) : (
-          <PencilSimpleIcon className="text-muted-foreground size-4.5" />
+          <span>{value.value}</span>
         )}
       </DialogTrigger>
-      <DialogContent className="min-w-md px-1 py-2">
+      <DialogContent className="min-w-md px-1 py-1">
         <Tabs defaultValue="icon">
           <TabsList variant="line">
             <TabsTrigger value="icon">Icons</TabsTrigger>
+            <TabsTrigger value="emoji">Emojis</TabsTrigger>
           </TabsList>
           <TabsContent value="icon" className="p-2">
             <IconPickerComponent
+              onChange={(icon) => {
+                onChange(icon);
+                setOpen(false);
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="emoji" className="p-2">
+            <EmojiPickerComponent
               onChange={(icon) => {
                 onChange(icon);
                 setOpen(false);
