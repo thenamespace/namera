@@ -1,5 +1,21 @@
 # @namera-ai/cli
 
+## 0.1.3
+
+### Patch Changes
+
+- [#8](https://github.com/thenamespace/namera/pull/8) [`63b1616`](https://github.com/thenamespace/namera/commit/63b1616aa059253f9ad914c66a3b065e6e61c85d) Thanks [@envoy1084](https://github.com/envoy1084)! - Print `HelpDoc` on root commands of command groups. This includes:
+
+  ```bash
+  namera
+  namera keystore/k
+  namera smart-account/sa
+  namera session-key/sk
+  namera mcp
+  ```
+
+- [#7](https://github.com/thenamespace/namera/pull/7) [`6ddc54f`](https://github.com/thenamespace/namera/commit/6ddc54f0f6a9452a84f5816d02983b0c8a740ec7) Thanks [@envoy1084](https://github.com/envoy1084)! - Fix `--quite` flag typo throughout all commands
+
 ## 0.1.2
 
 ### Patch Changes
