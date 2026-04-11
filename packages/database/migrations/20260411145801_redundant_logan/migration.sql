@@ -1,0 +1,2 @@
+ALTER TABLE "smart_account" ALTER COLUMN "owner" SET DATA TYPE text USING "owner"::text;--> statement-breakpoint
+CREATE INDEX "smart_account_owner_index_idx" ON "smart_account" ("owner","index" DESC NULLS LAST);

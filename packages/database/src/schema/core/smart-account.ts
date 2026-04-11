@@ -12,7 +12,6 @@ import { sql } from "drizzle-orm";
 import {
   index,
   integer,
-  jsonb,
   pgPolicy,
   pgTable,
   text,
@@ -41,11 +40,12 @@ export const smartAccount = pgTable.withRLS(
     index: integer("index").notNull(),
     address: text("address").notNull().$type<EthereumAddress>(),
     ownerType: text("owner_type").notNull().$type<OwnerType>(),
-    owner: jsonb("owner").notNull().$type<SmartAccountOwner>(),
+    owner: text("owner").notNull().$type<SmartAccountOwner>(),
     ...timestamps,
   },
   (table) => [
     index("smart_account_userId_idx").on(table.userId),
+    index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
     uniqueIndex("smart_account_address_uidx").on(table.address),
     pgPolicy("smart_account_user_select", {
       as: "permissive",

@@ -10,13 +10,10 @@ import {
   UserId,
 } from "../common";
 
-export const EcdsaOwner = Schema.Struct({
-  address: EthereumAddress,
-});
-
-export const PasskeyOwner = Schema.Struct({
-  credentialId: Schema.String,
-});
+// Address of the Owner
+export const EcdsaOwner = EthereumAddress;
+// Credential ID of the Owner
+export const PasskeyOwner = Schema.String;
 
 const BaseSmartAccount = Schema.Struct({
   id: SmartAccountId,
