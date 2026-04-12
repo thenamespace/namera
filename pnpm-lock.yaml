@@ -162,6 +162,9 @@ importers:
       mermaid:
         specifier: ^11.13.0
         version: 11.14.0
+      motion:
+        specifier: ^12.38.0
+        version: 12.38.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       posthog-node:
         specifier: ^5.28.11
         version: 5.28.11

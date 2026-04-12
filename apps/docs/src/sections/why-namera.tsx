@@ -19,7 +19,10 @@ const withNamera = [
 
 export const WhyNamera = () => {
   return (
-    <section className="px-4 max-w-7xl mx-auto py-[5dvh]" id="why-namera">
+    <section
+      className="px-4 max-w-7xl mx-auto py-[5dvh] min-h-dvh flex items-center justify-evenly flex-col"
+      id="why-namera"
+    >
       <h2 className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl">
         Building agent wallets is complex.
         <br />

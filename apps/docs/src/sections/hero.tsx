@@ -19,7 +19,7 @@ export const Hero = () => {
             className="w-full rounded-2xl my-4"
             loop={true}
             muted={true}
-            src="/assets/hero-video.mp4"
+            src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcKlPJKvydv8A6jcXM3ehpNnSUiG7f0Vs2glHFW"
           />
         </div>
       </div>

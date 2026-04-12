@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Navbar } from "@/components";
-import { Hero, Products, WhyNamera } from "@/sections";
+import { Hero, Integrate, Products, WhyNamera } from "@/sections";
 
 // import { Hr } from "@/components/misc";
 // import { CallToAction, Faqs, Hero, HowItWorks, UseCases } from "@/sections";
@@ -14,6 +14,7 @@ const Home = () => {
       <Hero />
       <Products />
       <WhyNamera />
+      <Integrate />
       <div className="h-dvh" />
       {/* <Hero />
       <Hr />
