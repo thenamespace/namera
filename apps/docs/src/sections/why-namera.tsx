@@ -1,4 +1,9 @@
-import { CheckIcon, XIcon } from "@phosphor-icons/react";
+import {
+  CheckIcon,
+  QuestionMarkIcon,
+  TriangleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 
 const withoutNamera = [
   "Managing private keys and access manually",
@@ -17,6 +22,43 @@ const withNamera = [
   "Integrates easily with apps, agents, and systems",
 ];
 
+const lines = Array.from({ length: 50 });
+
+const MovingRails = () => {
+  return (
+    <>
+      <div className="absolute inset-0">
+        <div className="flex w-max animate-[scroll_20s_linear_infinite] gap-10">
+          {[...lines, ...lines].map((_, i) => (
+            <div
+              className="rounded-full bg-border border h-px opacity-80"
+              key={`slow-${i.toString()}`}
+              style={{
+                marginTop: `${Math.random() * 160}px`,
+                width: `${20 + Math.random() * 40}px`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="absolute inset-0">
+        <div className="flex w-max animate-[scroll_8s_linear_infinite] gap-10">
+          {[...lines, ...lines].map((_, i) => (
+            <div
+              className="rounded-full bg-border border h-px"
+              key={`fast-${i.toString()}`}
+              style={{
+                marginTop: `${Math.random() * 160}px`,
+                width: `${20 + Math.random() * 60}px`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
 export const WhyNamera = () => {
   return (
     <section
@@ -28,9 +70,14 @@ export const WhyNamera = () => {
         <br />
         Without Namera, it's harder.
       </h2>
-      <div className="flex-col items-start flex lg:flex-row max-w-4xl mx-auto w-full justify-between py-24 gap-8 lg:gap-0">
+      <div className="flex-col items-center lg:items-start flex lg:flex-row max-w-4xl mx-auto w-full justify-between py-24 gap-8 lg:gap-0">
         <div className="flex flex-col gap-4 pt-12">
-          <div className="bg-popover rounded-xl h-28 lg:w-[16rem] w-full" />
+          <div className="bg-popover rounded-xl h-28 lg:w-[16rem] w-full relative overflow-hidden">
+            <MovingRails />
+            <div className="absolute top-1/2 right-1/2 size-6 bg-white rounded-full flex items-center justify-center animate-path confused translate-x-1/2">
+              <QuestionMarkIcon className="text-border" strokeWidth={2} />
+            </div>
+          </div>
           <div className="flex flex-col gap-2 w-full">
             <div className="text-lg text-foreground/70 font-medium py-4 w-full">
               Without Namera...
@@ -49,7 +96,15 @@ export const WhyNamera = () => {
           </div>
         </div>
         <div className="flex flex-col gap-4 ">
-          <div className="max-w-[24rem] bg-popover rounded-xl h-40 w-full" />
+          <div className="max-w-[24rem] bg-popover rounded-xl h-40 w-full overflow-hidden relative">
+            <MovingRails />
+            <div className="rotate-90 absolute top-1/2 right-1/2">
+              <TriangleIcon
+                className="animate-triangle-path size-8 fill-white"
+                weight="fill"
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-2 w-full">
             <div className="text-2xl text-foreground font-semibold py-4">
               With Namera...

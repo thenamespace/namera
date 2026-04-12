@@ -29,15 +29,12 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 
 function RootComponent() {
   return (
-    <>
-      <ReactLenis root={true} />
-      <RootDocument>
-        <ProviderTree>
-          <SvgDefs />
-          <Outlet />
-        </ProviderTree>
-      </RootDocument>
-    </>
+    <RootDocument>
+      <ProviderTree>
+        <SvgDefs />
+        <Outlet />
+      </ProviderTree>
+    </RootDocument>
   );
 }
 

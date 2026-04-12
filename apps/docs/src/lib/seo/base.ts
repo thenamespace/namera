@@ -1,4 +1,4 @@
-// import { faqs } from "@/sections";
+import { faqs } from "@/sections";
 import appCss from "@/styles/globals.css?url";
 
 import { env } from "../env";
@@ -96,14 +96,14 @@ export const getBaseSeo = () => {
       {
         "@id": new URL("#faq", env.baseUrl).toString(),
         "@type": "FAQPage",
-        // mainEntity: faqs.map((faq) => ({
-        //   "@type": "Question",
-        //   acceptedAnswer: {
-        //     "@type": "Answer",
-        //     text: faq.answer,
-        //   },
-        //   name: faq.question,
-        // })),
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+          name: faq.question,
+        })),
       },
     ],
   };

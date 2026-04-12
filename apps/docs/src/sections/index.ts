@@ -1,3 +1,4 @@
+export * from "./faqs";
 export * from "./hero";
 export * from "./integrate";
 export * from "./products";

@@ -105,6 +105,49 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --default-border-width: 0.5px;
+
+  --animate-scroll: scroll linear infinite;
+  --animate-triangle-path: trianglePath 3s ease-in-out infinite;
+
+  --animate-path: movePath 6s linear infinite;
+
+  @keyframes scroll {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  @keyframes movePath {
+    to {
+      offset-distance: 100%;
+    }
+  }
+
+  @keyframes trianglePath {
+    0% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-12px);
+    }
+    40% {
+      transform: translateX(10px);
+    }
+    60% {
+      transform: translateX(16px);
+    }
+    80% {
+      transform: translateX(-8px);
+    }
+    100% {
+      transform: translateX(-14px);
+    }
+  }
 }
 
 @layer base {
@@ -167,4 +210,9 @@ body {
   border: 1px solid rgba(114, 125, 161, 0.2);
   border-image: radial-gradient(rgba(114, 125, 161, 0.2), transparent);
   border-image-slice: 100% 0;
+}
+
+.confused {
+  offset-path: path("M 0 0 L 30 -20 L 60 10 L 20 30 L 80 40 L 10 60 Z");
+  offset-rotate: 0deg;
 }

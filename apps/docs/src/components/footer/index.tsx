@@ -1,132 +1,131 @@
-import { Link } from "@tanstack/react-router";
-
 import { NameraIcon } from "@namera-ai/ui/icons";
-import {
-  EnvelopeIcon,
-  GithubLogoIcon,
-  TelegramLogoIcon,
-  XLogoIcon,
-} from "@phosphor-icons/react";
 
-const socials = [
+const navigationGroups = [
   {
-    href: "https://github.com/thenamespace/namera",
-    icon: GithubLogoIcon,
-    title: "Github",
+    links: [
+      {
+        external: false,
+        href: "/docs",
+        title: "Platform",
+      },
+      {
+        external: false,
+        href: "/docs/sdk",
+        title: "SDKs",
+      },
+      {
+        external: false,
+        href: "/docs/cli",
+        title: "CLI",
+      },
+    ],
+    title: "Product",
   },
   {
-    href: "https://twitter.com/namera_ai",
-    icon: XLogoIcon,
-    title: "Twitter",
+    links: [
+      {
+        external: false,
+        href: "/blog",
+        title: "Blog",
+      },
+      {
+        external: false,
+        href: "/changelog",
+        title: "Changelog",
+      },
+      {
+        external: true,
+        href: "https://github.com/thenamespace/namera",
+        title: "GitHub",
+      },
+      {
+        external: true,
+        href: "https://x.com/namera_ai",
+        title: "X/Twitter",
+      },
+      {
+        external: true,
+        href: "https://linkedin.com/company/namera-ai",
+        title: "LinkedIn",
+      },
+    ],
+    title: "Company",
   },
   {
-    href: "mailto:hey@namera.ai",
-    icon: EnvelopeIcon,
-    title: "Email",
-  },
-  {
-    href: "https://t.me/namera_devs",
-    icon: TelegramLogoIcon,
-    title: "Telegram",
+    links: [
+      {
+        external: false,
+        href: "/docs",
+        title: "Documentation",
+      },
+      {
+        external: false,
+        href: "/terms",
+        title: "Terms of Service",
+      },
+      {
+        external: false,
+        href: "/privacy-policy",
+        title: "Privacy Policy",
+      },
+    ],
+    title: "Resources",
   },
 ];
 
 export const Footer = () => {
   return (
-    <>
-      <div className="hidden md:flex">
-        <FooterDesktop />
-      </div>
-      <div className="md:hidden flex">
-        <FooterMobile />
-      </div>
-    </>
-  );
-};
-
-export const FooterDesktop = () => {
-  return (
-    <footer className="w-full">
-      <div className="max-w-6xl px-6 w-full mx-auto">
-        <div className="flex flex-col">
-          <div className="flex flex-row justify-between py-5 items-end border-y px-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-row gap-2 items-center">
-                <NameraIcon className="size-6 fill-white" />
-                <div className="text-white text-2xl font-medium">Namera</div>
-              </div>
-              <p className="text-[#939DB8] text-sm max-w-xs text-wrap">
-                Secure, programmable smart accounts for autonomous agents.
-              </p>
+    <div className="flex flex-col gap-4">
+      <footer className="w-full">
+        <div className="max-w-7xl mx-auto border-t border-b w-full flex flex-col md:flex-row items-start justify-between p-10 md:gap-4 gap-12">
+          <div className="flex flex-col gap-6 order-2 md:order-1 mx-auto md:mx-0">
+            <div className="flex flex-row items-center gap-2 justify-center md:justify-start">
+              <NameraIcon className="size-5 fill-white" />
+              <div className="text-xl text-white font-medium">Namera</div>
             </div>
-            <div className="flex flex-row gap-4 items-center">
-              <a
-                className="text-neutral-200 text-sm font-light"
-                href="mailto:hey@namera.ai"
-                rel="noreferrer"
-                target="_blank"
-                title="Contact us"
-              >
-                hey@namera.ai
-              </a>
-              <div className="border-r border-neutral-400 h-4" />
-              <div className="flex flex-row items-center gap-3">
-                {socials.map((social) => (
-                  <a
-                    className="text-neutral-200 text-sm font-light"
-                    href={social.href}
-                    key={social.title}
-                    rel="noreferrer"
-                    target="_blank"
-                    title={social.title}
-                  >
-                    <social.icon className="size-4.5" />
-                  </a>
-                ))}
-              </div>
-            </div>
+            <p className="text-muted-foreground text-xs max-w-xs text-center md:text-left">
+              Secure, programmable smart accounts for autonomous agents.
+            </p>
           </div>
-          <div className="flex flex-row items-center justify-between border-border/50 py-3 px-3 text-neutral-300 ">
-            <div className="flex flex-row gap-4 items-center text-xs">
-              <Link to="/terms">Terms of Service</Link>
-              <Link to="/privacy-policy">Privacy Policy</Link>
-            </div>
-            <div className="text-xs">© 2026 Namespace Inc.</div>
+          <div className="grid sm:grid-cols-3 md:gap-4 grid-cols-2 mx-auto gap-8 order-1 md:order-2 md:mx-0">
+            {navigationGroups.map((group) => {
+              return (
+                <div
+                  className="flex flex-col gap-2 w-full place-items-start"
+                  key={group.title}
+                >
+                  <div className="text-sm text-foreground pb-3">
+                    {group.title}
+                  </div>
+                  {group.links.map((link) => {
+                    const isExternal = link.external;
+
+                    return (
+                      <a
+                        className="text-muted-foreground hover:text-foreground text-sm transition-all"
+                        href={link.href}
+                        key={link.title}
+                        rel="noopener noreferrer"
+                        target={isExternal ? "_blank" : "_self"}
+                      >
+                        {link.title}
+                      </a>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
+      </footer>
+      <div className="max-w-7xl justify-end flex mx-auto w-full text-sm text-muted-foreground pb-[10dvh] sm:pb-[15dvh] md:pb-[20dvh] px-4 lg:pb-[25dvh]">
+        © 2026 Namespace Inc. All rights reserved.
       </div>
-    </footer>
-  );
-};
-
-export const FooterMobile = () => {
-  return (
-    <footer className="w-full border-t py-4 flex flex-col gap-4 items-center justify-center">
-      <div className="flex flex-row gap-2 items-center">
-        <NameraIcon className="size-5 fill-white" />
-        <div className="text-white text-xl font-medium">Namera</div>
-      </div>
-      <div className="flex flex-row gap-4 items-center text-xs text-neutral-300">
-        <Link to="/terms">Terms of Service</Link>
-        <Link to="/privacy-policy">Privacy Policy</Link>
-      </div>
-      <div className="flex flex-col items-center justify-center gap-2">
-        <div className="flex flex-row items-center gap-3">
-          {socials.map((social) => (
-            <a
-              className="text-neutral-200 text-sm font-light"
-              href={social.href}
-              key={social.title}
-              rel="noreferrer"
-              target="_blank"
-              title={social.title}
-            >
-              <social.icon className="size-4.5" />
-            </a>
-          ))}
+      <div className="absolute bottom-0 left-1/2 overflow-hidden -translate-x-1/2 pointer-events-none">
+        <div className="text-[30dvw] sm:text-[30dvw] leading-none select-none text-muted [textStroke:1px_var(--color-neutral-700)] translate-y-1/4 [-webkit-text-stroke:1px_var(--color-neutral-700)]">
+          namera
         </div>
-        <div className="text-xs text-neutral-300 ">© 2026 Namespace Inc.</div>
       </div>
-    </footer>
+    </div>
   );
 };

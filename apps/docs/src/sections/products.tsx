@@ -41,7 +41,7 @@ type Product = (typeof products)[number];
 
 const ProductCard = (product: Product) => {
   return (
-    <div className="flex flex-col border-[0.5px] rounded-xl max-w-xs">
+    <div className="flex flex-col border rounded-xl max-w-xs">
       <div className="p-5 h-56">
         <div className="flex flex-row gap-4">
           <div
@@ -53,7 +53,7 @@ const ProductCard = (product: Product) => {
           <div className="text-3xl font-medium">{product.title}</div>
         </div>
       </div>
-      <div className="p-5 border-t-[0.5px]">{product.description}</div>
+      <div className="p-5 border-t">{product.description}</div>
     </div>
   );
 };
@@ -61,7 +61,7 @@ const ProductCard = (product: Product) => {
 export const Products = () => {
   return (
     <section
-      className="px-4 max-w-7xl mx-auto py-[5dvh] min-h-dvh"
+      className="px-4 max-w-7xl mx-auto py-[5dvh] min-h-dvh justify-evenly flex flex-col"
       id="products"
     >
       <h2 className="text-3xl max-w-xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl">
