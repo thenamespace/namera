@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
-
 import { Link } from "@tanstack/react-router";
 
+import { Button } from "@namera-ai/ui/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -11,216 +10,120 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@namera-ai/ui/components/ui/navigation-menu";
-// import { McpIcon } from "@namera-ai/ui/icons";
-import {
-  BuildingIcon,
-  // CurrencyEthIcon,
-  LegoIcon,
-  NewspaperIcon,
-  PenNibIcon,
-  TerminalIcon,
-} from "@phosphor-icons/react";
 
-const platformContents = [
+const productItems = [
   {
-    icon: BuildingIcon,
-    path: "",
-    tagline: "Agent-native wallet layer",
-    title: "Protocol",
+    description: "Manage smart wallets, session keys through a unified layer",
+    title: "Platform",
+    url: "/docs",
   },
   {
-    icon: LegoIcon,
-    path: "sdk",
-    tagline: "Build agent wallets",
-    title: "SDK",
+    description:
+      "Integrate programmable wallets into your app or agent workflows",
+    title: "SDKs",
+    url: "/docs/sdk",
   },
   {
-    icon: TerminalIcon,
-    path: "cli",
-    tagline: "Manage keys locally",
+    description: "Operate wallets through CLI or MCP with full control",
     title: "CLI",
+    url: "/docs/cli",
   },
-  // {
-  //   comingSoon: true,
-  //   icon: McpIcon,
-  //   path: "mcp",
-  //   tagline: "Secure agent execution",
-  //   title: "MCP",
-  // },
-  // {
-  //   comingSoon: true,
-  //   icon: CurrencyEthIcon,
-  //   path: "x402",
-  //   tagline: "Native onchain payments",
-  //   title: "x402 Payments",
-  // },
 ];
 
-export const resources = [
+const resourcesItems = [
   {
-    icon: PenNibIcon,
-    path: "/blog",
+    description: "Build agent wallets using Namera",
+    title: "Developers",
+    url: "/docs/sdk",
+  },
+  {
+    description: "Integrate Namera into your apps",
+    title: "Docs",
+    url: "/docs",
+  },
+  {
+    description: "Learn more about Namera and its use cases",
     title: "Blog",
+    url: "/blog",
   },
   {
-    icon: NewspaperIcon,
-    path: "/changelog",
+    description: "All updates to Namera",
     title: "Changelog",
+    url: "/changelog",
   },
 ];
 
-export const components: {
-  title: string;
-  href: string;
-  description: string;
-}[] = [
-  {
-    description:
-      "A modal dialog that interrupts the user with important content and expects a response.",
-    href: "/docs/primitives/alert-dialog",
-    title: "Alert Dialog",
-  },
-  {
-    description:
-      "For sighted users to preview content available behind a link.",
-    href: "/docs/primitives/hover-card",
-    title: "Hover Card",
-  },
-  {
-    description:
-      "Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.",
-    href: "/docs/primitives/progress",
-    title: "Progress",
-  },
-  {
-    description: "Visually or semantically separates content.",
-    href: "/docs/primitives/scroll-area",
-    title: "Scroll-area",
-  },
-  {
-    description:
-      "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
-    href: "/docs/primitives/tabs",
-    title: "Tabs",
-  },
-  {
-    description:
-      "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.",
-    href: "/docs/primitives/tooltip",
-    title: "Tooltip",
-  },
-];
 export const Menu = () => {
   return (
     <NavigationMenu>
-      <NavigationMenuList className="hidden sm:flex">
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Platform</NavigationMenuTrigger>
+      <NavigationMenuList>
+        <NavigationMenuItem className="hidden sm:flex">
+          <NavigationMenuTrigger>Product</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="w-54">
-              {platformContents.map((content) => (
-                <li key={content.title}>
-                  <NavigationMenuLink
-                    className="hover:bg-[#727DA1]/15 text-neutral-200"
-                    render={
-                      <Link
-                        // biome-ignore lint/style/useNamingConvention: safe
-                        params={{ _splat: content.path }}
-                        to="/docs/$"
-                      />
-                    }
-                  >
-                    <div className="flex flex-row gap-2 items-start">
-                      <content.icon
-                        className="size-6 fill-[url(#gradient-primary)] mt-1"
-                        weight="fill"
-                      />
-                      <div className="flex flex-col">
-                        <div className="text-sm">{content.title}</div>
-                        <div className="text-muted-foreground">
-                          {content.tagline}
-                        </div>
+            <ul className="w-lg bg-muted rounded-md border grid grid-cols-2 gap-2 p-2 divide-x divide-accent">
+              {productItems.map((item) => {
+                return (
+                  <Link key={item.title} to={item.url}>
+                    <li className="flex flex-col gap-1 text-xs hover:bg-accent transition p-3 rounded-lg">
+                      <div className="text-muted-foreground font-medium">
+                        {item.title}
                       </div>
-                    </div>
-                  </NavigationMenuLink>
-                </li>
-              ))}
+                      <div>{item.description}</div>
+                    </li>
+                  </Link>
+                );
+              })}
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        {/* <NavigationMenuItem className="hidden md:flex">
-          <NavigationMenuTrigger>Getting Started</NavigationMenuTrigger>
+        <NavigationMenuItem className="hidden sm:flex">
+          <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-100 gap-2 md:w-125 md:grid-cols-2 lg:w-150">
-              {components.map((component) => (
-                <ListItem
-                  href={component.href}
-                  key={component.title}
-                  title={component.title}
-                >
-                  {component.description}
-                </ListItem>
-              ))}
+            <ul className="w-lg bg-muted rounded-md border grid grid-cols-2 gap-2 p-2 divide-x divide-accent">
+              {resourcesItems.map((item) => {
+                return (
+                  <Link key={item.title} to={item.url}>
+                    <li className="flex flex-col gap-1 text-xs hover:bg-accent transition p-3 rounded-lg">
+                      <div className="text-muted-foreground font-medium">
+                        {item.title}
+                      </div>
+                      <div>{item.description}</div>
+                    </li>
+                  </Link>
+                );
+              })}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
         <NavigationMenuItem className="hidden sm:flex">
+          <NavigationMenuLink
+            className={navigationMenuTriggerStyle()}
+            render={<Link to="/blog" />}
+          >
+            Blog
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem className="hidden sm:flex">
+          <NavigationMenuLink
+            className={navigationMenuTriggerStyle()}
+            render={<Link to="/changelog" />}
+          >
+            Changelog
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <div className="h-5 border-r hidden sm:block" />
+        <NavigationMenuItem>
           <NavigationMenuLink
             className={navigationMenuTriggerStyle()}
             render={<Link to="/docs/$" />}
           >
-            Documentation
+            Docs
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="w-54">
-              {resources.map((item) => (
-                <li key={item.title}>
-                  <NavigationMenuLink
-                    className="hover:bg-[#727DA1]/15 text-neutral-200"
-                    render={<Link to={item.path} />}
-                  >
-                    <div className="flex flex-row gap-2 items-center">
-                      <item.icon
-                        className="size-5 fill-accent-foreground"
-                        weight="fill"
-                      />
-                      <div className="text-sm">{item.title}</div>
-                    </div>
-                  </NavigationMenuLink>
-                </li>
-              ))}
-            </ul>
-          </NavigationMenuContent>
+        <NavigationMenuItem render={<Button render={<Link to="/docs/$" />} />}>
+          Get Started
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
   );
 };
-
-export function ListItem({
-  title,
-  children,
-  href,
-  icon,
-  ...props
-}: React.ComponentPropsWithoutRef<"li"> & { href: string; icon?: ReactNode }) {
-  return (
-    <li {...props}>
-      <NavigationMenuLink
-        className="hover:bg-[#727DA1]/15"
-        render={<Link to={href} />}
-      >
-        <div className="flex flex-col gap-1 text-sm">
-          <div className="flex flex-row gap-2">
-            {icon}
-            <div className="leading-none font-medium">{title}</div>
-          </div>
-          <div className="line-clamp-2 text-muted-foreground">{children}</div>
-        </div>
-      </NavigationMenuLink>
-    </li>
-  );
-}

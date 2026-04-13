@@ -19,6 +19,7 @@ import {
   getPaginatedBlogs,
   getPaginationRange,
 } from "@/lib/blog";
+import { env } from "@/lib/env";
 import { sourceBlog } from "@/lib/source";
 import type { BlogCardProps } from "@/types";
 
@@ -32,16 +33,31 @@ const serverLoader = createServerFn({
     const pages = sourceBlog.getPages();
 
     const allBlogs: BlogCardProps[] = pages.map((page) => {
+      const dateModified = page.data.lastModified ?? new Date();
+      const datePublished =
+        page.data.date instanceof Date
+          ? page.data.date
+          : new Date(page.data.date);
+
+      let image: string;
+      if (page.data.image) {
+        image = page.data.image;
+      } else {
+        const ogImage = new URL("/api/og", env.baseUrl);
+        ogImage.searchParams.set("description", page.data.description ?? "");
+        ogImage.searchParams.set("lastUpdatedDate", dateModified.toISOString());
+        ogImage.searchParams.set("paths", "Blog");
+        ogImage.searchParams.set("title", page.data.title);
+        image = ogImage.toString();
+      }
       return {
         author: page.data.author,
-        datePublished:
-          page.data.date instanceof Date
-            ? page.data.date
-            : new Date(page.data.date),
+        datePublished: datePublished,
         description: page.data.description,
-        lastModified: page.data.lastModified ?? new Date(),
+        lastModified: dateModified,
         slug: page.slugs[0] ?? "",
         title: page.data.title,
+        image: page.data.image ?? image,
       };
     });
 
@@ -71,21 +87,21 @@ const BlogHomePage = () => {
   });
 
   return (
-    <div>
+    <div className="max-w-5xl w-full mx-auto px-4 py-[10dvh]">
       <BlogHero />
-      <div className="px-4 mx-auto max-w-3xl flex flex-col py-12 w-full divide-y min-h-[40dvh]">
+      <div className="min-h-[40dvh] grid grid-cols-1 sm:grid-cols-2 py-12 gap-12">
         {data.items.map((blog) => (
           <BlogCard {...blog} key={blog.slug} />
         ))}
       </div>
       <Pagination>
-        <PaginationContent className="bg-[#171824] rounded-lg px-1 py-1 mb-12">
+        <PaginationContent>
           <PaginationItem>
             <Button
-              className="hover:bg-[#1F2433] bg-[#171824]"
               disabled={data.currentPage === 1}
               onClick={() => goToPage(Math.max(1, data.currentPage - 1))}
               size="icon"
+              variant="ghost"
             >
               <CaretLeftIcon />
             </Button>
@@ -97,12 +113,12 @@ const BlogHomePage = () => {
               ) : (
                 <Button
                   className={cn(
-                    "hover:bg-[#1F2433]",
-                    page === data.currentPage ? "bg-[#1F2433]" : "bg-[#171824]",
+                    page === data.currentPage ? "bg-muted hover:bg-muted" : "",
                   )}
                   nativeButton={false}
                   onClick={() => goToPage(page)}
                   size="icon"
+                  variant="ghost"
                 >
                   {page}
                 </Button>
@@ -111,7 +127,6 @@ const BlogHomePage = () => {
           ))}
           <PaginationItem>
             <Button
-              className="hover:bg-[#1F2433] bg-[#171824]"
               disabled={
                 data.currentPage >= data.totalPages || data.totalPages === 0
               }
@@ -119,6 +134,7 @@ const BlogHomePage = () => {
                 goToPage(Math.min(data.totalPages, data.currentPage + 1))
               }
               size="icon"
+              variant="ghost"
             >
               <CaretRightIcon />
             </Button>

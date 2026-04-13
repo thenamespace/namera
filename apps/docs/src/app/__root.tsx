@@ -7,7 +7,6 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { SvgDefs } from "@/components/misc";
 import { getBaseSeo } from "@/lib/seo/base";
 import { ProviderTree } from "@/providers";
 
@@ -29,7 +28,6 @@ function RootComponent() {
   return (
     <RootDocument>
       <ProviderTree>
-        <SvgDefs />
         <Outlet />
       </ProviderTree>
     </RootDocument>

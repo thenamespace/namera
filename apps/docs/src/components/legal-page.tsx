@@ -57,19 +57,14 @@ export const legalPageServerLoader = createServerFn({
 
 export const LegalPage = ({ toc, mdx: MDX, metadata }: LegalPageProps) => {
   return (
-    <div className="px-4">
+    <div className="bg-[#08090a]">
       <Navbar />
-      <div className="flex flex-col gap-2 h-[20dvh] items-center justify-center max-w-5xl border-b mx-auto my-8 relative">
-        <img
-          alt="Crescent Background"
-          className="absolute top-0 left-0 pointer-events-none w-full transform-[rotate(180deg)]"
-          src="/assets/crescent-bottom.png"
-        />
+      <div className="flex flex-col gap-2 pt-[10dvh] items-center justify-center max-w-5xl mx-auto pb-[5dvh]">
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-8">
           <h1 className="text-3xl md:text-5xl font-helveticaDisplay heading-gradient pb-2">
             {metadata.title}
           </h1>
-          <p className="font-base text-muted-foreground">
+          <p className="font-normal text-muted-foreground">
             Last updated:{" "}
             {metadata.lastModified.toLocaleDateString("en-US", {
               day: "numeric",
@@ -87,7 +82,7 @@ export const LegalPage = ({ toc, mdx: MDX, metadata }: LegalPageProps) => {
           </div>
         </div>
       </DocsBody>
-      <Footer />
+      <Footer showDesign={false} />
     </div>
   );
 };

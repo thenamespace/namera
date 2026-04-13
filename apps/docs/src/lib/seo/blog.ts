@@ -1,21 +1,31 @@
 import { env } from "@/lib/env";
 import type { BlogMetadata } from "@/types";
 
+import { nameraIcon } from "./common";
+
 export const generateBlogSeo = (metadata: BlogMetadata) => {
   const canonicalUrl = new URL(`/blog/${metadata.slug}`, env.baseUrl);
 
   const datePublished = metadata.datePublished.toISOString();
   const dateModified = metadata.lastModified.toISOString();
 
-  const ogImage = new URL("/api/og", env.baseUrl);
-  ogImage.searchParams.set("type", "blog");
-  ogImage.searchParams.set("description", metadata.description ?? "");
-  ogImage.searchParams.set("lastUpdatedDate", dateModified);
-  ogImage.searchParams.set("paths", `Blog,${metadata.title}`);
-  ogImage.searchParams.set("readTime", metadata.readingTime.minutes.toString());
-  ogImage.searchParams.set("title", metadata.title);
+  let imageLink: string;
 
-  const imageLink = ogImage.toString();
+  if (metadata.image) {
+    imageLink = metadata.image;
+  } else {
+    const ogImage = new URL("/api/og", env.baseUrl);
+    ogImage.searchParams.set("description", metadata.description ?? "");
+    ogImage.searchParams.set("lastUpdatedDate", dateModified);
+    ogImage.searchParams.set("paths", "Blog");
+    ogImage.searchParams.set(
+      "readTime",
+      metadata.readingTime.minutes.toString(),
+    );
+    ogImage.searchParams.set("title", metadata.title);
+
+    imageLink = ogImage.toString();
+  }
 
   return {
     links: [{ href: canonicalUrl.toString(), rel: "canonical" }],
@@ -25,7 +35,7 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
       { content: metadata.author.name, name: "author" },
       { content: "index, follow, max-image-preview:large", name: "robots" },
       // Open Graph
-      { content: "Namera", property: "og:site_name" },
+      { content: "Namera Blog", property: "og:site_name" },
       { content: "article", property: "og:type" },
       { content: metadata.title, property: "og:title" },
       { content: metadata.description, property: "og:description" },
@@ -69,7 +79,7 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
             "@type": "Organization",
             logo: {
               "@type": "ImageObject",
-              url: new URL("/metadata/icon.png", env.baseUrl).toString(),
+              url: nameraIcon,
             },
             name: "Namera",
           },

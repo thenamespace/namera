@@ -4,7 +4,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@namera-ai/ui/components/ui/accordion";
-import { usePostHog } from "@posthog/react";
 
 export const faqs = [
   {
@@ -52,43 +51,27 @@ export const faqs = [
 ];
 
 export const Faqs = () => {
-  const posthog = usePostHog();
-
   return (
     <section
-      className="px-4 max-w-7xl mx-auto my-24 flex flex-col gap-12"
+      className="px-4 max-w-7xl mx-auto py-[15dvh] min-h-dvh justify-center flex flex-col gap-24"
       id="faqs"
     >
       <div className="flex flex-col gap-2">
-        <h2 className="font-helveticaDisplay text-3xl sm:text-4xl heading-gradient text-center pb-2">
+        <h2 className="text-3xl max-w-2xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl">
           Frequently Asked Questions
         </h2>
-        <p className="text-center max-w-sm mx-auto text-neutral-200">
+        <p className="text-center max-w-sm mx-auto text-muted-foreground">
           Answers to common questions about Namera and how it works
         </p>
       </div>
       <div className="mx-auto max-w-4xl w-full">
-        <Accordion
-          className="border rounded-2xl p-6"
-          defaultValue={[]}
-          onValueChange={(value) => {
-            const expanded = Array.isArray(value) ? value : [value];
-            for (const key of expanded) {
-              const faq = faqs.find((f) => f.key === key);
-              if (faq) {
-                posthog.capture("faq_item_expanded", {
-                  question: faq.question,
-                });
-              }
-            }
-          }}
-        >
+        <Accordion className="border rounded-2xl px-6 py-2">
           {faqs.map((faq) => (
             <AccordionItem className="py-1" key={faq.key} value={faq.key}>
-              <AccordionTrigger className="text-base sm:text-lg font-normal hover:no-underline">
+              <AccordionTrigger className="text-base sm:text-lg font-medium hover:no-underline text-foreground">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-neutral-200 text-sm sm:text-base font-light">
+              <AccordionContent className="text-muted-foreground text-sm sm:text-base font-normal">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

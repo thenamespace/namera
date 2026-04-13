@@ -1,27 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { Footer, Navbar } from "@/components";
-import { Hr } from "@/components/misc";
-import { CallToAction, Faqs, Hero, HowItWorks, UseCases } from "@/sections";
-import { Products } from "@/sections/products";
+import ReactLenis from "lenis/react";
+
+import { Navbar } from "@/components";
+import { Footer } from "@/components/footer";
+import { Faqs, Hero, Integrate, Products, WhyNamera } from "@/sections";
 
 const Home = () => {
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <Navbar />
-      <Hero />
-      <Hr />
-      <Products />
-      <Hr />
-      <HowItWorks />
-      <Hr />
-      <UseCases />
-      <Hr />
-      <Faqs />
-      <Hr />
-      <CallToAction />
-      <Footer />
-    </div>
+    <ReactLenis root={true}>
+      <div className="min-h-screen overflow-x-hidden bg-[#08090a]">
+        <Navbar />
+        <Hero />
+        <Products />
+        <WhyNamera />
+        <Integrate />
+        <Faqs />
+        <Footer />
+      </div>
+    </ReactLenis>
   );
 };
 

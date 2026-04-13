@@ -35,6 +35,7 @@ export const blog = defineDocs({
       author: z.string(),
       authorUrl: z.string().optional(),
       date: z.iso.date().or(z.date()),
+      image: z.string().optional(),
     }),
   },
 });
@@ -54,8 +55,8 @@ export default defineConfig({
       inline: "tailing-curly-colon",
       langs: ["js", "jsx", "ts", "tsx", "json", "bash"],
       themes: {
-        dark: "one-dark-pro",
-        light: "one-dark-pro",
+        dark: "github-dark-dimmed",
+        light: "github-dark-dimmed",
       },
       transformers: [
         ...(rehypeCodeDefaultOptions.transformers ?? []),

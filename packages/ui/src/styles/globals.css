@@ -1,146 +1,103 @@
-/** biome-ignore-all lint/a11y/useGenericFontNames: safe */
 @import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 @source "../../../../packages/ui/src/**/*.{js,ts,jsx,tsx}";
 
-@custom-variant dark (&:is(.dark *));
-
-@font-face {
-  font-family: "Helvetica Now Text";
-  src: url("/fonts/HelveticaNowText-Light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Helvetica Now Text";
-  src: url("/fonts/HelveticaNowText-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Helvetica Now Text";
-  src: url("/fonts/HelveticaNowText-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Helvetica Now Text";
-  src: url("/fonts/HelveticaNowText-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Helvetica Now Display";
-  src: url("/fonts/HelveticaNowDisplay-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  --background: #0b0c14;
-  --foreground: #fafafa;
+  --background: oklch(0.1689 0.0021 286.1774);
+  --foreground: oklch(1 0 0);
 
-  --card: #10101a;
-  --card-foreground: oklch(0.9848 0 0);
+  --card: oklch(0.205 0.002 286.2258);
+  --card-foreground: oklch(1 0 0);
 
-  --popover: #181926;
-  --popover-foreground: oklch(0.9848 0 0);
+  --popover: oklch(0.2225 0.0019 286.2428);
+  --popover-foreground: oklch(0.922 0.0042 271.3669);
 
-  --primary: #707fdb;
-  --primary-foreground: oklch(1 0 0);
+  --primary: oklch(60.707% 0.16344 276.066);
+  --primary-foreground: oklch(0.9973 0.0013 286.3762);
 
-  --secondary: oklch(0.2246 0.0161 280.0366);
-  --secondary-foreground: #dee0ed;
+  --secondary: oklch(0.2681 0.012 264.3502);
+  --secondary-foreground: oklch(0.9192 0.0055 274.9612);
 
-  --muted: #151623;
-  --muted-foreground: #9d9faf;
+  --muted: oklch(0.205 0.002 286.2258);
+  --muted-foreground: oklch(0.6795 0.0031 264.5367);
 
-  --accent: #151623;
-  --accent-foreground: #c9d3ee;
+  --accent: oklch(0.269 0.0018 286.2762);
+  --accent-foreground: oklch(1 0 0);
 
-  --destructive: oklch(0.4344 0.1466 25.7809);
+  --destructive: oklch(0.6553 0.2012 23.3476);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: #1d212f;
-  --input: oklch(0.2443 0.0184 279.9678);
+  --border: oklch(0.2344 0.0024 247.9303);
+  --input: oklch(0.2973 0.0056 271.2268);
+  --ring: oklch(0.556 0 0);
 
-  --ring: --alpha(var(--primary) / 30%);
+  --chart-1: #6b77e6;
+  --chart-2: #8879d2;
+  --chart-3: #3cc2dd;
+  --chart-4: #b675d7;
+  --chart-5: #67a6e4;
 
-  --chart-1: oklch(0.6257 0.1401 275.0131);
-  --chart-2: oklch(0.5906 0.1527 296.8464);
-  --chart-3: oklch(0.7218 0.1129 233.1408);
-  --chart-4: oklch(0.5293 0.1408 280.4575);
-  --chart-5: oklch(0.6229 0.132 263.0131);
+  --sidebar: var(--background);
+  --sidebar-foreground: oklch(0.6573 0.0029 286.3191);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: oklch(0.9973 0.0013 286.3762);
+  --sidebar-accent: oklch(0.2167 0.0015 197.0424);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.2344 0.0024 247.9303);
+  --sidebar-ring: oklch(0.556 0 0);
 
-  --radius: 0.5rem;
-  --shadow-x: 0px;
-  --shadow-y: 16px;
-  --shadow-blur: 32px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.6;
-  --shadow-color: hsl(0, 0%, 0%);
-  --shadow-2xs: 0px 16px 32px 0px hsl(0 0% 0% / 0.3);
-  --shadow-xs: 0px 16px 32px 0px hsl(0 0% 0% / 0.3);
-  --shadow-sm:
-    0px 16px 32px 0px hsl(0 0% 0% / 0.6), 0px 1px 2px -1px hsl(0 0% 0% / 0.6);
-  --shadow:
-    0px 16px 32px 0px hsl(0 0% 0% / 0.6), 0px 1px 2px -1px hsl(0 0% 0% / 0.6);
-  --shadow-md:
-    0px 16px 32px 0px hsl(0 0% 0% / 0.6), 0px 2px 4px -1px hsl(0 0% 0% / 0.6);
-  --shadow-lg:
-    0px 16px 32px 0px hsl(0 0% 0% / 0.6), 0px 4px 6px -1px hsl(0 0% 0% / 0.6);
-  --shadow-xl:
-    0px 16px 32px 0px hsl(0 0% 0% / 0.6), 0px 8px 10px -1px hsl(0 0% 0% / 0.6);
-  --shadow-2xl: 0px 16px 32px 0px hsl(0 0% 0% / 1.5);
+  --radius: 0.4rem;
   --spacing: 0.25rem;
 }
 
 @theme inline {
-  --font-helveticaDisplay:
-    "Helvetica Now Display", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-inter:
+    "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   --font-geist-mono:
     "Geist Mono", "Menlo", "Monaco", "Lucida Console", "Liberation Mono",
     "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Courier New", monospace;
-  --color-background: var(--background);
 
+  --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-border-light: var(--border-light);
+
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -150,62 +107,78 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
-  --shadow-2xs: var(--shadow-2xs);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-sm: var(--shadow-sm);
-  --shadow: var(--shadow);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-2xl: var(--shadow-2xl);
+  --default-border-width: 0.5px;
 
-  /* Neutrl Colors */
-  --color-neutral-50: #eaecf1;
-  --color-neutral-100: #b8bfd1;
-  --color-neutral-200: #939db8;
-  --color-neutral-300: #646e87;
-  --color-neutral-400: #4e576e;
-  --color-neutral-500: #3b4254;
-  --color-neutral-600: #2f3647;
-  --color-neutral-700: #293040;
-  --color-neutral-800: #222838;
-  --color-neutral-900: #121826;
-}
+  --animate-scroll: scroll linear infinite;
+  --animate-triangle-path: trianglePath 3s ease-in-out infinite;
 
-@utility font-helvetica {
-  font-family:
-    "Helvetica Now Text", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --animate-path: movePath 6s linear infinite;
 
-  font-feature-settings:
-    "ss04" on,
-    "ss01" on,
-    "ss03" on,
-    "ss19" on;
+  @keyframes scroll {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  @keyframes movePath {
+    to {
+      offset-distance: 100%;
+    }
+  }
+
+  @keyframes trianglePath {
+    0% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-12px);
+    }
+    40% {
+      transform: translateX(10px);
+    }
+    60% {
+      transform: translateX(16px);
+    }
+    80% {
+      transform: translateX(-8px);
+    }
+    100% {
+      transform: translateX(-14px);
+    }
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 antialiased;
   }
   body {
     letter-spacing: var(--tracking-normal);
-    @apply bg-background text-foreground font-helvetica;
+    @apply bg-background text-foreground font-inter;
   }
   html {
     @apply font-sans;
   }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+
+  ::selection {
+    color: var(--color-primary-foreground);
+    background-color: --alpha(var(--color-primary) / 25%);
   }
 }
 
@@ -224,7 +197,7 @@ body {
   box-shadow: 0px 1px 3px 0px rgba(255, 255, 255, 0.25) inset;
 }
 
-.heading-gradient {
+@utility heading-gradient {
   font-feature-settings:
     "salt" on,
     "ss02" on;
@@ -248,12 +221,7 @@ body {
   border-image-slice: 100% 0;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+.confused {
+  offset-path: path("M 0 0 L 30 -20 L 60 10 L 20 30 L 80 40 L 10 60 Z");
+  offset-rotate: 0deg;
 }

@@ -6,14 +6,7 @@ import {
 } from "@takumi-rs/image-response";
 import { Schema } from "effect";
 
-import {
-  BlogOgImageResponse,
-  BlogOgParams,
-  DocsOgImageResponse,
-  DocsOgParams,
-} from "@/components/og";
-
-const OgParams = Schema.Union([BlogOgParams, DocsOgParams]);
+import { CommonOgImageResponse, CommonOgParams } from "@/components/og";
 
 export const Route = createFileRoute("/api/og")({
   server: {
@@ -22,7 +15,7 @@ export const Route = createFileRoute("/api/og")({
         const url = new URL(request.url);
 
         const searchParams = Object.fromEntries(url.searchParams.entries());
-        const search = Schema.decodeUnknownOption(OgParams)(searchParams);
+        const search = Schema.decodeUnknownOption(CommonOgParams)(searchParams);
 
         if (search._tag === "None") {
           return Response.json(
@@ -31,35 +24,25 @@ export const Route = createFileRoute("/api/og")({
           );
         }
 
-        const helveticaNowTextUrl = new URL(
-          "/fonts/HelveticaNowText-Regular.woff2",
-          url,
-        );
+        const interRegularUrl = new URL("/fonts/InterRegular.ttf", url);
+        const interMediumUrl = new URL("/fonts/InterMedium.ttf", url);
 
-        const helveticaNowDisplayUrl = new URL(
-          "/fonts/HelveticaNowDisplay-Medium.woff2",
-          url,
-        );
-
-        const helveticaNowText = await fetch(helveticaNowTextUrl).then((res) =>
-          res.arrayBuffer(),
-        );
-
-        const helveticaNowDisplay = await fetch(helveticaNowDisplayUrl).then(
-          (res) => res.arrayBuffer(),
-        );
+        const [interRegularText, interMediumText] = await Promise.all([
+          fetch(interRegularUrl).then((res) => res.arrayBuffer()),
+          fetch(interMediumUrl).then((res) => res.arrayBuffer()),
+        ]);
 
         const imageOptions: ImageResponseOptions = {
           fonts: [
             {
-              data: helveticaNowText,
-              name: "Helvetica Now Text",
+              data: interRegularText,
+              name: "Inter",
               style: "normal",
               weight: 400,
             },
             {
-              data: helveticaNowDisplay,
-              name: "HelveticaDisplay",
+              data: interMediumText,
+              name: "Inter",
               style: "normal",
               weight: 500,
             },
@@ -70,23 +53,9 @@ export const Route = createFileRoute("/api/og")({
           width: 1200,
         };
 
-        if (search.value.type === "blog") {
-          return new ImageResponse(
-            <BlogOgImageResponse {...search.value} baseUrl={url.toString()} />,
-            imageOptions,
-          );
-        }
-
-        if (search.value.type === "docs") {
-          return new ImageResponse(
-            <DocsOgImageResponse {...search.value} baseUrl={url.toString()} />,
-            imageOptions,
-          );
-        }
-
-        return Response.json(
-          { error: "Invalid search params" },
-          { status: 400 },
+        return new ImageResponse(
+          <CommonOgImageResponse {...search.value} />,
+          imageOptions,
         );
       },
     },

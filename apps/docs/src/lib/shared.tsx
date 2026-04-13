@@ -1,26 +1,27 @@
+import { Button } from "@namera-ai/ui/components/ui/button";
 import { NameraIcon } from "@namera-ai/ui/icons";
-import { XLogoIcon } from "@phosphor-icons/react";
+import { SparkleIcon, XLogoIcon } from "@phosphor-icons/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
-// import { useAISearchContext } from "@/components/ai/search/context";
+import { useAISearchContext } from "@/components/ai/search/context";
 
 export const githubDetails = {
   org: "thenamespace",
   repo: "namera",
 };
 
-// const AskAIButton = () => {
-//   const { setOpen, open } = useAISearchContext();
+const AskAIButton = () => {
+  const { setOpen, open } = useAISearchContext();
 
-//   if (open) return null;
+  if (open) return null;
 
-//   return (
-//     <Button onClick={() => setOpen(true)} size="sm" variant="outline">
-//       <SparkleIcon />
-//       Ask AI
-//     </Button>
-//   );
-// };
+  return (
+    <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <SparkleIcon />
+      Ask AI
+    </Button>
+  );
+};
 
 export const baseOptions = (): BaseLayoutProps => {
   return {
@@ -33,18 +34,18 @@ export const baseOptions = (): BaseLayoutProps => {
         type: "icon",
         url: "https://x.com/namera_ai",
       },
-      // {
-      //   children: <AskAIButton />,
-      //   type: "custom",
-      // },
+      {
+        children: <AskAIButton />,
+        type: "custom",
+      },
     ],
     nav: {
       // @ts-expect-error safe
       mode: "top",
       title: (
-        <div className="text-lg flex flex-row gap-2 items-center px-1 text-[#C9D3EE]">
-          <NameraIcon className="size-4.5 fill-[#C9D3EE]" />
-          <div className="font-normal">Namera</div>
+        <div className="text-lg flex flex-row gap-2 items-center text-accent-foreground px-2">
+          <NameraIcon className="size-4.5 fill-accent-foreground" />
+          <div className="font-medium">Namera</div>
         </div>
       ),
       transparentMode: "top",
