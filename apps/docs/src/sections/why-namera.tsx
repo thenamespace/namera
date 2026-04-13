@@ -22,20 +22,28 @@ const withNamera = [
   "Integrates easily with apps, agents, and systems",
 ];
 
-const lines = Array.from({ length: 50 });
+const slowLines = Array.from({ length: 100 }, () => ({
+  marginTop: `${Math.random() * 160}px`,
+  width: `${20 + Math.random() * 40}px`,
+}));
+
+const fastLines = Array.from({ length: 100 }, () => ({
+  marginTop: `${Math.random() * 160}px`,
+  width: `${20 + Math.random() * 60}px`,
+}));
 
 const MovingRails = () => {
   return (
     <>
       <div className="absolute inset-0">
         <div className="flex w-max animate-[scroll_20s_linear_infinite] gap-10">
-          {[...lines, ...lines].map((_, i) => (
+          {slowLines.map((line, i) => (
             <div
               className="rounded-full border-neutral-700 h-px border opacity-80"
               key={`slow-${i.toString()}`}
               style={{
-                marginTop: `${Math.random() * 160}px`,
-                width: `${20 + Math.random() * 40}px`,
+                marginTop: line.marginTop,
+                width: line.width,
               }}
             />
           ))}
@@ -43,13 +51,13 @@ const MovingRails = () => {
       </div>
       <div className="absolute inset-0">
         <div className="flex w-max animate-[scroll_8s_linear_infinite] gap-10">
-          {[...lines, ...lines].map((_, i) => (
+          {fastLines.map((line, i) => (
             <div
               className="rounded-full border-neutral-700 border h-px"
               key={`fast-${i.toString()}`}
               style={{
-                marginTop: `${Math.random() * 160}px`,
-                width: `${20 + Math.random() * 60}px`,
+                marginTop: line.marginTop,
+                width: line.width,
               }}
             />
           ))}
