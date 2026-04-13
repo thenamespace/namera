@@ -7,34 +7,33 @@
 @source "../../../../packages/ui/src/**/*.{js,ts,jsx,tsx}";
 
 :root {
-  --background: #0d0d0d;
-  --foreground: #f2f2f2;
+  --background: oklch(0.1689 0.0021 286.1774);
+  --foreground: oklch(1 0 0);
 
-  --card: #171718;
-  --card-foreground: #ffffff;
+  --card: oklch(0.205 0.002 286.2258);
+  --card-foreground: oklch(1 0 0);
 
-  --popover: #141414;
-  --popover-foreground: #fafafa;
+  --popover: oklch(0.2225 0.0019 286.2428);
+  --popover-foreground: oklch(0.922 0.0042 271.3669);
 
-  --primary: #6a75e2;
-  --primary-foreground: #ffffff;
+  --primary: oklch(0.6493 0.1862 267.3965);
+  --primary-foreground: oklch(0.9973 0.0013 286.3762);
 
-  --secondary: #1f1f1f;
-  --secondary-foreground: #e6e6e6;
+  --secondary: oklch(0.2681 0.012 264.3502);
+  --secondary-foreground: oklch(0.9192 0.0055 274.9612);
 
-  --muted: #1b1b1c;
-  --muted-foreground: #999999;
+  --muted: oklch(0.205 0.002 286.2258);
+  --muted-foreground: oklch(0.6795 0.0031 264.5367);
 
-  --accent: #1b1d32;
-  --accent-foreground: #a8aff0;
+  --accent: oklch(0.269 0.0018 286.2762);
+  --accent-foreground: oklch(1 0 0);
 
-  --destructive: #a52727;
-  --destructive-foreground: #ffffff;
+  --destructive: oklch(0.6553 0.2012 23.3476);
+  --destructive-foreground: oklch(1 0 0);
 
-  --border: #262626;
-  --input: #262626;
-
-  --ring: --alpha(var(--color-primary) / 30%);
+  --border: oklch(0.2344 0.0024 247.9303);
+  --input: oklch(0.2973 0.0056 271.2268);
+  --ring: oklch(0.556 0 0);
 
   --chart-1: #6b77e6;
   --chart-2: #8879d2;
@@ -42,16 +41,16 @@
   --chart-4: #b675d7;
   --chart-5: #67a6e4;
 
-  --sidebar: #080808;
-  --sidebar-foreground: #b3b3b3;
-  --sidebar-primary: #6a75e2;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1f1f1f;
-  --sidebar-ring: #6a75e2;
+  --sidebar: oklch(0.1286 0 0);
+  --sidebar-foreground: oklch(0.6573 0.0029 286.3191);
+  --sidebar-primary: oklch(0.6493 0.1862 267.3965);
+  --sidebar-primary-foreground: oklch(0.9973 0.0013 286.3762);
+  --sidebar-accent: oklch(0.2167 0.0015 197.0424);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.2344 0.0024 247.9303);
+  --sidebar-ring: oklch(0.556 0 0);
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --spacing: 0.25rem;
 }
 
@@ -65,29 +64,40 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-border-light: var(--border-light);
+
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -97,14 +107,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
   --default-border-width: 0.5px;
 
