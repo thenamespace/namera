@@ -9,7 +9,7 @@
 @source "../node_modules/@streamdown/code/dist/*.js";
 
 pre:has(.line.focused) .line {
-  opacity: 0.35;
+  opacity: 0.45;
   transition: opacity 0.2s ease;
 }
 
@@ -31,4 +31,8 @@ pre code .twoslash-hover {
 pre:hover code .twoslash-hover {
   text-decoration-color: rgba(255, 255, 255, 0.4);
   cursor: help;
+}
+
+.bg-fd-secondary {
+  background-color: #171718;
 }

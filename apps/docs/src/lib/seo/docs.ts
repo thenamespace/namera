@@ -1,6 +1,8 @@
 import { env } from "@/lib/env";
 import type { DocsMetadata } from "@/types";
 
+import { nameraIcon } from "./common";
+
 const formatSlugToName = (slug: string) => {
   return slug
     .split("-")
@@ -71,7 +73,7 @@ export const generateDocsSeo = (metadata: DocsMetadata) => {
       { content: "index, follow", name: "robots" },
       { content: keywords.join(", "), name: "keywords" },
       // Open Graph
-      { content: "Namera", property: "og:site_name" },
+      { content: "Namera Documentation", property: "og:site_name" },
       { content: "website", property: "og:type" },
       { content: metadata.title, property: "og:title" },
       { content: metadata.description, property: "og:description" },
@@ -114,9 +116,9 @@ export const generateDocsSeo = (metadata: DocsMetadata) => {
               "@type": "Organization",
               logo: {
                 "@type": "ImageObject",
-                height: "60",
-                url: new URL("/metadata/icon.png", baseUrl).toString(),
-                width: "600",
+                height: "512",
+                url: nameraIcon,
+                width: "512",
               },
               name: "Namera",
               url: baseUrl,

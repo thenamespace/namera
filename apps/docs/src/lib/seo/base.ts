@@ -2,6 +2,7 @@ import { faqs } from "@/sections";
 import appCss from "@/styles/globals.css?url";
 
 import { env } from "../env";
+import { baseOgImage, nameraIcon } from "./common";
 
 export const getBaseSeo = () => {
   const canonicalUrl = new URL("/", env.baseUrl);
@@ -30,11 +31,11 @@ export const getBaseSeo = () => {
       {
         "@id": new URL("#org", env.baseUrl).toString(),
         "@type": "Organization",
-        logo: new URL("/metadata/icon.png", env.baseUrl).toString(),
+        logo: nameraIcon,
         name: "Namera",
         sameAs: [
           "https://x.com/namera_ai",
-          "https://t.me/namera_devs",
+          "https://linkedin.com/company/namera-ai",
           "https://github.com/thenamespace/namera",
         ],
         url: env.baseUrl.toString(),
@@ -82,7 +83,7 @@ export const getBaseSeo = () => {
         },
         category: "Developer Tools",
         description,
-        image: new URL("/metadata/og.png", env.baseUrl).toString(),
+        image: baseOgImage,
         name: "Namera Smart Accounts SDK",
         offers: {
           "@type": "Offer",
@@ -112,13 +113,13 @@ export const getBaseSeo = () => {
     links: [
       { href: appCss, rel: "stylesheet" },
       { href: canonicalUrl.toString(), rel: "canonical" },
-      { href: "/metadata/icon.png", rel: "icon" },
+      { href: nameraIcon, rel: "icon" },
     ],
     meta: [
       // Base Tags
       { charSet: "utf-8" },
       { content: "width=device-width, initial-scale=1", name: "viewport" },
-      { content: "#0b0c14", name: "theme-color" },
+      { content: "#08090a", name: "theme-color" },
       { content: "Namera", name: "author" },
       { content: "Namera", name: "publisher" },
       { title },
@@ -131,7 +132,7 @@ export const getBaseSeo = () => {
       { content: description, property: "og:description" },
       { content: "website", property: "og:type" },
       { content: env.baseUrl.toString(), property: "og:url" },
-      { content: "/metadata/og.png", property: "og:image" },
+      { content: baseOgImage, property: "og:image" },
       { content: "Namera", property: "og:site_name" },
       { content: "en_US", property: "og:locale" },
       { content: "Namera Smart Wallets", property: "og:image:alt" },
@@ -139,7 +140,7 @@ export const getBaseSeo = () => {
       { content: "summary_large_image", name: "twitter:card" },
       { content: title, name: "twitter:title" },
       { content: description, name: "twitter:description" },
-      { content: "/metadata/og.png", name: "twitter:image" },
+      { content: baseOgImage, name: "twitter:image" },
       { content: "@namera_ai", name: "twitter:creator" },
     ],
     scripts: [

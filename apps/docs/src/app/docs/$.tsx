@@ -17,7 +17,7 @@ import {
 import browserCollections from "fumadocs-mdx:collections/browser";
 
 import { getMDXComponents } from "@/components";
-// import { AISearch, AISearchPanel } from "@/components/ai/search";
+import { AISearch, AISearchPanel } from "@/components/ai/search";
 import {
   LLMCopyButton,
   ViewOptions,
@@ -105,39 +105,39 @@ const DocsPage = () => {
   }, [data.url]);
 
   return (
-    // <AISearch>
-    <DocsLayout
-      {...baseOptions()}
-      sidebar={{
-        tabs: {
-          transform(option) {
-            return {
-              ...option,
-              icon: (
-                <div
-                  className={cn(
-                    "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
-                  )}
-                >
-                  {option.icon}
-                </div>
-              ),
-            };
+    <AISearch>
+      <DocsLayout
+        {...baseOptions()}
+        sidebar={{
+          tabs: {
+            transform(option) {
+              return {
+                ...option,
+                icon: (
+                  <div
+                    className={cn(
+                      "[&_svg]:size-full rounded-lg size-full max-md:border max-md:p-1.5",
+                    )}
+                  >
+                    {option.icon}
+                  </div>
+                ),
+              };
+            },
           },
-        },
-      }}
-      tabMode="navbar"
-      tree={data.pageTree}
-    >
-      {/* <AISearchPanel /> */}
-      <Suspense>
-        {clientLoader.useContent(data.path, {
-          path: data.path,
-          url: data.url,
-        })}
-      </Suspense>
-    </DocsLayout>
-    // </AISearch>
+        }}
+        tabMode="navbar"
+        tree={data.pageTree}
+      >
+        <AISearchPanel />
+        <Suspense>
+          {clientLoader.useContent(data.path, {
+            path: data.path,
+            url: data.url,
+          })}
+        </Suspense>
+      </DocsLayout>
+    </AISearch>
   );
 };
 
