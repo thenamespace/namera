@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import { NameraIcon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/lib/utils";
 
@@ -101,16 +103,28 @@ export const Footer = ({ showDesign = true }: { showDesign?: boolean }) => {
                   {group.links.map((link) => {
                     const isExternal = link.external;
 
+                    if (isExternal) {
+                      return (
+                        <a
+                          className="text-muted-foreground hover:text-foreground text-sm transition-all"
+                          href={link.href}
+                          key={link.title}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          {link.title}
+                        </a>
+                      );
+                    }
+
                     return (
-                      <a
+                      <Link
                         className="text-muted-foreground hover:text-foreground text-sm transition-all"
-                        href={link.href}
                         key={link.title}
-                        rel="noopener noreferrer"
-                        target={isExternal ? "_blank" : "_self"}
+                        to={link.href}
                       >
                         {link.title}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>
