@@ -6,14 +6,7 @@ import {
 } from "@takumi-rs/image-response";
 import { Schema } from "effect";
 
-import {
-  BlogOgImageResponse,
-  BlogOgParams,
-  DocsOgImageResponse,
-  DocsOgParams,
-} from "@/components/og";
-
-const OgParams = Schema.Union([BlogOgParams, DocsOgParams]);
+import { CommonOgImageResponse, CommonOgParams } from "@/components/og";
 
 export const Route = createFileRoute("/api/og")({
   server: {
@@ -22,7 +15,7 @@ export const Route = createFileRoute("/api/og")({
         const url = new URL(request.url);
 
         const searchParams = Object.fromEntries(url.searchParams.entries());
-        const search = Schema.decodeUnknownOption(OgParams)(searchParams);
+        const search = Schema.decodeUnknownOption(CommonOgParams)(searchParams);
 
         if (search._tag === "None") {
           return Response.json(
@@ -60,23 +53,9 @@ export const Route = createFileRoute("/api/og")({
           width: 1200,
         };
 
-        if (search.value.type === "blog") {
-          return new ImageResponse(
-            <BlogOgImageResponse {...search.value} baseUrl={url.toString()} />,
-            imageOptions,
-          );
-        }
-
-        if (search.value.type === "docs") {
-          return new ImageResponse(
-            <DocsOgImageResponse {...search.value} baseUrl={url.toString()} />,
-            imageOptions,
-          );
-        }
-
-        return Response.json(
-          { error: "Invalid search params" },
-          { status: 400 },
+        return new ImageResponse(
+          <CommonOgImageResponse {...search.value} />,
+          imageOptions,
         );
       },
     },

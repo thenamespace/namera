@@ -47,7 +47,7 @@ const serverLoader = createServerFn({
         ogImage.searchParams.set("type", "blog");
         ogImage.searchParams.set("description", page.data.description ?? "");
         ogImage.searchParams.set("lastUpdatedDate", dateModified.toISOString());
-        ogImage.searchParams.set("paths", `Blog,${page.data.title}`);
+        ogImage.searchParams.set("paths", "Blog");
         ogImage.searchParams.set("title", page.data.title);
         image = ogImage.toString();
       }

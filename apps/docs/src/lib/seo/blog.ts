@@ -15,10 +15,9 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
     imageLink = metadata.image;
   } else {
     const ogImage = new URL("/api/og", env.baseUrl);
-    ogImage.searchParams.set("type", "blog");
     ogImage.searchParams.set("description", metadata.description ?? "");
     ogImage.searchParams.set("lastUpdatedDate", dateModified);
-    ogImage.searchParams.set("paths", `Blog,${metadata.title}`);
+    ogImage.searchParams.set("paths", "Blog");
     ogImage.searchParams.set(
       "readTime",
       metadata.readingTime.minutes.toString(),

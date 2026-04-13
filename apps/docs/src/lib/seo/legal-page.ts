@@ -21,7 +21,7 @@ export const getLegalPageSeo = ({
   ogImage.searchParams.set("type", "docs");
   ogImage.searchParams.set("description", description ?? "");
   ogImage.searchParams.set("lastUpdatedDate", dateModified);
-  ogImage.searchParams.set("paths", title);
+  ogImage.searchParams.set("paths", "Legal");
   ogImage.searchParams.set("readTime", readingTime.minutes.toString());
   ogImage.searchParams.set("title", title);
 

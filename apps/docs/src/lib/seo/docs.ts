@@ -29,9 +29,7 @@ export const generateDocsSeo = (metadata: DocsMetadata) => {
     : [];
 
   const category = getCategory(metadata.slugs[0]);
-  const paths = ["Documentation", category, metadata.title]
-    .filter(Boolean)
-    .join(",");
+  const paths = ["Documentation", category].filter(Boolean).join(",");
 
   const ogImage = new URL("/api/og", baseUrl);
   ogImage.searchParams.set("type", "docs");
