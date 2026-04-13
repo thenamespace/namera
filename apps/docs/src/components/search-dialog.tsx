@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { buttonVariants } from "@namera-ai/ui/components/ui/button";
 import { cn } from "@namera-ai/ui/lib/utils";
-import { usePostHog } from "@posthog/react";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import {
   SearchDialog,
@@ -31,34 +30,23 @@ const items = [
     value: undefined,
   },
   {
-    description: "Only results about framework guides",
-    name: "Framework",
-    value: "framework",
+    description: "Only results about platform guides",
+    name: "Platform",
+    value: "platform",
   },
   {
-    description: "Only results about Core",
-    name: "Core",
-    value: "core",
+    description: "Only results about SDKs",
+    name: "SDKs",
+    value: "sdk",
   },
   {
     description: "Only results about CLI",
     name: "CLI",
     value: "cli",
   },
-  // {
-  //   description: "Only results about MCP",
-  //   name: "MCP",
-  //   value: "mcp",
-  // },
-  // {
-  //   description: "Only results about x402",
-  //   name: "x402",
-  //   value: "x402",
-  // },
 ];
 
 export const CustomSearchDialog = (props: SharedProps) => {
-  const posthog = usePostHog();
   const [open, setOpen] = useState(false);
   const [tag, setTag] = useState<string | undefined>();
   const { search, setSearch, query } = useDocsSearch({
@@ -74,14 +62,14 @@ export const CustomSearchDialog = (props: SharedProps) => {
       {...props}
     >
       <SearchDialogOverlay />
-      <SearchDialogContent className="bg-card">
+      <SearchDialogContent>
         <SearchDialogHeader>
           <SearchDialogIcon />
           <SearchDialogInput />
           <SearchDialogClose />
         </SearchDialogHeader>
         <SearchDialogList items={query.data !== "empty" ? query.data : null} />
-        <SearchDialogFooter className="flex flex-row flex-wrap gap-2 items-center">
+        <SearchDialogFooter className="flex flex-row flex-wrap gap-2 items-center bg-popover">
           <Popover modal={false} onOpenChange={setOpen} open={open}>
             <PopoverTrigger
               className={buttonVariants({
@@ -106,17 +94,14 @@ export const CustomSearchDialog = (props: SharedProps) => {
                     className={cn(
                       "rounded-lg text-start px-2 py-1.5",
                       isSelected
-                        ? "text-fd-primary bg-fd-primary/10"
-                        : "hover:bg-[#727DA1]/15",
+                        ? "text-accent-foreground bg-accent"
+                        : "hover:bg-accent",
                     )}
                     key={i.toString()}
                     onClick={(e) => {
                       e.preventDefault();
                       setTag(item.value);
                       setOpen(false);
-                      posthog.capture("search_filter_changed", {
-                        filter: item.name,
-                      });
                     }}
                     type="button"
                   >

@@ -43,6 +43,7 @@ const serverLoader = createServerFn({
       readingTime,
       slug: page.slugs[0] ?? "",
       title: page.data.title,
+      image: page.data.image,
     };
 
     return {

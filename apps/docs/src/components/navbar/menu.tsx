@@ -18,13 +18,13 @@ export const Menu = () => {
         <NavigationMenuItem className="hidden sm:flex">
           <NavigationMenuTrigger>Product</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="w-lg bg-neutral-500/10 h-32 rounded-lg border-[0.5px] backdrop-blur-sm" />
+            <ul className="w-lg bg-muted h-32 rounded-lg border backdrop-blur-sm" />
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem className="hidden sm:flex">
           <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="w-lg bg-neutral-600/10 h-32 rounded-md border-[0.5px]" />
+            <ul className="w-lg bg-muted h-32 rounded-md border" />
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem className="hidden sm:flex">
@@ -52,8 +52,8 @@ export const Menu = () => {
             Docs
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <Button>Get Started</Button>
+        <NavigationMenuItem render={<Button render={<Link to="/docs/$" />} />}>
+          Get Started
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>

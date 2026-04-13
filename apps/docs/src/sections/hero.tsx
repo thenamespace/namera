@@ -17,6 +17,8 @@ export const Hero = () => {
           <video
             autoPlay={true}
             className="w-full rounded-2xl my-4"
+            controls={false}
+            disablePictureInPicture={true}
             loop={true}
             muted={true}
             src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcKlPJKvydv8A6jcXM3ehpNnSUiG7f0Vs2glHFW"

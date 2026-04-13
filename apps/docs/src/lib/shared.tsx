@@ -42,7 +42,7 @@ export const baseOptions = (): BaseLayoutProps => {
       // @ts-expect-error safe
       mode: "top",
       title: (
-        <div className="text-lg flex flex-row gap-2 items-center px-1 text-accent-foreground">
+        <div className="text-lg flex flex-row gap-2 items-center text-accent-foreground px-2">
           <NameraIcon className="size-4.5 fill-accent-foreground" />
           <div className="font-medium">Namera</div>
         </div>

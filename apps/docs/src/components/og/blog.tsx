@@ -20,7 +20,7 @@ export const BlogOgImageResponse = (
 ) => {
   const url = new URL(params.baseUrl);
 
-  const spotLightUrl = new URL("/assets/spotlight.jpg", url);
+  // const spotLightUrl = new URL("/assets/spotlight.jpg", url);
 
   const relativeTime = humanizeRelativeTime(new Date(params.lastUpdatedDate));
 
@@ -28,11 +28,11 @@ export const BlogOgImageResponse = (
 
   return (
     <div tw="bg-[#0B0C14] h-full w-full flex items-center">
-      <img
+      {/* <img
         alt="spotlight"
         src={spotLightUrl.toString()}
         tw="absolute top-0 left-0 h-full w-full object-cover"
-      />
+      /> */}
       <div tw="absolute bottom-8 right-12 flex flex-row items-center gap-2">
         <svg
           fill="#C9D3EE"

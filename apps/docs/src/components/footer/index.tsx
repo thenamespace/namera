@@ -1,4 +1,5 @@
 import { NameraIcon } from "@namera-ai/ui/icons";
+import { cn } from "@namera-ai/ui/lib/utils";
 
 const navigationGroups = [
   {
@@ -73,7 +74,7 @@ const navigationGroups = [
   },
 ];
 
-export const Footer = () => {
+export const Footer = ({ showDesign = true }: { showDesign?: boolean }) => {
   return (
     <div className="flex flex-col gap-4">
       <footer className="w-full">
@@ -118,14 +119,23 @@ export const Footer = () => {
           </div>
         </div>
       </footer>
-      <div className="max-w-7xl justify-end flex mx-auto w-full text-sm text-muted-foreground pb-[10dvh] sm:pb-[15dvh] md:pb-[20dvh] px-4 lg:pb-[25dvh]">
+      <div
+        className={cn(
+          "max-w-7xl justify-center md:justify-end flex mx-auto w-full text-xs text-muted-foreground",
+          showDesign
+            ? "pb-[10dvh] sm:pb-[15dvh] md:pb-[20dvh] px-4 lg:pb-[25dvh]"
+            : "pb-4",
+        )}
+      >
         © 2026 Namespace Inc. All rights reserved.
       </div>
-      <div className="absolute bottom-0 left-1/2 overflow-hidden -translate-x-1/2 pointer-events-none">
-        <div className="text-[30dvw] sm:text-[30dvw] leading-none select-none text-muted [textStroke:1px_var(--color-neutral-700)] translate-y-1/4 [-webkit-text-stroke:1px_var(--color-neutral-700)]">
-          namera
+      {showDesign && (
+        <div className="absolute bottom-0 left-1/2 overflow-hidden -translate-x-1/2 pointer-events-none">
+          <div className="text-[30dvw] sm:text-[30dvw] leading-none select-none text-muted [textStroke:1px_var(--color-neutral-700)] translate-y-1/4 [-webkit-text-stroke:1px_var(--color-neutral-700)]">
+            namera
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

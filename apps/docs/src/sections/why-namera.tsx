@@ -31,7 +31,7 @@ const MovingRails = () => {
         <div className="flex w-max animate-[scroll_20s_linear_infinite] gap-10">
           {[...lines, ...lines].map((_, i) => (
             <div
-              className="rounded-full bg-border border h-px opacity-80"
+              className="rounded-full border-neutral-700 h-px border opacity-80"
               key={`slow-${i.toString()}`}
               style={{
                 marginTop: `${Math.random() * 160}px`,
@@ -45,7 +45,7 @@ const MovingRails = () => {
         <div className="flex w-max animate-[scroll_8s_linear_infinite] gap-10">
           {[...lines, ...lines].map((_, i) => (
             <div
-              className="rounded-full bg-border border h-px"
+              className="rounded-full border-neutral-700 border h-px"
               key={`fast-${i.toString()}`}
               style={{
                 marginTop: `${Math.random() * 160}px`,
@@ -72,17 +72,17 @@ export const WhyNamera = () => {
       </h2>
       <div className="flex-col items-center lg:items-start flex lg:flex-row max-w-4xl mx-auto w-full justify-between py-24 gap-8 lg:gap-0">
         <div className="flex flex-col gap-4 pt-12">
-          <div className="bg-popover rounded-xl h-28 lg:w-[16rem] w-full relative overflow-hidden">
+          <div className="bg-muted rounded-xl h-28 lg:w-[16rem] w-full relative overflow-hidden">
             <MovingRails />
             <div className="absolute top-1/2 right-1/2 size-6 bg-white rounded-full flex items-center justify-center animate-path confused translate-x-1/2">
               <QuestionMarkIcon className="text-border" strokeWidth={2} />
             </div>
           </div>
           <div className="flex flex-col gap-2 w-full">
-            <div className="text-lg text-foreground/70 font-medium py-4 w-full">
+            <div className="text-lg text-muted-foreground font-medium py-4 w-full">
               Without Namera...
             </div>
-            <div className="flex flex-col text-sm gap-2 text-foreground/70">
+            <div className="flex flex-col text-sm gap-2 text-muted-foreground">
               {withoutNamera.map((text, i) => (
                 <div
                   className="flex flex-row gap-2 items-center"
@@ -96,7 +96,7 @@ export const WhyNamera = () => {
           </div>
         </div>
         <div className="flex flex-col gap-4 ">
-          <div className="max-w-[24rem] bg-popover rounded-xl h-40 w-full overflow-hidden relative">
+          <div className="max-w-[24rem] bg-muted rounded-xl h-40 w-full overflow-hidden relative">
             <MovingRails />
             <div className="rotate-90 absolute top-1/2 right-1/2">
               <TriangleIcon

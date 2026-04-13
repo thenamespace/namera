@@ -86,7 +86,7 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
     <Tooltip>
       <TooltipTrigger>
         <motion.div
-          className="size-16 rounded-2xl border-[0.5px] flex items-center justify-center"
+          className="size-16 rounded-2xl border flex items-center justify-center"
           key={icon.title}
           transition={{
             duration: 0.6,
@@ -96,7 +96,7 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
         >
           <img
             alt={icon.title}
-            className="size-8 rounded-lg"
+            className="size-9 rounded-sm"
             src={icon.src}
             title={icon.title}
           />
@@ -161,7 +161,7 @@ export const Integrate = () => {
             <IconComponent icon={icon} index={i} key={icon.title} />
           ))}
         </div>
-        <div className="size-32 border-[0.5px] flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
+        <div className="size-32 border flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
           <NameraIcon className="size-16 fill-white" />
         </div>
         <div className="flex flex-row items-center gap-4">
@@ -171,7 +171,7 @@ export const Integrate = () => {
         </div>
       </div>
       <div className="gap-12 py-[15dvh] mx-auto lg:hidden flex-row flex relative items-center justify-center">
-        <div className="size-32 border-[0.5px] flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
+        <div className="size-32 border flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
           <NameraIcon className="size-16 fill-white" />
         </div>
         <div className="absolute w-full h-full">
@@ -199,7 +199,7 @@ export const Integrate = () => {
                 }}
               >
                 <motion.div
-                  className="size-16 rounded-2xl border-[0.5px] flex items-center justify-center"
+                  className="size-16 rounded-2xl border flex items-center justify-center"
                   style={{}}
                 >
                   <img

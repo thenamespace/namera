@@ -4,10 +4,10 @@ import { Footer, Navbar } from "@/components";
 
 const BlogLayout = () => {
   return (
-    <div>
+    <div className="bg-[#08090a]">
       <Navbar />
       <Outlet />
-      <Footer />
+      <Footer showDesign={false} />
     </div>
   );
 };

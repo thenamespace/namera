@@ -73,7 +73,7 @@ const ChangelogPage = () => {
           <div className="text-sm text-muted-foreground">CHANGELOG</div>
           <div className="w-full border-t" />
         </div>
-        <div className="overflow-scroll hide-scrollbar">
+        <div className="overflow-scroll no-scrollbar">
           {messages.map((release) => (
             <Changelog {...release} key={release.url} />
           ))}

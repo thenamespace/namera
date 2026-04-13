@@ -35,6 +35,7 @@ export const blog = defineDocs({
       author: z.string(),
       authorUrl: z.string().optional(),
       date: z.iso.date().or(z.date()),
+      image: z.string().optional(),
     }),
   },
 });

@@ -16,6 +16,7 @@ export type BlogMetadata = {
   lastModified: Date;
   slug: string;
   readingTime: ReadingTimeResult;
+  image?: string;
 };
 
 export type DocsMetadata = {
@@ -35,4 +36,5 @@ export type BlogCardProps = {
   datePublished: Date;
   lastModified: Date;
   slug: string;
+  image: string;
 };
