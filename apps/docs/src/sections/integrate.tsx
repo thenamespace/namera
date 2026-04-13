@@ -71,7 +71,7 @@ type IconComponentProps = {
 
 const IconComponent = ({ icon, index }: IconComponentProps) => {
   const sign = index % 2 === 0 ? -1 : 1;
-  const translateY = sign * (80 + Math.random() * 80);
+  const translateY = sign * (80 + (index % 4) * 20);
 
   const variants = {
     hidden: {
