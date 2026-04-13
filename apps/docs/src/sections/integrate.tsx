@@ -6,7 +6,13 @@ import {
   TooltipTrigger,
 } from "@namera-ai/ui/components/ui/tooltip";
 import { NameraIcon } from "@namera-ai/ui/icons";
-import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import {
+  animate,
+  type MotionValue,
+  motion,
+  useMotionValue,
+  useTransform,
+} from "motion/react";
 
 const leftIcons = [
   {
@@ -63,6 +69,48 @@ const rightIcons = [
 ];
 
 const logos = [...leftIcons, ...rightIcons];
+
+const LogoOrbitItem = ({
+  logo,
+  rotation,
+  i,
+}: {
+  logo: (typeof logos)[number];
+  i: number;
+  rotation: MotionValue<number>;
+}) => {
+  const baseAngle = (i / logos.length) * 360;
+  const angle = useTransform(
+    rotation,
+    (r) => (r + baseAngle) * (Math.PI / 180),
+  );
+
+  const x = useTransform(angle, (a) => Math.cos(a) * 160);
+  const y = useTransform(angle, (a) => Math.sin(a) * 160);
+
+  return (
+    <motion.div
+      className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
+      key={logo.title}
+      style={{
+        x,
+        y,
+      }}
+    >
+      <motion.div
+        className="size-16 rounded-2xl border flex items-center justify-center"
+        style={{}}
+      >
+        <img
+          alt={logo.title}
+          className="size-8 rounded-lg"
+          src={logo.src}
+          title={logo.title}
+        />
+      </motion.div>
+    </motion.div>
+  );
+};
 
 type IconComponentProps = {
   icon: (typeof leftIcons)[number];
@@ -176,40 +224,13 @@ export const Integrate = () => {
         </div>
         <div className="absolute w-full h-full">
           {logos.map((logo, i) => {
-            const baseAngle = (i / logos.length) * 360;
-
-            // biome-ignore lint/correctness/useHookAtTopLevel: safe as order is maintained
-            const angle = useTransform(
-              rotation,
-              (r) => (r + baseAngle) * (Math.PI / 180),
-            );
-
-            // biome-ignore lint/correctness/useHookAtTopLevel: safe as order is maintained
-            const x = useTransform(angle, (a) => Math.cos(a) * 160);
-            // biome-ignore lint/correctness/useHookAtTopLevel: safe as order is maintained
-            const y = useTransform(angle, (a) => Math.sin(a) * 160);
-
             return (
-              <motion.div
-                className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
+              <LogoOrbitItem
+                i={i}
                 key={logo.title}
-                style={{
-                  x,
-                  y,
-                }}
-              >
-                <motion.div
-                  className="size-16 rounded-2xl border flex items-center justify-center"
-                  style={{}}
-                >
-                  <img
-                    alt={logo.title}
-                    className="size-8 rounded-lg"
-                    src={logo.src}
-                    title={logo.title}
-                  />
-                </motion.div>
-              </motion.div>
+                logo={logo}
+                rotation={rotation}
+              />
             );
           })}
         </div>
