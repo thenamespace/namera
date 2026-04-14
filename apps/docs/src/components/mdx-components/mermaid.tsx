@@ -31,12 +31,38 @@ function MermaidContent({ chart }: { chart: string }) {
     cachePromise("mermaid", () => import("mermaid")),
   );
 
+  const nodeBg = "#27272a";
+  const nodeBorder = "#52525b";
+  const clusterBg = "#3f3f46";
+  const clusterBorder = "#52525b";
+
   mermaid.initialize({
-    fontFamily: "inherit",
-    securityLevel: "loose",
+    flowchart: {
+      curve: "basis",
+      htmlLabels: true,
+      nodeSpacing: 40,
+      padding: 12,
+      rankSpacing: 40,
+    },
     startOnLoad: false,
-    theme: "dark",
-    themeCSS: "margin: 1.5rem auto 0;",
+    theme: "base",
+    themeVariables: {
+      clusterBkg: clusterBg,
+      clusterBorder,
+      edgeLabelBackground: nodeBg,
+      fontFamily:
+        'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+      fontSize: "14px",
+      lineColor: "#71717a",
+      mainBkg: nodeBg,
+      nodeBorder,
+      primaryBorderColor: clusterBorder,
+      primaryColor: clusterBg,
+      primaryTextColor: "#e4e4e7",
+      secondaryColor: nodeBg,
+      tertiaryColor: clusterBg,
+      titleColor: "#e4e4e7",
+    },
   });
 
   const { svg, bindFunctions } = use(

@@ -10,10 +10,12 @@ import type { MDXComponents } from "mdx/types";
 
 import * as files from "./files";
 import * as mermaid from "./mermaid";
+import * as sequenceAnimated from "./sequence-animated";
 
 export function getMDXComponents(): MDXComponents {
   return {
     ...defaultMdxComponents,
+    ...sequenceAnimated,
     ...mermaid,
     ...files,
     ...tabsComponents,
