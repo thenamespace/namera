@@ -40,8 +40,6 @@ export const baseOptions = (): BaseLayoutProps => {
       },
     ],
     nav: {
-      // @ts-expect-error safe
-      mode: "top",
       title: (
         <div className="text-lg flex flex-row gap-2 items-center text-accent-foreground px-2">
           <NameraIcon className="size-4.5 fill-accent-foreground" />
@@ -60,8 +58,6 @@ export const baseOptions = (): BaseLayoutProps => {
 export const blogBaseOptions = (): BaseLayoutProps => {
   return {
     nav: {
-      // @ts-expect-error safe
-      mode: "top",
       title: (
         <div className="text-lg flex flex-row gap-2 items-center px-1 text-[#C9D3EE]">
           <NameraIcon className="size-4.5 fill-[#C9D3EE]" />

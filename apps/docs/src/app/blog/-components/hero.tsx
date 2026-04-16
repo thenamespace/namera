@@ -43,8 +43,8 @@ export const BlogHero = () => {
   return (
     <div className="relative">
       <div className="flex flex-col gap-6">
-        <h1 className="text-4xl font-semibold">Blog</h1>
-        <div className="flex flex-row items-center justify-between">
+        <h1 className="text-3xl sm:text-4xl font-semibold">Blog</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-row items-center gap-3 text-sm">
             <span className="cursor-pointer">All</span>
             <span className="text-muted-foreground cursor-pointer">
@@ -58,8 +58,8 @@ export const BlogHero = () => {
               Community
             </span>
           </div>
-          <div className="flex flex-row items-center gap-2">
-            <InputGroup className="max-w-sm w-full h-10 rounded-full">
+          <div className="flex flex-row items-center gap-2 w-full sm:w-max">
+            <InputGroup className="sm:max-w-sm w-full h-10 rounded-full">
               <InputGroupInput
                 onChange={(e) => {
                   const value = e.target.value;

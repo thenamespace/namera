@@ -26,22 +26,11 @@ Instead, we give them everything.
 
 If you've built anything even slightly automated in crypto, you've probably done this.
 
-You spin up a bot, give it a private key, and let it run.
+You spin up a bot, give it a private key, and let it run. A trading bot sits there executing strategies with full access to funds. It doesn't need most of that power, but there's no real way to scope it down. So it just has everything.
 
-A trading bot sits there executing strategies with full access to funds. It doesn't need most of that power, but there's no real way to scope it down. So it just... has everything.
+Sometimes it's simpler. A script. A cron job. Something that runs every few minutes and performs a task. Same key. Same level of control as the actual user.
 
-Sometimes it's even simpler. A script. A cron job. Something that runs every few minutes and performs a task. And again, it uses the same key. The same level of control as the actual user. And now with AI agents, we're taking it a step further. We're giving systems that are inherently unpredictable direct signing authority. Not limited access. Not scoped permissions. Just a private key and full control.
-
-<SequenceDiagram chart={`
-sequenceDiagram
-    participant Agent
-    participant Account
-    participant Blockchain
-
-    Agent->>Account: Sign transaction (private key)
-    Account->>Blockchain: Execute ANY action
-    Blockchain-->>Agent: Success / Failure
-`} />
+And now with AI agents, we're taking it further. We're giving systems that are inherently unpredictable direct signing authority. Not limited access. Not scoped permissions. A private key and full control.
 
 And once the agent has the key, the account doesn't distinguish:
 
@@ -51,9 +40,7 @@ And once the agent has the key, the account doesn't distinguish:
 
 Everything is just allowed.
 
-It works. That's the thing, all of these setups work. They get the job done and they're already in production, everywhere.
-
-But if you zoom out, they all rely on the same pattern.
+It works. That's the thing, all of these setups work. They get the job done and they're already in production, everywhere. But if you zoom out, they all rely on the same pattern.
 
 Everything is built around a single primitive - **the private key**.
 
@@ -65,43 +52,38 @@ The pattern we just saw isn't accidental. It's a direct result of how accounts a
 
 At the core, most crypto accounts are still tied to a private key. It's a simple model, and for a long time, it worked. But it comes with a hard limitation, it assumes that whoever is using the account should have full control over it.
 
-That assumption breaks the moment you introduce automation, and the current model just doesn't express that.
+That assumption made sense when accounts had one user. It breaks the moment you introduce automation.
 
-### What if accounts weren't tied to keys at all?
+The key doesn't know if it's being used by its owner or by a bot running on someone else's infrastructure. It doesn't know if the transaction is intentional or the result of a bug three layers deep in an agent's reasoning chain. It just signs and executes.
 
-Instead of thinking of an account as something controlled by a key, you can think of it as something that enforces rules.
+What we actually need is partial trust. The ability to say "this system is allowed to do this specific thing, under these specific conditions, and nothing else."
 
-This is the shift that things like [account abstraction](https://ethereum.org/roadmap/account-abstraction/) are pushing toward. Instead of relying on a single private key for every action, accounts can define their own validation logic - how transactions are approved, under what conditions, and by whom.
+## What If Accounts Could Enforce Rules?
 
-An account can decide what is allowed, not just who can sign, but:
+Instead of thinking of an account as something *controlled by a key*, think of it as something that *enforces rules*. Not just who can sign, but what is valid, how much can be spent, and when execution is allowed.
 
-- what actions are valid
-- how much can be spent
-- when something is allowed to execute
+This is what [account abstraction](https://ethereum.org/roadmap/account-abstraction/) makes possible. Rather than a single private key governing every action, accounts can define their own validation logic. The account itself becomes programmable with unique rules and policies.
 
-Instead of a static key, you get a programmable system.
-
-### Permissions instead of ownership
+Instead of ownership, you issue permissions.
 
 Once you start thinking this way, the model changes completely. You don't hand over a private key anymore. You grant permissions.
 
-And those permissions can be scoped:
+And permissions can be scoped:
 
-- limited to a specific contract
-- capped to a certain amount
-- valid only for a period of time
+- limited to a specific contract or protocol
+- capped at a spend limit per transaction or in total
+- valid only within a defined time window
+- restricted to specific action types
 
 This is where concepts like session keys come in.
 
-A [session key](https://docs.erc4337.io/smart-accounts/session-keys-and-delegation.html?utm_source=chatgpt.com) is essentially a delegated signer with constraints. It can execute transactions on behalf of an account but only within predefined limits, like time, value, or allowed actions.
+A [session key](https://docs.erc4337.io/smart-accounts/session-keys-and-delegation.html?utm_source=chatgpt.com) is a delegated signer with built-in constraints. It can execute transactions on behalf of an account, but only within the rules attached to it. When the session expires, or a limit is hit, or a disallowed action is attempted, the account rejects it. Not at the application layer. At the account layer.
 
-Instead of giving an agent full control, you give it a session key:
+What you're giving an agent isn't access to the account. You're giving it a scoped credential that only works inside a defined boundary:
 
 - valid for 1 hour
 - allowed to trade up to a limit
 - restricted to a specific protocol
-
-And importantly, it never has access to the main key.
 
 <SequenceDiagram chart={`
 sequenceDiagram

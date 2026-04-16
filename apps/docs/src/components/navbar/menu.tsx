@@ -120,7 +120,14 @@ export const Menu = () => {
             Docs
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem render={<Button render={<Link to="/docs/$" />} />}>
+        <NavigationMenuItem
+          render={
+            <Button
+              className="bg-accent-foreground text-accent font-medium hover:bg-accent-foreground/80!"
+              render={<Link to="/docs/$" />}
+            />
+          }
+        >
           Get Started
         </NavigationMenuItem>
       </NavigationMenuList>

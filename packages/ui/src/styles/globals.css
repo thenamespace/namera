@@ -41,7 +41,7 @@
   --chart-4: #b675d7;
   --chart-5: #67a6e4;
 
-  --sidebar: var(--background);
+  --sidebar: oklch(13.441% 0.00002 271.152);
   --sidebar-foreground: oklch(0.6573 0.0029 286.3191);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.9973 0.0013 286.3762);
