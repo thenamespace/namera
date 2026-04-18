@@ -69,7 +69,9 @@ export const getGithubReleases = createServerFn({ method: "GET" }).handler(
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          Authorization: `Bearer ${serverEnv.githubToken}`,
+          ...(serverEnv.githubToken
+            ? { Authorization: `Bearer ${serverEnv.githubToken}` }
+            : {}),
         },
       },
     );

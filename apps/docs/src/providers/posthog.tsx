@@ -3,6 +3,8 @@ import { PostHogProvider as PostHogProviderCore } from "@posthog/react";
 import { env } from "@/lib/env";
 
 export const PostHogProvider = ({ children }: React.PropsWithChildren) => {
+  if (!env.postHogToken || !env.postHogHost) return children;
+
   return (
     <PostHogProviderCore
       apiKey={env.postHogToken}

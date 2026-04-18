@@ -71,10 +71,6 @@ async function chunkedAll<O>(promises: Promise<O>[]): Promise<O[]> {
   return out;
 }
 
-const openrouter = createOpenRouter({
-  apiKey: serverEnv.openRouterApiKey,
-});
-
 const systemPrompt = [
   "You are Namera AI, an AI assistant for a Namera documentation site.",
   "Use the `search` tool to retrieve relevant docs context before answering when needed.",
@@ -86,8 +82,17 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async (ctx) => {
+        if (!serverEnv.openRouterApiKey) {
+          return new Response("Chat is not configured for this deployment.", {
+            status: 503,
+          });
+        }
+
         const req = ctx.request;
         const reqJson = await req.json();
+        const openrouter = createOpenRouter({
+          apiKey: serverEnv.openRouterApiKey,
+        });
 
         const result = streamText({
           messages: [
