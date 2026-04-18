@@ -227,7 +227,9 @@ export const SessionKeys = () => {
           Session Keys & Policies
         </p>
         <h2 className="heading-gradient mx-auto max-w-3xl pb-2 text-center text-3xl tracking-tight sm:text-4xl md:text-5xl">
-          Fine-grained control, enforced onchain.
+          Fine-grained control.
+          <br />
+          Enforced onchain.
         </h2>
       </div>
 

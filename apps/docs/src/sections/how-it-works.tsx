@@ -16,7 +16,7 @@ type Step = {
 const steps: Step[] = [
   {
     description:
-      "Deterministic address, deployable on demand. Works before deployment — fund, receive, and plan without an onchain transaction.",
+      "Deterministic address, ready on demand. Fund and receive before deployment.",
     icon: WalletIcon,
     key: "create",
     label: "Smart Account",
@@ -24,7 +24,7 @@ const steps: Step[] = [
   },
   {
     description:
-      "Issue a scoped key to your agent with explicit policy boundaries. The root key never leaves your device.",
+      "Issue scoped session keys to your agents. The root key stays on your device.",
     icon: KeyIcon,
     key: "session",
     label: "Session Key",
@@ -32,7 +32,7 @@ const steps: Step[] = [
   },
   {
     description:
-      "Restrict by contract, function, gas limit, rate, or time window. Every rule is enforced at the smart contract level.",
+      "Restrict contracts, functions, gas, rate, and time windows with one policy layer.",
     icon: ShieldCheckIcon,
     key: "policies",
     label: "Policies",
@@ -40,7 +40,7 @@ const steps: Step[] = [
   },
   {
     description:
-      "Agent signs and submits transactions within the allowed scope. Policies enforced onchain — not on a server.",
+      "Your agent signs and sends transactions only within the scope you define.",
     icon: LightningIcon,
     key: "execute",
     label: "Execution",
@@ -88,32 +88,30 @@ const StepCard = ({ step, index }: { step: Step; index: number }) => {
           className="pointer-events-none absolute top-6 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full opacity-0 blur-2xl"
           style={{ backgroundColor: "rgba(255,255,255,0.45)" }}
         />
+        <span
+          aria-hidden={true}
+          className="pointer-events-none absolute right-5 bottom-4 font-mono text-5xl leading-none text-white/[0.05]"
+        >
+          {String(index + 1).padStart(2, "0")}
+        </span>
 
-        <div className="flex items-start justify-between">
+        <div className="flex items-start">
           <div
             className="flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]"
             style={{ boxShadow: "0 0 20px rgba(255,255,255,0.06)" }}
           >
             <Icon className="size-6 text-white/80" weight="duotone" />
           </div>
-          <div className="flex min-w-[3.25rem] flex-col items-end gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-right">
-            <span className="text-[9px] font-medium tracking-[0.24em] text-white/35 uppercase">
-              Step
-            </span>
-            <span className="font-mono text-sm leading-none text-white/80">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-2">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/40">
             {step.label}
           </span>
           <h3 className="text-lg font-semibold tracking-tight text-white">
             {step.title}
           </h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="min-h-[4.5rem] max-w-[26ch] text-sm leading-relaxed text-muted-foreground">
             {step.description}
           </p>
         </div>

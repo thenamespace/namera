@@ -20,9 +20,9 @@ const Home = () => {
     <div className="min-h-screen overflow-x-hidden bg-[#08090a]">
       <Navbar />
       <Hero />
+      <Products />
       <HowItWorks />
       <SessionKeys />
-      <Products />
       <McpSection />
       <UseCases />
       <Trust />
