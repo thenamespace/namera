@@ -88,6 +88,7 @@ next-env.d.ts
 
 # Vercel
 .vercel/
+.claude/
 
 # tanstack
 .tanstack
@@ -154,3 +155,4 @@ pre-commit.log
 prisma/db.sqlite
 prisma/db.sqlite-journal
 db.sqlite
+.vercel

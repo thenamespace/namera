@@ -40,7 +40,7 @@
     "format:check": "biome format",
     "lint": "biome check --write",
     "lint:check": "biome check",
-    "prepare": "lefthook install"
+    "prepare": "test -d .git && lefthook install || true"
   },
   "version": "0.0.0",
   "workspaces": [

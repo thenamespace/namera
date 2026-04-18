@@ -1,9 +1,13 @@
 import { Config, ConfigProvider, Effect } from "effect";
 
 const ServerEnv = Config.all({
-  githubToken: Config.string("GITHUB_TOKEN"),
-  openRouterApiKey: Config.string("OPENROUTER_API_KEY"),
-  openRouterModel: Config.string("OPENROUTER_MODEL"),
+  githubToken: Config.string("GITHUB_TOKEN").pipe(Config.withDefault("")),
+  openRouterApiKey: Config.string("OPENROUTER_API_KEY").pipe(
+    Config.withDefault(""),
+  ),
+  openRouterModel: Config.string("OPENROUTER_MODEL").pipe(
+    Config.withDefault("openai/gpt-4o-mini"),
+  ),
 });
 
 export const serverEnv = Effect.runSync(

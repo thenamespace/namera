@@ -98,7 +98,7 @@ const LogoOrbitItem = ({
       }}
     >
       <motion.div
-        className="size-16 rounded-2xl border flex items-center justify-center"
+        className="size-16 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]"
         style={{}}
       >
         <img
@@ -131,10 +131,10 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
   };
 
   return (
-    <Tooltip>
+    <Tooltip delay={0}>
       <TooltipTrigger>
         <motion.div
-          className="size-16 rounded-2xl border flex items-center justify-center"
+          className="group size-16 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center justify-center transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06] hover:shadow-[0_12px_28px_-12px_rgba(0,0,0,0.8)]"
           key={icon.title}
           transition={{
             duration: 0.6,
@@ -144,7 +144,7 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
         >
           <img
             alt={icon.title}
-            className="size-9 rounded-sm"
+            className="size-9 rounded-sm transition-transform duration-300 group-hover:scale-110"
             src={icon.src}
             title={icon.title}
           />
@@ -186,31 +186,75 @@ export const Integrate = () => {
 
   return (
     <motion.section
-      className="px-4 py-[10dvh] flex flex-col justify-center gap-12 border bg-[#0F1011] mx-1 rounded-lg overflow-hidden"
+      className="relative px-4 py-[12dvh] flex flex-col justify-center gap-12 border border-white/10 bg-[#0F1011] mx-4 sm:mx-6 rounded-2xl overflow-hidden"
       id="integrate"
       initial="hidden"
       variants={container}
       viewport={{ amount: 0.5, once: false }}
       whileInView="visible"
     >
-      <motion.h2
-        className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl"
-        transition={{
-          duration: 0.2,
-          ease: "easeIn",
+      {/* Subtle grid pattern overlay */}
+      <div
+        aria-hidden={true}
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage:
+            "radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 80%)",
         }}
-        variants={item}
-      >
-        Works with your stack
-      </motion.h2>
-      <div className="gap-12 py-12 mx-auto lg:flex flex-row hidden">
+      />
+      {/* Ambient glow */}
+      <div
+        aria-hidden={true}
+        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-3xl h-64 blur-3xl opacity-40"
+        style={{
+          background:
+            "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,255,255,0.12), transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex flex-col gap-3">
+        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
+          Ecosystem
+        </p>
+        <motion.h2
+          className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight"
+          transition={{
+            duration: 0.2,
+            ease: "easeIn",
+          }}
+          variants={item}
+        >
+          Works with your stack
+        </motion.h2>
+      </div>
+
+      <div className="relative gap-12 py-12 mx-auto lg:flex flex-row hidden items-center">
         <div className="flex flex-row items-center gap-4">
           {leftIcons.map((icon, i) => (
             <IconComponent icon={icon} index={i} key={icon.title} />
           ))}
         </div>
-        <div className="size-32 border flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
-          <NameraIcon className="size-16 fill-white" />
+        <div className="relative">
+          {/* Radial gradient glow behind Namera logo */}
+          <div
+            aria-hidden={true}
+            className="pointer-events-none absolute -inset-10 blur-2xl"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)",
+            }}
+          />
+          {/* Pulsing ring */}
+          <div
+            aria-hidden={true}
+            className="pointer-events-none absolute inset-0 rounded-4xl border border-white/10 animate-pulse"
+          />
+          <div className="relative size-32 border border-white/15 flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8 shadow-[0_0_40px_rgba(255,255,255,0.05)]">
+            <NameraIcon className="size-16 fill-white" />
+          </div>
         </div>
         <div className="flex flex-row items-center gap-4">
           {rightIcons.map((icon, i) => (
@@ -218,8 +262,22 @@ export const Integrate = () => {
           ))}
         </div>
       </div>
-      <div className="gap-12 py-[15dvh] mx-auto lg:hidden flex-row flex relative items-center justify-center">
-        <div className="size-32 border flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8">
+
+      <div className="relative gap-12 py-[15dvh] mx-auto lg:hidden flex-row flex items-center justify-center">
+        {/* Mobile ambient glow */}
+        <div
+          aria-hidden={true}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        >
+          <div
+            className="size-72 rounded-full blur-3xl"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)",
+            }}
+          />
+        </div>
+        <div className="relative size-32 border border-white/15 flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8 shadow-[0_0_40px_rgba(255,255,255,0.05)]">
           <NameraIcon className="size-16 fill-white" />
         </div>
         <div className="absolute w-full h-full">
@@ -235,9 +293,40 @@ export const Integrate = () => {
           })}
         </div>
       </div>
-      <p className="text-center text-muted-foreground">
+      {/* Supported Networks */}
+      <div className="relative flex flex-col items-center gap-4">
+        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
+          Supported Networks
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
+            <img
+              alt="Ethereum"
+              className="size-3.5 rounded-sm"
+              src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcKRdW8sFAzH1SnIehYbmGJy58oNkfAtv4Z0RLQ"
+            />
+            <span>Ethereum</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
+            <img
+              alt="Base"
+              className="size-3.5 rounded-sm"
+              src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcK3je8iYsgdt63Nik9WJIYpTSPrqZ450EzjOwy"
+            />
+            <span>Base</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
+            <span>Polygon</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
+            <span>Arbitrum</span>
+          </div>
+        </div>
+      </div>
+
+      <p className="relative mx-auto max-w-6xl px-4 text-center text-muted-foreground md:whitespace-nowrap">
         Use Namera with the tools, chains, and payment systems you already rely
-        on
+        on.
       </p>
     </motion.section>
   );

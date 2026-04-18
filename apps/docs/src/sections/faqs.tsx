@@ -8,75 +8,102 @@ import {
 export const faqs = [
   {
     answer:
-      "Namera is a programmable wallet layer that enables agents to securely interact with smart wallets using scoped access and defined execution rules",
+      "A programmable wallet layer for autonomous agents — scoped session keys, onchain-enforced policies, no key exposure.",
     key: "question-1",
     question: "What is Namera?",
   },
   {
     answer:
-      "Agents are granted access through scoped session keys, which define what actions they can perform and under what conditions",
+      "Through session keys: delegated credentials with explicit rules on what the agent can call, spend, and when.",
     key: "question-2",
     question: "How do agents access wallets?",
   },
   {
     answer:
-      "Yes. All actions are restricted by defined permissions and enforced onchain, preventing unauthorized transactions or access beyond allowed rules",
+      "Yes. Permissions are enforced at the contract level — no server-side rule an agent can route around.",
     key: "question-3",
     question: "Are funds safe if agents control wallets?",
   },
   {
     answer:
-      "Session keys provide temporary, scoped access to wallets, allowing agents to perform specific actions without exposing the main private key",
+      "No. Use the managed platform and start immediately. The CLI is there if you prefer local-first keystores.",
     key: "question-4",
-    question: "What are session keys?",
-  },
-  {
-    answer:
-      "No. Namera provides a managed platform with hosted services, so you can get started without running your own backend. However, you can also use the CLI to manage your own keystores and smart accounts",
-    key: "question-5",
     question: "Do I need to run infrastructure?",
   },
   {
-    answer:
-      "You can integrate using the SDK for applications, the CLI for local workflows, or the MCP server for agent-based systems",
-    key: "question-6",
+    answer: "SDK for apps, CLI for local workflows, MCP server for agents.",
+    key: "question-5",
     question: "How do I integrate Namera?",
   },
   {
     answer:
-      "MCP is a programmable interface that allows agents to securely interact with wallets and execute actions within defined rules",
-    key: "question-7",
-    question: "What is MCP in Namera?",
+      "A local server that gives any MCP-compatible agent wallet capabilities — without touching private keys.",
+    key: "question-6",
+    question: "What is the MCP server?",
   },
 ];
 
 export const Faqs = () => {
   return (
     <section
-      className="px-4 max-w-7xl mx-auto py-[15dvh] min-h-dvh justify-center flex flex-col gap-24"
+      className="relative px-4 max-w-7xl mx-auto py-[14dvh] flex flex-col gap-16"
       id="faqs"
     >
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl max-w-2xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl">
+      {/* Top divider */}
+      <div
+        aria-hidden={true}
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
+        }}
+      />
+      {/* Ambient glow */}
+      <div
+        aria-hidden={true}
+        className="pointer-events-none absolute inset-x-0 top-20 mx-auto max-w-2xl h-64 blur-3xl opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(182,214,255,0.12), transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex flex-col gap-3">
+        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
+          FAQ
+        </p>
+        <h2 className="text-3xl max-w-2xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight">
           Frequently Asked Questions
         </h2>
-        <p className="text-center max-w-sm mx-auto text-muted-foreground">
-          Answers to common questions about Namera and how it works
-        </p>
       </div>
-      <div className="mx-auto max-w-4xl w-full">
-        <Accordion className="border rounded-2xl px-6 py-2">
-          {faqs.map((faq) => (
-            <AccordionItem className="py-1" key={faq.key} value={faq.key}>
-              <AccordionTrigger className="text-base sm:text-lg font-medium hover:no-underline text-foreground">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground text-sm sm:text-base font-normal">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+      <div className="relative mx-auto max-w-3xl w-full">
+        <div className="relative rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
+          {/* Top highlight */}
+          <div
+            aria-hidden={true}
+            className="pointer-events-none absolute inset-x-0 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
+            }}
+          />
+          <Accordion className="px-6 py-2">
+            {faqs.map((faq) => (
+              <AccordionItem
+                className="py-1 border-white/5"
+                key={faq.key}
+                value={faq.key}
+              >
+                <AccordionTrigger className="text-base sm:text-lg font-medium hover:no-underline text-foreground hover:text-white transition-colors">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-sm sm:text-base font-normal leading-relaxed">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
       </div>
     </section>
   );
