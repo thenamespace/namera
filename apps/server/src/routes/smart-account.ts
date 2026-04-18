@@ -13,15 +13,16 @@ import { CoreRepo } from "@namera-ai/domain";
 
 const getSmartAccount = (params: GetSmartAccountRequest) =>
   Effect.gen(function* () {
-    yield* AuthenticatedUser;
+    const user = (yield* AuthenticatedUser).user;
     const db = yield* Database.Database;
     const coreRepo = yield* CoreRepo.CoreRepo;
 
     const sa = yield* db
       .transaction((tx) =>
-        coreRepo.smartAccount
-          .findSmartAccount(params)
-          .pipe(Transaction.withTx(tx)),
+        Effect.gen(function* () {
+          yield* Transaction.setCurrentUser(user.id);
+          return yield* coreRepo.smartAccount.findSmartAccount(params);
+        }).pipe(Transaction.withTx(tx)),
       )
       .pipe(Effect.orDie);
 
@@ -37,6 +38,12 @@ const listSmartAccountsHandler = () =>
     const res = yield* db
       .transaction((tx) =>
         Effect.gen(function* () {
+          console.log("list smart account");
+          console.log(user.id);
+          console.log("setting current user");
+          yield* Transaction.setCurrentUser(user.id);
+          console.log("current user set");
+          console.log("getting smart account");
           return yield* coreRepo.smartAccount.listSmartAccounts(user.id);
         }).pipe(Transaction.withTx(tx)),
       )
@@ -54,6 +61,12 @@ const createSmartAccountHandler = (params: CreateSmartAccountRequest) =>
     const res = yield* db
       .transaction((tx) =>
         Effect.gen(function* () {
+          console.log("creating smart account");
+          console.log(user.id);
+          console.log("setting current user");
+          yield* Transaction.setCurrentUser(user.id);
+          console.log("current user set");
+          console.log("creating smart account");
           return yield* coreRepo.smartAccount.createSmartAccount(
             user.id,
             params,

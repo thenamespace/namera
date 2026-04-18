@@ -81,6 +81,7 @@ export const layer = Layer.succeed(
           },
         });
 
+        console.log("getting last account");
         const lastAccount = yield* db.query.smartAccount
           .findFirst({
             where: {
@@ -94,11 +95,15 @@ export const layer = Layer.succeed(
           })
           .pipe(Effect.orDie);
 
-        const nextIndex = lastAccount?.index ? lastAccount.index + 1 : 0;
+        console.log("last account", lastAccount);
+
+        const nextIndex = lastAccount ? lastAccount.index + 1 : 0;
 
         const publicClient = createPublicClient({
           chain: mainnet,
-          transport: http(),
+          transport: http(
+            "https://eth-mainnet.g.alchemy.com/v2/e7dMA7qcIGZHxrSPkwn2W",
+          ),
         });
 
         const sa = yield* Effect.promise(() =>
@@ -113,6 +118,8 @@ export const layer = Layer.succeed(
             client: publicClient,
           }),
         );
+
+        console.log("creating smart account with address", sa.account.address);
 
         const res = yield* db
           .insert(smartAccount)

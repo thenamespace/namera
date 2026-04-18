@@ -1,18 +1,13 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { TriangleIcon } from "@phosphor-icons/react";
 import { Controller, useForm } from "react-hook-form";
 import { useConnectionEffect } from "wagmi";
 
+import { createSmartAccount } from "@/actions/core";
 import { ConnectButton } from "@/components";
 import { EthereumAddress } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@namera-ai/ui/components/ui/collapsible";
 import {
   Field,
   FieldError,
@@ -35,7 +30,6 @@ const NewAccount = Schema.toStandardSchemaV1(
       ),
     }),
     ownerAddress: EthereumAddress,
-    index: Schema.optional(Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))),
   }),
 );
 
@@ -56,9 +50,13 @@ export const NewAccountForm = () => {
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(NewAccount)),
   });
 
-  // oxlint-disable-next-line unicorn/consistent-function-scoping
-  const handleSubmit = (value: NewAccount) => {
-    console.log("submitting...", value);
+  const handleSubmit = async (value: NewAccount) => {
+    const res = await createSmartAccount({
+      metadata: value.metadata,
+      owner: value.ownerAddress,
+      ownerType: "ecdsa",
+    });
+    console.log(res);
   };
 
   useConnectionEffect({
@@ -136,54 +134,14 @@ export const NewAccountForm = () => {
           }}
         />
       </div>
-      <Collapsible className="flex w-full flex-col gap-1" defaultOpen={false}>
-        <CollapsibleTrigger
-          className="group"
-          nativeButton={false}
-          render={
-            <div className="text-muted-foreground flex h-5 cursor-pointer flex-row items-center gap-1.5 text-xs select-none" />
+      <div className="flex justify-end">
+        <Button
+          className="cta-button w-fit"
+          type="submit"
+          disabled={
+            form.formState.isSubmitting || form.formState.isValid === false
           }
         >
-          Advanced
-          <TriangleIcon
-            className="size-2! rotate-90 transition-all group-data-panel-open:rotate-180"
-            weight="fill"
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
-          <div className="bg-card flex flex-col divide-y rounded-xl border-[0.5px] px-4">
-            <Controller
-              control={form.control}
-              name="index"
-              render={({ field, fieldState }) => {
-                const isInvalid = fieldState.invalid;
-                return (
-                  <Field
-                    data-invalid={isInvalid}
-                    className="flex flex-row py-3"
-                  >
-                    <FieldLabel htmlFor={field.name}>Account Index</FieldLabel>
-                    <Input
-                      id={field.name}
-                      {...field}
-                      className="max-w-48"
-                      type="number"
-                      min={0}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                      aria-invalid={isInvalid}
-                      placeholder="eg. 1"
-                      autoComplete="off"
-                    />
-                    {isInvalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                );
-              }}
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-      <div className="flex justify-end">
-        <Button className="cta-button w-fit" type="submit">
           Create Account
         </Button>
       </div>

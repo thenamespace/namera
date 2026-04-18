@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { getCurrentUser } from "@/actions";
+import { listSmartAccounts } from "@/actions/core";
 import { NotFound } from "@/components/misc";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
@@ -28,6 +29,9 @@ export const Route = createFileRoute("/dashboard")({
     return currentUser;
   },
   component: DashboardLayout,
-  loader: () => {},
+  loader: () => {
+    const res = listSmartAccounts();
+    return res;
+  },
   notFoundComponent: () => <NotFound />,
 });
