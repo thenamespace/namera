@@ -1,20 +1,33 @@
+import { useRef } from "react";
+
 import {
+  type Icon,
   KeyIcon,
   LightningIcon,
   ShieldCheckIcon,
   WalletIcon,
 } from "@phosphor-icons/react";
+import {
+  type MotionValue,
+  motion,
+  useScroll,
+  useTransform,
+} from "motion/react";
+
+import { Hr } from "@/components";
 
 type Step = {
   description: string;
-  icon: typeof WalletIcon;
+  icon: Icon;
   key: string;
   label: string;
   title: string;
+  color: string;
 };
 
 const steps: Step[] = [
   {
+    color: "#ffa16c",
     description:
       "Deterministic address, ready on demand. Fund and receive before deployment.",
     icon: WalletIcon,
@@ -23,6 +36,7 @@ const steps: Step[] = [
     title: "Create a Smart Account",
   },
   {
+    color: "#b6d6ff",
     description:
       "Issue scoped session keys to your agents. The root key stays on your device.",
     icon: KeyIcon,
@@ -31,6 +45,7 @@ const steps: Step[] = [
     title: "Define a Session Key",
   },
   {
+    color: "#d6fe51",
     description:
       "Restrict contracts, functions, gas, rate, and time windows with one policy layer.",
     icon: ShieldCheckIcon,
@@ -39,6 +54,7 @@ const steps: Step[] = [
     title: "Set Policies",
   },
   {
+    color: "#ffa16c",
     description:
       "Your agent signs and sends transactions only within the scope you define.",
     icon: LightningIcon,
@@ -48,116 +64,202 @@ const steps: Step[] = [
   },
 ];
 
-const StepCard = ({ step, index }: { step: Step; index: number }) => {
+const StepCard = ({
+  step,
+  index,
+  scrollYProgress,
+}: {
+  step: Step;
+  index: number;
+  scrollYProgress: MotionValue<number>;
+}) => {
   const Icon = step.icon;
   const isLast = index === steps.length - 1;
 
+  // --- Scroll Scrubbing Math ---
+  const segment = 1 / steps.length;
+  const start = index * segment;
+  const cardFadeEnd = start + 0.1;
+  const glowEnd = cardFadeEnd + 0.05;
+  const lineEnd = start + segment;
+
+  // --- EXPLICIT Motion Transforms ---
+  // Format: [0 (start of page), start of animation, end of animation, 1 (end of page)]
+
+  const cardOpacity = useTransform(
+    scrollYProgress,
+    [0, start, cardFadeEnd, 1],
+    [0, 0, 1, 1], // Locked at 1 until the end
+  );
+
+  const cardY = useTransform(
+    scrollYProgress,
+    [0, start, cardFadeEnd, 1],
+    [40, 40, 0, 0], // Locked at 0 until the end
+  );
+
+  const lineScaleX = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, lineEnd, 1],
+    [0, 0, 1, 1],
+  );
+
+  const numberGlowOpacity = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, glowEnd, 1],
+    [0, 0, 1, 1],
+  );
+
+  const borderGlowOpacity = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, glowEnd, 1],
+    [0.02, 0.02, 0.15, 0.15],
+  );
+
+  const iconBorderColor = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, glowEnd, 1],
+    [
+      "rgba(255,255,255,0.1)",
+      "rgba(255,255,255,0.1)",
+      "rgba(255,255,255,0.3)",
+      "rgba(255,255,255,0.3)",
+    ],
+  );
+
+  const iconColor = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, glowEnd, 1],
+    [
+      "rgba(255,255,255,0.4)",
+      "rgba(255,255,255,0.4)",
+      "rgba(255,255,255,1)",
+      "rgba(255,255,255,1)",
+    ],
+  );
+
+  const titleColor = useTransform(
+    scrollYProgress,
+    [0, cardFadeEnd, glowEnd, 1],
+    [
+      "rgba(255,255,255,0.6)",
+      "rgba(255,255,255,0.6)",
+      "rgba(255,255,255,1)",
+      "rgba(255,255,255,1)",
+    ],
+  );
+
   return (
-    <div className="relative flex flex-col">
-      {/* Connector line to next step (desktop only) */}
+    <motion.div
+      className="relative flex flex-col"
+      style={{ opacity: cardOpacity, y: cardY }}
+    >
+      {/* Energy Connector Line */}
       {!isLast && (
-        <div
-          aria-hidden={true}
-          className="pointer-events-none absolute top-8 left-[calc(50%+2rem)] hidden h-px w-[calc(100%-4rem)] md:block"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.2) 100%)",
-          }}
-        />
+        <motion.div
+          className="pointer-events-none absolute top-8 left-[calc(50%+2rem)] hidden h-[2px] w-[calc(100%-4rem)] origin-left md:block"
+          style={{ scaleX: lineScaleX }}
+        >
+          <div className="absolute inset-0 bg-white/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+        </motion.div>
       )}
 
-      <div
-        className="group relative flex h-full flex-col gap-5 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur-sm transition-all duration-300"
+      {/* Card Body */}
+      <motion.div
+        className="group relative flex h-full flex-col gap-5 overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
         style={{
-          boxShadow:
-            "0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6)",
+          boxShadow: "0 8px 24px -12px rgba(0,0,0,0.6)",
         }}
       >
         {/* Top accent */}
-        <div
+        <motion.div
           aria-hidden={true}
-          className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-60"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
-          }}
-        />
-        {/* Glow on hover */}
-        <div
-          aria-hidden={true}
-          className="pointer-events-none absolute top-6 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full opacity-0 blur-2xl"
-          style={{ backgroundColor: "rgba(255,255,255,0.45)" }}
-        />
-        <span
-          aria-hidden={true}
-          className="pointer-events-none absolute right-5 bottom-4 font-mono text-5xl leading-none text-white/[0.05]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px"
+          style={{ opacity: borderGlowOpacity }}
         >
-          {String(index + 1).padStart(2, "0")}
-        </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+        </motion.div>
 
-        <div className="flex items-start">
-          <div
-            className="flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]"
-            style={{ boxShadow: "0 0 20px rgba(255,255,255,0.06)" }}
+        {/* Number Layering */}
+        <div className="absolute right-5 top-4">
+          <span className="font-mono text-5xl leading-none text-white/[0.05]">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <motion.span
+            className="absolute inset-0 font-mono text-5xl leading-none text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+            style={{ opacity: numberGlowOpacity }}
           >
-            <Icon className="size-6 text-white/80" weight="duotone" />
-          </div>
+            {String(index + 1).padStart(2, "0")}
+          </motion.span>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2">
+        {/* Icon */}
+        <div className="flex items-start relative z-10">
+          <motion.div
+            className="flex size-12 items-center justify-center rounded-xl border bg-white/[0.03]"
+            style={{ borderColor: iconBorderColor }}
+          >
+            <motion.div style={{ color: iconColor }}>
+              <Icon className="size-6" weight="duotone" />
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Text */}
+        <div className="flex flex-1 flex-col gap-2 relative z-10">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/40">
             {step.label}
           </span>
-          <h3 className="text-lg font-semibold tracking-tight text-white">
+          <motion.h3
+            className="text-lg font-semibold tracking-tight"
+            style={{ color: titleColor }}
+          >
             {step.title}
-          </h3>
-          <p className="min-h-[4.5rem] max-w-[26ch] text-sm leading-relaxed text-muted-foreground">
+          </motion.h3>
+          <p className="min-h-[4.5rem] max-w-[26ch] text-sm leading-relaxed text-white/50">
             {step.description}
           </p>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
 export const HowItWorks = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    offset: ["start start", "end end"],
+    target: containerRef,
+  });
+
   return (
     <section
-      className="relative mx-auto flex max-w-7xl flex-col gap-16 px-4 py-[12dvh]"
+      className="relative h-[400dvh]"
       id="how-it-works"
+      ref={containerRef}
     >
-      {/* Top divider */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
-        }}
-      />
-      {/* Ambient glow */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-20 mx-auto h-64 max-w-3xl blur-3xl opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,255,255,0.06), transparent 70%)",
-        }}
-      />
-
-      <div className="relative flex flex-col gap-3">
-        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
-          How It Works
-        </p>
-        <h2 className="heading-gradient mx-auto max-w-3xl pb-2 text-center text-3xl tracking-tight sm:text-4xl md:text-5xl">
-          From smart account to agent execution
-        </h2>
-      </div>
-
-      <div className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-        {steps.map((step, i) => (
-          <StepCard index={i} key={step.key} step={step} />
-        ))}
+      <Hr />
+      <div className="sticky top-0 flex h-dvh w-full flex-col items-center justify-center px-4 max-w-7xl mx-auto gap-24">
+        <div className="flex flex-col gap-3">
+          <p className="text-center text-xs font-medium uppercase text-muted-foreground tracking-wider">
+            How It Works
+          </p>
+          <h2 className="heading-gradient mx-auto max-w-3xl pb-2 text-center text-3xl tracking-tight text-white sm:text-4xl md:text-5xl">
+            From smart account to agent execution
+          </h2>
+        </div>
+        <div className="relative grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+          {steps.map((step, i) => (
+            <StepCard
+              index={i}
+              key={step.key}
+              scrollYProgress={scrollYProgress}
+              step={step}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

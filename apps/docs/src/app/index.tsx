@@ -10,14 +10,13 @@ import {
   McpSection,
   Products,
   SessionKeys,
-  Trust,
   UseCases,
   WhyNamera,
 } from "@/sections";
 
 const Home = () => {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#08090a]">
+    <div className="min-h-screen bg-[#08090a]">
       <Navbar />
       <Hero />
       <Products />
@@ -25,7 +24,6 @@ const Home = () => {
       <SessionKeys />
       <McpSection />
       <UseCases />
-      <Trust />
       <Integrate />
       <WhyNamera />
       <Faqs />
