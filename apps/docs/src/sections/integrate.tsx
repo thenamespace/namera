@@ -1,11 +1,28 @@
 import { useEffect } from "react";
 
+import { Avatar, AvatarGroup } from "@namera-ai/ui/components/ui/avatar";
+import { buttonVariants } from "@namera-ai/ui/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@namera-ai/ui/components/ui/tooltip";
 import { NameraIcon } from "@namera-ai/ui/icons";
+import { cn } from "@namera-ai/ui/lib/utils";
+import {
+  NetworkArbitrumOne,
+  NetworkArc,
+  NetworkAvalanche,
+  NetworkBase,
+  NetworkEthereum,
+  NetworkMonad,
+  NetworkOptimism,
+  NetworkPolygon,
+  NetworkScroll,
+  NetworkTempo,
+  NetworkUnichain,
+  NetworkZora,
+} from "@web3icons/react";
 import {
   animate,
   type MotionValue,
@@ -13,6 +30,59 @@ import {
   useMotionValue,
   useTransform,
 } from "motion/react";
+
+import { GridOverlay } from "@/components/misc";
+
+const supportedChains = [
+  {
+    icon: NetworkEthereum,
+    title: "Ethereum",
+  },
+  {
+    icon: NetworkBase,
+    title: "Base",
+  },
+  {
+    icon: NetworkPolygon,
+    title: "Polygon",
+  },
+  {
+    icon: NetworkArbitrumOne,
+    title: "Arbitrum",
+  },
+  {
+    icon: NetworkScroll,
+    title: "Scroll",
+  },
+  {
+    icon: NetworkOptimism,
+    title: "Optimism",
+  },
+  {
+    icon: NetworkTempo,
+    title: "Tempo",
+  },
+  {
+    icon: NetworkAvalanche,
+    title: "Avalanche",
+  },
+  {
+    icon: NetworkUnichain,
+    title: "Unichain",
+  },
+  {
+    icon: NetworkMonad,
+    title: "Monad",
+  },
+  {
+    icon: NetworkZora,
+    title: "Zora",
+  },
+  {
+    icon: NetworkArc,
+    title: "Arc",
+  },
+];
 
 const leftIcons = [
   {
@@ -98,8 +168,7 @@ const LogoOrbitItem = ({
       }}
     >
       <motion.div
-        className="size-16 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]"
-        style={{}}
+        className={cn(buttonVariants({ variant: "outline" }), "size-16")}
       >
         <img
           alt={logo.title}
@@ -129,12 +198,14 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
       translateY: 0,
     },
   };
-
   return (
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger delay={200}>
         <motion.div
-          className="group size-16 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center justify-center transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06] hover:shadow-[0_12px_28px_-12px_rgba(0,0,0,0.8)]"
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "size-16 group",
+          )}
           key={icon.title}
           transition={{
             duration: 0.6,
@@ -144,7 +215,7 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
         >
           <img
             alt={icon.title}
-            className="size-9 rounded-sm transition-transform duration-300 group-hover:scale-110"
+            className="size-9 rounded-sm transition-transform duration-300 group-hover:scale-100"
             src={icon.src}
             title={icon.title}
           />
@@ -186,35 +257,14 @@ export const Integrate = () => {
 
   return (
     <motion.section
-      className="relative px-4 py-[12dvh] flex flex-col justify-center gap-12 border border-white/10 bg-[#0F1011] mx-2 rounded-2xl overflow-hidden"
+      className="relative px-4 py-[12dvh] flex flex-col justify-center gap-12 border bg-[#0F1011] mx-2 rounded-2xl overflow-hidden"
       id="integrate"
       initial="hidden"
       variants={container}
-      viewport={{ amount: 0.5 }}
+      viewport={{ amount: 0.5, once: true }}
       whileInView="visible"
     >
-      {/* Grid pattern overlay */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage:
-            "radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 80%)",
-        }}
-      />
-      {/* Ambient glow */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-3xl h-64 blur-3xl opacity-40"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,255,255,0.12), transparent 70%)",
-        }}
-      />
-
+      <GridOverlay />
       <motion.div
         className="relative flex flex-col gap-3"
         transition={{
@@ -284,29 +334,26 @@ export const Integrate = () => {
         <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
           Supported Networks
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
-            <img
-              alt="Ethereum"
-              className="size-3.5 rounded-sm"
-              src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcKRdW8sFAzH1SnIehYbmGJy58oNkfAtv4Z0RLQ"
-            />
-            <span>Ethereum</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
-            <img
-              alt="Base"
-              className="size-3.5 rounded-sm"
-              src="https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcK3je8iYsgdt63Nik9WJIYpTSPrqZ450EzjOwy"
-            />
-            <span>Base</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
-            <span>Polygon</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 backdrop-blur-sm">
-            <span>Arbitrum</span>
-          </div>
+        <div className="flex items-center justify-center">
+          <AvatarGroup>
+            {supportedChains.map((chain) => {
+              return (
+                <Tooltip key={chain.title}>
+                  <TooltipTrigger delay={100}>
+                    <Avatar className="hover:-translate-y-1 transition-all size-8 sm:size-10.5 bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                      <chain.icon
+                        className="size-7.5 sm:size-9.5 rounded-full"
+                        variant="background"
+                      />
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={10}>
+                    <p className="text-sm">{chain.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </AvatarGroup>
         </div>
       </div>
 
