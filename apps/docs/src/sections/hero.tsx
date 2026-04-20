@@ -12,7 +12,7 @@ export const Hero = () => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    copy("npm i -g @namera-ai/cli").catch(() => console.error);
+    copy("npm i -g @namera-ai/cli").catch(console.error);
     setCopied(true);
   };
 
