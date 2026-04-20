@@ -1,4 +1,15 @@
-import { BrainIcon, LightningIcon, PlugsIcon } from "@phosphor-icons/react";
+import {
+  type BrainIcon,
+  ClockCountdownIcon,
+  CpuIcon,
+  GaugeIcon,
+  KeyIcon,
+  RepeatIcon,
+  ShieldCheckIcon,
+} from "@phosphor-icons/react";
+
+import { Hr } from "@/components";
+import { AmbientGlow } from "@/components/misc";
 
 type UseCase = {
   description: string;
@@ -10,24 +21,42 @@ type UseCase = {
 const useCases: UseCase[] = [
   {
     description:
-      "Give your LLM a wallet it can use. Scoped access, zero key exposure.",
-    icon: BrainIcon,
+      "Enforce rules onchain limiting contracts calls, gas usage, and more.",
+    icon: ShieldCheckIcon,
+    key: "",
+    title: "Spending Guardrails",
+  },
+  {
+    description:
+      "Let users grant apps or agents controlled access to their wallets with defined limits.",
+    icon: KeyIcon,
     key: "agents",
-    title: "AI Agent Developers",
+    title: "Delegated Wallet Access",
+  },
+  {
+    description: "Enable recurring payments for services and memberships.",
+    icon: RepeatIcon,
+    key: "subscriptions",
+    title: "Subscriptions",
+  },
+  {
+    description: "Enable autonomous systems to exchange value continuously.",
+    icon: CpuIcon,
+    key: "machine-payments",
+    title: "Machine Payments",
   },
   {
     description:
-      "Automate swaps, positions, and yield strategies with onchain risk rules.",
-    icon: LightningIcon,
-    key: "defi",
-    title: "DeFi Automation",
+      "Charge users dynamically based on usage, API calls, or events.",
+    icon: GaugeIcon,
+    key: "usage-based-billing",
+    title: "Usage-Based Billing",
   },
   {
-    description:
-      "Let users delegate limited wallet access. Passkeys, batching, and multi-chain included.",
-    icon: PlugsIcon,
-    key: "protocols",
-    title: "Protocol Integrators",
+    description: "Restrict wallet actions to specific time windows.",
+    icon: ClockCountdownIcon,
+    key: "time-locked-spending",
+    title: "Time-Locked Spending",
   },
 ];
 
@@ -35,7 +64,7 @@ const UseCaseCard = ({ useCase }: { useCase: UseCase }) => {
   const Icon = useCase.icon;
   return (
     <div
-      className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur-sm transition-all duration-300"
+      className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-white/10 bg-white/2 p-6 backdrop-blur-sm transition-all duration-300"
       style={{
         boxShadow:
           "0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6)",
@@ -47,20 +76,20 @@ const UseCaseCard = ({ useCase }: { useCase: UseCase }) => {
         className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-60"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
         }}
       />
       {/* Hover glow */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute top-6 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full opacity-0 blur-2xl"
-        style={{ backgroundColor: "rgba(255,255,255,0.45)" }}
+        style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
       />
 
       <div className="relative flex items-start justify-between">
         <div
-          className="flex size-14 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]"
-          style={{ boxShadow: "0 0 24px rgba(255,255,255,0.06)" }}
+          className="flex size-14 items-center justify-center rounded-xl border border-white/10 bg-white/3"
+          style={{ boxShadow: "0 0 24px rgba(255,255,255,0.02)" }}
         >
           <Icon className="size-7 text-white/80" weight="duotone" />
         </div>
@@ -81,28 +110,11 @@ const UseCaseCard = ({ useCase }: { useCase: UseCase }) => {
 export const UseCases = () => {
   return (
     <section
-      className="relative mx-auto flex max-w-7xl flex-col gap-14 px-4 py-[12dvh]"
+      className="relative mx-auto flex max-w-7xl flex-col gap-14 px-4 py-[12dvh] min-h-screen items-center justify-center"
       id="use-cases"
     >
-      {/* Top divider */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
-        }}
-      />
-      {/* Ambient glow */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-20 mx-auto h-64 max-w-4xl blur-3xl opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(255,255,255,0.05), transparent 70%)",
-        }}
-      />
-
+      <Hr />
+      <AmbientGlow />
       <div className="relative flex flex-col gap-3">
         <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
           Use Cases
@@ -112,7 +124,7 @@ export const UseCases = () => {
         </h2>
       </div>
 
-      <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
         {useCases.map((useCase) => (
           <UseCaseCard key={useCase.key} useCase={useCase} />
         ))}

@@ -1,21 +1,30 @@
+import { motion, type Variants } from "motion/react";
+
+import { Hr } from "@/components";
+
 const products = [
   {
+    color: "#ffa16c",
     description:
-      "Manage wallets, session keys, and agent access — no backend required.",
+      "Manage smart wallets, session keys, and agent access through a unified layer without running your own backend",
     key: "platform",
     label: "Platform",
     stat: "90%",
     statSub: "Less overhead",
   },
   {
-    description: "Add programmable wallets to any app or agent workflow.",
+    color: "#b6d6ff",
+    description:
+      "Integrate programmable wallets into your app or agent workflows with a simple, developer-first toolkit",
     key: "sdk",
     label: "SDK",
     stat: "5 min",
     statSub: "Integration time",
   },
   {
-    description: "Operate wallets via CLI or MCP. Full local control.",
+    color: "#d6fe51",
+    description:
+      "Operate wallets and execute transactions through CLI or MCP with full control over agent behavior",
     key: "cli",
     label: "CLI",
     stat: "100%",
@@ -25,13 +34,30 @@ const products = [
 
 type Product = (typeof products)[number];
 
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: [0.16, 1, 0.3, 1],
+    },
+    y: 0,
+  },
+};
+
 const ProductCard = (product: Product) => {
   return (
-    <div
-      className="group relative flex w-full max-w-xs flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-sm transition-all duration-300 ease-out"
+    <motion.div
+      className="group relative flex w-full max-w-xs flex-col overflow-hidden rounded-xl border border-white/10 bg-white/2 backdrop-blur-sm"
       style={{
         boxShadow:
           "0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6)",
+      }}
+      variants={itemVariants}
+      whileHover={{
+        transition: { duration: 0.15, ease: "easeOut" },
+        y: -6,
       }}
     >
       {/* Top gradient accent line */}
@@ -40,28 +66,18 @@ const ProductCard = (product: Product) => {
         className="absolute inset-x-0 top-0 h-px opacity-60"
         style={{
           background:
-            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)",
         }}
       />
-      {/* Colored radial glow on hover */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute top-6 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full opacity-0 blur-2xl"
-        style={{
-          backgroundColor: "rgba(255,255,255,0.45)",
-        }}
-      />
-
       <div className="relative p-6 h-56">
         <div className="flex flex-row items-start gap-4">
           <div
             className="h-16 w-0.5 rounded-full"
             style={{
-              backgroundColor: "rgba(255,255,255,0.7)",
-              boxShadow: "0 0 12px rgba(255,255,255,0.14)",
+              backgroundColor: product.color,
             }}
           />
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/55">
               {product.label}
             </span>
@@ -79,39 +95,44 @@ const ProductCard = (product: Product) => {
       <div className="relative border-t border-white/10 p-6 text-sm leading-relaxed text-muted-foreground">
         {product.description}
       </div>
-    </div>
+    </motion.div>
   );
+};
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.2,
+      staggerChildren: 0.15,
+    },
+  },
 };
 
 export const Products = () => {
   return (
-    <section
-      className="relative px-4 max-w-7xl mx-auto py-[12dvh] flex flex-col gap-16"
+    <motion.section
+      className="relative px-4 max-w-7xl mx-auto py-[12dvh] flex flex-col gap-16 min-h-[80dvh] justify-center"
       id="products"
+      initial="hidden"
+      variants={containerVariants}
+      viewport={{ margin: "-100px", once: true }}
+      whileInView="visible"
     >
-      {/* Section divider glow at top */}
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
-        }}
-      />
+      <Hr />
 
-      <div className="flex flex-col gap-3">
-        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
-          The Platform
-        </p>
-        <h2 className="text-3xl max-w-xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight">
-          Everything you need to build agent wallets
-        </h2>
-      </div>
+      <motion.h2
+        className="text-3xl max-w-xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight"
+        variants={itemVariants}
+      >
+        Everything you need to build agent wallets
+      </motion.h2>
       <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto sm:grid-cols-2 md:grid-cols-3 justify-items-center w-full">
         {products.map((product) => (
           <ProductCard {...product} key={product.key} />
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 };
