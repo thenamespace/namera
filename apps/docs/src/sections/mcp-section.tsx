@@ -109,7 +109,7 @@ export const McpSection = () => {
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
                   Namera ships a local MCP server. Drop it into Claude, GPT, or
-                  any MCP-compatible agent your model gets wallet capabilities
+                  any MCP-compatible agent — your model gets wallet capabilities
                   within scoped policies.
                 </p>
               </div>
