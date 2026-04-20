@@ -153,18 +153,10 @@ export const Footer = ({ showDesign = true }: { showDesign?: boolean }) => {
             : "pb-4"
         }
       />
+
       {showDesign && (
-        <div className="absolute bottom-0 left-1/2 overflow-hidden -translate-x-1/2 pointer-events-none w-full flex justify-center">
-          {/* Ambient glow behind giant text */}
-          <div
-            aria-hidden={true}
-            className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-64 w-[90%] blur-3xl opacity-40"
-            style={{
-              background:
-                "radial-gradient(ellipse 60% 80% at 50% 100%, rgba(214,254,81,0.08), transparent 70%)",
-            }}
-          />
-          <div className="text-[30dvw] sm:text-[30dvw] leading-none select-none text-transparent bg-clip-text translate-y-1/4 font-semibold tracking-tight [-webkit-text-stroke:1px_var(--color-neutral-800)]">
+        <div className="absolute bottom-0 left-1/2 overflow-hidden -translate-x-1/2 pointer-events-none">
+          <div className="text-[30dvw] sm:text-[30dvw] leading-none select-none text-muted [textStroke:1px_var(--color-neutral-700)] translate-y-1/4 [-webkit-text-stroke:1px_var(--color-neutral-700)]">
             namera
           </div>
         </div>

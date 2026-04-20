@@ -5,7 +5,6 @@ import { Footer } from "@/components/footer";
 import {
   Faqs,
   Hero,
-  HowItWorks,
   Integrate,
   McpSection,
   Products,
@@ -20,7 +19,6 @@ const Home = () => {
       <Navbar />
       <Hero />
       <Products />
-      <HowItWorks />
       <SessionKeys />
       <McpSection />
       <UseCases />

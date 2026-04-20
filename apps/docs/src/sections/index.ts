@@ -1,6 +1,5 @@
 export * from "./faqs";
 export * from "./hero";
-export * from "./how-it-works";
 export * from "./integrate";
 export * from "./mcp-section";
 export * from "./products";

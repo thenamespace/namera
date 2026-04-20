@@ -131,7 +131,7 @@ const IconComponent = ({ icon, index }: IconComponentProps) => {
   };
 
   return (
-    <Tooltip delay={0}>
+    <Tooltip>
       <TooltipTrigger>
         <motion.div
           className="group size-16 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center justify-center transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06] hover:shadow-[0_12px_28px_-12px_rgba(0,0,0,0.8)]"
@@ -186,14 +186,14 @@ export const Integrate = () => {
 
   return (
     <motion.section
-      className="relative px-4 py-[12dvh] flex flex-col justify-center gap-12 border border-white/10 bg-[#0F1011] mx-4 sm:mx-6 rounded-2xl overflow-hidden"
+      className="relative px-4 py-[12dvh] flex flex-col justify-center gap-12 border border-white/10 bg-[#0F1011] mx-2 rounded-2xl overflow-hidden"
       id="integrate"
       initial="hidden"
       variants={container}
-      viewport={{ amount: 0.5, once: false }}
+      viewport={{ amount: 0.5 }}
       whileInView="visible"
     >
-      {/* Subtle grid pattern overlay */}
+      {/* Grid pattern overlay */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -215,21 +215,21 @@ export const Integrate = () => {
         }}
       />
 
-      <div className="relative flex flex-col gap-3">
+      <motion.div
+        className="relative flex flex-col gap-3"
+        transition={{
+          duration: 0.4,
+          ease: "easeIn",
+        }}
+        variants={item}
+      >
         <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-white/40">
           Ecosystem
         </p>
-        <motion.h2
-          className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight"
-          transition={{
-            duration: 0.2,
-            ease: "easeIn",
-          }}
-          variants={item}
-        >
+        <motion.h2 className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight">
           Works with your stack
         </motion.h2>
-      </div>
+      </motion.div>
 
       <div className="relative gap-12 py-12 mx-auto lg:flex flex-row hidden items-center">
         <div className="flex flex-row items-center gap-4">
@@ -238,20 +238,6 @@ export const Integrate = () => {
           ))}
         </div>
         <div className="relative">
-          {/* Radial gradient glow behind Namera logo */}
-          <div
-            aria-hidden={true}
-            className="pointer-events-none absolute -inset-10 blur-2xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)",
-            }}
-          />
-          {/* Pulsing ring */}
-          <div
-            aria-hidden={true}
-            className="pointer-events-none absolute inset-0 rounded-4xl border border-white/10 animate-pulse"
-          />
           <div className="relative size-32 border border-white/15 flex items-center justify-center rounded-4xl bg-linear-to-bl from-background from-0% via-background via-70% to-black to-100% mmx-8 shadow-[0_0_40px_rgba(255,255,255,0.05)]">
             <NameraIcon className="size-16 fill-white" />
           </div>
