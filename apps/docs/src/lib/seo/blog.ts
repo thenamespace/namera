@@ -90,3 +90,43 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
     ],
   };
 };
+
+export const generateBaseBlogSeo = () => {
+  const canonicalUrl = new URL("/blog", env.baseUrl);
+
+  const title = "Blog | Namera";
+  const description =
+    "Deep dives on programmable wallet infrastructure, session keys, smart accounts, and safe onchain execution for developers building autonomous agents.";
+
+  const ogImage = new URL("/api/og", env.baseUrl);
+  ogImage.searchParams.set("description", description);
+  ogImage.searchParams.set("paths", "Blog");
+  ogImage.searchParams.set("title", title);
+
+  const imageLink = ogImage.toString();
+  return {
+    links: [{ href: canonicalUrl.toString(), rel: "canonical" }],
+    meta: [
+      { title: title },
+      { content: description, name: "description" },
+      { content: "index, follow", name: "robots" },
+      // Open Graph
+      { content: "Namera Blog", property: "og:site_name" },
+      { content: "article", property: "og:type" },
+      { content: title, property: "og:title" },
+      { content: description, property: "og:description" },
+      { content: canonicalUrl.toString(), property: "og:url" },
+      { content: imageLink, property: "og:image" },
+      { content: "1200", property: "og:image:width" },
+      { content: "630", property: "og:image:height" },
+      // Twitter
+      { content: "summary_large_image", name: "twitter:card" },
+      { content: "@namera_ai", name: "twitter:site" },
+      { content: "@namera_ai", name: "twitter:creator" },
+      { content: title, name: "twitter:title" },
+      { content: description, name: "twitter:description" },
+      { content: imageLink, name: "twitter:image" },
+      //
+    ],
+  };
+};

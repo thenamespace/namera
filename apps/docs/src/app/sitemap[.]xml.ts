@@ -71,6 +71,11 @@ export const Route = createFileRoute("/sitemap.xml")({
             lastmod: latestBlogPostDate.toISOString(),
             priority: 0.7,
           },
+          {
+            loc: new URL("/changelog", env.baseUrl).toString(),
+            lastmod: now,
+            priority: 0.6,
+          },
         ];
 
         const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

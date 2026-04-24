@@ -1,30 +1,14 @@
-import { useEffect, useState } from "react";
-
 import { Link } from "@tanstack/react-router";
 
-import { Button } from "@namera-ai/ui/components/ui/button";
+import { Button, buttonVariants } from "@namera-ai/ui/components/ui/button";
 import { ButtonGroup } from "@namera-ai/ui/components/ui/button-group";
+import { cn } from "@namera-ai/ui/lib/utils";
 import { ArrowRight, CheckIcon, CopyIcon } from "lucide-react";
-import { useCopyToClipboard } from "usehooks-ts";
+
+import { useCopyToClipboard } from "@/hooks/misc";
 
 export const Hero = () => {
-  const [_, copy] = useCopyToClipboard();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    copy("npm i -g @namera-ai/cli").catch(console.error);
-    setCopied(true);
-  };
-
-  useEffect(() => {
-    if (!copied) return;
-
-    const timeout = window.setTimeout(() => {
-      setCopied(false);
-    }, 1600);
-
-    return () => window.clearTimeout(timeout);
-  }, [copied]);
+  const { copied, copy } = useCopyToClipboard();
 
   return (
     <section className="relative pt-[18dvh] pb-[8dvh] overflow-hidden">
@@ -48,13 +32,21 @@ export const Hero = () => {
             for autonomous agents
           </h1>
           <p className="text-muted-foreground text-sm font-normal md:text-base max-w-4xl mx-auto sm:mx-0">
-            Define fine-grained permissions with session keys and let agents
-            execute transactions on your behalf.
+            Issue scoped session keys, attach onchain policies, and let agents
+            execute transactions within the limits you define.
           </p>
-          <ButtonGroup>
+          <ButtonGroup className="max-w-full overflow-x-auto">
+            <span
+              className={cn(
+                buttonVariants({ size: "xl", variant: "outline" }),
+                "rounded-r-none hover:bg-background! hover:text-muted-foreground rounded-l-xl",
+              )}
+            >
+              Get Started
+            </span>
             <Button
-              className="rounded-xl"
-              onClick={handleCopy}
+              className="rounded-none"
+              onClick={() => copy("npm i -g @namera-ai/cli")}
               size="xl"
               variant="outline"
             >
@@ -67,8 +59,9 @@ export const Hero = () => {
                 <CopyIcon className="size-3.5" />
               )}
             </Button>
+
             <Button
-              className="rounded-xl group pr-4"
+              className="rounded-xl rounded-l-none group pr-4"
               render={<Link to="/docs/$" />}
               size="xl"
               variant="outline"

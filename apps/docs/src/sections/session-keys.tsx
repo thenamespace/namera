@@ -1,4 +1,4 @@
-import { CheckIcon, ShieldCheckIcon } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 
 import { AmbientGlow, CardGlow, Hr } from "@/components/misc";
 
@@ -21,7 +21,7 @@ const policyTable: PolicyTableRow[] = [
       "Restricts contract calls to specific targets, functions, and parameters",
     key: "call",
     name: "Call Policy",
-    useCase: "Most common, limits which contracts and functions can be called",
+    useCase: "Limit which contracts and functions an agent can call",
   },
   {
     description: "Caps total gas usage for a session key",
@@ -68,7 +68,7 @@ const policyRows: PolicyRow[] = [
 const PolicyCard = () => {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0b0c0d] backdrop-blur-sm"
+      className="relative overflow-hidden rounded-2xl border bg-[#0b0c0d] backdrop-blur-sm"
       style={{
         boxShadow:
           "0 0 0 1px rgba(255,255,255,0.02), 0 20px 60px -20px rgba(0,0,0,0.8)",
@@ -146,15 +146,12 @@ const PolicyTable = () => {
           <span className="size-2.5 rounded-full bg-yellow-400" />
           <span className="size-2.5 rounded-full bg-green-400" />
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <ShieldCheckIcon className="size-3" weight="duotone" />
-          <span className="font-geist-mono text-[10px] uppercase pt-px">
-            policies
-          </span>
-        </div>
+        <span className="font-geist-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
+          policies
+        </span>
       </div>
 
-      <div className="grid grid-cols-[1fr_1.4fr_1.4fr] border-b border-white/10 px-5 py-3">
+      <div className="hidden md:grid grid-cols-[1fr_1.4fr_1.4fr] border-b border-white/10 px-5 py-3">
         <span className="text-xs font-semibold uppercase tracking-[0.15em] text-white/55">
           Policy Type
         </span>
@@ -167,7 +164,7 @@ const PolicyTable = () => {
       </div>
       {policyTable.map((row, i) => (
         <div
-          className={`grid grid-cols-[1fr_1.4fr_1.4fr] px-5 py-4 gap-4 ${i < policyTable.length - 1 ? "border-b border-white/6" : ""}`}
+          className={`flex flex-col gap-1 px-5 py-4 md:grid md:grid-cols-[1fr_1.4fr_1.4fr] md:gap-4 ${i < policyTable.length - 1 ? "border-b border-white/6" : ""}`}
           key={row.key}
         >
           <span className="text-sm font-semibold text-white/88">
@@ -176,7 +173,7 @@ const PolicyTable = () => {
           <span className="text-sm leading-relaxed text-white/52">
             {row.description}
           </span>
-          <span className="text-sm leading-relaxed text-white/42">
+          <span className="text-sm leading-relaxed text-white/42 md:block hidden">
             {row.useCase}
           </span>
         </div>
@@ -188,7 +185,7 @@ const PolicyTable = () => {
 export const SessionKeys = () => {
   return (
     <section
-      className="relative mx-auto flex max-w-7xl flex-col gap-14 px-4 py-[12dvh] min-h-screen"
+      className="relative mx-auto flex max-w-7xl flex-col gap-14 px-4 py-[12dvh]"
       id="session-keys"
     >
       <Hr />

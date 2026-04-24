@@ -3,8 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Navbar } from "@/components";
 import { Footer } from "@/components/footer";
 import {
+  Cta,
   Faqs,
+  Features,
   Hero,
+  Industries,
   Integrate,
   McpSection,
   Products,
@@ -20,11 +23,14 @@ const Home = () => {
       <Hero />
       <Products />
       <SessionKeys />
+      <Features />
+      <WhyNamera />
       <McpSection />
       <UseCases />
+      <Industries />
       <Integrate />
-      <WhyNamera />
       <Faqs />
+      <Cta />
       <Footer />
     </div>
   );

@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-
-# Block internal build/system paths
 Disallow: /api/
+Sitemap: https://namera.ai/sitemap.xml

@@ -20,6 +20,7 @@ import {
   getPaginationRange,
 } from "@/lib/blog";
 import { env } from "@/lib/env";
+import { generateBaseBlogSeo } from "@/lib/seo/blog";
 import { sourceBlog } from "@/lib/source";
 import type { BlogCardProps } from "@/types";
 
@@ -154,5 +155,8 @@ export const Route = createFileRoute("/blog/")({
       data: deps,
     });
     return res;
+  },
+  head: () => {
+    return generateBaseBlogSeo();
   },
 });

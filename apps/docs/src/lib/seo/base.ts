@@ -7,9 +7,10 @@ import { baseOgImage, nameraIcon } from "./common";
 export const getBaseSeo = () => {
   const canonicalUrl = new URL("/", env.baseUrl);
 
-  const title = "Namera - Smart Wallets for Autonomous Agents";
+  const title =
+    "Namera — Programmable Wallet Infrastructure for Autonomous Agents";
   const description =
-    "Namera is a programmable wallet platform for autonomous agents. Create smart wallets, define permissions, issue session keys, and let agents execute transactions securely onchain.";
+    "Issue scoped session keys, attach onchain policies, and let agents execute transactions within the limits you define. Programmable wallet infrastructure built for autonomous agents.";
   const keywords = [
     "programmable wallets",
     "agent wallets",
@@ -130,18 +131,20 @@ export const getBaseSeo = () => {
       { content: "website", property: "og:type" },
       { content: title, property: "og:title" },
       { content: description, property: "og:description" },
-      { content: "website", property: "og:type" },
       { content: env.baseUrl.toString(), property: "og:url" },
       { content: baseOgImage, property: "og:image" },
+      { content: "1200", property: "og:image:width" },
+      { content: "630", property: "og:image:height" },
+      { content: "Namera Smart Wallets", property: "og:image:alt" },
       { content: "Namera", property: "og:site_name" },
       { content: "en_US", property: "og:locale" },
-      { content: "Namera Smart Wallets", property: "og:image:alt" },
       // Twitter Tags
       { content: "summary_large_image", name: "twitter:card" },
+      { content: "@namera_ai", name: "twitter:site" },
+      { content: "@namera_ai", name: "twitter:creator" },
       { content: title, name: "twitter:title" },
       { content: description, name: "twitter:description" },
       { content: baseOgImage, name: "twitter:image" },
-      { content: "@namera_ai", name: "twitter:creator" },
     ],
     scripts: [
       {

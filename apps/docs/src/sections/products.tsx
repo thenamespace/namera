@@ -10,7 +10,7 @@ const products = [
     key: "platform",
     label: "Platform",
     stat: "90%",
-    statSub: "Less overhead",
+    statSub: "Less Overhead",
   },
   {
     color: "#b6d6ff",
@@ -49,16 +49,12 @@ const itemVariants: Variants = {
 const ProductCard = (product: Product) => {
   return (
     <motion.div
-      className="group relative flex w-full max-w-xs flex-col overflow-hidden rounded-xl border border-white/10 bg-white/2 backdrop-blur-sm"
+      className="group relative flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/2 backdrop-blur-sm"
       style={{
         boxShadow:
           "0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6)",
       }}
       variants={itemVariants}
-      whileHover={{
-        transition: { duration: 0.15, ease: "easeOut" },
-        y: -6,
-      }}
     >
       {/* Top gradient accent line */}
       <div
@@ -78,7 +74,7 @@ const ProductCard = (product: Product) => {
             }}
           />
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/55">
+            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/55">
               {product.label}
             </span>
             <div className="flex flex-col gap-0">
@@ -126,7 +122,7 @@ export const Products = () => {
         className="text-3xl max-w-xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight"
         variants={itemVariants}
       >
-        Everything you need to build agent wallets
+        The complete stack for agent wallets
       </motion.h2>
       <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto sm:grid-cols-2 md:grid-cols-3 justify-items-center w-full">
         {products.map((product) => (

@@ -80,7 +80,7 @@ export const WhyNamera = () => {
         <h2 className="text-3xl max-w-3xl mx-auto text-center heading-gradient pb-2 sm:text-4xl md:text-5xl tracking-tight">
           Building agent wallets is hard.
           <br />
-          Without Namera, even harder.
+          Namera handles the hard parts.
         </h2>
       </div>
       <div className="grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-2">

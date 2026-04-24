@@ -8,38 +8,63 @@ import {
 export const faqs = [
   {
     answer:
-      "A programmable wallet layer for autonomous agents — scoped session keys, onchain-enforced policies, no key exposure.",
+      "Namera is a programmable wallet infrastructure that lets agents execute onchain transactions within rules you define. Instead of giving full wallet access, you define permissions upfront and let agents operate within those boundaries.",
     key: "question-1",
     question: "What is Namera?",
   },
   {
     answer:
-      "Through session keys: delegated credentials with explicit rules on what the agent can call, spend, and when.",
+      "Agents don't access your wallet directly. They use session keys — secondary keys with limited permissions — that you issue and control.",
     key: "question-2",
     question: "How do agents access wallets?",
   },
   {
     answer:
-      "Yes. Permissions are enforced at the contract level — no server-side rule an agent can route around.",
+      "Yes. Agents can only act within the limits you define — like which contracts they can call, how much they can spend, and how often. They never have unrestricted access to your funds.",
     key: "question-3",
-    question: "Are funds safe if agents control wallets?",
+    question: "Are funds safe if agents can execute transactions?",
   },
   {
     answer:
-      "No. Use the managed platform and start immediately. The CLI is there if you prefer local-first keystores.",
+      "Policies are rules attached to a session key that define what an agent is allowed to do. They're enforced directly onchain, so they can't be bypassed or modified by the agent.",
     key: "question-4",
+    question: "What are onchain policies?",
+  },
+  {
+    answer:
+      "Its access is already restricted by policies. You can revoke the session key instantly without affecting your main wallet or other agents.",
+    key: "question-5",
+    question: "What happens if an agent is compromised?",
+  },
+  {
+    answer:
+      "No. Namera is local-first and can run directly in your environment via CLI or MCP server. You don't need to manage backend infrastructure to get started.",
+    key: "question-6",
     question: "Do I need to run infrastructure?",
   },
   {
-    answer: "SDK for apps, CLI for local workflows, MCP server for agents.",
-    key: "question-5",
+    answer:
+      "You can use the SDK for full integration, the CLI for local workflows, or connect directly to agents through the MCP server. It's designed to plug into existing developer tools and agent environments.",
+    key: "question-7",
     question: "How do I integrate Namera?",
   },
   {
     answer:
-      "A local server that gives any MCP-compatible agent wallet capabilities — without touching private keys.",
-    key: "question-6",
+      "The MCP server lets AI agents connect to Namera and execute actions safely. It acts as the bridge between your agent and the wallet, enforcing permissions during execution.",
+    key: "question-8",
     question: "What is the MCP server?",
+  },
+  {
+    answer:
+      "Yes. You can create multiple session keys, each with its own policies, and assign them to different agents or roles.",
+    key: "question-9",
+    question: "Can I use multiple agents with different permissions?",
+  },
+  {
+    answer:
+      "Namera supports multi-chain execution through a unified interface, so you can operate across networks without managing separate wallets.",
+    key: "question-10",
+    question: "Which chains does Namera support?",
   },
 ];
 
@@ -49,7 +74,6 @@ export const Faqs = () => {
       className="relative px-4 max-w-7xl mx-auto py-[14dvh] flex flex-col gap-16"
       id="faqs"
     >
-      {/* Top divider */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
@@ -58,7 +82,6 @@ export const Faqs = () => {
             "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
         }}
       />
-      {/* Ambient glow */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute inset-x-0 top-20 mx-auto max-w-2xl h-64 blur-3xl opacity-30"
@@ -77,8 +100,7 @@ export const Faqs = () => {
         </h2>
       </div>
       <div className="relative mx-auto max-w-3xl w-full">
-        <div className="relative rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-          {/* Top highlight */}
+        <div className="relative rounded-2xl border border-white/10 bg-white/2 backdrop-blur-sm overflow-hidden">
           <div
             aria-hidden={true}
             className="pointer-events-none absolute inset-x-0 top-0 h-px"

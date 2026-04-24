@@ -90,11 +90,8 @@ const CommandBlock = () => {
 
 export const McpSection = () => {
   return (
-    <section
-      className="relative px-4 py-[6dvh] sm:py-[8dvh] min-h-screen justify-center border items-center flex"
-      id="mcp"
-    >
-      <div className="relative mx-auto max-w-7xl">
+    <section className="relative px-4 py-[6dvh] sm:py-[8dvh]" id="mcp">
+      <div className="relative mx-auto max-w-7xl flex flex-col gap-4">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0F1011] p-6 sm:p-10 md:p-14">
           <GridOverlay />
           <AmbientGlow />
@@ -108,9 +105,9 @@ export const McpSection = () => {
                   Give your agent a wallet in one command
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                  Namera ships a local MCP server. Drop it into Claude, GPT, or
-                  any MCP-compatible agent — your model gets wallet capabilities
-                  within scoped policies.
+                  Run the local MCP server and drop it into any MCP-compatible
+                  agent. Your agent gets wallet access with rules and
+                  permissions you define.
                 </p>
               </div>
 
