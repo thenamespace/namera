@@ -74,7 +74,6 @@ export const Faqs = () => {
       className="relative px-4 max-w-7xl mx-auto py-[14dvh] flex flex-col gap-16"
       id="faqs"
     >
-      {/* Top divider */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
@@ -83,7 +82,6 @@ export const Faqs = () => {
             "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
         }}
       />
-      {/* Ambient glow */}
       <div
         aria-hidden={true}
         className="pointer-events-none absolute inset-x-0 top-20 mx-auto max-w-2xl h-64 blur-3xl opacity-30"
@@ -102,8 +100,7 @@ export const Faqs = () => {
         </h2>
       </div>
       <div className="relative mx-auto max-w-3xl w-full">
-        <div className="relative rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-          {/* Top highlight */}
+        <div className="relative rounded-2xl border border-white/10 bg-white/2 backdrop-blur-sm overflow-hidden">
           <div
             aria-hidden={true}
             className="pointer-events-none absolute inset-x-0 top-0 h-px"

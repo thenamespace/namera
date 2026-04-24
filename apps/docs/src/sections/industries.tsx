@@ -193,7 +193,7 @@ export const Industries = () => {
                     className="rounded-lg border border-white/8 bg-white/3 px-3 py-2 text-sm leading-snug text-muted-foreground"
                     key={bullet}
                     variants={{
-                      hidden: { opacity: 0, y: 15 }, // Starts slightly lower
+                      hidden: { opacity: 0, y: 15 },
                       visible: {
                         opacity: 1,
                         transition: {
@@ -201,7 +201,7 @@ export const Industries = () => {
                           stiffness: 200,
                           type: "spring",
                         },
-                        y: 0, // Slides up to position
+                        y: 0,
                       },
                     }}
                   >

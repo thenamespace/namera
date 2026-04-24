@@ -65,14 +65,14 @@ export const Cta = () => {
             key={step.key}
             variants={stepVariants}
           >
-            <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.02] px-5 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/2 px-5 py-2.5 backdrop-blur-sm">
               <span className="font-geist-mono text-sm font-medium text-white/80">
                 {step.label}
               </span>
             </div>
             {i < steps.length - 1 && (
               <div className="flex items-center px-2">
-                <div className="h-px w-6 bg-gradient-to-r from-white/40 to-white/20" />
+                <div className="h-px w-6 bg-linear-to-r from-white/40 to-white/20" />
                 <div
                   aria-hidden={true}
                   className="h-1 w-1 rotate-45 border-r border-t border-white/40"

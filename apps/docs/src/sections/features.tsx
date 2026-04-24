@@ -156,7 +156,7 @@ export const Features = () => {
         variants={containerVariants}
       >
         {features.map((feature) => (
-          <FeatureCard key={feature.key} {...feature} />
+          <FeatureCard {...feature} key={feature.key} />
         ))}
       </motion.div>
     </motion.section>
