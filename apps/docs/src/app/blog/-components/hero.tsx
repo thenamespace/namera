@@ -59,7 +59,7 @@ export const BlogHero = () => {
             </span>
           </div>
           <div className="flex flex-row items-center gap-2 w-full sm:w-max">
-            <InputGroup className="sm:max-w-sm w-full h-10 rounded-full">
+            <InputGroup className="sm:max-w-sm w-full h-10 rounded-xl">
               <InputGroupInput
                 onChange={(e) => {
                   const value = e.target.value;
@@ -74,7 +74,7 @@ export const BlogHero = () => {
                 <MagnifyingGlassIcon />
               </InputGroupAddon>
               <InputGroupAddon align="inline-end" className="pr-4">
-                <Kbd className="bg-accent">/</Kbd>
+                <Kbd className="bg-accent rounded-md!">/</Kbd>
               </InputGroupAddon>
             </InputGroup>
             <Button

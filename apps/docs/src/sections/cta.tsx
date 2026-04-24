@@ -1,18 +1,19 @@
 import { Link } from "@tanstack/react-router";
 
-import { Button } from "@namera-ai/ui/components/ui/button";
+import { Button, buttonVariants } from "@namera-ai/ui/components/ui/button";
 import { ButtonGroup } from "@namera-ai/ui/components/ui/button-group";
+import { cn } from "@namera-ai/ui/lib/utils";
 import { ArrowRight, CheckIcon, CopyIcon } from "lucide-react";
 import { motion, type Variants } from "motion/react";
 
 import { AmbientGlow, Hr } from "@/components/misc";
-import { useCopyCommand } from "@/hooks/misc/use-copy-to-clipboard";
+import { useCopyToClipboard } from "@/hooks/misc";
 
 const steps = [
-  { dim: "Smart", key: "create", lit: "Wallets" },
-  { dim: "Session", key: "access", lit: "Keys" },
-  { dim: "Policy", key: "control", lit: "Control" },
-  { dim: "Agent", key: "execute", lit: "Autonomy" },
+  { key: "create", label: "Smart Wallets" },
+  { key: "access", label: "Session Keys" },
+  { key: "control", label: "Policies" },
+  { key: "execute", label: "Agents" },
 ];
 
 const containerVariants: Variants = {
@@ -42,7 +43,7 @@ const stepVariants: Variants = {
 };
 
 export const Cta = () => {
-  const { copied, handleCopy } = useCopyCommand("npm i -g @namera-ai/cli");
+  const { copied, copy } = useCopyToClipboard();
 
   return (
     <motion.section
@@ -54,8 +55,6 @@ export const Cta = () => {
     >
       <Hr />
       <AmbientGlow />
-
-      {/* Step pipeline */}
       <motion.div
         className="flex flex-wrap items-center justify-center gap-y-3"
         variants={containerVariants}
@@ -67,17 +66,8 @@ export const Cta = () => {
             variants={stepVariants}
           >
             <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.02] px-5 py-2.5 backdrop-blur-sm">
-              <span className="font-geist-mono text-sm text-white/25">
-                {step.dim}
-              </span>
-              <span
-                aria-hidden={true}
-                className="font-geist-mono text-[10px] text-white/15"
-              >
-                ·
-              </span>
               <span className="font-geist-mono text-sm font-medium text-white/80">
-                {step.lit}
+                {step.label}
               </span>
             </div>
             {i < steps.length - 1 && (
@@ -99,7 +89,7 @@ export const Cta = () => {
           Start building.
         </h2>
         <p className="mx-auto max-w-md text-sm font-normal leading-relaxed text-muted-foreground md:text-base">
-          Smart accounts, session keys, and onchain policies — all in one place,
+          Smart accounts, session keys, and onchain policies - all in one place,
           ready for agents.
         </p>
       </motion.div>
@@ -107,12 +97,17 @@ export const Cta = () => {
       {/* CTAs */}
       <motion.div variants={itemVariants}>
         <ButtonGroup className="max-w-full overflow-x-auto">
-          <span className="flex items-center px-4 font-geist-mono text-xs text-white/30 border border-white/10 bg-white/[0.02] rounded-xl rounded-r-none border-r-0 select-none">
-            Start
+          <span
+            className={cn(
+              buttonVariants({ size: "xl", variant: "outline" }),
+              "rounded-r-none hover:bg-background! hover:text-muted-foreground rounded-l-xl",
+            )}
+          >
+            Get Started
           </span>
           <Button
             className="rounded-none"
-            onClick={handleCopy}
+            onClick={() => copy("npm i -g @namera-ai/cli")}
             size="xl"
             variant="outline"
           >
@@ -125,17 +120,15 @@ export const Cta = () => {
               <CopyIcon className="size-3.5" />
             )}
           </Button>
-          <span className="flex items-center px-4 font-geist-mono text-xs text-white/30 border border-white/10 bg-white/[0.02] border-l-0 border-r-0 select-none">
-            Read
-          </span>
+
           <Button
             className="rounded-xl rounded-l-none group pr-4"
             render={<Link to="/docs/$" />}
             size="xl"
             variant="outline"
           >
-            Get started
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+            Docs
+            <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-all" />
           </Button>
         </ButtonGroup>
       </motion.div>

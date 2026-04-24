@@ -20,7 +20,7 @@ const navigationGroups = [
   {
     links: [
       { external: false, href: "/blog", title: "Blog" },
-      { external: false, href: "/docs", title: "Dev Docs" },
+      { external: false, href: "/docs", title: "Docs" },
       { external: false, href: "/changelog", title: "Changelog" },
     ],
     title: "Company",

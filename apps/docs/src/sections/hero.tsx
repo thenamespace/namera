@@ -39,7 +39,7 @@ export const Hero = () => {
             <span
               className={cn(
                 buttonVariants({ size: "xl", variant: "outline" }),
-                "rounded-r-none hover:bg-background! hover:text-muted-foreground",
+                "rounded-r-none hover:bg-background! hover:text-muted-foreground rounded-l-xl",
               )}
             >
               Get Started
