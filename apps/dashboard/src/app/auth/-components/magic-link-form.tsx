@@ -43,7 +43,7 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
       id="auth-form"
       onSubmit={form.handleSubmit(handleSubmit)}
     >
-      <div className="text-card-foreground text-center text-lg">
+      <div className="text-center text-lg font-medium">
         Get started with Namera
       </div>
       <Controller
@@ -64,13 +64,12 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
             </Field>
           );
         }}
+        control={form.control}
         name="email"
       />
       <Button
         className="w-full"
-        disabled={
-          form.formState.isValid === false || form.formState.isSubmitting
-        }
+        disabled={form.formState.isSubmitting}
         size="lg"
         type="submit"
       >

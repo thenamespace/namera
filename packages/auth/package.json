@@ -13,11 +13,11 @@
     "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
     "@namera-ai/utils": "workspace:*",
-    "effect": "4.0.0-beta.42"
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "^1.3.11",
-    "typescript": "^6.0.2"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   }
 }

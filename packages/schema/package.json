@@ -9,12 +9,12 @@
   },
   "scripts": {},
   "dependencies": {
-    "effect": "4.0.0-beta.42",
-    "viem": "^2.47.10"
+    "effect": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "^1.3.11",
-    "typescript": "^6.0.2"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   }
 }
