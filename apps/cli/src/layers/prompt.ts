@@ -1,4 +1,4 @@
-import { Data, Effect, Layer, type Redacted, ServiceMap } from "effect";
+import { Context, Data, Effect, Layer, type Redacted } from "effect";
 import type { QuitError } from "effect/Terminal";
 import { Prompt } from "effect/unstable/cli";
 import { type Hex, hexToBytes, isHex } from "viem";
@@ -64,7 +64,7 @@ export type PromptManager = {
 /**
  * Service tag for resolving {@link PromptManager} from the Effect context.
  */
-export const PromptManager = ServiceMap.Service<PromptManager>(
+export const PromptManager = Context.Service<PromptManager>(
   "@namera-ai/cli/PromptManager",
 );
 

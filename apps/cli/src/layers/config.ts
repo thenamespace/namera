@@ -1,6 +1,6 @@
 import os from "node:os";
 
-import { Data, Effect, FileSystem, Layer, Path, ServiceMap } from "effect";
+import { Context, Data, Effect, FileSystem, Layer, Path } from "effect";
 import type { SystemErrorTag } from "effect/PlatformError";
 
 import { type Entity, type EntityType, entityName } from "@/types";
@@ -90,7 +90,7 @@ type GetEntityParams<TEntityType extends EntityType> = {
 /**
  * Service tag for resolving {@link ConfigManager} from the Effect context.
  */
-export const ConfigManager = ServiceMap.Service<ConfigManager>(
+export const ConfigManager = Context.Service<ConfigManager>(
   "@namera-ai/cli/ConfigManager",
 );
 

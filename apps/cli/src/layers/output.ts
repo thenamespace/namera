@@ -1,5 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
-import { NdJson } from "json-nd";
+import { Context, Effect, Layer } from "effect";
 
 import { prettyFormat } from "@/helpers/pretty";
 
@@ -22,7 +21,7 @@ export type OutputFormatter = {
 /**
  * Service tag for resolving {@link OutputFormatter} from the Effect context.
  */
-export const OutputFormatter = ServiceMap.Service<OutputFormatter>(
+export const OutputFormatter = Context.Service<OutputFormatter>(
   "@namera-ai/cli/OutputFormatter",
 );
 
@@ -42,10 +41,10 @@ export const layer = Layer.succeed(
         }
 
         if (Array.isArray(data)) {
-          return NdJson.stringify(data);
+          return `${data.map((item) => JSON.stringify(item)).join("\n")}\n`;
         }
 
-        return NdJson.stringify([data]);
+        return `${JSON.stringify(data)}\n`;
       }),
   }),
 );

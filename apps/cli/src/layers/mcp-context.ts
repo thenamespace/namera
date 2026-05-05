@@ -1,4 +1,4 @@
-import { ServiceMap } from "effect";
+import { Context } from "effect";
 import type { LocalAccount } from "viem";
 
 import type { LocalSmartAccount, SessionKeyData } from "@/dto";
@@ -10,6 +10,6 @@ export type McpContext = {
   })[];
 };
 
-export const McpContext = ServiceMap.Service<McpContext>(
+export const McpContext = Context.Service<McpContext>(
   "@namera-ai/cli/McpContext",
 );

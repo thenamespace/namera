@@ -6,4 +6,7 @@ export default createTsdownConfig({
   },
   entry: ["src/index.ts"],
   platform: "node",
+  unbundle: true,
+  treeshake: false,
+  shims: false,
 });

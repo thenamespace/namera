@@ -3,7 +3,7 @@ import {
   createSessionKey as createNameraSessionKey,
   isSessionKeyInstalled,
 } from "@namera-ai/sdk/session-key";
-import { Data, Effect, Layer, type Redacted, Schema, ServiceMap } from "effect";
+import { Context, Data, Effect, Layer, type Redacted, Schema } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import { hexToBytes, toHex } from "viem";
@@ -95,7 +95,7 @@ export type SessionKeyManager = {
     readonly alias: string;
   }) => Effect.Effect<void, SessionKeyManagerError | ConfigManagerError, never>;
 };
-export const SessionKeyManager = ServiceMap.Service<SessionKeyManager>(
+export const SessionKeyManager = Context.Service<SessionKeyManager>(
   "@namera-ai/cli/SessionKeyManager",
 );
 

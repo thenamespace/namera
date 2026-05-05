@@ -1,5 +1,5 @@
 import { createAccountClient } from "@namera-ai/sdk/account";
-import { Data, Effect, Layer, Schema, ServiceMap } from "effect";
+import { Context, Data, Effect, Layer, Schema } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
@@ -106,7 +106,7 @@ export type SmartAccountManager = {
 /**
  * Service tag for resolving {@link SmartAccountManager} from the Effect context.
  */
-export const SmartAccountManager = ServiceMap.Service<SmartAccountManager>(
+export const SmartAccountManager = Context.Service<SmartAccountManager>(
   "@namera-ai/cli/SmartAccountManager",
 );
 

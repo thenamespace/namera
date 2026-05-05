@@ -1,4 +1,4 @@
-import { Schema, Struct } from "effect";
+import { Effect, Schema, Struct } from "effect";
 
 import { BigIntFromString, EthereumAddress, Hex } from "./common";
 
@@ -9,13 +9,13 @@ export const SudoPolicyParams = Schema.Struct({
 export const TimestampPolicyParams = Schema.Struct({
   type: Schema.Literal("timestamp"),
   validAfter: Schema.optional(Schema.Number)
-    .pipe(Schema.withDecodingDefault(() => 0))
+    .pipe(Schema.withDecodingDefault(Effect.succeed(0)))
     .annotate({
       description:
         "The timestamp in seconds after which signer is valid. If not provided, the signer is valid immediately.",
     }),
   validUntil: Schema.optional(Schema.Number)
-    .pipe(Schema.withDecodingDefault(() => 0))
+    .pipe(Schema.withDecodingDefault(Effect.succeed(0)))
     .annotate({
       description:
         "The timestamp in seconds until which signer is valid. If not provided, the signer is valid indefinitely.",
@@ -121,7 +121,7 @@ const ParamRule = Schema.Struct({
 
 const PermissionCore = Schema.Struct({
   callType: Schema.optional(CallType)
-    .pipe(Schema.withDecodingDefault(() => "call"))
+    .pipe(Schema.withDecodingDefault(Effect.succeed("call")))
     .annotate({
       description: "The type of call to make",
       default: "call",

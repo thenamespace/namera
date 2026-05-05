@@ -1,4 +1,4 @@
-import { Config, Effect, Layer, Redacted, ServiceMap } from "effect";
+import { Config, Context, Effect, Layer, Redacted } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import {
@@ -86,7 +86,7 @@ export type GetBundlerClientParams = {
 /**
  * Service tag for resolving {@link Web3Service} from the Effect context.
  */
-export const Web3Service = ServiceMap.Service<Web3Service>(
+export const Web3Service = Context.Service<Web3Service>(
   "@namera-ai/cli/Web3Service",
 );
 

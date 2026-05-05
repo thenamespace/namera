@@ -1,5 +1,5 @@
 import { Wallet as EthereumJSWallet, Wallet } from "@ethereumjs/wallet";
-import { Data, Effect, Layer, Redacted, ServiceMap } from "effect";
+import { Context, Data, Effect, Layer, Redacted } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
@@ -113,7 +113,7 @@ export type KeystoreManager = {
 /**
  * Service tag for resolving {@link KeystoreManager} from the Effect context.
  */
-export const KeystoreManager = ServiceMap.Service<KeystoreManager>(
+export const KeystoreManager = Context.Service<KeystoreManager>(
   "@namera-ai/cli/KeystoreManager",
 );
 

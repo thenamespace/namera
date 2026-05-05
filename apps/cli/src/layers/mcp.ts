@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Context, Effect, Layer } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { ServeError } from "effect/unstable/http/HttpServerError";
 
@@ -19,7 +19,7 @@ export type McpManager = {
   >;
 };
 
-export const McpManager = ServiceMap.Service<McpManager>(
+export const McpManager = Context.Service<McpManager>(
   "@namera-ai/cli/McpManager",
 );
 
