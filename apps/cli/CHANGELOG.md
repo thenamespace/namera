@@ -1,5 +1,13 @@
 # @namera-ai/cli
 
+## 0.1.4
+
+### Patch Changes
+
+- [#20](https://github.com/thenamespace/namera/pull/20) [`a7ce08c`](https://github.com/thenamespace/namera/commit/a7ce08c7ff2ff43e2092f9aaeee50be744e771dd) Thanks [@envoy1084](https://github.com/envoy1084)! - - Upgraded `effect` to `4.0.0-beta.60` for improved stability and compatibility with the latest Effect ecosystem
+  - Removed `json-nd` dependency and replaced with inline handling logic to reduce dependency surface and improve control
+  - Switched to unbundled output in tsdown to preserve file structure and improve runtime compatibility across npm, pnpm, and bun
+
 ## 0.1.3
 
 ### Patch Changes
