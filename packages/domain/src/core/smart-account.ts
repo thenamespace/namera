@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema, ServiceMap } from "effect";
+import { Effect, Layer, Schema, Context } from "effect";
 
 import { createPublicClient, http } from "viem";
 import { toAccount } from "viem/accounts";
@@ -34,7 +34,7 @@ export type SmartAccountRepo = {
 };
 
 export const SmartAccountRepo =
-  ServiceMap.Service<SmartAccountRepo>("SmartAccountRepo");
+  Context.Service<SmartAccountRepo>("SmartAccountRepo");
 
 export const layer = Layer.succeed(
   SmartAccountRepo,

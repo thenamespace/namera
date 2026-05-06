@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 import * as SessionRepo from "./session";
 import * as UserRepo from "./user";
@@ -10,7 +10,7 @@ export type AuthRepo = {
   session: SessionRepo.SessionRepo;
 };
 
-export const AuthRepo = ServiceMap.Service<AuthRepo>("AuthRepo");
+export const AuthRepo = Context.Service<AuthRepo>("AuthRepo");
 
 export const layer = Layer.effect(
   AuthRepo,

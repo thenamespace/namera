@@ -1,4 +1,4 @@
-import { Clock, Duration, Effect, Layer, ServiceMap } from "effect";
+import { Clock, Duration, Effect, Layer, Context } from "effect";
 
 import { originCheck } from "@/helpers/origin";
 import { AdminDatabase, Transaction, type Database } from "@namera-ai/database";
@@ -35,7 +35,7 @@ export type MagicLink = {
   >;
 };
 
-export const MagicLink = ServiceMap.Service<MagicLink>("MagicLink");
+export const MagicLink = Context.Service<MagicLink>("MagicLink");
 
 const signInMagicLink = (params: SigInMagicLinkBody) =>
   Effect.gen(function* () {

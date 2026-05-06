@@ -1,6 +1,6 @@
 import type { Session, User } from "@namera-ai/schema";
 
-import { Schema, ServiceMap } from "effect";
+import { Schema, Context } from "effect";
 
 import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 
@@ -10,7 +10,7 @@ export class Unauthorized extends Schema.TaggedErrorClass<Unauthorized>()(
   { httpApiStatus: 401 },
 ) {}
 
-export class AuthenticatedUser extends ServiceMap.Service<
+export class AuthenticatedUser extends Context.Service<
   AuthenticatedUser,
   {
     user: User;

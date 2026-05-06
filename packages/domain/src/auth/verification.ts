@@ -4,7 +4,7 @@ import type {
   VerificationUpdate,
 } from "@namera-ai/schema";
 
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 import { eq } from "drizzle-orm";
 
@@ -31,7 +31,7 @@ export type VerificationRepo = {
 };
 
 export const VerificationRepo =
-  ServiceMap.Service<VerificationRepo>("VerificationRepo");
+  Context.Service<VerificationRepo>("VerificationRepo");
 
 export const layer = Layer.succeed(
   VerificationRepo,

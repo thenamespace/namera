@@ -1,4 +1,4 @@
-import { Config, Effect, Layer, ServiceMap } from "effect";
+import { Config, Effect, Layer, Context } from "effect";
 
 export const OtelEnv = Config.all({
   otelBaseUrl: Config.url("OTEL_BASE_URL"),
@@ -12,7 +12,7 @@ export type OtelConfig = {
   logsUrl: URL;
 };
 
-export const OtelConfig = ServiceMap.Service<OtelConfig>("OtelConfig");
+export const OtelConfig = Context.Service<OtelConfig>("OtelConfig");
 
 export const layer = Layer.effect(
   OtelConfig,

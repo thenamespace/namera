@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 import * as SmartAccountRepo from "./smart-account";
 
@@ -6,7 +6,7 @@ export type CoreRepo = {
   smartAccount: SmartAccountRepo.SmartAccountRepo;
 };
 
-export const CoreRepo = ServiceMap.Service<CoreRepo>("CoreRepo");
+export const CoreRepo = Context.Service<CoreRepo>("CoreRepo");
 
 export const layer = Layer.effect(
   CoreRepo,

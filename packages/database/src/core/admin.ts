@@ -1,5 +1,5 @@
 import { PgClient } from "@effect/sql-pg";
-import { Config, Layer, ServiceMap } from "effect";
+import { Config, Layer, Context } from "effect";
 
 import { types } from "pg";
 
@@ -20,7 +20,7 @@ const PgAdminLive = PgClient.layerConfig({
   },
 });
 export type AdminDatabase = Database;
-export const AdminDatabase = ServiceMap.Service<AdminDatabase>("AdminDatabase");
+export const AdminDatabase = Context.Service<AdminDatabase>("AdminDatabase");
 export const layer = Layer.provideMerge(
   Layer.effect(AdminDatabase, makeDatabase),
   PgAdminLive,

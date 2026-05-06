@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema, ServiceMap } from "effect";
+import { Effect, Layer, Schema, Context } from "effect";
 
 import { and, eq, ne } from "drizzle-orm";
 
@@ -33,7 +33,7 @@ export type SessionRepo = {
   ) => Effect.Effect<void, never, Database.Database>;
 };
 
-export const SessionRepo = ServiceMap.Service<SessionRepo>("SessionRepo");
+export const SessionRepo = Context.Service<SessionRepo>("SessionRepo");
 
 export const layer = Layer.succeed(
   SessionRepo,

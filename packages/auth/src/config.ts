@@ -1,4 +1,4 @@
-import { Duration, Effect, Layer, ServiceMap } from "effect";
+import { Duration, Effect, Layer, Context } from "effect";
 
 import { AuthEnv } from "./env";
 
@@ -21,7 +21,7 @@ export type AuthConfig = AuthEnv & {
   };
 };
 
-export const AuthConfig = ServiceMap.Service<AuthConfig>("AuthConfig");
+export const AuthConfig = Context.Service<AuthConfig>("AuthConfig");
 
 export const layer = Layer.effect(
   AuthConfig,

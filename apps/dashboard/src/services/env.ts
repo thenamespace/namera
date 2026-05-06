@@ -1,4 +1,4 @@
-import { Config, ConfigProvider, Effect, Layer, ServiceMap } from "effect";
+import { Config, ConfigProvider, Effect, Layer, Context } from "effect";
 
 export const EnvConfig = Config.all({
   backendUrl: Config.url("VITE_BACKEND_URL"),
@@ -7,7 +7,7 @@ export const EnvConfig = Config.all({
 });
 
 export type Env = Config.Success<typeof EnvConfig>;
-export const Env = ServiceMap.Service<Env>("@namera-ai/dashboard/Env");
+export const Env = Context.Service<Env>("@namera-ai/dashboard/Env");
 
 export const layer = Layer.effect(
   Env,

@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 import { HttpApiClient } from "effect/unstable/httpapi";
 
@@ -17,7 +17,7 @@ const makeApiClient = Effect.gen(function* () {
 
 type ApiClient = Effect.Success<typeof makeApiClient>;
 
-export const ApiClient = ServiceMap.Service<ApiClient>(
+export const ApiClient = Context.Service<ApiClient>(
   "@namera/dashboard/ApiClient",
 );
 

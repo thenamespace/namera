@@ -1,5 +1,5 @@
 import { PgClient } from "@effect/sql-pg";
-import { Config, Effect, Layer, ServiceMap } from "effect";
+import { Config, Effect, Layer, Context } from "effect";
 
 import * as PgDrizzle from "drizzle-orm/effect-postgres";
 import { types } from "pg";
@@ -27,7 +27,7 @@ export const makeDatabase = PgDrizzle.make({ relations }).pipe(
 
 export type Database = Effect.Success<typeof makeDatabase>;
 
-export const Database = ServiceMap.Service<Database>("Database");
+export const Database = Context.Service<Database>("Database");
 export const layer = Layer.provideMerge(
   Layer.effect(Database, makeDatabase),
   PgLive,

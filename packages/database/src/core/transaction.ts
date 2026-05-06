@@ -1,6 +1,6 @@
 import type { UserId } from "@namera-ai/schema";
 
-import { Effect, ServiceMap } from "effect";
+import { Effect, Context } from "effect";
 
 import type { Database } from "./layer";
 import { TransactionOrDatabase } from "./tx-or-db";
@@ -9,7 +9,7 @@ export type TransactionClient = Parameters<
   Parameters<Database["transaction"]>[0]
 >[0];
 export const TransactionClient =
-  ServiceMap.Service<TransactionClient>("TransactionClient");
+  Context.Service<TransactionClient>("TransactionClient");
 
 export const withTx = (tx: TransactionClient) =>
   Effect.provideService(TransactionClient, tx);
