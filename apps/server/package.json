@@ -23,5 +23,9 @@
     "@namera-ai/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
+  },
+  "portless": {
+    "name": "api.namera",
+    "appPort": 8080
   }
 }

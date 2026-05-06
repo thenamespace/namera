@@ -1,0 +1,28 @@
+{
+  "name": "@namera-ai/emails",
+  "version": "0.1.0",
+  "private": "true",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "email dev -d ./src -p 5000"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-email": "6.1.1",
+    "tailwindcss": "^4.2.4"
+  },
+  "devDependencies": {
+    "@namera-ai/config": "workspace:*",
+    "@react-email/ui": "6.1.1",
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "portless": {
+    "name": "emails.namera",
+    "appPort": 5000
+  }
+}
