@@ -6,11 +6,6 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { ConfigProvider, Console, Effect, Layer } from "effect";
 import { CliError, Command } from "effect/unstable/cli";
 
-import { createRequire } from "node:module";
-
-import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { ConfigProvider, Console, Effect, Layer } from "effect";
-import { CliError, Command } from "effect/unstable/cli";
 import { commands } from "./commands";
 import { globalFlags } from "./flags/global";
 import {
@@ -26,19 +21,6 @@ import {
 
 const require = createRequire(import.meta.url);
 const packageJson = require("../package.json");
-
-import { commands } from "./commands";
-import { globalFlags } from "./flags/global";
-import {
-  ConfigManager,
-  KeystoreManager,
-  McpManager,
-  OutputFormatter,
-  PromptManager,
-  SessionKeyManager,
-  SmartAccountManager,
-  Web3Service,
-} from "./layers";
 
 const command = Command.make("namera", {}, () =>
   Effect.fail(
