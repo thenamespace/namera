@@ -1,6 +1,6 @@
 pre-commit:
   commands:
-    biome-check:
+    ox-check:
       run: bun format && bun lint
       stage_fixed: true
 
