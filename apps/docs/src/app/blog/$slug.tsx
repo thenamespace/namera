@@ -28,15 +28,8 @@ const serverLoader = createServerFn({
     const text = await page.data.getText("processed");
     const readingTime = getReadingTime(text);
 
-    const authors: BlogMetadata["authors"] = [
-      { name: page.data.author, url: page.data.authorUrl },
-      ...(page.data.author2
-        ? [{ name: page.data.author2, url: page.data.authorUrl2 }]
-        : []),
-    ];
-
     const metadata: BlogMetadata = {
-      authors,
+      authors: page.data.authors,
       datePublished:
         page.data.date instanceof Date
           ? page.data.date

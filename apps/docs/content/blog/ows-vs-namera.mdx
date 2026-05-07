@@ -3,15 +3,16 @@ title: "OWS vs Namera"
 description: "A direct comparison of Open Wallet Standard and Namera for agent wallets, policy enforcement, custody, and onchain execution."
 image: "https://6iw07yybtp.ufs.sh/f/9tvkThgRlUcKFe1uMoTKVboBCWguHlNkJpxPhrQR4i3qvXm1"
 category: "community"
-author: Vedant Chainani
-authorUrl: https://envoy1084.xyz
-author2: cap.eth
-authorUrl2: https://kriskocic.com
+authors:
+    - name: cap.eth
+      url: https://kriskocic.com
+    - name: Vedant Chainani
+      url: https://envoy1084.xyz
 date: 2026-05-04
 keywords: OWS, Open Wallet Standard, Namera, agent wallets, session keys, smart accounts, wallet permissions, local wallet storage, account abstraction, policy enforcement
 ---
 
-*People have been asking how Namera compares to OWS [Open Wallet Standard](https://openwallet.sh), what the differences are, what the tradeoffs look like, and whether they can be paired together. This is a technical comparison covering custody model, policy enforcement, developer ergonomics, and tradeoffs.*
+*People have been asking how Namera compares to OWS ([Open Wallet Standard](https://openwallet.sh)), what the differences are, what the tradeoffs look like, and whether they can be paired together. This is a technical comparison covering custody model, policy enforcement, developer ergonomics, and tradeoffs.*
 
 ---
 
@@ -67,7 +68,7 @@ Important detail: the agent does not receive the plaintext private key. It recei
 
 ## What is Namera?
 
-Namera is a programmable smart wallet infrastructure layer for autonomous agents.
+Namera is a programmable smart wallet layer for autonomous agents.
 
 It's not trying to become a universal local wallet file format. It's focused on smart accounts, session keys, account abstraction, and policies that define what an agent can do onchain.
 
@@ -102,7 +103,6 @@ The Namera flow looks like this:
 
 ## How They Compare
 
-
 |                  | OWS                                                | Namera                                     |
 | ---------------- | -------------------------------------------------- | ------------------------------------------ |
 | Main job         | Local wallet storage and signing access            | Scoped smart-account execution             |
@@ -113,7 +113,9 @@ The Namera flow looks like this:
 | Best for         | One local wallet interface across tools and chains | Agents executing bounded onchain workflows |
 
 
-### Custody
+---
+
+## Custody Model
 
 **OWS is local custody first.**
 
@@ -131,8 +133,9 @@ The owner signer remains the source of authority, but the agent operates through
 | OWS    | Local wallet secret and signing path         |
 | Namera | Smart account authority and execution rights |
 
+---
 
-### Policy Model
+## Policy Model
 
 **OWS policies are pre-signing checks.**
 
@@ -159,7 +162,9 @@ This is closer to how people describe tasks in plain language:
 - "This bot can spend up to 100 USDC, not everything."
 - "This service can sign orders for this protocol, not random messages."
 
-### Onchain vs Local Enforcement
+---
+
+## Onchain vs Local Enforcement
 
 **OWS enforcement is local and pre-signing.**
 

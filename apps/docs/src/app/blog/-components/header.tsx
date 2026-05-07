@@ -31,18 +31,14 @@ export const BlogHeader = ({
           {authors.map((author, i) => (
             <span key={author.name}>
               {i > 0 && <span className="mr-1">&</span>}
-              {author.url ? (
-                <a
-                  className="hover:text-foreground transition-colors"
-                  href={author.url}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {author.name}
-                </a>
-              ) : (
-                author.name
-              )}
+              <a
+                className="hover:text-foreground transition-colors"
+                href={author.url}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {author.name}
+              </a>
             </span>
           ))}
         </address>

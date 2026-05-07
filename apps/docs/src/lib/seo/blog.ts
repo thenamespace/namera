@@ -49,7 +49,10 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
       // Article Tags
       { content: datePublished, property: "article:published_time" },
       { content: dateModified, property: "article:modified_time" },
-      { content: metadata.authors[0]?.url, property: "article:author" },
+      ...metadata.authors.map((author) => ({
+        content: author.url,
+        property: "article:author",
+      })),
       // Twitter
       { content: "summary_large_image", name: "twitter:card" },
       { content: "@namera_ai", name: "twitter:site" },

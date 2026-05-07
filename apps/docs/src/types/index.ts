@@ -8,10 +8,10 @@ export type ReadingTimeResult = {
 export type BlogMetadata = {
   title: string;
   description?: string;
-  authors: Array<{
+  authors: {
     name: string;
-    url?: string;
-  }>;
+    url: string;
+  }[];
   datePublished: Date;
   lastModified: Date;
   slug: string;
@@ -34,7 +34,10 @@ export type BlogCategory = "case-study" | "community" | "news" | "changelog";
 export type BlogCardProps = {
   title: string;
   description?: string;
-  author: string;
+  authors: {
+    name: string;
+    url: string;
+  }[];
   datePublished: Date;
   lastModified: Date;
   slug: string;

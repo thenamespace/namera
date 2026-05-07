@@ -4,7 +4,7 @@ import type { BlogCardProps } from "@/types";
 
 export const BlogCard = (props: BlogCardProps) => {
   return (
-    <div className="py-3">
+    <div className="px-6">
       <Link
         className="gap-3 flex flex-col"
         params={{ slug: props.slug }}
@@ -16,7 +16,9 @@ export const BlogCard = (props: BlogCardProps) => {
           src={props.image}
         />
         <div className="flex flex-row gap-2 items-center text-xs">
-          <div className="text-muted-foreground">{props.author}</div>
+          <div className="text-muted-foreground">
+            {props.authors.map((a) => a.name).join(" & ")}
+          </div>
           <div className="size-0.5 rounded-full bg-muted-foreground" />
           <div className="text-muted-foreground">
             Updated on{" "}
