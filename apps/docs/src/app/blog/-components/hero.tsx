@@ -126,6 +126,14 @@ export const BlogHero = () => {
             </InputGroup>
             <Button
               className="text-muted-foreground"
+              render={
+                // biome-ignore lint/a11y/useAnchorContent: safe
+                <a
+                  href="/blog/rss.xml"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                />
+              }
               size="icon-lg"
               variant="ghost"
             >
