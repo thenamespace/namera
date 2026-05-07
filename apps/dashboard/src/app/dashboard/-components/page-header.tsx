@@ -17,13 +17,13 @@ export const PageHeader = ({
   return (
     <div
       className={cn(
-        "flex h-10 flex-row items-center justify-between px-6",
-        noBorder ? "" : "border-b-[0.5px]",
+        "flex h-12 flex-row items-center justify-between px-4",
+        noBorder ? "" : "border-b",
         className,
       )}
       {...props}
     >
-      <div className="text-[13px]">{header}</div>
+      <div className="text-[13px] font-medium">{header}</div>
       <div className="text-[13px]">{children}</div>
     </div>
   );

@@ -15,12 +15,25 @@ export const SerializedAccount = Schema.Struct({
   serializedAccount: Schema.String,
 });
 
+export const SessionKeyMetadata = Schema.Struct({
+  icon: Schema.Struct({
+    type: Schema.Literals(["icon", "emoji"]),
+    value: Schema.String,
+  }),
+  name: Schema.String.check(
+    Schema.isLengthBetween(4, 255, {
+      message: "Name must be between 4 and 255 characters long",
+    }),
+  ),
+});
+
 const BaseSessionKey = Schema.Struct({
   id: SessionKeyId,
-  userId: UserId,
-  name: Schema.optional(Schema.String),
+  userId: UserId, // Reference to user
   smartAccountId: SmartAccountId, // Reference to smart account
   serializedAccounts: Schema.Array(SerializedAccount),
+  metadata: SessionKeyMetadata,
+  // Timestamps
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
 });
@@ -46,7 +59,7 @@ export const SessionKeyInsert = createInsertSchema(
   SessionKey,
   "type",
   "userId",
-  "name",
+  "metadata",
   "smartAccountId",
   "serializedAccounts",
 );

@@ -1,32 +1,30 @@
 import { useHotkeySequence } from "@tanstack/react-hotkeys";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
-import {
-  AddressBookIcon,
-  FlaskIcon,
-  KeyIcon,
-  PulseIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
+import { KeyIcon, TriangleIcon } from "@phosphor-icons/react/ssr";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@namera-ai/ui/components/ui/collapsible";
-import { Kbd } from "@namera-ai/ui/components/ui/kbd";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
+import {
+  AnalyticsLottieIcon,
+  CategoryLottieIcon,
+  UserLottieIcon,
+} from "@namera-ai/ui/lottie";
+
+import { SidebarButton } from "./sidebar-button";
 
 const items = [
   {
     href: "/dashboard/accounts",
-    icon: AddressBookIcon,
+    lottie: UserLottieIcon,
     title: "Accounts",
     tooltip: {
       hotKey: "A",
@@ -44,7 +42,7 @@ const items = [
   },
   {
     href: "/dashboard/permissions",
-    icon: FlaskIcon,
+    lottie: CategoryLottieIcon,
     title: "Permissions",
     tooltip: {
       hotKey: "P",
@@ -53,7 +51,7 @@ const items = [
   },
   {
     href: "/dashboard/activity",
-    icon: PulseIcon,
+    lottie: AnalyticsLottieIcon,
     title: "Activity",
     tooltip: {
       text: "activity",
@@ -101,36 +99,7 @@ export const CoreGroup = () => {
         <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
           <SidebarMenu>
             {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  render={
-                    <Link
-                      to={item.href}
-                      activeOptions={{
-                        exact: false,
-                      }}
-                      activeProps={{
-                        className: "bg-sidebar-accent",
-                      }}
-                    />
-                  }
-                  tooltip={{
-                    children: (
-                      <div className="flex flex-row items-center gap-1">
-                        <div>Go to {item.tooltip.text}</div>
-                        {"hotKey" in item.tooltip && (
-                          <div>
-                            <Kbd>G</Kbd> then <Kbd>{item.tooltip.hotKey}</Kbd>
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  }}
-                >
-                  <item.icon />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarButton key={item.title} {...item} />
             ))}
           </SidebarMenu>
         </CollapsibleContent>

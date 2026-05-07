@@ -19,7 +19,6 @@ import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as DashboardMcpIndexRouteImport } from "./app/dashboard/mcp/index";
 import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
-import { Route as DashboardSecurityIndexRouteImport } from "./app/dashboard/security/index";
 import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as IndexRouteImport } from "./app/index";
@@ -55,11 +54,6 @@ const DashboardSessionKeysIndexRoute =
     path: "/session-keys/",
     getParentRoute: () => DashboardRouteRoute,
   } as any);
-const DashboardSecurityIndexRoute = DashboardSecurityIndexRouteImport.update({
-  id: "/security/",
-  path: "/security/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
 const DashboardPermissionsIndexRoute =
   DashboardPermissionsIndexRouteImport.update({
     id: "/permissions/",
@@ -109,7 +103,6 @@ export interface FileRoutesByFullPath {
   "/dashboard/identity/": typeof DashboardIdentityIndexRoute;
   "/dashboard/mcp/": typeof DashboardMcpIndexRoute;
   "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
   "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardAccountsNewIndexRoute;
@@ -124,7 +117,6 @@ export interface FileRoutesByTo {
   "/dashboard/identity": typeof DashboardIdentityIndexRoute;
   "/dashboard/mcp": typeof DashboardMcpIndexRoute;
   "/dashboard/permissions": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security": typeof DashboardSecurityIndexRoute;
   "/dashboard/session-keys": typeof DashboardSessionKeysIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
   "/dashboard/accounts/new": typeof DashboardAccountsNewIndexRoute;
@@ -141,7 +133,6 @@ export interface FileRoutesById {
   "/dashboard/identity/": typeof DashboardIdentityIndexRoute;
   "/dashboard/mcp/": typeof DashboardMcpIndexRoute;
   "/dashboard/permissions/": typeof DashboardPermissionsIndexRoute;
-  "/dashboard/security/": typeof DashboardSecurityIndexRoute;
   "/dashboard/session-keys/": typeof DashboardSessionKeysIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardAccountsNewIndexRoute;
@@ -159,7 +150,6 @@ export interface FileRouteTypes {
     | "/dashboard/identity/"
     | "/dashboard/mcp/"
     | "/dashboard/permissions/"
-    | "/dashboard/security/"
     | "/dashboard/session-keys/"
     | "/dashboard/settings/"
     | "/dashboard/accounts/new/";
@@ -174,7 +164,6 @@ export interface FileRouteTypes {
     | "/dashboard/identity"
     | "/dashboard/mcp"
     | "/dashboard/permissions"
-    | "/dashboard/security"
     | "/dashboard/session-keys"
     | "/dashboard/settings"
     | "/dashboard/accounts/new";
@@ -190,7 +179,6 @@ export interface FileRouteTypes {
     | "/dashboard/identity/"
     | "/dashboard/mcp/"
     | "/dashboard/permissions/"
-    | "/dashboard/security/"
     | "/dashboard/session-keys/"
     | "/dashboard/settings/"
     | "/dashboard/accounts/new/";
@@ -244,13 +232,6 @@ declare module "@tanstack/react-router" {
       path: "/session-keys";
       fullPath: "/dashboard/session-keys/";
       preLoaderRoute: typeof DashboardSessionKeysIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/security/": {
-      id: "/dashboard/security/";
-      path: "/security";
-      fullPath: "/dashboard/security/";
-      preLoaderRoute: typeof DashboardSecurityIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/permissions/": {
@@ -313,7 +294,6 @@ interface DashboardRouteRouteChildren {
   DashboardIdentityIndexRoute: typeof DashboardIdentityIndexRoute;
   DashboardMcpIndexRoute: typeof DashboardMcpIndexRoute;
   DashboardPermissionsIndexRoute: typeof DashboardPermissionsIndexRoute;
-  DashboardSecurityIndexRoute: typeof DashboardSecurityIndexRoute;
   DashboardSessionKeysIndexRoute: typeof DashboardSessionKeysIndexRoute;
   DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute;
   DashboardAccountsNewIndexRoute: typeof DashboardAccountsNewIndexRoute;
@@ -327,7 +307,6 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIdentityIndexRoute: DashboardIdentityIndexRoute,
   DashboardMcpIndexRoute: DashboardMcpIndexRoute,
   DashboardPermissionsIndexRoute: DashboardPermissionsIndexRoute,
-  DashboardSecurityIndexRoute: DashboardSecurityIndexRoute,
   DashboardSessionKeysIndexRoute: DashboardSessionKeysIndexRoute,
   DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
   DashboardAccountsNewIndexRoute: DashboardAccountsNewIndexRoute,

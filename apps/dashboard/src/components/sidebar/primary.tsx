@@ -1,18 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { SidebarGroup, SidebarMenu } from "@namera-ai/ui/components/ui/sidebar";
+import { WalletLottieIcon, OverviewLottieIcon } from "@namera-ai/ui/lottie";
 
-import { CardholderIcon, HeadCircuitIcon } from "@phosphor-icons/react/ssr";
-
-import {
-  SidebarGroup,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@namera-ai/ui/components/ui/sidebar";
+import { SidebarButton } from "./sidebar-button";
 
 const items = [
   {
     href: "/dashboard",
-    icon: HeadCircuitIcon,
+    lottie: OverviewLottieIcon,
     title: "Overview",
     tooltip: {
       text: "overview",
@@ -20,7 +14,7 @@ const items = [
   },
   {
     href: "/dashboard/assets",
-    icon: CardholderIcon,
+    lottie: WalletLottieIcon,
     title: "Assets",
     tooltip: {
       text: "assets",
@@ -32,27 +26,9 @@ export const PrimaryGroup = () => {
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton
-              render={
-                <Link
-                  to={item.href}
-                  activeOptions={{
-                    exact: true,
-                  }}
-                  activeProps={{
-                    className: "bg-sidebar-accent",
-                  }}
-                />
-              }
-              tooltip={`Go to ${item.tooltip.text}`}
-            >
-              <item.icon />
-              <span>{item.title}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+        {items.map((item) => {
+          return <SidebarButton key={item.title} {...item} />;
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

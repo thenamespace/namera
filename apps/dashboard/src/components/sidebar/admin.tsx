@@ -1,10 +1,4 @@
-import { Link } from "@tanstack/react-router";
-
-import {
-  GearSixIcon,
-  ShieldCheckIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
+import { TriangleIcon } from "@phosphor-icons/react/ssr";
 
 import {
   Collapsible,
@@ -15,22 +9,15 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
+import { SettingsLottieIcon } from "@namera-ai/ui/lottie";
+
+import { SidebarButton } from "./sidebar-button";
 
 const items = [
   {
-    href: "/dashboard/security",
-    icon: ShieldCheckIcon,
-    title: "Security",
-    tooltip: {
-      text: "security",
-    },
-  },
-  {
     href: "/dashboard/settings",
-    icon: GearSixIcon,
+    lottie: SettingsLottieIcon,
     title: "Settings",
     tooltip: {
       text: "settings",
@@ -58,25 +45,7 @@ export const AdminGroup = () => {
         <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
           <SidebarMenu>
             {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  render={
-                    <Link
-                      to={item.href}
-                      activeOptions={{
-                        exact: true,
-                      }}
-                      activeProps={{
-                        className: "bg-sidebar-accent",
-                      }}
-                    />
-                  }
-                  tooltip={`Go to ${item.tooltip.text}`}
-                >
-                  <item.icon />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarButton key={item.title} {...item} />
             ))}
           </SidebarMenu>
         </CollapsibleContent>

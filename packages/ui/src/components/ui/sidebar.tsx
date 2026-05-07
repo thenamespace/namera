@@ -221,8 +221,8 @@ function Sidebar({
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
-            ? "left-0 group-data-[collapsible=offExamples]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offExamples]:right-[calc(var(--sidebar-width)*-1)]",
+            ? "left-0 group-data-[collapsible=offExamples]:-left-(--sidebar-width)"
+            : "right-0 group-data-[collapsible=offExamples]:-right-(--sidebar-width)",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -480,7 +480,10 @@ function SidebarMenuItem({ className, ...props }: react.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "ring-sidebar-ring hover:bg-sidebar-accent hover:[&_svg]:text-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:font-medium [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+  [
+    "ring-sidebar-ring hover:bg-sidebar-accent hover:text-foreground hover:[&_svg]:text-foreground active:bg-sidebar-accent active:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-xl p-2 text-left text-sm outline-hidden transition-all group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:font-medium [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+    "shrink-0 [--lord-icon-colorize:var(--sidebar-foreground)] hover:[--lord-icon-colorize:var(--foreground)]",
+  ],
   {
     defaultVariants: {
       size: "default",
@@ -488,9 +491,8 @@ const sidebarMenuButtonVariants = cva(
     },
     variants: {
       size: {
-        default: "h-8 text-sm",
+        default: "h-7 text-[13px]",
         lg: "h-10 text-sm group-data-[collapsible=icon]:p-0!",
-        sm: "h-7 text-xs",
       },
       variant: {
         default: "hover:bg-sidebar-accent",
@@ -524,7 +526,7 @@ function SidebarMenuButton({
       },
       props,
     ),
-    render: !tooltip ? render : <TooltipTrigger render={render} />,
+    render: !tooltip ? render : <TooltipTrigger render={render} delay={400} />,
     state: {
       active: isActive,
       sidebar: "menu-button",

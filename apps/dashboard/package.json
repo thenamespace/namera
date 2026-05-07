@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "5.2.2",
+    "@lordicon/react": "^1.11.0",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/schema": "workspace:*",
     "@namera-ai/ui": "workspace:*",
@@ -24,6 +25,7 @@
     "@tanstack/router-plugin": "1.167.32",
     "avvvatars-react": "0.4.2",
     "effect": "catalog:",
+    "lottie-web": "^5.13.0",
     "motion": "12.38.0",
     "react": "catalog:",
     "react-dom": "catalog:",
