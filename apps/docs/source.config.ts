@@ -32,8 +32,12 @@ export const blog = defineDocs({
       includeProcessedMarkdown: true,
     },
     schema: pageSchema.extend({
-      author: z.string(),
-      authorUrl: z.string().optional(),
+      authors: z.array(
+        z.object({
+          name: z.string(),
+          url: z.string(),
+        }),
+      ),
       category: z.enum(["case-study", "community", "news", "changelog"]),
       date: z.iso.date().or(z.date()),
       image: z.string().optional(),

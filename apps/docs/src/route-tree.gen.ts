@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from "./app/index";
 import { Route as ChangelogIndexRouteImport } from "./app/changelog/index";
 import { Route as BlogIndexRouteImport } from "./app/blog/index";
 import { Route as DocsSplatRouteImport } from "./app/docs/$";
+import { Route as BlogRssDotxmlRouteImport } from "./app/blog/rss[.]xml";
 import { Route as BlogSlugRouteImport } from "./app/blog/$slug";
 import { Route as ApiSearchRouteImport } from "./app/api/search";
 import { Route as ApiOgRouteImport } from "./app/api/og";
@@ -76,6 +77,11 @@ const DocsSplatRoute = DocsSplatRouteImport.update({
   path: "/docs/$",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: "/rss.xml",
+  path: "/rss.xml",
+  getParentRoute: () => BlogRouteRoute,
+} as any);
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: "/$slug",
   path: "/$slug",
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
+  "/blog/rss.xml": typeof BlogRssDotxmlRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog/": typeof BlogIndexRoute;
   "/changelog/": typeof ChangelogIndexRoute;
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
+  "/blog/rss.xml": typeof BlogRssDotxmlRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog": typeof BlogIndexRoute;
   "/changelog": typeof ChangelogIndexRoute;
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
   "/blog/$slug": typeof BlogSlugRoute;
+  "/blog/rss.xml": typeof BlogRssDotxmlRoute;
   "/docs/$": typeof DocsSplatRoute;
   "/blog/": typeof BlogIndexRoute;
   "/changelog/": typeof ChangelogIndexRoute;
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
+    | "/blog/rss.xml"
     | "/docs/$"
     | "/blog/"
     | "/changelog/"
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
+    | "/blog/rss.xml"
     | "/docs/$"
     | "/blog"
     | "/changelog"
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | "/api/og"
     | "/api/search"
     | "/blog/$slug"
+    | "/blog/rss.xml"
     | "/docs/$"
     | "/blog/"
     | "/changelog/"
@@ -306,6 +318,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DocsSplatRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/blog/rss.xml": {
+      id: "/blog/rss.xml";
+      path: "/rss.xml";
+      fullPath: "/blog/rss.xml";
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport;
+      parentRoute: typeof BlogRouteRoute;
+    };
     "/blog/$slug": {
       id: "/blog/$slug";
       path: "/$slug";
@@ -353,11 +372,13 @@ declare module "@tanstack/react-router" {
 
 interface BlogRouteRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute;
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute;
   BlogIndexRoute: typeof BlogIndexRoute;
 }
 
 const BlogRouteRouteChildren: BlogRouteRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   BlogIndexRoute: BlogIndexRoute,
 };
 

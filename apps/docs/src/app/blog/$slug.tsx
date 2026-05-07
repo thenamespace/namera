@@ -29,10 +29,7 @@ const serverLoader = createServerFn({
     const readingTime = getReadingTime(text);
 
     const metadata: BlogMetadata = {
-      author: {
-        name: page.data.author,
-        url: page.data.authorUrl,
-      },
+      authors: page.data.authors,
       datePublished:
         page.data.date instanceof Date
           ? page.data.date

@@ -32,7 +32,10 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
     meta: [
       { title: metadata.title },
       { content: metadata.description, name: "description" },
-      { content: metadata.author.name, name: "author" },
+      {
+        content: metadata.authors.map((a) => a.name).join(", "),
+        name: "author",
+      },
       { content: "index, follow, max-image-preview:large", name: "robots" },
       // Open Graph
       { content: "Namera Blog", property: "og:site_name" },
@@ -46,7 +49,10 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
       // Article Tags
       { content: datePublished, property: "article:published_time" },
       { content: dateModified, property: "article:modified_time" },
-      { content: metadata.author.url, property: "article:author" },
+      ...metadata.authors.map((author) => ({
+        content: author.url,
+        property: "article:author",
+      })),
       // Twitter
       { content: "summary_large_image", name: "twitter:card" },
       { content: "@namera_ai", name: "twitter:site" },
@@ -61,11 +67,11 @@ export const generateBlogSeo = (metadata: BlogMetadata) => {
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BlogPosting",
-          author: {
+          author: metadata.authors.map((a) => ({
             "@type": "Person",
-            name: metadata.author.name,
-            url: metadata.author.url,
-          },
+            name: a.name,
+            url: a.url,
+          })),
           dateModified,
           datePublished,
           description: metadata.description,

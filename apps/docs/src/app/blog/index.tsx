@@ -53,7 +53,7 @@ const serverLoader = createServerFn({
       }
       return {
         category: page.data.category,
-        author: page.data.author,
+        authors: page.data.authors,
         datePublished: datePublished,
         description: page.data.description,
         lastModified: dateModified,
@@ -89,9 +89,9 @@ const BlogHomePage = () => {
   });
 
   return (
-    <div className="max-w-5xl w-full mx-auto px-4 py-[10dvh]">
+    <div className="max-w-7xl w-full mx-auto py-[10dvh]">
       <BlogHero />
-      <div className="min-h-[40dvh] grid grid-cols-1 sm:grid-cols-2 py-12 gap-12">
+      <div className="min-h-[40dvh] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 py-12 divide-x">
         {data.items.map((blog) => (
           <BlogCard {...blog} key={blog.slug} />
         ))}

@@ -82,7 +82,7 @@ export const BlogHero = () => {
   });
 
   return (
-    <div className="relative">
+    <div className="relative px-6">
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl sm:text-4xl font-semibold">Blog</h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -126,6 +126,14 @@ export const BlogHero = () => {
             </InputGroup>
             <Button
               className="text-muted-foreground"
+              render={
+                // biome-ignore lint/a11y/useAnchorContent: safe
+                <a
+                  href="/blog/rss.xml"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                />
+              }
               size="icon-lg"
               variant="ghost"
             >
