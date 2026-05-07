@@ -2,7 +2,7 @@ import type { BlogMetadata } from "@/types";
 
 export const BlogHeader = ({
   title,
-  author,
+  authors,
   lastModified,
   readingTime,
   image,
@@ -23,8 +23,28 @@ export const BlogHeader = ({
         />
       )}
       <div className="flex flex-row gap-2 items-center text-muted-foreground mx-auto text-xs md:text-sm">
-        <address itemProp="author" rel="author">
-          {author.name}
+        <address
+          className="flex flex-row gap-1 not-italic"
+          itemProp="author"
+          rel="author"
+        >
+          {authors.map((author, i) => (
+            <span key={author.name}>
+              {i > 0 && <span className="mr-1">&</span>}
+              {author.url ? (
+                <a
+                  className="hover:text-foreground transition-colors"
+                  href={author.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {author.name}
+                </a>
+              ) : (
+                author.name
+              )}
+            </span>
+          ))}
         </address>
         <div className="size-0.5 bg-foreground rounded-full" />
         <div>{readingTime.text}</div>

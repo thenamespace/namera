@@ -8,10 +8,10 @@ export type ReadingTimeResult = {
 export type BlogMetadata = {
   title: string;
   description?: string;
-  author: {
+  authors: Array<{
     name: string;
     url?: string;
-  };
+  }>;
   datePublished: Date;
   lastModified: Date;
   slug: string;
