@@ -1,21 +1,59 @@
 import type { TailwindConfig } from "react-email";
 
+import { Font } from "react-email";
 import plugin from "tailwindcss/plugin";
 
-const colors = {
-  bg: "#131313",
-  "bg-2": "#212121",
-  fg: "#FFFFFF",
-  "fg-2": "#C4C4C4",
-  "fg-3": "#818181",
-  "fg-inverted": "#FFFFFF",
-  stroke: "#2B2B2B",
-  brand: "#614500",
-  muted: "#4A4A4A",
-  "subtle-border": "#D0D0D0",
-  surface: "#FFFFFF",
-  ink: "#131313",
+const colors2 = {
+  background: "#0f0f10",
+  "background-2": "#212121",
+  foreground: "#FFFFFF",
+  primary: "#6a75e2",
+  "primary-foreground": "#fefeff",
+  muted: "#171718",
+  "muted-foreground": "#97989a",
+  accent: "#262627",
+  "accent-foreground": "#ffffff",
+  destructive: "#f34e52",
+  "destructive-foreground": "#ffffff",
+  border: "#1d1e1f",
 } as const;
+
+export const NameraFonts = () => {
+  return (
+    <>
+      <Font
+        fontFamily="Inter"
+        fallbackFontFamily={["Arial", "sans-serif"]}
+        webFont={{
+          url: "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuOKfMZg.ttf",
+          format: "truetype",
+        }}
+        fontWeight={300}
+        fontStyle="normal"
+      />
+      <Font
+        fontFamily="Inter"
+        fallbackFontFamily={["Arial", "sans-serif"]}
+        webFont={{
+          url: "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2",
+          format: "woff2",
+        }}
+        fontWeight={400}
+        fontStyle="normal"
+      />
+      <Font
+        fontFamily="Inter"
+        fallbackFontFamily={["Arial", "sans-serif"]}
+        webFont={{
+          url: "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf",
+          format: "truetype",
+        }}
+        fontWeight={500}
+        fontStyle="normal"
+      />
+    </>
+  );
+};
 
 const fontScale = {
   11: {
@@ -69,7 +107,7 @@ const fontScale = {
   },
 } as const;
 
-export const ditherTailwindConfig: TailwindConfig = {
+export const nameraTwConfig: TailwindConfig = {
   plugins: [
     plugin(({ addUtilities, addVariant }) => {
       addVariant("mobile", "@media (max-width: 600px)");
@@ -82,16 +120,9 @@ export const ditherTailwindConfig: TailwindConfig = {
   ],
   theme: {
     extend: {
-      colors,
+      colors: colors2,
       fontFamily: {
         sans: ["Inter", "Arial", "sans-serif"],
-        mono: ["'IBM Plex Mono'", "'Courier New'", "monospace"],
-        condensed: [
-          "'IBM Plex Sans Condensed'",
-          "'Arial Narrow'",
-          "Arial",
-          "sans-serif",
-        ],
       },
     },
   },
