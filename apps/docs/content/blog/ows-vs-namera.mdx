@@ -9,46 +9,21 @@ date: 2026-05-04
 keywords: OWS, Open Wallet Standard, Namera, agent wallets, session keys, smart accounts, wallet permissions, local wallet storage, account abstraction, policy enforcement
 ---
 
-People have been asking how [Open Wallet Standard](https://openwallet.sh) compares to Namera.
-
-The short answer is: they are solving a similar problem from different layers.
-
-Both care about agents. Both care about not giving raw private keys to software. Both care about permissions. But they do not put the control point in the same place.
-
-OWS is about how wallets are stored locally and exposed safely to tools.
-
-Namera is about how smart accounts give agents scoped permission to execute onchain.
-
-That difference sounds small, but it changes the whole model.
+*People have been asking how Namera compares to OWS [Open Wallet Standard](https://openwallet.sh), what the differences are, what the tradeoffs look like, and whether they can be paired together. This is a technical comparison covering custody model, policy enforcement, developer ergonomics, and tradeoffs.*
 
 ---
 
-## Executive Summary
+## Summary
 
-OWS asks:
+OWS and Namera solve a similar problem, but from different layers.
 
-> How should agents, CLIs, and apps access local wallets without each tool inventing its own key storage?
+Both care about agents. Both care about not handing raw private keys to software. But they don't put the control point in the same place.
 
-Namera asks:
+OWS is a local wallet standard. It defines a shared vault under ~/.ows/, encrypted wallet files, API-token-based agent access, CAIP chain identifiers, and a policy engine that checks requests before signing. It asks: *how should agents, CLIs, and apps access wallets without each tool inventing its own key storage?*
 
-> How should an agent be allowed to act through a smart account without becoming the account owner?
+Namera is a programmable permissions layer for smart accounts. It uses session keys, policies, UserOperations, and account-level validation so an agent can only execute actions inside explicit limits. It asks: *how should an agent be allowed to act through a smart account without becoming the account owner?*
 
-OWS is a local wallet standard. It defines a shared vault under `~/.ows/`, encrypted wallet files, API-token-based agent access, CAIP chain identifiers, and a policy engine that checks requests before signing.
-
-Namera is a programmable permissions layer for smart accounts. It uses session keys, policies, UserOperations, and account-level validation so an agent can only execute actions inside explicit limits.
-
-The clean split:
-
-| Question | OWS | Namera |
-| --- | --- | --- |
-| Main job | Local wallet storage and signing access | Scoped smart-account execution |
-| Agent credential | API token | Session key |
-| Policy location | Local access layer before signing | Smart account validation path |
-| Enforcement style | Offchain, before decryption/signing | Onchain/account-level during UserOp validation |
-| Chain scope | Broad multi-chain wallet standard | EVM/account-abstraction focused |
-| Best for | One local wallet interface across tools/chains | Agents executing bounded onchain workflows |
-
-They are not mutually exclusive. OWS can be the local custody and signing layer. Namera can be the execution permission layer.
+That difference sounds small but it changes the entire model.
 
 ---
 
@@ -58,11 +33,11 @@ They are not mutually exclusive. OWS can be the local custody and signing layer.
 
 Today, every tool stores keys differently:
 
-- a `.env` file for one bot
-- a browser wallet for one app
-- a Solana JSON keypair in another folder
-- a Foundry keystore somewhere else
-- a custom agent wallet config in a repo
+- an `.env` file for one bot
+- browser wallet for one app
+- Solana JSON keypair in another folder
+- Foundry keystore somewhere else
+- custom agent wallet config in a repo
 
 OWS tries to replace that with one local standard. The core pieces are:
 
@@ -70,13 +45,13 @@ OWS tries to replace that with one local standard. The core pieces are:
 - wallet files using AES-256-GCM and keystore-style metadata
 - API keys for agent access
 - CAIP identifiers for chains and accounts
-- a signing interface for transactions and messages
-- a policy engine that runs before agent-backed signing
+- signing interface for transactions and messages
+- policy engine that runs before agent-backed signing
 - CLI, Node.js, and Python surfaces in the reference implementation
 
-OWS supports many chain families, including EVM, Solana, Bitcoin, Cosmos, Tron, TON, Sui, Spark, Filecoin, and XRPL. That broad chain coverage is one of its strongest points.
+OWS supports a broad range of chains including EVM, Solana, Bitcoin, Cosmos, Tron, TON, Sui, Filecoin, XRPL, and more. That broad is one of its strongest points.
 
-The flow is simple:
+The flow works like this: 
 
 1. A caller asks OWS to sign a transaction or message.
 2. OWS checks whether the caller is the owner or an agent.
@@ -92,71 +67,80 @@ Important detail: the agent does not receive the plaintext private key. It recei
 
 Namera is a programmable smart wallet infrastructure layer for autonomous agents.
 
-It is not trying to become a universal local wallet file format. It is focused on smart accounts, session keys, account abstraction, and policies that define what an agent can do onchain.
+It's not trying to become a universal local wallet file format. It's focused on smart accounts, session keys, account abstraction, and policies that define what an agent can do onchain.
 
 The core pieces are:
 
-- smart accounts
-- ECDSA and passkey account flows
-- session keys
-- policy-constrained UserOperation signing
-- onchain validation through smart-account infrastructure
-- local CLI and MCP tooling for agents
-- batched, parallel, and multi-chain EVM execution
+- Smart accounts with ECDSA and passkey flows
+- Session keys with policy-constrained UserOperation signing
+- Onchain validation through smart-account infrastructure
+- Local CLI and MCP tooling for agents
+- Batched, parallel, and multi-chain EVM execution
 
-In Namera, an agent should not hold the owner key. It should hold a scoped credential. That credential is a session key.
+In Namera, an agent holds a session key, not the owner key. A session key can sign `UserOperations` for a smart account, but only inside the policies attached to it. If it tries to do something outside those limits, the account validation path rejects it.
 
-A session key can sign `UserOperations` for a smart account, but only inside the policies attached to it. If a session key tries to do something outside its limits, the account validation path rejects it.
+Example policies:
 
-Example policies include:
-
-- **Call policy:** only call certain contracts, functions, arguments, or value amounts
+- **Call policy:** only call specific contracts, functions, argument values, or native value amounts
 - **Gas policy:** cap total gas spend or require a paymaster
 - **Signature policy:** restrict who can validate signed messages
 - **Rate-limit policy:** allow only a set number of UserOps per interval
 - **Timestamp policy:** make access start or expire at specific times
-- **Sudo policy:** give full access for trusted internal automation
+- **Sudo policy:** full access for trusted internal automation
 
 The Namera flow looks like this:
 
 1. The owner creates a smart account.
-2. The owner creates a session key for an agent.
-3. The owner attaches policies to that session key.
+2. Creates a session key for an agent.
+3. Attaches policies to that session key.
 4. The agent uses the session key client to send UserOperations.
 5. The smart account validates the session key and policy bounds before execution.
 
 ---
 
-## Custody Model
+## How They Compare
 
-OWS is local custody first.
+
+|                  | OWS                                                | Namera                                     |
+| ---------------- | -------------------------------------------------- | ------------------------------------------ |
+| Main job         | Local wallet storage and signing access            | Scoped smart-account execution             |
+| Agent credential | API token                                          | Session key                                |
+| Policy location  | Local access layer, before signing                 | Smart account validation path              |
+| Enforcement      | Offchain, before decryption/signing                | Onchain during UserOp validation           |
+| Chain scope      | Broad multi-chain wallet standard                  | EVM/account-abstraction focused            |
+| Best for         | One local wallet interface across tools and chains | Agents executing bounded onchain workflows |
+
+
+### Custody
+
+**OWS is local custody first.**
 
 Wallet secrets live on your machine inside `~/.ows/`. The standard defines file layout, encryption, wallet metadata, API key metadata, policy files, and audit logs. A mnemonic wallet can derive addresses across supported chains from one encrypted secret.
 
 For agents, OWS uses API tokens. When an API key is created, wallet secret material is re-encrypted under a key derived from that token. The agent presents the token, policies are checked, and only then does OWS decrypt the token-backed secret copy for signing.
 
-Namera's custody model is different.
+**Namera starts from a smart account.**
 
-Namera starts from a smart account. The owner signer remains the source of authority, but the agent receives a session key instead of the owner key. The session key is useful only because the smart account recognizes it under specific policies.
+The owner signer remains the source of authority, but the agent operates through a session key that's only valid inside specific policy bounds. The account itself is the enforcement layer.
 
-| Model | What gets protected |
-| --- | --- |
-| OWS | Local wallet secret and signing path |
+
+| Model  | What gets protected                          |
+| ------ | -------------------------------------------- |
+| OWS    | Local wallet secret and signing path         |
 | Namera | Smart account authority and execution rights |
 
----
 
-## Policy Model
+### Policy Model
 
-OWS policies are pre-signing checks.
+**OWS policies are pre-signing checks.**
 
-For API-token-backed requests, OWS evaluates all attached policies before touching token-backed secret material. The policy model supports simple declarative rules such as allowed chains and expiry. For more complex logic, OWS supports executable policies that receive request context and return allow or deny.
+For API-token-backed requests, OWS evaluates all attached policies before touching token-backed secret material. The policy model supports simple declarative rules such as allowed chains and expiry. For more complex logic, OWS supports executable policies that receive request context and return allow or deny. 
 
 That makes OWS flexible as a local access-control layer.
 
 But the final result is still a signature from a wallet key. Once a transaction is validly signed and sent, enforcement has already happened locally.
 
-Namera policies are account permissions.
+**Namera policies are account permissions.**
 
 They are attached to session keys and checked during the smart-account execution path. The most important policy is the call policy because it maps directly to actions:
 
@@ -166,39 +150,33 @@ They are attached to session keys and checked during the smart-account execution
 - how much native value can move
 - whether the operation is a call or delegatecall
 
-This is closer to how people describe tasks:
+This is closer to how people describe tasks in plain language:
 
 - "This agent can swap on Uniswap, but only with this token pair."
 - "This automation can pay this subscription once per month."
 - "This bot can spend up to 100 USDC, not everything."
 - "This service can sign orders for this protocol, not random messages."
 
-That is why Namera fits agent workflows well. You define what the agent is supposed to do, not just whether it may ask for a signature.
+### Onchain vs Local Enforcement
 
----
+**OWS enforcement is local and pre-signing.**
 
-## Onchain Enforcement vs Local Enforcement
+If the agent uses an OWS API token, policy checks happen before decryption and signing. If a policy denies a request, no signature is produced. That's a strong local boundary. But OWS doesn't turn the wallet into a programmable smart account. It controls the signing path.
 
-This is the part people usually care about.
+**Namera enforcement is account-level.**
 
-OWS enforcement is local and pre-signing.
+The session key can only execute if the smart account accepts the UserOperation under the attached policies. If the action doesn't match, the account refuses it.
 
-If the agent uses an OWS API token, policy checks happen before decryption and signing. If a policy denies the request, no signature is produced. That is a strong local boundary.
+**In plain terms:**
 
-But OWS itself does not turn the wallet into a programmable smart account. It does not make the account contract reject actions. It controls the signing path.
 
-Namera enforcement is account-level.
+| If an agent tries a bad action | What happens                               |
+| ------------------------------ | ------------------------------------------ |
+| OWS                            | Local policy refuses to sign               |
+| Namera                         | Smart account validation rejects execution |
 
-The session key can only execute if the smart account validation accepts the UserOperation under the attached policies. If the action does not match the policy, the account refuses it.
 
-In plain terms:
-
-| If an agent tries a bad action | What happens |
-| --- | --- |
-| OWS | Local policy should refuse to sign |
-| Namera | Smart account validation should reject execution |
-
-This matters because agents are not normal users. They run continuously. They retry. They call tools. They can misunderstand instructions. They can be compromised.
+This matters because agents are not normal users. They can misunderstand, run continuously, retry operations, call tools, and can be compromised.
 
 For agents, the safer question is not only:
 
@@ -209,6 +187,21 @@ It is also:
 > Even if this delegated credential is used, what can the account actually do?
 
 Namera is built around the second question.
+
+---
+
+## Can They Work Together?
+
+Yes.
+
+The clean pairing is:
+
+- OWS manages local wallet storage and signing access.
+- Namera manages smart-account permissions and execution.
+
+For example, an owner signer could live behind an OWS-style local vault, while Namera session keys define what an agent can actually do through the smart account.
+
+They are not identical products: **OWS is closer to a wallet standard, whereas Namera is closer to an account permission system.**
 
 ---
 
@@ -248,9 +241,9 @@ Namera gives you stronger smart-account execution boundaries.
 
 ---
 
-## Who Should Use OWS
+## Which One Do You Need?
 
-Use OWS if your main problem is local wallet access across tools.
+**Use OWS if your main problem is local wallet access across tools.** 
 
 Good fit:
 
@@ -261,13 +254,9 @@ Good fit:
 - You want a local-first model instead of a cloud wallet API.
 - You need broad signing support more than account-level permissioning.
 
-OWS is especially useful for the "my tools all need a wallet" problem.
+OWS is especially useful for the "my tools all need a wallet" problem. It gives agents a safer way to ask for signatures.
 
-It gives agents a safer way to ask for signatures.
-
----
-
-## Who Should Use Namera
+**Use Namera if your main problem is agent execution safety.** 
 
 Use Namera if your main problem is agent execution safety.
 
@@ -282,44 +271,21 @@ Good fit:
 
 Namera is especially useful for the "what is this agent allowed to do?" problem.
 
----
-
-## Can They Work Together?
-
-Yes.
-
-The clean pairing is:
-
-- OWS manages local wallet storage and signing access.
-- Namera manages smart-account permissions and execution.
-
-For example, an owner signer could live behind an OWS-style local vault, while Namera session keys define what an agent can actually do through the smart account.
-
-The mistake is treating them as identical products. They are not.
-
-OWS is closer to a wallet standard, whereas Namera is closer to an account permission system.
+**Use both if you need the full stack.** Safe local key custody at the signing layer. Enforceable execution boundaries at the account layer.
 
 ---
 
 ## Final Takeaway
 
-OWS and Namera are both responses to the same reality: agents should not hold unrestricted private keys.
+OWS and Namera both respond to the same reality: agents should not hold unrestricted private keys. They just solve different parts of it.
 
-They just solve different parts of that reality.
+**OWS** is best when you need a standard local wallet vault and safe signing interface across many chains and tools.
 
-OWS is best when you need a standard local wallet vault and safe signing interface across many chains and tools.
-
-Namera is best when you need an agent to operate through a smart account with clear, enforceable limits.
+**Namera** is best when you need an agent to operate through a smart account with clear, enforceable limits.
 
 The simplest way to remember it:
 
 > OWS controls access to the signer.
->
 > Namera controls what the account may execute.
 
-If your problem is wallet storage, signing interoperability, and local custody, OWS is the better fit.
-
-If your problem is programmable permissions for autonomous onchain execution, Namera is the better fit.
-
-> Agents do not need private keys.
-They need permissioned execution.
+Agents don't need private keys. They need permissioned execution.
