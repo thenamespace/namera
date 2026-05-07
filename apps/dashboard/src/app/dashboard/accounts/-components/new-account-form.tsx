@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
@@ -82,7 +84,7 @@ export const NewAccountForm = () => {
           Create a new Smart Account with Multichain ECDSA Validator
         </p>
       </div>
-      <div className="bg-card flex flex-col divide-y rounded-xl border-[0.5px] px-4">
+      <div className="bg-card flex flex-col divide-y rounded-xl border px-4">
         <Controller
           name="metadata.icon"
           control={form.control}
@@ -90,12 +92,7 @@ export const NewAccountForm = () => {
             const isInvalid = fieldState.invalid;
             return (
               <Field data-invalid={isInvalid} className="flex flex-row py-3">
-                <div className="flex flex-col">
-                  <FieldLabel htmlFor={field.name}>Account Icon</FieldLabel>
-                  <div className="text-muted-foreground text-xs">
-                    Recommended size is 256x256px
-                  </div>
-                </div>
+                <FieldLabel htmlFor={field.name}>Account Icon</FieldLabel>
                 <IconPicker
                   value={field.value}
                   onChange={(icon) => field.onChange(icon)}
@@ -134,15 +131,24 @@ export const NewAccountForm = () => {
           }}
         />
       </div>
-      <div className="flex justify-end">
+      <div className="flex flex-row justify-end gap-2">
         <Button
-          className="cta-button w-fit"
+          className="w-fit"
+          type="button"
+          variant="muted"
+          render={<Link to="/dashboard/accounts" />}
+        >
+          Cancel
+        </Button>
+        <Button
+          className="w-fit"
           type="submit"
           disabled={
-            form.formState.isSubmitting || form.formState.isValid === false
+            false
+            // form.formState.isSubmitting || form.formState.isValid === false
           }
         >
-          Create Account
+          Create
         </Button>
       </div>
     </form>
