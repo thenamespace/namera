@@ -25,6 +25,7 @@ export const SessionKeyMetadata = Schema.Struct({
       message: "Name must be between 4 and 255 characters long",
     }),
   ),
+  description: Schema.optional(Schema.String),
 });
 
 const BaseSessionKey = Schema.Struct({

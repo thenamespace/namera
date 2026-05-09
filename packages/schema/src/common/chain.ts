@@ -175,6 +175,8 @@ export const supportedChains = {
   ...supportedTestnetChains,
 } as Record<SupportedChain, ChainWithMetadata>;
 
+export const supportedChainsArray = Object.values(supportedChains);
+
 export const getChain = (chain: SupportedChain): ChainWithMetadata => {
   return supportedChains[chain];
 };

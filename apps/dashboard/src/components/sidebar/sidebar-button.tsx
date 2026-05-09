@@ -39,6 +39,7 @@ export const SidebarButton = (item: SidebarButtonProps) => {
             to={item.href}
             activeOptions={{
               exact: true,
+              includeSearch: false,
             }}
             activeProps={{
               className:

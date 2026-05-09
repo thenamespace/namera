@@ -8,7 +8,7 @@ import { useConnectionEffect } from "wagmi";
 
 import { createSmartAccount } from "@/actions/core";
 import { ConnectButton } from "@/components";
-import { EthereumAddress } from "@namera-ai/schema";
+import { CreateSmartAccountRequest } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import {
   Field,
@@ -18,28 +18,8 @@ import {
 import { IconPicker } from "@namera-ai/ui/components/ui/icon-picker";
 import { Input } from "@namera-ai/ui/components/ui/input";
 
-const NewAccount = Schema.toStandardSchemaV1(
-  Schema.Struct({
-    metadata: Schema.Struct({
-      icon: Schema.Struct({
-        type: Schema.Literals(["icon", "emoji"]),
-        value: Schema.String,
-      }),
-      name: Schema.String.check(
-        Schema.isLengthBetween(4, 255, {
-          message: "Name must be between 4 and 255 characters long",
-        }),
-      ),
-    }),
-    ownerAddress: EthereumAddress,
-  }),
-);
-
-type NewAccount = typeof NewAccount.Type;
-type NewAccountEncoded = typeof NewAccount.Encoded;
-
 export const NewAccountForm = () => {
-  const form = useForm<NewAccount, NewAccountEncoded>({
+  const form = useForm<CreateSmartAccountRequest>({
     defaultValues: {
       metadata: {
         icon: {
@@ -49,26 +29,24 @@ export const NewAccountForm = () => {
         name: "",
       },
     },
-    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(NewAccount)),
+    resolver: standardSchemaResolver(
+      Schema.toStandardSchemaV1(CreateSmartAccountRequest),
+    ),
   });
 
-  const handleSubmit = async (value: NewAccount) => {
-    const res = await createSmartAccount({
-      metadata: value.metadata,
-      owner: value.ownerAddress,
-      ownerType: "ecdsa",
-    });
+  const handleSubmit = async (value: CreateSmartAccountRequest) => {
+    const res = await createSmartAccount(value);
     console.log(res);
   };
 
   useConnectionEffect({
     onConnect: ({ address }) => {
       console.log("onConnect", address);
-      form.setValue("ownerAddress", address);
+      form.setValue("owner", address);
     },
     onDisconnect: () => {
       console.log("onDisconnect");
-      form.setValue("ownerAddress", "0x0");
+      form.setValue("owner", "0x0");
     },
   });
 
