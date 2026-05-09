@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PageHeader } from "../-components";
+import { PageHeader } from "@/app/dashboard/-components";
 
 const Page = () => {
   return (
@@ -10,6 +10,6 @@ const Page = () => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/session-keys/")({
+export const Route = createFileRoute("/dashboard/(core)/session-keys/")({
   component: Page,
 });

@@ -16,7 +16,8 @@ const Page = () => {
         header={
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
+            className="w-fit rounded-full"
             render={<Link to="/dashboard/accounts" />}
           >
             <CaretLeftIcon className="size-3" weight="bold" />
@@ -31,6 +32,6 @@ const Page = () => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/accounts/new/")({
+export const Route = createFileRoute("/dashboard/(core)/accounts/new/")({
   component: Page,
 });

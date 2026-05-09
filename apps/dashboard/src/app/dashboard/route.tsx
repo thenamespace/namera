@@ -15,7 +15,7 @@ const DashboardLayout = () => {
         ) : (
           <Sidebar />
         )}
-        <div className="border-border m-1 w-full rounded-xl border bg-[#0F0F10]">
+        <div className="border-border m-2 w-full rounded-xl border bg-[#0F0F10]">
           <Outlet />
         </div>
       </SidebarProvider>

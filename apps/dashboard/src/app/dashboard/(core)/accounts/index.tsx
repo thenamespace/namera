@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PageHeader } from "../-components";
+import { PageHeader } from "@/app/dashboard/-components";
+
 import { CreateAccountButton } from "./-components";
 
 const Page = () => {
@@ -13,6 +14,6 @@ const Page = () => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/accounts/")({
+export const Route = createFileRoute("/dashboard/(core)/accounts/")({
   component: Page,
 });
