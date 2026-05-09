@@ -9,19 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
+import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
+import { Route as IndexRouteImport } from "./app/index";
+import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as AuthIndexRouteImport } from "./app/auth/index";
+import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
+import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
+import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
+import { Route as DashboardMcpIndexRouteImport } from "./app/dashboard/mcp/index";
+import { Route as DashboardIdentityIndexRouteImport } from "./app/dashboard/identity/index";
+import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
+import { Route as DashboardActivityIndexRouteImport } from "./app/dashboard/activity/index";
 import { Route as DashboardAccountsIndexRouteImport } from "./app/dashboard/accounts/index";
 import { Route as DashboardAccountsNewIndexRouteImport } from "./app/dashboard/accounts/new/index";
-import { Route as DashboardActivityIndexRouteImport } from "./app/dashboard/activity/index";
-import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
-import { Route as DashboardIdentityIndexRouteImport } from "./app/dashboard/identity/index";
-import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
-import { Route as DashboardMcpIndexRouteImport } from "./app/dashboard/mcp/index";
-import { Route as DashboardPermissionsIndexRouteImport } from "./app/dashboard/permissions/index";
-import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
-import { Route as DashboardSessionKeysIndexRouteImport } from "./app/dashboard/session-keys/index";
-import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
-import { Route as IndexRouteImport } from "./app/index";
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
