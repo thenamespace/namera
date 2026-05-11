@@ -41,12 +41,12 @@ const items = [
     },
   },
   {
-    href: "/dashboard/permissions",
+    href: "/dashboard/templates",
     lottie: CategoryLottieIcon,
-    title: "Permissions",
+    title: "Templates",
     tooltip: {
-      hotKey: "P",
-      text: "permissions",
+      hotKey: "T",
+      text: "templates",
     },
   },
   {
@@ -68,9 +68,9 @@ export const CoreGroup = () => {
     });
   });
 
-  useHotkeySequence(["G", "P"], () => {
+  useHotkeySequence(["G", "T"], () => {
     navigate({
-      to: "/dashboard/permissions",
+      to: "/dashboard/templates",
     });
   });
 

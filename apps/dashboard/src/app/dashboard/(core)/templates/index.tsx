@@ -5,11 +5,11 @@ import { PageHeader } from "@/app/dashboard/-components";
 const Page = () => {
   return (
     <div>
-      <PageHeader header="Permissions" />
+      <PageHeader header="Templates" />
     </div>
   );
 };
 
-export const Route = createFileRoute("/dashboard/(core)/permissions/")({
+export const Route = createFileRoute("/dashboard/(core)/templates/")({
   component: Page,
 });

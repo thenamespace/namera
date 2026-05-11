@@ -15,8 +15,8 @@ import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as AuthIndexRouteImport } from "./app/auth/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
+import { Route as DashboardcoreTemplatesIndexRouteImport } from "./app/dashboard/(core)/templates/index";
 import { Route as DashboardcoreSessionKeysIndexRouteImport } from "./app/dashboard/(core)/session-keys/index";
-import { Route as DashboardcorePermissionsIndexRouteImport } from "./app/dashboard/(core)/permissions/index";
 import { Route as DashboardcoreActivityIndexRouteImport } from "./app/dashboard/(core)/activity/index";
 import { Route as DashboardcoreAccountsIndexRouteImport } from "./app/dashboard/(core)/accounts/index";
 import { Route as DashboardagentsMcpIndexRouteImport } from "./app/dashboard/(agents)/mcp/index";
@@ -54,16 +54,16 @@ const DashboardAssetsIndexRoute = DashboardAssetsIndexRouteImport.update({
   path: "/assets/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardcoreTemplatesIndexRoute =
+  DashboardcoreTemplatesIndexRouteImport.update({
+    id: "/(core)/templates/",
+    path: "/templates/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
 const DashboardcoreSessionKeysIndexRoute =
   DashboardcoreSessionKeysIndexRouteImport.update({
     id: "/(core)/session-keys/",
     path: "/session-keys/",
-    getParentRoute: () => DashboardRouteRoute,
-  } as any);
-const DashboardcorePermissionsIndexRoute =
-  DashboardcorePermissionsIndexRouteImport.update({
-    id: "/(core)/permissions/",
-    path: "/permissions/",
     getParentRoute: () => DashboardRouteRoute,
   } as any);
 const DashboardcoreActivityIndexRoute =
@@ -113,8 +113,8 @@ export interface FileRoutesByFullPath {
   "/dashboard/mcp/": typeof DashboardagentsMcpIndexRoute;
   "/dashboard/accounts/": typeof DashboardcoreAccountsIndexRoute;
   "/dashboard/activity/": typeof DashboardcoreActivityIndexRoute;
-  "/dashboard/permissions/": typeof DashboardcorePermissionsIndexRoute;
   "/dashboard/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
+  "/dashboard/templates/": typeof DashboardcoreTemplatesIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -128,8 +128,8 @@ export interface FileRoutesByTo {
   "/dashboard/mcp": typeof DashboardagentsMcpIndexRoute;
   "/dashboard/accounts": typeof DashboardcoreAccountsIndexRoute;
   "/dashboard/activity": typeof DashboardcoreActivityIndexRoute;
-  "/dashboard/permissions": typeof DashboardcorePermissionsIndexRoute;
   "/dashboard/session-keys": typeof DashboardcoreSessionKeysIndexRoute;
+  "/dashboard/templates": typeof DashboardcoreTemplatesIndexRoute;
   "/dashboard/accounts/new": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -145,8 +145,8 @@ export interface FileRoutesById {
   "/dashboard/(agents)/mcp/": typeof DashboardagentsMcpIndexRoute;
   "/dashboard/(core)/accounts/": typeof DashboardcoreAccountsIndexRoute;
   "/dashboard/(core)/activity/": typeof DashboardcoreActivityIndexRoute;
-  "/dashboard/(core)/permissions/": typeof DashboardcorePermissionsIndexRoute;
   "/dashboard/(core)/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
+  "/dashboard/(core)/templates/": typeof DashboardcoreTemplatesIndexRoute;
   "/dashboard/(core)/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/(core)/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -163,8 +163,8 @@ export interface FileRouteTypes {
     | "/dashboard/mcp/"
     | "/dashboard/accounts/"
     | "/dashboard/activity/"
-    | "/dashboard/permissions/"
     | "/dashboard/session-keys/"
+    | "/dashboard/templates/"
     | "/dashboard/accounts/new/"
     | "/dashboard/session-keys/create/";
   fileRoutesByTo: FileRoutesByTo;
@@ -178,8 +178,8 @@ export interface FileRouteTypes {
     | "/dashboard/mcp"
     | "/dashboard/accounts"
     | "/dashboard/activity"
-    | "/dashboard/permissions"
     | "/dashboard/session-keys"
+    | "/dashboard/templates"
     | "/dashboard/accounts/new"
     | "/dashboard/session-keys/create";
   id:
@@ -194,8 +194,8 @@ export interface FileRouteTypes {
     | "/dashboard/(agents)/mcp/"
     | "/dashboard/(core)/accounts/"
     | "/dashboard/(core)/activity/"
-    | "/dashboard/(core)/permissions/"
     | "/dashboard/(core)/session-keys/"
+    | "/dashboard/(core)/templates/"
     | "/dashboard/(core)/accounts/new/"
     | "/dashboard/(core)/session-keys/create/";
   fileRoutesById: FileRoutesById;
@@ -250,18 +250,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardAssetsIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/(core)/templates/": {
+      id: "/dashboard/(core)/templates/";
+      path: "/templates";
+      fullPath: "/dashboard/templates/";
+      preLoaderRoute: typeof DashboardcoreTemplatesIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
     "/dashboard/(core)/session-keys/": {
       id: "/dashboard/(core)/session-keys/";
       path: "/session-keys";
       fullPath: "/dashboard/session-keys/";
       preLoaderRoute: typeof DashboardcoreSessionKeysIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/(core)/permissions/": {
-      id: "/dashboard/(core)/permissions/";
-      path: "/permissions";
-      fullPath: "/dashboard/permissions/";
-      preLoaderRoute: typeof DashboardcorePermissionsIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/(core)/activity/": {
@@ -317,8 +317,8 @@ interface DashboardRouteRouteChildren {
   DashboardagentsMcpIndexRoute: typeof DashboardagentsMcpIndexRoute;
   DashboardcoreAccountsIndexRoute: typeof DashboardcoreAccountsIndexRoute;
   DashboardcoreActivityIndexRoute: typeof DashboardcoreActivityIndexRoute;
-  DashboardcorePermissionsIndexRoute: typeof DashboardcorePermissionsIndexRoute;
   DashboardcoreSessionKeysIndexRoute: typeof DashboardcoreSessionKeysIndexRoute;
+  DashboardcoreTemplatesIndexRoute: typeof DashboardcoreTemplatesIndexRoute;
   DashboardcoreAccountsNewIndexRoute: typeof DashboardcoreAccountsNewIndexRoute;
   DashboardcoreSessionKeysCreateIndexRoute: typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -331,8 +331,8 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardagentsMcpIndexRoute: DashboardagentsMcpIndexRoute,
   DashboardcoreAccountsIndexRoute: DashboardcoreAccountsIndexRoute,
   DashboardcoreActivityIndexRoute: DashboardcoreActivityIndexRoute,
-  DashboardcorePermissionsIndexRoute: DashboardcorePermissionsIndexRoute,
   DashboardcoreSessionKeysIndexRoute: DashboardcoreSessionKeysIndexRoute,
+  DashboardcoreTemplatesIndexRoute: DashboardcoreTemplatesIndexRoute,
   DashboardcoreAccountsNewIndexRoute: DashboardcoreAccountsNewIndexRoute,
   DashboardcoreSessionKeysCreateIndexRoute:
     DashboardcoreSessionKeysCreateIndexRoute,
