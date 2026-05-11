@@ -30,6 +30,7 @@ import {
   lineaSepolia,
   megaeth,
   megaethTestnet,
+  hyperEvm,
 } from "viem/chains";
 
 // Available Chains to add in the future
@@ -98,6 +99,10 @@ const supportedMainnetChains = {
   "megaeth-mainnet": {
     ...megaeth,
     key: "megaeth-mainnet",
+  },
+  "hyperevm-mainnet": {
+    ...hyperEvm,
+    key: "hyperevm-mainnet",
   },
 } as const;
 

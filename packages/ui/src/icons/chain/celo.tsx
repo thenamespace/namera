@@ -1,0 +1,24 @@
+export const CeloIcon = (props: React.SVGProps<SVGSVGElement>) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <title>Celo</title>
+      <g clip-path="url(#celo__a)">
+        <path fill="#FCFE52" d="M24 0H0v24h24z" />
+        <path
+          fill="#fff"
+          d="M4 4h16v5.715h-2.765a5.714 5.714 0 1 0 0 4.57H20V20H4z"
+        />
+      </g>
+      <defs>
+        <clipPath id="celo__a">
+          <path fill="#000" d="M0 0h24v24H0z" />
+        </clipPath>
+      </defs>
+    </svg>
+  );
+};

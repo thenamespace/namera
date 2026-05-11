@@ -1,9 +1,22 @@
 import { SidebarGroup, SidebarMenu } from "@namera-ai/ui/components/ui/sidebar";
-import { WalletLottieIcon, OverviewLottieIcon } from "@namera-ai/ui/lottie";
+import {
+  WalletLottieIcon,
+  OverviewLottieIcon,
+  InboxLottieIcon,
+} from "@namera-ai/ui/lottie";
 
 import { SidebarButton } from "./sidebar-button";
 
 const items = [
+  {
+    href: "/dashboard",
+    lottie: InboxLottieIcon,
+    title: "Inbox",
+    tooltip: {
+      hotkey: "I",
+      text: "inbox",
+    },
+  },
   {
     href: "/dashboard",
     lottie: OverviewLottieIcon,
