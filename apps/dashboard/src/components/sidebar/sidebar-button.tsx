@@ -65,13 +65,13 @@ export const SidebarButton = (item: SidebarButtonProps) => {
           <div className="min-h-4 min-w-4">
             <Player
               icon={item.lottie}
-              size={16}
+              size={17}
               colorize="#000"
               ref={playerRef}
             />
           </div>
         )}
-        <span>{item.title}</span>
+        <span className="text-[13px]">{item.title}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

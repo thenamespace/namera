@@ -19,7 +19,7 @@ export const Metadata = ({ form }: FormProps) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       <div className="text-xl">Metadata</div>
-      <div className="bg-card flex flex-col divide-y rounded-xl border px-4">
+      <div className="bg-card flex flex-col gap-2 divide-y rounded-xl border px-4">
         <Controller
           name="metadata.icon"
           control={form.control}

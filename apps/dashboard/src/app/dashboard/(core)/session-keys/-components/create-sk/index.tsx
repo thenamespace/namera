@@ -40,7 +40,7 @@ export const NewSessionKeyForm = () => {
       onSubmit={form.handleSubmit(handleSubmit)}
     >
       <div className="flex flex-col gap-2">
-        <div className="text-2xl">Create a new session key</div>
+        <div className="text-2xl font-medium">Create a new session key</div>
         <p className="text-muted-foreground text-sm">
           Create a new Session Key across multiple chains with fine-grained
           permissions.

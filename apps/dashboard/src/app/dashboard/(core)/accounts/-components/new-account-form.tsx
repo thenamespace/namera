@@ -56,13 +56,13 @@ export const NewAccountForm = () => {
       id="new-account-form"
       onSubmit={form.handleSubmit(handleSubmit)}
     >
-      <div className="flex flex-col gap-2 px-1">
-        <div className="text-2xl">Create a new account</div>
+      <div className="flex flex-col gap-2 px-1 py-4">
+        <div className="text-2xl font-medium">Create a new account</div>
         <p className="text-muted-foreground text-sm">
           Create a new Smart Account with Multichain ECDSA Validator
         </p>
       </div>
-      <div className="bg-card flex flex-col divide-y rounded-xl border px-4">
+      <div className="bg-card flex flex-col gap-2 divide-y rounded-2xl border px-5">
         <Controller
           name="metadata.icon"
           control={form.control}
