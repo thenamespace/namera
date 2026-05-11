@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { PageHeader } from "../-components";
 
@@ -12,4 +12,7 @@ const Page = () => {
 
 export const Route = createFileRoute("/dashboard/settings/")({
   component: Page,
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard/settings/profile" });
+  },
 });

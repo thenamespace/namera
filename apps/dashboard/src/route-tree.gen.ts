@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as AuthIndexRouteImport } from "./app/auth/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
+import { Route as DashboardSettingsProfileIndexRouteImport } from "./app/dashboard/settings/profile/index";
 import { Route as DashboardcoreTemplatesIndexRouteImport } from "./app/dashboard/(core)/templates/index";
 import { Route as DashboardcoreSessionKeysIndexRouteImport } from "./app/dashboard/(core)/session-keys/index";
 import { Route as DashboardcoreActivityIndexRouteImport } from "./app/dashboard/(core)/activity/index";
@@ -54,6 +55,12 @@ const DashboardAssetsIndexRoute = DashboardAssetsIndexRouteImport.update({
   path: "/assets/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardSettingsProfileIndexRoute =
+  DashboardSettingsProfileIndexRouteImport.update({
+    id: "/settings/profile/",
+    path: "/settings/profile/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
 const DashboardcoreTemplatesIndexRoute =
   DashboardcoreTemplatesIndexRouteImport.update({
     id: "/(core)/templates/",
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/activity/": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/templates/": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
   "/dashboard/activity": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/session-keys": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/templates": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/settings/profile": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/accounts/new": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -147,6 +156,7 @@ export interface FileRoutesById {
   "/dashboard/(core)/activity/": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/(core)/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/(core)/templates/": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/(core)/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/(core)/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | "/dashboard/activity/"
     | "/dashboard/session-keys/"
     | "/dashboard/templates/"
+    | "/dashboard/settings/profile/"
     | "/dashboard/accounts/new/"
     | "/dashboard/session-keys/create/";
   fileRoutesByTo: FileRoutesByTo;
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | "/dashboard/activity"
     | "/dashboard/session-keys"
     | "/dashboard/templates"
+    | "/dashboard/settings/profile"
     | "/dashboard/accounts/new"
     | "/dashboard/session-keys/create";
   id:
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | "/dashboard/(core)/activity/"
     | "/dashboard/(core)/session-keys/"
     | "/dashboard/(core)/templates/"
+    | "/dashboard/settings/profile/"
     | "/dashboard/(core)/accounts/new/"
     | "/dashboard/(core)/session-keys/create/";
   fileRoutesById: FileRoutesById;
@@ -248,6 +261,13 @@ declare module "@tanstack/react-router" {
       path: "/assets";
       fullPath: "/dashboard/assets/";
       preLoaderRoute: typeof DashboardAssetsIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/settings/profile/": {
+      id: "/dashboard/settings/profile/";
+      path: "/settings/profile";
+      fullPath: "/dashboard/settings/profile/";
+      preLoaderRoute: typeof DashboardSettingsProfileIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/(core)/templates/": {
@@ -319,6 +339,7 @@ interface DashboardRouteRouteChildren {
   DashboardcoreActivityIndexRoute: typeof DashboardcoreActivityIndexRoute;
   DashboardcoreSessionKeysIndexRoute: typeof DashboardcoreSessionKeysIndexRoute;
   DashboardcoreTemplatesIndexRoute: typeof DashboardcoreTemplatesIndexRoute;
+  DashboardSettingsProfileIndexRoute: typeof DashboardSettingsProfileIndexRoute;
   DashboardcoreAccountsNewIndexRoute: typeof DashboardcoreAccountsNewIndexRoute;
   DashboardcoreSessionKeysCreateIndexRoute: typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -333,6 +354,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardcoreActivityIndexRoute: DashboardcoreActivityIndexRoute,
   DashboardcoreSessionKeysIndexRoute: DashboardcoreSessionKeysIndexRoute,
   DashboardcoreTemplatesIndexRoute: DashboardcoreTemplatesIndexRoute,
+  DashboardSettingsProfileIndexRoute: DashboardSettingsProfileIndexRoute,
   DashboardcoreAccountsNewIndexRoute: DashboardcoreAccountsNewIndexRoute,
   DashboardcoreSessionKeysCreateIndexRoute:
     DashboardcoreSessionKeysCreateIndexRoute,

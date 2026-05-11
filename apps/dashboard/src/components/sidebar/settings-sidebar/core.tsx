@@ -1,19 +1,11 @@
 import { FingerprintIcon, NotificationIcon } from "@phosphor-icons/react";
 
 import { SidebarGroup, SidebarMenu } from "@namera-ai/ui/components/ui/sidebar";
-import { SettingsLottieIcon, UserLottieIcon } from "@namera-ai/ui/lottie";
+import { UserLottieIcon } from "@namera-ai/ui/lottie";
 
 import { SidebarButton } from "../sidebar-button";
 
 const items = [
-  {
-    href: "/dashboard/settings/preferences",
-    lottie: SettingsLottieIcon,
-    title: "Preferences",
-    tooltip: {
-      text: "preferences",
-    },
-  },
   {
     href: "/dashboard/settings/profile",
     lottie: UserLottieIcon,
