@@ -1,6 +1,6 @@
 import type { Icon } from "@phosphor-icons/react";
 
-import { useRef } from "react";
+import { useRef, type JSX } from "react";
 
 import { Link } from "@tanstack/react-router";
 
@@ -14,7 +14,7 @@ import {
 
 type SidebarButtonProps = {
   href: string;
-  icon?: Icon;
+  icon?: Icon | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element);
   lottie?: any;
   title: string;
   tooltip: {

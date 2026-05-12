@@ -11,12 +11,13 @@
 import { Route as rootRouteImport } from "./app/__root";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
-import { Route as DashboardIndexRouteImport } from "./app/dashboard/index";
 import { Route as AuthIndexRouteImport } from "./app/auth/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
-import { Route as DashboardAssetsIndexRouteImport } from "./app/dashboard/assets/index";
+import { Route as DashboardprimaryIndexRouteImport } from "./app/dashboard/(primary)/index";
 import { Route as DashboardSettingsProfileIndexRouteImport } from "./app/dashboard/settings/profile/index";
 import { Route as DashboardSettingsNotificationsIndexRouteImport } from "./app/dashboard/settings/notifications/index";
+import { Route as DashboardprimaryInboxIndexRouteImport } from "./app/dashboard/(primary)/inbox/index";
+import { Route as DashboardprimaryAssetsIndexRouteImport } from "./app/dashboard/(primary)/assets/index";
 import { Route as DashboardcoreTemplatesIndexRouteImport } from "./app/dashboard/(core)/templates/index";
 import { Route as DashboardcoreSessionKeysIndexRouteImport } from "./app/dashboard/(core)/session-keys/index";
 import { Route as DashboardcoreActivityIndexRouteImport } from "./app/dashboard/(core)/activity/index";
@@ -36,11 +37,6 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any);
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: "/",
-  path: "/",
-  getParentRoute: () => DashboardRouteRoute,
-} as any);
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: "/auth/",
   path: "/auth/",
@@ -51,9 +47,9 @@ const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
   path: "/settings/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
-const DashboardAssetsIndexRoute = DashboardAssetsIndexRouteImport.update({
-  id: "/assets/",
-  path: "/assets/",
+const DashboardprimaryIndexRoute = DashboardprimaryIndexRouteImport.update({
+  id: "/(primary)/",
+  path: "/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
 const DashboardSettingsProfileIndexRoute =
@@ -66,6 +62,18 @@ const DashboardSettingsNotificationsIndexRoute =
   DashboardSettingsNotificationsIndexRouteImport.update({
     id: "/settings/notifications/",
     path: "/settings/notifications/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
+const DashboardprimaryInboxIndexRoute =
+  DashboardprimaryInboxIndexRouteImport.update({
+    id: "/(primary)/inbox/",
+    path: "/inbox/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
+const DashboardprimaryAssetsIndexRoute =
+  DashboardprimaryAssetsIndexRouteImport.update({
+    id: "/(primary)/assets/",
+    path: "/assets/",
     getParentRoute: () => DashboardRouteRoute,
   } as any);
 const DashboardcoreTemplatesIndexRoute =
@@ -120,8 +128,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/auth/": typeof AuthIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
+  "/dashboard/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/identity/": typeof DashboardagentsIdentityIndexRoute;
   "/dashboard/mcp/": typeof DashboardagentsMcpIndexRoute;
@@ -129,6 +136,8 @@ export interface FileRoutesByFullPath {
   "/dashboard/activity/": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/templates/": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/assets/": typeof DashboardprimaryAssetsIndexRoute;
+  "/dashboard/inbox/": typeof DashboardprimaryInboxIndexRoute;
   "/dashboard/settings/notifications/": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
@@ -137,8 +146,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/auth": typeof AuthIndexRoute;
-  "/dashboard": typeof DashboardIndexRoute;
-  "/dashboard/assets": typeof DashboardAssetsIndexRoute;
+  "/dashboard": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
   "/dashboard/identity": typeof DashboardagentsIdentityIndexRoute;
   "/dashboard/mcp": typeof DashboardagentsMcpIndexRoute;
@@ -146,6 +154,8 @@ export interface FileRoutesByTo {
   "/dashboard/activity": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/session-keys": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/templates": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/assets": typeof DashboardprimaryAssetsIndexRoute;
+  "/dashboard/inbox": typeof DashboardprimaryInboxIndexRoute;
   "/dashboard/settings/notifications": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/accounts/new": typeof DashboardcoreAccountsNewIndexRoute;
@@ -156,8 +166,7 @@ export interface FileRoutesById {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/auth/": typeof AuthIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/assets/": typeof DashboardAssetsIndexRoute;
+  "/dashboard/(primary)/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/(agents)/identity/": typeof DashboardagentsIdentityIndexRoute;
   "/dashboard/(agents)/mcp/": typeof DashboardagentsMcpIndexRoute;
@@ -165,6 +174,8 @@ export interface FileRoutesById {
   "/dashboard/(core)/activity/": typeof DashboardcoreActivityIndexRoute;
   "/dashboard/(core)/session-keys/": typeof DashboardcoreSessionKeysIndexRoute;
   "/dashboard/(core)/templates/": typeof DashboardcoreTemplatesIndexRoute;
+  "/dashboard/(primary)/assets/": typeof DashboardprimaryAssetsIndexRoute;
+  "/dashboard/(primary)/inbox/": typeof DashboardprimaryInboxIndexRoute;
   "/dashboard/settings/notifications/": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/(core)/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
@@ -177,7 +188,6 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/auth/"
     | "/dashboard/"
-    | "/dashboard/assets/"
     | "/dashboard/settings/"
     | "/dashboard/identity/"
     | "/dashboard/mcp/"
@@ -185,6 +195,8 @@ export interface FileRouteTypes {
     | "/dashboard/activity/"
     | "/dashboard/session-keys/"
     | "/dashboard/templates/"
+    | "/dashboard/assets/"
+    | "/dashboard/inbox/"
     | "/dashboard/settings/notifications/"
     | "/dashboard/settings/profile/"
     | "/dashboard/accounts/new/"
@@ -194,7 +206,6 @@ export interface FileRouteTypes {
     | "/"
     | "/auth"
     | "/dashboard"
-    | "/dashboard/assets"
     | "/dashboard/settings"
     | "/dashboard/identity"
     | "/dashboard/mcp"
@@ -202,6 +213,8 @@ export interface FileRouteTypes {
     | "/dashboard/activity"
     | "/dashboard/session-keys"
     | "/dashboard/templates"
+    | "/dashboard/assets"
+    | "/dashboard/inbox"
     | "/dashboard/settings/notifications"
     | "/dashboard/settings/profile"
     | "/dashboard/accounts/new"
@@ -211,8 +224,7 @@ export interface FileRouteTypes {
     | "/"
     | "/dashboard"
     | "/auth/"
-    | "/dashboard/"
-    | "/dashboard/assets/"
+    | "/dashboard/(primary)/"
     | "/dashboard/settings/"
     | "/dashboard/(agents)/identity/"
     | "/dashboard/(agents)/mcp/"
@@ -220,6 +232,8 @@ export interface FileRouteTypes {
     | "/dashboard/(core)/activity/"
     | "/dashboard/(core)/session-keys/"
     | "/dashboard/(core)/templates/"
+    | "/dashboard/(primary)/assets/"
+    | "/dashboard/(primary)/inbox/"
     | "/dashboard/settings/notifications/"
     | "/dashboard/settings/profile/"
     | "/dashboard/(core)/accounts/new/"
@@ -248,13 +262,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/dashboard/": {
-      id: "/dashboard/";
-      path: "/";
-      fullPath: "/dashboard/";
-      preLoaderRoute: typeof DashboardIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
     "/auth/": {
       id: "/auth/";
       path: "/auth";
@@ -269,11 +276,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardSettingsIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
-    "/dashboard/assets/": {
-      id: "/dashboard/assets/";
-      path: "/assets";
-      fullPath: "/dashboard/assets/";
-      preLoaderRoute: typeof DashboardAssetsIndexRouteImport;
+    "/dashboard/(primary)/": {
+      id: "/dashboard/(primary)/";
+      path: "/";
+      fullPath: "/dashboard/";
+      preLoaderRoute: typeof DashboardprimaryIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/settings/profile/": {
@@ -288,6 +295,20 @@ declare module "@tanstack/react-router" {
       path: "/settings/notifications";
       fullPath: "/dashboard/settings/notifications/";
       preLoaderRoute: typeof DashboardSettingsNotificationsIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/(primary)/inbox/": {
+      id: "/dashboard/(primary)/inbox/";
+      path: "/inbox";
+      fullPath: "/dashboard/inbox/";
+      preLoaderRoute: typeof DashboardprimaryInboxIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/(primary)/assets/": {
+      id: "/dashboard/(primary)/assets/";
+      path: "/assets";
+      fullPath: "/dashboard/assets/";
+      preLoaderRoute: typeof DashboardprimaryAssetsIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/(core)/templates/": {
@@ -350,8 +371,7 @@ declare module "@tanstack/react-router" {
 }
 
 interface DashboardRouteRouteChildren {
-  DashboardIndexRoute: typeof DashboardIndexRoute;
-  DashboardAssetsIndexRoute: typeof DashboardAssetsIndexRoute;
+  DashboardprimaryIndexRoute: typeof DashboardprimaryIndexRoute;
   DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute;
   DashboardagentsIdentityIndexRoute: typeof DashboardagentsIdentityIndexRoute;
   DashboardagentsMcpIndexRoute: typeof DashboardagentsMcpIndexRoute;
@@ -359,6 +379,8 @@ interface DashboardRouteRouteChildren {
   DashboardcoreActivityIndexRoute: typeof DashboardcoreActivityIndexRoute;
   DashboardcoreSessionKeysIndexRoute: typeof DashboardcoreSessionKeysIndexRoute;
   DashboardcoreTemplatesIndexRoute: typeof DashboardcoreTemplatesIndexRoute;
+  DashboardprimaryAssetsIndexRoute: typeof DashboardprimaryAssetsIndexRoute;
+  DashboardprimaryInboxIndexRoute: typeof DashboardprimaryInboxIndexRoute;
   DashboardSettingsNotificationsIndexRoute: typeof DashboardSettingsNotificationsIndexRoute;
   DashboardSettingsProfileIndexRoute: typeof DashboardSettingsProfileIndexRoute;
   DashboardcoreAccountsNewIndexRoute: typeof DashboardcoreAccountsNewIndexRoute;
@@ -366,8 +388,7 @@ interface DashboardRouteRouteChildren {
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
-  DashboardIndexRoute: DashboardIndexRoute,
-  DashboardAssetsIndexRoute: DashboardAssetsIndexRoute,
+  DashboardprimaryIndexRoute: DashboardprimaryIndexRoute,
   DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
   DashboardagentsIdentityIndexRoute: DashboardagentsIdentityIndexRoute,
   DashboardagentsMcpIndexRoute: DashboardagentsMcpIndexRoute,
@@ -375,6 +396,8 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardcoreActivityIndexRoute: DashboardcoreActivityIndexRoute,
   DashboardcoreSessionKeysIndexRoute: DashboardcoreSessionKeysIndexRoute,
   DashboardcoreTemplatesIndexRoute: DashboardcoreTemplatesIndexRoute,
+  DashboardprimaryAssetsIndexRoute: DashboardprimaryAssetsIndexRoute,
+  DashboardprimaryInboxIndexRoute: DashboardprimaryInboxIndexRoute,
   DashboardSettingsNotificationsIndexRoute:
     DashboardSettingsNotificationsIndexRoute,
   DashboardSettingsProfileIndexRoute: DashboardSettingsProfileIndexRoute,

@@ -5,11 +5,11 @@ import {
   InboxLottieIcon,
 } from "@namera-ai/ui/lottie";
 
-import { SidebarButton } from "./sidebar-button";
+import { SidebarButton } from "../sidebar-button";
 
 const items = [
   {
-    href: "/dashboard",
+    href: "/dashboard/inbox",
     lottie: InboxLottieIcon,
     title: "Inbox",
     tooltip: {

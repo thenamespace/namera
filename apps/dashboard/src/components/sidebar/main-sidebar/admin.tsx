@@ -1,9 +1,4 @@
-import { Link } from "@tanstack/react-router";
-
-import {
-  IdentificationBadgeIcon,
-  TriangleIcon,
-} from "@phosphor-icons/react/ssr";
+import { TriangleIcon } from "@phosphor-icons/react/ssr";
 
 import {
   Collapsible,
@@ -14,31 +9,23 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@namera-ai/ui/components/ui/sidebar";
-import { McpIcon } from "@namera-ai/ui/icons";
+import { SettingsLottieIcon } from "@namera-ai/ui/lottie";
+
+import { SidebarButton } from "../sidebar-button";
 
 const items = [
   {
-    href: "/dashboard/identity",
-    icon: IdentificationBadgeIcon,
-    title: "Identity",
+    href: "/dashboard/settings",
+    lottie: SettingsLottieIcon,
+    title: "Settings",
     tooltip: {
-      text: "agent identity",
-    },
-  },
-  {
-    href: "/dashboard/mcp",
-    icon: McpIcon,
-    title: "MCP",
-    tooltip: {
-      text: "mcp",
+      text: "settings",
     },
   },
 ] as const;
 
-export const AgentGroup = () => {
+export const AdminGroup = () => {
   return (
     <SidebarGroup>
       <Collapsible className="flex w-full flex-col gap-1" defaultOpen={true}>
@@ -49,7 +36,7 @@ export const AgentGroup = () => {
             <SidebarGroupLabel className="flex h-5 cursor-pointer flex-row items-center gap-1.5 select-none" />
           }
         >
-          Agents
+          Admin
           <TriangleIcon
             className="size-2! rotate-90 transition-all group-data-panel-open:rotate-180"
             weight="fill"
@@ -58,27 +45,7 @@ export const AgentGroup = () => {
         <CollapsibleContent className="flex h-(--collapsible-panel-height) flex-col justify-end overflow-hidden text-sm transition-all duration-150 ease-out data-ending-style:h-0 data-starting-style:h-0 [&[hidden]:not([hidden='until-found'])]:hidden">
           <SidebarMenu>
             {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  render={
-                    <Link
-                      to={item.href}
-                      activeOptions={{
-                        exact: true,
-                      }}
-                      activeProps={{
-                        className: "bg-sidebar-accent",
-                      }}
-                    />
-                  }
-                  tooltip={{
-                    children: <div>Go to {item.tooltip.text}</div>,
-                  }}
-                >
-                  <item.icon />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarButton key={item.title} {...item} />
             ))}
           </SidebarMenu>
         </CollapsibleContent>

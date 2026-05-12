@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PageHeader } from "../-components";
+import { PageHeader } from "@/app/dashboard/-components";
 
 const Page = () => {
   return (
@@ -10,6 +10,6 @@ const Page = () => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/assets/")({
+export const Route = createFileRoute("/dashboard/(primary)/assets/")({
   component: Page,
 });

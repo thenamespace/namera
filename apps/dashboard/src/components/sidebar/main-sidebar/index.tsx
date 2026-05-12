@@ -9,7 +9,7 @@ import { CoreGroup } from "./core";
 import { Header } from "./header";
 import { PrimaryGroup } from "./primary";
 
-export function Sidebar() {
+export const Sidebar = () => {
   return (
     <SidebarCore collapsible="icon">
       <Header />
@@ -21,6 +21,4 @@ export function Sidebar() {
       </SidebarContent>
     </SidebarCore>
   );
-}
-
-export * from "./settings-sidebar";
+};

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PageHeader } from "./-components";
+import { PageHeader } from "@/app/dashboard/-components";
 
 const DashboardPage = () => {
   return (
@@ -10,7 +10,7 @@ const DashboardPage = () => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/")({
+export const Route = createFileRoute("/dashboard/(primary)/")({
   component: DashboardPage,
   errorComponent: () => <div>Some Error Occurred in dashboard</div>,
 });

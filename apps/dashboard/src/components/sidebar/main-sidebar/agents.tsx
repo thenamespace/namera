@@ -1,7 +1,7 @@
-import { useHotkeySequence } from "@tanstack/react-hotkeys";
-import { useNavigate } from "@tanstack/react-router";
-
-import { KeyIcon, TriangleIcon } from "@phosphor-icons/react/ssr";
+import {
+  IdentificationBadgeIcon,
+  TriangleIcon,
+} from "@phosphor-icons/react/ssr";
 
 import {
   Collapsible,
@@ -13,73 +13,30 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
 } from "@namera-ai/ui/components/ui/sidebar";
-import {
-  AnalyticsLottieIcon,
-  CategoryLottieIcon,
-  UserLottieIcon,
-} from "@namera-ai/ui/lottie";
+import { McpIcon } from "@namera-ai/ui/icons";
 
-import { SidebarButton } from "./sidebar-button";
+import { SidebarButton } from "../sidebar-button";
 
 const items = [
   {
-    href: "/dashboard/accounts",
-    lottie: UserLottieIcon,
-    title: "Accounts",
+    href: "/dashboard/identity",
+    icon: IdentificationBadgeIcon,
+    title: "Identity",
     tooltip: {
-      hotKey: "A",
-      text: "accounts",
+      text: "agent identity",
     },
   },
   {
-    href: "/dashboard/session-keys",
-    icon: KeyIcon,
-    title: "Session Keys",
+    href: "/dashboard/mcp",
+    icon: McpIcon,
+    title: "MCP",
     tooltip: {
-      hotKey: "S",
-      text: "session keys",
-    },
-  },
-  {
-    href: "/dashboard/templates",
-    lottie: CategoryLottieIcon,
-    title: "Templates",
-    tooltip: {
-      hotKey: "T",
-      text: "templates",
-    },
-  },
-  {
-    href: "/dashboard/activity",
-    lottie: AnalyticsLottieIcon,
-    title: "Activity",
-    tooltip: {
-      text: "activity",
+      text: "mcp",
     },
   },
 ] as const;
 
-export const CoreGroup = () => {
-  const navigate = useNavigate();
-
-  useHotkeySequence(["G", "S"], () => {
-    navigate({
-      to: "/dashboard/session-keys",
-    });
-  });
-
-  useHotkeySequence(["G", "T"], () => {
-    navigate({
-      to: "/dashboard/templates",
-    });
-  });
-
-  useHotkeySequence(["G", "A"], () => {
-    navigate({
-      to: "/dashboard/activity",
-    });
-  });
-
+export const AgentGroup = () => {
   return (
     <SidebarGroup>
       <Collapsible className="flex w-full flex-col gap-1" defaultOpen={true}>
@@ -90,7 +47,7 @@ export const CoreGroup = () => {
             <SidebarGroupLabel className="flex h-5 cursor-pointer flex-row items-center gap-1.5 select-none" />
           }
         >
-          Core Actions
+          Agents
           <TriangleIcon
             className="size-2! rotate-90 transition-all group-data-panel-open:rotate-180"
             weight="fill"
