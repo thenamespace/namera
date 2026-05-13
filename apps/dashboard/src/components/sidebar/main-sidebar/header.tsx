@@ -4,13 +4,14 @@ import {
   useSidebar,
 } from "@namera-ai/ui/components/ui/sidebar";
 
-import { AccountSwitcher } from "./account-switcher";
+import { TeamDropdownButton } from "./team-dropdown";
 
 export const Header = () => {
   const { open } = useSidebar();
   return (
     <SidebarHeader className="flex flex-row items-center justify-between px-2!">
-      <AccountSwitcher />
+      <TeamDropdownButton />
+      {/* <AccountSwitcher /> */}
       {open && <SidebarTrigger />}
     </SidebarHeader>
   );
