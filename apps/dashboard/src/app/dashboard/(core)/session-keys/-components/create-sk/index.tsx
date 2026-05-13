@@ -5,6 +5,7 @@ import { Schema } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
 
+import { HeadingGroup } from "@/components/misc";
 import { Button } from "@namera-ai/ui/components/ui/button";
 
 import { Chains } from "./chains";
@@ -39,13 +40,12 @@ export const NewSessionKeyForm = () => {
       id="new-account-form"
       onSubmit={form.handleSubmit(handleSubmit)}
     >
-      <div className="flex flex-col gap-2">
-        <div className="text-2xl font-medium">Create a new session key</div>
-        <p className="text-muted-foreground text-sm">
-          Create a new Session Key across multiple chains with fine-grained
-          permissions.
-        </p>
-      </div>
+      <HeadingGroup
+        heading="Create a new session key"
+        description="Create a new Session Key across multiple chains with fine-grained permissions."
+        size="lg"
+        className="pb-0"
+      />
       <Metadata form={form} />
       <Chains form={form} />
       <div className="flex flex-row justify-end gap-2">
