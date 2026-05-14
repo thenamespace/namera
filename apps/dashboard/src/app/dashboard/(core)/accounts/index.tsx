@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/app/dashboard/-components";
 
-import { AccountsTable, CreateAccountButton } from "./-components";
+import { AccountsTableContainer, CreateAccountButton } from "./-components";
 
 const Page = () => {
   return (
@@ -10,7 +10,7 @@ const Page = () => {
       <PageHeader header="Accounts">
         <CreateAccountButton />
       </PageHeader>
-      <AccountsTable />
+      <AccountsTableContainer />
     </div>
   );
 };
