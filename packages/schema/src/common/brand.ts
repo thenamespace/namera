@@ -5,6 +5,11 @@ export const SessionId = Schema.String.pipe(Schema.brand("SessionId"));
 export const OrganizationId = Schema.String.pipe(
   Schema.brand("OrganizationId"),
 );
+
+export const OrganizationMemberId = Schema.String.pipe(
+  Schema.brand("OrganizationMemberId"),
+);
+
 export const OrganizationSlug = Schema.String.pipe(
   Schema.brand("OrganizationSlug"),
 ).check(
@@ -23,6 +28,7 @@ export const SessionKeyId = Schema.String.pipe(Schema.brand("SessionKeyId"));
 export type SessionId = typeof SessionId.Type;
 export type UserId = typeof UserId.Type;
 export type OrganizationId = typeof OrganizationId.Type;
+export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationSlug = typeof OrganizationSlug.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;

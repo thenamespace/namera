@@ -6,6 +6,7 @@ import { UserId } from "../common";
 
 export const Account = Schema.Struct({
   id: Schema.String,
+  userId: UserId,
   accountId: Schema.String,
   accessToken: Schema.NullOr(Schema.String),
   accessTokenExpiresAt: Schema.Date,
@@ -17,7 +18,6 @@ export const Account = Schema.Struct({
   scope: Schema.NullOr(Schema.String),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
-  userId: UserId,
 });
 
 export const AccountUpdate = createUpdateSchema(Account);

@@ -7,6 +7,7 @@ import type {
   UserId,
   SmartAccountOwner,
   SmartAccountMetadata,
+  OrganizationId,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
@@ -20,6 +21,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
+import { organization } from "../auth";
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 
@@ -30,10 +32,14 @@ export const smartAccount = pgTable.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<SmartAccountId>(),
-    userId: text("user_id")
+    organizationId: text("organization_id")
+      .notNull()
+      .$type<OrganizationId>()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    creatorId: text("creator_id")
       .notNull()
       .$type<UserId>()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "no action" }),
     metadata: json("metadata").notNull().$type<SmartAccountMetadata>(),
     entryPointVersion: text("entrypoint_version")
       .notNull()
@@ -46,33 +52,34 @@ export const smartAccount = pgTable.withRLS(
     ...timestamps,
   },
   (table) => [
-    index("smart_account_userId_idx").on(table.userId),
+    index("smart_account_organizationId_idx").on(table.organizationId),
+    index("smart_account_creatorId_idx").on(table.creatorId),
     index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
     uniqueIndex("smart_account_address_uidx").on(table.address),
     pgPolicy("smart_account_user_select", {
       as: "permissive",
       to: userRole,
       for: "select",
-      using: sql`${table.userId} = auth_user_id()`,
+      using: sql`${table.creatorId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_user_insert", {
       as: "permissive",
       to: userRole,
       for: "insert",
-      withCheck: sql`${table.userId} = auth_user_id()`,
+      withCheck: sql`${table.creatorId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_user_update", {
       as: "permissive",
       to: userRole,
       for: "update",
-      using: sql`${table.userId} = auth_user_id()`,
-      withCheck: sql`${table.userId} = auth_user_id()`,
+      using: sql`${table.creatorId} = auth_user_id()`,
+      withCheck: sql`${table.creatorId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_user_delete", {
       as: "permissive",
       to: userRole,
       for: "delete",
-      using: sql`${table.userId} = auth_user_id()`,
+      using: sql`${table.creatorId} = auth_user_id()`,
     }),
     pgPolicy("smart_account_admin_access", {
       as: "permissive",

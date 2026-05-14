@@ -2,6 +2,9 @@ import { defineRelations } from "drizzle-orm";
 
 import {
   account,
+  invitation,
+  member,
+  organization,
   session,
   sessionKey,
   smartAccount,
@@ -10,7 +13,17 @@ import {
 } from "../schema";
 
 export const relations = defineRelations(
-  { account, session, user, verification, smartAccount, sessionKey },
+  {
+    account,
+    session,
+    user,
+    verification,
+    smartAccount,
+    sessionKey,
+    organization,
+    invitation,
+    member,
+  },
   (r) => ({
     account: {
       // 1 account can have one user
@@ -35,10 +48,44 @@ export const relations = defineRelations(
       smartAccounts: r.many.smartAccount(),
       // 1 user can have many session keys
       sessionKeys: r.many.sessionKey(),
+      // 1 user can have many invitations
+      invitations: r.many.invitation(),
+      // 1 user can be member of many organizations
+      members: r.many.member(),
     },
     verification: {},
+    organization: {
+      // 1 organization can have many invitations
+      invitations: r.many.invitation(),
+      // 1 organization can have many members
+      members: r.many.member(),
+    },
+    member: {
+      // 1 member can have one organization
+      organization: r.one.organization({
+        from: r.member.organizationId,
+        to: r.organization.id,
+      }),
+      // 1 member maps to one user
+      user: r.one.user({
+        from: r.member.userId,
+        to: r.user.id,
+      }),
+    },
+    invitation: {
+      // 1 invitation belongs to one organization
+      organization: r.one.organization({
+        from: r.invitation.organizationId,
+        to: r.organization.id,
+      }),
+      // 1 invitation can have one inviter
+      user: r.one.user({
+        from: r.invitation.inviterId,
+        to: r.user.id,
+      }),
+    },
     smartAccount: {
-      // one smart account can have one user
+      // one smart account can belong to one org
       user: r.one.user({
         from: r.smartAccount.userId,
         to: r.user.id,

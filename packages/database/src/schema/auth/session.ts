@@ -1,4 +1,4 @@
-import type { SessionId, UserId } from "@namera-ai/schema";
+import type { OrganizationId, SessionId, UserId } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import { index, pgPolicy, text } from "drizzle-orm/pg-core";
@@ -23,6 +23,9 @@ export const session = authSchema.table.withRLS(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
+    activeOrganizationId: text(
+      "active_organization_id",
+    ).$type<OrganizationId>(),
     userAgent: text("user_agent"),
     expiresAt: createTimestampField("expires_at", {
       mode: "date",

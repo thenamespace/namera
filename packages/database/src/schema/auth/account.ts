@@ -6,6 +6,7 @@ import { index, pgPolicy, text } from "drizzle-orm/pg-core";
 import {
   adminRole,
   createTimestampField,
+  generateUniqueId,
   timestamps,
   userRole,
 } from "../common";
@@ -15,7 +16,7 @@ import { user } from "./user";
 export const account = authSchema.table.withRLS(
   "account",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().$defaultFn(generateUniqueId),
     accountId: text("account_id").notNull(),
     accessToken: text("access_token"),
     accessTokenExpiresAt: createTimestampField("access_token_expires_at", {
