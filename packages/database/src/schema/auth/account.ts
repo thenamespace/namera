@@ -1,6 +1,7 @@
 import type { UserId } from "@namera-ai/schema";
 
-import { index, text } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -42,6 +43,10 @@ export const account = authSchema.table.withRLS(
   },
   (table) => [
     index("account_userId_idx").on(table.userId),
+    uniqueIndex("account_providerId_accountId_idx").on(
+      table.providerId,
+      table.accountId,
+    ),
     // Users can only select their own accounts
     new PgPolicyBuilder()
       .name("account_user_select")
@@ -81,7 +86,7 @@ export const account = authSchema.table.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

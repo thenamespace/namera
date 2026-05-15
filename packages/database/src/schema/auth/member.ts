@@ -4,6 +4,7 @@ import type {
   UserId,
 } from "@namera-ai/schema";
 
+import { sql } from "drizzle-orm";
 import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { OrganizationMemberRole } from "@namera-ai/schema";
@@ -94,7 +95,7 @@ export const member = authSchema.table.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

@@ -32,7 +32,7 @@ export const SessionKeyMetadata = Schema.Struct({
 const BaseSessionKey = Schema.Struct({
   id: SessionKeyId,
   metadata: SessionKeyMetadata,
-  userId: UserId, // Reference to user
+  creatorId: UserId, // Reference to creator of session key
   organizationId: OrganizationId,
   smartAccountId: SmartAccountId, // Reference to smart account
   serializedAccounts: Schema.Array(SerializedAccount),
@@ -61,7 +61,7 @@ export const SessionKeyUpdate = createUpdateSchema(SessionKey);
 export const SessionKeyInsert = createInsertSchema(
   SessionKey,
   "type",
-  "userId",
+  "creatorId",
   "organizationId",
   "smartAccountId",
   "serializedAccounts",

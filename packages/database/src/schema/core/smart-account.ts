@@ -10,6 +10,7 @@ import type {
   OrganizationId,
 } from "@namera-ai/schema";
 
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -109,7 +110,7 @@ export const smartAccount = pgTable.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

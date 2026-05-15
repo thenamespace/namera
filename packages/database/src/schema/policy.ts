@@ -2,7 +2,7 @@
 
 import type { OrganizationMemberRole } from "@namera-ai/schema";
 
-import { sql, type ColumnType } from "drizzle-orm";
+import { type ColumnType, sql, type SQL } from "drizzle-orm";
 import {
   ExtraConfigColumn,
   pgPolicy,
@@ -10,61 +10,58 @@ import {
   type PgColumnBaseConfig,
 } from "drizzle-orm/pg-core";
 
-export const and = (policies: string[]) => {
-  return policies.join(" AND ");
-};
+type PolicyColumn = ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>;
 
-export const or = (policies: string[]) => {
-  return policies.join(" OR ");
-};
+export const and = (policies: SQL[]) =>
+  sql.join(
+    policies.map((p) => sql`(${p})`),
+    sql` AND `,
+  );
 
-export const onlyUserId = (
-  id: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-) => {
-  return `auth_current_user_id() = ${id}`;
-};
+export const or = (policies: SQL[]) =>
+  sql.join(
+    policies.map((p) => sql`(${p})`),
+    sql` OR `,
+  );
 
-export const onlyOrgMember = (
-  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-) => {
-  return `auth_user_has_org_access(${orgId})`;
-};
+export const onlyUserId = (id: PolicyColumn) =>
+  sql`auth_current_user_id() = ${id}`;
+
+export const onlyOrgMember = (orgId: PolicyColumn) =>
+  sql`auth_user_has_org_access(${orgId})`;
 
 export const onlyIfSeedMember = (
-  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-  userId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-  role: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-) => {
-  return `auth_org_can_seed_owner(${orgId}, ${userId}, ${role})`;
-};
+  orgId: PolicyColumn,
+  userId: PolicyColumn,
+  role: PolicyColumn,
+) => sql`auth_org_can_seed_owner(${orgId}, ${userId}, ${role})`;
 
 export const onlyIfSmartAccountInOrg = (
-  smartAccountId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-) => {
-  return `auth_smart_account_in_org(${smartAccountId}, ${orgId})`;
-};
+  smartAccountId: PolicyColumn,
+  orgId: PolicyColumn,
+) => sql`auth_smart_account_in_org(${smartAccountId}, ${orgId})`;
 
 export const onlyIfSessionKeyInOrg = (
-  sessionKeyId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
-) => {
-  return `auth_session_key_in_org(${sessionKeyId}, ${orgId})`;
-};
+  sessionKeyId: PolicyColumn,
+  orgId: PolicyColumn,
+) => sql`auth_session_key_in_org(${sessionKeyId}, ${orgId})`;
+
+const quoteSqlString = (value: string) => `'${value.replaceAll("'", "''")}'`;
 
 export const onlyOrgMemberWithRoles = (
-  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
+  orgId: PolicyColumn,
   roles: OrganizationMemberRole[],
 ) => {
-  return `auth_user_has_role_in_org(${orgId}, ARRAY[${roles.map((r) => `'${r}'`).join(",")}])`;
+  const roleList = roles.map(quoteSqlString).join(", ");
+  return sql`auth_user_has_role_in_org(${orgId}, ARRAY[${sql.raw(roleList)}]::text[])`;
 };
 
 export class PgPolicyBuilder {
   protected _name!: string;
   protected _as?: "permissive" | "restrictive";
   protected _for?: "all" | "select" | "insert" | "update" | "delete";
-  protected _using?: string;
-  protected _withCheck?: string;
+  protected _using?: SQL;
+  protected _withCheck?: SQL;
   protected _to?: PgRole;
 
   public name(name: string) {
@@ -89,12 +86,12 @@ export class PgPolicyBuilder {
     return this;
   }
 
-  public using(policy: string) {
+  public using(policy: SQL) {
     this._using = policy;
     return this;
   }
 
-  public withCheck(policy: string) {
+  public withCheck(policy: SQL) {
     this._withCheck = policy;
     return this;
   }
@@ -103,9 +100,9 @@ export class PgPolicyBuilder {
     return pgPolicy(this._name, {
       as: this._as,
       for: this._for,
-      to: "user",
-      using: sql`${this._using}`,
-      withCheck: sql`${this._withCheck}`,
+      to: this._to,
+      using: this._using,
+      withCheck: this._withCheck,
     });
   }
 }

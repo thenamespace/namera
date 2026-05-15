@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
@@ -32,7 +33,7 @@ export const verification = authSchema.table.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

@@ -1,5 +1,6 @@
 import type { OrganizationId, SessionId, UserId } from "@namera-ai/schema";
 
+import { sql } from "drizzle-orm";
 import { index, text } from "drizzle-orm/pg-core";
 
 import {
@@ -9,7 +10,7 @@ import {
   timestamps,
   userRole,
 } from "../common";
-import { onlyUserId, PgPolicyBuilder } from "../policy";
+import { and, onlyOrgMember, onlyUserId, or, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 import { organization } from "./organization";
 import { user } from "./user";
@@ -55,7 +56,16 @@ export const session = authSchema.table.withRLS(
       .to(userRole)
       .forOperation("update")
       .using(onlyUserId(table.userId))
-      .withCheck(onlyUserId(table.userId))
+      .withCheck(
+        and([
+          onlyUserId(table.userId),
+          // only org that user is part of
+          or([
+            sql`${table.activeOrganizationId} IS NULL`,
+            onlyOrgMember(table.activeOrganizationId),
+          ]),
+        ]),
+      )
       .build(),
     // Users can only delete their own sessions
     new PgPolicyBuilder()
@@ -71,7 +81,7 @@ export const session = authSchema.table.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

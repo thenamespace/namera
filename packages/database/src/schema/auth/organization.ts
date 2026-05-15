@@ -5,7 +5,7 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { json, pgPolicy, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { OrganizationPlan } from "@namera-ai/schema";
 
@@ -17,6 +17,9 @@ import {
 } from "../policy";
 import { authSchema } from "./common";
 
+// Organization Table
+// Represents an organization
+// "insert" policies are not required because they are done by admin
 export const organization = authSchema.table.withRLS(
   "organization",
   {
@@ -26,7 +29,7 @@ export const organization = authSchema.table.withRLS(
       .$type<OrganizationId>(),
     metadata: json("metadata").$type<OrganizationMetadata>(),
     plan: text("plan").notNull().$type<OrganizationPlan>(),
-    slug: text("slug").notNull().unique().$type<OrganizationSlug>(),
+    slug: text("slug").notNull().$type<OrganizationSlug>(),
     ...timestamps,
   },
   (table) => [
@@ -39,13 +42,7 @@ export const organization = authSchema.table.withRLS(
       .forOperation("select")
       .using(onlyOrgMember(table.id))
       .build(),
-    // Org Insert
-    pgPolicy("organization_user_insert", {
-      as: "permissive",
-      to: userRole,
-      for: "insert",
-      withCheck: sql`true`,
-    }),
+
     // Only owner can update the organization
     new PgPolicyBuilder()
       .name("organization_owner_update")
@@ -69,7 +66,7 @@ export const organization = authSchema.table.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );

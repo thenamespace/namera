@@ -8,6 +8,7 @@ import type {
   UserId,
 } from "@namera-ai/schema";
 
+import { sql } from "drizzle-orm";
 import { index, json, pgTable, text } from "drizzle-orm/pg-core";
 
 import { SessionKeyMetadata } from "@namera-ai/schema";
@@ -21,6 +22,7 @@ import {
   onlyIfSmartAccountInOrg,
   onlyOrgMember,
   onlyOrgMemberWithRoles,
+  onlyUserId,
   PgPolicyBuilder,
 } from "../policy";
 import { smartAccount } from "./smart-account";
@@ -35,7 +37,7 @@ export const sessionKey = pgTable.withRLS(
       .$defaultFn(generateUniqueId)
       .$type<SessionKeyId>(),
     metadata: json("metadata").notNull().$type<SessionKeyMetadata>(),
-    creatorId: text("creatorId")
+    creatorId: text("creator_id")
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "no action" }),
@@ -73,12 +75,16 @@ export const sessionKey = pgTable.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]))
+      .using(
+        and([
+          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyIfSessionKeyInOrg(table.id, table.organizationId),
+        ]),
+      )
       .withCheck(
         and([
           onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
-          onlyIfSessionKeyInOrg(table.id, table.organizationId),
         ]),
       )
       .build(),
@@ -90,9 +96,9 @@ export const sessionKey = pgTable.withRLS(
       .forOperation("insert")
       .withCheck(
         and([
+          onlyUserId(table.creatorId),
           onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
-          onlyOrgMember(table.creatorId),
         ]),
       )
       .build(),
@@ -115,7 +121,7 @@ export const sessionKey = pgTable.withRLS(
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
-      .using("true")
+      .using(sql`true`)
       .build(),
   ],
 );
