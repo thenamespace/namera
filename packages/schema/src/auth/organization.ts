@@ -12,8 +12,6 @@ export const OrganizationPlan = Schema.Literals(["free"]);
 
 export const Organization = Schema.Struct({
   id: OrganizationId,
-  name: Schema.String,
-  logo: Schema.NullOr(Schema.String),
   metadata: Schema.NullOr(OrganizationMetadata),
   plan: OrganizationPlan,
   slug: OrganizationSlug,
@@ -27,7 +25,7 @@ export type OrganizationPlan = typeof OrganizationPlan.Type;
 export const OrganizationUpdate = createUpdateSchema(Organization);
 export const OrganizationInsert = createInsertSchema(
   Organization,
-  "name",
+  "metadata",
   "plan",
   "slug",
 );

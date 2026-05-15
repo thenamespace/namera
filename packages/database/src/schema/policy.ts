@@ -45,6 +45,13 @@ export const onlyIfSmartAccountInOrg = (
   return `auth_smart_account_in_org(${smartAccountId}, ${orgId})`;
 };
 
+export const onlyIfSessionKeyInOrg = (
+  sessionKeyId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
+  orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
+) => {
+  return `auth_session_key_in_org(${sessionKeyId}, ${orgId})`;
+};
+
 export const onlyOrgMemberWithRoles = (
   orgId: ExtraConfigColumn<PgColumnBaseConfig<ColumnType>>,
   roles: OrganizationMemberRole[],

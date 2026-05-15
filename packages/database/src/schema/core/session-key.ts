@@ -8,14 +8,25 @@ import type {
   UserId,
 } from "@namera-ai/schema";
 
-import { sql } from "drizzle-orm";
-import { index, json, pgPolicy, pgTable, text } from "drizzle-orm/pg-core";
+import { index, json, pgTable, text } from "drizzle-orm/pg-core";
+
+import { SessionKeyMetadata } from "@namera-ai/schema";
 
 import { organization } from "../auth/organization";
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  and,
+  onlyIfSessionKeyInOrg,
+  onlyIfSmartAccountInOrg,
+  onlyOrgMember,
+  onlyOrgMemberWithRoles,
+  PgPolicyBuilder,
+} from "../policy";
 import { smartAccount } from "./smart-account";
 
+// Session Keys table
+// Represents session keys associated with a org's smart account
 export const sessionKey = pgTable.withRLS(
   "session_key",
   {
@@ -23,16 +34,15 @@ export const sessionKey = pgTable.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<SessionKeyId>(),
-    type: text("type").notNull().$type<SessionKeyType>(),
-    userId: text("user_id")
+    metadata: json("metadata").notNull().$type<SessionKeyMetadata>(),
+    creatorId: text("creatorId")
       .notNull()
       .$type<UserId>()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "no action" }),
     organizationId: text("organization_id")
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
-    name: text("name"),
     smartAccountId: text("smart_account_id")
       .notNull()
       .$type<SmartAccountId>()
@@ -40,50 +50,72 @@ export const sessionKey = pgTable.withRLS(
     serializedAccounts: json("serialized_accounts")
       .notNull()
       .$type<SerializedAccount[]>(),
+    type: text("type").notNull().$type<SessionKeyType>(),
     data: json("data").notNull().$type<SessionKeyData>(),
     ...timestamps,
   },
   (table) => [
-    index("session_key_userId_idx").on(table.userId),
     index("session_key_organizationId_idx").on(table.organizationId),
     index("session_key_smartAccountId_idx").on(table.smartAccountId),
-    pgPolicy("session_key_user_select", {
-      as: "permissive",
-      to: userRole,
-      for: "select",
-      using: sql`auth_org_has_access(${table.organizationId})`,
-    }),
-    pgPolicy("session_key_user_update", {
-      as: "permissive",
-      to: userRole,
-      for: "update",
-      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
-      withCheck: sql`
-        auth_org_has_role(${table.organizationId}, ARRAY['owner'])
-        AND auth_smart_account_in_org(${table.smartAccountId}, ${table.organizationId})
-      `,
-    }),
-    pgPolicy("session_key_user_insert", {
-      as: "permissive",
-      to: userRole,
-      for: "insert",
-      withCheck: sql`
-        ${table.userId} = auth_user_id()
-        AND auth_org_has_role(${table.organizationId}, ARRAY['owner', 'member'])
-        AND auth_smart_account_in_org(${table.smartAccountId}, ${table.organizationId})
-      `,
-    }),
-    pgPolicy("session_key_user_delete", {
-      as: "permissive",
-      to: userRole,
-      for: "delete",
-      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
-    }),
-    pgPolicy("session_key_admin_access", {
-      as: "permissive",
-      to: adminRole,
-      for: "all",
-      using: sql`true`,
-    }),
+    index("session_key_creator_idx").on(table.creatorId),
+    index("session_key_type_idx").on(table.type),
+    // Only org members can select their own session keys
+    new PgPolicyBuilder()
+      .name("session_key_user_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(onlyOrgMember(table.organizationId))
+      .build(),
+    // Only org owners and admins can update session keys and if session key belongs to org and as well as smart account
+    new PgPolicyBuilder()
+      .name("session_key_owner_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]))
+      .withCheck(
+        and([
+          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
+          onlyIfSessionKeyInOrg(table.id, table.organizationId),
+        ]),
+      )
+      .build(),
+    // Only Org owners and admins can insert session keys, where creator is the current user, smart account belongs to org,
+    new PgPolicyBuilder()
+      .name("session_key_owner_insert")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("insert")
+      .withCheck(
+        and([
+          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
+          onlyOrgMember(table.creatorId),
+        ]),
+      )
+      .build(),
+    // Only Org owners can delete session keys and if session key belongs to org
+    new PgPolicyBuilder()
+      .name("session_key_owner_delete")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("delete")
+      .using(
+        and([
+          onlyOrgMemberWithRoles(table.organizationId, ["owner"]),
+          onlyIfSessionKeyInOrg(table.id, table.organizationId),
+        ]),
+      )
+      .build(),
+    // Admins can access all session keys
+    new PgPolicyBuilder()
+      .name("session_key_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using("true")
+      .build(),
   ],
 );

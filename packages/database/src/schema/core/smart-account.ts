@@ -10,12 +10,10 @@ import type {
   OrganizationId,
 } from "@namera-ai/schema";
 
-import { sql } from "drizzle-orm";
 import {
   index,
   integer,
   json,
-  pgPolicy,
   pgTable,
   text,
   uniqueIndex,
@@ -24,7 +22,16 @@ import {
 import { organization } from "../auth";
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  and,
+  onlyOrgMember,
+  onlyOrgMemberWithRoles,
+  onlyUserId,
+  PgPolicyBuilder,
+} from "../policy";
 
+// Smart Accounts table
+// Represents a org's smart account in Namera
 export const smartAccount = pgTable.withRLS(
   "smart_account",
   {
@@ -56,39 +63,53 @@ export const smartAccount = pgTable.withRLS(
     index("smart_account_creatorId_idx").on(table.creatorId),
     index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
     uniqueIndex("smart_account_address_uidx").on(table.address),
-    pgPolicy("smart_account_user_select", {
-      as: "permissive",
-      to: userRole,
-      for: "select",
-      using: sql`auth_org_has_access(${table.organizationId})`,
-    }),
-    pgPolicy("smart_account_user_insert", {
-      as: "permissive",
-      to: userRole,
-      for: "insert",
-      withCheck: sql`
-        ${table.creatorId} = auth_user_id()
-        AND auth_org_has_role(${table.organizationId}, ARRAY['owner', 'member'])
-      `,
-    }),
-    pgPolicy("smart_account_user_update", {
-      as: "permissive",
-      to: userRole,
-      for: "update",
-      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
-      withCheck: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
-    }),
-    pgPolicy("smart_account_user_delete", {
-      as: "permissive",
-      to: userRole,
-      for: "delete",
-      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
-    }),
-    pgPolicy("smart_account_admin_access", {
-      as: "permissive",
-      to: adminRole,
-      for: "all",
-      using: sql`true`,
-    }),
+    // Only members of an organization can select it
+    new PgPolicyBuilder()
+      .name("smart_account_user_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(onlyOrgMember(table.organizationId))
+      .build(),
+    // Only Org owners and admins can insert smart accounts, where creator is the current user
+    new PgPolicyBuilder()
+      .name("smart_account_owner_insert")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("insert")
+      .withCheck(
+        and([
+          onlyUserId(table.creatorId),
+          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+        ]),
+      )
+      .build(),
+    // Only Org owners and admins can update smart accounts
+    new PgPolicyBuilder()
+      .name("smart_account_owner_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]))
+      .withCheck(
+        onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+      )
+      .build(),
+    // Only Org owners can delete smart accounts
+    new PgPolicyBuilder()
+      .name("smart_account_owner_delete")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("delete")
+      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .build(),
+    // Admins can access all smart accounts
+    new PgPolicyBuilder()
+      .name("smart_account_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using("true")
+      .build(),
   ],
 );

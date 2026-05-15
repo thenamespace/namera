@@ -31,10 +31,10 @@ export const SessionKeyMetadata = Schema.Struct({
 
 const BaseSessionKey = Schema.Struct({
   id: SessionKeyId,
+  metadata: SessionKeyMetadata,
   userId: UserId, // Reference to user
   organizationId: OrganizationId,
   smartAccountId: SmartAccountId, // Reference to smart account
-  name: Schema.NullOr(Schema.String),
   serializedAccounts: Schema.Array(SerializedAccount),
   // Timestamps
   createdAt: Schema.Date,
@@ -73,3 +73,5 @@ export type SessionKeyUpdate = typeof SessionKeyUpdate.Type;
 export type SessionKeyInsert = typeof SessionKeyInsert.Type;
 export type SessionKeyData = typeof SessionKeyData.Type;
 export type SerializedAccount = typeof SerializedAccount.Type;
+
+export type SessionKeyMetadata = typeof SessionKeyMetadata.Type;

@@ -197,3 +197,21 @@ BEGIN
   );
 END;
 $$;
+
+-- Helper function to check if a session key belongs to an organization
+CREATE OR REPLACE FUNCTION auth_session_key_in_org(session_key_id text, org_id text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.session_key AS sk
+    WHERE sk.id = session_key_id
+      AND sk.organization_id = org_id
+  );
+END;
+$$;
