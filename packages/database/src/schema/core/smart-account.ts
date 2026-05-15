@@ -60,26 +60,29 @@ export const smartAccount = pgTable.withRLS(
       as: "permissive",
       to: userRole,
       for: "select",
-      using: sql`${table.creatorId} = auth_user_id()`,
+      using: sql`auth_org_has_access(${table.organizationId})`,
     }),
     pgPolicy("smart_account_user_insert", {
       as: "permissive",
       to: userRole,
       for: "insert",
-      withCheck: sql`${table.creatorId} = auth_user_id()`,
+      withCheck: sql`
+        ${table.creatorId} = auth_user_id()
+        AND auth_org_has_role(${table.organizationId}, ARRAY['owner', 'member'])
+      `,
     }),
     pgPolicy("smart_account_user_update", {
       as: "permissive",
       to: userRole,
       for: "update",
-      using: sql`${table.creatorId} = auth_user_id()`,
-      withCheck: sql`${table.creatorId} = auth_user_id()`,
+      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
+      withCheck: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
     }),
     pgPolicy("smart_account_user_delete", {
       as: "permissive",
       to: userRole,
       for: "delete",
-      using: sql`${table.creatorId} = auth_user_id()`,
+      using: sql`auth_org_has_role(${table.organizationId}, ARRAY['owner'])`,
     }),
     pgPolicy("smart_account_admin_access", {
       as: "permissive",

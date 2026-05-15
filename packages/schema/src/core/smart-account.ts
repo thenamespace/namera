@@ -6,6 +6,7 @@ import {
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
+  OrganizationId,
   SmartAccountId,
   UserId,
 } from "../common";
@@ -29,7 +30,8 @@ export const PasskeyOwner = Schema.String;
 
 const BaseSmartAccount = Schema.Struct({
   id: SmartAccountId,
-  userId: UserId,
+  organizationId: OrganizationId,
+  creatorId: UserId,
   metadata: SmartAccountMetadata,
   entryPointVersion: EntrypointVersion,
   kernelVersion: KernelVersion,
@@ -66,7 +68,8 @@ const SmartAccountUpdate = createUpdateSchema(SmartAccount);
 
 export const SmartAccountInsert = createInsertSchema(
   SmartAccount,
-  "userId",
+  "organizationId",
+  "creatorId",
   "metadata",
   "address",
   "entryPointVersion",

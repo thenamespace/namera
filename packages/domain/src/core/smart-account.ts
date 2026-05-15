@@ -15,6 +15,7 @@ import {
   GetSmartAccountRequest,
   GetSmartAccountResponse,
   ListSmartAccountsResponse,
+  OrganizationId,
   SmartAccount,
   UserId,
 } from "@namera-ai/schema";
@@ -25,10 +26,11 @@ export type SmartAccountRepo = {
     data: GetSmartAccountRequest,
   ) => Effect.Effect<GetSmartAccountResponse, never, Database.Database>;
   listSmartAccounts: (
-    userId: UserId,
+    organizationId: OrganizationId,
   ) => Effect.Effect<ListSmartAccountsResponse, never, Database.Database>;
   createSmartAccount: (
     userId: UserId,
+    organizationId: OrganizationId,
     params: CreateSmartAccountRequest,
   ) => Effect.Effect<CreateSmartAccountResponse, never, Database.Database>;
 };
@@ -51,12 +53,12 @@ export const layer = Layer.succeed(
         const parsed = Schema.decodeUnknownSync(SmartAccount)(res);
         return parsed;
       }).pipe(Effect.orDie),
-    listSmartAccounts: (userId) =>
+    listSmartAccounts: (organizationId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db.query.smartAccount.findMany({
           where: {
-            userId: { eq: userId },
+            organizationId: { eq: organizationId },
           },
         });
         const parsed = res.map((r) =>
@@ -64,7 +66,7 @@ export const layer = Layer.succeed(
         );
         return parsed;
       }).pipe(Effect.orDie),
-    createSmartAccount: (userId, params) =>
+    createSmartAccount: (userId, organizationId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
@@ -85,9 +87,8 @@ export const layer = Layer.succeed(
         const lastAccount = yield* db.query.smartAccount
           .findFirst({
             where: {
-              owner: {
-                eq: params.owner,
-              },
+              owner: { eq: params.owner },
+              organizationId: { eq: organizationId },
             },
             orderBy: {
               index: "desc",
@@ -124,7 +125,8 @@ export const layer = Layer.succeed(
         const res = yield* db
           .insert(smartAccount)
           .values({
-            userId: userId,
+            organizationId,
+            creatorId: userId,
             index: nextIndex,
             address: sa.account.address,
             ownerType: params.ownerType,

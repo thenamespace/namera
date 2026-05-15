@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { Email, OrganizationMemberId, UserId } from "@/common";
+import { Email, OrganizationId, UserId } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 import { OrganizationMemberRole } from "./member";
@@ -15,7 +15,7 @@ export const Invitation = Schema.Struct({
   id: Schema.String,
   email: Email,
   role: OrganizationMemberRole,
-  organizationId: OrganizationMemberId,
+  organizationId: OrganizationId,
   expiresAt: Schema.Date,
   inviterId: UserId,
   status: Schema.Literals(["pending", "accepted", "rejected"]),

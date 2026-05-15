@@ -59,6 +59,10 @@ export const relations = defineRelations(
       invitations: r.many.invitation(),
       // 1 organization can have many members
       members: r.many.member(),
+      // 1 organization can have many smart accounts
+      smartAccounts: r.many.smartAccount(),
+      // 1 organization can have many session keys
+      sessionKeys: r.many.sessionKey(),
     },
     member: {
       // 1 member can have one organization
@@ -85,9 +89,14 @@ export const relations = defineRelations(
       }),
     },
     smartAccount: {
-      // one smart account can belong to one org
-      user: r.one.user({
-        from: r.smartAccount.userId,
+      // one smart account belongs to one organization
+      organization: r.one.organization({
+        from: r.smartAccount.organizationId,
+        to: r.organization.id,
+      }),
+      // one smart account has one creator
+      creator: r.one.user({
+        from: r.smartAccount.creatorId,
         to: r.user.id,
       }),
       // one smart account can have many session keys
@@ -97,6 +106,11 @@ export const relations = defineRelations(
       }),
     },
     sessionKey: {
+      // one session key belongs to one organization
+      organization: r.one.organization({
+        from: r.sessionKey.organizationId,
+        to: r.organization.id,
+      }),
       // one session key can have one user
       user: r.one.user({
         from: r.sessionKey.userId,

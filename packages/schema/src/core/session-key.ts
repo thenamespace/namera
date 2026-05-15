@@ -4,6 +4,7 @@ import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 import {
   EthereumAddress,
+  OrganizationId,
   SessionKeyId,
   SmartAccountId,
   SupportedChain,
@@ -31,9 +32,10 @@ export const SessionKeyMetadata = Schema.Struct({
 const BaseSessionKey = Schema.Struct({
   id: SessionKeyId,
   userId: UserId, // Reference to user
+  organizationId: OrganizationId,
   smartAccountId: SmartAccountId, // Reference to smart account
+  name: Schema.NullOr(Schema.String),
   serializedAccounts: Schema.Array(SerializedAccount),
-  metadata: SessionKeyMetadata,
   // Timestamps
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
@@ -60,9 +62,10 @@ export const SessionKeyInsert = createInsertSchema(
   SessionKey,
   "type",
   "userId",
-  "metadata",
+  "organizationId",
   "smartAccountId",
   "serializedAccounts",
+  "data",
 );
 
 export type SessionKey = typeof SessionKey.Type;

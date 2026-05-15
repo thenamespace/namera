@@ -3,7 +3,11 @@ import { Schema } from "effect";
 import { OrganizationId, OrganizationMemberId, UserId } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
-export const OrganizationMemberRole = Schema.Literals(["owner", "member"]);
+export const OrganizationMemberRole = Schema.Literals([
+  "owner",
+  "admin",
+  "member",
+]);
 
 export const OrganizationMember = Schema.Struct({
   id: OrganizationMemberId,

@@ -4,18 +4,17 @@ import { OrganizationId, OrganizationSlug } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 export const OrganizationMetadata = Schema.Struct({
-  name: Schema.String,
-  logo: Schema.Struct({
-    type: Schema.Literals(["icon", "image"]),
-    value: Schema.String,
-  }),
+  name: Schema.optional(Schema.String),
+  logo: Schema.optional(Schema.String),
 });
 
 export const OrganizationPlan = Schema.Literals(["free"]);
 
 export const Organization = Schema.Struct({
   id: OrganizationId,
-  metadata: OrganizationMetadata,
+  name: Schema.String,
+  logo: Schema.NullOr(Schema.String),
+  metadata: Schema.NullOr(OrganizationMetadata),
   plan: OrganizationPlan,
   slug: OrganizationSlug,
   createdAt: Schema.Date,
@@ -28,7 +27,7 @@ export type OrganizationPlan = typeof OrganizationPlan.Type;
 export const OrganizationUpdate = createUpdateSchema(Organization);
 export const OrganizationInsert = createInsertSchema(
   Organization,
-  "metadata",
+  "name",
   "plan",
   "slug",
 );

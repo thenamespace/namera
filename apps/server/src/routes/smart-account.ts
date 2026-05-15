@@ -7,7 +7,7 @@ import { Effect } from "effect";
 
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { api, AuthenticatedUser } from "@namera-ai/api";
+import { api, AuthenticatedUser, Unauthorized } from "@namera-ai/api";
 import { Database, Transaction } from "@namera-ai/database";
 import { CoreRepo } from "@namera-ai/domain";
 
@@ -31,9 +31,14 @@ const getSmartAccount = (params: GetSmartAccountRequest) =>
 
 const listSmartAccountsHandler = () =>
   Effect.gen(function* () {
-    const user = (yield* AuthenticatedUser).user;
+    const { session, user } = yield* AuthenticatedUser;
     const db = yield* Database.Database;
     const coreRepo = yield* CoreRepo.CoreRepo;
+
+    if (!session.activeOrganizationId) {
+      return [];
+    }
+    const organizationId = session.activeOrganizationId;
 
     const res = yield* db
       .transaction((tx) =>
@@ -44,7 +49,7 @@ const listSmartAccountsHandler = () =>
           yield* Transaction.setCurrentUser(user.id);
           console.log("current user set");
           console.log("getting smart account");
-          return yield* coreRepo.smartAccount.listSmartAccounts(user.id);
+          return yield* coreRepo.smartAccount.listSmartAccounts(organizationId);
         }).pipe(Transaction.withTx(tx)),
       )
       .pipe(Effect.orDie);
@@ -54,9 +59,14 @@ const listSmartAccountsHandler = () =>
 
 const createSmartAccountHandler = (params: CreateSmartAccountRequest) =>
   Effect.gen(function* () {
-    const user = (yield* AuthenticatedUser).user;
+    const { session, user } = yield* AuthenticatedUser;
     const db = yield* Database.Database;
     const coreRepo = yield* CoreRepo.CoreRepo;
+
+    if (!session.activeOrganizationId) {
+      return yield* Effect.fail(new Unauthorized());
+    }
+    const organizationId = session.activeOrganizationId;
 
     const res = yield* db
       .transaction((tx) =>
@@ -69,6 +79,7 @@ const createSmartAccountHandler = (params: CreateSmartAccountRequest) =>
           console.log("creating smart account");
           return yield* coreRepo.smartAccount.createSmartAccount(
             user.id,
+            organizationId,
             params,
           );
         }).pipe(Transaction.withTx(tx)),

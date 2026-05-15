@@ -1,7 +1,6 @@
 import type { UserId } from "@namera-ai/schema";
 
-import { sql } from "drizzle-orm";
-import { index, pgPolicy, text } from "drizzle-orm/pg-core";
+import { index, text } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -10,9 +9,12 @@ import {
   timestamps,
   userRole,
 } from "../common";
+import { onlyUserId, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 import { user } from "./user";
 
+// Account Table
+// Represents a user's account in Namera such as Email, Google, etc.
 export const account = authSchema.table.withRLS(
   "account",
   {
@@ -40,30 +42,46 @@ export const account = authSchema.table.withRLS(
   },
   (table) => [
     index("account_userId_idx").on(table.userId),
-    pgPolicy("account_user_select", {
-      as: "permissive",
-      to: userRole,
-      for: "select",
-      using: sql`${table.userId} = auth_user_id()`,
-    }),
-    pgPolicy("account_user_update", {
-      as: "permissive",
-      to: userRole,
-      for: "update",
-      using: sql`${table.userId} = auth_user_id()`,
-      withCheck: sql`${table.userId} = auth_user_id()`,
-    }),
-    pgPolicy("account_user_delete", {
-      as: "permissive",
-      to: userRole,
-      for: "delete",
-      using: sql`${table.userId} = auth_user_id()`,
-    }),
-    pgPolicy("account_admin_access", {
-      as: "permissive",
-      to: adminRole,
-      for: "all",
-      using: sql`true`,
-    }),
+    // Users can only select their own accounts
+    new PgPolicyBuilder()
+      .name("account_user_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(onlyUserId(table.userId))
+      .build(),
+    // Users can only update their own accounts
+    new PgPolicyBuilder()
+      .name("account_user_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(onlyUserId(table.userId))
+      .withCheck(onlyUserId(table.userId))
+      .build(),
+    // Users can only insert their own accounts such as linking google etc.
+    new PgPolicyBuilder()
+      .name("account_user_insert")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("insert")
+      .withCheck(onlyUserId(table.userId))
+      .build(),
+    // Users can only delete their own accounts, such as unlinking google etc.
+    new PgPolicyBuilder()
+      .name("account_user_delete")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("delete")
+      .using(onlyUserId(table.userId))
+      .build(),
+    // Admins can access all accounts
+    new PgPolicyBuilder()
+      .name("account_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using("true")
+      .build(),
   ],
 );

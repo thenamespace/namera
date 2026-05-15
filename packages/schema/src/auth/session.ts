@@ -9,7 +9,7 @@ export const Session = Schema.Struct({
   ipAddress: Schema.NullOr(Schema.String),
   token: Schema.String,
   userId: UserId,
-  activeOrganizationId: OrganizationId,
+  activeOrganizationId: Schema.NullOr(OrganizationId),
   userAgent: Schema.NullOr(Schema.String),
   expiresAt: Schema.Date,
   createdAt: Schema.Date,

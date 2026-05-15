@@ -4,11 +4,17 @@ import type {
   OrganizationSlug,
 } from "@namera-ai/schema";
 
-import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { json, pgPolicy, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { OrganizationPlan } from "@namera-ai/schema";
 
-import { generateUniqueId, timestamps } from "../common";
+import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  onlyOrgMember,
+  onlyOrgMemberWithRoles,
+  PgPolicyBuilder,
+} from "../policy";
 import { authSchema } from "./common";
 
 export const organization = authSchema.table.withRLS(
@@ -23,5 +29,47 @@ export const organization = authSchema.table.withRLS(
     slug: text("slug").notNull().unique().$type<OrganizationSlug>(),
     ...timestamps,
   },
-  (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
+  (table) => [
+    uniqueIndex("organization_slug_uidx").on(table.slug),
+    // Only members of an organization can select it
+    new PgPolicyBuilder()
+      .name("organization_member_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(onlyOrgMember(table.id))
+      .build(),
+    // Org Insert
+    pgPolicy("organization_user_insert", {
+      as: "permissive",
+      to: userRole,
+      for: "insert",
+      withCheck: sql`true`,
+    }),
+    // Only owner can update the organization
+    new PgPolicyBuilder()
+      .name("organization_owner_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(onlyOrgMemberWithRoles(table.id, ["owner"]))
+      .withCheck(onlyOrgMemberWithRoles(table.id, ["owner"]))
+      .build(),
+    // Only Org Owner can delete the organization
+    new PgPolicyBuilder()
+      .name("organization_owner_delete")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("delete")
+      .using(onlyOrgMemberWithRoles(table.id, ["owner"]))
+      .build(),
+    // Admins can access all organizations
+    new PgPolicyBuilder()
+      .name("organization_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using("true")
+      .build(),
+  ],
 );
