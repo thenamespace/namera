@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./app/__root";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
 import { Route as IndexRouteImport } from "./app/index";
 import { Route as AuthIndexRouteImport } from "./app/auth/index";
+import { Route as WorkspaceNewRouteImport } from "./app/workspace/new";
 import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
 import { Route as DashboardprimaryIndexRouteImport } from "./app/dashboard/(primary)/index";
 import { Route as DashboardSettingsSecurityIndexRouteImport } from "./app/dashboard/settings/security/index";
@@ -41,6 +42,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: "/auth/",
   path: "/auth/",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const WorkspaceNewRoute = WorkspaceNewRouteImport.update({
+  id: "/workspace/new",
+  path: "/workspace/new",
   getParentRoute: () => rootRouteImport,
 } as any);
 const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
@@ -134,6 +140,7 @@ const DashboardcoreAccountsNewIndexRoute =
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth": typeof AuthIndexRoute;
   "/dashboard": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/(primary)/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/workspace/new"
     | "/auth/"
     | "/dashboard/"
     | "/dashboard/settings/"
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/workspace/new"
     | "/auth"
     | "/dashboard"
     | "/dashboard/settings"
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/workspace/new"
     | "/auth/"
     | "/dashboard/(primary)/"
     | "/dashboard/settings/"
@@ -256,6 +268,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  WorkspaceNewRoute: typeof WorkspaceNewRoute;
   AuthIndexRoute: typeof AuthIndexRoute;
 }
 
@@ -280,6 +293,13 @@ declare module "@tanstack/react-router" {
       path: "/auth";
       fullPath: "/auth/";
       preLoaderRoute: typeof AuthIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/workspace/new": {
+      id: "/workspace/new";
+      path: "/workspace/new";
+      fullPath: "/workspace/new";
+      preLoaderRoute: typeof WorkspaceNewRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/dashboard/settings/": {
@@ -435,6 +455,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  WorkspaceNewRoute: WorkspaceNewRoute,
   AuthIndexRoute: AuthIndexRoute,
 };
 export const routeTree = rootRouteImport
