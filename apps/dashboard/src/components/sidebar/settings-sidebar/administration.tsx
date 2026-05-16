@@ -11,7 +11,7 @@ import { SidebarButton } from "../sidebar-button";
 
 const items = [
   {
-    href: "/dashboard/settings/profile",
+    href: "/dashboard/settings/workspace",
     lottie: WorkspaceLottieIcon,
     title: "Workspace",
     tooltip: {
