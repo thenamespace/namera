@@ -1,3 +1,5 @@
+import type { MetadataIcon } from "@namera-ai/schema";
+
 import { useMemo, useState } from "react";
 import { useRef } from "react";
 
@@ -79,15 +81,10 @@ export const useEmojiPicker = () => {
   };
 };
 
-type Icon = {
-  type: "icon" | "emoji";
-  value: string;
-};
-
 export const EmojiPickerComponent = ({
   onChange,
 }: {
-  onChange: (icon: Icon) => void;
+  onChange: (icon: MetadataIcon) => void;
 }) => {
   const { search, setSearch, emojis } = useEmojiPicker();
   const parentRef = useRef<HTMLDivElement>(null);

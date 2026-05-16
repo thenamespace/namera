@@ -1,3 +1,5 @@
+import type { MetadataIcon } from "@namera-ai/schema";
+
 import React, { useMemo, useState } from "react";
 
 import { Button } from "@namera-ai/ui/components/ui/button";
@@ -18,14 +20,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@namera-ai/ui/components/ui/tooltip";
+import { cn } from "@namera-ai/ui/lib/utils";
 
 import { ICON_DATA, iconMap, type IconData } from "./data";
 import { EmojiPickerComponent } from "./emoji";
-
-type Icon = {
-  type: "icon" | "emoji";
-  value: string;
-};
+import { ImagePickerComponent } from "./image";
 
 const useIconPicker = (): {
   search: string;
@@ -67,7 +66,7 @@ const IconRenderer = ({
 const IconPickerComponent = ({
   onChange,
 }: {
-  onChange: (icon: Icon) => void;
+  onChange: (icon: MetadataIcon) => void;
 }) => {
   const { search, setSearch, icons } = useIconPicker();
 
@@ -117,21 +116,28 @@ const IconPicker = ({
   value,
   onChange,
 }: {
-  onChange: (icon: Icon) => void;
-  value: Icon;
+  onChange: (icon: MetadataIcon) => void;
+  value: MetadataIcon;
 }) => {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={(e) => setOpen(e)}>
       <DialogTrigger
-        render={<Button variant="secondary" className="h-9 max-w-9" />}
+        render={
+          <Button
+            variant="secondary"
+            className={cn("h-9 max-w-9", value.type === "image" && "p-0!")}
+          />
+        }
       >
         {value.type === "icon" ? (
           <IconRenderer
             className="text-muted-foreground size-4.5"
             icon={value.value}
           />
+        ) : value.type === "image" ? (
+          <img className="h-9 w-9 rounded-lg" src={value.value} />
         ) : (
           <span>{value.value}</span>
         )}
@@ -141,6 +147,7 @@ const IconPicker = ({
           <TabsList variant="line">
             <TabsTrigger value="icon">Icons</TabsTrigger>
             <TabsTrigger value="emoji">Emojis</TabsTrigger>
+            <TabsTrigger value="image">Image</TabsTrigger>
           </TabsList>
           <TabsContent value="icon" className="p-2">
             <IconPickerComponent
@@ -154,6 +161,15 @@ const IconPicker = ({
             <EmojiPickerComponent
               onChange={(icon) => {
                 onChange(icon);
+                setOpen(false);
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="image" className="p-2">
+            <ImagePickerComponent
+              value={value}
+              onDone={(imgSrc: string) => {
+                onChange({ type: "image", value: imgSrc });
                 setOpen(false);
               }}
             />
