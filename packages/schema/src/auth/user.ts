@@ -2,12 +2,12 @@ import { Schema } from "effect";
 
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
-import { UserId } from "../common";
+import { Email, UserId } from "../common";
 
 export const User = Schema.Struct({
   id: UserId,
   name: Schema.String,
-  email: Schema.String,
+  email: Email,
   emailVerified: Schema.Boolean,
   image: Schema.NullOr(Schema.String),
   createdAt: Schema.Date,

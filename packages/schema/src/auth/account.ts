@@ -2,10 +2,10 @@ import { Schema } from "effect";
 
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
-import { UserId } from "../common";
+import { AccountId, UserId } from "../common";
 
 export const Account = Schema.Struct({
-  id: Schema.String,
+  id: AccountId,
   userId: UserId,
   accountId: Schema.String,
   accessToken: Schema.NullOr(Schema.String),

@@ -1,9 +1,10 @@
 import { Schema } from "effect";
 
+import { VerificationId } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 export const Verification = Schema.Struct({
-  id: Schema.String,
+  id: VerificationId,
   expiresAt: Schema.Date,
   identifier: Schema.String,
   value: Schema.String,
