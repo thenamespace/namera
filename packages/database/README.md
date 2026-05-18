@@ -339,17 +339,21 @@ Represents an authenticated user session.
 | `active_organization_id` | `text`        | yes  | FK to `auth.organization.id`, set null on org delete. |
 | `ip_address`             | `text`        | yes  | Session IP address.                                   |
 | `user_agent`             | `text`        | yes  | Session user agent.                                   |
-| `expires_at`             | `timestamptz` | yes  | Session expiry.                                       |
+| `expires_at`             | `timestamptz` | no   | Session expiry.                                       |
+| `revoked_at`             | `timestamptz` | yes  | Set when the session is revoked/logged out.           |
 | `created_at`             | `timestamptz` | no   | Created timestamp.                                    |
 | `updated_at`             | `timestamptz` | no   | Updated timestamp.                                    |
+| `deleted_at`             | `timestamptz` | yes  | Soft-delete marker from shared timestamps.            |
 
 Indexes and constraints:
 
-| Name                 | Type        | Columns   |
-| -------------------- | ----------- | --------- |
-| implicit primary key | primary key | `id`      |
-| implicit unique      | unique      | `token`   |
-| `session_userId_idx` | index       | `user_id` |
+| Name                               | Type        | Columns                  |
+| ---------------------------------- | ----------- | ------------------------ |
+| implicit primary key               | primary key | `id`                     |
+| `session_token_idx`                | unique      | `token`                  |
+| `session_user_active_idx`          | index       | `user_id`, `expires_at`  |
+| `session_activeOrganizationId_idx` | index       | `active_organization_id` |
+| `session_expiresAt_idx`            | index       | `expires_at`             |
 
 RLS:
 
@@ -357,7 +361,6 @@ RLS:
 | ---------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `session_select` | `select`  | `user_id = auth_current_user_id()`                                                                                                                           |
 | `session_update` | `update`  | existing row must belong to current user; new row must belong to current user and `active_organization_id` must be null or an org where the user is a member |
-| `session_delete` | `delete`  | `user_id = auth_current_user_id()`                                                                                                                           |
 | `session_access` | `all`     | `app_admin` can access all rows                                                                                                                              |
 
 API responsibilities:
@@ -365,6 +368,9 @@ API responsibilities:
 - Create sessions after authentication only.
 - Expose a narrow active-organization switch endpoint.
 - Do not allow client-controlled updates to token, expiry, IP, user agent, or user id.
+- Revoke/logout sessions by setting `revoked_at`, not by user hard delete.
+- Normal session validation should require `revoked_at IS NULL`,
+  `deleted_at IS NULL`, and `expires_at > now()`.
 
 ### `auth.organization`
 

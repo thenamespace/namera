@@ -12,8 +12,10 @@ export const Session = Schema.Struct({
   activeOrganizationId: Schema.NullOr(OrganizationId),
   userAgent: Schema.NullOr(Schema.String),
   expiresAt: Schema.Date,
+  revokedAt: Schema.NullOr(Schema.Date),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 export const SessionUpdate = createUpdateSchema(Session);

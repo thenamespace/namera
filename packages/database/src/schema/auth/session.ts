@@ -1,7 +1,7 @@
 import type { OrganizationId, SessionId, UserId } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, text } from "drizzle-orm/pg-core";
+import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -24,7 +24,7 @@ export const session = authSchema.table.withRLS(
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SessionId>(),
     ipAddress: text("ip_address"),
-    token: text("token").notNull().unique(),
+    token: text("token").notNull(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
@@ -37,10 +37,17 @@ export const session = authSchema.table.withRLS(
       mode: "date",
       withTimezone: true,
     }).notNull(),
+    revokedAt: createTimestampField("revoked_at", {
+      mode: "date",
+      withTimezone: true,
+    }).default(sql`NULL`),
     ...timestamps,
   },
   (table) => [
-    index("session_userId_idx").on(table.userId),
+    uniqueIndex("session_token_idx").on(table.token),
+    index("session_user_active_idx").on(table.userId, table.expiresAt),
+    index("session_activeOrganizationId_idx").on(table.activeOrganizationId),
+    index("session_expiresAt_idx").on(table.expiresAt),
     // Users can only select their own sessions
     new PgPolicyBuilder()
       .name("session_select")
@@ -66,14 +73,6 @@ export const session = authSchema.table.withRLS(
           ]),
         ]),
       )
-      .build(),
-    // Users can only delete their own sessions
-    new PgPolicyBuilder()
-      .name("session_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(onlyUserId(table.userId))
       .build(),
     // Admins can access all sessions
     new PgPolicyBuilder()
