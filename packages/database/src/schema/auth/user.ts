@@ -32,10 +32,6 @@ export const user = authSchema.table.withRLS(
       mode: "date",
       withTimezone: true,
     }).notNull(),
-    deletedAt: createTimestampField("deleted_at", {
-      mode: "date",
-      withTimezone: true,
-    }).default(sql`NULL`),
     ...timestamps,
   },
   (table) => [

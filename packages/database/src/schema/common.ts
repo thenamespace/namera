@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { type PgTimestampConfig, pgRole, timestamp } from "drizzle-orm/pg-core";
 import { v7 as uuidv7 } from "uuid";
 
@@ -11,6 +12,10 @@ export const timestamps = {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  deletedAt: timestamp("deleted_at", {
+    mode: "date",
+    withTimezone: true,
+  }).default(sql`NULL`),
 };
 
 export const createTimestampField = (

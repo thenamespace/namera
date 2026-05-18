@@ -26,27 +26,31 @@ export const account = authSchema.table.withRLS(
       .references(() => user.id, { onDelete: "cascade" }),
     accountId: text("account_id").notNull(),
     accessToken: text("access_token"),
-    accessTokenExpiresAt: createTimestampField("access_token_expires_at", {
-      mode: "date",
-      withTimezone: true,
-    }),
     idToken: text("id_token"),
     password: text("password"),
     providerId: text("provider_id").notNull(),
     refreshToken: text("refresh_token"),
+    scope: text("scope"),
+    // Timestamps
+    accessTokenExpiresAt: createTimestampField("access_token_expires_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+    lastUsedAt: createTimestampField("last_used_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
     refreshTokenExpiresAt: createTimestampField("refresh_token_expires_at", {
       mode: "date",
       withTimezone: true,
     }),
-    scope: text("scope"),
     ...timestamps,
   },
   (table) => [
     index("account_userId_idx").on(table.userId),
-    uniqueIndex("account_providerId_accountId_idx").on(
-      table.providerId,
-      table.accountId,
-    ),
+    uniqueIndex("account_providerId_accountId_idx")
+      .on(table.providerId, table.accountId)
+      .where(sql`${table.deletedAt} IS NULL`),
     // Users can only select their own accounts
     new PgPolicyBuilder()
       .name("account_select")
@@ -71,14 +75,6 @@ export const account = authSchema.table.withRLS(
       .to(userRole)
       .forOperation("insert")
       .withCheck(onlyUserId(table.userId))
-      .build(),
-    // Users can only delete their own accounts, such as unlinking google etc.
-    new PgPolicyBuilder()
-      .name("account_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(onlyUserId(table.userId))
       .build(),
     // Admins can access all accounts
     new PgPolicyBuilder()

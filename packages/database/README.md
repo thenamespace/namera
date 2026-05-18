@@ -296,16 +296,18 @@ Represents a login/provider account connected to a user.
 | `id_token`                 | `text`        | yes  | Provider id token.                        |
 | `password`                 | `text`        | yes  | Password hash when password auth is used. |
 | `scope`                    | `text`        | yes  | Provider scopes.                          |
+| `last_used_at`             | `timestamptz` | yes  | Last time this account/provider was used. |
 | `created_at`               | `timestamptz` | no   | Created timestamp.                        |
 | `updated_at`               | `timestamptz` | no   | Updated timestamp.                        |
+| `deleted_at`               | `timestamptz` | yes  | Soft-delete marker for unlink workflows.  |
 
 Indexes and constraints:
 
-| Name                               | Type        | Columns                     |
-| ---------------------------------- | ----------- | --------------------------- |
-| implicit primary key               | primary key | `id`                        |
-| `account_userId_idx`               | index       | `user_id`                   |
-| `account_providerId_accountId_idx` | unique      | `provider_id`, `account_id` |
+| Name                               | Type           | Columns                                                |
+| ---------------------------------- | -------------- | ------------------------------------------------------ |
+| implicit primary key               | primary key    | `id`                                                   |
+| `account_userId_idx`               | index          | `user_id`                                              |
+| `account_providerId_accountId_idx` | partial unique | `provider_id`, `account_id` where `deleted_at IS NULL` |
 
 RLS:
 
@@ -314,7 +316,6 @@ RLS:
 | `account_select`       | `select`  | `user_id = auth_current_user_id()`                                |
 | `account_insert`       | `insert`  | new row must have `user_id = auth_current_user_id()`              |
 | `account_update`       | `update`  | existing and new row must have `user_id = auth_current_user_id()` |
-| `account_delete`       | `delete`  | `user_id = auth_current_user_id()`                                |
 | `account_admin_access` | `all`     | `app_admin` can access all rows                                   |
 
 API responsibilities:
@@ -322,6 +323,9 @@ API responsibilities:
 - Own provider linking/unlinking flows.
 - Prevent unlinking the last usable login method.
 - Keep token refresh, encryption, and provider validation out of client control.
+- Treat unlink as a soft delete by setting `deleted_at`.
+- Update `last_used_at` when this provider/account is used for authentication.
+- Normal account lookups should ignore rows where `deleted_at IS NOT NULL`.
 
 ### `auth.session`
 
