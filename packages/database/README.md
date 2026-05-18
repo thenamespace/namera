@@ -376,21 +376,25 @@ API responsibilities:
 
 Represents an organization/tenant.
 
-| Column       | Type          | Null | Description                                               |
-| ------------ | ------------- | ---- | --------------------------------------------------------- |
-| `id`         | `text`        | no   | Organization id.                                          |
-| `metadata`   | `json`        | no   | `OrganizationMetadata`.                                   |
-| `plan`       | `text`        | no   | Organization plan. Currently `free`.                      |
-| `slug`       | `text`        | no   | Unique public slug, 3-63 chars, alphanumeric plus hyphen. |
-| `created_at` | `timestamptz` | no   | Created timestamp.                                        |
-| `updated_at` | `timestamptz` | no   | Updated timestamp.                                        |
+| Column          | Type          | Null | Description                                               |
+| --------------- | ------------- | ---- | --------------------------------------------------------- |
+| `id`            | `text`        | no   | Organization id.                                          |
+| `name`          | `text`        | no   | Queryable organization display name.                      |
+| `metadata`      | `json`        | yes  | `OrganizationMetadata`; currently logo metadata.          |
+| `plan`          | `text`        | no   | Organization plan. Currently `free`.                      |
+| `slug`          | `text`        | no   | Unique public slug, 3-63 chars, alphanumeric plus hyphen. |
+| `created_by_id` | `text`        | yes  | FK to `auth.user.id`; creator of the organization.        |
+| `updated_by_id` | `text`        | yes  | FK to `auth.user.id`; last updater of the organization.   |
+| `created_at`    | `timestamptz` | no   | Created timestamp.                                        |
+| `updated_at`    | `timestamptz` | no   | Updated timestamp.                                        |
+| `deleted_at`    | `timestamptz` | yes  | Soft-delete marker from shared timestamps.                |
 
 Indexes and constraints:
 
-| Name                     | Type        | Columns |
-| ------------------------ | ----------- | ------- |
-| implicit primary key     | primary key | `id`    |
-| `organization_slug_uidx` | unique      | `slug`  |
+| Name                     | Type        | Columns       |
+| ------------------------ | ----------- | ------------- |
+| implicit primary key     | primary key | `id`          |
+| `organization_slug_uidx` | unique      | `lower(slug)` |
 
 RLS:
 
@@ -398,7 +402,6 @@ RLS:
 | --------------------------- | --------- | ------------------------------- |
 | `organization_select`       | `select`  | `org:read`                      |
 | `organization_update`       | `update`  | `org:update`                    |
-| `organization_delete`       | `delete`  | `org:delete`                    |
 | `organization_admin_access` | `all`     | `app_admin` can access all rows |
 
 API responsibilities:
@@ -410,6 +413,8 @@ API responsibilities:
 - Handle logo upload.
 - Enforce billing and plan rules.
 - Require confirmation and audit logging for deletion.
+- Treat delete as a soft-delete workflow by setting `deleted_at`.
+- Normal organization queries should ignore rows where `deleted_at IS NOT NULL`.
 
 ### `auth.role`
 

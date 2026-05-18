@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { MetadataIcon, OrganizationId } from "@/common";
+import { MetadataIcon, MetadataName, OrganizationId, UserId } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 export const OrganizationSlug = Schema.String.pipe(
@@ -15,15 +15,6 @@ export const OrganizationSlug = Schema.String.pipe(
 );
 
 export const OrganizationMetadata = Schema.Struct({
-  name: Schema.String.check(
-    Schema.isPattern(/^[a-zA-Z0-9-_]+$/, {
-      message:
-        "Name must be alphanumeric and can contain hyphens and underscores",
-    }),
-    Schema.isLengthBetween(3, 128, {
-      message: "Name must be between 3 and 128 characters long",
-    }),
-  ),
   logo: MetadataIcon,
 });
 
@@ -31,19 +22,26 @@ export const OrganizationPlan = Schema.Literals(["free"]);
 
 export const Organization = Schema.Struct({
   id: OrganizationId,
+  name: MetadataName,
   metadata: Schema.NullOr(OrganizationMetadata),
   plan: OrganizationPlan,
   slug: OrganizationSlug,
+  createdById: Schema.NullOr(UserId),
+  updatedById: Schema.NullOr(UserId),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 export const OrganizationUpdate = createUpdateSchema(Organization);
 export const OrganizationInsert = createInsertSchema(
   Organization,
+  "name",
   "metadata",
   "plan",
   "slug",
+  "createdById",
+  "updatedById",
 );
 
 export type OrganizationSlug = typeof OrganizationSlug.Type;
