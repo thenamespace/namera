@@ -25,8 +25,7 @@ import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
-  onlyOrgMember,
-  onlyOrgMemberWithRoles,
+  onlyOrgMemberWithPermissions,
   onlyUserId,
   PgPolicyBuilder,
 } from "../policy";
@@ -64,45 +63,61 @@ export const smartAccount = pgTable.withRLS(
     index("smart_account_creatorId_idx").on(table.creatorId),
     index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
     uniqueIndex("smart_account_address_uidx").on(table.address),
-    // Only members of an organization can select it
+    // Only members with "smart_account:read" permission can select it
     new PgPolicyBuilder()
-      .name("smart_account_user_select")
+      .name("smart_account_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMember(table.organizationId))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "smart_account:read",
+        ]),
+      )
       .build(),
-    // Only Org owners and admins can insert smart accounts, where creator is the current user
+    // Only members with "smart_account:create" permission can create smart accounts
     new PgPolicyBuilder()
-      .name("smart_account_owner_insert")
+      .name("smart_account_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
         and([
           onlyUserId(table.creatorId),
-          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyOrgMemberWithPermissions(table.organizationId, [
+            "smart_account:create",
+          ]),
         ]),
       )
       .build(),
-    // Only Org owners and admins can update smart accounts
+    // Only members with "smart_account:update" permission can update smart accounts
     new PgPolicyBuilder()
       .name("smart_account_owner_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "smart_account:update",
+        ]),
+      )
       .withCheck(
-        onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "smart_account:update",
+        ]),
       )
       .build(),
-    // Only Org owners can delete smart accounts
+    // Only members with "smart_account:delete" permission can delete smart accounts
     new PgPolicyBuilder()
       .name("smart_account_owner_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "smart_account:delete",
+        ]),
+      )
       .build(),
     // Admins can access all smart accounts
     new PgPolicyBuilder()

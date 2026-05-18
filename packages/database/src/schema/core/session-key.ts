@@ -20,8 +20,7 @@ import {
   and,
   onlyIfSessionKeyInOrg,
   onlyIfSmartAccountInOrg,
-  onlyOrgMember,
-  onlyOrgMemberWithRoles,
+  onlyOrgMemberWithPermissions,
   onlyUserId,
   PgPolicyBuilder,
 } from "../policy";
@@ -63,54 +62,69 @@ export const sessionKey = pgTable.withRLS(
     index("session_key_type_idx").on(table.type),
     // Only org members can select their own session keys
     new PgPolicyBuilder()
-      .name("session_key_user_select")
+      .name("session_key_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMember(table.organizationId))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "session_key:read",
+        ]),
+      )
       .build(),
-    // Only org owners and admins can update session keys and if session key belongs to org and as well as smart account
+    // Only org members with "session_key:update" permission can update session keys
+    // only if session key and smart account belongs to org
     new PgPolicyBuilder()
-      .name("session_key_owner_update")
+      .name("session_key_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
       .using(
         and([
-          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyOrgMemberWithPermissions(table.organizationId, [
+            "session_key:update",
+          ]),
           onlyIfSessionKeyInOrg(table.id, table.organizationId),
         ]),
       )
       .withCheck(
         and([
-          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyOrgMemberWithPermissions(table.organizationId, [
+            "session_key:update",
+          ]),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
         ]),
       )
       .build(),
-    // Only Org owners and admins can insert session keys, where creator is the current user, smart account belongs to org,
+    // Only members with "session_key:create" permission can insert session keys
+    // Only if creator is the current user, smart account belongs to org,
     new PgPolicyBuilder()
-      .name("session_key_owner_insert")
+      .name("session_key_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
         and([
           onlyUserId(table.creatorId),
-          onlyOrgMemberWithRoles(table.organizationId, ["owner", "admin"]),
+          onlyOrgMemberWithPermissions(table.organizationId, [
+            "session_key:create",
+          ]),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
         ]),
       )
       .build(),
-    // Only Org owners can delete session keys and if session key belongs to org
+    // Only members with "session_key:delete" permission can delete session keys
+    // Only if session key belongs to org
     new PgPolicyBuilder()
-      .name("session_key_owner_delete")
+      .name("session_key_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
       .using(
         and([
-          onlyOrgMemberWithRoles(table.organizationId, ["owner"]),
+          onlyOrgMemberWithPermissions(table.organizationId, [
+            "session_key:delete",
+          ]),
           onlyIfSessionKeyInOrg(table.id, table.organizationId),
         ]),
       )

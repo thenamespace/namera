@@ -6,18 +6,12 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
-import {
-  onlyOrgMember,
-  onlyOrgMemberWithRoles,
-  onlyIfSeedMember,
-  or,
-  PgPolicyBuilder,
-} from "../policy";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
-import { organization } from "./organization";
+import { role } from "./role";
 import { user } from "./user";
 
 // Members table
@@ -29,11 +23,8 @@ export const member = authSchema.table.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<OrganizationMemberId>(),
-    organizationId: text("organization_id")
-      .notNull()
-      .$type<OrganizationId>()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    role: text("role").notNull().$type<OrganizationRoleId>(),
+    organizationId: text("organization_id").notNull().$type<OrganizationId>(),
+    roleId: text("role_id").notNull().$type<OrganizationRoleId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
@@ -41,49 +32,59 @@ export const member = authSchema.table.withRLS(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.roleId],
+      foreignColumns: [role.organizationId, role.id],
+      name: "member_organization_role_fk",
+    }),
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
     uniqueIndex("member_user_organization_uidx").on(
       table.userId,
       table.organizationId,
     ),
-    // Users can only select their own memberships
+    // Only Member with "member:read" permission can select members
     new PgPolicyBuilder()
-      .name("member_user_select")
+      .name("member_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMember(table.organizationId))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, ["member:read"]),
+      )
       .build(),
-    // Only Org owner can insert members or if user is the first member
+    // Only Member with "member:invite" permission can insert members or if user is the first member
     new PgPolicyBuilder()
-      .name("member_owner_insert")
+      .name("member_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
-        or([
-          onlyOrgMemberWithRoles(table.organizationId, ["owner"]),
-          onlyIfSeedMember(table.organizationId, table.userId, table.role),
-        ]),
+        onlyOrgMemberWithPermissions(table.organizationId, ["member:invite"]), // TODO: check this.
       )
       .build(),
-    // Only Org owner can update members
+    // Only Member with "member:update" permission can update members
     new PgPolicyBuilder()
-      .name("member_owner_update")
+      .name("member_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
-      .withCheck(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, ["member:update"]),
+      )
+      .withCheck(
+        onlyOrgMemberWithPermissions(table.organizationId, ["member:update"]),
+      )
       .build(),
-    // Only Org owner can delete members
+    // Only Member with "member:remove" permission can delete members
     new PgPolicyBuilder()
-      .name("member_owner_delete")
+      .name("member_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, ["member:remove"]),
+      )
       .build(),
     // Admins can access all members
     new PgPolicyBuilder()

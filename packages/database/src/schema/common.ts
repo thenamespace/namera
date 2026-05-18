@@ -17,7 +17,7 @@ export const createTimestampField = (
   name: string,
   config?: PgTimestampConfig<"date">,
 ) => {
-  return timestamp(name, config).defaultNow().notNull();
+  return timestamp(name, config).defaultNow();
 };
 
 export const userRole = pgRole("app_user").existing();

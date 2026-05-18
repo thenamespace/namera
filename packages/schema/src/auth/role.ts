@@ -6,6 +6,11 @@ import { createInsertSchema, createUpdateSchema } from "@/helpers";
 import { Permission } from "./permissions";
 
 export const OrganizationRoleMetadata = Schema.Struct({
+  logo: MetadataIcon,
+});
+
+export const OrganizationRole = Schema.Struct({
+  id: OrganizationRoleId,
   name: Schema.String.check(
     Schema.isPattern(/^[a-zA-Z0-9-_]+$/, {
       message:
@@ -15,11 +20,6 @@ export const OrganizationRoleMetadata = Schema.Struct({
       message: "Name must be between 3 and 128 characters long",
     }),
   ),
-  logo: MetadataIcon,
-});
-
-export const OrganizationRole = Schema.Struct({
-  id: OrganizationRoleId,
   metadata: OrganizationRoleMetadata,
   organizationId: OrganizationId,
   permissions: Schema.Array(Permission),
@@ -30,6 +30,7 @@ export const OrganizationRole = Schema.Struct({
 export const OrganizationRoleUpdate = createUpdateSchema(OrganizationRole);
 export const OrganizationRoleInsert = createInsertSchema(
   OrganizationRole,
+  "name",
   "metadata",
   "organizationId",
   "permissions",

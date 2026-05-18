@@ -1,10 +1,9 @@
 import { useState } from "react";
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { useStep } from "usehooks-ts";
 
-import { getCurrentUser } from "@/actions";
 import { TransitionWrapper } from "@/components/wrappers";
 import { NameraIcon } from "@namera-ai/ui/icons";
 
@@ -41,10 +40,10 @@ const AuthPage = () => {
 
 export const Route = createFileRoute("/auth/")({
   beforeLoad: async () => {
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      throw redirect({ to: "/dashboard" });
-    }
+    // const currentUser = await getCurrentUser();
+    // if (currentUser) {
+    //   throw redirect({ to: "/dashboard" });
+    // }
   },
   component: AuthPage,
 });

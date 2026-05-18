@@ -1,11 +1,11 @@
 import { Schema } from "effect";
 
-import { Invitation, OrganizationMemberRole } from "@/auth";
-import { Email, OrganizationId } from "@/common";
+import { Invitation } from "@/auth";
+import { Email, OrganizationId, OrganizationRoleId } from "@/common";
 
 export const InviteMemberRequest = Schema.Struct({
   email: Email,
-  role: OrganizationMemberRole,
+  roleId: OrganizationRoleId,
   organizationId: OrganizationId,
 });
 export const InviteMemberResponse = Schema.Void;

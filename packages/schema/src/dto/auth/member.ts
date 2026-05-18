@@ -1,7 +1,11 @@
 import { Schema } from "effect";
 
-import { OrganizationMember, OrganizationMemberRole } from "@/auth";
-import { OrganizationId, OrganizationMemberId } from "@/common";
+import { OrganizationMember } from "@/auth";
+import {
+  OrganizationId,
+  OrganizationMemberId,
+  OrganizationRoleId,
+} from "@/common";
 
 export const ListOrganizationMembersRequest = Schema.Struct({
   // TODO: Add filters here
@@ -17,7 +21,7 @@ export const RemoveOrganizationMemberRequest = Schema.Struct({
 export const RemoveOrganizationMemberResponse = Schema.Void;
 
 export const UpdateOrganizationMemberRoleRequest = Schema.Struct({
-  role: OrganizationMemberRole,
+  role: OrganizationRoleId,
   memberId: OrganizationMemberId,
   organizationId: OrganizationId,
 });

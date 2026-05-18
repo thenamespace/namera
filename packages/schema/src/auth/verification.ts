@@ -5,9 +5,9 @@ import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 export const Verification = Schema.Struct({
   id: VerificationId,
-  expiresAt: Schema.Date,
   identifier: Schema.String,
   value: Schema.String,
+  expiresAt: Schema.Date,
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
 });

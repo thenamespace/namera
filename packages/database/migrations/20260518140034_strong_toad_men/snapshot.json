@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "581b0564-3868-4ac6-b1dd-4ec5573f222b",
+  "id": "6c738e57-0d35-47c2-9556-1770d792ea58",
   "prevIds": ["7ccd38d8-3a89-4bf8-b975-f537b1a96ea9"],
   "ddl": [
     {
@@ -48,6 +48,12 @@
     },
     {
       "isRlsEnabled": true,
+      "name": "role",
+      "entityType": "tables",
+      "schema": "auth"
+    },
+    {
+      "isRlsEnabled": true,
       "name": "smart_account",
       "entityType": "tables",
       "schema": "public"
@@ -67,6 +73,19 @@
       "generated": null,
       "identity": null,
       "name": "id",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "account"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
       "entityType": "columns",
       "schema": "auth",
       "table": "account"
@@ -100,7 +119,7 @@
     {
       "type": "timestamp with time zone",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": "now()",
       "generated": null,
@@ -165,7 +184,7 @@
     {
       "type": "timestamp with time zone",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": "now()",
       "generated": null,
@@ -184,19 +203,6 @@
       "generated": null,
       "identity": null,
       "name": "scope",
-      "entityType": "columns",
-      "schema": "auth",
-      "table": "account"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
       "entityType": "columns",
       "schema": "auth",
       "table": "account"
@@ -622,10 +628,10 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": "'member'",
+      "default": null,
       "generated": null,
       "identity": null,
-      "name": "role",
+      "name": "role_id",
       "entityType": "columns",
       "schema": "auth",
       "table": "member"
@@ -703,7 +709,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "role",
+      "name": "role_id",
       "entityType": "columns",
       "schema": "auth",
       "table": "invitation"
@@ -785,6 +791,97 @@
       "entityType": "columns",
       "schema": "auth",
       "table": "invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "metadata",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "organization_id",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 1,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "permissions",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "auth",
+      "table": "role"
     },
     {
       "type": "text",
@@ -1146,6 +1243,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "user_email_uidx",
+      "entityType": "indexes",
+      "schema": "auth",
+      "table": "user"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "identifier",
           "isExpression": false,
           "asc": true,
@@ -1295,6 +1413,55 @@
       "entityType": "indexes",
       "schema": "auth",
       "table": "invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "name",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "organization_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "role_name_organizationId_idx",
+      "entityType": "indexes",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "organization_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "role_organizationId_idx",
+      "entityType": "indexes",
+      "schema": "auth",
+      "table": "role"
     },
     {
       "nameExplicit": true,
@@ -1512,19 +1679,6 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["organization_id"],
-      "schemaTo": "auth",
-      "tableTo": "organization",
-      "columnsTo": ["id"],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "member_organization_id_organization_id_fkey",
-      "entityType": "fks",
-      "schema": "auth",
-      "table": "member"
-    },
-    {
-      "nameExplicit": false,
       "columns": ["user_id"],
       "schemaTo": "auth",
       "tableTo": "user",
@@ -1537,17 +1691,17 @@
       "table": "member"
     },
     {
-      "nameExplicit": false,
-      "columns": ["organization_id"],
+      "nameExplicit": true,
+      "columns": ["organization_id", "role_id"],
       "schemaTo": "auth",
-      "tableTo": "organization",
-      "columnsTo": ["id"],
+      "tableTo": "role",
+      "columnsTo": ["organization_id", "id"],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "invitation_organization_id_organization_id_fkey",
+      "onDelete": "NO ACTION",
+      "name": "member_organization_role_fk",
       "entityType": "fks",
       "schema": "auth",
-      "table": "invitation"
+      "table": "member"
     },
     {
       "nameExplicit": false,
@@ -1556,11 +1710,37 @@
       "tableTo": "user",
       "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "NO ACTION",
       "name": "invitation_inviter_id_user_id_fkey",
       "entityType": "fks",
       "schema": "auth",
       "table": "invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": ["organization_id", "role_id"],
+      "schemaTo": "auth",
+      "tableTo": "role",
+      "columnsTo": ["organization_id", "id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "invitation_organization_role_fk",
+      "entityType": "fks",
+      "schema": "auth",
+      "table": "invitation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": ["organization_id"],
+      "schemaTo": "auth",
+      "tableTo": "organization",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "role_organization_id_organization_id_fkey",
+      "entityType": "fks",
+      "schema": "auth",
+      "table": "role"
     },
     {
       "nameExplicit": false,
@@ -1686,6 +1866,14 @@
     {
       "columns": ["id"],
       "nameExplicit": false,
+      "name": "role_pkey",
+      "schema": "auth",
+      "table": "role",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
       "name": "smart_account_pkey",
       "schema": "public",
       "table": "smart_account",
@@ -1709,21 +1897,12 @@
       "entityType": "uniques"
     },
     {
-      "nameExplicit": false,
-      "columns": ["email"],
-      "nullsNotDistinct": false,
-      "name": "user_email_key",
-      "schema": "auth",
-      "table": "user",
-      "entityType": "uniques"
-    },
-    {
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"account\".\"user_id\"",
       "withCheck": null,
-      "name": "account_user_select",
+      "name": "account_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "account"
@@ -1734,7 +1913,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"account\".\"user_id\"",
       "withCheck": "auth_current_user_id() = \"auth\".\"account\".\"user_id\"",
-      "name": "account_user_update",
+      "name": "account_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "account"
@@ -1745,7 +1924,7 @@
       "roles": ["app_user"],
       "using": null,
       "withCheck": "auth_current_user_id() = \"auth\".\"account\".\"user_id\"",
-      "name": "account_user_insert",
+      "name": "account_insert",
       "entityType": "policies",
       "schema": "auth",
       "table": "account"
@@ -1756,7 +1935,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"account\".\"user_id\"",
       "withCheck": null,
-      "name": "account_user_delete",
+      "name": "account_delete",
       "entityType": "policies",
       "schema": "auth",
       "table": "account"
@@ -1778,7 +1957,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"session\".\"user_id\"",
       "withCheck": null,
-      "name": "session_user_select",
+      "name": "session_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "session"
@@ -1789,7 +1968,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"session\".\"user_id\"",
       "withCheck": "(auth_current_user_id() = \"auth\".\"session\".\"user_id\") AND ((\"auth\".\"session\".\"active_organization_id\" IS NULL) OR (auth_user_has_org_access(\"auth\".\"session\".\"active_organization_id\")))",
-      "name": "session_user_update",
+      "name": "session_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "session"
@@ -1800,7 +1979,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"session\".\"user_id\"",
       "withCheck": null,
-      "name": "session_user_delete",
+      "name": "session_delete",
       "entityType": "policies",
       "schema": "auth",
       "table": "session"
@@ -1811,7 +1990,7 @@
       "roles": ["app_admin"],
       "using": "true",
       "withCheck": null,
-      "name": "session_admin_access",
+      "name": "session_access",
       "entityType": "policies",
       "schema": "auth",
       "table": "session"
@@ -1822,7 +2001,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"user\".\"id\"",
       "withCheck": null,
-      "name": "user_self_select",
+      "name": "user_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "user"
@@ -1833,7 +2012,7 @@
       "roles": ["app_user"],
       "using": "auth_current_user_id() = \"auth\".\"user\".\"id\"",
       "withCheck": "auth_current_user_id() = \"auth\".\"user\".\"id\"",
-      "name": "user_self_update",
+      "name": "user_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "user"
@@ -1844,7 +2023,7 @@
       "roles": ["app_admin"],
       "using": "true",
       "withCheck": null,
-      "name": "user_admin_access",
+      "name": "user_adminaccess",
       "entityType": "policies",
       "schema": "auth",
       "table": "user"
@@ -1864,9 +2043,9 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
-      "using": "auth_user_has_org_access(\"auth\".\"organization\".\"id\")",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"organization\".\"id\", ARRAY['org:read']::text[])",
       "withCheck": null,
-      "name": "organization_member_select",
+      "name": "organization_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "organization"
@@ -1875,9 +2054,9 @@
       "as": "PERMISSIVE",
       "for": "UPDATE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"organization\".\"id\", ARRAY['owner']::text[])",
-      "withCheck": "auth_user_has_role_in_org(\"auth\".\"organization\".\"id\", ARRAY['owner']::text[])",
-      "name": "organization_owner_update",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"organization\".\"id\", ARRAY['org:update']::text[])",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"organization\".\"id\", ARRAY['org:update']::text[])",
+      "name": "organization_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "organization"
@@ -1886,9 +2065,9 @@
       "as": "PERMISSIVE",
       "for": "DELETE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"organization\".\"id\", ARRAY['owner']::text[])",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"organization\".\"id\", ARRAY['org:delete']::text[])",
       "withCheck": null,
-      "name": "organization_owner_delete",
+      "name": "organization_delete",
       "entityType": "policies",
       "schema": "auth",
       "table": "organization"
@@ -1908,9 +2087,9 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
-      "using": "auth_user_has_org_access(\"auth\".\"member\".\"organization_id\")",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['member:read']::text[])",
       "withCheck": null,
-      "name": "member_user_select",
+      "name": "member_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "member"
@@ -1920,8 +2099,8 @@
       "for": "INSERT",
       "roles": ["app_user"],
       "using": null,
-      "withCheck": "(auth_user_has_role_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['owner']::text[])) OR (auth_org_can_seed_owner(\"auth\".\"member\".\"organization_id\", \"auth\".\"member\".\"user_id\", \"auth\".\"member\".\"role\"))",
-      "name": "member_owner_insert",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['member:invite']::text[])",
+      "name": "member_insert",
       "entityType": "policies",
       "schema": "auth",
       "table": "member"
@@ -1930,9 +2109,9 @@
       "as": "PERMISSIVE",
       "for": "UPDATE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['owner']::text[])",
-      "withCheck": "auth_user_has_role_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['owner']::text[])",
-      "name": "member_owner_update",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['member:update']::text[])",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['member:update']::text[])",
+      "name": "member_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "member"
@@ -1941,9 +2120,9 @@
       "as": "PERMISSIVE",
       "for": "DELETE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['owner']::text[])",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"member\".\"organization_id\", ARRAY['member:remove']::text[])",
       "withCheck": null,
-      "name": "member_owner_delete",
+      "name": "member_delete",
       "entityType": "policies",
       "schema": "auth",
       "table": "member"
@@ -1963,9 +2142,9 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
-      "using": "auth_user_has_org_access(\"auth\".\"invitation\".\"organization_id\")",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['invitation:read']::text[])",
       "withCheck": null,
-      "name": "invitation_user_select",
+      "name": "invitation_select",
       "entityType": "policies",
       "schema": "auth",
       "table": "invitation"
@@ -1975,8 +2154,8 @@
       "for": "INSERT",
       "roles": ["app_user"],
       "using": null,
-      "withCheck": "auth_user_has_role_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['owner']::text[])",
-      "name": "invitation_owner_insert",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['invitation:create']::text[])",
+      "name": "invitation_insert",
       "entityType": "policies",
       "schema": "auth",
       "table": "invitation"
@@ -1985,9 +2164,9 @@
       "as": "PERMISSIVE",
       "for": "UPDATE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['owner']::text[])",
-      "withCheck": "auth_user_has_role_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['owner']::text[])",
-      "name": "invitation_owner_update",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['invitation:update']::text[])",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['invitation:update']::text[])",
+      "name": "invitation_update",
       "entityType": "policies",
       "schema": "auth",
       "table": "invitation"
@@ -1996,9 +2175,9 @@
       "as": "PERMISSIVE",
       "for": "DELETE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['owner']::text[])",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"invitation\".\"organization_id\", ARRAY['invitation:delete']::text[])",
       "withCheck": null,
-      "name": "invitation_owner_delete",
+      "name": "invitation_delete",
       "entityType": "policies",
       "schema": "auth",
       "table": "invitation"
@@ -2018,9 +2197,64 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
-      "using": "auth_user_has_org_access(\"smart_account\".\"organization_id\")",
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"role\".\"organization_id\", ARRAY['role:read']::text[])",
       "withCheck": null,
-      "name": "smart_account_user_select",
+      "name": "role_select",
+      "entityType": "policies",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": ["app_user"],
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"role\".\"organization_id\", ARRAY['role:update']::text[])",
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"role\".\"organization_id\", ARRAY['role:update']::text[])",
+      "name": "role_update",
+      "entityType": "policies",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": ["app_user"],
+      "using": null,
+      "withCheck": "auth_user_has_permissions_in_org(\"auth\".\"role\".\"organization_id\", ARRAY['role:create']::text[])",
+      "name": "role_insert",
+      "entityType": "policies",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": ["app_user"],
+      "using": "auth_user_has_permissions_in_org(\"auth\".\"role\".\"organization_id\", ARRAY['role:delete']::text[])",
+      "withCheck": null,
+      "name": "role_delete",
+      "entityType": "policies",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": ["app_admin"],
+      "using": "true",
+      "withCheck": null,
+      "name": "role_admin_access",
+      "entityType": "policies",
+      "schema": "auth",
+      "table": "role"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": ["app_user"],
+      "using": "auth_user_has_permissions_in_org(\"smart_account\".\"organization_id\", ARRAY['smart_account:read']::text[])",
+      "withCheck": null,
+      "name": "smart_account_select",
       "entityType": "policies",
       "schema": "public",
       "table": "smart_account"
@@ -2030,8 +2264,8 @@
       "for": "INSERT",
       "roles": ["app_user"],
       "using": null,
-      "withCheck": "(auth_current_user_id() = \"smart_account\".\"creator_id\") AND (auth_user_has_role_in_org(\"smart_account\".\"organization_id\", ARRAY['owner', 'admin']::text[]))",
-      "name": "smart_account_owner_insert",
+      "withCheck": "(auth_current_user_id() = \"smart_account\".\"creator_id\") AND (auth_user_has_permissions_in_org(\"smart_account\".\"organization_id\", ARRAY['smart_account:create']::text[]))",
+      "name": "smart_account_insert",
       "entityType": "policies",
       "schema": "public",
       "table": "smart_account"
@@ -2040,8 +2274,8 @@
       "as": "PERMISSIVE",
       "for": "UPDATE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"smart_account\".\"organization_id\", ARRAY['owner', 'admin']::text[])",
-      "withCheck": "auth_user_has_role_in_org(\"smart_account\".\"organization_id\", ARRAY['owner', 'admin']::text[])",
+      "using": "auth_user_has_permissions_in_org(\"smart_account\".\"organization_id\", ARRAY['smart_account:update']::text[])",
+      "withCheck": "auth_user_has_permissions_in_org(\"smart_account\".\"organization_id\", ARRAY['smart_account:update']::text[])",
       "name": "smart_account_owner_update",
       "entityType": "policies",
       "schema": "public",
@@ -2051,7 +2285,7 @@
       "as": "PERMISSIVE",
       "for": "DELETE",
       "roles": ["app_user"],
-      "using": "auth_user_has_role_in_org(\"smart_account\".\"organization_id\", ARRAY['owner']::text[])",
+      "using": "auth_user_has_permissions_in_org(\"smart_account\".\"organization_id\", ARRAY['smart_account:delete']::text[])",
       "withCheck": null,
       "name": "smart_account_owner_delete",
       "entityType": "policies",
@@ -2073,9 +2307,9 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["app_user"],
-      "using": "auth_user_has_org_access(\"session_key\".\"organization_id\")",
+      "using": "auth_user_has_permissions_in_org(\"session_key\".\"organization_id\", ARRAY['session_key:read']::text[])",
       "withCheck": null,
-      "name": "session_key_user_select",
+      "name": "session_key_select",
       "entityType": "policies",
       "schema": "public",
       "table": "session_key"
@@ -2084,9 +2318,9 @@
       "as": "PERMISSIVE",
       "for": "UPDATE",
       "roles": ["app_user"],
-      "using": "(auth_user_has_role_in_org(\"session_key\".\"organization_id\", ARRAY['owner', 'admin']::text[])) AND (auth_session_key_in_org(\"session_key\".\"id\", \"session_key\".\"organization_id\"))",
-      "withCheck": "(auth_user_has_role_in_org(\"session_key\".\"organization_id\", ARRAY['owner', 'admin']::text[])) AND (auth_smart_account_in_org(\"session_key\".\"smart_account_id\", \"session_key\".\"organization_id\"))",
-      "name": "session_key_owner_update",
+      "using": "(auth_user_has_permissions_in_org(\"session_key\".\"organization_id\", ARRAY['session_key:update']::text[])) AND (auth_session_key_in_org(\"session_key\".\"id\", \"session_key\".\"organization_id\"))",
+      "withCheck": "(auth_user_has_permissions_in_org(\"session_key\".\"organization_id\", ARRAY['session_key:update']::text[])) AND (auth_smart_account_in_org(\"session_key\".\"smart_account_id\", \"session_key\".\"organization_id\"))",
+      "name": "session_key_update",
       "entityType": "policies",
       "schema": "public",
       "table": "session_key"
@@ -2096,8 +2330,8 @@
       "for": "INSERT",
       "roles": ["app_user"],
       "using": null,
-      "withCheck": "(auth_current_user_id() = \"session_key\".\"creator_id\") AND (auth_user_has_role_in_org(\"session_key\".\"organization_id\", ARRAY['owner', 'admin']::text[])) AND (auth_smart_account_in_org(\"session_key\".\"smart_account_id\", \"session_key\".\"organization_id\"))",
-      "name": "session_key_owner_insert",
+      "withCheck": "(auth_current_user_id() = \"session_key\".\"creator_id\") AND (auth_user_has_permissions_in_org(\"session_key\".\"organization_id\", ARRAY['session_key:create']::text[])) AND (auth_smart_account_in_org(\"session_key\".\"smart_account_id\", \"session_key\".\"organization_id\"))",
+      "name": "session_key_insert",
       "entityType": "policies",
       "schema": "public",
       "table": "session_key"
@@ -2106,9 +2340,9 @@
       "as": "PERMISSIVE",
       "for": "DELETE",
       "roles": ["app_user"],
-      "using": "(auth_user_has_role_in_org(\"session_key\".\"organization_id\", ARRAY['owner']::text[])) AND (auth_session_key_in_org(\"session_key\".\"id\", \"session_key\".\"organization_id\"))",
+      "using": "(auth_user_has_permissions_in_org(\"session_key\".\"organization_id\", ARRAY['session_key:delete']::text[])) AND (auth_session_key_in_org(\"session_key\".\"id\", \"session_key\".\"organization_id\"))",
       "withCheck": null,
-      "name": "session_key_owner_delete",
+      "name": "session_key_delete",
       "entityType": "policies",
       "schema": "public",
       "table": "session_key"

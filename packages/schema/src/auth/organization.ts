@@ -48,7 +48,7 @@ export const OrganizationInsert = createInsertSchema(
 
 export type OrganizationSlug = typeof OrganizationSlug.Type;
 export type OrganizationMetadata = typeof OrganizationMetadata.Type;
-
+export type OrganizationPlan = typeof OrganizationPlan.Type;
 export type Organization = typeof Organization.Type;
 export type OrganizationUpdate = typeof OrganizationUpdate.Type;
 export type OrganizationInsert = typeof OrganizationInsert.Type;

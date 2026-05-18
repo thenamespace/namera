@@ -22,7 +22,7 @@ export const verification = authSchema.table.withRLS(
     expiresAt: createTimestampField("expires_at", {
       mode: "date",
       withTimezone: true,
-    }),
+    }).notNull(),
     ...timestamps,
   },
   (table) => [

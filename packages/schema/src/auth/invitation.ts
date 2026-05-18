@@ -1,9 +1,13 @@
 import { Schema } from "effect";
 
-import { Email, OrganizationId, UserId } from "@/common";
+import {
+  Email,
+  InvitationId,
+  OrganizationId,
+  OrganizationRoleId,
+  UserId,
+} from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
-
-import { OrganizationMemberRole } from "./member";
 
 export const InvitationStatus = Schema.Literals([
   "pending",
@@ -12,13 +16,13 @@ export const InvitationStatus = Schema.Literals([
 ]);
 
 export const Invitation = Schema.Struct({
-  id: Schema.String,
+  id: InvitationId,
   email: Email,
-  role: OrganizationMemberRole,
+  roleId: OrganizationRoleId,
   organizationId: OrganizationId,
-  expiresAt: Schema.Date,
   inviterId: UserId,
-  status: Schema.Literals(["pending", "accepted", "rejected"]),
+  status: InvitationStatus,
+  expiresAt: Schema.Date,
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
 });
@@ -27,10 +31,11 @@ export const InvitationUpdate = createUpdateSchema(Invitation);
 export const InvitationInsert = createInsertSchema(
   Invitation,
   "email",
-  "role",
+  "roleId",
   "organizationId",
-  "expiresAt",
   "inviterId",
+  "status",
+  "expiresAt",
 );
 
 export type Invitation = typeof Invitation.Type;

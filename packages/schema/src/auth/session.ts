@@ -17,7 +17,15 @@ export const Session = Schema.Struct({
 });
 
 export const SessionUpdate = createUpdateSchema(Session);
-export const SessionInsert = createInsertSchema(Session, "token", "userId");
+export const SessionInsert = createInsertSchema(
+  Session,
+  "ipAddress",
+  "token",
+  "userId",
+  "activeOrganizationId",
+  "userAgent",
+  "expiresAt",
+);
 
 export type Session = typeof Session.Type;
 export type SessionUpdate = typeof SessionUpdate.Type;

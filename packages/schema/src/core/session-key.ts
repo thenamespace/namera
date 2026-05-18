@@ -60,11 +60,12 @@ export const SessionKey = Schema.Union([EcdsaSessionKey]);
 export const SessionKeyUpdate = createUpdateSchema(SessionKey);
 export const SessionKeyInsert = createInsertSchema(
   SessionKey,
-  "type",
+  "metadata",
   "creatorId",
   "organizationId",
   "smartAccountId",
   "serializedAccounts",
+  "type",
   "data",
 );
 

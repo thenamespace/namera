@@ -1,9 +1,15 @@
-import type { Email, UserId } from "@namera-ai/schema";
+import type { Email, UserId, UserMetadata } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { boolean, text } from "drizzle-orm/pg-core";
+import { boolean, json, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  adminRole,
+  createTimestampField,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "../common";
 import { onlyUserId, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 
@@ -15,15 +21,28 @@ export const user = authSchema.table.withRLS(
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<UserId>(),
     name: text("name").notNull(),
-    email: text("email").notNull().unique().$type<Email>(),
-    emailVerified: boolean("email_verified").default(false).notNull(),
+    email: text("email").notNull().$type<Email>(),
+    emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
+    metadata: json("metadata")
+      .notNull()
+      .$type<UserMetadata>()
+      .default(sql`{}`),
+    lastLoginAt: createTimestampField("last_login_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
+    deletedAt: createTimestampField("deleted_at", {
+      mode: "date",
+      withTimezone: true,
+    }).default(sql`NULL`),
     ...timestamps,
   },
   (table) => [
+    uniqueIndex("user_email_uidx").on(table.email),
     // Users can only select themselves
     new PgPolicyBuilder()
-      .name("user_self_select")
+      .name("user_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
@@ -31,7 +50,7 @@ export const user = authSchema.table.withRLS(
       .build(),
     // Users can only update themselves
     new PgPolicyBuilder()
-      .name("user_self_update")
+      .name("user_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
@@ -40,7 +59,7 @@ export const user = authSchema.table.withRLS(
       .build(),
     // Admins can access all users
     new PgPolicyBuilder()
-      .name("user_admin_access")
+      .name("user_adminaccess")
       .as("permissive")
       .to(adminRole)
       .forOperation("all")

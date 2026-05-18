@@ -1,6 +1,6 @@
 // oxlint-disable no-underscore-dangle
 
-import type { OrganizationMemberRole } from "@namera-ai/schema";
+import type { Permission } from "@namera-ai/schema";
 
 import { type ColumnType, sql, type SQL } from "drizzle-orm";
 import {
@@ -30,11 +30,16 @@ export const onlyUserId = (id: PolicyColumn) =>
 export const onlyOrgMember = (orgId: PolicyColumn) =>
   sql`auth_user_has_org_access(${orgId})`;
 
-export const onlyIfSeedMember = (
+export const onlyOrgMemberWithPermissions = (
   orgId: PolicyColumn,
-  userId: PolicyColumn,
-  role: PolicyColumn,
-) => sql`auth_org_can_seed_owner(${orgId}, ${userId}, ${role})`;
+  permissions: Permission[],
+) => {
+  const permissionList = permissions
+    .map((permission) => `'${permission.replaceAll("'", "''")}'`)
+    .join(", ");
+
+  return sql`auth_user_has_permissions_in_org(${orgId}, ARRAY[${sql.raw(permissionList)}]::text[])`;
+};
 
 export const onlyIfSmartAccountInOrg = (
   smartAccountId: PolicyColumn,
@@ -45,16 +50,6 @@ export const onlyIfSessionKeyInOrg = (
   sessionKeyId: PolicyColumn,
   orgId: PolicyColumn,
 ) => sql`auth_session_key_in_org(${sessionKeyId}, ${orgId})`;
-
-const quoteSqlString = (value: string) => `'${value.replaceAll("'", "''")}'`;
-
-export const onlyOrgMemberWithRoles = (
-  orgId: PolicyColumn,
-  roles: OrganizationMemberRole[],
-) => {
-  const roleList = roles.map(quoteSqlString).join(", ");
-  return sql`auth_user_has_role_in_org(${orgId}, ARRAY[${sql.raw(roleList)}]::text[])`;
-};
 
 export class PgPolicyBuilder {
   protected _name!: string;

@@ -3,12 +3,12 @@ import type {
   InvitationId,
   InvitationStatus,
   OrganizationId,
-  OrganizationMemberRole,
+  OrganizationRoleId,
   UserId,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, text } from "drizzle-orm/pg-core";
+import { foreignKey, index, text } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -17,13 +17,9 @@ import {
   timestamps,
   userRole,
 } from "../common";
-import {
-  onlyOrgMember,
-  onlyOrgMemberWithRoles,
-  PgPolicyBuilder,
-} from "../policy";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
-import { organization } from "./organization";
+import { role } from "./role";
 import { user } from "./user";
 
 // Invitations table
@@ -36,15 +32,12 @@ export const invitation = authSchema.table.withRLS(
       .$defaultFn(generateUniqueId)
       .$type<InvitationId>(),
     email: text("email").notNull().$type<Email>(),
-    role: text("role").notNull().$type<OrganizationMemberRole>(),
-    organizationId: text("organization_id")
-      .notNull()
-      .$type<OrganizationId>()
-      .references(() => organization.id, { onDelete: "cascade" }),
+    roleId: text("role_id").notNull().$type<OrganizationRoleId>(),
+    organizationId: text("organization_id").notNull().$type<OrganizationId>(),
     inviterId: text("inviter_id")
       .notNull()
       .$type<UserId>()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "no action" }),
     status: text("status")
       .notNull()
       .$type<InvitationStatus>()
@@ -52,44 +45,67 @@ export const invitation = authSchema.table.withRLS(
     expiresAt: createTimestampField("expires_at", {
       mode: "date",
       withTimezone: true,
-    }),
+    }).notNull(),
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.roleId],
+      foreignColumns: [role.organizationId, role.id],
+      name: "invitation_organization_role_fk",
+    }),
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
-    // Users can only select their own invitations
+    // Only Members with "invitation:read" permission can select invitations
     new PgPolicyBuilder()
-      .name("invitation_user_select")
+      .name("invitation_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMember(table.organizationId))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, ["invitation:read"]),
+      )
       .build(),
-    // Only Org owner can create invitations
+    // Only member with "invitation:create" permission can create invitations
     new PgPolicyBuilder()
-      .name("invitation_owner_insert")
+      .name("invitation_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
-      .withCheck(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .withCheck(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "invitation:create",
+        ]),
+      )
       .build(),
-    // Only Org owner can update invitations
+    // Only member with "invitation:update" permission can update invitations
     new PgPolicyBuilder()
-      .name("invitation_owner_update")
+      .name("invitation_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
-      .withCheck(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "invitation:update",
+        ]),
+      )
+      .withCheck(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "invitation:update",
+        ]),
+      )
       .build(),
-    // Only Org owner can delete invitations
+    // Only member with "invitation:delete" permission can delete invitations
     new PgPolicyBuilder()
-      .name("invitation_owner_delete")
+      .name("invitation_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
-      .using(onlyOrgMemberWithRoles(table.organizationId, ["owner"]))
+      .using(
+        onlyOrgMemberWithPermissions(table.organizationId, [
+          "invitation:delete",
+        ]),
+      )
       .build(),
     // Admins can access all invitations
     new PgPolicyBuilder()

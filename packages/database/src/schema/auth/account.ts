@@ -20,6 +20,10 @@ export const account = authSchema.table.withRLS(
   "account",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<AccountId>(),
+    userId: text("user_id")
+      .notNull()
+      .$type<UserId>()
+      .references(() => user.id, { onDelete: "cascade" }),
     accountId: text("account_id").notNull(),
     accessToken: text("access_token"),
     accessTokenExpiresAt: createTimestampField("access_token_expires_at", {
@@ -35,10 +39,6 @@ export const account = authSchema.table.withRLS(
       withTimezone: true,
     }),
     scope: text("scope"),
-    userId: text("user_id")
-      .notNull()
-      .$type<UserId>()
-      .references(() => user.id, { onDelete: "cascade" }),
     ...timestamps,
   },
   (table) => [
@@ -49,7 +49,7 @@ export const account = authSchema.table.withRLS(
     ),
     // Users can only select their own accounts
     new PgPolicyBuilder()
-      .name("account_user_select")
+      .name("account_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
@@ -57,7 +57,7 @@ export const account = authSchema.table.withRLS(
       .build(),
     // Users can only update their own accounts
     new PgPolicyBuilder()
-      .name("account_user_update")
+      .name("account_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
@@ -66,7 +66,7 @@ export const account = authSchema.table.withRLS(
       .build(),
     // Users can only insert their own accounts such as linking google etc.
     new PgPolicyBuilder()
-      .name("account_user_insert")
+      .name("account_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
@@ -74,7 +74,7 @@ export const account = authSchema.table.withRLS(
       .build(),
     // Users can only delete their own accounts, such as unlinking google etc.
     new PgPolicyBuilder()
-      .name("account_user_delete")
+      .name("account_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")

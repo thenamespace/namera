@@ -10,11 +10,7 @@ import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { OrganizationPlan } from "@namera-ai/schema";
 
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
-import {
-  onlyOrgMember,
-  onlyOrgMemberWithRoles,
-  PgPolicyBuilder,
-} from "../policy";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 
 // Organization Table
@@ -34,31 +30,30 @@ export const organization = authSchema.table.withRLS(
   },
   (table) => [
     uniqueIndex("organization_slug_uidx").on(table.slug),
-    // Only members of an organization can select it
+    // Only members with "org:read" permission can select it
     new PgPolicyBuilder()
-      .name("organization_member_select")
+      .name("organization_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMember(table.id))
+      .using(onlyOrgMemberWithPermissions(table.id, ["org:read"]))
       .build(),
-
-    // Only owner can update the organization
+    // Only member with org:update permission can update the organization
     new PgPolicyBuilder()
-      .name("organization_owner_update")
+      .name("organization_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithRoles(table.id, ["owner"]))
-      .withCheck(onlyOrgMemberWithRoles(table.id, ["owner"]))
+      .using(onlyOrgMemberWithPermissions(table.id, ["org:update"]))
+      .withCheck(onlyOrgMemberWithPermissions(table.id, ["org:update"]))
       .build(),
-    // Only Org Owner can delete the organization
+    // Only member with org:delete permission can delete the organization
     new PgPolicyBuilder()
-      .name("organization_owner_delete")
+      .name("organization_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
-      .using(onlyOrgMemberWithRoles(table.id, ["owner"]))
+      .using(onlyOrgMemberWithPermissions(table.id, ["org:delete"]))
       .build(),
     // Admins can access all organizations
     new PgPolicyBuilder()

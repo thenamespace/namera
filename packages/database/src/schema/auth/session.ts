@@ -36,14 +36,14 @@ export const session = authSchema.table.withRLS(
     expiresAt: createTimestampField("expires_at", {
       mode: "date",
       withTimezone: true,
-    }),
+    }).notNull(),
     ...timestamps,
   },
   (table) => [
     index("session_userId_idx").on(table.userId),
     // Users can only select their own sessions
     new PgPolicyBuilder()
-      .name("session_user_select")
+      .name("session_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
@@ -51,7 +51,7 @@ export const session = authSchema.table.withRLS(
       .build(),
     // Users can only update their own sessions
     new PgPolicyBuilder()
-      .name("session_user_update")
+      .name("session_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
@@ -69,7 +69,7 @@ export const session = authSchema.table.withRLS(
       .build(),
     // Users can only delete their own sessions
     new PgPolicyBuilder()
-      .name("session_user_delete")
+      .name("session_delete")
       .as("permissive")
       .to(userRole)
       .forOperation("delete")
@@ -77,7 +77,7 @@ export const session = authSchema.table.withRLS(
       .build(),
     // Admins can access all sessions
     new PgPolicyBuilder()
-      .name("session_admin_access")
+      .name("session_access")
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
