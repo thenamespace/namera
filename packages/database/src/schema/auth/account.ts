@@ -1,4 +1,4 @@
-import type { UserId } from "@namera-ai/schema";
+import type { AccountId, UserId } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
@@ -19,7 +19,7 @@ import { user } from "./user";
 export const account = authSchema.table.withRLS(
   "account",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId),
+    id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<AccountId>(),
     accountId: text("account_id").notNull(),
     accessToken: text("access_token"),
     accessTokenExpiresAt: createTimestampField("access_token_expires_at", {

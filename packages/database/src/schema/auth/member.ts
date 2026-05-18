@@ -1,13 +1,12 @@
 import type {
   OrganizationId,
   OrganizationMemberId,
+  OrganizationRoleId,
   UserId,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
-
-import { OrganizationMemberRole } from "@namera-ai/schema";
 
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
@@ -34,10 +33,7 @@ export const member = authSchema.table.withRLS(
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
-    role: text("role")
-      .notNull()
-      .$type<OrganizationMemberRole>()
-      .default("member"),
+    role: text("role").notNull().$type<OrganizationRoleId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()

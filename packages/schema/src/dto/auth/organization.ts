@@ -6,14 +6,7 @@ import { OrganizationId } from "@/common";
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
   "OrganizationError",
   {
-    code: Schema.Literals([
-      "INVALID_TOKEN",
-      "TOKEN_EXPIRED",
-      "SEND_EMAIL_FAILED",
-      "ATTEMPTS_EXCEEDED",
-      "TOKEN_NOT_FOUND",
-      "INVALID_ORIGIN",
-    ]),
+    code: Schema.Literals(["SLUG_ALREADY_TAKEN"]),
     message: Schema.optional(Schema.String),
   },
 ) {}

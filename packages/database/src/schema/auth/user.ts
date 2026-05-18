@@ -1,4 +1,4 @@
-import type { UserId } from "@namera-ai/schema";
+import type { Email, UserId } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
 import { boolean, text } from "drizzle-orm/pg-core";
@@ -15,7 +15,7 @@ export const user = authSchema.table.withRLS(
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<UserId>(),
     name: text("name").notNull(),
-    email: text("email").notNull().unique(),
+    email: text("email").notNull().unique().$type<Email>(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
     ...timestamps,

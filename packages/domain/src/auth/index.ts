@@ -1,5 +1,6 @@
 import { Effect, Layer, Context } from "effect";
 
+import * as OrganizationRepo from "./organization";
 import * as SessionRepo from "./session";
 import * as UserRepo from "./user";
 import * as VerificationRepo from "./verification";
@@ -8,6 +9,7 @@ export type AuthRepo = {
   verification: VerificationRepo.VerificationRepo;
   user: UserRepo.UserRepo;
   session: SessionRepo.SessionRepo;
+  organization: OrganizationRepo.OrganizationRepo;
 };
 
 export const AuthRepo = Context.Service<AuthRepo>("AuthRepo");
@@ -18,11 +20,13 @@ export const layer = Layer.effect(
     const verification = yield* VerificationRepo.VerificationRepo;
     const user = yield* UserRepo.UserRepo;
     const session = yield* SessionRepo.SessionRepo;
+    const organization = yield* OrganizationRepo.OrganizationRepo;
 
     return AuthRepo.of({
       session,
       user,
       verification,
+      organization,
     });
   }),
 ).pipe(

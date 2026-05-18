@@ -1,5 +1,6 @@
 import type {
   Email,
+  InvitationId,
   InvitationStatus,
   OrganizationId,
   OrganizationMemberRole,
@@ -30,7 +31,10 @@ import { user } from "./user";
 export const invitation = authSchema.table.withRLS(
   "invitation",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(generateUniqueId)
+      .$type<InvitationId>(),
     email: text("email").notNull().$type<Email>(),
     role: text("role").notNull().$type<OrganizationMemberRole>(),
     organizationId: text("organization_id")

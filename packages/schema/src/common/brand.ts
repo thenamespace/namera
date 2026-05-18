@@ -13,6 +13,9 @@ export const OrganizationId = Schema.String.pipe(
 export const OrganizationMemberId = Schema.String.pipe(
   Schema.brand("OrganizationMemberId"),
 );
+export const OrganizationRoleId = Schema.String.pipe(
+  Schema.brand("OrganizationRoleId"),
+);
 export const InvitationId = Schema.String.pipe(Schema.brand("InvitationId"));
 export const SmartAccountId = Schema.String.pipe(
   Schema.brand("SmartAccountId"),
@@ -25,6 +28,7 @@ export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
+export type OrganizationRoleId = typeof OrganizationRoleId.Type;
 export type InvitationId = typeof InvitationId.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
