@@ -11,7 +11,12 @@ import { OrganizationId } from "@/common";
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
   "OrganizationError",
   {
-    code: Schema.Literals(["SLUG_ALREADY_TAKEN", "ORG_LIMIT_REACHED"]),
+    code: Schema.Literals([
+      "SLUG_ALREADY_TAKEN",
+      "ORG_LIMIT_REACHED",
+      "ORGANIZATION_NOT_FOUND",
+      "ORGANIZATION_MEMBER_NOT_FOUND",
+    ]),
     message: Schema.optional(Schema.String),
   },
 ) {}
@@ -62,9 +67,7 @@ export const GetFullOrganizationResponse = Organization;
 // Update Organization
 export const UpdateOrganizationRequest = Schema.Struct({
   id: OrganizationId,
-  data: Organization.mapFields(
-    Struct.omit(["createdAt", "id", "plan", "updatedAt"]),
-  ),
+  data: Organization.mapFields(Struct.pick(["name", "metadata"])),
 });
 export const UpdateOrganizationResponse = Organization;
 

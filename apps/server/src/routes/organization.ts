@@ -9,6 +9,7 @@ import {
   CheckOrganizationSlugRequest,
   OrganizationError,
   type CreateOrganizationRequest,
+  type SetActiveOrganizationRequest,
 } from "@namera-ai/schema";
 
 const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
@@ -78,7 +79,38 @@ const listOrgsHandler = () =>
     return res;
   });
 
-export const HealthGroupLive = HttpApiBuilder.group(
+const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
+  Effect.gen(function* () {
+    const currentUser = yield* AuthenticatedUser;
+    const auth = yield* AuthRepo.AuthRepo;
+    const db = yield* AdminDatabase.AdminDatabase;
+
+    return yield* db
+      .transaction((tx) =>
+        Effect.gen(function* () {
+          const isMember = yield* auth.organization.hasActiveMembership(
+            currentUser.user.id,
+            payload.id,
+            payload.slug,
+          );
+
+          if (!isMember) {
+            return yield* new OrganizationError({
+              code: "ORGANIZATION_MEMBER_NOT_FOUND",
+            });
+          }
+
+          yield* auth.session.setActiveOrganization(
+            currentUser.session.id,
+            currentUser.user.id,
+            payload.id,
+          );
+        }).pipe(Transaction.withTx(tx)),
+      )
+      .pipe(Effect.orDie);
+  });
+
+export const OrganizationGroupLive = HttpApiBuilder.group(
   api,
   "organization",
   (handlers) =>
@@ -86,7 +118,9 @@ export const HealthGroupLive = HttpApiBuilder.group(
       .handle("create", ({ payload }) => createOrganizationHandler(payload))
       .handle("checkSlug", ({ payload }) => checkSlugHandler(payload))
       .handle("list", () => listOrgsHandler())
-      .handle("setActive", () => Effect.succeed("todo" as any))
+      .handle("setActive", ({ payload }) =>
+        setActiveOrganizationHandler(payload),
+      )
       .handle("getFullOrganization", () => Effect.succeed("todo" as any))
       .handle("update", () => Effect.succeed("todo" as any))
       .handle("delete", () => Effect.succeed("todo" as any)),

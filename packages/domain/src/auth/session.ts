@@ -11,6 +11,7 @@ import {
   type Session,
   SessionId,
   SessionInsert,
+  OrganizationId,
   type UserId,
 } from "@namera-ai/schema";
 
@@ -30,6 +31,11 @@ export type SessionRepo = {
   deleteAllSessionsExcept: (
     userId: UserId,
     exceptSessionId: SessionId,
+  ) => Effect.Effect<void, never, Database.Database>;
+  setActiveOrganization: (
+    sessionId: SessionId,
+    userId: UserId,
+    organizationId: OrganizationId,
   ) => Effect.Effect<void, never, Database.Database>;
 };
 
@@ -80,6 +86,16 @@ export const layer = Layer.succeed(
           },
         });
         return res;
+      }).pipe(Effect.orDie),
+    setActiveOrganization: (sessionId, userId, organizationId) =>
+      Effect.gen(function* () {
+        const db = yield* TransactionOrDatabase;
+        yield* db
+          .update(session)
+          .set({
+            activeOrganizationId: organizationId,
+          })
+          .where(and(eq(session.id, sessionId), eq(session.userId, userId)));
       }).pipe(Effect.orDie),
   }),
 );

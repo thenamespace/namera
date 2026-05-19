@@ -8,6 +8,7 @@ import {
 import {
   ListOrganizationsResponse,
   Organization,
+  OrganizationId,
   OrganizationInsert,
   OrganizationSlug,
   UserId,
@@ -26,6 +27,11 @@ export type OrganizationRepo = {
   list: (
     userId: UserId,
   ) => Effect.Effect<ListOrganizationsResponse, never, Database.Database>;
+  hasActiveMembership: (
+    userId: UserId,
+    organizationId: OrganizationId,
+    slug: OrganizationSlug,
+  ) => Effect.Effect<boolean, never, Database.Database>;
 };
 
 export const OrganizationRepo =
@@ -40,6 +46,7 @@ export const layer = Layer.succeed(
         const res = yield* db.query.organization.findMany({
           where: {
             createdById: { eq: userId },
+            deletedAt: { isNull: true },
           },
         });
 
@@ -77,7 +84,27 @@ export const layer = Layer.succeed(
           },
         });
 
-        return res as ListOrganizationsResponse;
+        return (
+          res.filter((m) => m.organization) as ListOrganizationsResponse
+        ).filter((m) => m.organization.deletedAt === null);
+      }).pipe(Effect.orDie),
+    hasActiveMembership: (userId, organizationId, slug) =>
+      Effect.gen(function* () {
+        const db = yield* TransactionOrDatabase;
+
+        const res = yield* db.query.member.findFirst({
+          where: {
+            userId: { eq: userId },
+            organizationId: { eq: organizationId },
+            deletedAt: { isNull: true },
+            removedAt: { isNull: true },
+          },
+          with: {
+            organization: true,
+          },
+        });
+
+        return res?.organization?.slug === slug && !res.organization.deletedAt;
       }).pipe(Effect.orDie),
   }),
 );

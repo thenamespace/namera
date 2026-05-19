@@ -33,4 +33,5 @@ export const layer = Layer.effect(
   Layer.provide(VerificationRepo.layer),
   Layer.provide(UserRepo.layer),
   Layer.provide(SessionRepo.layer),
+  Layer.provide(OrganizationRepo.layer),
 );

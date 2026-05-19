@@ -18,6 +18,7 @@ import { Middlewares } from "./middlewares";
 import {
   AuthGroupLive,
   HealthGroupLive,
+  OrganizationGroupLive,
   RpcGroupLive,
   SmartAccountGroupLive,
 } from "./routes";
@@ -26,6 +27,7 @@ const NameraApiLive = Layer.mergeAll(
   HealthGroupLive,
   RpcGroupLive,
   AuthGroupLive,
+  OrganizationGroupLive,
   SmartAccountGroupLive,
 );
 
