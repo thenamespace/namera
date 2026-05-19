@@ -13,6 +13,8 @@ export const OrganizationMember = Schema.Struct({
   organizationId: OrganizationId,
   roleId: OrganizationRoleId,
   userId: UserId,
+  joinedAt: Schema.Date,
+  removedAt: Schema.NullOr(Schema.Date),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
 });

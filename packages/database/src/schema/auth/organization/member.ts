@@ -8,11 +8,18 @@ import type {
 import { sql } from "drizzle-orm";
 import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
-import { authSchema } from "./common";
+import { authSchema } from "@/schema/auth/common";
+import { user } from "@/schema/auth/user";
+import {
+  adminRole,
+  createTimestampField,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "@/schema/common";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+
 import { role } from "./role";
-import { user } from "./user";
 
 // Members table
 // Represents a user's membership in an organization
@@ -29,6 +36,15 @@ export const member = authSchema.table.withRLS(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
+    // Timestamps
+    joinedAt: createTimestampField("joined_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
+    removedAt: createTimestampField("removed_at", {
+      mode: "date",
+      withTimezone: true,
+    }).default(sql`NULL`),
     ...timestamps,
   },
   (table) => [

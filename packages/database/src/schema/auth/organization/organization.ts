@@ -8,18 +8,17 @@ import type {
 import { sql } from "drizzle-orm";
 import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { OrganizationPlan } from "@namera-ai/schema";
-
+import { authSchema } from "@/schema/auth/common";
+import { user } from "@/schema/auth/user";
 import {
   adminRole,
   generateUniqueId,
   lower,
   timestamps,
   userRole,
-} from "../common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
-import { authSchema } from "./common";
-import { user } from "./user";
+} from "@/schema/common";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+import { OrganizationPlan } from "@namera-ai/schema";
 
 // Organization Table
 // Represents an organization
@@ -36,9 +35,6 @@ export const organization = authSchema.table.withRLS(
     plan: text("plan").notNull().$type<OrganizationPlan>(),
     slug: text("slug").notNull().$type<OrganizationSlug>(),
     createdById: text("created_by_id")
-      .$type<UserId>()
-      .references(() => user.id, { onDelete: "set null" }),
-    updatedById: text("updated_by_id")
       .$type<UserId>()
       .references(() => user.id, { onDelete: "set null" }),
     ...timestamps,

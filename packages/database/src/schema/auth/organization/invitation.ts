@@ -10,17 +10,18 @@ import type {
 import { sql } from "drizzle-orm";
 import { foreignKey, index, text } from "drizzle-orm/pg-core";
 
+import { authSchema } from "@/schema/auth/common";
+import { user } from "@/schema/auth/user";
 import {
   adminRole,
   createTimestampField,
   generateUniqueId,
   timestamps,
   userRole,
-} from "../common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "../policy";
-import { authSchema } from "./common";
+} from "@/schema/common";
+import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+
 import { role } from "./role";
-import { user } from "./user";
 
 // Invitations table
 // Represents an invitation to join an organization

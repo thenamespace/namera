@@ -27,7 +27,6 @@ export const Organization = Schema.Struct({
   plan: OrganizationPlan,
   slug: OrganizationSlug,
   createdById: Schema.NullOr(UserId),
-  updatedById: Schema.NullOr(UserId),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
   deletedAt: Schema.NullOr(Schema.Date),
@@ -41,7 +40,6 @@ export const OrganizationInsert = createInsertSchema(
   "plan",
   "slug",
   "createdById",
-  "updatedById",
 );
 
 export type OrganizationSlug = typeof OrganizationSlug.Type;

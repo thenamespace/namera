@@ -11,9 +11,9 @@ import type {
 import { sql } from "drizzle-orm";
 import { index, json, pgTable, text } from "drizzle-orm/pg-core";
 
+import { organization } from "@/schema/auth";
 import { SessionKeyMetadata } from "@namera-ai/schema";
 
-import { organization } from "../auth/organization";
 import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
