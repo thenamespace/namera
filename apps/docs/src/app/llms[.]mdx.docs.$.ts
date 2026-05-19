@@ -13,7 +13,11 @@ export const Route = createFileRoute("/llms.mdx/docs/$")({
 
         return new Response(await getLLMText(page), {
           headers: {
+            "Cache-Control": "public, max-age=300, must-revalidate",
             "Content-Type": "text/markdown",
+            "Last-Modified": (
+              page.data.lastModified ?? new Date()
+            ).toUTCString(),
           },
         });
       },

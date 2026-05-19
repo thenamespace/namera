@@ -1,4 +1,32 @@
 ---
-title: Introduction
+title: Policies
+description: Policy primitives that scope what a Namera session key can do.
 ---
 
+Policies define the boundaries for delegated wallet access. A session key can
+only execute actions that satisfy every policy attached to it, so each key can
+be scoped to a specific chain, contract, function, gas budget, time window, or
+rate limit.
+
+Use policies when an app, automation, or agent needs limited authority instead
+of full account control. The account owner approves the policy set once, then
+the session key can operate within those constraints until it expires or is
+revoked.
+
+## Common policy types
+
+- [Call policy](/docs/sdk/session-keys/policies/call): allow specific target
+  contracts and function selectors.
+- [Gas policy](/docs/sdk/session-keys/policies/gas): cap transaction gas usage.
+- [Rate limit policy](/docs/sdk/session-keys/policies/rate-limit): limit how
+  often a key can act.
+- [Timestamp policy](/docs/sdk/session-keys/policies/timestamp): set valid
+  start and expiry times.
+- [Signature caller policy](/docs/sdk/session-keys/policies/signature): require
+  calls from an expected signer.
+- [Sudo policy](/docs/sdk/session-keys/policies/sudo): grant broad authority
+  when a session key intentionally needs it.
+
+For a complete setup flow, start with
+[Create Session Key](/docs/sdk/session-keys/create) or
+[Create Passkey Session Key](/docs/sdk/session-keys/create-passkey-session-key).
