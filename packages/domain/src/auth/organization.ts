@@ -6,9 +6,11 @@ import {
   TransactionOrDatabase,
 } from "@namera-ai/database";
 import {
+  ListOrganizationsResponse,
   Organization,
   OrganizationInsert,
   OrganizationSlug,
+  UserId,
 } from "@namera-ai/schema";
 
 export type OrganizationRepo = {
@@ -18,6 +20,12 @@ export type OrganizationRepo = {
   checkSlug: (
     slug: OrganizationSlug,
   ) => Effect.Effect<boolean, never, Database.Database>;
+  listOrgsCreatedByUser: (
+    userId: UserId,
+  ) => Effect.Effect<Organization[], never, Database.Database>;
+  list: (
+    userId: UserId,
+  ) => Effect.Effect<ListOrganizationsResponse, never, Database.Database>;
 };
 
 export const OrganizationRepo =
@@ -26,6 +34,17 @@ export const OrganizationRepo =
 export const layer = Layer.succeed(
   OrganizationRepo,
   OrganizationRepo.of({
+    listOrgsCreatedByUser: (userId) =>
+      Effect.gen(function* () {
+        const db = yield* TransactionOrDatabase;
+        const res = yield* db.query.organization.findMany({
+          where: {
+            createdById: { eq: userId },
+          },
+        });
+
+        return res;
+      }).pipe(Effect.orDie),
     createOrganization: (data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -44,6 +63,21 @@ export const layer = Layer.succeed(
         });
 
         return Boolean(res);
+      }).pipe(Effect.orDie),
+    list: (userId) =>
+      Effect.gen(function* () {
+        const db = yield* TransactionOrDatabase;
+
+        const res = yield* db.query.member.findMany({
+          where: {
+            userId: { eq: userId },
+          },
+          with: {
+            organization: true,
+          },
+        });
+
+        return res as ListOrganizationsResponse;
       }).pipe(Effect.orDie),
   }),
 );

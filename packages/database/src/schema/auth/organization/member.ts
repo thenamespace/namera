@@ -40,11 +40,13 @@ export const member = authSchema.table.withRLS(
     joinedAt: createTimestampField("joined_at", {
       mode: "date",
       withTimezone: true,
-    }).notNull(),
+    })
+      .notNull()
+      .defaultNow(),
     removedAt: createTimestampField("removed_at", {
       mode: "date",
       withTimezone: true,
-    }).default(sql`NULL`),
+    }),
     ...timestamps,
   },
   (table) => [
@@ -90,16 +92,6 @@ export const member = authSchema.table.withRLS(
       )
       .withCheck(
         onlyOrgMemberWithPermissions(table.organizationId, ["member:update"]),
-      )
-      .build(),
-    // Only Member with "member:remove" permission can delete members
-    new PgPolicyBuilder()
-      .name("member_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["member:remove"]),
       )
       .build(),
     // Admins can access all members

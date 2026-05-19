@@ -14,6 +14,6 @@ export default defineConfig({
   entities: {
     roles: true,
   },
-  out: "./migrations",
+  out: "./drizzle-migrations",
   schema: "./src/schema/index.ts",
 });

@@ -25,6 +25,7 @@ export const OrganizationRole = Schema.Struct({
   permissions: Schema.Array(Permission),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 export const OrganizationRoleUpdate = createUpdateSchema(OrganizationRole);

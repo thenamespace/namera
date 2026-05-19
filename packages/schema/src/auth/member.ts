@@ -17,6 +17,7 @@ export const OrganizationMember = Schema.Struct({
   removedAt: Schema.NullOr(Schema.Date),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 export const OrganizationMemberUpdate = createUpdateSchema(OrganizationMember);

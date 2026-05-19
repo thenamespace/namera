@@ -1,21 +1,26 @@
 import { Schema, Struct } from "effect";
 
-import { Organization, OrganizationMetadata, OrganizationSlug } from "@/auth";
+import {
+  Organization,
+  OrganizationInsert,
+  OrganizationMember,
+  OrganizationSlug,
+} from "@/auth";
 import { OrganizationId } from "@/common";
 
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
   "OrganizationError",
   {
-    code: Schema.Literals(["SLUG_ALREADY_TAKEN"]),
+    code: Schema.Literals(["SLUG_ALREADY_TAKEN", "ORG_LIMIT_REACHED"]),
     message: Schema.optional(Schema.String),
   },
 ) {}
 
 // Create Organization
-export const CreateOrganizationRequest = Schema.Struct({
-  metadata: OrganizationMetadata,
-  slug: OrganizationSlug,
-});
+export const CreateOrganizationRequest = OrganizationInsert.mapFields(
+  Struct.pick(["name", "metadata", "slug"]),
+);
+
 export const CreateOrganizationResponse = Organization;
 
 // Check if slug is available
@@ -28,7 +33,9 @@ export const CheckOrganizationSlugResponse = Schema.Struct({
 
 // List user's organizations
 export const ListOrganizationsRequest = Schema.Undefined;
-export const ListOrganizationsResponse = Schema.Array(Organization);
+export const ListOrganizationsResponse = Schema.Array(
+  OrganizationMember.mapFields(Struct.assign({ organization: Organization })),
+);
 
 // Set current user's active organization
 export const SetActiveOrganizationRequest = Schema.Struct({

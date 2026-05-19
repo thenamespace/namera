@@ -107,18 +107,6 @@ export const smartAccount = pgTable.withRLS(
         ]),
       )
       .build(),
-    // Only members with "smart_account:delete" permission can delete smart accounts
-    new PgPolicyBuilder()
-      .name("smart_account_owner_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "smart_account:delete",
-        ]),
-      )
-      .build(),
     // Admins can access all smart accounts
     new PgPolicyBuilder()
       .name("smart_account_admin_access")

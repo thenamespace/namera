@@ -25,6 +25,7 @@ export const Invitation = Schema.Struct({
   expiresAt: Schema.Date,
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 export const InvitationUpdate = createUpdateSchema(Invitation);

@@ -113,22 +113,6 @@ export const sessionKey = pgTable.withRLS(
         ]),
       )
       .build(),
-    // Only members with "session_key:delete" permission can delete session keys
-    // Only if session key belongs to org
-    new PgPolicyBuilder()
-      .name("session_key_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(
-        and([
-          onlyOrgMemberWithPermissions(table.organizationId, [
-            "session_key:delete",
-          ]),
-          onlyIfSessionKeyInOrg(table.id, table.organizationId),
-        ]),
-      )
-      .build(),
     // Admins can access all session keys
     new PgPolicyBuilder()
       .name("session_key_admin_access")

@@ -15,6 +15,23 @@ The API is the main product authorization layer. RLS is the database safety
 layer: it must prevent cross-user and cross-organization access even if an API
 query is written incorrectly.
 
+## Data Philosophy
+
+Domain tables store current state. They should answer "what is true now?" for
+users, organizations, members, roles, invitations, smart accounts, and session
+keys.
+
+Historical activity should be append-only and separate from domain tables. Future
+event/inbox tables should record important mutations such as role changes,
+member removals, invitation state changes, smart account changes, and session
+key revocations. Domain tables should keep lifecycle fields only when they are
+part of the current state, such as `deleted_at`, `removed_at`, or `revoked_at`.
+
+App-user hard deletes are avoided for domain tables. Product delete/remove/revoke
+actions should normally be implemented as API-controlled updates that set
+lifecycle fields. `app_admin` may retain hard-delete capability for maintenance,
+retention jobs, and exceptional repair work.
+
 ## Actors
 
 Postgres roles used by policies:
@@ -149,6 +166,38 @@ triggers when possible:
 - No editing or deleting system roles.
 - No privilege escalation through custom roles.
 
+## Activity and Notification Model
+
+Domain tables intentionally do not carry detailed audit columns such as
+`role_changed_by_id` or `updated_by_id` on every resource. Important mutations
+should be written to future append-only event tables.
+
+Recommended future tables:
+
+| Table                | Purpose                                                               |
+| -------------------- | --------------------------------------------------------------------- |
+| `organization_event` | Canonical append-only organization activity/audit log.                |
+| `notification`       | Per-recipient inbox/read/archive state generated from events.         |
+| `chain_event`        | Raw indexed smart contract logs keyed by chain/transaction/log index. |
+
+`organization_event` should use normal columns for queryable dimensions:
+
+```text
+id
+organization_id
+actor_user_id
+type
+entity_type
+entity_id
+target_user_id
+metadata
+created_at
+```
+
+Use `metadata` only for event-specific payload such as previous/next role ids,
+revoke reason, or chain transaction details. One event can fan out to many
+notifications; notifications should not be the source of truth for audit.
+
 ## Common Column Conventions
 
 All tables use:
@@ -158,6 +207,7 @@ All tables use:
 | `id`         | `text`                     | Primary key, generated with UUIDv7. |
 | `created_at` | `timestamp with time zone` | Creation timestamp.                 |
 | `updated_at` | `timestamp with time zone` | Last update timestamp.              |
+| `deleted_at` | `timestamp with time zone` | Nullable soft-delete marker.        |
 
 Application id types are branded strings in `packages/schema/src/common/brand.ts`.
 
@@ -384,7 +434,6 @@ Represents an organization/tenant.
 | `plan`          | `text`        | no   | Organization plan. Currently `free`.                      |
 | `slug`          | `text`        | no   | Unique public slug, 3-63 chars, alphanumeric plus hyphen. |
 | `created_by_id` | `text`        | yes  | FK to `auth.user.id`; creator of the organization.        |
-| `updated_by_id` | `text`        | yes  | FK to `auth.user.id`; last updater of the organization.   |
 | `created_at`    | `timestamptz` | no   | Created timestamp.                                        |
 | `updated_at`    | `timestamptz` | no   | Updated timestamp.                                        |
 | `deleted_at`    | `timestamptz` | yes  | Soft-delete marker from shared timestamps.                |
@@ -429,6 +478,7 @@ Represents an organization role. Roles are permission containers.
 | `permissions`     | `text[]`      | no   | Permission keys from the catalog.             |
 | `created_at`      | `timestamptz` | no   | Created timestamp.                            |
 | `updated_at`      | `timestamptz` | no   | Updated timestamp.                            |
+| `deleted_at`      | `timestamptz` | yes  | Soft-delete marker from shared timestamps.    |
 
 Indexes and constraints:
 
@@ -436,6 +486,7 @@ Indexes and constraints:
 | ------------------------------ | ----------- | ------------------------- |
 | implicit primary key           | primary key | `id`                      |
 | `role_name_organizationId_idx` | unique      | `name`, `organization_id` |
+| `role_organization_id_id_uidx` | unique      | `organization_id`, `id`   |
 | `role_organizationId_idx`      | index       | `organization_id`         |
 
 RLS:
@@ -445,7 +496,6 @@ RLS:
 | `role_select`       | `select`  | `role:read`                     |
 | `role_insert`       | `insert`  | `role:create`                   |
 | `role_update`       | `update`  | `role:update`                   |
-| `role_delete`       | `delete`  | `role:delete`                   |
 | `role_admin_access` | `all`     | `app_admin` can access all rows |
 
 API responsibilities:
@@ -453,9 +503,11 @@ API responsibilities:
 - Validate permissions against the known catalog.
 - Validate permission dependencies.
 - Prevent creating/updating roles with permissions the actor does not have.
-- Prevent editing/deleting built-in system roles.
+- Prevent editing or soft-deleting built-in system roles.
 - Require `role:assign` when assigning roles to members or invitations.
-- Prevent deleting a role that is in use.
+- Treat role deletion as a soft-delete workflow by setting `deleted_at`.
+- Prevent soft-deleting a role that is still assigned to active members or
+  pending invitations.
 
 ### `auth.member`
 
@@ -467,32 +519,30 @@ Represents a user's membership in an organization.
 | `organization_id` | `text`        | no   | FK to `auth.organization.id`, cascade delete.                                            |
 | `role_id`         | `text`        | no   | Role assigned to this member. Intended invariant: role belongs to the same organization. |
 | `user_id`         | `text`        | no   | FK to `auth.user.id`, cascade delete.                                                    |
+| `joined_at`       | `timestamptz` | no   | Membership activation timestamp.                                                         |
+| `removed_at`      | `timestamptz` | yes  | Set when the member leaves or is removed.                                                |
 | `created_at`      | `timestamptz` | no   | Created timestamp.                                                                       |
 | `updated_at`      | `timestamptz` | no   | Updated timestamp.                                                                       |
+| `deleted_at`      | `timestamptz` | yes  | Soft-delete marker from shared timestamps.                                               |
 
 Indexes and constraints:
 
-| Name                            | Type        | Columns                      |
-| ------------------------------- | ----------- | ---------------------------- |
-| implicit primary key            | primary key | `id`                         |
-| `member_organizationId_idx`     | index       | `organization_id`            |
-| `member_userId_idx`             | index       | `user_id`                    |
-| `member_user_organization_uidx` | unique      | `user_id`, `organization_id` |
-
-Recommended additional constraints:
-
-- The assigned role must belong to the same `organization_id` as the member.
-  Prefer a composite FK or trigger/check helper for this invariant.
+| Name                            | Type        | Columns                                                                  |
+| ------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| implicit primary key            | primary key | `id`                                                                     |
+| `member_organizationId_idx`     | index       | `organization_id`                                                        |
+| `member_userId_idx`             | index       | `user_id`                                                                |
+| `member_user_organization_uidx` | unique      | `user_id`, `organization_id`                                             |
+| `member_organization_role_fk`   | foreign key | `(organization_id, role_id)` references `auth.role(organization_id, id)` |
 
 RLS:
 
-| Policy                | Operation | Rule                                                                             |
-| --------------------- | --------- | -------------------------------------------------------------------------------- |
-| `member_select`       | `select`  | Requires `member:read` in `organization_id`.                                     |
-| `member_insert`       | `insert`  | Requires `member:invite` in `organization_id`, or a valid first-owner seed path. |
-| `member_update`       | `update`  | Requires `member:update` in `organization_id`.                                   |
-| `member_delete`       | `delete`  | Requires `member:remove` in `organization_id`.                                   |
-| `member_admin_access` | `all`     | `app_admin` can access all rows.                                                 |
+| Policy                | Operation | Rule                                           |
+| --------------------- | --------- | ---------------------------------------------- |
+| `member_select`       | `select`  | Requires `member:read` in `organization_id`.   |
+| `member_insert`       | `insert`  | Requires `member:invite` in `organization_id`. |
+| `member_update`       | `update`  | Requires `member:update` in `organization_id`. |
+| `member_admin_access` | `all`     | `app_admin` can access all rows.               |
 
 API responsibilities:
 
@@ -502,6 +552,10 @@ API responsibilities:
 - Prevent assigning a role with permissions greater than the actor's
   permissions.
 - Prevent removing or demoting the last owner-equivalent member.
+- Treat removal as a lifecycle update by setting `removed_at` and/or
+  `deleted_at`; keep hard delete for admin/maintenance only.
+- Write role changes, removals, rejoins, and suspensions to the future
+  organization event/inbox system instead of storing audit columns here.
 - Decide and enforce self-leave behavior.
 
 ### `auth.invitation`
@@ -519,19 +573,20 @@ Represents an invitation to join an organization.
 | `expires_at`      | `timestamptz` | no   | Invitation expiry.                                                                           |
 | `created_at`      | `timestamptz` | no   | Created timestamp.                                                                           |
 | `updated_at`      | `timestamptz` | no   | Updated timestamp.                                                                           |
+| `deleted_at`      | `timestamptz` | yes  | Soft-delete marker from shared timestamps.                                                   |
 
 Indexes and constraints:
 
-| Name                            | Type        | Columns           |
-| ------------------------------- | ----------- | ----------------- |
-| implicit primary key            | primary key | `id`              |
-| `invitation_organizationId_idx` | index       | `organization_id` |
-| `invitation_email_idx`          | index       | `email`           |
+| Name                              | Type        | Columns                                                                  |
+| --------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| implicit primary key              | primary key | `id`                                                                     |
+| `invitation_organizationId_idx`   | index       | `organization_id`                                                        |
+| `invitation_email_idx`            | index       | `email`                                                                  |
+| `invitation_organization_role_fk` | foreign key | `(organization_id, role_id)` references `auth.role(organization_id, id)` |
 
 Recommended additional constraints:
 
 - Unique pending invitation per organization/email.
-- Role must belong to the invitation's organization.
 
 RLS:
 
@@ -540,7 +595,6 @@ RLS:
 | `invitation_select`       | `select`  | `invitation:read`               |
 | `invitation_insert`       | `insert`  | `invitation:create`             |
 | `invitation_update`       | `update`  | `invitation:update`             |
-| `invitation_delete`       | `delete`  | `invitation:delete`             |
 | `invitation_admin_access` | `all`     | `app_admin` can access all rows |
 
 API responsibilities:
@@ -553,20 +607,23 @@ API responsibilities:
 - Enforce expiry, accept, reject, cancel, and resend state transitions.
 - Accept invitation by creating `auth.member` transactionally and setting the
   user's active organization.
+- Treat cancellation/deletion as a state/lifecycle update, not app-user hard
+  delete.
 
 ### `auth.verification`
 
 Stores temporary verification values such as magic-link codes, provider link
 state, and email verification tokens.
 
-| Column       | Type          | Null | Description              |
-| ------------ | ------------- | ---- | ------------------------ |
-| `id`         | `text`        | no   | Verification row id.     |
-| `identifier` | `text`        | no   | Verification identifier. |
-| `value`      | `text`        | no   | Secret value/code/token. |
-| `expires_at` | `timestamptz` | yes  | Expiry timestamp.        |
-| `created_at` | `timestamptz` | no   | Created timestamp.       |
-| `updated_at` | `timestamptz` | no   | Updated timestamp.       |
+| Column       | Type          | Null | Description                                |
+| ------------ | ------------- | ---- | ------------------------------------------ |
+| `id`         | `text`        | no   | Verification row id.                       |
+| `identifier` | `text`        | no   | Verification identifier.                   |
+| `value`      | `text`        | no   | Secret value/code/token.                   |
+| `expires_at` | `timestamptz` | no   | Expiry timestamp.                          |
+| `created_at` | `timestamptz` | no   | Created timestamp.                         |
+| `updated_at` | `timestamptz` | no   | Updated timestamp.                         |
+| `deleted_at` | `timestamptz` | yes  | Soft-delete marker from shared timestamps. |
 
 Indexes and constraints:
 
@@ -586,6 +643,8 @@ API responsibilities:
 - Own all verification lifecycle operations.
 - Enforce expiry, replay protection, and rate limits.
 - Never expose raw verification values to clients.
+- Verification rows are service/admin-owned; cleanup jobs may hard-delete
+  expired/consumed rows according to retention policy.
 
 ## Core Schema
 
@@ -607,6 +666,7 @@ Represents an organization smart account.
 | `owner`              | `text`        | no   | ECDSA address or passkey credential id.       |
 | `created_at`         | `timestamptz` | no   | Created timestamp.                            |
 | `updated_at`         | `timestamptz` | no   | Updated timestamp.                            |
+| `deleted_at`         | `timestamptz` | yes  | Soft-delete marker from shared timestamps.    |
 
 Indexes and constraints:
 
@@ -625,7 +685,6 @@ RLS:
 | `smart_account_select`       | `select`  | `smart_account:read`                                             |
 | `smart_account_insert`       | `insert`  | `smart_account:create` and `creator_id = auth_current_user_id()` |
 | `smart_account_update`       | `update`  | `smart_account:update`                                           |
-| `smart_account_delete`       | `delete`  | `smart_account:delete`                                           |
 | `smart_account_admin_access` | `all`     | `app_admin` can access all rows                                  |
 
 API responsibilities:
@@ -635,7 +694,9 @@ API responsibilities:
 - Enforce plan limits.
 - Decide which fields are immutable after creation, such as `address`,
   `entrypoint_version`, `kernel_version`, and `index`.
-- Audit account creation and ownership changes.
+- Treat deletion/archive as a soft-delete workflow by setting `deleted_at`.
+- Record creation, updates, archive/delete, and ownership/security-sensitive
+  changes in the future organization event/inbox system.
 
 ### `public.session_key`
 
@@ -653,6 +714,7 @@ Represents a session key associated with an organization smart account.
 | `data`                | `json`        | no   | `SessionKeyData`.                                |
 | `created_at`          | `timestamptz` | no   | Created timestamp.                               |
 | `updated_at`          | `timestamptz` | no   | Updated timestamp.                               |
+| `deleted_at`          | `timestamptz` | yes  | Soft-delete marker from shared timestamps.       |
 
 Indexes and constraints:
 
@@ -671,7 +733,6 @@ RLS:
 | `session_key_select`       | `select`  | `session_key:read`                                                                                                               |
 | `session_key_insert`       | `insert`  | `session_key:create`, `creator_id = auth_current_user_id()`, and referenced smart account belongs to `organization_id`           |
 | `session_key_update`       | `update`  | `session_key:update`, existing session key belongs to `organization_id`, and new `smart_account_id` belongs to `organization_id` |
-| `session_key_delete`       | `delete`  | `session_key:delete` and session key belongs to `organization_id`                                                                |
 | `session_key_admin_access` | `all`     | `app_admin` can access all rows                                                                                                  |
 
 API responsibilities:
@@ -681,7 +742,9 @@ API responsibilities:
 - Prevent creating a session key with broader capability than the actor should
   have.
 - Enforce expiry, revocation, usage limits, and audit logging.
-- Prefer a revoke workflow over hard delete if historical auditability matters.
+- Prefer a revoke/update workflow over app-user hard delete.
+- Record create, revoke, update, and use events in the future organization
+  event/inbox system when they matter to audit or notifications.
 
 ## SQL Helper Functions
 
@@ -696,7 +759,7 @@ Required behavior:
 
 ### `auth_user_has_org_access(org_id text)`
 
-Returns true when the current user has any member row in the organization.
+Returns true when the current user has an active member row in the organization.
 
 Use for coarse membership checks, such as validating
 `session.active_organization_id`.
@@ -710,6 +773,8 @@ Required behavior:
 
 - Join `auth.member` to `auth.role`.
 - Ensure role and member belong to the same organization.
+- Ignore removed or soft-deleted members.
+- Ignore soft-deleted roles.
 - Use containment semantics: `role.permissions @> required_permissions`.
 
 ### `auth_smart_account_in_org(smart_account_id text, org_id text)`
@@ -723,7 +788,7 @@ references.
 
 Returns true when the session key belongs to the given organization.
 
-Used by `session_key` update/delete policies.
+Used by `session_key` update policies and API lifecycle checks.
 
 ## Database/API Enforcement Matrix
 
@@ -750,7 +815,6 @@ Keep these checks green when changing the schema:
 - `auth.member.role_id` belongs to the same organization as the member.
 - `auth.invitation.role_id` references an organization role id.
 - `auth.invitation.role_id` belongs to the same organization as the invitation.
-- `session_key_delete` checks `session_key:delete`.
 - Policy names match their table and operation.
 - Fresh migrations do not contain stale role-name policies such as owner/admin
   string checks.
@@ -764,38 +828,32 @@ Before building the API on top of this schema, complete these items.
 
 ### P0: correctness and security blockers
 
-- Ensure generated migrations create valid same-organization role constraints
-  for `auth.member` and `auth.invitation`. The generated target should be
-  `(organization_id, role_id) -> auth.role(organization_id, id)`, and Postgres
-  requires the referenced column pair to be backed by a unique or primary-key
-  constraint.
+- Ensure generated migrations preserve valid same-organization role constraints
+  for `auth.member` and `auth.invitation`: `(organization_id, role_id) ->
+auth.role(organization_id, id)`.
 - Add a database-level invariant for "at least one owner-equivalent member
   remains" if organization ownership must be non-orphanable.
 - Add privilege-escalation protection for role creation/update/assignment:
   actors must not create, grant, or assign permissions they do not already have.
   Enforce in API and consider a DB helper/trigger for defense in depth.
-- Fix remaining Effect schema/database nullability mismatches before API
-  contracts depend on them. Nullable database columns should be
-  `Schema.NullOr(...)`, or the database columns should become `notNull()`.
+- Keep Effect schemas aligned with shared lifecycle columns such as
+  `deletedAt`.
 
 ### P1: schema and policy quality
 
 - Add system-role fields to `auth.role`, such as `key`, `system`, and possibly
   `rank`, if built-in roles need immutability and ordered privilege checks.
+- Add append-only organization event and notification/inbox tables for audit and
+  user-facing activity.
 - Include required DB fields in insert schemas unless the API supplies defaults
   elsewhere.
 - Add unique pending invitation constraint, usually a partial unique index on
   `(organization_id, lower(email)) WHERE status = 'pending'`.
-- Consider making role deletion `onDelete: restrict` for members and
-  invitations. Cascading a role delete into members/invitations is dangerous in
-  production.
 - Consider lower-cased unique indexes for case-insensitive fields:
   organization slug, email, role name, and invitation email.
 
 ### P2: operational hardening
 
-- Add audit tables/events for org deletion, role changes, member role changes,
-  invitations, smart account changes, and session key create/revoke/delete.
 - Add explicit check constraints for enum-like database text fields where useful:
   organization plan, invitation status, owner type, entrypoint/kernel versions,
   and session key type.

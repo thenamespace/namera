@@ -96,18 +96,6 @@ export const invitation = authSchema.table.withRLS(
         ]),
       )
       .build(),
-    // Only member with "invitation:delete" permission can delete invitations
-    new PgPolicyBuilder()
-      .name("invitation_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "invitation:delete",
-        ]),
-      )
-      .build(),
     // Admins can access all invitations
     new PgPolicyBuilder()
       .name("invitation_admin_access")

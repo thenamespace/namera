@@ -39,6 +39,7 @@ const BaseSessionKey = Schema.Struct({
   // Timestamps
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 const EcdsaSessionKeyData = Schema.Struct({

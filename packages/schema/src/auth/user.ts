@@ -26,6 +26,7 @@ export const UserInsert = createInsertSchema(
   "email",
   "emailVerified",
   "image",
+  "lastLoginAt",
 );
 
 export type UserMetadata = typeof UserMetadata.Type;

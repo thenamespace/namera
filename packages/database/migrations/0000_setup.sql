@@ -90,12 +90,3 @@ GRANT USAGE, SELECT ON SEQUENCES TO app_rw;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA auth
 GRANT USAGE, SELECT ON SEQUENCES TO app_rw;
-
--- Create helper function to get current user id
-CREATE OR REPLACE FUNCTION auth_current_user_id()
-RETURNS text
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT NULLIF(current_setting('app.user_id', true), '')
-$$;

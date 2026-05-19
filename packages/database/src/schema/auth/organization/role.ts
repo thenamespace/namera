@@ -77,16 +77,6 @@ export const role = authSchema.table.withRLS(
         onlyOrgMemberWithPermissions(table.organizationId, ["role:create"]),
       )
       .build(),
-    // Only members with "role:delete" permission can delete the role
-    new PgPolicyBuilder()
-      .name("role_delete")
-      .as("permissive")
-      .to(userRole)
-      .forOperation("delete")
-      .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["role:delete"]),
-      )
-      .build(),
     // Admins can access all roles
     new PgPolicyBuilder()
       .name("role_admin_access")

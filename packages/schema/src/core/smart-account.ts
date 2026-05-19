@@ -39,6 +39,7 @@ const BaseSmartAccount = Schema.Struct({
   address: EthereumAddress,
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
 });
 
 const EcdsaSmartAccount = BaseSmartAccount.mapFields(
