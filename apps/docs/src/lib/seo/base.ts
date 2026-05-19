@@ -115,6 +115,7 @@ export const getBaseSeo = () => {
       { href: appCss, rel: "stylesheet" },
       { href: canonicalUrl.toString(), rel: "canonical" },
       { href: nameraIcon, rel: "icon" },
+      { href: "/llms.txt", rel: "llms", type: "text/plain" },
     ],
     meta: [
       // Base Tags

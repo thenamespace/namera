@@ -40,6 +40,23 @@ const config = defineConfig({
       },
     }),
     nitro({
+      routeRules: {
+        "/docs/**": {
+          headers: {
+            "Cache-Control": "public, max-age=300, must-revalidate",
+          },
+        },
+        "/llms-full.txt": {
+          headers: {
+            "Cache-Control": "public, max-age=300, must-revalidate",
+          },
+        },
+        "/llms.txt": {
+          headers: {
+            "Cache-Control": "public, max-age=300, must-revalidate",
+          },
+        },
+      },
       traceDeps: takumiDeps,
     }),
     viteReact(),

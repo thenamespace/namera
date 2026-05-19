@@ -14,9 +14,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <head>
+        <link href="/llms.txt" rel="llms" type="text/plain" />
         <HeadContent />
       </head>
       <body className="min-h-screen" suppressHydrationWarning={true}>
+        <a className="sr-only" href="/llms.txt">
+          For the complete documentation index, see llms.txt.
+        </a>
         <div className="root">{children}</div>
         <Scripts />
       </body>

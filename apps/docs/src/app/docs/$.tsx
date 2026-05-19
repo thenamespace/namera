@@ -50,6 +50,7 @@ const serverLoader = createServerFn({
     };
 
     return {
+      contentPreview: text.replace(/\s+/g, " ").slice(0, 500),
       pageTree: await source.serializePageTree(source.getPageTree()),
       metadata,
       path: page.path,
@@ -76,11 +77,15 @@ const clientLoader = browserCollections.docs.createClientLoader({
         <DocsDescription className="my-0">
           {frontmatter.description}
         </DocsDescription>
+        <p className="sr-only">
+          For the complete documentation index, see{" "}
+          <a href="/llms.txt">llms.txt</a>.
+        </p>
         <div className="flex flex-row gap-2 items-center border-b pt-2 pb-4">
-          <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
+          <LLMCopyButton markdownUrl={`${page.url}.md`} />
           <ViewOptions
             githubUrl={`https://github.com/${githubDetails.org}/${githubDetails.repo}/blob/main/apps/docs/content/docs/${page.path}`}
-            markdownUrl={`${page.url}.mdx`}
+            markdownUrl={`${page.url}.md`}
           />
         </div>
         <DocsBody>
@@ -106,6 +111,11 @@ const DocsPage = () => {
 
   return (
     <AISearch>
+      <section className="sr-only">
+        <h1>{data.metadata.title}</h1>
+        <p>{data.metadata.description}</p>
+        <p>{data.contentPreview}</p>
+      </section>
       <DocsLayout
         {...baseOptions()}
         sidebar={{
@@ -152,6 +162,18 @@ export const Route = createFileRoute("/docs/$")({
   head: ({ loaderData }) => {
     // biome-ignore lint/style/noNonNullAssertion: safe
     const { metadata } = loaderData!;
-    return generateDocsSeo(metadata);
+    const seo = generateDocsSeo(metadata);
+
+    return {
+      ...seo,
+      links: [
+        ...(seo.links ?? []),
+        {
+          href: `${metadata.url}.md`,
+          rel: "alternate",
+          type: "text/markdown",
+        },
+      ],
+    };
   },
 });

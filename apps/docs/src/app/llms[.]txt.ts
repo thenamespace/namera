@@ -1,14 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { llms } from "fumadocs-core/source";
-
+import { getLLMsIndex } from "@/lib/llms";
 import { source } from "@/lib/source";
 
 export const Route = createFileRoute("/llms.txt")({
   server: {
     handlers: {
       GET() {
-        return new Response(llms(source).index());
+        return new Response(getLLMsIndex(source.getPages()), {
+          headers: {
+            "Cache-Control": "public, max-age=300, must-revalidate",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
       },
     },
   },
