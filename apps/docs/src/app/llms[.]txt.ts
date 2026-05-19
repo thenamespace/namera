@@ -11,7 +11,6 @@ export const Route = createFileRoute("/llms.txt")({
           headers: {
             "Cache-Control": "public, max-age=300, must-revalidate",
             "Content-Type": "text/plain; charset=utf-8",
-            "Last-Modified": new Date().toUTCString(),
           },
         });
       },
