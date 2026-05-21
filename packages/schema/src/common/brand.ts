@@ -1,6 +1,8 @@
 import { Schema } from "effect";
 
 // Branded Ids
+
+// Auth Tables
 export const UserId = Schema.String.pipe(Schema.brand("UserId"));
 export const SessionId = Schema.String.pipe(Schema.brand("SessionId"));
 export const AccountId = Schema.String.pipe(Schema.brand("AccountId"));
@@ -17,6 +19,13 @@ export const OrganizationRoleId = Schema.String.pipe(
   Schema.brand("OrganizationRoleId"),
 );
 export const InvitationId = Schema.String.pipe(Schema.brand("InvitationId"));
+
+// Audit Tables
+export const OrganizationEventId = Schema.String.pipe(
+  Schema.brand("OrganizationEventId"),
+);
+
+// Core Tables
 export const SmartAccountId = Schema.String.pipe(
   Schema.brand("SmartAccountId"),
 );
@@ -30,5 +39,6 @@ export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;
 export type InvitationId = typeof InvitationId.Type;
+export type OrganizationEventId = typeof OrganizationEventId.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;

@@ -5,6 +5,7 @@ import {
   invitation,
   member,
   organization,
+  organizationEvent,
   role,
   session,
   sessionKey,
@@ -25,6 +26,7 @@ export const relations = defineRelations(
     invitation,
     member,
     role,
+    organizationEvent,
   },
   (r) => ({
     account: {
@@ -67,6 +69,8 @@ export const relations = defineRelations(
       sessionKeys: r.many.sessionKey(),
       // 1 organization can have many roles
       roles: r.many.role(),
+      // 1 org can have many events
+      events: r.many.organizationEvent(),
     },
     member: {
       // 1 member can have one organization
@@ -113,6 +117,16 @@ export const relations = defineRelations(
       invitations: r.many.invitation({
         from: r.role.id,
         to: r.invitation.roleId,
+      }),
+    },
+    organizationEvent: {
+      organization: r.one.organization({
+        from: r.organizationEvent.organizationId,
+        to: r.organization.id,
+      }),
+      user: r.one.user({
+        from: r.organizationEvent.actorUserId,
+        to: r.user.id,
       }),
     },
     smartAccount: {
