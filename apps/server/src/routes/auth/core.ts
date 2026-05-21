@@ -1,54 +1,16 @@
-import type {
-  SigInMagicLinkBody,
-  VerifyMagicLinkBody,
-} from "@namera-ai/schema";
-
 import { Effect } from "effect";
 
 import { HttpServerResponse } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { AuthenticatedUser, api } from "@namera-ai/api";
-import { Auth, AuthConfig } from "@namera-ai/auth";
+import { AuthConfig } from "@namera-ai/auth";
 import { AdminDatabase, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 
-const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
-  Effect.gen(function* () {
-    const auth = yield* Auth.Auth;
-    yield* auth.magicLink.signInMagicLink(payload);
-  });
-
-const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
-  Effect.gen(function* () {
-    const auth = yield* Auth.Auth;
-    const authConfig = yield* AuthConfig.AuthConfig;
-    const res = yield* auth.magicLink.verifyMagicLink(payload);
-
-    const redirectUrl = res.isNewUser
-      ? payload.newUserCallbackUrl
-      : payload.callbackUrl;
-
-    return yield* HttpServerResponse.empty({ status: 302 })
-      .pipe(
-        HttpServerResponse.setHeader("Location", redirectUrl.toString()),
-        HttpServerResponse.setCookie(authConfig.session.cookieName, res.token, {
-          ...(authConfig.session.domain
-            ? { domain: authConfig.session.domain }
-            : {}),
-          httpOnly: true,
-          maxAge: authConfig.session.expiresIn,
-          path: "/",
-          sameSite: "lax",
-          secure: authConfig.session.secure,
-        }),
-      )
-      .pipe(Effect.orDie);
-  });
-
 const currentUserHandler = Effect.fnUntraced(function* () {
   const res = yield* AuthenticatedUser;
-  return res.user;
+  return res;
 });
 
 const listSessionsHandler = () =>
@@ -65,7 +27,9 @@ const listSessionsHandler = () =>
       )
       .pipe(Effect.orDie);
 
-    return sessions;
+    return sessions.map(({ token: _t, ...session }) => {
+      return session;
+    });
   });
 
 const logoutHandler = () =>
@@ -85,7 +49,14 @@ const logoutHandler = () =>
 
     return yield* HttpServerResponse.empty({ status: 200 }).pipe(
       HttpServerResponse.expireCookie(authConfig.session.cookieName, {
+        domain: authConfig.session.domain,
+        secure: authConfig.session.secure,
+        ...(authConfig.session.domain
+          ? { domain: authConfig.session.domain }
+          : {}),
+        httpOnly: true,
         path: "/",
+        sameSite: "lax",
       }),
       Effect.orDie,
     );
@@ -94,11 +65,10 @@ const logoutHandler = () =>
 const revokeOtherSessionsHandler = () =>
   Effect.gen(function* () {
     const authUser = yield* AuthenticatedUser;
-    const authConfig = yield* AuthConfig.AuthConfig;
     const authRepo = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
 
-    yield* db
+    const deletedSessions = yield* db
       .transaction((tx) =>
         authRepo.session
           .deleteAllSessionsExcept(authUser.user.id, authUser.session.id)
@@ -106,20 +76,13 @@ const revokeOtherSessionsHandler = () =>
       )
       .pipe(Effect.orDie);
 
-    return yield* HttpServerResponse.empty({ status: 200 }).pipe(
-      HttpServerResponse.expireCookie(authConfig.session.cookieName, {
-        path: "/",
-      }),
-      Effect.orDie,
-    );
+    return deletedSessions.length;
   });
 
 export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
-    .handle("currentUser", currentUserHandler)
+    .handle("currentUser", () => currentUserHandler())
     .handle("listSessions", () => listSessionsHandler())
     .handle("logout", () => logoutHandler())
-    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler())
-    .handle("signInMagicLink", ({ payload }) => signInMagicLinkHandler(payload))
-    .handle("magicLinkVerify", ({ query }) => magicLinkVerifyHandler(query)),
+    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler()),
 );

@@ -27,7 +27,10 @@ export type MagicLink = {
   ) => Effect.Effect<
     void,
     MagicLinkError,
-    AuthRepo.AuthRepo | Database.Database | AuthConfig.AuthConfig
+    | AuthRepo.AuthRepo
+    | Database.Database
+    | AuthConfig.AuthConfig
+    | AdminDatabase.AdminDatabase
   >;
   verifyMagicLink: (
     params: VerifyMagicLinkBody,
@@ -47,6 +50,7 @@ export const MagicLink = Context.Service<MagicLink>("MagicLink");
 
 const signInMagicLink = (params: SigInMagicLinkBody) =>
   Effect.gen(function* () {
+    const db = yield* AdminDatabase.AdminDatabase;
     const authRepo = yield* AuthRepo.AuthRepo;
     const config = yield* AuthConfig.AuthConfig;
 
@@ -54,7 +58,6 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
     yield* originCheck([
       { label: "callbackUrl", url: params.callbackUrl },
       { label: "newUserCallbackUrl", url: params.newUserCallbackUrl },
-      { label: "errorCallbackUrl", url: params.errorCallbackUrl },
     ]);
 
     // Generate and store verification token
@@ -72,27 +75,26 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
     );
 
     // Store Verification Token
-    yield* authRepo.verification.createVerification({
-      expiresAt,
-      identifier: hashed,
-      value: JSON.stringify({
-        attempt: 0,
-        email: params.email,
-        name: params.name,
-      }),
-    });
+    yield* db
+      .transaction((tx) =>
+        Effect.gen(function* () {
+          yield* authRepo.verification.createVerification({
+            expiresAt,
+            identifier: hashed,
+            value: JSON.stringify({
+              attempt: 0,
+              email: params.email,
+              name: params.name,
+              callbackUrl: params.callbackUrl.toString(),
+              newUserCallbackUrl: params.newUserCallbackUrl.toString(),
+            }),
+          });
+        }).pipe(Transaction.withTx(tx)),
+      )
+      .pipe(Effect.orDie);
 
     const url = new URL("/auth/magic-link/verify", config.baseURL);
     url.searchParams.set("token", verificationToken);
-    url.searchParams.set("callbackUrl", params.callbackUrl.toString());
-    url.searchParams.set(
-      "newUserCallbackUrl",
-      params.newUserCallbackUrl.toString(),
-    );
-    url.searchParams.set(
-      "errorCallbackUrl",
-      params.errorCallbackUrl.toString(),
-    );
 
     // TODO: Send Email
     yield* Effect.log("Magic Link: ", url.toString());
@@ -141,10 +143,14 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           email,
           name,
           attempt = 0,
+          callbackUrl,
+          newUserCallbackUrl,
         } = JSON.parse(verificationValue.value) as {
           email: string;
           name?: string | undefined;
           attempt?: number | undefined;
+          callbackUrl: string;
+          newUserCallbackUrl: string;
         };
 
         // If attempts exceeded, delete the token and fail
@@ -158,16 +164,13 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
         }
 
         // Update Attempt Count
-        yield* authRepo.verification.updateVerification(
-          verificationValue.identifier,
-          {
-            value: JSON.stringify({
-              attempt: attempt + 1,
-              email,
-              name,
-            }),
-          },
-        );
+        yield* authRepo.verification.updateVerification(verificationValue.id, {
+          value: JSON.stringify({
+            attempt: attempt + 1,
+            email,
+            name,
+          }),
+        });
 
         let isNewUser = false;
         let user = yield* authRepo.user.findUserByEmail(email);
@@ -218,11 +221,14 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           yield* Metric.update(userCountMetric, 1n);
         }
 
+        const redirectUrl = isNewUser ? newUserCallbackUrl : callbackUrl;
+
         return {
           isNewUser,
           session,
           token,
           user,
+          redirectUrl: new URL(redirectUrl),
         };
       }).pipe(Transaction.withTx(tx)),
     );

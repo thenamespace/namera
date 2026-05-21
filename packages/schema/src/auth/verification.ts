@@ -18,6 +18,7 @@ export const VerificationInsert = createInsertSchema(
   Verification,
   "identifier",
   "value",
+  "expiresAt",
 );
 
 export type Verification = typeof Verification.Type;

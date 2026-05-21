@@ -1,10 +1,4 @@
-import type {
-  Verification,
-  VerificationInsert,
-  VerificationUpdate,
-} from "@namera-ai/schema";
-
-import { Effect, Layer, Context } from "effect";
+import { Effect, Layer, Context, Schema } from "effect";
 
 import { eq } from "drizzle-orm";
 
@@ -13,6 +7,12 @@ import {
   TransactionOrDatabase,
   verification,
 } from "@namera-ai/database";
+import {
+  Verification,
+  VerificationId,
+  type VerificationInsert,
+  type VerificationUpdate,
+} from "@namera-ai/schema";
 
 export type VerificationRepo = {
   createVerification: (
@@ -25,7 +25,7 @@ export type VerificationRepo = {
     identifier: string;
   }) => Effect.Effect<void, never, Database.Database>;
   updateVerification: (
-    identifier: string,
+    verificationId: VerificationId,
     params: VerificationUpdate,
   ) => Effect.Effect<void, never, Database.Database>;
 };
@@ -61,16 +61,16 @@ export const layer = Layer.succeed(
           },
         });
 
-        return res;
+        return Schema.decodeUnknownSync(Verification)(res);
       }).pipe(Effect.orDie),
 
-    updateVerification: (identifier, params) =>
+    updateVerification: (verificationId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         yield* db
           .update(verification)
           .set(params)
-          .where(eq(verification.id, identifier));
+          .where(eq(verification.id, verificationId));
       }).pipe(Effect.orDie),
   }),
 );

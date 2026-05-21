@@ -48,7 +48,7 @@ export const role = authSchema.table.withRLS(
       .notNull()
       .$type<OrganizationRoleMetadata>()
       .default(sql`'{}'::jsonb`),
-    permissions: text("permissions").array().notNull().$type<Permission[]>(),
+    permissions: text("permissions").array().notNull().$type<Permission>(),
     isSystem: boolean("is_system").notNull().default(false),
     version: integer("version").notNull().default(0),
     ...timestamps,

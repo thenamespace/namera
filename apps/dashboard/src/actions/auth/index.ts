@@ -23,14 +23,10 @@ export const signInWithMagicLink = async (
       const successCallback = new URL("/dashboard", env.baseUrl);
       successCallback.searchParams.set("success", "true");
 
-      const errorCallback = new URL("/auth", env.baseUrl);
-      errorCallback.searchParams.set("success", "false");
-
-      yield* client.auth.signInMagicLink({
+      yield* client.magicLink.signIn({
         payload: {
           ...data,
           callbackUrl: successCallback,
-          errorCallbackUrl: errorCallback,
           newUserCallbackUrl: successCallback,
         },
       });

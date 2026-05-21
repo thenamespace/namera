@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useStep } from "usehooks-ts";
 
+import { authMiddleware } from "@/actions/middlewares";
 import { TransitionWrapper } from "@/components/wrappers";
 import { NameraIcon } from "@namera-ai/ui/icons";
 
@@ -40,10 +41,7 @@ const AuthPage = () => {
 
 export const Route = createFileRoute("/auth/")({
   beforeLoad: async () => {
-    // const currentUser = await getCurrentUser();
-    // if (currentUser) {
-    //   throw redirect({ to: "/dashboard" });
-    // }
+    return await authMiddleware();
   },
   component: AuthPage,
 });

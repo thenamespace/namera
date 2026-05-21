@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema, Context } from "effect";
 
-import { sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import {
   type Database,
@@ -31,7 +31,7 @@ export type SessionRepo = {
   deleteAllSessionsExcept: (
     userId: UserId,
     exceptSessionId: SessionId,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<Session[], never, Database.Database>;
   setActiveOrganization: (
     sessionId: SessionId,
     userId: UserId,
@@ -55,11 +55,14 @@ export const layer = Layer.succeed(
     deleteAllSessionsExcept: (userId, exceptSessionId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        yield* db
+        const res = yield* db
           .delete(session)
           .where(
-            sql`${session.userId} = ${userId} AND ${session.id} != ${exceptSessionId}`,
-          );
+            and(eq(session.userId, userId), ne(session.id, exceptSessionId)),
+          )
+          .returning();
+
+        return res;
       }).pipe(Effect.orDie),
     deleteSession: (id) =>
       Effect.gen(function* () {

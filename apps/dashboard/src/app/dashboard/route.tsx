@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 
-// import { getCurrentUser } from "@/actions";
+import { authMiddleware } from "@/actions/middlewares";
 import { NotFound } from "@/components/misc";
 import { SettingsSidebar, Sidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@namera-ai/ui/components/ui/sidebar";
@@ -25,11 +25,7 @@ const DashboardLayout = () => {
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
-    // const currentUser = await getCurrentUser();
-    // if (!currentUser) {
-    //   throw redirect({ to: "/auth" });
-    // }
-    // return currentUser;
+    return await authMiddleware();
   },
   component: DashboardLayout,
   loader: () => {
