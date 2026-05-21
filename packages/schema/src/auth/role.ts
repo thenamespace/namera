@@ -1,28 +1,38 @@
 import { Schema } from "effect";
 
-import { MetadataIcon, OrganizationId, OrganizationRoleId } from "@/common";
+import {
+  MetadataDescription,
+  MetadataIcon,
+  MetadataName,
+  OrganizationId,
+  OrganizationRoleId,
+} from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
 import { Permission } from "./permissions";
 
 export const OrganizationRoleMetadata = Schema.Struct({
+  name: MetadataName,
   logo: MetadataIcon,
+  description: Schema.optional(MetadataDescription),
 });
 
 export const OrganizationRole = Schema.Struct({
   id: OrganizationRoleId,
-  name: Schema.String.check(
+  organizationId: OrganizationId,
+  key: Schema.String.check(
     Schema.isPattern(/^[a-zA-Z0-9-_]+$/, {
       message:
-        "Name must be alphanumeric and can contain hyphens and underscores",
+        "Key must be alphanumeric and can contain hyphens and underscores",
     }),
     Schema.isLengthBetween(3, 128, {
-      message: "Name must be between 3 and 128 characters long",
+      message: "Key must be between 3 and 128 characters long",
     }),
   ),
-  metadata: OrganizationRoleMetadata,
-  organizationId: OrganizationId,
   permissions: Schema.Array(Permission),
+  metadata: OrganizationRoleMetadata,
+  isSystem: Schema.Boolean,
+  version: Schema.Int,
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
   deletedAt: Schema.NullOr(Schema.Date),
@@ -31,10 +41,10 @@ export const OrganizationRole = Schema.Struct({
 export const OrganizationRoleUpdate = createUpdateSchema(OrganizationRole);
 export const OrganizationRoleInsert = createInsertSchema(
   OrganizationRole,
-  "name",
-  "metadata",
   "organizationId",
+  "key",
   "permissions",
+  "metadata",
 );
 
 export type OrganizationRoleMetadata = typeof OrganizationRoleMetadata.Type;

@@ -17,4 +17,11 @@ export const MetadataName = Schema.String.check(
   }),
 );
 
+export const MetadataDescription = Schema.String.check(
+  Schema.isLengthBetween(3, 1024, {
+    message: "Description must be between 3 and 1024 characters long",
+  }),
+);
+
 export type MetadataName = typeof MetadataName.Type;
+export type MetadataDescription = typeof MetadataDescription.Type;

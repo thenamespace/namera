@@ -6,7 +6,14 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, json, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import { authSchema } from "@/schema/auth/common";
 import {
@@ -32,18 +39,23 @@ export const role = authSchema.table.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<OrganizationRoleId>(),
-    name: text("name").notNull(),
-    metadata: json("metadata").notNull().$type<OrganizationRoleMetadata>(),
     organizationId: text("organization_id")
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
-    permissions: text("permissions").array().notNull().$type<Permission>(),
+    key: text("key").notNull(),
+    metadata: jsonb("metadata")
+      .notNull()
+      .$type<OrganizationRoleMetadata>()
+      .default(sql`'{}'::jsonb`),
+    permissions: text("permissions").array().notNull().$type<Permission[]>(),
+    isSystem: boolean("is_system").notNull().default(false),
+    version: integer("version").notNull().default(0),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("role_name_organizationId_idx")
-      .on(table.name, table.organizationId)
+    uniqueIndex("role_key_organizationId_idx")
+      .on(table.key, table.organizationId)
       .where(sql`${table.deletedAt} IS NULL`),
     uniqueIndex("role_organization_id_id_uidx").on(
       table.organizationId,
