@@ -12,6 +12,7 @@
     { "path": "../database" },
     { "path": "../domain" },
     { "path": "../schema" },
-    { "path": "../utils" }
+    { "path": "../utils" },
+    { "path": "../telemetry" }
   ]
 }

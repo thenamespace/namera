@@ -117,6 +117,7 @@
         "@namera-ai/database": "workspace:*",
         "@namera-ai/domain": "workspace:*",
         "@namera-ai/schema": "workspace:*",
+        "@namera-ai/telemetry": "workspace:*",
         "@namera-ai/utils": "workspace:*",
         "effect": "catalog:",
       },

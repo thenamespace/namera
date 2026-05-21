@@ -1,14 +1,20 @@
-import { Clock, Duration, Effect, Layer, Context } from "effect";
+import type { HttpServerRequest } from "effect/unstable/http";
 
+import { Effect, Layer, Context, Metric, DateTime } from "effect";
+
+import { createNewUser, getHttpRequestMetadata } from "@/helpers";
 import { originCheck } from "@/helpers/origin";
 import { AdminDatabase, Transaction, type Database } from "@namera-ai/database";
-import { AuthRepo } from "@namera-ai/domain";
+import * as AuthRepo from "@namera-ai/domain/auth";
+import * as CoreRepo from "@namera-ai/domain/core";
 import {
+  Email,
   MagicLinkError,
   type SigInMagicLinkBody,
   type VerifyMagicLinkBody,
   type VerifyMagicLinkResponse,
 } from "@namera-ai/schema";
+import { userCountMetric } from "@namera-ai/telemetry/metrics";
 import { base64Url } from "@namera-ai/utils/base64";
 import { createHash } from "@namera-ai/utils/hash";
 import { generateRandomString } from "@namera-ai/utils/random";
@@ -28,6 +34,8 @@ export type MagicLink = {
   ) => Effect.Effect<
     VerifyMagicLinkResponse,
     MagicLinkError,
+    | HttpServerRequest.HttpServerRequest
+    | CoreRepo.CoreRepo
     | AuthRepo.AuthRepo
     | Database.Database
     | AuthConfig.AuthConfig
@@ -42,12 +50,14 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
     const authRepo = yield* AuthRepo.AuthRepo;
     const config = yield* AuthConfig.AuthConfig;
 
+    // Check urls origin, to prevent CSRF
     yield* originCheck([
       { label: "callbackUrl", url: params.callbackUrl },
       { label: "newUserCallbackUrl", url: params.newUserCallbackUrl },
       { label: "errorCallbackUrl", url: params.errorCallbackUrl },
     ]);
 
+    // Generate and store verification token
     const verificationToken = generateRandomString(32, "A-Z", "a-z");
     const hash = yield* Effect.promise(() =>
       createHash("SHA-256").digest(new TextEncoder().encode(verificationToken)),
@@ -56,9 +66,9 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
       padding: false,
     });
 
-    const expiresAt = new Date(
-      (yield* Clock.currentTimeMillis) +
-        Duration.toMillis(config.emailVerification.expiresIn),
+    const expiresAt = (yield* DateTime.now).pipe(
+      DateTime.addDuration(config.emailVerification.expiresIn),
+      DateTime.toDate,
     );
 
     // Store Verification Token
@@ -94,6 +104,8 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
     const authRepo = yield* AuthRepo.AuthRepo;
     const config = yield* AuthConfig.AuthConfig;
 
+    const requestMetadata = yield* getHttpRequestMetadata;
+
     const hash = yield* Effect.promise(() =>
       createHash("SHA-256").digest(new TextEncoder().encode(params.token)),
     );
@@ -117,7 +129,9 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           );
         }
 
-        if (verificationValue.expiresAt < new Date()) {
+        const now = (yield* DateTime.now).pipe(DateTime.toDate);
+
+        if (verificationValue.expiresAt < now) {
           return yield* Effect.fail(
             new MagicLinkError({ code: "TOKEN_EXPIRED" }),
           );
@@ -160,11 +174,11 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
 
         // Create User if not found
         if (!user) {
-          user = yield* authRepo.user.createUser({
-            email: email,
+          user = yield* createNewUser({
+            email: Email.make(email),
+            name,
             emailVerified: true,
-            id: undefined,
-            name: name ?? "User",
+            image: null,
           });
           isNewUser = true;
         }
@@ -176,22 +190,31 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           });
         }
 
-        const sessionExpiredAt = new Date(
-          (yield* Clock.currentTimeMillis) +
-            Duration.toMillis(config.session.expiresIn),
+        const sessionExpiresAt = (yield* DateTime.now).pipe(
+          DateTime.addDuration(config.session.expiresIn),
+          DateTime.toDate,
         );
         const token = generateRandomString(32, "A-Z", "a-z", "0-9");
 
+        // TODO: Check and set a active organization if user is part of any organization
+
         const session = yield* authRepo.session.createSession({
-          expiresAt: sessionExpiredAt,
+          expiresAt: sessionExpiresAt,
           token,
           userId: user.id,
-          // TODO: Pass IP and User Agent from params/headers
+          ipAddress: requestMetadata.ipAddress,
+          userAgent: requestMetadata.userAgent,
+          activeOrganizationId: null,
         });
 
         yield* authRepo.verification.deleteVerification({
           identifier: verificationValue.identifier,
         });
+
+        if (isNewUser) {
+          // Update user count metric
+          yield* Metric.update(userCountMetric, 1n);
+        }
 
         return {
           isNewUser,

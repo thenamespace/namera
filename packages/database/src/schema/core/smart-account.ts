@@ -14,7 +14,7 @@ import { sql } from "drizzle-orm";
 import {
   index,
   integer,
-  json,
+  jsonb,
   pgTable,
   text,
   uniqueIndex,
@@ -48,7 +48,7 @@ export const smartAccount = pgTable.withRLS(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "no action" }),
-    metadata: json("metadata").notNull().$type<SmartAccountMetadata>(),
+    metadata: jsonb("metadata").notNull().$type<SmartAccountMetadata>(),
     entryPointVersion: text("entrypoint_version")
       .notNull()
       .$type<EntrypointVersion>(),

@@ -11,7 +11,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { AuthenticatedUser, api } from "@namera-ai/api";
 import { Auth, AuthConfig } from "@namera-ai/auth";
 import { AdminDatabase, Transaction } from "@namera-ai/database";
-import { AuthRepo } from "@namera-ai/domain";
+import * as AuthRepo from "@namera-ai/domain/auth";
 
 const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
   Effect.gen(function* () {

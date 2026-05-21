@@ -9,7 +9,14 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { foreignKey, index, json, pgTable, text } from "drizzle-orm/pg-core";
+import {
+  foreignKey,
+  index,
+  json,
+  jsonb,
+  pgTable,
+  text,
+} from "drizzle-orm/pg-core";
 
 import { organization } from "@/schema/auth";
 import { SessionKeyMetadata } from "@namera-ai/schema";
@@ -35,7 +42,7 @@ export const sessionKey = pgTable.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<SessionKeyId>(),
-    metadata: json("metadata").notNull().$type<SessionKeyMetadata>(),
+    metadata: jsonb("metadata").notNull().$type<SessionKeyMetadata>(),
     creatorId: text("creator_id")
       .notNull()
       .$type<UserId>()
@@ -49,7 +56,7 @@ export const sessionKey = pgTable.withRLS(
       .notNull()
       .$type<SerializedAccount[]>(),
     type: text("type").notNull().$type<SessionKeyType>(),
-    data: json("data").notNull().$type<SessionKeyData>(),
+    data: jsonb("data").notNull().$type<SessionKeyData>(),
     ...timestamps,
   },
   (table) => [

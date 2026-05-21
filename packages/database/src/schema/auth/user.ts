@@ -1,7 +1,7 @@
 import type { Email, UserId, UserMetadata } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { boolean, json, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -24,10 +24,7 @@ export const user = authSchema.table.withRLS(
     email: text("email").notNull().$type<Email>(),
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
-    metadata: json("metadata")
-      .notNull()
-      .$type<UserMetadata>()
-      .default(sql`{}`),
+    metadata: jsonb("metadata").notNull().$type<UserMetadata>(),
     lastLoginAt: createTimestampField("last_login_at", {
       mode: "date",
       withTimezone: true,

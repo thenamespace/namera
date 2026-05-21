@@ -9,7 +9,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { api, AuthenticatedUser, Unauthorized } from "@namera-ai/api";
 import { Database, Transaction } from "@namera-ai/database";
-import { CoreRepo } from "@namera-ai/domain";
+import * as CoreRepo from "@namera-ai/domain/core";
 
 const getSmartAccount = (params: GetSmartAccountRequest) =>
   Effect.gen(function* () {

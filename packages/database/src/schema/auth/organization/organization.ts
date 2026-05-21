@@ -6,7 +6,7 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { authSchema } from "@/schema/auth/common";
 import { user } from "@/schema/auth/user";
@@ -36,7 +36,7 @@ export const organization = authSchema.table.withRLS(
       .$defaultFn(generateUniqueId)
       .$type<OrganizationId>(),
     name: text("name").notNull(),
-    metadata: json("metadata").notNull().$type<OrganizationMetadata>(),
+    metadata: jsonb("metadata").notNull().$type<OrganizationMetadata>(),
     plan: text("plan").notNull().$type<OrganizationPlan>(),
     slug: text("slug").notNull().$type<OrganizationSlug>(),
     createdById: text("created_by_id")

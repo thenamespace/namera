@@ -26,6 +26,7 @@ export const UserInsert = createInsertSchema(
   "email",
   "emailVerified",
   "image",
+  "metadata",
   "lastLoginAt",
 );
 
