@@ -9,6 +9,9 @@ export const AccountId = Schema.String.pipe(Schema.brand("AccountId"));
 export const VerificationId = Schema.String.pipe(
   Schema.brand("VerificationId"),
 );
+export const UserPreferenceId = Schema.String.pipe(
+  Schema.brand("UserPreferenceId"),
+);
 export const OrganizationId = Schema.String.pipe(
   Schema.brand("OrganizationId"),
 );
@@ -35,6 +38,7 @@ export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;
+export type UserPreferenceId = typeof UserPreferenceId.Type;
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;

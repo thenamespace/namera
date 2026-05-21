@@ -11,6 +11,7 @@ import {
   sessionKey,
   smartAccount,
   user,
+  userPreference,
   verification,
 } from "../schema";
 
@@ -27,6 +28,7 @@ export const relations = defineRelations(
     member,
     role,
     organizationEvent,
+    userPreference,
   },
   (r) => ({
     account: {
@@ -48,16 +50,25 @@ export const relations = defineRelations(
       accounts: r.many.account(),
       // 1 user can have many sessions
       sessions: r.many.session(),
-      // 1 user can have many smart accounts
-      smartAccounts: r.many.smartAccount(),
-      // 1 user can have many session keys
-      sessionKeys: r.many.sessionKey(),
       // 1 user can have many invitations
       invitations: r.many.invitation(),
       // 1 user can be member of many organizations
       members: r.many.member(),
+      // 1 user can have 1 user preference
+      userPreference: r.one.userPreference(),
+      // 1 user can have many smart accounts
+      smartAccounts: r.many.smartAccount(),
+      // 1 user can have many session keys
+      sessionKeys: r.many.sessionKey(),
     },
     verification: {},
+    userPreference: {
+      // 1 user preference can have one user
+      user: r.one.user({
+        from: r.userPreference.userId,
+        to: r.user.id,
+      }),
+    },
     organization: {
       // 1 organization can have many invitations
       invitations: r.many.invitation(),
