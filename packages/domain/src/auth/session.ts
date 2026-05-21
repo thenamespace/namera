@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema, Context } from "effect";
 
-import { and, eq, ne } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 import {
   type Database,
@@ -58,13 +58,13 @@ export const layer = Layer.succeed(
         yield* db
           .delete(session)
           .where(
-            and(eq(session.userId, userId), ne(session.id, exceptSessionId)),
+            sql`${session.userId} = ${userId} AND ${session.id} != ${exceptSessionId}`,
           );
       }).pipe(Effect.orDie),
     deleteSession: (id) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        yield* db.delete(session).where(eq(session.id, id));
+        yield* db.delete(session).where(sql`${session.id} = ${id}`);
       }).pipe(Effect.orDie),
     findSessionByToken: (token) =>
       Effect.gen(function* () {
@@ -95,7 +95,9 @@ export const layer = Layer.succeed(
           .set({
             activeOrganizationId: organizationId,
           })
-          .where(and(eq(session.id, sessionId), eq(session.userId, userId)));
+          .where(
+            sql`${session.id} = ${sessionId} AND ${session.userId} = ${userId}`,
+          );
       }).pipe(Effect.orDie),
   }),
 );

@@ -25,7 +25,8 @@ import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
-  onlyOrgMemberWithPermissions,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
   onlyUserId,
   PgPolicyBuilder,
 } from "../policy";
@@ -62,20 +63,33 @@ export const smartAccount = pgTable.withRLS(
     index("smart_account_organizationId_idx").on(table.organizationId),
     index("smart_account_creatorId_idx").on(table.creatorId),
     index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
+    index("smart_account_org_owner_index_idx").on(
+      table.organizationId,
+      table.owner,
+      table.index.desc(),
+    ),
     uniqueIndex("smart_account_address_uidx").on(table.address),
-    // Only members with "smart_account:read" permission can select it
+    uniqueIndex("smart_account_organization_id_id_uidx").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("smart_account_organization_owner_index_uidx").on(
+      table.organizationId,
+      table.owner,
+      table.index,
+    ),
     new PgPolicyBuilder()
       .name("smart_account_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "smart_account:read",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Only members with "smart_account:create" permission can create smart accounts
     new PgPolicyBuilder()
       .name("smart_account_insert")
       .as("permissive")
@@ -84,30 +98,29 @@ export const smartAccount = pgTable.withRLS(
       .withCheck(
         and([
           onlyUserId(table.creatorId),
-          onlyOrgMemberWithPermissions(table.organizationId, [
-            "smart_account:create",
-          ]),
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Only members with "smart_account:update" permission can update smart accounts
     new PgPolicyBuilder()
       .name("smart_account_owner_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "smart_account:update",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "smart_account:update",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Admins can access all smart accounts
     new PgPolicyBuilder()
       .name("smart_account_admin_access")
       .as("permissive")

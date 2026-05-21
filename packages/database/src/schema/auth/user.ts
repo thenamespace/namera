@@ -10,7 +10,7 @@ import {
   timestamps,
   userRole,
 } from "../common";
-import { onlyUserId, PgPolicyBuilder } from "../policy";
+import { and, onlyIfNotDeleted, onlyUserId, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 
 // User Table
@@ -35,14 +35,16 @@ export const user = authSchema.table.withRLS(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("user_email_uidx").on(table.email),
+    uniqueIndex("user_email_uidx")
+      .on(table.email)
+      .where(sql`${table.deletedAt} IS NULL`),
     // Users can only select themselves
     new PgPolicyBuilder()
       .name("user_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyUserId(table.id))
+      .using(and([onlyUserId(table.id), onlyIfNotDeleted(table.deletedAt)]))
       .build(),
     // Users can only update themselves
     new PgPolicyBuilder()
@@ -50,8 +52,8 @@ export const user = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyUserId(table.id))
-      .withCheck(onlyUserId(table.id))
+      .using(and([onlyUserId(table.id), onlyIfNotDeleted(table.deletedAt)]))
+      .withCheck(and([onlyUserId(table.id), onlyIfNotDeleted(table.deletedAt)]))
       .build(),
     // Admins can access all users
     new PgPolicyBuilder()

@@ -10,7 +10,7 @@ import {
   timestamps,
   userRole,
 } from "../common";
-import { onlyUserId, PgPolicyBuilder } from "../policy";
+import { and, onlyIfNotDeleted, onlyUserId, PgPolicyBuilder } from "../policy";
 import { authSchema } from "./common";
 import { user } from "./user";
 
@@ -57,7 +57,7 @@ export const account = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyUserId(table.userId))
+      .using(and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]))
       .build(),
     // Users can only update their own accounts
     new PgPolicyBuilder()
@@ -65,8 +65,10 @@ export const account = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyUserId(table.userId))
-      .withCheck(onlyUserId(table.userId))
+      .using(and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]))
+      .withCheck(
+        and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]),
+      )
       .build(),
     // Users can only insert their own accounts such as linking google etc.
     new PgPolicyBuilder()
@@ -74,7 +76,9 @@ export const account = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
-      .withCheck(onlyUserId(table.userId))
+      .withCheck(
+        and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]),
+      )
       .build(),
     // Admins can access all accounts
     new PgPolicyBuilder()

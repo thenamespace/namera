@@ -16,6 +16,7 @@ export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError
       "ORG_LIMIT_REACHED",
       "ORGANIZATION_NOT_FOUND",
       "ORGANIZATION_MEMBER_NOT_FOUND",
+      "ORGANIZATION_PERMISSION_DENIED",
     ]),
     message: Schema.optional(Schema.String),
   },
@@ -92,3 +93,7 @@ export type SetActiveOrganizationResponse =
 export type GetFullOrganizationRequest = typeof GetFullOrganizationRequest.Type;
 export type GetFullOrganizationResponse =
   typeof GetFullOrganizationResponse.Type;
+export type UpdateOrganizationRequest = typeof UpdateOrganizationRequest.Type;
+export type UpdateOrganizationResponse = typeof UpdateOrganizationResponse.Type;
+export type DeleteOrganizationRequest = typeof DeleteOrganizationRequest.Type;
+export type DeleteOrganizationResponse = typeof DeleteOrganizationResponse.Type;

@@ -8,7 +8,7 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { foreignKey, index, text } from "drizzle-orm/pg-core";
+import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { authSchema } from "@/schema/auth/common";
 import { user } from "@/schema/auth/user";
@@ -19,7 +19,12 @@ import {
   timestamps,
   userRole,
 } from "@/schema/common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  PgPolicyBuilder,
+} from "@/schema/policy";
 
 import { role } from "./role";
 
@@ -57,46 +62,56 @@ export const invitation = authSchema.table.withRLS(
     }),
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
-    // Only Members with "invitation:read" permission can select invitations
+    index("invitation_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+    ),
+    index("invitation_email_status_idx").on(table.email, table.status),
+    uniqueIndex("invitation_pending_organization_email_uidx")
+      .on(table.organizationId, table.email)
+      .where(sql`${table.status} = 'pending' AND ${table.deletedAt} IS NULL`),
     new PgPolicyBuilder()
       .name("invitation_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["invitation:read"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .build(),
-    // Only member with "invitation:create" permission can create invitations
     new PgPolicyBuilder()
       .name("invitation_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "invitation:create",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Only member with "invitation:update" permission can update invitations
     new PgPolicyBuilder()
       .name("invitation_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "invitation:update",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "invitation:update",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Admins can access all invitations
     new PgPolicyBuilder()
       .name("invitation_admin_access")
       .as("permissive")

@@ -10,7 +10,14 @@ import {
   timestamps,
   userRole,
 } from "../common";
-import { and, onlyOrgMember, onlyUserId, or, PgPolicyBuilder } from "../policy";
+import {
+  and,
+  onlyIfNotDeleted,
+  onlyUserId,
+  or,
+  PgPolicyBuilder,
+  onlyActorWithOrgAccess,
+} from "../policy";
 import { authSchema } from "./common";
 import { organization } from "./organization";
 import { user } from "./user";
@@ -54,7 +61,7 @@ export const session = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyUserId(table.userId))
+      .using(and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]))
       .build(),
     // Users can only update their own sessions
     new PgPolicyBuilder()
@@ -62,14 +69,15 @@ export const session = authSchema.table.withRLS(
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyUserId(table.userId))
+      .using(and([onlyUserId(table.userId), onlyIfNotDeleted(table.deletedAt)]))
       .withCheck(
         and([
           onlyUserId(table.userId),
+          onlyIfNotDeleted(table.deletedAt),
           // only org that user is part of
           or([
             sql`${table.activeOrganizationId} IS NULL`,
-            onlyOrgMember(table.activeOrganizationId),
+            onlyActorWithOrgAccess(table.activeOrganizationId),
           ]),
         ]),
       )

@@ -17,7 +17,12 @@ import {
   timestamps,
   userRole,
 } from "@/schema/common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  PgPolicyBuilder,
+} from "@/schema/policy";
 
 import { role } from "./role";
 
@@ -57,41 +62,54 @@ export const member = authSchema.table.withRLS(
     }),
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
-    uniqueIndex("member_user_organization_uidx").on(
-      table.userId,
-      table.organizationId,
-    ),
-    // Only Member with "member:read" permission can select members
+    uniqueIndex("member_user_organization_uidx")
+      .on(table.userId, table.organizationId)
+      .where(sql`${table.deletedAt} IS NULL AND ${table.removedAt} IS NULL`),
+    index("member_active_organization_user_idx")
+      .on(table.organizationId, table.userId)
+      .where(sql`${table.deletedAt} IS NULL AND ${table.removedAt} IS NULL`),
     new PgPolicyBuilder()
       .name("member_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["member:read"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+          sql`${table.removedAt} IS NULL`,
+        ]),
       )
       .build(),
-    // Only Member with "member:invite" permission can insert members or if user is the first member
     new PgPolicyBuilder()
       .name("member_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, ["member:invite"]), // TODO: check this.
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+          sql`${table.removedAt} IS NULL`,
+        ]),
       )
       .build(),
-    // Only Member with "member:update" permission can update members
     new PgPolicyBuilder()
       .name("member_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["member:update"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, ["member:update"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .build(),
     // Admins can access all members

@@ -9,7 +9,7 @@ import type {
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { index, json, pgTable, text } from "drizzle-orm/pg-core";
+import { foreignKey, index, json, pgTable, text } from "drizzle-orm/pg-core";
 
 import { organization } from "@/schema/auth";
 import { SessionKeyMetadata } from "@namera-ai/schema";
@@ -18,9 +18,9 @@ import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
-  onlyIfSessionKeyInOrg,
   onlyIfSmartAccountInOrg,
-  onlyOrgMemberWithPermissions,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
   onlyUserId,
   PgPolicyBuilder,
 } from "../policy";
@@ -44,10 +44,7 @@ export const sessionKey = pgTable.withRLS(
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
-    smartAccountId: text("smart_account_id")
-      .notNull()
-      .$type<SmartAccountId>()
-      .references(() => smartAccount.id, { onDelete: "cascade" }),
+    smartAccountId: text("smart_account_id").notNull().$type<SmartAccountId>(),
     serializedAccounts: json("serialized_accounts")
       .notNull()
       .$type<SerializedAccount[]>(),
@@ -56,24 +53,31 @@ export const sessionKey = pgTable.withRLS(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.smartAccountId],
+      foreignColumns: [smartAccount.organizationId, smartAccount.id],
+      name: "session_key_organization_smart_account_fk",
+    }),
     index("session_key_organizationId_idx").on(table.organizationId),
     index("session_key_smartAccountId_idx").on(table.smartAccountId),
+    index("session_key_organization_smartAccount_idx").on(
+      table.organizationId,
+      table.smartAccountId,
+    ),
     index("session_key_creator_idx").on(table.creatorId),
     index("session_key_type_idx").on(table.type),
-    // Only org members can select their own session keys
     new PgPolicyBuilder()
       .name("session_key_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, [
-          "session_key:read",
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Only org members with "session_key:update" permission can update session keys
-    // only if session key and smart account belongs to org
     new PgPolicyBuilder()
       .name("session_key_update")
       .as("permissive")
@@ -81,23 +85,18 @@ export const sessionKey = pgTable.withRLS(
       .forOperation("update")
       .using(
         and([
-          onlyOrgMemberWithPermissions(table.organizationId, [
-            "session_key:update",
-          ]),
-          onlyIfSessionKeyInOrg(table.id, table.organizationId),
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .withCheck(
         and([
-          onlyOrgMemberWithPermissions(table.organizationId, [
-            "session_key:update",
-          ]),
+          onlyActorWithOrgAccess(table.organizationId),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Only members with "session_key:create" permission can insert session keys
-    // Only if creator is the current user, smart account belongs to org,
     new PgPolicyBuilder()
       .name("session_key_insert")
       .as("permissive")
@@ -106,14 +105,12 @@ export const sessionKey = pgTable.withRLS(
       .withCheck(
         and([
           onlyUserId(table.creatorId),
-          onlyOrgMemberWithPermissions(table.organizationId, [
-            "session_key:create",
-          ]),
+          onlyActorWithOrgAccess(table.organizationId),
           onlyIfSmartAccountInOrg(table.smartAccountId, table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
         ]),
       )
       .build(),
-    // Admins can access all session keys
     new PgPolicyBuilder()
       .name("session_key_admin_access")
       .as("permissive")

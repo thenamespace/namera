@@ -1,7 +1,5 @@
 // oxlint-disable no-underscore-dangle
 
-import type { Permission } from "@namera-ai/schema";
-
 import { type ColumnType, sql, type SQL } from "drizzle-orm";
 import {
   ExtraConfigColumn,
@@ -27,19 +25,11 @@ export const or = (policies: SQL[]) =>
 export const onlyUserId = (id: PolicyColumn) =>
   sql`auth_current_user_id() = ${id}`;
 
-export const onlyOrgMember = (orgId: PolicyColumn) =>
-  sql`auth_user_has_org_access(${orgId})`;
+export const onlyActorWithOrgAccess = (orgId: PolicyColumn) =>
+  sql`auth_actor_has_org_access(${orgId})`;
 
-export const onlyOrgMemberWithPermissions = (
-  orgId: PolicyColumn,
-  permissions: Permission[],
-) => {
-  const permissionList = permissions
-    .map((permission) => `'${permission.replaceAll("'", "''")}'`)
-    .join(", ");
-
-  return sql`auth_user_has_permissions_in_org(${orgId}, ARRAY[${sql.raw(permissionList)}]::text[])`;
-};
+export const onlyIfNotDeleted = (deletedAt: PolicyColumn) =>
+  sql`${deletedAt} IS NULL`;
 
 export const onlyIfSmartAccountInOrg = (
   smartAccountId: PolicyColumn,

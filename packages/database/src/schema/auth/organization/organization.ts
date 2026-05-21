@@ -17,7 +17,12 @@ import {
   timestamps,
   userRole,
 } from "@/schema/common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  PgPolicyBuilder,
+} from "@/schema/policy";
 import { OrganizationPlan } from "@namera-ai/schema";
 
 // Organization Table
@@ -31,7 +36,7 @@ export const organization = authSchema.table.withRLS(
       .$defaultFn(generateUniqueId)
       .$type<OrganizationId>(),
     name: text("name").notNull(),
-    metadata: json("metadata").$type<OrganizationMetadata>(),
+    metadata: json("metadata").notNull().$type<OrganizationMetadata>(),
     plan: text("plan").notNull().$type<OrganizationPlan>(),
     slug: text("slug").notNull().$type<OrganizationSlug>(),
     createdById: text("created_by_id")
@@ -40,25 +45,39 @@ export const organization = authSchema.table.withRLS(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("organization_slug_uidx").on(lower(table.slug)),
-    // Only members with "org:read" permission can select it
+    uniqueIndex("organization_slug_uidx")
+      .on(lower(table.slug))
+      .where(sql`${table.deletedAt} IS NULL`),
     new PgPolicyBuilder()
       .name("organization_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMemberWithPermissions(table.id, ["org:read"]))
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
       .build(),
-    // Only member with org:update permission can update the organization
     new PgPolicyBuilder()
       .name("organization_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
-      .using(onlyOrgMemberWithPermissions(table.id, ["org:update"]))
-      .withCheck(onlyOrgMemberWithPermissions(table.id, ["org:update"]))
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .withCheck(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
       .build(),
-    // Admins can access all organizations
     new PgPolicyBuilder()
       .name("organization_admin_access")
       .as("permissive")

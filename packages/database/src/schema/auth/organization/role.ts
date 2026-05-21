@@ -15,7 +15,12 @@ import {
   timestamps,
   userRole,
 } from "@/schema/common";
-import { onlyOrgMemberWithPermissions, PgPolicyBuilder } from "@/schema/policy";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  PgPolicyBuilder,
+} from "@/schema/policy";
 
 import { organization } from "./organization";
 
@@ -37,47 +42,56 @@ export const role = authSchema.table.withRLS(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("role_name_organizationId_idx").on(
-      table.name,
-      table.organizationId,
-    ),
+    uniqueIndex("role_name_organizationId_idx")
+      .on(table.name, table.organizationId)
+      .where(sql`${table.deletedAt} IS NULL`),
     uniqueIndex("role_organization_id_id_uidx").on(
       table.organizationId,
       table.id,
     ),
     index("role_organizationId_idx").on(table.organizationId),
-    // Only members with "role:read" permission can select it
     new PgPolicyBuilder()
       .name("role_select")
       .as("permissive")
       .to(userRole)
       .forOperation("select")
-      .using(onlyOrgMemberWithPermissions(table.organizationId, ["role:read"]))
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
       .build(),
-    // Only members with "role:update" permission can update the organization
     new PgPolicyBuilder()
       .name("role_update")
       .as("permissive")
       .to(userRole)
       .forOperation("update")
       .using(
-        onlyOrgMemberWithPermissions(table.organizationId, ["role:update"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, ["role:update"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .build(),
-    // Only members with "role:create" permission can create roles
     new PgPolicyBuilder()
       .name("role_insert")
       .as("permissive")
       .to(userRole)
       .forOperation("insert")
       .withCheck(
-        onlyOrgMemberWithPermissions(table.organizationId, ["role:create"]),
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
       )
       .build(),
-    // Admins can access all roles
     new PgPolicyBuilder()
       .name("role_admin_access")
       .as("permissive")
