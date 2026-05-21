@@ -196,7 +196,9 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
         );
         const token = generateRandomString(32, "A-Z", "a-z", "0-9");
 
-        // TODO: Check and set a active organization if user is part of any organization
+        // Check and set a active organization if user is part of any organization
+        const orgsForUser = yield* authRepo.organization.list(user.id);
+        const activeOrganizationId = orgsForUser[0]?.organization?.id ?? null;
 
         const session = yield* authRepo.session.createSession({
           expiresAt: sessionExpiresAt,
@@ -204,7 +206,7 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           userId: user.id,
           ipAddress: requestMetadata.ipAddress,
           userAgent: requestMetadata.userAgent,
-          activeOrganizationId: null,
+          activeOrganizationId,
         });
 
         yield* authRepo.verification.deleteVerification({

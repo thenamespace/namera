@@ -23,7 +23,7 @@ export const OrganizationPlan = Schema.Literals(["free"]);
 export const Organization = Schema.Struct({
   id: OrganizationId,
   name: MetadataName,
-  metadata: Schema.NullOr(OrganizationMetadata),
+  metadata: OrganizationMetadata,
   plan: OrganizationPlan,
   slug: OrganizationSlug,
   createdById: Schema.NullOr(UserId),
