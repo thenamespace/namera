@@ -5,6 +5,7 @@ import { queries } from "@/lib/query";
 
 export const authMiddleware = async (queryClient: QueryClient) => {
   const currentUser = await queryClient.ensureQueryData(queries.auth.me);
+
   if (!currentUser) {
     throw redirect({ to: "/auth" });
   }

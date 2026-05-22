@@ -33,3 +33,11 @@ export const signInWithMagicLink = async (
       return yield* client.auth.currentUser();
     }).pipe(Effect.catchTag("Unauthorized", () => Effect.succeed(null))),
   );
+
+export const logout = async () =>
+  clientRuntime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* ApiClient.ApiClient;
+      yield* client.auth.logout();
+    }),
+  );

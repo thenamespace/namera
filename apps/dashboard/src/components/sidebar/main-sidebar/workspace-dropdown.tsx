@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { CaretDownIcon, PlusIcon } from "@phosphor-icons/react";
 
-import { useCurrentUser } from "@/hooks/auth";
+import { useCurrentUser, useLogout } from "@/hooks/auth";
 import { useListUserOrgs, useSwitchOrg } from "@/hooks/organization";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import { SidebarMenuButton } from "@namera-ai/ui/components/ui/sidebar";
 
 export const WorkspaceDropdownButton = () => {
   const { data: currentUser } = useCurrentUser();
+  const { mutateAsync: logout } = useLogout();
 
   if (!currentUser?.organization) return null;
 
@@ -44,7 +45,9 @@ export const WorkspaceDropdownButton = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-52">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            render={<Link to="/dashboard/settings">Settings</Link>}
+          >
             <div className="flex w-full flex-row items-center justify-between">
               <span>Settings</span>
               <div className="text-muted-foreground text-xs">
@@ -58,7 +61,12 @@ export const WorkspaceDropdownButton = () => {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <SwitchWorkspaceButton />
-          <DropdownMenuItem>Log out</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={async () => await logout()}
+            variant="destructive"
+          >
+            Log out
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

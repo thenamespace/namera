@@ -26,11 +26,10 @@ export const listUserOrgs = async () =>
     }),
   );
 
-export const switchOrganization = async (id: OrganizationId) => {
+export const switchOrganization = async (id: OrganizationId) =>
   clientRuntime.runPromise(
     Effect.gen(function* () {
       const client = yield* ApiClient.ApiClient;
       yield* client.organization.setActive({ payload: { id } });
     }),
   );
-};

@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema, Context } from "effect";
 
-import { and, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 
 import {
   type Database,
@@ -69,7 +69,7 @@ export const layer = Layer.succeed(
     deleteSession: (id) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        yield* db.delete(session).where(sql`${session.id} = ${id}`);
+        yield* db.delete(session).where(eq(session.id, id));
       }).pipe(mapDatabaseError),
     findSessionByToken: (token) =>
       Effect.gen(function* () {

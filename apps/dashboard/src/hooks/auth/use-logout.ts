@@ -1,21 +1,20 @@
-import type { OrganizationId } from "@namera-ai/schema";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 
-import { switchOrganization } from "@/actions/auth/organization";
+import { logout } from "@/actions";
 import { queries } from "@/lib/query";
 
-export const useSwitchOrg = () => {
+export const useLogout = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id }: { id: OrganizationId }) => {
-      await switchOrganization(id);
+    mutationFn: async () => {
+      await logout();
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries(queries.auth.me);
+      await queryClient.cancelQueries(queries.auth.me);
+      queryClient.setQueryData(queries.auth.me.queryKey, null);
       await router.invalidate();
     },
   });

@@ -44,11 +44,8 @@ export const role = authSchema.table.withRLS(
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
-    metadata: jsonb("metadata")
-      .notNull()
-      .$type<OrganizationRoleMetadata>()
-      .default(sql`'{}'::jsonb`),
-    permissions: text("permissions").array().notNull().$type<Permission>(),
+    metadata: jsonb("metadata").notNull().$type<OrganizationRoleMetadata>(),
+    permissions: text("permissions").array().notNull().$type<Permission[]>(),
     isSystem: boolean("is_system").notNull().default(false),
     version: integer("version").notNull().default(0),
     ...timestamps,
@@ -60,6 +57,10 @@ export const role = authSchema.table.withRLS(
     uniqueIndex("role_organization_id_id_uidx").on(
       table.organizationId,
       table.id,
+    ),
+    index("role_organization_system_idx").on(
+      table.organizationId,
+      table.isSystem,
     ),
     index("role_organizationId_idx").on(table.organizationId),
     new PgPolicyBuilder()
