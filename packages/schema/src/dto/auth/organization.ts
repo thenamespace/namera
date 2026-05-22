@@ -26,8 +26,6 @@ export const CreateOrganizationRequest = OrganizationInsert.mapFields(
 
 export const CreateOrganizationResponse = Organization;
 
-// List user's organizations
-export const ListOrganizationsRequest = Schema.Undefined;
 export const ListOrganizationsResponse = Schema.Array(
   OrganizationMember.mapFields(Struct.assign({ organization: Organization })),
 );
@@ -71,7 +69,7 @@ export const DeleteOrganizationResponse = Schema.Void;
 
 export type CreateOrganizationRequest = typeof CreateOrganizationRequest.Type;
 export type CreateOrganizationResponse = typeof CreateOrganizationResponse.Type;
-export type ListOrganizationsRequest = typeof ListOrganizationsRequest.Type;
+
 export type ListOrganizationsResponse = typeof ListOrganizationsResponse.Type;
 export type SetActiveOrganizationRequest =
   typeof SetActiveOrganizationRequest.Type;

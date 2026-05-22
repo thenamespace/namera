@@ -7,7 +7,6 @@ import {
   DatabaseError,
   GetFullOrganizationRequest,
   GetFullOrganizationResponse,
-  ListOrganizationsRequest,
   ListOrganizationsResponse,
   OrganizationError,
   SetActiveOrganizationRequest,
@@ -27,7 +26,6 @@ export const organizationGroup = HttpApiGroup.make("organization")
 
     // List user's organizations
     HttpApiEndpoint.get("list", "/organization/list", {
-      params: ListOrganizationsRequest,
       success: ListOrganizationsResponse,
       error: [OrganizationError, DatabaseError],
     }),

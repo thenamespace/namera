@@ -14,10 +14,23 @@ export const TransactionClient =
 export const withTx = (tx: TransactionClient) =>
   Effect.provideService(TransactionClient, tx);
 
-export const setCurrentUser = (userId: UserId) =>
+export type ActorContext =
+  | {
+      actorType: "user";
+      userId: UserId;
+    }
+  | {
+      actorType: "api_key";
+      actorId: string;
+    };
+
+export const setActorContext = (ctx: ActorContext) =>
   Effect.gen(function* () {
     const db = yield* TransactionOrDatabase;
-    yield* db
-      .execute(`SET LOCAL app.user_id = '${userId.toString()}'`)
-      .pipe(Effect.orDie);
+
+    yield* db.execute(`SET LOCAL app.actor_type = '${ctx.actorType}'`);
+
+    if (ctx.actorType === "user") {
+      yield* db.execute(`SET LOCAL app.user_id = '${ctx.userId}'`);
+    }
   });

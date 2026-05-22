@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 
 import { Schema } from "effect";
 
@@ -21,6 +21,7 @@ import { IconPicker } from "@namera-ai/ui/components/ui/icon-picker";
 import { Input } from "@namera-ai/ui/components/ui/input";
 
 export const NewWorkspaceForm = () => {
+  const router = useRouter();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const form = useForm<CreateOrganizationRequest>({
@@ -40,6 +41,7 @@ export const NewWorkspaceForm = () => {
 
   const handleSubmit = async (value: CreateOrganizationRequest) => {
     await createOrganization(value);
+    await router.invalidate();
     await queryClient.invalidateQueries({
       queryKey: queries.auth.me.queryKey,
     });

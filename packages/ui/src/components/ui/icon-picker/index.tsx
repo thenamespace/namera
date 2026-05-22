@@ -22,9 +22,10 @@ import {
 } from "@namera-ai/ui/components/ui/tooltip";
 import { cn } from "@namera-ai/ui/lib/utils";
 
-import { ICON_DATA, iconMap, type IconData } from "./data";
+import { ICON_DATA, type IconData } from "./data";
 import { EmojiPickerComponent } from "./emoji";
 import { ImagePickerComponent } from "./image";
+import { IconRenderer, MetadataIconRenderer } from "./renderer";
 
 const useIconPicker = (): {
   search: string;
@@ -46,21 +47,6 @@ const useIconPicker = (): {
   }, [search]);
 
   return { search, setSearch, icons: filteredIcons };
-};
-
-const IconRenderer = ({
-  icon,
-  ...rest
-}: {
-  icon: string;
-} & React.ComponentPropsWithoutRef<"svg">) => {
-  const IconComponent = iconMap[icon]?.icon;
-
-  if (!IconComponent) {
-    return null;
-  }
-
-  return <IconComponent data-slot="icon" {...rest} />;
 };
 
 const IconPickerComponent = ({
@@ -131,16 +117,12 @@ const IconPicker = ({
           />
         }
       >
-        {value.type === "icon" ? (
-          <IconRenderer
-            className="text-muted-foreground size-4.5"
-            icon={value.value}
-          />
-        ) : value.type === "image" ? (
-          <img className="h-9 w-9 rounded-lg" src={value.value} />
-        ) : (
-          <span>{value.value}</span>
-        )}
+        <MetadataIconRenderer
+          value={value}
+          className="size-9 rounded-lg"
+          iconCls="text-muted-foreground size-4.5!"
+          emojiCls="min-w-9 h-9 text-lg"
+        />
       </DialogTrigger>
       <DialogContent className="min-w-md px-1 py-1">
         <Tabs defaultValue="icon">
@@ -180,4 +162,4 @@ const IconPicker = ({
   );
 };
 
-export { IconPicker, useIconPicker };
+export { IconPicker, useIconPicker, MetadataIconRenderer };

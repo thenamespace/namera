@@ -67,8 +67,17 @@ const listOrgsHandler = () =>
   Effect.gen(function* () {
     const currentUser = yield* AuthenticatedUser;
     const auth = yield* AuthRepo.AuthRepo;
+    const db = yield* Database.Database;
 
-    const res = yield* auth.organization.list(currentUser.user.id);
+    const res = yield* db.transaction((tx) =>
+      Effect.gen(function* () {
+        yield* Transaction.setActorContext({
+          actorType: "user",
+          userId: currentUser.user.id,
+        });
+        return yield* auth.organization.list(currentUser.user.id);
+      }).pipe(Transaction.withTx(tx)),
+    );
 
     return res;
   }).pipe(mapDatabaseError);
@@ -81,10 +90,16 @@ const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
 
     return yield* db.transaction((tx) =>
       Effect.gen(function* () {
+        yield* Transaction.setActorContext({
+          actorType: "user",
+          userId: currentUser.user.id,
+        });
         const isMember = yield* auth.organization.hasActiveMembership(
           currentUser.user.id,
           payload.id,
         );
+
+        yield* Effect.log("isMember", isMember);
 
         if (!isMember) {
           return yield* new OrganizationError({

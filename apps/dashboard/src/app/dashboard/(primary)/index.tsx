@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/app/dashboard/-components";
-import { useCurrentUser } from "@/hooks/auth";
+import { useListUserOrgs } from "@/hooks/organization";
 
 const DashboardPage = () => {
-  const { data } = useCurrentUser();
+  const { data } = useListUserOrgs();
   return (
     <div>
       <PageHeader header="Dashboard" />
