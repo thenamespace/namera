@@ -7,12 +7,8 @@ import {
   Session,
   User,
 } from "@/auth";
-import { MetadataName } from "@/common";
 
-export const UpdateUserRequest = Schema.Struct({
-  name: MetadataName,
-  image: Schema.NullOr(Schema.String),
-});
+export const UpdateUserRequest = User.mapFields(Struct.pick(["image", "name"]));
 export const UpdateUserResponse = User;
 
 export const AuthenticatedUserResponse = Schema.Struct({
