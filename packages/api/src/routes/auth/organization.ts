@@ -6,6 +6,7 @@ import {
   CheckOrganizationSlugResponse,
   CreateOrganizationRequest,
   CreateOrganizationResponse,
+  DatabaseError,
   DeleteOrganizationRequest,
   DeleteOrganizationResponse,
   GetFullOrganizationRequest,
@@ -24,25 +25,25 @@ export const organizationGroup = HttpApiGroup.make("organization")
     // Create Organization
     HttpApiEndpoint.post("create", "/organization/create", {
       payload: CreateOrganizationRequest,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
       success: CreateOrganizationResponse,
     }),
     // Check if slug is available
     HttpApiEndpoint.post("checkSlug", "/organization/check-slug", {
       payload: CheckOrganizationSlugRequest,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
       success: CheckOrganizationSlugResponse,
     }),
     // List user's organizations
     HttpApiEndpoint.get("list", "/organization/list", {
       params: ListOrganizationsRequest,
       success: ListOrganizationsResponse,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
     }),
     // Set current user's active organization
     HttpApiEndpoint.post("setActive", "/organization/set-active", {
       payload: SetActiveOrganizationRequest,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
       success: SetActiveOrganizationResponse,
     }),
     // Get Organization
@@ -51,20 +52,20 @@ export const organizationGroup = HttpApiGroup.make("organization")
       "/organization/get-full-organization",
       {
         params: GetFullOrganizationRequest,
-        error: OrganizationError,
+        error: [OrganizationError, DatabaseError],
         success: GetFullOrganizationResponse,
       },
     ),
     // Update Organization
     HttpApiEndpoint.post("update", "/organization/update", {
       payload: UpdateOrganizationRequest,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
       success: UpdateOrganizationResponse,
     }),
     // Delete Organization
     HttpApiEndpoint.post("delete", "/organization/delete", {
       payload: DeleteOrganizationRequest,
-      error: OrganizationError,
+      error: [OrganizationError, DatabaseError],
       success: DeleteOrganizationResponse,
     }),
   )

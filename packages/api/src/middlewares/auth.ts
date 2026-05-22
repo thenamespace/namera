@@ -1,14 +1,8 @@
-import { Schema, Context } from "effect";
+import { Context } from "effect";
 
 import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 
-import { AuthenticatedUserResponse } from "@namera-ai/schema";
-
-export class Unauthorized extends Schema.TaggedErrorClass<Unauthorized>()(
-  "Unauthorized",
-  {},
-  { httpApiStatus: 401 },
-) {}
+import { AuthenticatedUserResponse, Unauthorized } from "@namera-ai/schema";
 
 export class AuthenticatedUser extends Context.Service<
   AuthenticatedUser,

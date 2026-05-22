@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema, Context } from "effect";
 
-import { sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import {
   type Database,
@@ -8,6 +8,7 @@ import {
   TransactionOrDatabase,
 } from "@namera-ai/database";
 import {
+  DatabaseError,
   GetFullOrganizationRequest,
   ListOrganizationsResponse,
   Organization,
@@ -18,43 +19,55 @@ import {
   Permission,
   UpdateOrganizationRequest,
   UserId,
+  mapDatabaseError,
 } from "@namera-ai/schema";
 
 export type OrganizationRepo = {
-  createOrganization: (
+  create: (
     data: OrganizationInsert,
-  ) => Effect.Effect<Organization, never, Database.Database>;
+  ) => Effect.Effect<Organization, DatabaseError, Database.Database>;
   checkSlug: (
     slug: OrganizationSlug,
-  ) => Effect.Effect<boolean, never, Database.Database>;
+  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
   listOrgsCreatedByUser: (
     userId: UserId,
-  ) => Effect.Effect<Organization[], never, Database.Database>;
+  ) => Effect.Effect<Organization[], DatabaseError, Database.Database>;
   list: (
     userId: UserId,
-  ) => Effect.Effect<ListOrganizationsResponse, never, Database.Database>;
+  ) => Effect.Effect<
+    ListOrganizationsResponse,
+    DatabaseError,
+    Database.Database
+  >;
   hasActiveMembership: (
     userId: UserId,
     organizationId: OrganizationId,
-    slug: OrganizationSlug,
-  ) => Effect.Effect<boolean, never, Database.Database>;
+  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
   hasPermission: (
     userId: UserId,
     organizationId: OrganizationId,
     permission: Permission,
-  ) => Effect.Effect<boolean, never, Database.Database>;
+  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
   getFullOrganization: (
     userId: UserId,
     params: GetFullOrganizationRequest,
-  ) => Effect.Effect<Organization | undefined, never, Database.Database>;
+  ) => Effect.Effect<
+    Organization | undefined,
+    DatabaseError,
+    Database.Database
+  >;
   updateOrganization: (
     userId: UserId,
     params: UpdateOrganizationRequest,
-  ) => Effect.Effect<Organization | undefined, never, Database.Database>;
+  ) => Effect.Effect<
+    Organization | undefined,
+    DatabaseError,
+    Database.Database
+  >;
   deleteOrganization: (
     userId: UserId,
     organizationId: OrganizationId,
-  ) => Effect.Effect<boolean, never, Database.Database>;
+  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
 };
 
 export const OrganizationRepo =
@@ -88,7 +101,7 @@ const hasPermission = (
       res.role.organizationId === organizationId &&
       res.role.permissions.includes(permission)
     );
-  }).pipe(Effect.orDie);
+  }).pipe(mapDatabaseError);
 
 export const layer = Layer.succeed(
   OrganizationRepo,
@@ -104,26 +117,26 @@ export const layer = Layer.succeed(
         });
 
         return res;
-      }).pipe(Effect.orDie),
-    createOrganization: (data) =>
+      }).pipe(mapDatabaseError),
+    create: (data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const parsed = Schema.decodeSync(OrganizationInsert)(data);
         const res = yield* db.insert(organization).values(parsed).returning();
-        // biome-ignore lint/style/noNonNullAssertion: safe
         return res[0]!;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     checkSlug: (slug: OrganizationSlug) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db.query.organization.findFirst({
           where: {
             slug: { eq: slug },
+            deletedAt: { isNull: true },
           },
         });
 
         return Boolean(res);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     list: (userId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -142,8 +155,8 @@ export const layer = Layer.succeed(
         return (
           res.filter((m) => m.organization) as ListOrganizationsResponse
         ).filter((m) => m.organization.deletedAt === null);
-      }).pipe(Effect.orDie),
-    hasActiveMembership: (userId, organizationId, slug) =>
+      }).pipe(mapDatabaseError),
+    hasActiveMembership: (userId, organizationId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
@@ -159,8 +172,8 @@ export const layer = Layer.succeed(
           },
         });
 
-        return res?.organization?.slug === slug && !res.organization.deletedAt;
-      }).pipe(Effect.orDie),
+        return Boolean(res && res.organization && !res.organization.deletedAt);
+      }).pipe(mapDatabaseError),
     hasPermission,
     getFullOrganization: (userId, params) =>
       Effect.gen(function* () {
@@ -187,7 +200,7 @@ export const layer = Layer.succeed(
         }
 
         return Schema.decodeUnknownSync(Organization)(res.organization);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     updateOrganization: (userId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -205,14 +218,14 @@ export const layer = Layer.succeed(
             updatedAt: new Date(),
           })
           .where(
-            sql`${organization.id} = ${params.id} AND ${organization.deletedAt} IS NULL`,
+            and(eq(organization.id, params.id), isNull(organization.deletedAt)),
           )
           .returning();
 
         return res[0]
           ? Schema.decodeUnknownSync(Organization)(res[0])
           : undefined;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     deleteOrganization: (userId, organizationId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -230,14 +243,16 @@ export const layer = Layer.succeed(
           .update(organization)
           .set({
             deletedAt: new Date(),
-            updatedAt: new Date(),
           })
           .where(
-            sql`${organization.id} = ${organizationId} AND ${organization.deletedAt} IS NULL`,
+            and(
+              eq(organization.id, organizationId),
+              isNull(organization.deletedAt),
+            ),
           )
           .returning({ id: organization.id });
 
         return Boolean(res[0]);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
   }),
 );

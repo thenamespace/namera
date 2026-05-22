@@ -187,6 +187,7 @@
       "name": "@namera-ai/schema",
       "version": "0.1.0",
       "dependencies": {
+        "drizzle-orm": "catalog:",
         "effect": "catalog:",
         "viem": "catalog:",
       },

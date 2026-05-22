@@ -1,7 +1,8 @@
 import { Effect, Layer, Redacted } from "effect";
 
-import { AuthenticatedUser, Authorization, Unauthorized } from "@namera-ai/api";
+import { AuthenticatedUser, Authorization } from "@namera-ai/api";
 import { AdminDatabase } from "@namera-ai/database";
+import { Unauthorized } from "@namera-ai/schema";
 
 export const AuthMiddleware = Layer.effect(
   Authorization,

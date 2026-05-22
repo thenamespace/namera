@@ -8,7 +8,9 @@ import {
   type Database,
 } from "@namera-ai/database";
 import {
+  DatabaseError,
   Email,
+  mapDatabaseError,
   UserInsert,
   UserUpdate,
   type User,
@@ -18,14 +20,14 @@ import {
 export type UserRepo = {
   findUserByEmail: (
     email: string,
-  ) => Effect.Effect<User | undefined, never, Database.Database>;
+  ) => Effect.Effect<User | undefined, DatabaseError, Database.Database>;
   createUser: (
     params: UserInsert,
-  ) => Effect.Effect<User, never, Database.Database>;
+  ) => Effect.Effect<User, DatabaseError, Database.Database>;
   updateUser: (
     id: UserId,
     params: UserUpdate,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<void, DatabaseError, Database.Database>;
 };
 
 export const UserRepo = Context.Service<UserRepo>("UserRepo");
@@ -35,13 +37,11 @@ export const layer = Layer.succeed(
     createUser: (params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-
         const parsed = Schema.decodeSync(UserInsert)(params);
-
         const res = yield* db.insert(user).values(parsed).returning();
 
         return res[0]!;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     findUserByEmail: (email) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -57,13 +57,13 @@ export const layer = Layer.succeed(
         });
 
         return res;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     updateUser: (id, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
         const parsed = Schema.decodeSync(UserUpdate)(params);
         yield* db.update(user).set(parsed).where(eq(user.id, id));
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
   }),
 );

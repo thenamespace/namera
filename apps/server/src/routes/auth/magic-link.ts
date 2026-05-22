@@ -23,18 +23,11 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
     const authConfig = yield* AuthConfig.AuthConfig;
     const res = yield* auth.magicLink.verifyMagicLink(payload);
 
-    return yield* HttpServerResponse.empty({ status: 302 })
+    return yield* HttpServerResponse.redirect(res.redirectUrl)
       .pipe(
-        HttpServerResponse.setHeader("Location", res.redirectUrl.toString()),
         HttpServerResponse.setCookie(authConfig.session.cookieName, res.token, {
-          ...(authConfig.session.domain
-            ? { domain: authConfig.session.domain }
-            : {}),
-          httpOnly: true,
+          ...authConfig.session.cookieOpts,
           maxAge: authConfig.session.expiresIn,
-          path: "/",
-          sameSite: "lax",
-          secure: authConfig.session.secure,
         }),
       )
       .pipe(Effect.orDie);

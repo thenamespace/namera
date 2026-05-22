@@ -13,30 +13,32 @@ import {
   SessionInsert,
   OrganizationId,
   type UserId,
+  DatabaseError,
+  mapDatabaseError,
 } from "@namera-ai/schema";
 
 export type SessionRepo = {
   createSession: (
     data: SessionInsert,
-  ) => Effect.Effect<Session, never, Database.Database>;
+  ) => Effect.Effect<Session, DatabaseError, Database.Database>;
   findSessionByToken: (
     token: string,
-  ) => Effect.Effect<Session | undefined, never, Database.Database>;
-  findSessionsByUserId: (
+  ) => Effect.Effect<Session | undefined, DatabaseError, Database.Database>;
+  findSessionsForUserId: (
     userId: UserId,
-  ) => Effect.Effect<Session[], never, Database.Database>;
+  ) => Effect.Effect<Session[], DatabaseError, Database.Database>;
   deleteSession: (
     id: SessionId,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<void, DatabaseError, Database.Database>;
   deleteAllSessionsExcept: (
     userId: UserId,
     exceptSessionId: SessionId,
-  ) => Effect.Effect<Session[], never, Database.Database>;
+  ) => Effect.Effect<Session[], DatabaseError, Database.Database>;
   setActiveOrganization: (
     sessionId: SessionId,
     userId: UserId,
     organizationId: OrganizationId,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<void, DatabaseError, Database.Database>;
 };
 
 export const SessionRepo = Context.Service<SessionRepo>("SessionRepo");
@@ -51,7 +53,7 @@ export const layer = Layer.succeed(
         const res = yield* db.insert(session).values(parsed);
         // biome-ignore lint/style/noNonNullAssertion: safe
         return res[0]!;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     deleteAllSessionsExcept: (userId, exceptSessionId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -63,12 +65,12 @@ export const layer = Layer.succeed(
           .returning();
 
         return res;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     deleteSession: (id) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         yield* db.delete(session).where(sql`${session.id} = ${id}`);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     findSessionByToken: (token) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -78,18 +80,20 @@ export const layer = Layer.succeed(
           },
         });
         return res;
-      }).pipe(Effect.orDie),
-    findSessionsByUserId: (userId) =>
+      }).pipe(mapDatabaseError),
+    findSessionsForUserId: (userId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db.query.session.findMany({
           orderBy: (sessions, { desc }) => [desc(sessions.createdAt)],
           where: {
             userId: { eq: userId },
+            deletedAt: { isNull: true },
+            revokedAt: { isNull: true },
           },
         });
         return res;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     setActiveOrganization: (sessionId, userId, organizationId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -101,6 +105,6 @@ export const layer = Layer.succeed(
           .where(
             sql`${session.id} = ${sessionId} AND ${session.userId} = ${userId}`,
           );
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
   }),
 );

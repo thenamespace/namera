@@ -8,6 +8,8 @@ import {
   userPreference,
 } from "@namera-ai/database";
 import {
+  DatabaseError,
+  mapDatabaseError,
   UserId,
   UserPreference,
   UserPreferenceInsert,
@@ -17,15 +19,15 @@ import {
 export type UserPreferenceRepo = {
   get: (
     userId: UserId,
-  ) => Effect.Effect<UserPreference, never, Database.Database>;
+  ) => Effect.Effect<UserPreference, DatabaseError, Database.Database>;
   update: (
     userId: UserId,
     data: UserPreferenceUpdate,
-  ) => Effect.Effect<UserPreference, never, Database.Database>;
+  ) => Effect.Effect<UserPreference, DatabaseError, Database.Database>;
   create: (
     userId: UserId,
     data: UserPreferenceInsert,
-  ) => Effect.Effect<UserPreference, never, Database.Database>;
+  ) => Effect.Effect<UserPreference, DatabaseError, Database.Database>;
 };
 
 export const UserPreferenceRepo =
@@ -44,7 +46,7 @@ export const layer = Layer.succeed(
         });
         const parsed = Schema.decodeUnknownSync(UserPreference)(res);
         return parsed;
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     update: (userId, data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -54,12 +56,12 @@ export const layer = Layer.succeed(
           .where(eq(userPreference.userId, userId))
           .returning();
         return Schema.decodeUnknownSync(UserPreference)(res[0]);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     create: (userId, data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db.insert(userPreference).values(data).returning();
         return Schema.decodeUnknownSync(UserPreference)(res[0]);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
   }),
 );

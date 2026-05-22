@@ -7,82 +7,71 @@ import { AuthenticatedUser, api } from "@namera-ai/api";
 import { AuthConfig } from "@namera-ai/auth";
 import { AdminDatabase, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
+import { mapDatabaseError } from "@namera-ai/schema";
 
 const currentUserHandler = Effect.fnUntraced(function* () {
-  const res = yield* AuthenticatedUser;
-  return res;
+  return yield* AuthenticatedUser;
 });
 
-const listSessionsHandler = () =>
-  Effect.gen(function* () {
-    const user = (yield* AuthenticatedUser).user;
-    const authRepo = yield* AuthRepo.AuthRepo;
-    const db = yield* AdminDatabase.AdminDatabase;
+const listSessionsHandler = Effect.gen(function* () {
+  const user = (yield* AuthenticatedUser).user;
+  const authRepo = yield* AuthRepo.AuthRepo;
+  const db = yield* AdminDatabase.AdminDatabase;
 
-    const sessions = yield* db
-      .transaction((tx) =>
-        authRepo.session
-          .findSessionsByUserId(user.id)
-          .pipe(Transaction.withTx(tx)),
-      )
-      .pipe(Effect.orDie);
+  const sessions = yield* db.transaction((tx) =>
+    Effect.gen(function* () {
+      return yield* authRepo.session.findSessionsForUserId(user.id);
+    }).pipe(Transaction.withTx(tx)),
+  );
 
-    return sessions.map(({ token: _t, ...session }) => {
-      return session;
-    });
+  return sessions.map(({ token: _t, ...session }) => {
+    return session;
   });
+}).pipe(mapDatabaseError);
 
-const logoutHandler = () =>
-  Effect.gen(function* () {
-    const authUser = yield* AuthenticatedUser;
-    const authConfig = yield* AuthConfig.AuthConfig;
-    const authRepo = yield* AuthRepo.AuthRepo;
-    const db = yield* AdminDatabase.AdminDatabase;
+const logoutHandler = Effect.gen(function* () {
+  const authUser = yield* AuthenticatedUser;
+  const authConfig = yield* AuthConfig.AuthConfig;
+  const authRepo = yield* AuthRepo.AuthRepo;
+  const db = yield* AdminDatabase.AdminDatabase;
 
-    yield* db
-      .transaction((tx) =>
-        authRepo.session
-          .deleteSession(authUser.session.id)
-          .pipe(Transaction.withTx(tx)),
-      )
-      .pipe(Effect.orDie);
+  yield* db.transaction((tx) =>
+    Effect.gen(function* () {
+      return yield* authRepo.session.deleteSession(authUser.session.id);
+    }).pipe(Transaction.withTx(tx)),
+  );
 
-    return yield* HttpServerResponse.empty({ status: 200 }).pipe(
-      HttpServerResponse.expireCookie(authConfig.session.cookieName, {
-        domain: authConfig.session.domain,
-        secure: authConfig.session.secure,
-        ...(authConfig.session.domain
-          ? { domain: authConfig.session.domain }
-          : {}),
-        httpOnly: true,
-        path: "/",
-        sameSite: "lax",
-      }),
-      Effect.orDie,
-    );
-  });
+  return yield* HttpServerResponse.empty({ status: 200 })
+    .pipe(
+      HttpServerResponse.expireCookie(
+        authConfig.session.cookieName,
+        authConfig.session.cookieOpts,
+      ),
+    )
+    .pipe(Effect.orDie);
+}).pipe(mapDatabaseError);
 
-const revokeOtherSessionsHandler = () =>
-  Effect.gen(function* () {
-    const authUser = yield* AuthenticatedUser;
-    const authRepo = yield* AuthRepo.AuthRepo;
-    const db = yield* AdminDatabase.AdminDatabase;
+const revokeOtherSessionsHandler = Effect.gen(function* () {
+  const authUser = yield* AuthenticatedUser;
+  const authRepo = yield* AuthRepo.AuthRepo;
+  const db = yield* AdminDatabase.AdminDatabase;
 
-    const deletedSessions = yield* db
-      .transaction((tx) =>
-        authRepo.session
-          .deleteAllSessionsExcept(authUser.user.id, authUser.session.id)
-          .pipe(Transaction.withTx(tx)),
-      )
-      .pipe(Effect.orDie);
+  const deletedSessions = yield* db.transaction((tx) =>
+    Effect.gen(function* () {
+      return yield* authRepo.session.deleteAllSessionsExcept(
+        authUser.user.id,
+        authUser.session.id,
+      );
+    }).pipe(Transaction.withTx(tx)),
+  );
 
-    return deletedSessions.length;
-  });
+  return deletedSessions.length;
+}).pipe(mapDatabaseError);
 
-export const AuthGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
+export const AuthCoreGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers
-    .handle("currentUser", () => currentUserHandler())
-    .handle("listSessions", () => listSessionsHandler())
-    .handle("logout", () => logoutHandler())
-    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler()),
+    .handle("currentUser", currentUserHandler)
+    .handle("listSessions", () => listSessionsHandler)
+    .handle("logout", () => logoutHandler)
+    .handle("revokeOtherSessions", () => revokeOtherSessionsHandler),
 );

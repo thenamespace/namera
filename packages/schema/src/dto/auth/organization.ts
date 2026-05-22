@@ -17,6 +17,7 @@ export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError
       "ORGANIZATION_NOT_FOUND",
       "ORGANIZATION_MEMBER_NOT_FOUND",
       "ORGANIZATION_PERMISSION_DENIED",
+      "DATABASE_ERROR",
     ]),
     message: Schema.optional(Schema.String),
   },

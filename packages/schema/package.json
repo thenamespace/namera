@@ -9,6 +9,7 @@
   },
   "scripts": {},
   "dependencies": {
+    "drizzle-orm": "catalog:",
     "effect": "catalog:",
     "viem": "catalog:"
   },
