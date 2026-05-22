@@ -27,7 +27,7 @@ export type UserRepo = {
   updateUser: (
     id: UserId,
     params: UserUpdate,
-  ) => Effect.Effect<void, DatabaseError, Database.Database>;
+  ) => Effect.Effect<User, DatabaseError, Database.Database>;
 };
 
 export const UserRepo = Context.Service<UserRepo>("UserRepo");
@@ -63,7 +63,12 @@ export const layer = Layer.succeed(
         const db = yield* TransactionOrDatabase;
 
         const parsed = Schema.decodeSync(UserUpdate)(params);
-        yield* db.update(user).set(parsed).where(eq(user.id, id));
+        const res = yield* db
+          .update(user)
+          .set(parsed)
+          .where(eq(user.id, id))
+          .returning();
+        return res[0]!;
       }).pipe(mapDatabaseError),
   }),
 );

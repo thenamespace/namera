@@ -1,11 +1,17 @@
 import { HttpApi, OpenApi } from "effect/unstable/httpapi";
 
-import { authCoreGroup, organizationGroup, magicLinkGroup } from "./auth";
+import {
+  authCoreGroup,
+  organizationGroup,
+  magicLinkGroup,
+  userGroup,
+} from "./auth";
 import { healthGroup } from "./health";
 import { rpcGroup } from "./rpc";
 
 export const api = HttpApi.make("NameraAPI")
   .add(authCoreGroup)
+  .add(userGroup)
   .add(magicLinkGroup)
   .add(organizationGroup)
   .add(rpcGroup)

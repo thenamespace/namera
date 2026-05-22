@@ -7,6 +7,13 @@ import {
   Session,
   User,
 } from "@/auth";
+import { MetadataName } from "@/common";
+
+export const UpdateUserRequest = Schema.Struct({
+  name: MetadataName,
+  image: Schema.NullOr(Schema.String),
+});
+export const UpdateUserResponse = User;
 
 export const AuthenticatedUserResponse = Schema.Struct({
   user: User,
@@ -21,4 +28,6 @@ export const AuthenticatedUserResponse = Schema.Struct({
   ),
 });
 
+export type UpdateUserRequest = typeof UpdateUserRequest.Type;
+export type UpdateUserResponse = typeof UpdateUserResponse.Type;
 export type AuthenticatedUserResponse = typeof AuthenticatedUserResponse.Type;

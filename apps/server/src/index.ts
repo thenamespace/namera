@@ -21,12 +21,14 @@ import {
   HealthGroupLive,
   OrganizationGroupLive,
   RpcGroupLive,
+  UserGroupLive,
 } from "./routes";
 
 const NameraApiLive = Layer.mergeAll(
   HealthGroupLive,
   RpcGroupLive,
   AuthCoreGroupLive,
+  UserGroupLive,
   MagicLinkGroupLive,
   OrganizationGroupLive,
 );

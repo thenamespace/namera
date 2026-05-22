@@ -41,3 +41,5 @@ export const logout = async () =>
       yield* client.auth.logout();
     }),
   );
+
+export * from "./user";
