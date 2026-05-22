@@ -10,8 +10,10 @@ import {
 import {
   DatabaseError,
   GetFullOrganizationRequest,
+  GetFullOrganizationResponse,
   ListOrganizationsResponse,
   Organization,
+  OrganizationError,
   OrganizationId,
   OrganizationInsert,
   OrganizationSlug,
@@ -25,7 +27,11 @@ import {
 export type OrganizationRepo = {
   create: (
     data: OrganizationInsert,
-  ) => Effect.Effect<Organization, DatabaseError, Database.Database>;
+  ) => Effect.Effect<
+    Organization,
+    DatabaseError | OrganizationError,
+    Database.Database
+  >;
   checkSlug: (
     slug: OrganizationSlug,
   ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
@@ -43,40 +49,35 @@ export type OrganizationRepo = {
     userId: UserId,
     organizationId: OrganizationId,
   ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
-  hasPermission: (
+  hasPermissions: (
     userId: UserId,
     organizationId: OrganizationId,
-    permission: Permission,
+    permissions: Permission[],
   ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
   getFullOrganization: (
-    userId: UserId,
     params: GetFullOrganizationRequest,
   ) => Effect.Effect<
-    Organization | undefined,
-    DatabaseError,
+    GetFullOrganizationResponse,
+    DatabaseError | OrganizationError,
     Database.Database
   >;
   updateOrganization: (
     userId: UserId,
     params: UpdateOrganizationRequest,
   ) => Effect.Effect<
-    Organization | undefined,
-    DatabaseError,
+    Organization,
+    DatabaseError | OrganizationError,
     Database.Database
   >;
-  deleteOrganization: (
-    userId: UserId,
-    organizationId: OrganizationId,
-  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
 };
 
 export const OrganizationRepo =
   Context.Service<OrganizationRepo>("OrganizationRepo");
 
-const hasPermission = (
+const hasPermissions = (
   userId: UserId,
   organizationId: OrganizationId,
-  permission: Permission,
+  permissions: Permission[],
 ) =>
   Effect.gen(function* () {
     const db = yield* TransactionOrDatabase;
@@ -89,17 +90,21 @@ const hasPermission = (
         removedAt: { isNull: true },
       },
       with: {
-        role: true,
+        role: {
+          where: {
+            deletedAt: { isNull: true },
+            organizationId: { eq: organizationId },
+          },
+        },
       },
     });
 
-    if (!res?.role || res.role.deletedAt) {
-      return false;
-    }
+    const role = res?.role;
 
-    return (
-      res.role.organizationId === organizationId &&
-      res.role.permissions.includes(permission)
+    if (!role) return false;
+
+    return permissions.every((permission) =>
+      role.permissions.includes(permission),
     );
   }).pipe(mapDatabaseError);
 
@@ -123,7 +128,15 @@ export const layer = Layer.succeed(
         const db = yield* TransactionOrDatabase;
         const parsed = Schema.decodeSync(OrganizationInsert)(data);
         const res = yield* db.insert(organization).values(parsed).returning();
-        return res[0]!;
+
+        const returning = res[0];
+
+        if (!returning) {
+          return yield* new OrganizationError({
+            code: "ORGANIZATION_CREATE_FAILED",
+          });
+        }
+        return returning;
       }).pipe(mapDatabaseError),
     checkSlug: (slug: OrganizationSlug) =>
       Effect.gen(function* () {
@@ -152,9 +165,7 @@ export const layer = Layer.succeed(
           },
         });
 
-        return (
-          res.filter((m) => m.organization) as ListOrganizationsResponse
-        ).filter((m) => m.organization.deletedAt === null);
+        return res.filter((m) => m.organization) as ListOrganizationsResponse;
       }).pipe(mapDatabaseError),
     hasActiveMembership: (userId, organizationId) =>
       Effect.gen(function* () {
@@ -168,46 +179,57 @@ export const layer = Layer.succeed(
             removedAt: { isNull: true },
           },
           with: {
-            organization: true,
+            organization: {
+              where: {
+                deletedAt: { isNull: true },
+              },
+            },
           },
         });
 
-        return Boolean(res && res.organization && !res.organization.deletedAt);
+        if (res && res.organization) return true;
+        return false;
       }).pipe(mapDatabaseError),
-    hasPermission,
-    getFullOrganization: (userId, params) =>
+    hasPermissions,
+    getFullOrganization: (params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
 
-        const res = yield* db.query.member.findFirst({
+        const res = yield* db.query.organization.findFirst({
           where: {
-            userId: { eq: userId },
-            organizationId: { eq: params.id },
+            id: { eq: params.id },
             deletedAt: { isNull: true },
-            removedAt: { isNull: true },
           },
           with: {
-            organization: true,
+            members: {
+              limit: params.membersLimit,
+              where: {
+                removedAt: { isNull: true },
+                deletedAt: { isNull: true },
+              },
+            },
           },
         });
 
-        if (
-          !res?.organization ||
-          res.organization.slug !== params.slug ||
-          res.organization.deletedAt
-        ) {
-          return undefined;
+        if (!res) {
+          return yield* new OrganizationError({
+            code: "ORGANIZATION_NOT_FOUND",
+          });
         }
 
-        return Schema.decodeUnknownSync(Organization)(res.organization);
+        return res;
       }).pipe(mapDatabaseError),
     updateOrganization: (userId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        const canUpdate = yield* hasPermission(userId, params.id, "org:update");
+        const canUpdate = yield* hasPermissions(userId, params.id, [
+          "org:update",
+        ]);
 
         if (!canUpdate) {
-          return undefined;
+          return yield* new OrganizationError({
+            code: "INSUFFICIENT_PERMISSIONS",
+          });
         }
 
         const parsed = Schema.decodeSync(OrganizationUpdate)(params.data);
@@ -222,37 +244,15 @@ export const layer = Layer.succeed(
           )
           .returning();
 
-        return res[0]
-          ? Schema.decodeUnknownSync(Organization)(res[0])
-          : undefined;
-      }).pipe(mapDatabaseError),
-    deleteOrganization: (userId, organizationId) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        const canDelete = yield* hasPermission(
-          userId,
-          organizationId,
-          "org:delete",
-        );
+        const returning = res[0];
 
-        if (!canDelete) {
-          return false;
+        if (!returning) {
+          return yield* new OrganizationError({
+            code: "ORGANIZATION_UPDATE_FAILED",
+          });
         }
 
-        const res = yield* db
-          .update(organization)
-          .set({
-            deletedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(organization.id, organizationId),
-              isNull(organization.deletedAt),
-            ),
-          )
-          .returning({ id: organization.id });
-
-        return Boolean(res[0]);
+        return Schema.decodeUnknownSync(Organization)(returning);
       }).pipe(mapDatabaseError),
   }),
 );

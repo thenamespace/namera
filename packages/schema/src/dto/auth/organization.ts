@@ -12,12 +12,13 @@ export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError
   "OrganizationError",
   {
     code: Schema.Literals([
+      "ORGANIZATION_CREATE_FAILED",
+      "ORGANIZATION_UPDATE_FAILED",
+      "INSUFFICIENT_PERMISSIONS",
       "SLUG_ALREADY_TAKEN",
-      "ORG_LIMIT_REACHED",
+      "ORGANIZATION_CREATION_LIMIT_REACHED",
       "ORGANIZATION_NOT_FOUND",
       "ORGANIZATION_MEMBER_NOT_FOUND",
-      "ORGANIZATION_PERMISSION_DENIED",
-      "DATABASE_ERROR",
     ]),
     message: Schema.optional(Schema.String),
   },
@@ -64,7 +65,11 @@ export const GetFullOrganizationRequest = Schema.Struct({
     ),
   ),
 });
-export const GetFullOrganizationResponse = Organization;
+export const GetFullOrganizationResponse = Organization.mapFields(
+  Struct.assign({
+    members: Schema.Array(OrganizationMember),
+  }),
+);
 
 // Update Organization
 export const UpdateOrganizationRequest = Schema.Struct({

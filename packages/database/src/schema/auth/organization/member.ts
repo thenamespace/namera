@@ -24,6 +24,7 @@ import {
   PgPolicyBuilder,
 } from "@/schema/policy";
 
+import { organization } from "./organization";
 import { role } from "./role";
 
 // Members table
@@ -35,7 +36,10 @@ export const member = authSchema.table.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<OrganizationMemberId>(),
-    organizationId: text("organization_id").notNull().$type<OrganizationId>(),
+    organizationId: text("organization_id")
+      .notNull()
+      .$type<OrganizationId>()
+      .references(() => organization.id, { onDelete: "cascade" }),
     roleId: text("role_id").notNull().$type<OrganizationRoleId>(),
     userId: text("user_id")
       .notNull()

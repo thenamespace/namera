@@ -7,7 +7,6 @@ import { AdminDatabase, Database, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 import {
   CheckOrganizationSlugRequest,
-  type DeleteOrganizationRequest,
   type GetFullOrganizationRequest,
   OrganizationError,
   type CreateOrganizationRequest,
@@ -20,7 +19,6 @@ const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
   Effect.gen(function* () {
     const currentUser = yield* AuthenticatedUser;
     const auth = yield* AuthRepo.AuthRepo;
-
     const db = yield* AdminDatabase.AdminDatabase;
 
     const res = yield* db.transaction((tx) =>
@@ -28,9 +26,10 @@ const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
         const orgsCreatedByUser =
           yield* auth.organization.listOrgsCreatedByUser(currentUser.user.id);
 
+        // TODO: Make it configurable
         if (orgsCreatedByUser.length >= 3) {
           return yield* new OrganizationError({
-            code: "ORG_LIMIT_REACHED",
+            code: "ORGANIZATION_CREATION_LIMIT_REACHED",
           });
         }
 
@@ -109,28 +108,14 @@ const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
 
 const getFullOrganizationHandler = (params: GetFullOrganizationRequest) =>
   Effect.gen(function* () {
-    const currentUser = yield* AuthenticatedUser;
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
 
-    const res = yield* db.transaction((tx) =>
+    return yield* db.transaction((tx) =>
       Effect.gen(function* () {
-        const org = yield* auth.organization.getFullOrganization(
-          currentUser.user.id,
-          params,
-        );
-
-        if (!org) {
-          return yield* new OrganizationError({
-            code: "ORGANIZATION_NOT_FOUND",
-          });
-        }
-
-        return org;
+        return yield* auth.organization.getFullOrganization(params);
       }).pipe(Transaction.withTx(tx)),
     );
-
-    return res;
   }).pipe(mapDatabaseError);
 
 const updateOrganizationHandler = (payload: UpdateOrganizationRequest) =>
@@ -139,44 +124,12 @@ const updateOrganizationHandler = (payload: UpdateOrganizationRequest) =>
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
 
-    const res = yield* db.transaction((tx) =>
+    return yield* db.transaction((tx) =>
       Effect.gen(function* () {
-        const org = yield* auth.organization.updateOrganization(
+        return yield* auth.organization.updateOrganization(
           currentUser.user.id,
           payload,
         );
-
-        if (!org) {
-          return yield* new OrganizationError({
-            code: "ORGANIZATION_PERMISSION_DENIED",
-          });
-        }
-
-        return org;
-      }).pipe(Transaction.withTx(tx)),
-    );
-
-    return res;
-  }).pipe(mapDatabaseError);
-
-const deleteOrganizationHandler = (payload: DeleteOrganizationRequest) =>
-  Effect.gen(function* () {
-    const currentUser = yield* AuthenticatedUser;
-    const auth = yield* AuthRepo.AuthRepo;
-    const db = yield* AdminDatabase.AdminDatabase;
-
-    return yield* db.transaction((tx) =>
-      Effect.gen(function* () {
-        const deleted = yield* auth.organization.deleteOrganization(
-          currentUser.user.id,
-          payload.id,
-        );
-
-        if (!deleted) {
-          return yield* new OrganizationError({
-            code: "ORGANIZATION_PERMISSION_DENIED",
-          });
-        }
       }).pipe(Transaction.withTx(tx)),
     );
   }).pipe(mapDatabaseError);
@@ -195,6 +148,5 @@ export const OrganizationGroupLive = HttpApiBuilder.group(
       .handle("getFullOrganization", ({ params }) =>
         getFullOrganizationHandler(params),
       )
-      .handle("update", ({ payload }) => updateOrganizationHandler(payload))
-      .handle("delete", ({ payload }) => deleteOrganizationHandler(payload)),
+      .handle("update", ({ payload }) => updateOrganizationHandler(payload)),
 );

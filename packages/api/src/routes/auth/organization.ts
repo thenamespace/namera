@@ -7,8 +7,6 @@ import {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
   DatabaseError,
-  DeleteOrganizationRequest,
-  DeleteOrganizationResponse,
   GetFullOrganizationRequest,
   GetFullOrganizationResponse,
   ListOrganizationsRequest,
@@ -62,12 +60,12 @@ export const organizationGroup = HttpApiGroup.make("organization")
       error: [OrganizationError, DatabaseError],
       success: UpdateOrganizationResponse,
     }),
-    // Delete Organization
-    HttpApiEndpoint.post("delete", "/organization/delete", {
-      payload: DeleteOrganizationRequest,
-      error: [OrganizationError, DatabaseError],
-      success: DeleteOrganizationResponse,
-    }),
+    // TODO: Add Delete Organization in future
+    // HttpApiEndpoint.post("delete", "/organization/delete", {
+    //   payload: DeleteOrganizationRequest,
+    //   error: [OrganizationError, DatabaseError],
+    //   success: DeleteOrganizationResponse,
+    // }),
   )
   .middleware(Authorization)
   .prefix("/auth");

@@ -26,6 +26,7 @@ import {
   PgPolicyBuilder,
 } from "@/schema/policy";
 
+import { organization } from "./organization";
 import { role } from "./role";
 
 // Invitations table
@@ -39,7 +40,10 @@ export const invitation = authSchema.table.withRLS(
       .$type<InvitationId>(),
     email: text("email").notNull().$type<Email>(),
     roleId: text("role_id").notNull().$type<OrganizationRoleId>(),
-    organizationId: text("organization_id").notNull().$type<OrganizationId>(),
+    organizationId: text("organization_id")
+      .notNull()
+      .$type<OrganizationId>()
+      .references(() => organization.id, { onDelete: "cascade" }),
     inviterId: text("inviter_id")
       .notNull()
       .$type<UserId>()

@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema, Context } from "effect";
 
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 
 import {
   type Database,
@@ -103,7 +103,12 @@ export const layer = Layer.succeed(
             activeOrganizationId: organizationId,
           })
           .where(
-            sql`${session.id} = ${sessionId} AND ${session.userId} = ${userId}`,
+            and(
+              eq(session.id, sessionId),
+              eq(session.userId, userId),
+              isNull(session.deletedAt),
+              isNull(session.revokedAt),
+            ),
           );
       }).pipe(mapDatabaseError),
   }),

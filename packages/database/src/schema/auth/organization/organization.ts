@@ -41,7 +41,7 @@ export const organization = authSchema.table.withRLS(
     slug: text("slug").notNull().$type<OrganizationSlug>(),
     createdById: text("created_by_id")
       .$type<UserId>()
-      .references(() => user.id, { onDelete: "set null" }),
+      .references(() => user.id, { onDelete: "no action" }),
     ...timestamps,
   },
   (table) => [
