@@ -16,7 +16,6 @@ import {
   OrganizationError,
   OrganizationId,
   OrganizationInsert,
-  OrganizationSlug,
   OrganizationUpdate,
   Permission,
   UpdateOrganizationRequest,
@@ -32,9 +31,6 @@ export type OrganizationRepo = {
     DatabaseError | OrganizationError,
     Database.Database
   >;
-  checkSlug: (
-    slug: OrganizationSlug,
-  ) => Effect.Effect<boolean, DatabaseError, Database.Database>;
   listOrgsCreatedByUser: (
     userId: UserId,
   ) => Effect.Effect<Organization[], DatabaseError, Database.Database>;
@@ -137,18 +133,6 @@ export const layer = Layer.succeed(
           });
         }
         return returning;
-      }).pipe(mapDatabaseError),
-    checkSlug: (slug: OrganizationSlug) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        const res = yield* db.query.organization.findFirst({
-          where: {
-            slug: { eq: slug },
-            deletedAt: { isNull: true },
-          },
-        });
-
-        return Boolean(res);
       }).pipe(mapDatabaseError),
     list: (userId) =>
       Effect.gen(function* () {

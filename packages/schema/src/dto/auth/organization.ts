@@ -1,11 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import {
-  Organization,
-  OrganizationInsert,
-  OrganizationMember,
-  OrganizationSlug,
-} from "@/auth";
+import { Organization, OrganizationInsert, OrganizationMember } from "@/auth";
 import { OrganizationId } from "@/common";
 
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
@@ -26,18 +21,10 @@ export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError
 
 // Create Organization
 export const CreateOrganizationRequest = OrganizationInsert.mapFields(
-  Struct.pick(["name", "metadata", "slug"]),
+  Struct.pick(["name", "metadata"]),
 );
 
 export const CreateOrganizationResponse = Organization;
-
-// Check if slug is available
-export const CheckOrganizationSlugRequest = Schema.Struct({
-  slug: OrganizationSlug,
-});
-export const CheckOrganizationSlugResponse = Schema.Struct({
-  isAvailable: Schema.Boolean,
-});
 
 // List user's organizations
 export const ListOrganizationsRequest = Schema.Undefined;
@@ -48,14 +35,12 @@ export const ListOrganizationsResponse = Schema.Array(
 // Set current user's active organization
 export const SetActiveOrganizationRequest = Schema.Struct({
   id: OrganizationId,
-  slug: OrganizationSlug,
 });
 export const SetActiveOrganizationResponse = Schema.Void;
 
 // Get Organization
 export const GetFullOrganizationRequest = Schema.Struct({
   id: OrganizationId,
-  slug: OrganizationSlug,
   membersLimit: Schema.Int.check(
     Schema.isBetween(
       { minimum: 1, maximum: 100 },
@@ -86,10 +71,6 @@ export const DeleteOrganizationResponse = Schema.Void;
 
 export type CreateOrganizationRequest = typeof CreateOrganizationRequest.Type;
 export type CreateOrganizationResponse = typeof CreateOrganizationResponse.Type;
-export type CheckOrganizationSlugRequest =
-  typeof CheckOrganizationSlugRequest.Type;
-export type CheckOrganizationSlugResponse =
-  typeof CheckOrganizationSlugResponse.Type;
 export type ListOrganizationsRequest = typeof ListOrganizationsRequest.Type;
 export type ListOrganizationsResponse = typeof ListOrganizationsResponse.Type;
 export type SetActiveOrganizationRequest =

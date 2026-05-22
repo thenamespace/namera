@@ -1,6 +1,10 @@
 /// <reference types="vite/client" />
 
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  Link,
+  Outlet,
+} from "@tanstack/react-router";
 
 import { NotFound } from "@/components/misc";
 import { ProviderTree } from "@/providers";
@@ -8,6 +12,7 @@ import { Button } from "@namera-ai/ui/components/ui/button";
 
 // oxlint-disable-next-line import/no-unassigned-import
 import "../styles/globals.css";
+import { QueryClient } from "@tanstack/react-query";
 
 function RootComponent() {
   return (
@@ -17,7 +22,9 @@ function RootComponent() {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   component: RootComponent,
   errorComponent: () => <div>Some Error Occurred</div>,
   head: () => ({

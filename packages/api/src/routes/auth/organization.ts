@@ -2,8 +2,6 @@ import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 import { Authorization } from "@/middlewares";
 import {
-  CheckOrganizationSlugRequest,
-  CheckOrganizationSlugResponse,
   CreateOrganizationRequest,
   CreateOrganizationResponse,
   DatabaseError,
@@ -26,12 +24,7 @@ export const organizationGroup = HttpApiGroup.make("organization")
       error: [OrganizationError, DatabaseError],
       success: CreateOrganizationResponse,
     }),
-    // Check if slug is available
-    HttpApiEndpoint.post("checkSlug", "/organization/check-slug", {
-      payload: CheckOrganizationSlugRequest,
-      error: [OrganizationError, DatabaseError],
-      success: CheckOrganizationSlugResponse,
-    }),
+
     // List user's organizations
     HttpApiEndpoint.get("list", "/organization/list", {
       params: ListOrganizationsRequest,

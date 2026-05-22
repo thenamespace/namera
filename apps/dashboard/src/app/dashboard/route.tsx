@@ -24,8 +24,8 @@ const DashboardLayout = () => {
 };
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async () => {
-    return await authMiddleware();
+  beforeLoad: async ({ context }) => {
+    return await authMiddleware(context.queryClient);
   },
   component: DashboardLayout,
   loader: () => {

@@ -3,17 +3,6 @@ import { Schema } from "effect";
 import { MetadataIcon, MetadataName, OrganizationId, UserId } from "@/common";
 import { createInsertSchema, createUpdateSchema } from "@/helpers";
 
-export const OrganizationSlug = Schema.String.pipe(
-  Schema.brand("OrganizationSlug"),
-).check(
-  Schema.isPattern(/^[a-zA-Z0-9-]+$/, {
-    message: "Slug must be alphanumeric and can contain hyphens",
-  }),
-  Schema.isLengthBetween(3, 63, {
-    message: "Slug must be between 3 and 63 characters long",
-  }),
-);
-
 export const OrganizationMetadata = Schema.Struct({
   logo: MetadataIcon,
 });
@@ -25,7 +14,6 @@ export const Organization = Schema.Struct({
   name: MetadataName,
   metadata: OrganizationMetadata,
   plan: OrganizationPlan,
-  slug: OrganizationSlug,
   createdById: Schema.NullOr(UserId),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
@@ -38,11 +26,9 @@ export const OrganizationInsert = createInsertSchema(
   "name",
   "metadata",
   "plan",
-  "slug",
   "createdById",
 );
 
-export type OrganizationSlug = typeof OrganizationSlug.Type;
 export type OrganizationMetadata = typeof OrganizationMetadata.Type;
 export type OrganizationPlan = typeof OrganizationPlan.Type;
 export type Organization = typeof Organization.Type;

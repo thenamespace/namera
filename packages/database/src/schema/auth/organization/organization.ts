@@ -1,19 +1,17 @@
 import type {
   OrganizationId,
   OrganizationMetadata,
-  OrganizationSlug,
   UserId,
 } from "@namera-ai/schema";
 
 import { sql } from "drizzle-orm";
-import { jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, jsonb, text } from "drizzle-orm/pg-core";
 
 import { authSchema } from "@/schema/auth/common";
 import { user } from "@/schema/auth/user";
 import {
   adminRole,
   generateUniqueId,
-  lower,
   timestamps,
   userRole,
 } from "@/schema/common";
@@ -38,15 +36,14 @@ export const organization = authSchema.table.withRLS(
     name: text("name").notNull(),
     metadata: jsonb("metadata").notNull().$type<OrganizationMetadata>(),
     plan: text("plan").notNull().$type<OrganizationPlan>(),
-    slug: text("slug").notNull().$type<OrganizationSlug>(),
     createdById: text("created_by_id")
       .$type<UserId>()
       .references(() => user.id, { onDelete: "no action" }),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("organization_slug_uidx")
-      .on(lower(table.slug))
+    index("organization_created_by_idx")
+      .on(table.createdById)
       .where(sql`${table.deletedAt} IS NULL`),
     new PgPolicyBuilder()
       .name("organization_select")

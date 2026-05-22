@@ -1,11 +1,15 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { CheckCircleIcon } from "@phosphor-icons/react";
 import { Controller, useForm } from "react-hook-form";
 
+import { createOrganization } from "@/actions/auth/organization";
 import { HeadingGroup } from "@/components/misc";
-import { MetadataIcon } from "@namera-ai/schema";
+import { queries } from "@/lib/query";
+import { CreateOrganizationRequest } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Card, CardContent } from "@namera-ai/ui/components/ui/card";
 import {
@@ -15,51 +19,32 @@ import {
 } from "@namera-ai/ui/components/ui/field";
 import { IconPicker } from "@namera-ai/ui/components/ui/icon-picker";
 import { Input } from "@namera-ai/ui/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@namera-ai/ui/components/ui/input-group";
-import { Spinner } from "@namera-ai/ui/components/ui/spinner";
-
-const NewWorkspaceRequest = Schema.Struct({
-  metadata: Schema.Struct({
-    name: Schema.String,
-    logo: MetadataIcon,
-  }),
-  slug: Schema.String.check(
-    Schema.isPattern(/^[a-z0-9][a-z0-9-]{2,62}[a-z0-9]$/, {
-      message: "Invalid slug",
-    }),
-    Schema.isLengthBetween(3, 63, {
-      message: "Slug must be between 3 and 63 characters",
-    }),
-  ),
-});
-
-type NewWorkspaceRequest = typeof NewWorkspaceRequest.Type;
-
-const handleSubmit = (value: NewWorkspaceRequest) => {
-  console.log(value);
-};
 
 export const NewWorkspaceForm = () => {
-  const form = useForm<NewWorkspaceRequest>({
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const form = useForm<CreateOrganizationRequest>({
     defaultValues: {
+      name: "",
       metadata: {
         logo: {
           type: "icon",
           value: "wallet",
         },
-        name: "",
       },
     },
     resolver: standardSchemaResolver(
-      Schema.toStandardSchemaV1(NewWorkspaceRequest),
+      Schema.toStandardSchemaV1(CreateOrganizationRequest),
     ),
   });
 
-  const slug = form.watch("slug");
+  const handleSubmit = async (value: CreateOrganizationRequest) => {
+    await createOrganization(value);
+    await queryClient.invalidateQueries({
+      queryKey: queries.auth.me.queryKey,
+    });
+    await navigate({ to: "/dashboard" });
+  };
 
   return (
     <form
@@ -96,7 +81,7 @@ export const NewWorkspaceForm = () => {
             }}
           />
           <Controller
-            name="metadata.name"
+            name="name"
             control={form.control}
             render={({ field, fieldState }) => {
               const isInvalid = fieldState.invalid;
@@ -119,45 +104,15 @@ export const NewWorkspaceForm = () => {
               );
             }}
           />
-          <Controller
-            name="slug"
-            control={form.control}
-            render={({ field, fieldState }) => {
-              const isInvalid = fieldState.invalid;
-              return (
-                <Field data-invalid={isInvalid} className="py-3">
-                  <div className="flex flex-row items-center justify-between">
-                    <div className="flex flex-col">
-                      <FieldLabel htmlFor={field.name}>
-                        Workspace Slug
-                      </FieldLabel>
-                      <span className="text-muted-foreground text-[10px]">
-                        dashboard.namera.ai/{slug}
-                      </span>
-                    </div>
-                    <InputGroup className="max-w-48">
-                      <InputGroupInput
-                        id={field.name}
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="my-workspace"
-                        autoComplete="off"
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <CheckCircleIcon />
-                        <Spinner />
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </div>
-                  {isInvalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              );
-            }}
-          />
         </CardContent>
       </Card>
-      <Button variant="default" size="lg" className="my-2">
+      <Button
+        variant="default"
+        size="lg"
+        className="my-2"
+        type="submit"
+        disabled={form.formState.isSubmitting}
+      >
         Create Workspace
       </Button>
     </form>

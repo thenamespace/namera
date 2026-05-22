@@ -19,9 +19,8 @@ import {
   AuthCoreGroupLive,
   MagicLinkGroupLive,
   HealthGroupLive,
-  // OrganizationGroupLive,
+  OrganizationGroupLive,
   RpcGroupLive,
-  SmartAccountGroupLive,
 } from "./routes";
 
 const NameraApiLive = Layer.mergeAll(
@@ -29,8 +28,7 @@ const NameraApiLive = Layer.mergeAll(
   RpcGroupLive,
   AuthCoreGroupLive,
   MagicLinkGroupLive,
-  // OrganizationGroupLive,
-  SmartAccountGroupLive,
+  OrganizationGroupLive,
 );
 
 const app = HttpApiBuilder.layer(api).pipe(

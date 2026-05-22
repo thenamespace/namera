@@ -183,6 +183,7 @@ import {
   UsersFourIcon,
   IdentificationCardIcon,
   IdentificationBadgeIcon,
+  CrownIcon,
   KeyIcon,
 } from "@phosphor-icons/react";
 
@@ -220,6 +221,7 @@ export const ICON_DATA: IconData[] = [
   { name: "highlighter", component: "Highlighter", category: "general", tags: ["highlight"] , icon: HighlighterIcon },
   { name: "eraser", component: "Eraser", category: "general", tags: ["erase"] , icon: EraserIcon },
   { name: "key", component: "Key", category: "general", tags: ["secure"] , icon: KeyIcon },
+  { name: "crown", component: "Crown", category: "general", tags: ["admin"] , icon: CrownIcon },
 
   // USER (25)
   { name: "user", component: "User", category: "user", tags: ["profile"] , icon: UserIcon },

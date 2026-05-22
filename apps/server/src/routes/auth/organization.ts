@@ -6,7 +6,6 @@ import { api, AuthenticatedUser } from "@namera-ai/api";
 import { AdminDatabase, Database, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 import {
-  CheckOrganizationSlugRequest,
   type GetFullOrganizationRequest,
   OrganizationError,
   type CreateOrganizationRequest,
@@ -26,46 +25,42 @@ const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
         const orgsCreatedByUser =
           yield* auth.organization.listOrgsCreatedByUser(currentUser.user.id);
 
-        // TODO: Make it configurable
         if (orgsCreatedByUser.length >= 3) {
           return yield* new OrganizationError({
             code: "ORGANIZATION_CREATION_LIMIT_REACHED",
           });
         }
 
-        const isSlugTaken = yield* auth.organization.checkSlug(payload.slug);
-
-        if (isSlugTaken) {
-          return yield* new OrganizationError({
-            code: "SLUG_ALREADY_TAKEN",
-          });
-        }
-
+        // Create Organization
         const newOrg = yield* auth.organization.create({
           ...payload,
           plan: "free",
           createdById: currentUser.user.id,
         });
 
+        // Create default system roles.
+        const { ownerRole } = yield* auth.role.createSystemRoles(newOrg.id);
+
+        // Create owner member
+        yield* auth.member.create({
+          organizationId: newOrg.id,
+          userId: currentUser.user.id,
+          roleId: ownerRole.id,
+          joinedAt: new Date(),
+        });
+
+        // Set current user's active organization
+        yield* auth.session.setActiveOrganization(
+          currentUser.session.id,
+          currentUser.user.id,
+          newOrg.id,
+        );
+
         return newOrg;
       }).pipe(Transaction.withTx(tx)),
     );
 
     return res;
-  }).pipe(mapDatabaseError);
-
-const checkSlugHandler = ({ slug }: CheckOrganizationSlugRequest) =>
-  Effect.gen(function* () {
-    const db = yield* AdminDatabase.AdminDatabase;
-    const auth = yield* AuthRepo.AuthRepo;
-
-    const isSlugTaken = yield* db.transaction((tx) =>
-      Effect.gen(function* () {
-        return yield* auth.organization.checkSlug(slug);
-      }).pipe(Transaction.withTx(tx)),
-    );
-
-    return { isAvailable: !isSlugTaken };
   }).pipe(mapDatabaseError);
 
 const listOrgsHandler = () =>
@@ -140,7 +135,6 @@ export const OrganizationGroupLive = HttpApiBuilder.group(
   (handlers) =>
     handlers
       .handle("create", ({ payload }) => createOrganizationHandler(payload))
-      .handle("checkSlug", ({ payload }) => checkSlugHandler(payload))
       .handle("list", () => listOrgsHandler())
       .handle("setActive", ({ payload }) =>
         setActiveOrganizationHandler(payload),

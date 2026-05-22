@@ -84,3 +84,33 @@ export const memberRolePermissions: Permission[] = [
   "smart_account:read",
   "session_key:read",
 ];
+
+export const ownerRole = {
+  key: "owner",
+  permissions: ownerRolePermissions,
+  isSystem: true,
+  version: 0,
+  metadata: {
+    name: "Owner",
+    description: "System role for the organization owner",
+    logo: {
+      type: "icon",
+      value: "crown",
+    },
+  },
+} as const;
+
+export const memberRole = {
+  key: "member",
+  permissions: memberRolePermissions,
+  isSystem: true,
+  version: 0,
+  metadata: {
+    name: "Member",
+    description: "System role for organization members",
+    logo: {
+      type: "icon",
+      value: "user",
+    },
+  },
+} as const;

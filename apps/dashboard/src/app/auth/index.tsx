@@ -40,8 +40,8 @@ const AuthPage = () => {
 };
 
 export const Route = createFileRoute("/auth/")({
-  beforeLoad: async () => {
-    return await authMiddleware();
+  beforeLoad: async ({ context }) => {
+    return await authMiddleware(context.queryClient);
   },
   component: AuthPage,
 });

@@ -9,26 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
-import { Route as AuthIndexRouteImport } from "./app/auth/index";
-import { Route as DashboardagentsIdentityIndexRouteImport } from "./app/dashboard/(agents)/identity/index";
-import { Route as DashboardagentsMcpIndexRouteImport } from "./app/dashboard/(agents)/mcp/index";
-import { Route as DashboardcoreAccountsIndexRouteImport } from "./app/dashboard/(core)/accounts/index";
-import { Route as DashboardcoreAccountsNewIndexRouteImport } from "./app/dashboard/(core)/accounts/new/index";
-import { Route as DashboardcoreActivityIndexRouteImport } from "./app/dashboard/(core)/activity/index";
-import { Route as DashboardcoreSessionKeysCreateIndexRouteImport } from "./app/dashboard/(core)/session-keys/create/index";
-import { Route as DashboardcoreSessionKeysIndexRouteImport } from "./app/dashboard/(core)/session-keys/index";
-import { Route as DashboardcoreTemplatesIndexRouteImport } from "./app/dashboard/(core)/templates/index";
-import { Route as DashboardprimaryAssetsIndexRouteImport } from "./app/dashboard/(primary)/assets/index";
-import { Route as DashboardprimaryInboxIndexRouteImport } from "./app/dashboard/(primary)/inbox/index";
-import { Route as DashboardprimaryIndexRouteImport } from "./app/dashboard/(primary)/index";
 import { Route as DashboardRouteRouteImport } from "./app/dashboard/route";
-import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
-import { Route as DashboardSettingsNotificationsIndexRouteImport } from "./app/dashboard/settings/notifications/index";
-import { Route as DashboardSettingsProfileIndexRouteImport } from "./app/dashboard/settings/profile/index";
-import { Route as DashboardSettingsSecurityIndexRouteImport } from "./app/dashboard/settings/security/index";
-import { Route as DashboardSettingsWorkspaceIndexRouteImport } from "./app/dashboard/settings/workspace/index";
 import { Route as IndexRouteImport } from "./app/index";
+import { Route as AuthIndexRouteImport } from "./app/auth/index";
 import { Route as WorkspaceNewRouteImport } from "./app/workspace/new";
+import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/settings/index";
+import { Route as DashboardprimaryIndexRouteImport } from "./app/dashboard/(primary)/index";
+import { Route as DashboardSettingsWorkspaceIndexRouteImport } from "./app/dashboard/settings/workspace/index";
+import { Route as DashboardSettingsSecurityIndexRouteImport } from "./app/dashboard/settings/security/index";
+import { Route as DashboardSettingsProfileIndexRouteImport } from "./app/dashboard/settings/profile/index";
+import { Route as DashboardSettingsNotificationsIndexRouteImport } from "./app/dashboard/settings/notifications/index";
+import { Route as DashboardprimaryInboxIndexRouteImport } from "./app/dashboard/(primary)/inbox/index";
+import { Route as DashboardprimaryAssetsIndexRouteImport } from "./app/dashboard/(primary)/assets/index";
+import { Route as DashboardcoreTemplatesIndexRouteImport } from "./app/dashboard/(core)/templates/index";
+import { Route as DashboardcoreSessionKeysIndexRouteImport } from "./app/dashboard/(core)/session-keys/index";
+import { Route as DashboardcoreActivityIndexRouteImport } from "./app/dashboard/(core)/activity/index";
+import { Route as DashboardcoreAccountsIndexRouteImport } from "./app/dashboard/(core)/accounts/index";
+import { Route as DashboardagentsMcpIndexRouteImport } from "./app/dashboard/(agents)/mcp/index";
+import { Route as DashboardagentsIdentityIndexRouteImport } from "./app/dashboard/(agents)/identity/index";
+import { Route as DashboardcoreSessionKeysCreateIndexRouteImport } from "./app/dashboard/(core)/session-keys/create/index";
+import { Route as DashboardcoreAccountsNewIndexRouteImport } from "./app/dashboard/(core)/accounts/new/index";
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
