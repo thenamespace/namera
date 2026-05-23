@@ -1,20 +1,15 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm, Controller } from "react-hook-form";
 
 import { signInWithMagicLink } from "@/actions";
-import { Email } from "@namera-ai/schema";
+import { Email, SigInMagicLinkBody } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Field, FieldError } from "@namera-ai/ui/components/ui/field";
 import { Input } from "@namera-ai/ui/components/ui/input";
 
-const AuthFormSchema = Schema.toStandardSchemaV1(
-  Schema.Struct({
-    email: Email,
-    name: Schema.String,
-  }),
-);
+const AuthFormSchema = SigInMagicLinkBody.mapFields(Struct.pick(["email"]));
 
 type AuthForm = typeof AuthFormSchema.Type;
 
@@ -26,7 +21,6 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
   const form = useForm({
     defaultValues: {
       email: "",
-      name: "",
     },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(AuthFormSchema)),
   });
@@ -34,7 +28,6 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
   const handleSubmit = async (value: AuthForm) => {
     await signInWithMagicLink({
       email: Email.make(value.email),
-      name: value.name,
     });
     onSubmit(value);
   };
@@ -48,26 +41,6 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
       <div className="text-center text-lg font-medium">
         Get started with Namera
       </div>
-      <Controller
-        render={({ field, fieldState }) => {
-          const isInvalid = fieldState.invalid;
-          return (
-            <Field data-invalid={isInvalid}>
-              <Input
-                aria-invalid={isInvalid}
-                className="h-9"
-                id={field.name}
-                {...field}
-                placeholder="What should we call you?"
-                spellCheck={false}
-              />
-              {isInvalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          );
-        }}
-        control={form.control}
-        name="name"
-      />
       <Controller
         render={({ field, fieldState }) => {
           const isInvalid = fieldState.invalid;

@@ -42,7 +42,8 @@ export const NewWorkspaceForm = () => {
   const handleSubmit = async (value: CreateOrganizationRequest) => {
     await createOrganization(value);
     await queryClient.cancelQueries(queries.auth.me);
-    queryClient.setQueryData(queries.auth.me.queryKey, null);
+    await queryClient.invalidateQueries(queries.organization.listUserOrgs);
+    await queryClient.fetchQuery(queries.auth.me);
     await router.invalidate();
     await navigate({ to: "/dashboard" });
   };

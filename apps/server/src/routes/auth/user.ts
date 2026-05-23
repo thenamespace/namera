@@ -19,9 +19,7 @@ const updateUserHandler = (payload: UpdateUserRequest) =>
           actorType: "user",
           userId: currentUser.user.id,
         });
-        return yield* authRepo.user.updateUser(currentUser.user.id, {
-          name: payload.name,
-        });
+        return yield* authRepo.user.updateUser(currentUser.user.id, payload);
       }).pipe(Transaction.withTx(tx)),
     );
   }).pipe(mapDatabaseError);

@@ -36,5 +36,7 @@ export const createNewUser = ({
       metadata: {},
     });
 
+    // TODO: Create a new org for user....
+
     return user;
   });

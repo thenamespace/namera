@@ -4,6 +4,7 @@ import { Effect, Layer, Context, Metric, DateTime } from "effect";
 
 import { createNewUser, getHttpRequestMetadata } from "@/helpers";
 import { originCheck } from "@/helpers/origin";
+import { inferNameFromEmail } from "@/helpers/user";
 import { AdminDatabase, Transaction, type Database } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 import * as CoreRepo from "@namera-ai/domain/core";
@@ -84,7 +85,6 @@ const signInMagicLink = (params: SigInMagicLinkBody) =>
             value: JSON.stringify({
               attempt: 0,
               email: params.email,
-              name: params.name,
               callbackUrl: params.callbackUrl.toString(),
               newUserCallbackUrl: params.newUserCallbackUrl.toString(),
             }),
@@ -141,13 +141,11 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
 
         const {
           email,
-          name,
           attempt = 0,
           callbackUrl,
           newUserCallbackUrl,
         } = JSON.parse(verificationValue.value) as {
           email: string;
-          name?: string | undefined;
           attempt?: number | undefined;
           callbackUrl: string;
           newUserCallbackUrl: string;
@@ -168,7 +166,8 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
           value: JSON.stringify({
             attempt: attempt + 1,
             email,
-            name,
+            callbackUrl,
+            newUserCallbackUrl,
           }),
         });
 
@@ -179,9 +178,9 @@ const verifyMagicLink = (params: VerifyMagicLinkBody) =>
         if (!user) {
           user = yield* createNewUser({
             email: Email.make(email),
-            name,
+            name: inferNameFromEmail(email),
             emailVerified: true,
-            image: null,
+            image: `https://api.dicebear.com/9.x/glass/svg?seed=${email}`,
           });
           isNewUser = true;
         }

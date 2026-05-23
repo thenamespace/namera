@@ -14,7 +14,7 @@ export const getCurrentUser = async () =>
   );
 
 export const signInWithMagicLink = async (
-  data: Pick<SigInMagicLinkBody, "name" | "email">,
+  data: Pick<SigInMagicLinkBody, "email">,
 ) =>
   clientRuntime.runPromise(
     Effect.gen(function* () {

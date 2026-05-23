@@ -25,10 +25,6 @@ export const SigInMagicLinkBody = Schema.Struct({
   email: Email.annotate({
     description: "Email address to send the magic link",
   }),
-  name: Schema.String.check(Schema.isLengthBetween(4, 255)).annotate({
-    description:
-      "User display name. Only used if the user is registering for the first time.",
-  }),
   newUserCallbackUrl: Schema.URL.annotate({
     description:
       "URL to redirect after new user signup. Only used if the user is registering for the first time.",

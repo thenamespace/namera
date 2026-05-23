@@ -27,6 +27,9 @@ import { EmojiPickerComponent } from "./emoji";
 import { ImagePickerComponent } from "./image";
 import { IconRenderer, MetadataIconRenderer } from "./renderer";
 
+type IconPickerType = MetadataIcon["type"];
+const DEFAULT_ALLOWED_TYPES: IconPickerType[] = ["icon", "emoji", "image"];
+
 const useIconPicker = (): {
   search: string;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
@@ -101,11 +104,22 @@ const IconPickerComponent = ({
 const IconPicker = ({
   value,
   onChange,
+  allowedTypes = DEFAULT_ALLOWED_TYPES,
 }: {
   onChange: (icon: MetadataIcon) => void;
   value: MetadataIcon;
+  allowedTypes?: IconPickerType[];
 }) => {
   const [open, setOpen] = useState(false);
+  const allowedTypeSet = useMemo(
+    () =>
+      new Set(allowedTypes.length > 0 ? allowedTypes : DEFAULT_ALLOWED_TYPES),
+    [allowedTypes],
+  );
+  const firstAllowedType = allowedTypes[0] ?? DEFAULT_ALLOWED_TYPES[0];
+  const activeType = allowedTypeSet.has(value.type)
+    ? value.type
+    : firstAllowedType;
 
   return (
     <Dialog open={open} onOpenChange={(e) => setOpen(e)}>
@@ -125,37 +139,54 @@ const IconPicker = ({
         />
       </DialogTrigger>
       <DialogContent className="min-w-md px-1 py-1">
-        <Tabs defaultValue="icon">
-          <TabsList variant="line">
-            <TabsTrigger value="icon">Icons</TabsTrigger>
-            <TabsTrigger value="emoji">Emojis</TabsTrigger>
-            <TabsTrigger value="image">Image</TabsTrigger>
-          </TabsList>
-          <TabsContent value="icon" className="p-2">
-            <IconPickerComponent
-              onChange={(icon) => {
-                onChange(icon);
-                setOpen(false);
-              }}
-            />
-          </TabsContent>
-          <TabsContent value="emoji" className="p-2">
-            <EmojiPickerComponent
-              onChange={(icon) => {
-                onChange(icon);
-                setOpen(false);
-              }}
-            />
-          </TabsContent>
-          <TabsContent value="image" className="p-2">
-            <ImagePickerComponent
-              value={value}
-              onDone={(imgSrc: string) => {
-                onChange({ type: "image", value: imgSrc });
-                setOpen(false);
-              }}
-            />
-          </TabsContent>
+        <Tabs key={`${open}-${activeType}`} defaultValue={activeType}>
+          {allowedTypes.length > 1 && (
+            <TabsList variant="line">
+              {allowedTypeSet.has("icon") && (
+                <TabsTrigger value="icon">Icons</TabsTrigger>
+              )}
+              {allowedTypeSet.has("emoji") && (
+                <TabsTrigger value="emoji">Emojis</TabsTrigger>
+              )}
+              {allowedTypeSet.has("image") && (
+                <TabsTrigger value="image">Image</TabsTrigger>
+              )}
+            </TabsList>
+          )}
+          {allowedTypes.length === 1 && (
+            <div className="px-2 pt-1 text-base">{`${allowedTypes[0]?.at(0)?.toUpperCase()}${allowedTypes[0]?.slice(1)}`}</div>
+          )}
+          {allowedTypeSet.has("icon") && (
+            <TabsContent value="icon" className="p-2">
+              <IconPickerComponent
+                onChange={(icon) => {
+                  onChange(icon);
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
+          {allowedTypeSet.has("emoji") && (
+            <TabsContent value="emoji" className="p-2">
+              <EmojiPickerComponent
+                onChange={(icon) => {
+                  onChange(icon);
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
+          {allowedTypeSet.has("image") && (
+            <TabsContent value="image" className="p-2">
+              <ImagePickerComponent
+                value={value}
+                onDone={(imgSrc: string) => {
+                  onChange({ type: "image", value: imgSrc });
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>

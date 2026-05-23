@@ -2,9 +2,9 @@ import type { MetadataIcon } from "@namera-ai/schema";
 
 import { useMemo, useState } from "react";
 
+import { Button } from "@namera-ai/ui/components/ui/button";
+import { Image } from "@namera-ai/ui/components/ui/image";
 import { Input } from "@namera-ai/ui/components/ui/input";
-
-import { Button } from "../button";
 
 type Props = {
   value: MetadataIcon;
@@ -15,7 +15,8 @@ export const ImagePickerComponent = ({ value, onDone }: Props) => {
   const [imgSrc, setImgSrc] = useState(
     value.type === "image" ? value.value : "",
   );
-  const defaultImage = "https://placehold.co/512x512/262627/FFF?text=Image";
+  const defaultImage =
+    "https://api.dicebear.com/9.x/glass/svg?backgroundColor=6a75e2";
 
   const imageSrc = useMemo(() => {
     if (imgSrc.trim() === "") return defaultImage;
@@ -28,7 +29,7 @@ export const ImagePickerComponent = ({ value, onDone }: Props) => {
         <Input
           className="border-input"
           placeholder="Image URL"
-          value={imageSrc}
+          value={imgSrc}
           onChange={(e) => {
             setImgSrc(e.target.value);
           }}
@@ -37,18 +38,17 @@ export const ImagePickerComponent = ({ value, onDone }: Props) => {
           className="min-w-20"
           size="lg"
           onClick={() => {
-            onDone(imageSrc);
+            onDone(imgSrc);
           }}
         >
           Save
         </Button>
       </div>
-      <img
+      <Image
         className="border-input aspect-square w-full rounded-xl border-1"
-        onError={(e) => {
-          e.currentTarget.src = defaultImage;
-        }}
+        defaultImage={defaultImage}
         src={imageSrc}
+        layout="fullWidth"
       />
     </div>
   );

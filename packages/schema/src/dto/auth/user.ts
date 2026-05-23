@@ -8,7 +8,7 @@ import {
   User,
 } from "@/auth";
 
-export const UpdateUserRequest = User.mapFields(Struct.pick(["name"]));
+export const UpdateUserRequest = User.mapFields(Struct.pick(["name", "image"]));
 export const UpdateUserResponse = User;
 
 export const AuthenticatedUserResponse = Schema.Struct({
