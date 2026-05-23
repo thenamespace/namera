@@ -134,10 +134,23 @@ const updateOrganizationHandler = (payload: UpdateOrganizationRequest) =>
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
 
+    const org = currentUser.organization;
+
+    if (!org) {
+      return yield* new OrganizationError({
+        code: "ORGANIZATION_NOT_FOUND",
+      });
+    }
+
     return yield* db.transaction((tx) =>
       Effect.gen(function* () {
+        yield* Transaction.setActorContext({
+          actorType: "user",
+          userId: currentUser.user.id,
+        });
         return yield* auth.organization.updateOrganization(
           currentUser.user.id,
+          org.id,
           payload,
         );
       }).pipe(Transaction.withTx(tx)),

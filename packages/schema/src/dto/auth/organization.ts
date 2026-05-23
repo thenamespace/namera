@@ -55,10 +55,9 @@ export const GetFullOrganizationResponse = Organization.mapFields(
 );
 
 // Update Organization
-export const UpdateOrganizationRequest = Schema.Struct({
-  id: OrganizationId,
-  data: Organization.mapFields(Struct.pick(["name", "metadata"])),
-});
+export const UpdateOrganizationRequest = Organization.mapFields(
+  Struct.pick(["name", "metadata"]),
+);
 export const UpdateOrganizationResponse = Organization;
 
 // Delete Organization

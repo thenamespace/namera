@@ -51,3 +51,4 @@ export const logout = async () =>
   );
 
 export * from "./user";
+export * from "./organization";

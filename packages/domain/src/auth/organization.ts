@@ -59,6 +59,7 @@ export type OrganizationRepo = {
   >;
   updateOrganization: (
     userId: UserId,
+    orgId: OrganizationId,
     params: UpdateOrganizationRequest,
   ) => Effect.Effect<
     Organization,
@@ -99,9 +100,7 @@ const hasPermissions = (
 
     if (!role) return false;
 
-    return permissions.every((permission) =>
-      role.permissions.includes(permission),
-    );
+    return permissions.every((p) => role.permissions.includes(p));
   }).pipe(mapDatabaseError);
 
 export const layer = Layer.succeed(
@@ -203,12 +202,10 @@ export const layer = Layer.succeed(
 
         return res;
       }).pipe(mapDatabaseError),
-    updateOrganization: (userId, params) =>
+    updateOrganization: (userId, orgId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        const canUpdate = yield* hasPermissions(userId, params.id, [
-          "org:update",
-        ]);
+        const canUpdate = yield* hasPermissions(userId, orgId, ["org:update"]);
 
         if (!canUpdate) {
           return yield* new OrganizationError({
@@ -216,7 +213,7 @@ export const layer = Layer.succeed(
           });
         }
 
-        const parsed = Schema.decodeSync(OrganizationUpdate)(params.data);
+        const parsed = Schema.decodeSync(OrganizationUpdate)(params);
         const res = yield* db
           .update(organization)
           .set({
@@ -224,7 +221,7 @@ export const layer = Layer.succeed(
             updatedAt: new Date(),
           })
           .where(
-            and(eq(organization.id, params.id), isNull(organization.deletedAt)),
+            and(eq(organization.id, orgId), isNull(organization.deletedAt)),
           )
           .returning();
 

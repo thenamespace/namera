@@ -45,7 +45,7 @@ export const role = authSchema.table.withRLS(
       .references(() => organization.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     metadata: jsonb("metadata").notNull().$type<OrganizationRoleMetadata>(),
-    permissions: text("permissions").array().notNull().$type<Permission[]>(),
+    permissions: text("permissions").array().notNull().$type<Permission>(),
     isSystem: boolean("is_system").notNull().default(false),
     version: integer("version").notNull().default(0),
     ...timestamps,

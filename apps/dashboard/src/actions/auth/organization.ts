@@ -1,6 +1,7 @@
 import type {
   CreateOrganizationRequest,
   OrganizationId,
+  UpdateOrganizationRequest,
 } from "@namera-ai/schema";
 
 import { Effect } from "effect";
@@ -31,5 +32,13 @@ export const switchOrganization = async (id: OrganizationId) =>
     Effect.gen(function* () {
       const client = yield* ApiClient.ApiClient;
       yield* client.organization.setActive({ payload: { id } });
+    }),
+  );
+
+export const updateOrganization = async (data: UpdateOrganizationRequest) =>
+  clientRuntime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* ApiClient.ApiClient;
+      return yield* client.organization.update({ payload: data });
     }),
   );
