@@ -5,8 +5,9 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "dev": "bun src/index.ts --watch",
-    "start": "bun src/index.ts"
+    "dev": "bun migrate && bun src/index.ts --watch",
+    "migrate": "bun --cwd ../../packages/database src/migrate.ts",
+    "start": "bun migrate && bun src/index.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",

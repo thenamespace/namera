@@ -21,7 +21,6 @@ const updateUserHandler = (payload: UpdateUserRequest) =>
         });
         return yield* authRepo.user.updateUser(currentUser.user.id, {
           name: payload.name,
-          image: payload.image,
         });
       }).pipe(Transaction.withTx(tx)),
     );
