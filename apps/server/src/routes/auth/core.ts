@@ -5,7 +5,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { AuthenticatedUser, api } from "@namera-ai/api";
 import { AuthConfig } from "@namera-ai/auth";
-import { AdminDatabase, Transaction } from "@namera-ai/database";
+import { Database, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 import { mapDatabaseError } from "@namera-ai/schema";
 
@@ -16,10 +16,14 @@ const currentUserHandler = Effect.fnUntraced(function* () {
 const listSessionsHandler = Effect.gen(function* () {
   const user = (yield* AuthenticatedUser).user;
   const authRepo = yield* AuthRepo.AuthRepo;
-  const db = yield* AdminDatabase.AdminDatabase;
+  const db = yield* Database.Database;
 
   const sessions = yield* db.transaction((tx) =>
     Effect.gen(function* () {
+      yield* Transaction.setActorContext({
+        actorType: "user",
+        userId: user.id,
+      });
       return yield* authRepo.session.findSessionsForUserId(user.id);
     }).pipe(Transaction.withTx(tx)),
   );
@@ -33,11 +37,15 @@ const logoutHandler = Effect.gen(function* () {
   const authUser = yield* AuthenticatedUser;
   const authConfig = yield* AuthConfig.AuthConfig;
   const authRepo = yield* AuthRepo.AuthRepo;
-  const db = yield* AdminDatabase.AdminDatabase;
+  const db = yield* Database.Database;
 
   yield* db.transaction((tx) =>
     Effect.gen(function* () {
-      return yield* authRepo.session.deleteSession(authUser.session.id);
+      yield* Transaction.setActorContext({
+        actorType: "user",
+        userId: authUser.user.id,
+      });
+      return yield* authRepo.session.revokeSession(authUser.session.id);
     }).pipe(Transaction.withTx(tx)),
   );
 
@@ -54,18 +62,18 @@ const logoutHandler = Effect.gen(function* () {
 const revokeOtherSessionsHandler = Effect.gen(function* () {
   const authUser = yield* AuthenticatedUser;
   const authRepo = yield* AuthRepo.AuthRepo;
-  const db = yield* AdminDatabase.AdminDatabase;
+  const db = yield* Database.Database;
 
-  const deletedSessions = yield* db.transaction((tx) =>
+  const revokedSessions = yield* db.transaction((tx) =>
     Effect.gen(function* () {
-      return yield* authRepo.session.deleteAllSessionsExcept(
+      return yield* authRepo.session.revokeAllSessionsExcept(
         authUser.user.id,
         authUser.session.id,
       );
     }).pipe(Transaction.withTx(tx)),
   );
 
-  return deletedSessions.length;
+  return revokedSessions.length;
 }).pipe(mapDatabaseError);
 
 export const AuthCoreGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>

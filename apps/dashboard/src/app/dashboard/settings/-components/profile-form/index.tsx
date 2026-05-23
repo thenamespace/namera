@@ -1,14 +1,16 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Controller, useForm, useFormState, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { updateUser } from "@/actions";
 import { useCurrentUser } from "@/hooks/auth";
+import { useAutoSave } from "@/hooks/misc";
 import { queries } from "@/lib/query";
 import { UpdateUserRequest } from "@namera-ai/schema";
 import {
@@ -32,37 +34,41 @@ export const ProfileForm = () => {
   });
 
   const updateProfile = useMutation({
-    mutationFn: async ({ name }: UpdateUserRequest) =>
-      updateUser({ name, image: null }),
+    mutationFn: async ({ name }: UpdateUserRequest) => updateUser({ name }),
     onSuccess: async () => {
       await queryClient.invalidateQueries(queries.auth.me);
     },
   });
 
-  const handleSubmit = async (value: UpdateUserRequest) => {
-    const res = await updateProfile.mutateAsync(value);
-    form.reset({
-      name: res.name,
-    });
-  };
+  const handleSubmit = useCallback(
+    async (value: UpdateUserRequest) => {
+      console.log("[ProfileForm] autosave submit called", {
+        value,
+        currentUserName: currentUser?.user.name,
+      });
 
-  const { isDirty } = useFormState({
-    control: form.control,
-  });
+      if (value.name === currentUser?.user.name) {
+        console.log("[ProfileForm] autosave skipped: unchanged name");
+        return;
+      }
 
-  const formValues = useWatch({
-    control: form.control,
-  });
+      await updateProfile.mutateAsync(value);
+      console.log("[ProfileForm] autosave mutation completed");
+      toast.success("Profile updated successfully");
+    },
+    [currentUser?.user.name, updateProfile],
+  );
+
+  const { resetBaseline } = useAutoSave({ form, onSave: handleSubmit });
 
   useEffect(() => {
-    if (!isDirty) return;
+    if (!currentUser || form.formState.isDirty) return;
 
-    const timer = setTimeout(() => {
-      form.handleSubmit(handleSubmit)();
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [isDirty, form, formValues]);
+    const values = { name: currentUser.user.name };
+    console.log("[ProfileForm] hydrating profile form", values);
+    form.reset(values);
+    resetBaseline(values);
+  }, [currentUser, form, resetBaseline]);
 
   return (
     <form

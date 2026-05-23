@@ -27,10 +27,10 @@ export type SessionRepo = {
   findSessionsForUserId: (
     userId: UserId,
   ) => Effect.Effect<Session[], DatabaseError, Database.Database>;
-  deleteSession: (
+  revokeSession: (
     id: SessionId,
   ) => Effect.Effect<void, DatabaseError, Database.Database>;
-  deleteAllSessionsExcept: (
+  revokeAllSessionsExcept: (
     userId: UserId,
     exceptSessionId: SessionId,
   ) => Effect.Effect<Session[], DatabaseError, Database.Database>;
@@ -54,11 +54,12 @@ export const layer = Layer.succeed(
         // biome-ignore lint/style/noNonNullAssertion: safe
         return res[0]!;
       }).pipe(mapDatabaseError),
-    deleteAllSessionsExcept: (userId, exceptSessionId) =>
+    revokeAllSessionsExcept: (userId, exceptSessionId) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db
-          .delete(session)
+          .update(session)
+          .set({ revokedAt: new Date() })
           .where(
             and(eq(session.userId, userId), ne(session.id, exceptSessionId)),
           )
@@ -66,10 +67,13 @@ export const layer = Layer.succeed(
 
         return res;
       }).pipe(mapDatabaseError),
-    deleteSession: (id) =>
+    revokeSession: (id) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
-        yield* db.delete(session).where(eq(session.id, id));
+        yield* db
+          .update(session)
+          .set({ revokedAt: new Date() })
+          .where(eq(session.id, id));
       }).pipe(mapDatabaseError),
     findSessionByToken: (token) =>
       Effect.gen(function* () {
