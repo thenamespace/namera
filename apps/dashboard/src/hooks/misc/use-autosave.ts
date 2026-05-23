@@ -77,6 +77,9 @@ export function useAutoSave<T extends FieldValues>({
 
       const data = form.getValues();
       const dataSignature = stableStringify(data);
+      if (dataSignature === baselineRef.current) {
+        return;
+      }
 
       if (inFlightRef.current) {
         rerunAfterSaveRef.current = true;
@@ -92,8 +95,8 @@ export function useAutoSave<T extends FieldValues>({
       if (!silent) setStatusIfMounted("saving");
 
       try {
-        await onSaveRef.current(data);
-        baselineRef.current = dataSignature;
+        const savedData = await onSaveRef.current(data);
+        baselineRef.current = stableStringify(savedData ?? data);
         if (!silent) setStatusIfMounted("saved");
 
         if (!silent) {
@@ -123,7 +126,7 @@ export function useAutoSave<T extends FieldValues>({
     timeoutRef.current = setTimeout(() => {
       void save();
     }, delay);
-  }, [clearSaveTimeout, currentSignature, delay, save, values]);
+  }, [clearSaveTimeout, delay, save]);
 
   useEffect(() => {
     onSaveRef.current = onSave;
@@ -134,10 +137,17 @@ export function useAutoSave<T extends FieldValues>({
   }, [save]);
 
   useEffect(() => {
+    if (!hasPendingChanges) {
+      clearSaveTimeout();
+      return;
+    }
+
     queueSave();
-  }, [currentSignature, hasPendingChanges, queueSave, values]);
+  }, [clearSaveTimeout, currentSignature, hasPendingChanges, queueSave]);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     const flushPendingChanges = () => {
       if (!flushOnUnmount) return;
 

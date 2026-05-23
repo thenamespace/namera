@@ -1,5 +1,3 @@
-import { useCallback, useEffect } from "react";
-
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
@@ -19,44 +17,58 @@ import { Input } from "@namera-ai/ui/components/ui/input";
 
 export const ProfileForm = () => {
   const { data: currentUser } = useCurrentUser();
+
+  // TODO: update to skeleton or some loading state
+  if (!currentUser) return null;
+
+  return (
+    <ProfileFormInner
+      key={currentUser.user.id}
+      initialValues={{
+        name: currentUser.user.name,
+        image: currentUser.user.image,
+      }}
+    />
+  );
+};
+
+export const ProfileFormInner = ({
+  initialValues,
+}: {
+  initialValues: {
+    name: string;
+    image?: string | null;
+  };
+}) => {
   const { mutateAsync: updateUser } = useUpdateUser();
 
   const form = useForm<UpdateUserRequest>({
-    defaultValues: {
-      name: currentUser?.user.name ?? "",
-      image: currentUser?.user.image ?? "",
-    },
+    defaultValues: initialValues,
     resolver: standardSchemaResolver(
       Schema.toStandardSchemaV1(UpdateUserRequest),
     ),
   });
 
-  const handleSubmit = useCallback(
-    async (value: UpdateUserRequest) => {
-      await updateUser(value);
-      toast.success("Profile updated successfully");
-    },
-    [currentUser?.user, updateUser],
-  );
-
-  const { resetBaseline } = useAutoSave({ form, onSave: handleSubmit });
-
-  useEffect(() => {
-    if (!currentUser || form.formState.isDirty) return;
-
-    const values = {
-      name: currentUser.user.name,
-      image: currentUser.user.image,
+  const saveProfile = async (value: UpdateUserRequest) => {
+    const savedValue = {
+      name: value.name,
+      image: value.image ?? "",
     };
-    form.reset(values);
-    resetBaseline(values);
-  }, [currentUser, form, resetBaseline]);
+    await updateUser(savedValue);
+    toast.success("Profile updated successfully");
+    return savedValue;
+  };
+
+  const { resetBaseline } = useAutoSave({ form, onSave: saveProfile });
 
   return (
     <form
       className="flex w-full flex-col gap-4"
       id="new-account-form"
-      onSubmit={form.handleSubmit(handleSubmit)}
+      onSubmit={form.handleSubmit(async (value) => {
+        const savedValue = await saveProfile(value);
+        resetBaseline(savedValue);
+      })}
     >
       <div className="flex flex-col gap-2 px-1 py-4">
         <div className="text-2xl font-medium">Profile</div>
@@ -88,7 +100,7 @@ export const ProfileForm = () => {
         <Field className="py-3">
           <div className="flex flex-row items-center justify-between">
             <FieldLabel>Email</FieldLabel>
-            <span className="text-sm">{currentUser?.user.email}</span>
+            <span className="text-sm"></span>
           </div>
         </Field>
         <Controller

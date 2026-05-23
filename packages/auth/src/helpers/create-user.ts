@@ -30,7 +30,7 @@ export const createNewUser = ({
     });
 
     // Create User preferences table.
-    yield* coreRepo.userPreference.create(user.id, {
+    yield* coreRepo.userPreference.create({
       userId: user.id,
       notificationPreferences: {},
       metadata: {},

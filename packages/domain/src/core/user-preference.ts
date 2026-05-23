@@ -25,7 +25,6 @@ export type UserPreferenceRepo = {
     data: UserPreferenceUpdate,
   ) => Effect.Effect<UserPreference, DatabaseError, Database.Database>;
   create: (
-    userId: UserId,
     data: UserPreferenceInsert,
   ) => Effect.Effect<UserPreference, DatabaseError, Database.Database>;
 };
@@ -57,7 +56,7 @@ export const layer = Layer.succeed(
           .returning();
         return Schema.decodeUnknownSync(UserPreference)(res[0]);
       }).pipe(mapDatabaseError),
-    create: (userId, data) =>
+    create: (data) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const res = yield* db.insert(userPreference).values(data).returning();

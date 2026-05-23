@@ -13,6 +13,14 @@ export const getCurrentUser = async () =>
     }).pipe(Effect.catchTag("Unauthorized", () => Effect.succeed(null))),
   );
 
+export const listSessions = async () =>
+  clientRuntime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* ApiClient.ApiClient;
+      return yield* client.auth.listSessions();
+    }),
+  );
+
 export const signInWithMagicLink = async (
   data: Pick<SigInMagicLinkBody, "email">,
 ) =>

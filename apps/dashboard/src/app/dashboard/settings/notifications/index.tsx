@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { queries } from "@/lib/query";
+
 import { NotificationsForm } from "../-components";
 
 const NotificationsPage = () => {
@@ -13,5 +15,8 @@ const NotificationsPage = () => {
 };
 
 export const Route = createFileRoute("/dashboard/settings/notifications/")({
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(queries.userPreference.get);
+  },
   component: NotificationsPage,
 });

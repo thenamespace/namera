@@ -9,7 +9,7 @@ import { Web3Provider } from "./web3";
 export const ProviderTree = ({ children }: PropsWithChildren) => {
   return (
     <HeadProvider>
-      <Toaster richColors position="top-right" />
+      <Toaster position="bottom-right" />
       <TooltipProvider>
         <Web3Provider>{children}</Web3Provider>
       </TooltipProvider>

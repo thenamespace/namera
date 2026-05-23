@@ -6,14 +6,16 @@ import {
   magicLinkGroup,
   userGroup,
 } from "./auth";
+import { userPreferencesGroup } from "./core";
 import { healthGroup } from "./health";
 import { rpcGroup } from "./rpc";
 
 export const api = HttpApi.make("NameraAPI")
-  .add(authCoreGroup)
-  .add(userGroup)
-  .add(magicLinkGroup)
+  .add(userPreferencesGroup)
   .add(organizationGroup)
+  .add(authCoreGroup)
+  .add(magicLinkGroup)
+  .add(userGroup)
   .add(rpcGroup)
   .add(healthGroup)
   .annotate(OpenApi.Title, "Namera API")

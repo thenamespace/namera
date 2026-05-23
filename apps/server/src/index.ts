@@ -16,6 +16,7 @@ import { OtelNode } from "@namera-ai/telemetry";
 import * as Env from "./env";
 import { Middlewares } from "./middlewares";
 import {
+  UserPreferencesGroupLive,
   AuthCoreGroupLive,
   MagicLinkGroupLive,
   HealthGroupLive,
@@ -25,6 +26,7 @@ import {
 } from "./routes";
 
 const NameraApiLive = Layer.mergeAll(
+  UserPreferencesGroupLive,
   HealthGroupLive,
   RpcGroupLive,
   AuthCoreGroupLive,

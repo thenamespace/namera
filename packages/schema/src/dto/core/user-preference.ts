@@ -1,3 +1,16 @@
-import { Schema } from "effect";
+import { Struct } from "effect";
 
-export const GetUserPreferenceRequest = Schema.Struct({});
+import { UserPreference, UserPreferenceUpdate } from "@/core";
+
+export const GetUserPreferenceResponse = UserPreference;
+
+export const UpdateUserPreferenceRequest = UserPreferenceUpdate.mapFields(
+  Struct.pick(["notificationPreferences", "metadata"]),
+);
+export const UpdateUserPreferenceResponse = UserPreference;
+
+export type GetUserPreferenceResponse = typeof GetUserPreferenceResponse.Type;
+export type UpdateUserPreferenceRequest =
+  typeof UpdateUserPreferenceRequest.Type;
+export type UpdateUserPreferenceResponse =
+  typeof UpdateUserPreferenceResponse.Type;
