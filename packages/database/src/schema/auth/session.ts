@@ -47,7 +47,7 @@ export const session = authSchema.table.withRLS(
     revokedAt: createTimestampField("revoked_at", {
       mode: "date",
       withTimezone: true,
-    }).default(sql`NULL`),
+    }),
     ...timestamps,
   },
   (table) => [

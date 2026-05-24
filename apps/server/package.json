@@ -17,6 +17,7 @@
     "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "dotenv": "17.4.2",
     "effect": "catalog:"
   },

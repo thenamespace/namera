@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
+import { createOrganization } from "@/common";
 import { api, AuthenticatedUser } from "@namera-ai/api";
 import { AdminDatabase, Database, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
@@ -17,46 +18,15 @@ import {
 const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
   Effect.gen(function* () {
     const currentUser = yield* AuthenticatedUser;
-    const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
 
     const res = yield* db.transaction((tx) =>
       Effect.gen(function* () {
-        const orgsCreatedByUser =
-          yield* auth.organization.listOrgsCreatedByUser(currentUser.user.id);
-
-        if (orgsCreatedByUser.length >= 3) {
-          return yield* new OrganizationError({
-            code: "ORGANIZATION_CREATION_LIMIT_REACHED",
-          });
-        }
-
-        // Create Organization
-        const newOrg = yield* auth.organization.create({
-          ...payload,
-          plan: "free",
-          createdById: currentUser.user.id,
-        });
-
-        // Create default system roles.
-        const { ownerRole } = yield* auth.role.createSystemRoles(newOrg.id);
-
-        // Create owner member
-        yield* auth.member.create({
-          organizationId: newOrg.id,
-          userId: currentUser.user.id,
-          roleId: ownerRole.id,
-          joinedAt: new Date(),
-        });
-
-        // Set current user's active organization
-        yield* auth.session.setActiveOrganization(
-          currentUser.session.id,
+        return yield* createOrganization(
           currentUser.user.id,
-          newOrg.id,
+          currentUser.session.id,
+          payload,
         );
-
-        return newOrg;
       }).pipe(Transaction.withTx(tx)),
     );
 

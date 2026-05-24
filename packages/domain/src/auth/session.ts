@@ -50,8 +50,7 @@ export const layer = Layer.succeed(
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         const parsed = Schema.decodeSync(SessionInsert)(data);
-        const res = yield* db.insert(session).values(parsed);
-        // biome-ignore lint/style/noNonNullAssertion: safe
+        const res = yield* db.insert(session).values(parsed).returning();
         return res[0]!;
       }).pipe(mapDatabaseError),
     revokeAllSessionsExcept: (userId, exceptSessionId) =>
