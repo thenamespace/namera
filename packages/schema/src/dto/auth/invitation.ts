@@ -3,6 +3,14 @@ import { Schema } from "effect";
 import { Invitation } from "@/auth";
 import { Email, OrganizationId, OrganizationRoleId } from "@/common";
 
+export class InvitationError extends Schema.TaggedErrorClass<InvitationError>()(
+  "InvitationError",
+  {
+    code: Schema.Literals([]),
+    message: Schema.optional(Schema.String),
+  },
+) {}
+
 export const InviteMemberRequest = Schema.Struct({
   email: Email,
   roleId: OrganizationRoleId,
