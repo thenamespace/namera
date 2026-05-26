@@ -31,7 +31,7 @@ const runMigrations = Effect.gen(function* () {
         host: config.host,
         password: Redacted.value(config.password),
         port: config.port,
-        ssl: Bun.env.POSTGRES_SSL === "true",
+        ssl: process.env.POSTGRES_SSL === "true",
         user: config.username,
       });
     }),

@@ -1,13 +1,23 @@
 {
   "name": "@namera-ai/schema",
-  "version": "0.1.0",
-  "private": "true",
+  "version": "0.0.0",
   "type": "module",
-  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {},
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      }
+    },
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
   "dependencies": {
     "drizzle-orm": "catalog:",
     "effect": "catalog:",
@@ -15,7 +25,8 @@
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
     "typescript": "catalog:"
   }
 }

@@ -1,7 +1,9 @@
 import { config } from "dotenv";
 config();
 
-import { BunHttpServer, BunRuntime } from "@effect/platform-bun";
+import { createServer } from "node:http";
+
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 import { Layer } from "effect";
 
 import { FetchHttpClient, HttpRouter } from "effect/unstable/http";
@@ -39,14 +41,14 @@ const app = HttpApiBuilder.layer(api).pipe(
   Layer.provide(NameraApiLive),
   Layer.provide(Middlewares),
   HttpRouter.serve,
-  Layer.provide(BunHttpServer.layer({ port: 8080 })),
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 8080 })),
   Layer.provide(Database.layer),
   Layer.provide(AdminDatabase.layer),
   Layer.provide(Auth.layer),
   Layer.provide(Domain.layer),
-  Layer.provide(OtelNode.layer),
+  Layer.provide(OtelNode.layer("namera-backend")),
   Layer.provide(FetchHttpClient.layer),
   Layer.provide(Env.layer),
 );
 
-BunRuntime.runMain(Layer.launch(app));
+NodeRuntime.runMain(Layer.launch(app));
