@@ -85,6 +85,6 @@
 
 ### Emails
 
-- [ ] Resend Integration
-- [ ] Subscriber Segments (to send newsletter, announcements from resend website, no code editor)
+- [x] Resend Integration
+- [x] Subscriber Segments (to send newsletter, announcements from resend website, no code editor)
 - [ ] Sync Subscriber lists to database
