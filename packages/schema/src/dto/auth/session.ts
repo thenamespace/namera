@@ -1,22 +1,19 @@
 import { Schema, Struct } from "effect";
 
-import { Session } from "@/auth";
+import { Session } from "@/database";
 
-export const ListSessionResponse = Schema.Array(
-  Session.mapFields(
-    Struct.pick([
-      "id",
-      "userId",
-      "ipAddress",
-      "userAgent",
-      "activeOrganizationId",
-      "createdAt",
-      "deletedAt",
-      "expiresAt",
-      "revokedAt",
-      "updatedAt",
-    ]),
-  ),
+export const GetSessionResponse = Session.mapFields(
+  Struct.pick([
+    "id",
+    "userId",
+    "activeOrganizationId",
+    "metadata",
+    "expiresAt",
+    "revokedAt",
+  ]),
 );
 
-export type ListSessionResponse = typeof ListSessionResponse.Type;
+export const ListSessionsResponse = Schema.Array(GetSessionResponse);
+
+export type GetSessionResponse = typeof GetSessionResponse.Type;
+export type ListSessionsResponse = typeof ListSessionsResponse.Type;

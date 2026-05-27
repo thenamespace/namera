@@ -11,14 +11,16 @@ import {
   sessionKey,
   smartAccount,
   user,
-  userPreference,
+  userPreferences,
   verification,
+  systemRole,
 } from "../schema";
 
 export const relations = defineRelations(
   {
     account,
     session,
+    systemRole,
     user,
     verification,
     smartAccount,
@@ -28,23 +30,9 @@ export const relations = defineRelations(
     member,
     role,
     organizationEvent,
-    userPreference,
+    userPreferences,
   },
   (r) => ({
-    account: {
-      // 1 account can have one user
-      user: r.one.user({
-        from: r.account.userId,
-        to: r.user.id,
-      }),
-    },
-    session: {
-      // 1 session can have one user
-      user: r.one.user({
-        from: r.session.userId,
-        to: r.user.id,
-      }),
-    },
     user: {
       // 1 user can have many accounts
       accounts: r.many.account(),
@@ -55,20 +43,23 @@ export const relations = defineRelations(
       // 1 user can be member of many organizations
       members: r.many.member(),
       // 1 user can have 1 user preference
-      userPreference: r.one.userPreference(),
-      // 1 user can have many smart accounts
-      smartAccounts: r.many.smartAccount(),
-      // 1 user can have many session keys
-      sessionKeys: r.many.sessionKey(),
+      userPreferences: r.one.userPreferences(),
     },
-    verification: {},
-    userPreference: {
-      // 1 user preference can have one user
+    session: {
+      // 1 session can have one user
       user: r.one.user({
-        from: r.userPreference.userId,
+        from: r.session.userId,
         to: r.user.id,
       }),
     },
+    account: {
+      // 1 account can have one user
+      user: r.one.user({
+        from: r.account.userId,
+        to: r.user.id,
+      }),
+    },
+    verification: {},
     organization: {
       // 1 organization can have many invitations
       invitations: r.many.invitation(),
@@ -94,9 +85,31 @@ export const relations = defineRelations(
         from: r.member.userId,
         to: r.user.id,
       }),
+      // 1 member can have one role
       role: r.one.role({
         from: r.member.roleId,
         to: r.role.id,
+      }),
+      // 1 member can have multiple smart accounts
+      smartAccounts: r.many.smartAccount(),
+      // 1 member can have many session keys
+      sessionKeys: r.many.sessionKey(),
+    },
+    role: {
+      // 1 role can have one organization
+      organization: r.one.organization({
+        from: r.role.organizationId,
+        to: r.organization.id,
+      }),
+      // 1 role can have many members
+      members: r.many.member({
+        from: r.role.id,
+        to: r.member.roleId,
+      }),
+      // 1 role can have many invitations
+      invitations: r.many.invitation({
+        from: r.role.id,
+        to: r.invitation.roleId,
       }),
     },
     invitation: {
@@ -116,27 +129,17 @@ export const relations = defineRelations(
         to: r.role.id,
       }),
     },
-    role: {
-      organization: r.one.organization({
-        from: r.role.organizationId,
-        to: r.organization.id,
-      }),
-      members: r.many.member({
-        from: r.role.id,
-        to: r.member.roleId,
-      }),
-      invitations: r.many.invitation({
-        from: r.role.id,
-        to: r.invitation.roleId,
-      }),
-    },
     organizationEvent: {
+      // 1 org event belongs to one organization
       organization: r.one.organization({
         from: r.organizationEvent.organizationId,
         to: r.organization.id,
       }),
+    },
+    userPreference: {
+      // 1 user preference can have one user
       user: r.one.user({
-        from: r.organizationEvent.actorUserId,
+        from: r.userPreferences.userId,
         to: r.user.id,
       }),
     },
@@ -147,9 +150,9 @@ export const relations = defineRelations(
         to: r.organization.id,
       }),
       // one smart account has one creator
-      creator: r.one.user({
+      creator: r.one.member({
         from: r.smartAccount.creatorId,
-        to: r.user.id,
+        to: r.member.id,
       }),
       // one smart account can have many session keys
       sessionKeys: r.many.sessionKey({
@@ -164,9 +167,9 @@ export const relations = defineRelations(
         to: r.organization.id,
       }),
       // one session key can have one creator
-      creator: r.one.user({
-        from: r.sessionKey.creatorId,
-        to: r.user.id,
+      creator: r.one.member({
+        from: r.smartAccount.creatorId,
+        to: r.member.id,
       }),
       // one session key can have one smart account
       smartAccount: r.one.smartAccount({

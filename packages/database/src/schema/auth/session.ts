@@ -1,7 +1,8 @@
 import type { OrganizationId, SessionId, UserId } from "@namera-ai/schema";
+import type { UserMetadata } from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
-import { index, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import {
   adminRole,
@@ -30,16 +31,15 @@ export const session = authSchema.table.withRLS(
   "session",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SessionId>(),
-    ipAddress: text("ip_address"),
-    token: text("token").notNull(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
     activeOrganizationId: text("active_organization_id")
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "set null" }),
-    userAgent: text("user_agent"),
+    metadata: jsonb("metadata").notNull().$type<UserMetadata>(),
     expiresAt: createTimestampField("expires_at", {
       mode: "date",
       withTimezone: true,
@@ -51,7 +51,9 @@ export const session = authSchema.table.withRLS(
     ...timestamps,
   },
   (table) => [
+    // Get Session with token
     uniqueIndex("session_token_idx").on(table.token),
+    // Get Active user sessions
     index("session_user_active_idx").on(table.userId, table.expiresAt),
     index("session_activeOrganizationId_idx").on(table.activeOrganizationId),
     index("session_expiresAt_idx").on(table.expiresAt),

@@ -1,7 +1,12 @@
 import { Schema, Struct } from "effect";
 
-import { Organization, OrganizationInsert, OrganizationMember } from "@/auth";
 import { OrganizationId } from "@/common";
+import {
+  Organization,
+  OrganizationInsert,
+  OrganizationMember,
+} from "@/database";
+import { OrganizationRole } from "@/database/auth/role";
 
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
   "OrganizationError",
@@ -19,65 +24,46 @@ export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError
   },
 ) {}
 
-// Create Organization
+export const GetOrganizationRequest = Schema.Struct({
+  id: OrganizationId,
+});
+export const GetOrganizationResponse = Organization.mapFields(
+  Struct.pick(["id", "name", "plan", "metadata"]),
+);
+
 export const CreateOrganizationRequest = OrganizationInsert.mapFields(
   Struct.pick(["name", "metadata"]),
 );
+export const CreateOrganizationResponse = GetOrganizationResponse;
 
-export const CreateOrganizationResponse = Organization;
-
-export const ListOrganizationsResponse = Schema.Array(
-  OrganizationMember.mapFields(Struct.assign({ organization: Organization })),
+export const ListUserOrganizationsResponse = Schema.Array(
+  Schema.Struct({
+    organization: GetOrganizationResponse,
+    member: OrganizationMember, // TODO: Update
+    role: OrganizationRole, // TODO: Update
+  }),
 );
 
-// Set current user's active organization
 export const SetActiveOrganizationRequest = Schema.Struct({
   id: OrganizationId,
 });
 export const SetActiveOrganizationResponse = Schema.Void;
 
-// Get Organization
-export const GetFullOrganizationRequest = Schema.Struct({
-  id: OrganizationId,
-  membersLimit: Schema.Int.check(
-    Schema.isBetween(
-      { minimum: 1, maximum: 100 },
-      {
-        message: "Members limit must be between 1 and 100",
-      },
-    ),
-  ),
-});
-export const GetFullOrganizationResponse = Organization.mapFields(
-  Struct.assign({
-    members: Schema.Array(OrganizationMember),
-  }),
-);
-
 // Update Organization
 export const UpdateOrganizationRequest = Organization.mapFields(
   Struct.pick(["name", "metadata"]),
 );
-export const UpdateOrganizationResponse = Organization;
+export const UpdateOrganizationResponse = GetOrganizationResponse;
 
-// Delete Organization
-export const DeleteOrganizationRequest = Schema.Struct({
-  id: OrganizationId,
-});
-export const DeleteOrganizationResponse = Schema.Void;
-
+export type GetOrganizationRequest = typeof GetOrganizationRequest.Type;
+export type GetOrganizationResponse = typeof GetOrganizationResponse.Type;
 export type CreateOrganizationRequest = typeof CreateOrganizationRequest.Type;
 export type CreateOrganizationResponse = typeof CreateOrganizationResponse.Type;
-
-export type ListOrganizationsResponse = typeof ListOrganizationsResponse.Type;
+export type ListUserOrganizationsResponse =
+  typeof ListUserOrganizationsResponse.Type;
 export type SetActiveOrganizationRequest =
   typeof SetActiveOrganizationRequest.Type;
 export type SetActiveOrganizationResponse =
   typeof SetActiveOrganizationResponse.Type;
-export type GetFullOrganizationRequest = typeof GetFullOrganizationRequest.Type;
-export type GetFullOrganizationResponse =
-  typeof GetFullOrganizationResponse.Type;
 export type UpdateOrganizationRequest = typeof UpdateOrganizationRequest.Type;
 export type UpdateOrganizationResponse = typeof UpdateOrganizationResponse.Type;
-export type DeleteOrganizationRequest = typeof DeleteOrganizationRequest.Type;
-export type DeleteOrganizationResponse = typeof DeleteOrganizationResponse.Type;

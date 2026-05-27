@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 
-import { Session, User } from "../../auth";
-import { Email } from "../../common";
+import { Email } from "@/common";
 
 export class MagicLinkError extends Schema.TaggedErrorClass<MagicLinkError>()(
   "MagicLinkError",
@@ -19,19 +18,20 @@ export class MagicLinkError extends Schema.TaggedErrorClass<MagicLinkError>()(
 ) {}
 
 export const SigInMagicLinkBody = Schema.Struct({
-  callbackUrl: Schema.URL.annotate({
-    description: "URL to redirect after magic link verification",
-  }),
   email: Email.annotate({
     description: "Email address to send the magic link",
+  }),
+  callbackUrl: Schema.URL.annotate({
+    description: "URL to redirect after magic link verification",
   }),
   newUserCallbackUrl: Schema.URL.annotate({
     description:
       "URL to redirect after new user signup. Only used if the user is registering for the first time.",
   }),
+  errorCallbackUrl: Schema.URL.annotate({
+    description: "URL to redirect to after encountering an error",
+  }),
 });
-
-export type SigInMagicLinkBody = typeof SigInMagicLinkBody.Type;
 
 export const VerifyMagicLinkBody = Schema.Struct({
   token: Schema.String.annotate({
@@ -39,13 +39,5 @@ export const VerifyMagicLinkBody = Schema.Struct({
   }),
 });
 
-export const VerifyMagicLinkResponse = Schema.Struct({
-  isNewUser: Schema.Boolean,
-  session: Session,
-  token: Schema.String,
-  user: User,
-  redirectUrl: Schema.URL,
-});
-
+export type SigInMagicLinkBody = typeof SigInMagicLinkBody.Type;
 export type VerifyMagicLinkBody = typeof VerifyMagicLinkBody.Type;
-export type VerifyMagicLinkResponse = typeof VerifyMagicLinkResponse.Type;

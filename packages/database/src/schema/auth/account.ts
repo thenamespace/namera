@@ -36,18 +36,20 @@ export const account = authSchema.table.withRLS(
       mode: "date",
       withTimezone: true,
     }),
-    lastUsedAt: createTimestampField("last_used_at", {
+    refreshTokenExpiresAt: createTimestampField("refresh_token_expires_at", {
       mode: "date",
       withTimezone: true,
     }),
-    refreshTokenExpiresAt: createTimestampField("refresh_token_expires_at", {
+    lastUsedAt: createTimestampField("last_used_at", {
       mode: "date",
       withTimezone: true,
     }),
     ...timestamps,
   },
   (table) => [
-    index("account_userId_idx").on(table.userId),
+    index("account_userId_idx")
+      .on(table.userId)
+      .where(sql`${table.deletedAt} IS NULL`),
     uniqueIndex("account_providerId_accountId_idx")
       .on(table.providerId, table.accountId)
       .where(sql`${table.deletedAt} IS NULL`),

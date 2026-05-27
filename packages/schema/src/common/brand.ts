@@ -1,48 +1,39 @@
+/**
+ * Branded Ids for Database Primary Keys and Foreign Keys
+ */
+
 import { Schema } from "effect";
 
-// Branded Ids
+export const createBrandedId = <T extends string>(brand: T) =>
+  Schema.String.pipe(Schema.brand(brand), Schema.check(Schema.isUUID(7)));
 
-// Auth Tables
-export const UserId = Schema.String.pipe(Schema.brand("UserId"));
-export const SessionId = Schema.String.pipe(Schema.brand("SessionId"));
-export const AccountId = Schema.String.pipe(Schema.brand("AccountId"));
-export const VerificationId = Schema.String.pipe(
-  Schema.brand("VerificationId"),
-);
-export const UserPreferenceId = Schema.String.pipe(
-  Schema.brand("UserPreferenceId"),
-);
-export const OrganizationId = Schema.String.pipe(
-  Schema.brand("OrganizationId"),
-);
-export const OrganizationMemberId = Schema.String.pipe(
-  Schema.brand("OrganizationMemberId"),
-);
-export const OrganizationRoleId = Schema.String.pipe(
-  Schema.brand("OrganizationRoleId"),
-);
-export const InvitationId = Schema.String.pipe(Schema.brand("InvitationId"));
+export const UserId = createBrandedId("UserId");
+export const SessionId = createBrandedId("SessionId");
+export const AccountId = createBrandedId("AccountId");
+export const VerificationId = createBrandedId("VerificationId");
+export const OrganizationId = createBrandedId("OrganizationId");
+export const OrganizationMemberId = createBrandedId("OrganizationMemberId");
+export const OrganizationRoleId = createBrandedId("OrganizationRoleId");
+export const InvitationId = createBrandedId("InvitationId");
+export const SystemRoleId = createBrandedId("SystemRoleId");
 
-// Audit Tables
-export const OrganizationEventId = Schema.String.pipe(
-  Schema.brand("OrganizationEventId"),
-);
+export const UserPreferencesId = createBrandedId("UserPreferencesId");
+export const SmartAccountId = createBrandedId("SmartAccountId");
+export const SessionKeyId = createBrandedId("SessionKeyId");
 
-// Core Tables
-export const SmartAccountId = Schema.String.pipe(
-  Schema.brand("SmartAccountId"),
-);
-export const SessionKeyId = Schema.String.pipe(Schema.brand("SessionKeyId"));
+export const OrganizationEventId = createBrandedId("OrganizationEventId");
 
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;
-export type UserPreferenceId = typeof UserPreferenceId.Type;
+
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;
 export type InvitationId = typeof InvitationId.Type;
-export type OrganizationEventId = typeof OrganizationEventId.Type;
+export type SystemRoleId = typeof SystemRoleId.Type;
+export type UserPreferencesId = typeof UserPreferencesId.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
+export type OrganizationEventId = typeof OrganizationEventId.Type;

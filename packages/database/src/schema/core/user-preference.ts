@@ -1,9 +1,8 @@
+import type { UserId, UserPreferencesId } from "@namera-ai/schema";
 import type {
   NotificationPreferences,
-  UserId,
-  UserPreferenceId,
   UserPreferenceMetadata,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
 import { jsonb, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
@@ -23,13 +22,13 @@ import {
 
 import { user } from "../auth";
 
-export const userPreference = pgTable.withRLS(
-  "user_preference",
+export const userPreferences = pgTable.withRLS(
+  "user_preferences",
   {
     id: text("id")
       .primaryKey()
       .$defaultFn(generateUniqueId)
-      .$type<UserPreferenceId>(),
+      .$type<UserPreferencesId>(),
     userId: text("user_id")
       .notNull()
       .$type<UserId>()

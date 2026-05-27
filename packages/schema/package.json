@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./database": "./src/database/index.ts",
+    "./dto": "./src/dto/index.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -11,6 +13,14 @@
       ".": {
         "import": "./dist/index.mjs",
         "types": "./dist/index.d.mts"
+      },
+      "./database": {
+        "import": "./dist/database.mjs",
+        "types": "./dist/database.d.mts"
+      },
+      "./dto": {
+        "import": "./dist/dto.mjs",
+        "types": "./dist/dto.d.mts"
       }
     },
     "provenance": true

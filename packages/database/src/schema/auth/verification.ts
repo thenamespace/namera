@@ -1,3 +1,5 @@
+import type { VerificationId } from "@namera-ai/schema";
+
 import { sql } from "drizzle-orm";
 import { text, uniqueIndex } from "drizzle-orm/pg-core";
 
@@ -16,7 +18,10 @@ import { authSchema } from "./common";
 export const verification = authSchema.table.withRLS(
   "verification",
   {
-    id: text("id").primaryKey().$defaultFn(generateUniqueId),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(generateUniqueId)
+      .$type<VerificationId>(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: createTimestampField("expires_at", {

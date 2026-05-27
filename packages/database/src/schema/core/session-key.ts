@@ -1,12 +1,15 @@
 import type {
-  SerializedAccount,
-  SessionKeyData,
   SessionKeyId,
   SessionKeyType,
   OrganizationId,
   SmartAccountId,
   UserId,
 } from "@namera-ai/schema";
+import type {
+  SerializedAccount,
+  SessionKeyData,
+  SessionKeyMetadata,
+} from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
 import {
@@ -18,10 +21,8 @@ import {
   text,
 } from "drizzle-orm/pg-core";
 
-import { organization } from "@/schema/auth";
-import { SessionKeyMetadata } from "@namera-ai/schema";
+import { member, organization } from "@/schema/auth";
 
-import { user } from "../auth/user";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
@@ -42,19 +43,22 @@ export const sessionKey = pgTable.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<SessionKeyId>(),
-    metadata: jsonb("metadata").notNull().$type<SessionKeyMetadata>(),
     creatorId: text("creator_id")
       .notNull()
       .$type<UserId>()
-      .references(() => user.id, { onDelete: "no action" }),
+      .references(() => member.id, { onDelete: "no action" }),
     organizationId: text("organization_id")
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "cascade" }),
-    smartAccountId: text("smart_account_id").notNull().$type<SmartAccountId>(),
+    smartAccountId: text("smart_account_id")
+      .notNull()
+      .$type<SmartAccountId>()
+      .references(() => smartAccount.id, { onDelete: "cascade" }),
+    metadata: jsonb("metadata").notNull().$type<SessionKeyMetadata>(),
     serializedAccounts: json("serialized_accounts")
       .notNull()
-      .$type<SerializedAccount[]>(),
+      .$type<SerializedAccount>(),
     type: text("type").notNull().$type<SessionKeyType>(),
     data: jsonb("data").notNull().$type<SessionKeyData>(),
     ...timestamps,

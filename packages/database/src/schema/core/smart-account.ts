@@ -4,11 +4,13 @@ import type {
   KernelVersion,
   SmartAccountId,
   OwnerType,
-  UserId,
-  SmartAccountOwner,
-  SmartAccountMetadata,
   OrganizationId,
+  OrganizationMemberId,
 } from "@namera-ai/schema";
+import type {
+  SmartAccountMetadata,
+  SmartAccountOwner,
+} from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
 import {
@@ -20,8 +22,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { organization } from "../auth";
-import { user } from "../auth/user";
+import { member, organization } from "../auth";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
@@ -46,8 +47,8 @@ export const smartAccount = pgTable.withRLS(
       .references(() => organization.id, { onDelete: "cascade" }),
     creatorId: text("creator_id")
       .notNull()
-      .$type<UserId>()
-      .references(() => user.id, { onDelete: "no action" }),
+      .$type<OrganizationMemberId>()
+      .references(() => member.id, { onDelete: "no action" }),
     metadata: jsonb("metadata").notNull().$type<SmartAccountMetadata>(),
     entryPointVersion: text("entrypoint_version")
       .notNull()

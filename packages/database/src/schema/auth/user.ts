@@ -1,4 +1,5 @@
-import type { Email, UserId, UserMetadata } from "@namera-ai/schema";
+import type { Email, UserId } from "@namera-ai/schema";
+import type { UserMetadata } from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
 import { boolean, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
@@ -20,10 +21,8 @@ export const user = authSchema.table.withRLS(
   "user",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<UserId>(),
-    name: text("name").notNull(),
     email: text("email").notNull().$type<Email>(),
     emailVerified: boolean("email_verified").notNull().default(false),
-    image: text("image"),
     metadata: jsonb("metadata").notNull().$type<UserMetadata>(),
     lastLoginAt: createTimestampField("last_login_at", {
       mode: "date",
@@ -54,7 +53,7 @@ export const user = authSchema.table.withRLS(
       .build(),
     // Admins can access all users
     new PgPolicyBuilder()
-      .name("user_adminaccess")
+      .name("user_admin_access")
       .as("permissive")
       .to(adminRole)
       .forOperation("all")
