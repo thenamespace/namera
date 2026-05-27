@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Seo } from "@/components/misc";
+import { queries } from "@/lib/query";
 
 import { ProfileForm } from "../-components";
 
@@ -16,5 +17,8 @@ const ProfilePage = () => {
 };
 
 export const Route = createFileRoute("/dashboard/settings/profile/")({
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(queries.auth.me);
+  },
   component: ProfilePage,
 });

@@ -1,3 +1,5 @@
+import type { Cookies } from "effect/unstable/http";
+
 import { Duration, Effect, Layer, Context } from "effect";
 
 import { AuthEnv } from "./env";
@@ -8,6 +10,7 @@ export type AuthConfig = AuthEnv & {
     expiresIn: Duration.Duration;
   };
   session: {
+    cookieOpts: Cookies.Cookie["options"];
     cookieName: string;
     expiresIn: Duration.Duration;
     secure: boolean;
@@ -36,6 +39,14 @@ export const layer = Layer.effect(
       return ["http://localhost:3000"];
     })();
 
+    const cookieOpts: Cookies.Cookie["options"] = {
+      ...(env.isProd ? { domain: "namera.ai" } : {}),
+      secure: isProd,
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+    };
+
     return AuthConfig.of({
       ...env,
       advanced: {
@@ -48,6 +59,7 @@ export const layer = Layer.effect(
         expiresIn: Duration.minutes(15),
       },
       session: {
+        cookieOpts,
         cookieName: "auth-token",
         expiresIn: Duration.days(7),
         secure: env.isProd,

@@ -183,7 +183,9 @@ import {
   UsersFourIcon,
   IdentificationCardIcon,
   IdentificationBadgeIcon,
+  CrownIcon,
   KeyIcon,
+  BuildingIcon,
 } from "@phosphor-icons/react";
 
 // oxfmt-ignore
@@ -220,7 +222,8 @@ export const ICON_DATA: IconData[] = [
   { name: "highlighter", component: "Highlighter", category: "general", tags: ["highlight"] , icon: HighlighterIcon },
   { name: "eraser", component: "Eraser", category: "general", tags: ["erase"] , icon: EraserIcon },
   { name: "key", component: "Key", category: "general", tags: ["secure"] , icon: KeyIcon },
-
+  { name: "crown", component: "Crown", category: "general", tags: ["admin"] , icon: CrownIcon },
+  { name: "building", component: "Building", category: "general", tags: ["building"] , icon: BuildingIcon },
   // USER (25)
   { name: "user", component: "User", category: "user", tags: ["profile"] , icon: UserIcon },
   { name: "users", component: "Users", category: "user", tags: ["team"] , icon: UsersIcon },

@@ -6,12 +6,13 @@
     }
   },
   "exclude": ["node_modules", "dist"],
-  "extends": "@namera-ai/config/tsconfig/library/bun",
+  "extends": "@namera-ai/config/tsconfig/library/node",
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [
     { "path": "../database" },
     { "path": "../domain" },
     { "path": "../schema" },
-    { "path": "../utils" }
+    { "path": "../utils" },
+    { "path": "../telemetry" }
   ]
 }

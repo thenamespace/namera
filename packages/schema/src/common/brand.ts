@@ -1,34 +1,41 @@
+/**
+ * Branded Ids for Database Primary Keys and Foreign Keys
+ */
+
 import { Schema } from "effect";
 
-export const UserId = Schema.String.pipe(Schema.brand("UserId"));
-export const SessionId = Schema.String.pipe(Schema.brand("SessionId"));
-export const OrganizationId = Schema.String.pipe(
-  Schema.brand("OrganizationId"),
-);
+export const createBrandedId = <T extends string>(brand: T) =>
+  Schema.String.pipe(Schema.brand(brand), Schema.check(Schema.isUUID(7)));
 
-export const OrganizationMemberId = Schema.String.pipe(
-  Schema.brand("OrganizationMemberId"),
-);
+export const UserId = createBrandedId("UserId");
+export const SessionId = createBrandedId("SessionId");
+export const AccountId = createBrandedId("AccountId");
+export const VerificationId = createBrandedId("VerificationId");
+export const OrganizationId = createBrandedId("OrganizationId");
+export const OrganizationMemberId = createBrandedId("OrganizationMemberId");
+export const OrganizationRoleId = createBrandedId("OrganizationRoleId");
+export const InvitationId = createBrandedId("InvitationId");
+export const SystemRoleId = createBrandedId("SystemRoleId");
 
-export const OrganizationSlug = Schema.String.pipe(
-  Schema.brand("OrganizationSlug"),
-).check(
-  Schema.isPattern(/^[a-z0-9][a-z0-9-]{2,62}[a-z0-9]$/, {
-    message: "Invalid slug",
-  }),
-  Schema.isLengthBetween(3, 63, {
-    message: "Slug must be between 3 and 63 characters",
-  }),
-);
-export const SmartAccountId = Schema.String.pipe(
-  Schema.brand("SmartAccountId"),
-);
-export const SessionKeyId = Schema.String.pipe(Schema.brand("SessionKeyId"));
+export const UserPreferencesId = createBrandedId("UserPreferencesId");
+export const SmartAccountId = createBrandedId("SmartAccountId");
+export const SessionKeyId = createBrandedId("SessionKeyId");
 
-export type SessionId = typeof SessionId.Type;
+export const OrganizationEventId = createBrandedId("OrganizationEventId");
+export const UserEventId = createBrandedId("UserEventId");
+
 export type UserId = typeof UserId.Type;
+export type SessionId = typeof SessionId.Type;
+export type AccountId = typeof AccountId.Type;
+export type VerificationId = typeof VerificationId.Type;
+
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
-export type OrganizationSlug = typeof OrganizationSlug.Type;
+export type OrganizationRoleId = typeof OrganizationRoleId.Type;
+export type InvitationId = typeof InvitationId.Type;
+export type SystemRoleId = typeof SystemRoleId.Type;
+export type UserPreferencesId = typeof UserPreferencesId.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
+export type OrganizationEventId = typeof OrganizationEventId.Type;
+export type UserEventId = typeof UserEventId.Type;

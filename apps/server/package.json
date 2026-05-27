@@ -5,27 +5,28 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "dev": "bun src/index.ts --watch",
-    "start": "bun src/index.ts"
+    "build": "tsdown",
+    "dev": "pnpm migrate && pnpm tsx src/index.ts --watch",
+    "migrate": "pnpm tsx --cwd ../../packages/database src/migrate.ts",
+    "start": "node dist/index.mjs"
   },
   "dependencies": {
-    "@effect/platform-bun": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/auth": "workspace:*",
     "@namera-ai/database": "workspace:*",
     "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "dotenv": "17.4.2",
     "effect": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
-  },
-  "portless": {
-    "name": "api.namera",
-    "appPort": 8080
   }
 }

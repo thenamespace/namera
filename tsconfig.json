@@ -3,7 +3,15 @@
   "compilerOptions": {
     "plugins": [
       {
-        "name": "@effect/language-service"
+        "name": "@effect/language-service",
+        "namespaceImportPackages": [],
+        "includeSuggestionsInTsc": false,
+        "ignoreEffectWarningsInTscExitCode": true,
+        "ignoreEffectErrorsInTscExitCode": true,
+        "diagnosticSeverity": {
+          "unknownInEffectCatch": "off",
+          "multipleEffectProvide": "off"
+        }
       }
     ]
   },

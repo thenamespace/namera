@@ -26,7 +26,9 @@ import { Route as DashboardSettingsIndexRouteImport } from "./app/dashboard/sett
 import { Route as DashboardSettingsNotificationsIndexRouteImport } from "./app/dashboard/settings/notifications/index";
 import { Route as DashboardSettingsProfileIndexRouteImport } from "./app/dashboard/settings/profile/index";
 import { Route as DashboardSettingsSecurityIndexRouteImport } from "./app/dashboard/settings/security/index";
+import { Route as DashboardSettingsWorkspaceIndexRouteImport } from "./app/dashboard/settings/workspace/index";
 import { Route as IndexRouteImport } from "./app/index";
+import { Route as WorkspaceNewRouteImport } from "./app/workspace/new";
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: "/dashboard",
@@ -43,6 +45,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: "/auth/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const WorkspaceNewRoute = WorkspaceNewRouteImport.update({
+  id: "/workspace/new",
+  path: "/workspace/new",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
   id: "/settings/",
   path: "/settings/",
@@ -53,6 +60,12 @@ const DashboardprimaryIndexRoute = DashboardprimaryIndexRouteImport.update({
   path: "/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardSettingsWorkspaceIndexRoute =
+  DashboardSettingsWorkspaceIndexRouteImport.update({
+    id: "/settings/workspace/",
+    path: "/settings/workspace/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
 const DashboardSettingsSecurityIndexRoute =
   DashboardSettingsSecurityIndexRouteImport.update({
     id: "/settings/security/",
@@ -134,6 +147,7 @@ const DashboardcoreAccountsNewIndexRoute =
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
@@ -148,11 +162,13 @@ export interface FileRoutesByFullPath {
   "/dashboard/settings/notifications/": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/settings/security/": typeof DashboardSettingsSecurityIndexRoute;
+  "/dashboard/settings/workspace/": typeof DashboardSettingsWorkspaceIndexRoute;
   "/dashboard/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth": typeof AuthIndexRoute;
   "/dashboard": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
@@ -167,6 +183,7 @@ export interface FileRoutesByTo {
   "/dashboard/settings/notifications": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityIndexRoute;
+  "/dashboard/settings/workspace": typeof DashboardSettingsWorkspaceIndexRoute;
   "/dashboard/accounts/new": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/session-keys/create": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -174,6 +191,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/workspace/new": typeof WorkspaceNewRoute;
   "/auth/": typeof AuthIndexRoute;
   "/dashboard/(primary)/": typeof DashboardprimaryIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
@@ -188,6 +206,7 @@ export interface FileRoutesById {
   "/dashboard/settings/notifications/": typeof DashboardSettingsNotificationsIndexRoute;
   "/dashboard/settings/profile/": typeof DashboardSettingsProfileIndexRoute;
   "/dashboard/settings/security/": typeof DashboardSettingsSecurityIndexRoute;
+  "/dashboard/settings/workspace/": typeof DashboardSettingsWorkspaceIndexRoute;
   "/dashboard/(core)/accounts/new/": typeof DashboardcoreAccountsNewIndexRoute;
   "/dashboard/(core)/session-keys/create/": typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -196,6 +215,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/workspace/new"
     | "/auth/"
     | "/dashboard/"
     | "/dashboard/settings/"
@@ -210,11 +230,13 @@ export interface FileRouteTypes {
     | "/dashboard/settings/notifications/"
     | "/dashboard/settings/profile/"
     | "/dashboard/settings/security/"
+    | "/dashboard/settings/workspace/"
     | "/dashboard/accounts/new/"
     | "/dashboard/session-keys/create/";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/workspace/new"
     | "/auth"
     | "/dashboard"
     | "/dashboard/settings"
@@ -229,12 +251,14 @@ export interface FileRouteTypes {
     | "/dashboard/settings/notifications"
     | "/dashboard/settings/profile"
     | "/dashboard/settings/security"
+    | "/dashboard/settings/workspace"
     | "/dashboard/accounts/new"
     | "/dashboard/session-keys/create";
   id:
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/workspace/new"
     | "/auth/"
     | "/dashboard/(primary)/"
     | "/dashboard/settings/"
@@ -249,6 +273,7 @@ export interface FileRouteTypes {
     | "/dashboard/settings/notifications/"
     | "/dashboard/settings/profile/"
     | "/dashboard/settings/security/"
+    | "/dashboard/settings/workspace/"
     | "/dashboard/(core)/accounts/new/"
     | "/dashboard/(core)/session-keys/create/";
   fileRoutesById: FileRoutesById;
@@ -256,6 +281,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  WorkspaceNewRoute: typeof WorkspaceNewRoute;
   AuthIndexRoute: typeof AuthIndexRoute;
 }
 
@@ -282,6 +308,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/workspace/new": {
+      id: "/workspace/new";
+      path: "/workspace/new";
+      fullPath: "/workspace/new";
+      preLoaderRoute: typeof WorkspaceNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/dashboard/settings/": {
       id: "/dashboard/settings/";
       path: "/settings";
@@ -294,6 +327,13 @@ declare module "@tanstack/react-router" {
       path: "/";
       fullPath: "/dashboard/";
       preLoaderRoute: typeof DashboardprimaryIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/settings/workspace/": {
+      id: "/dashboard/settings/workspace/";
+      path: "/settings/workspace";
+      fullPath: "/dashboard/settings/workspace/";
+      preLoaderRoute: typeof DashboardSettingsWorkspaceIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/settings/security/": {
@@ -404,6 +444,7 @@ interface DashboardRouteRouteChildren {
   DashboardSettingsNotificationsIndexRoute: typeof DashboardSettingsNotificationsIndexRoute;
   DashboardSettingsProfileIndexRoute: typeof DashboardSettingsProfileIndexRoute;
   DashboardSettingsSecurityIndexRoute: typeof DashboardSettingsSecurityIndexRoute;
+  DashboardSettingsWorkspaceIndexRoute: typeof DashboardSettingsWorkspaceIndexRoute;
   DashboardcoreAccountsNewIndexRoute: typeof DashboardcoreAccountsNewIndexRoute;
   DashboardcoreSessionKeysCreateIndexRoute: typeof DashboardcoreSessionKeysCreateIndexRoute;
 }
@@ -423,6 +464,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
     DashboardSettingsNotificationsIndexRoute,
   DashboardSettingsProfileIndexRoute: DashboardSettingsProfileIndexRoute,
   DashboardSettingsSecurityIndexRoute: DashboardSettingsSecurityIndexRoute,
+  DashboardSettingsWorkspaceIndexRoute: DashboardSettingsWorkspaceIndexRoute,
   DashboardcoreAccountsNewIndexRoute: DashboardcoreAccountsNewIndexRoute,
   DashboardcoreSessionKeysCreateIndexRoute:
     DashboardcoreSessionKeysCreateIndexRoute,
@@ -435,6 +477,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  WorkspaceNewRoute: WorkspaceNewRoute,
   AuthIndexRoute: AuthIndexRoute,
 };
 export const routeTree = rootRouteImport

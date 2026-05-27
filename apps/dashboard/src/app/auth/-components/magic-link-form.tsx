@@ -1,19 +1,15 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm, Controller } from "react-hook-form";
 
 import { signInWithMagicLink } from "@/actions";
-import { Email } from "@namera-ai/schema";
+import { Email, SigInMagicLinkBody } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Field, FieldError } from "@namera-ai/ui/components/ui/field";
 import { Input } from "@namera-ai/ui/components/ui/input";
 
-const AuthFormSchema = Schema.toStandardSchemaV1(
-  Schema.Struct({
-    email: Email,
-  }),
-);
+const AuthFormSchema = SigInMagicLinkBody.mapFields(Struct.pick(["email"]));
 
 type AuthForm = typeof AuthFormSchema.Type;
 
@@ -31,8 +27,7 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
 
   const handleSubmit = async (value: AuthForm) => {
     await signInWithMagicLink({
-      email: Email.makeUnsafe(value.email),
-      name: "Vedant",
+      email: Email.make(value.email),
     });
     onSubmit(value);
   };

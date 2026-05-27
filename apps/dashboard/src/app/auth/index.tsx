@@ -4,8 +4,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { useStep } from "usehooks-ts";
 
-import { getCurrentUser } from "@/actions";
 import { TransitionWrapper } from "@/components/wrappers";
+import { queries } from "@/lib/query";
 import { NameraIcon } from "@namera-ai/ui/icons";
 
 import { ConfirmStep, MagicLinkForm } from "./-components";
@@ -40,10 +40,17 @@ const AuthPage = () => {
 };
 
 export const Route = createFileRoute("/auth/")({
-  beforeLoad: async () => {
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
+  beforeLoad: async ({ context }) => {
+    const currentUser = await context.queryClient.ensureQueryData(
+      queries.auth.me,
+    );
+
+    if (currentUser?.organization) {
       throw redirect({ to: "/dashboard" });
+    }
+
+    if (currentUser) {
+      throw redirect({ to: "/workspace/new" });
     }
   },
   component: AuthPage,

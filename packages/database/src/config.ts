@@ -3,17 +3,17 @@ import { Config } from "effect";
 export const databaseConfig = {
   database: Config.string("POSTGRES_DATABASE"),
   host: Config.string("POSTGRES_HOST"),
-  password: Config.redacted("POSTGRES_PASSWORD"),
   port: Config.number("POSTGRES_PORT"),
-  username: Config.string("POSTGRES_USERNAME"),
+  username: Config.string("POSTGRES_APP_USER_USERNAME"),
+  password: Config.redacted("POSTGRES_APP_USER_PASSWORD"),
 };
 
 export const adminDatabaseConfig = {
-  database: Config.string("POSTGRES_ADMIN_DATABASE"),
-  host: Config.string("POSTGRES_ADMIN_HOST"),
-  password: Config.redacted("POSTGRES_ADMIN_PASSWORD"),
-  port: Config.number("POSTGRES_ADMIN_PORT"),
-  username: Config.string("POSTGRES_ADMIN_USERNAME"),
+  database: Config.string("POSTGRES_DATABASE"),
+  host: Config.string("POSTGRES_HOST"),
+  port: Config.number("POSTGRES_PORT"),
+  username: Config.string("POSTGRES_APP_ADMIN_USERNAME"),
+  password: Config.redacted("POSTGRES_APP_ADMIN_PASSWORD"),
 };
 
 export const DatabaseConfig = Config.all(databaseConfig);

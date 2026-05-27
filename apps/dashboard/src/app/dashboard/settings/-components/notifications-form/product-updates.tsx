@@ -1,3 +1,5 @@
+import type { NotificationPreferences } from "@namera-ai/schema";
+
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/misc";
@@ -9,10 +11,8 @@ import {
 } from "@namera-ai/ui/components/ui/field";
 import { Switch } from "@namera-ai/ui/components/ui/switch";
 
-import type { NotificationsFormSchema } from "./schema";
-
 type Props = {
-  form: UseFormReturn<NotificationsFormSchema>;
+  form: UseFormReturn<NotificationPreferences>;
 };
 
 export const ProductUpdates = ({ form }: Props) => {

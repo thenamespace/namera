@@ -1,7 +1,6 @@
 {
   "name": "@namera-ai/config",
-  "version": "1.0.0",
-  "private": "true",
+  "version": "0.0.0",
   "license": "Apache-2.0",
   "files": [
     "./tsconfig",
@@ -31,6 +30,6 @@
     "oxlint": "catalog:",
     "tsdown": "catalog:",
     "vite-tsconfig-paths": "6.1.1",
-    "vitest": "4.1.5"
+    "vitest": "4.1.7"
   }
 }

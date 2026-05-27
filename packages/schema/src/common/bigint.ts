@@ -1,10 +1,10 @@
 import { Schema, SchemaTransformation } from "effect";
 
-export const BigIntFromString = Schema.String.pipe(
+export const BigIntFromNumber = Schema.Int.pipe(
   Schema.decodeTo(
     Schema.BigInt,
     SchemaTransformation.transform({
-      encode: (v) => v.toString(),
+      encode: (v) => Number(v),
       decode: (v) => BigInt(v),
     }),
   ),

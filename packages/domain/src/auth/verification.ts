@@ -1,10 +1,4 @@
-import type {
-  Verification,
-  VerificationInsert,
-  VerificationUpdate,
-} from "@namera-ai/schema";
-
-import { Effect, Layer, Context } from "effect";
+import { Effect, Layer, Context, Schema } from "effect";
 
 import { eq } from "drizzle-orm";
 
@@ -13,21 +7,33 @@ import {
   TransactionOrDatabase,
   verification,
 } from "@namera-ai/database";
+import {
+  Verification,
+  VerificationId,
+  type VerificationInsert,
+  type VerificationUpdate,
+  mapDatabaseError,
+  DatabaseError,
+} from "@namera-ai/schema";
 
 export type VerificationRepo = {
   createVerification: (
     params: VerificationInsert,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<void, DatabaseError, Database.Database>;
   findVerification: (params: {
     identifier: string;
-  }) => Effect.Effect<Verification | undefined, never, Database.Database>;
+  }) => Effect.Effect<
+    Verification | undefined,
+    DatabaseError,
+    Database.Database
+  >;
   deleteVerification: (params: {
     identifier: string;
-  }) => Effect.Effect<void, never, Database.Database>;
+  }) => Effect.Effect<void, DatabaseError, Database.Database>;
   updateVerification: (
-    identifier: string,
+    verificationId: VerificationId,
     params: VerificationUpdate,
-  ) => Effect.Effect<void, never, Database.Database>;
+  ) => Effect.Effect<void, DatabaseError, Database.Database>;
 };
 
 export const VerificationRepo =
@@ -40,7 +46,7 @@ export const layer = Layer.succeed(
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         yield* db.insert(verification).values(params);
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     deleteVerification: (params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -48,7 +54,7 @@ export const layer = Layer.succeed(
         yield* db
           .delete(verification)
           .where(eq(verification.identifier, params.identifier));
-      }).pipe(Effect.orDie),
+      }).pipe(mapDatabaseError),
     findVerification: (params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
@@ -61,16 +67,16 @@ export const layer = Layer.succeed(
           },
         });
 
-        return res;
-      }).pipe(Effect.orDie),
+        return Schema.decodeUnknownSync(Verification)(res);
+      }).pipe(mapDatabaseError),
 
-    updateVerification: (identifier, params) =>
+    updateVerification: (verificationId, params) =>
       Effect.gen(function* () {
         const db = yield* TransactionOrDatabase;
         yield* db
           .update(verification)
           .set(params)
-          .where(eq(verification.id, identifier));
-      }).pipe(Effect.orDie),
+          .where(eq(verification.id, verificationId));
+      }).pipe(mapDatabaseError),
   }),
 );

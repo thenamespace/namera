@@ -1,3 +1,5 @@
+import type { MetadataIcon } from "@namera-ai/schema";
+
 import React, { useMemo, useState } from "react";
 
 import { Button } from "@namera-ai/ui/components/ui/button";
@@ -18,14 +20,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@namera-ai/ui/components/ui/tooltip";
+import { cn } from "@namera-ai/ui/lib/utils";
 
-import { ICON_DATA, iconMap, type IconData } from "./data";
+import { ICON_DATA, type IconData } from "./data";
 import { EmojiPickerComponent } from "./emoji";
+import { ImagePickerComponent } from "./image";
+import { IconRenderer, MetadataIconRenderer } from "./renderer";
 
-type Icon = {
-  type: "icon" | "emoji";
-  value: string;
-};
+type IconPickerType = MetadataIcon["type"];
+const DEFAULT_ALLOWED_TYPES: IconPickerType[] = ["icon", "emoji", "image"];
 
 const useIconPicker = (): {
   search: string;
@@ -49,25 +52,10 @@ const useIconPicker = (): {
   return { search, setSearch, icons: filteredIcons };
 };
 
-const IconRenderer = ({
-  icon,
-  ...rest
-}: {
-  icon: string;
-} & React.ComponentPropsWithoutRef<"svg">) => {
-  const IconComponent = iconMap[icon]?.icon;
-
-  if (!IconComponent) {
-    return null;
-  }
-
-  return <IconComponent data-slot="icon" {...rest} />;
-};
-
 const IconPickerComponent = ({
   onChange,
 }: {
-  onChange: (icon: Icon) => void;
+  onChange: (icon: MetadataIcon) => void;
 }) => {
   const { search, setSearch, icons } = useIconPicker();
 
@@ -116,52 +104,93 @@ const IconPickerComponent = ({
 const IconPicker = ({
   value,
   onChange,
+  allowedTypes = DEFAULT_ALLOWED_TYPES,
 }: {
-  onChange: (icon: Icon) => void;
-  value: Icon;
+  onChange: (icon: MetadataIcon) => void;
+  value: MetadataIcon;
+  allowedTypes?: IconPickerType[];
 }) => {
   const [open, setOpen] = useState(false);
+  const allowedTypeSet = useMemo(
+    () =>
+      new Set(allowedTypes.length > 0 ? allowedTypes : DEFAULT_ALLOWED_TYPES),
+    [allowedTypes],
+  );
+  const firstAllowedType = allowedTypes[0] ?? DEFAULT_ALLOWED_TYPES[0];
+  const activeType = allowedTypeSet.has(value.type)
+    ? value.type
+    : firstAllowedType;
 
   return (
     <Dialog open={open} onOpenChange={(e) => setOpen(e)}>
       <DialogTrigger
-        render={<Button variant="secondary" className="h-9 max-w-9" />}
-      >
-        {value.type === "icon" ? (
-          <IconRenderer
-            className="text-muted-foreground size-4.5"
-            icon={value.value}
+        render={
+          <Button
+            variant="secondary"
+            className={cn("h-9 max-w-9", value.type === "image" && "p-0!")}
           />
-        ) : (
-          <span>{value.value}</span>
-        )}
+        }
+      >
+        <MetadataIconRenderer
+          value={value}
+          className="size-9 rounded-lg"
+          iconCls="text-muted-foreground size-4.5!"
+          emojiCls="min-w-9 h-9 text-lg"
+        />
       </DialogTrigger>
       <DialogContent className="min-w-md px-1 py-1">
-        <Tabs defaultValue="icon">
-          <TabsList variant="line">
-            <TabsTrigger value="icon">Icons</TabsTrigger>
-            <TabsTrigger value="emoji">Emojis</TabsTrigger>
-          </TabsList>
-          <TabsContent value="icon" className="p-2">
-            <IconPickerComponent
-              onChange={(icon) => {
-                onChange(icon);
-                setOpen(false);
-              }}
-            />
-          </TabsContent>
-          <TabsContent value="emoji" className="p-2">
-            <EmojiPickerComponent
-              onChange={(icon) => {
-                onChange(icon);
-                setOpen(false);
-              }}
-            />
-          </TabsContent>
+        <Tabs key={`${open}-${activeType}`} defaultValue={activeType}>
+          {allowedTypes.length > 1 && (
+            <TabsList variant="line">
+              {allowedTypeSet.has("icon") && (
+                <TabsTrigger value="icon">Icons</TabsTrigger>
+              )}
+              {allowedTypeSet.has("emoji") && (
+                <TabsTrigger value="emoji">Emojis</TabsTrigger>
+              )}
+              {allowedTypeSet.has("image") && (
+                <TabsTrigger value="image">Image</TabsTrigger>
+              )}
+            </TabsList>
+          )}
+          {allowedTypes.length === 1 && (
+            <div className="px-2 pt-1 text-base">{`${allowedTypes[0]?.at(0)?.toUpperCase()}${allowedTypes[0]?.slice(1)}`}</div>
+          )}
+          {allowedTypeSet.has("icon") && (
+            <TabsContent value="icon" className="p-2">
+              <IconPickerComponent
+                onChange={(icon) => {
+                  onChange(icon);
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
+          {allowedTypeSet.has("emoji") && (
+            <TabsContent value="emoji" className="p-2">
+              <EmojiPickerComponent
+                onChange={(icon) => {
+                  onChange(icon);
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
+          {allowedTypeSet.has("image") && (
+            <TabsContent value="image" className="p-2">
+              <ImagePickerComponent
+                value={value}
+                onDone={(imgSrc: string) => {
+                  onChange({ type: "image", value: imgSrc });
+                  setOpen(false);
+                }}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>
   );
 };
 
-export { IconPicker, useIconPicker };
+export { IconPicker, useIconPicker, MetadataIconRenderer };

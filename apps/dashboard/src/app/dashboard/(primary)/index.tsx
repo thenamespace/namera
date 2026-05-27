@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/app/dashboard/-components";
+import { useListUserOrgs } from "@/hooks/organization";
 
 const DashboardPage = () => {
+  const { data } = useListUserOrgs();
   return (
     <div>
       <PageHeader header="Dashboard" />
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
 };

@@ -13,8 +13,16 @@ export const getCurrentUser = async () =>
     }).pipe(Effect.catchTag("Unauthorized", () => Effect.succeed(null))),
   );
 
+export const listSessions = async () =>
+  clientRuntime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* ApiClient.ApiClient;
+      return yield* client.auth.listSessions();
+    }),
+  );
+
 export const signInWithMagicLink = async (
-  data: Pick<SigInMagicLinkBody, "name" | "email">,
+  data: Pick<SigInMagicLinkBody, "email">,
 ) =>
   clientRuntime.runPromise(
     Effect.gen(function* () {
@@ -23,17 +31,24 @@ export const signInWithMagicLink = async (
       const successCallback = new URL("/dashboard", env.baseUrl);
       successCallback.searchParams.set("success", "true");
 
-      const errorCallback = new URL("/auth", env.baseUrl);
-      errorCallback.searchParams.set("success", "false");
-
-      yield* client.auth.signInMagicLink({
+      yield* client.magicLink.signIn({
         payload: {
           ...data,
           callbackUrl: successCallback,
-          errorCallbackUrl: errorCallback,
           newUserCallbackUrl: successCallback,
         },
       });
       return yield* client.auth.currentUser();
     }).pipe(Effect.catchTag("Unauthorized", () => Effect.succeed(null))),
   );
+
+export const logout = async () =>
+  clientRuntime.runPromise(
+    Effect.gen(function* () {
+      const client = yield* ApiClient.ApiClient;
+      yield* client.auth.logout();
+    }),
+  );
+
+export * from "./user";
+export * from "./organization";

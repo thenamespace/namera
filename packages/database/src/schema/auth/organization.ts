@@ -1,16 +1,30 @@
+import type { OrganizationId, UserId } from "@namera-ai/schema";
 import type {
-  OrganizationId,
   OrganizationMetadata,
-  OrganizationSlug,
-} from "@namera-ai/schema";
+  OrganizationPlan,
+} from "@namera-ai/schema/database";
 
-import { json, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { index, jsonb, text } from "drizzle-orm/pg-core";
 
-import { OrganizationPlan } from "@namera-ai/schema";
+import { authSchema } from "@/schema/auth/common";
+import { user } from "@/schema/auth/user";
+import {
+  adminRole,
+  generateUniqueId,
+  timestamps,
+  userRole,
+} from "@/schema/common";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  PgPolicyBuilder,
+} from "@/schema/policy";
 
-import { generateUniqueId, timestamps } from "../common";
-import { authSchema } from "./common";
-
+// Organization Table
+// Represents an organization
+// "insert" policies are not required because they are done by admin
 export const organization = authSchema.table.withRLS(
   "organization",
   {
@@ -18,10 +32,54 @@ export const organization = authSchema.table.withRLS(
       .primaryKey()
       .$defaultFn(generateUniqueId)
       .$type<OrganizationId>(),
-    metadata: json("metadata").$type<OrganizationMetadata>(),
+    name: text("name").notNull(),
+    metadata: jsonb("metadata").notNull().$type<OrganizationMetadata>(),
     plan: text("plan").notNull().$type<OrganizationPlan>(),
-    slug: text("slug").notNull().unique().$type<OrganizationSlug>(),
+    createdById: text("created_by_id")
+      .$type<UserId>()
+      .references(() => user.id, { onDelete: "cascade" }),
     ...timestamps,
   },
-  (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
+  (table) => [
+    index("organization_created_by_idx")
+      .on(table.createdById)
+      .where(sql`${table.deletedAt} IS NULL`),
+    new PgPolicyBuilder()
+      .name("organization_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .build(),
+    new PgPolicyBuilder()
+      .name("organization_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .withCheck(
+        and([
+          onlyActorWithOrgAccess(table.id),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .build(),
+    new PgPolicyBuilder()
+      .name("organization_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using(sql`true`)
+      .build(),
+  ],
 );

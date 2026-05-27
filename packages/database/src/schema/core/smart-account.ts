@@ -4,27 +4,36 @@ import type {
   KernelVersion,
   SmartAccountId,
   OwnerType,
-  UserId,
-  SmartAccountOwner,
-  SmartAccountMetadata,
   OrganizationId,
+  OrganizationMemberId,
 } from "@namera-ai/schema";
+import type {
+  SmartAccountMetadata,
+  SmartAccountOwner,
+} from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
 import {
   index,
   integer,
-  json,
-  pgPolicy,
+  jsonb,
   pgTable,
   text,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { organization } from "../auth";
-import { user } from "../auth/user";
+import { member, organization } from "../auth";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import {
+  and,
+  onlyActorWithOrgAccess,
+  onlyIfNotDeleted,
+  onlyUserId,
+  PgPolicyBuilder,
+} from "../policy";
 
+// Smart Accounts table
+// Represents a org's smart account in Namera
 export const smartAccount = pgTable.withRLS(
   "smart_account",
   {
@@ -38,9 +47,9 @@ export const smartAccount = pgTable.withRLS(
       .references(() => organization.id, { onDelete: "cascade" }),
     creatorId: text("creator_id")
       .notNull()
-      .$type<UserId>()
-      .references(() => user.id, { onDelete: "no action" }),
-    metadata: json("metadata").notNull().$type<SmartAccountMetadata>(),
+      .$type<OrganizationMemberId>()
+      .references(() => member.id, { onDelete: "no action" }),
+    metadata: jsonb("metadata").notNull().$type<SmartAccountMetadata>(),
     entryPointVersion: text("entrypoint_version")
       .notNull()
       .$type<EntrypointVersion>(),
@@ -55,37 +64,70 @@ export const smartAccount = pgTable.withRLS(
     index("smart_account_organizationId_idx").on(table.organizationId),
     index("smart_account_creatorId_idx").on(table.creatorId),
     index("smart_account_owner_index_idx").on(table.owner, table.index.desc()),
+    index("smart_account_org_owner_index_idx").on(
+      table.organizationId,
+      table.owner,
+      table.index.desc(),
+    ),
     uniqueIndex("smart_account_address_uidx").on(table.address),
-    pgPolicy("smart_account_user_select", {
-      as: "permissive",
-      to: userRole,
-      for: "select",
-      using: sql`${table.creatorId} = auth_user_id()`,
-    }),
-    pgPolicy("smart_account_user_insert", {
-      as: "permissive",
-      to: userRole,
-      for: "insert",
-      withCheck: sql`${table.creatorId} = auth_user_id()`,
-    }),
-    pgPolicy("smart_account_user_update", {
-      as: "permissive",
-      to: userRole,
-      for: "update",
-      using: sql`${table.creatorId} = auth_user_id()`,
-      withCheck: sql`${table.creatorId} = auth_user_id()`,
-    }),
-    pgPolicy("smart_account_user_delete", {
-      as: "permissive",
-      to: userRole,
-      for: "delete",
-      using: sql`${table.creatorId} = auth_user_id()`,
-    }),
-    pgPolicy("smart_account_admin_access", {
-      as: "permissive",
-      to: adminRole,
-      for: "all",
-      using: sql`true`,
-    }),
+    uniqueIndex("smart_account_organization_id_id_uidx").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("smart_account_organization_owner_index_uidx").on(
+      table.organizationId,
+      table.owner,
+      table.index,
+    ),
+    new PgPolicyBuilder()
+      .name("smart_account_select")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("select")
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .build(),
+    new PgPolicyBuilder()
+      .name("smart_account_insert")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("insert")
+      .withCheck(
+        and([
+          onlyUserId(table.creatorId),
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .build(),
+    new PgPolicyBuilder()
+      .name("smart_account_owner_update")
+      .as("permissive")
+      .to(userRole)
+      .forOperation("update")
+      .using(
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .withCheck(
+        and([
+          onlyActorWithOrgAccess(table.organizationId),
+          onlyIfNotDeleted(table.deletedAt),
+        ]),
+      )
+      .build(),
+    new PgPolicyBuilder()
+      .name("smart_account_admin_access")
+      .as("permissive")
+      .to(adminRole)
+      .forOperation("all")
+      .using(sql`true`)
+      .build(),
   ],
 );

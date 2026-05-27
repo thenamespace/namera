@@ -1,7 +1,6 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 
-import { Session, User } from "../../auth";
-import { Email } from "../../common";
+import { Email } from "@/common";
 
 export class MagicLinkError extends Schema.TaggedErrorClass<MagicLinkError>()(
   "MagicLinkError",
@@ -19,43 +18,26 @@ export class MagicLinkError extends Schema.TaggedErrorClass<MagicLinkError>()(
 ) {}
 
 export const SigInMagicLinkBody = Schema.Struct({
-  callbackUrl: Schema.URL.annotate({
-    description: "URL to redirect after magic link verification",
-  }),
   email: Email.annotate({
     description: "Email address to send the magic link",
   }),
-  errorCallbackUrl: Schema.URL.annotate({
-    description: "URL to redirect after error.",
-  }),
-  name: Schema.String.check(Schema.isLengthBetween(4, 255)).annotate({
-    description:
-      "User display name. Only used if the user is registering for the first time.",
+  callbackUrl: Schema.URL.annotate({
+    description: "URL to redirect after magic link verification",
   }),
   newUserCallbackUrl: Schema.URL.annotate({
     description:
       "URL to redirect after new user signup. Only used if the user is registering for the first time.",
   }),
+  errorCallbackUrl: Schema.URL.annotate({
+    description: "URL to redirect to after encountering an error",
+  }),
 });
-
-export type SigInMagicLinkBody = typeof SigInMagicLinkBody.Type;
 
 export const VerifyMagicLinkBody = Schema.Struct({
   token: Schema.String.annotate({
     description: "Magic link token",
   }),
-}).mapFields(
-  Struct.assign(
-    SigInMagicLinkBody.mapFields(Struct.omit(["name", "email"])).fields,
-  ),
-);
-
-export const VerifyMagicLinkResponse = Schema.Struct({
-  isNewUser: Schema.Boolean,
-  session: Session,
-  token: Schema.String,
-  user: User,
 });
 
+export type SigInMagicLinkBody = typeof SigInMagicLinkBody.Type;
 export type VerifyMagicLinkBody = typeof VerifyMagicLinkBody.Type;
-export type VerifyMagicLinkResponse = typeof VerifyMagicLinkResponse.Type;

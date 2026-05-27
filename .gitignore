@@ -154,3 +154,4 @@ pre-commit.log
 prisma/db.sqlite
 prisma/db.sqlite-journal
 db.sqlite
+drizzle-migrations

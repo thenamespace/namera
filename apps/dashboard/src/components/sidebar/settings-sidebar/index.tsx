@@ -3,6 +3,7 @@ import {
   Sidebar as SidebarCore,
 } from "@namera-ai/ui/components/ui/sidebar";
 
+import { AdministrationGroup } from "./administration";
 import { CoreGroup } from "./core";
 import { Header } from "./header";
 
@@ -12,6 +13,7 @@ export const SettingsSidebar = () => {
       <Header />
       <SidebarContent>
         <CoreGroup />
+        <AdministrationGroup />
       </SidebarContent>
     </SidebarCore>
   );

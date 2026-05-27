@@ -6,13 +6,16 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
 import { useConnectionEffect } from "wagmi";
 
-import { createSmartAccount } from "@/actions/core";
 import { HeadingGroup } from "@/components/misc";
 import { CreateSmartAccountRequest } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 
 import { EnsDetails } from "./ens";
 import { Metadata } from "./metadata";
+
+const handleSubmit = (value: CreateSmartAccountRequest) => {
+  console.log(value);
+};
 
 export const NewAccountForm = () => {
   const form = useForm<CreateSmartAccountRequest>({
@@ -29,11 +32,6 @@ export const NewAccountForm = () => {
       Schema.toStandardSchemaV1(CreateSmartAccountRequest),
     ),
   });
-
-  const handleSubmit = async (value: CreateSmartAccountRequest) => {
-    const res = await createSmartAccount(value);
-    console.log(res);
-  };
 
   useConnectionEffect({
     onConnect: ({ address }) => {

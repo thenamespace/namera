@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/utils",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": "true",
   "type": "module",
   "sideEffects": false,
@@ -11,13 +11,14 @@
     "./random": "./src/random.ts",
     "./trusted-origin": "./src/trusted-origin.ts",
     "./url": "./src/url.ts",
-    "./wildcard": "./src/wildcard.ts"
+    "./wildcard": "./src/wildcard.ts",
+    "./email": "./src/email.ts"
   },
   "scripts": {},
   "dependencies": {},
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   }
 }

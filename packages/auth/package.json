@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/auth",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": "true",
   "type": "module",
   "sideEffects": false,
@@ -12,12 +12,13 @@
     "@namera-ai/database": "workspace:*",
     "@namera-ai/domain": "workspace:*",
     "@namera-ai/schema": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/utils": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   }
 }
