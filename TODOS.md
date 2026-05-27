@@ -6,11 +6,11 @@
 - [ ] Inbox Page (view important updates to organization and user)
 - [ ] Overview Page
 - [ ] Assets Page (view assets owned by all smart accounts combined, and per smart account)
-- [ ] Smart Account
-  - [ ] Smart Accounts Page (view created smart accounts)
-  - [ ] Create Smart Account Page (create smart account)
-- [ ] Session Keys
-  - [ ] View Session Keys Page (view session keys)
+- [x] Smart Account
+  - [x] Smart Accounts Page (view created smart accounts)
+  - [x] Create Smart Account Page (create smart account)
+- [x] Session Keys
+  - [x] View Session Keys Page (view session keys)
   - [ ] Create Session Key Page (create session key)
   - [ ] Individual Session Key Page (view individual session key details, revoke session key, etc)
 - [ ] Templates
@@ -24,14 +24,16 @@
     - [x] Profile Page (view and update user profile)
     - [x] Notifications Page (manage notification preferences)
     - [x] Security Page (manage active user sessions)
-  - [ ] Organization
+  - [x] Organization
     - [x] Create Organization Page
     - [x] Update Organization Page (update organization name and metadata)
-    - [ ] Organization Members Page (see and manage organization members)
-    - [ ] Invite Members Page (invite new members to organization with a role)
-- [ ] Accept/Reject Invitation Page (accept/reject invitations to organization)
+    - [x] Organization Members Page (see and manage organization members)
+    - [x] Invite Members Page (invite new members to organization with a role)
+- [x] Accept/Reject Invitation Page (accept/reject invitations to organization)
 
 ## Namera Backend
+
+### Routes
 
 - [ ] Auth
   - [x] Core
@@ -49,29 +51,40 @@
     - [x] Set Current User's Active Organization
     - [x] Get Organization
     - [x] Update Organization
-  - [ ] Invitations
-    - [ ] Invite User to Organization
-    - [ ] Accept/Reject Invitation
-  - [ ] Members
-    - [ ] List Organization Members
-    - [ ] Update Organization Member
-    - [ ] Remove Organization Member
+  - [x] Invitations
+    - [x] Invite User to Organization
+    - [x] Accept/Reject Invitation
+  - [x] Members
+    - [x] List Organization Members
+    - [x] Update Organization Member
+    - [x] Remove Organization Member
   - [x] User
     - [x] Update User
 - [ ] Core
   - [x] User Preferences
     - [x] Get User Preferences
     - [x] Update User Preferences
-  - [ ] Smart Accounts
-    - [ ] Create Smart Account
-    - [ ] List Organization's Smart Accounts
-  - [ ] Session Keys
-    - [ ] Create Session Key
-    - [ ] List Session Keys (per organization, and per smart account)
-    - [ ] Get Session Key Details
+  - [x] Smart Accounts
+    - [x] Create Smart Account
+    - [x] List Organization's Smart Accounts
+  - [x] Session Keys
+    - [x] Create Session Key
+    - [x] List Session Keys (per organization, and per smart account)
+    - [x] Get Session Key Details
   - [ ] Templates
   - [ ] Agents
     - [ ] Register Subname
   - [ ] MCP OAuth 2.1 PCKE Flow
 - [x] RPC Proxy
 - [x] Health
+
+### Telemetry
+
+- [x] Tracing
+- [ ] Metrics
+
+### Emails
+
+- [ ] Resend Integration
+- [ ] Subscriber Segments (to send newsletter, announcements from resend website, no code editor)
+- [ ] Sync Subscriber lists to database
