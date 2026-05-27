@@ -22,6 +22,7 @@ export const SmartAccountId = createBrandedId("SmartAccountId");
 export const SessionKeyId = createBrandedId("SessionKeyId");
 
 export const OrganizationEventId = createBrandedId("OrganizationEventId");
+export const UserEventId = createBrandedId("UserEventId");
 
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
@@ -37,3 +38,4 @@ export type UserPreferencesId = typeof UserPreferencesId.Type;
 export type SmartAccountId = typeof SmartAccountId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
 export type OrganizationEventId = typeof OrganizationEventId.Type;
+export type UserEventId = typeof UserEventId.Type;

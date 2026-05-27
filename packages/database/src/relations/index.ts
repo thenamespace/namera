@@ -14,6 +14,7 @@ import {
   userPreferences,
   verification,
   systemRole,
+  userEvent,
 } from "../schema";
 
 export const relations = defineRelations(
@@ -30,6 +31,7 @@ export const relations = defineRelations(
     member,
     role,
     organizationEvent,
+    userEvent,
     userPreferences,
   },
   (r) => ({
@@ -44,6 +46,8 @@ export const relations = defineRelations(
       members: r.many.member(),
       // 1 user can have 1 user preference
       userPreferences: r.one.userPreferences(),
+      // 1 user can have many events
+      events: r.many.userEvent(),
     },
     session: {
       // 1 session can have one user
@@ -140,6 +144,13 @@ export const relations = defineRelations(
       // 1 user preference can have one user
       user: r.one.user({
         from: r.userPreferences.userId,
+        to: r.user.id,
+      }),
+    },
+    userEvent: {
+      // 1 user event can have one user
+      user: r.one.user({
+        from: r.userEvent.userId,
         to: r.user.id,
       }),
     },
