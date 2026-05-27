@@ -7,10 +7,13 @@ import { EventSource, TargetType } from "./common";
 
 export const EventType = Schema.String;
 export const ActorType = Schema.Literals(["user"]);
-export const OrganizationEventMetadata = Schema.Struct({
-  ipAddress: Schema.optionalKey(Schema.String),
-  userAgent: Schema.optionalKey(Schema.String),
-});
+export const OrganizationEventMetadata = Schema.StructWithRest(
+  Schema.Struct({
+    ipAddress: Schema.optionalKey(Schema.String),
+    userAgent: Schema.optionalKey(Schema.String),
+  }),
+  [Schema.Record(Schema.String, Schema.String)],
+);
 
 export const OrganizationEvent = Schema.Struct({
   id: OrganizationEventId,

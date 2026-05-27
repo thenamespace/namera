@@ -6,10 +6,13 @@ import { createInsertSchema } from "@/database/helpers";
 import { TargetType, EventSource } from "./common";
 
 export const UserEventType = Schema.String;
-export const UserEventMetadata = Schema.Struct({
-  ipAddress: Schema.optionalKey(Schema.String),
-  userAgent: Schema.optionalKey(Schema.String),
-});
+export const UserEventMetadata = Schema.StructWithRest(
+  Schema.Struct({
+    ipAddress: Schema.optionalKey(Schema.String),
+    userAgent: Schema.optionalKey(Schema.String),
+  }),
+  [Schema.Record(Schema.String, Schema.String)],
+);
 
 export const UserEvent = Schema.Struct({
   id: UserEventId,
