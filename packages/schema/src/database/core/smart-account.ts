@@ -8,9 +8,9 @@ import {
   OrganizationId,
   OrganizationMemberId,
   SmartAccountId,
-} from "@/common";
-import { MetadataLogo, MetadataName, TimestampFields } from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+} from "../../common";
+import { MetadataLogo, MetadataName, TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const SmartAccountMetadata = Schema.Struct({
   logo: MetadataLogo,

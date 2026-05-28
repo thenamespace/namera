@@ -1,6 +1,5 @@
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
-import { Authorization } from "@/middlewares";
 import { InternalError } from "@namera-ai/schema";
 import {
   CreateOrganizationRequest,
@@ -14,6 +13,8 @@ import {
   UpdateOrganizationRequest,
   UpdateOrganizationResponse,
 } from "@namera-ai/schema/dto";
+
+import { Authorization } from "../../middlewares";
 
 export const organizationGroup = HttpApiGroup.make("organization")
   .add(

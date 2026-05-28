@@ -150,7 +150,7 @@ export const relations = defineRelations(
         to: r.organization.id,
       }),
     },
-    userPreference: {
+    userPreferences: {
       // 1 user preference can have one user
       user: r.one.user({
         from: r.userPreferences.userId,
@@ -189,7 +189,7 @@ export const relations = defineRelations(
       }),
       // one session key can have one creator
       creator: r.one.member({
-        from: r.smartAccount.creatorId,
+        from: r.sessionKey.creatorId,
         to: r.member.id,
       }),
       // one session key can have one smart account

@@ -1,13 +1,12 @@
 import { Schema, Struct } from "effect";
 
-import { SystemRoleId } from "@/common";
+import { SystemRoleId } from "../../common";
 import {
   MetadataName,
   MetadataLogo,
   MetadataDescription,
   TimestampFields,
-} from "@/database/common";
-
+} from "../common";
 import { createInsertSchema, createUpdateSchema } from "../helpers";
 import { MemberPermission } from "./member-permissions";
 

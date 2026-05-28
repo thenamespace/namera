@@ -6,10 +6,9 @@ import {
   OrganizationId,
   OrganizationRoleId,
   UserId,
-} from "@/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
-
+} from "../../common";
 import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const InvitationStatus = Schema.Literals([
   "pending",

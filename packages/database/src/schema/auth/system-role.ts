@@ -8,14 +8,9 @@ import type {
 import { sql } from "drizzle-orm";
 import { integer, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { authSchema } from "@/schema/auth/common";
-import {
-  adminRole,
-  generateUniqueId,
-  timestamps,
-  userRole,
-} from "@/schema/common";
-import { and, onlyIfNotDeleted, PgPolicyBuilder } from "@/schema/policy";
+import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import { and, onlyIfNotDeleted, PgPolicyBuilder } from "../policy";
+import { authSchema } from "./common";
 
 // Organization Role Table
 export const systemRole = authSchema.table.withRLS(

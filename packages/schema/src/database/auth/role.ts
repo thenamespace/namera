@@ -1,14 +1,13 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, OrganizationRoleId, SystemRoleId } from "@/common";
+import { OrganizationId, OrganizationRoleId, SystemRoleId } from "../../common";
 import {
   MetadataDescription,
   MetadataLogo,
   MetadataName,
   TimestampFields,
-} from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
-
+} from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 import { MemberPermission } from "./member-permissions";
 
 export const OrganizationRoleMetadata = Schema.Struct({

@@ -7,14 +7,14 @@ import {
   SessionKeyId,
   SmartAccountId,
   SupportedChain,
-} from "@/common";
+} from "../../common";
 import {
   MetadataDescription,
   MetadataLogo,
   MetadataName,
   TimestampFields,
-} from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+} from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const SerializedAccount = Schema.Struct({
   chain: SupportedChain,

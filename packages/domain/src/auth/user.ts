@@ -34,7 +34,7 @@ export const layer = Layer.succeed(
   UserRepo.of({
     createUser: Effect.fn("createUser")(function* (params) {
       const db = yield* TransactionOrDatabase;
-      const parsed = Schema.encodeSync(UserInsert)(params);
+      const parsed = Schema.encodeUnknownSync(UserInsert)(params);
       const res = yield* db
         .insert(user)
         .values(parsed as any)
@@ -57,7 +57,7 @@ export const layer = Layer.succeed(
     }, mapToDatabaseError),
     updateUser: Effect.fn("updateUser")(function* (id, params) {
       const db = yield* TransactionOrDatabase;
-      const parsed = Schema.encodeSync(UserUpdate)(params);
+      const parsed = Schema.encodeUnknownSync(UserUpdate)(params);
       const res = yield* db
         .update(user)
         .set(parsed as any)

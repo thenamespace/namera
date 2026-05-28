@@ -1,9 +1,8 @@
 import { Effect, Schema, Struct } from "effect";
 
-import { UserId, UserPreferencesId } from "@/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
-
+import { UserId, UserPreferencesId } from "../../common";
 import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 const OptionalBooleanWithDefault = (defaultValue: boolean) =>
   Schema.Boolean.pipe(

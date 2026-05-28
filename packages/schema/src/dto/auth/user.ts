@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { User } from "@/database";
+import { User } from "../../database";
 
 export const GetUserRequest = Schema.Void;
 export const GetUserResponse = User.mapFields(

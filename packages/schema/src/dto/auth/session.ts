@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { Session } from "@/database";
+import { Session } from "../../database";
 
 export const GetSessionResponse = Session.mapFields(
   Struct.pick([

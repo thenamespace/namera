@@ -6,9 +6,9 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",
-    "dev": "pnpm tsx src/index.ts --watch",
-    "migrate": "pnpm tsx ../../packages/database/src/migrate.ts",
-    "start": "node dist/index.mjs"
+    "dev": "pnpm migrate && pnpm tsx src/index.ts --watch",
+    "migrate": "pnpm tsx ./scripts/migrate.ts",
+    "start": "node dist/migrate.js && node dist/index.mjs"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
@@ -20,11 +20,14 @@
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/utils": "workspace:*",
     "dotenv": "17.4.2",
-    "effect": "catalog:"
+    "drizzle-orm": "catalog:",
+    "effect": "catalog:",
+    "pg": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
     "@types/node": "catalog:",
+    "@types/pg": "catalog:",
     "tsdown": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"

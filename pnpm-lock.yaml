@@ -21,6 +21,9 @@ catalogs:
     '@types/node':
       specifier: 25.9.1
       version: 25.9.1
+    '@types/pg':
+      specifier: 8.20.0
+      version: 8.20.0
     '@types/react':
       specifier: 19.2.15
       version: 19.2.15
@@ -42,6 +45,9 @@ catalogs:
     oxlint:
       specifier: 1.62.0
       version: 1.62.0
+    pg:
+      specifier: 8.20.0
+      version: 8.20.0
     react:
       specifier: 19.2.6
       version: 19.2.6
@@ -237,9 +243,15 @@ importers:
       dotenv:
         specifier: 17.4.2
         version: 17.4.2
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.3(@effect/sql-pg@4.0.0-beta.70(effect@4.0.0-beta.70))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.70)(pg@8.20.0)(valibot@1.4.1(typescript@6.0.3))(zod@3.25.76)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.70
+      pg:
+        specifier: 'catalog:'
+        version: 8.20.0
     devDependencies:
       '@namera-ai/config':
         specifier: workspace:*
@@ -247,6 +259,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.1
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.20.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.0(tsx@4.22.3)(typescript@6.0.3)
@@ -333,6 +348,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.70(effect@4.0.0-beta.70)(ioredis@5.10.1)
       '@effect/sql-pg':
         specifier: 'catalog:'
         version: 4.0.0-beta.70(effect@4.0.0-beta.70)
@@ -346,7 +364,7 @@ importers:
         specifier: 'catalog:'
         version: 4.0.0-beta.70
       pg:
-        specifier: 8.20.0
+        specifier: 'catalog:'
         version: 8.20.0
       uuid:
         specifier: 14.0.0
@@ -359,7 +377,7 @@ importers:
         specifier: 'catalog:'
         version: 25.9.1
       '@types/pg':
-        specifier: 8.20.0
+        specifier: 'catalog:'
         version: 8.20.0
       drizzle-kit:
         specifier: 'catalog:'

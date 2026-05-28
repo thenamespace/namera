@@ -21,8 +21,7 @@ import {
   text,
 } from "drizzle-orm/pg-core";
 
-import { member, organization } from "@/schema/auth";
-
+import { member, organization } from "../auth";
 import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,

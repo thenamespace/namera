@@ -10,24 +10,23 @@ import type { InvitationStatus } from "@namera-ai/schema/database";
 import { sql } from "drizzle-orm";
 import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { authSchema } from "@/schema/auth/common";
-import { user } from "@/schema/auth/user";
 import {
   adminRole,
   createTimestampField,
   generateUniqueId,
   timestamps,
   userRole,
-} from "@/schema/common";
+} from "../common";
 import {
   and,
   onlyActorWithOrgAccess,
   onlyIfNotDeleted,
   PgPolicyBuilder,
-} from "@/schema/policy";
-
+} from "../policy";
+import { authSchema } from "./common";
 import { organization } from "./organization";
 import { role } from "./role";
+import { user } from "./user";
 
 // Invitations table
 // Represents an invitation to join an organization

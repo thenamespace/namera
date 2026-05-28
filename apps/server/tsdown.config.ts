@@ -6,5 +6,6 @@ export default createTsdownConfig({
   },
   entry: {
     index: "./src/index.ts",
+    migrate: "./scripts/migrate.ts",
   },
 });

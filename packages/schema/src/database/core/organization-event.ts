@@ -1,8 +1,7 @@
 import { Schema } from "effect";
 
-import { OrganizationEventId, OrganizationId } from "@/common";
-import { createInsertSchema } from "@/database/helpers";
-
+import { OrganizationEventId, OrganizationId } from "../../common";
+import { createInsertSchema } from "../helpers";
 import { EventSource, TargetType } from "./common";
 
 export const EventType = Schema.String;

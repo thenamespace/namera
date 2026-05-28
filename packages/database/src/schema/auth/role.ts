@@ -8,20 +8,14 @@ import type {
 import { sql } from "drizzle-orm";
 import { index, integer, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { authSchema } from "@/schema/auth/common";
-import {
-  adminRole,
-  generateUniqueId,
-  timestamps,
-  userRole,
-} from "@/schema/common";
+import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
   onlyActorWithOrgAccess,
   onlyIfNotDeleted,
   PgPolicyBuilder,
-} from "@/schema/policy";
-
+} from "../policy";
+import { authSchema } from "./common";
 import { organization } from "./organization";
 import { systemRole } from "./system-role";
 

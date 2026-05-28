@@ -9,15 +9,14 @@ import type {
 import { sql } from "drizzle-orm";
 import { index, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 
+import { organization } from "../auth";
 import {
   adminRole,
   createTimestampField,
   generateUniqueId,
   userRole,
-} from "@/schema/common";
-import { onlyActorWithOrgAccess, PgPolicyBuilder } from "@/schema/policy";
-
-import { organization } from "../auth";
+} from "../common";
+import { onlyActorWithOrgAccess, PgPolicyBuilder } from "../policy";
 
 export const organizationEvent = pgTable.withRLS(
   "organization_event",

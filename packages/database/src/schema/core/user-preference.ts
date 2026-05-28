@@ -7,20 +7,9 @@ import type {
 import { sql } from "drizzle-orm";
 import { jsonb, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import {
-  adminRole,
-  generateUniqueId,
-  timestamps,
-  userRole,
-} from "@/schema/common";
-import {
-  and,
-  onlyIfNotDeleted,
-  onlyUserId,
-  PgPolicyBuilder,
-} from "@/schema/policy";
-
 import { user } from "../auth";
+import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
+import { and, onlyIfNotDeleted, onlyUserId, PgPolicyBuilder } from "../policy";
 
 export const userPreferences = pgTable.withRLS(
   "user_preferences",

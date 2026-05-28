@@ -4,8 +4,6 @@ import type { Session, User } from "@namera-ai/schema/database";
 
 import { Effect, Layer, Context, DateTime, Metric, Redacted } from "effect";
 
-import { createNewUser, getHttpRequestMetadata } from "@/helpers";
-import { originCheck } from "@/helpers/origin";
 import { type Database } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
 import * as CoreRepo from "@namera-ai/domain/core";
@@ -22,6 +20,8 @@ import { createHash } from "@namera-ai/utils/hash";
 import { generateRandomString } from "@namera-ai/utils/random";
 
 import * as AuthConfig from "../config";
+import { createNewUser, getHttpRequestMetadata } from "../helpers";
+import { originCheck } from "../helpers/origin";
 
 export type MagicLink = {
   signInMagicLink: (
@@ -68,6 +68,7 @@ const signInMagicLink = Effect.fn("signInMagicLink")(function* (
   yield* originCheck([
     { label: "callbackUrl", url: params.callbackUrl },
     { label: "newUserCallbackUrl", url: params.newUserCallbackUrl },
+    { label: "errorCallbackUrl", url: params.errorCallbackUrl },
   ]);
 
   // Generate and store verification token

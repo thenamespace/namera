@@ -1,12 +1,12 @@
 import { Schema, Struct } from "effect";
 
-import { Email, UserId } from "@/common";
-import { TimestampFields, MetadataName } from "@/database/common";
-import { createUpdateSchema, createInsertSchema } from "@/database/helpers";
+import { Email, UserId } from "../../common";
+import { TimestampFields, MetadataName } from "../common";
+import { createUpdateSchema, createInsertSchema } from "../helpers";
 
 export const UserMetadata = Schema.Struct({
   name: MetadataName,
-  image: Schema.optionalKey(Schema.String),
+  image: Schema.optional(Schema.String),
 });
 
 export const User = Schema.Struct({

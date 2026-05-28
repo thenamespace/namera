@@ -1,12 +1,13 @@
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
-import { Authorization } from "@/middlewares";
 import { InternalError, Unauthorized } from "@namera-ai/schema";
 import {
   GetUserPreferencesResponse,
   UpdateUserPreferencesRequest,
   UpdateUserPreferencesResponse,
 } from "@namera-ai/schema/dto";
+
+import { Authorization } from "../../middlewares";
 
 export const userPreferencesGroup = HttpApiGroup.make("userPreferences")
   .add(

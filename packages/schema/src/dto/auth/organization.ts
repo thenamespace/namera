@@ -1,12 +1,12 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId } from "@/common";
+import { OrganizationId } from "../../common";
 import {
   Organization,
   OrganizationInsert,
   OrganizationMember,
-} from "@/database";
-import { OrganizationRole } from "@/database/auth/role";
+} from "../../database";
+import { OrganizationRole } from "../../database/auth/role";
 
 export class OrganizationError extends Schema.TaggedErrorClass<OrganizationError>()(
   "OrganizationError",

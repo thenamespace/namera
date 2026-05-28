@@ -2,12 +2,13 @@ import { Schema } from "effect";
 
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
-import { Authorization } from "@/middlewares";
 import { InternalError, Unauthorized } from "@namera-ai/schema";
 import {
   CurrentActorResponse,
   ListSessionsResponse,
 } from "@namera-ai/schema/dto";
+
+import { Authorization } from "../../middlewares";
 
 export const authCoreGroup = HttpApiGroup.make("auth")
   .add(

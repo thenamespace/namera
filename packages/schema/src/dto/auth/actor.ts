@@ -1,8 +1,7 @@
 import { Schema } from "effect";
 
-import { OrganizationMember } from "@/database";
-import { OrganizationRole } from "@/database/auth/role";
-
+import { OrganizationMember } from "../../database";
+import { OrganizationRole } from "../../database/auth/role";
 import { GetOrganizationResponse } from "./organization";
 import { GetSessionResponse } from "./session";
 import { GetUserResponse } from "./user";

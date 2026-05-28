@@ -8,24 +8,23 @@ import type {
 import { sql } from "drizzle-orm";
 import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { authSchema } from "@/schema/auth/common";
-import { user } from "@/schema/auth/user";
 import {
   adminRole,
   createTimestampField,
   generateUniqueId,
   timestamps,
   userRole,
-} from "@/schema/common";
+} from "../common";
 import {
   and,
   onlyActorWithOrgAccess,
   onlyIfNotDeleted,
   PgPolicyBuilder,
-} from "@/schema/policy";
-
+} from "../policy";
+import { authSchema } from "./common";
 import { organization } from "./organization";
 import { role } from "./role";
+import { user } from "./user";
 
 // Members table
 // Represents a user's membership in an organization

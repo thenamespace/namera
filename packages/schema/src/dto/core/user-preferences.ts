@@ -1,6 +1,6 @@
 import { Struct } from "effect";
 
-import { UserPreference, UserPreferenceUpdate } from "@/database";
+import { UserPreference, UserPreferenceUpdate } from "../../database";
 
 export const GetUserPreferencesResponse = UserPreference.mapFields(
   Struct.pick(["id", "metadata", "notificationPreferences"]),

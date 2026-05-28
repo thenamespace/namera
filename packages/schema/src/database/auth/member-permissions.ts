@@ -139,3 +139,9 @@ export const memberRole: SystemRoleInsert = {
     },
   },
 };
+
+export const systemRolesInsert = [
+  ownerRole,
+  adminRole,
+  memberRole,
+] as SystemRoleInsert[];

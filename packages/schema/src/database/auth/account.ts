@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { AccountId, UserId } from "@/common";
-import { TimestampFields } from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+import { AccountId, UserId } from "../../common";
+import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const Account = Schema.Struct({
   id: AccountId,

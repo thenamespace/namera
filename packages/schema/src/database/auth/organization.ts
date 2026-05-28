@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, UserId } from "@/common";
-import { MetadataLogo, MetadataName, TimestampFields } from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+import { OrganizationId, UserId } from "../../common";
+import { MetadataLogo, MetadataName, TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const OrganizationMetadata = Schema.Struct({
   logo: MetadataLogo,

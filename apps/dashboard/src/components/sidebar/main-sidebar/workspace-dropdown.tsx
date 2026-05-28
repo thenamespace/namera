@@ -97,8 +97,8 @@ const SwitchWorkspaceButton = () => {
             >
               {userOrgs.map((org) => (
                 <DropdownMenuRadioItem
-                  key={org.organizationId}
-                  value={org.organizationId}
+                  key={org.organization.id}
+                  value={org.organization.id}
                 >
                   <MetadataIconRenderer
                     value={org.organization.metadata.logo}

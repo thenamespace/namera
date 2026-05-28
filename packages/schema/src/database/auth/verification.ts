@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { VerificationId } from "@/common";
-import { TimestampFields } from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+import { VerificationId } from "../../common";
+import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const Verification = Schema.Struct({
   id: VerificationId,

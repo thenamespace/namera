@@ -7,20 +7,15 @@ import type {
 import { sql } from "drizzle-orm";
 import { index, jsonb, text } from "drizzle-orm/pg-core";
 
-import { authSchema } from "@/schema/auth/common";
-import { user } from "@/schema/auth/user";
-import {
-  adminRole,
-  generateUniqueId,
-  timestamps,
-  userRole,
-} from "@/schema/common";
+import { adminRole, generateUniqueId, timestamps, userRole } from "../common";
 import {
   and,
   onlyActorWithOrgAccess,
   onlyIfNotDeleted,
   PgPolicyBuilder,
-} from "@/schema/policy";
+} from "../policy";
+import { authSchema } from "./common";
+import { user } from "./user";
 
 // Organization Table
 // Represents an organization

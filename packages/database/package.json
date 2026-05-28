@@ -12,17 +12,18 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@effect/platform-node": "catalog:",
     "@effect/sql-pg": "catalog:",
     "@namera-ai/schema": "workspace:*",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",
-    "pg": "8.20.0",
+    "pg": "catalog:",
     "uuid": "14.0.0"
   },
   "devDependencies": {
     "@namera-ai/config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/pg": "8.20.0",
+    "@types/pg": "catalog:",
     "drizzle-kit": "catalog:",
     "typescript": "catalog:"
   }

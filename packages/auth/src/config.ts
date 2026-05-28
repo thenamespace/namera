@@ -30,7 +30,7 @@ export const layer = Layer.effect(
   AuthConfig,
   Effect.gen(function* () {
     const env = yield* AuthEnv;
-    const isProd = env.baseURL.host !== "localhost";
+    const isProd = env.isProd;
 
     const trustedOrigins = (() => {
       if (isProd) {

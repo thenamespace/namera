@@ -4,15 +4,14 @@ import type { TargetType, UserEventMetadata } from "@namera-ai/schema/database";
 import { sql } from "drizzle-orm";
 import { index, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 
+import { user } from "../auth";
 import {
   adminRole,
   createTimestampField,
   generateUniqueId,
   userRole,
-} from "@/schema/common";
-import { onlyUserId, PgPolicyBuilder } from "@/schema/policy";
-
-import { user } from "../auth";
+} from "../common";
+import { onlyUserId, PgPolicyBuilder } from "../policy";
 
 export const userEvent = pgTable.withRLS(
   "user_event",

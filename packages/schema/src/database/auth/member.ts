@@ -5,10 +5,9 @@ import {
   OrganizationMemberId,
   OrganizationRoleId,
   UserId,
-} from "@/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
-
+} from "../../common";
 import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const OrganizationMember = Schema.Struct({
   id: OrganizationMemberId,

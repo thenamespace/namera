@@ -24,11 +24,9 @@ export const ProfileForm = () => {
   return (
     <ProfileFormInner
       key={currentUser.user.id}
+      email={currentUser.user.email}
       initialValues={{
-        metadata: {
-          name: currentUser.user.name,
-          image: currentUser.user.image,
-        },
+        metadata: currentUser.user.metadata,
       }}
     />
   );
@@ -36,7 +34,9 @@ export const ProfileForm = () => {
 
 export const ProfileFormInner = ({
   initialValues,
+  email,
 }: {
+  email: string;
   initialValues: UpdateUserRequest;
 }) => {
   const { mutateAsync: updateUser } = useUpdateUser();
@@ -95,7 +95,7 @@ export const ProfileFormInner = ({
         <Field className="py-3">
           <div className="flex flex-row items-center justify-between">
             <FieldLabel>Email</FieldLabel>
-            <span className="text-sm"></span>
+            <span className="text-sm">{email}</span>
           </div>
         </Field>
         <Controller

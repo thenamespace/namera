@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { SessionId, UserId, OrganizationId } from "@/common";
-import { TimestampFields } from "@/database/common";
-import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
+import { SessionId, UserId, OrganizationId } from "../../common";
+import { TimestampFields } from "../common";
+import { createInsertSchema, createUpdateSchema } from "../helpers";
 
 export const SessionMetadata = Schema.Struct({
   ipAddress: Schema.NullOr(Schema.String),
