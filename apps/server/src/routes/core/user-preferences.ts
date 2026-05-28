@@ -1,17 +1,16 @@
+import type { UpdateUserPreferencesRequest } from "@namera-ai/schema/dto";
+
 import { Effect } from "effect";
 
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { AuthenticatedUser, api } from "@namera-ai/api";
+import { api, CurrentActor } from "@namera-ai/api";
 import { Database, Transaction } from "@namera-ai/database";
 import * as CoreRepo from "@namera-ai/domain/core";
-import {
-  mapDatabaseError,
-  UpdateUserPreferenceRequest,
-} from "@namera-ai/schema";
+import { mapToDatabaseError, mapToInternalError } from "@namera-ai/schema";
 
 const getUserPreferences = Effect.gen(function* () {
-  const currentUser = yield* AuthenticatedUser;
+  const currentUser = yield* CurrentActor;
   const coreRepo = yield* CoreRepo.CoreRepo;
   const db = yield* Database.Database;
 
@@ -24,11 +23,11 @@ const getUserPreferences = Effect.gen(function* () {
       return yield* coreRepo.userPreference.get(currentUser.user.id);
     }).pipe(Transaction.withTx(tx)),
   );
-}).pipe(mapDatabaseError);
+}).pipe(mapToDatabaseError, mapToInternalError);
 
-const updateUserPreferences = (payload: UpdateUserPreferenceRequest) =>
+const updateUserPreferences = (payload: UpdateUserPreferencesRequest) =>
   Effect.gen(function* () {
-    const currentUser = yield* AuthenticatedUser;
+    const currentUser = yield* CurrentActor;
     const coreRepo = yield* CoreRepo.CoreRepo;
     const db = yield* Database.Database;
 
@@ -44,7 +43,7 @@ const updateUserPreferences = (payload: UpdateUserPreferenceRequest) =>
         );
       }).pipe(Transaction.withTx(tx)),
     );
-  }).pipe(mapDatabaseError);
+  }).pipe(mapToDatabaseError, mapToInternalError);
 
 export const UserPreferencesGroupLive = HttpApiBuilder.group(
   api,

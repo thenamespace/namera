@@ -50,6 +50,11 @@ export const relations = defineRelations(
       events: r.many.userEvent(),
     },
     session: {
+      // 1 session can have one organization
+      organization: r.one.organization({
+        from: r.session.activeOrganizationId,
+        to: r.organization.id,
+      }),
       // 1 session can have one user
       user: r.one.user({
         from: r.session.userId,

@@ -1,9 +1,9 @@
 import { Schema } from "effect";
 
-import { SessionKeyMetadata, SupportedChain } from "@namera-ai/schema";
+import { SupportedChain } from "@namera-ai/schema";
 
 export const NewSessionKeyFormSchema = Schema.Struct({
-  metadata: SessionKeyMetadata,
+  metadata: Schema.Any,
   chains: Schema.Array(SupportedChain),
 });
 

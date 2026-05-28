@@ -9,6 +9,7 @@ export const CorsMiddleware = HttpRouter.cors({
     "b3",
   ],
   allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  // TODO: Update here to take in auth config.
   allowedOrigins: ["http://localhost:3000"],
   credentials: true,
 });

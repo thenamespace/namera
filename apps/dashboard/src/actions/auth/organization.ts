@@ -1,8 +1,8 @@
+import type { OrganizationId } from "@namera-ai/schema";
 import type {
   CreateOrganizationRequest,
-  OrganizationId,
   UpdateOrganizationRequest,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/dto";
 
 import { Effect } from "effect";
 

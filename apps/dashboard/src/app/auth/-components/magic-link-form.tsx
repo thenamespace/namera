@@ -4,7 +4,8 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm, Controller } from "react-hook-form";
 
 import { signInWithMagicLink } from "@/actions";
-import { Email, SigInMagicLinkBody } from "@namera-ai/schema";
+import { Email } from "@namera-ai/schema";
+import { SigInMagicLinkBody } from "@namera-ai/schema/dto";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Field, FieldError } from "@namera-ai/ui/components/ui/field";
 import { Input } from "@namera-ai/ui/components/ui/input";

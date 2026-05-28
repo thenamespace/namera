@@ -1,4 +1,4 @@
-import type { UpdateUserPreferenceRequest } from "@namera-ai/schema";
+import type { UpdateUserPreferencesRequest } from "@namera-ai/schema/dto";
 
 import { Effect } from "effect";
 
@@ -6,7 +6,7 @@ import { clientRuntime } from "@/lib/runtime";
 import { ApiClient } from "@/services";
 
 export const updateUserPreferences = async (
-  data: UpdateUserPreferenceRequest,
+  data: UpdateUserPreferencesRequest,
 ) =>
   clientRuntime.runPromise(
     Effect.gen(function* () {

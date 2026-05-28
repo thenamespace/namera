@@ -4,7 +4,8 @@ import { HttpBody, HttpClient } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { api } from "@namera-ai/api";
-import { getChainFromId, RpcError, UnsupportedChain } from "@namera-ai/schema";
+import { getChainFromId } from "@namera-ai/schema";
+import { RpcError, UnsupportedChain } from "@namera-ai/schema/dto";
 
 import * as Env from "../env";
 

@@ -31,7 +31,7 @@ export const organizationGroup = HttpApiGroup.make("organization")
       error: [OrganizationError, InternalError],
       success: SetActiveOrganizationResponse,
     }),
-    HttpApiEndpoint.get("getFullOrganization", "/organization/get", {
+    HttpApiEndpoint.get("getOrganization", "/organization/get", {
       params: GetOrganizationRequest,
       error: [OrganizationError, InternalError],
       success: GetOrganizationResponse,

@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { createOrganization } from "@/actions/auth/organization";
 import { HeadingGroup } from "@/components/misc";
 import { queries } from "@/lib/query";
-import { CreateOrganizationRequest } from "@namera-ai/schema";
+import { CreateOrganizationRequest } from "@namera-ai/schema/dto";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Card, CardContent } from "@namera-ai/ui/components/ui/card";
 import {

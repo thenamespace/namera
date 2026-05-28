@@ -1,51 +1,56 @@
-import { Effect } from "effect";
+import type { SessionId, UserId } from "@namera-ai/schema";
+
+import { DateTime, Effect } from "effect";
 
 import * as AuthRepo from "@namera-ai/domain/auth";
 import {
   CreateOrganizationRequest,
-  mapDatabaseError,
   OrganizationError,
-  SessionId,
-  UserId,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/dto";
 
-export const createOrganization = (
-  userId: UserId,
-  sessionId: SessionId,
-  payload: CreateOrganizationRequest,
-) =>
-  Effect.gen(function* () {
-    const auth = yield* AuthRepo.AuthRepo;
+export type CreateOrgParams = {
+  userId: UserId;
+  sessionId: SessionId;
+  payload: CreateOrganizationRequest;
+};
 
-    const orgsCreatedByUser =
-      yield* auth.organization.listOrgsCreatedByUser(userId);
+export const createOrganization = Effect.fn("createOrganization")(function* ({
+  userId,
+  sessionId,
+  payload,
+}: CreateOrgParams) {
+  const auth = yield* AuthRepo.AuthRepo;
 
-    if (orgsCreatedByUser.length >= 3) {
-      return yield* new OrganizationError({
-        code: "ORGANIZATION_CREATION_LIMIT_REACHED",
-      });
-    }
+  const orgsCreatedByUser =
+    yield* auth.organization.listOrgsCreatedByUser(userId);
 
-    // Create Organization
-    const newOrg = yield* auth.organization.create({
-      ...payload,
-      plan: "free",
-      createdById: userId,
+  if (orgsCreatedByUser.length >= 3) {
+    return yield* new OrganizationError({
+      code: "ORGANIZATION_CREATION_LIMIT_REACHED",
     });
+  }
 
-    // Create default system roles.
-    const { ownerRole } = yield* auth.role.createSystemRoles(newOrg.id);
+  // Create Organization
+  const newOrg = yield* auth.organization.create({
+    ...payload,
+    plan: "free",
+    createdById: userId,
+  });
 
-    // Create owner member
-    yield* auth.member.create({
-      organizationId: newOrg.id,
-      userId: userId,
-      roleId: ownerRole.id,
-      joinedAt: new Date(),
-    });
+  // Create default system roles.
+  const systemRoles = yield* auth.role.createSystemRoles(newOrg.id);
+  const ownerRole = systemRoles.find((r) => r.key === "owner")!;
 
-    // Set current user's active organization
-    yield* auth.session.setActiveOrganization(sessionId, userId, newOrg.id);
+  // Create owner member
+  yield* auth.member.create({
+    organizationId: newOrg.id,
+    userId: userId,
+    roleId: ownerRole.id,
+    joinedAt: yield* DateTime.now,
+  });
 
-    return newOrg;
-  }).pipe(mapDatabaseError);
+  // Set current user's active organization
+  yield* auth.session.setActiveOrganization(sessionId, userId, newOrg.id);
+
+  return newOrg;
+});

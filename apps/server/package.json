@@ -6,8 +6,8 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",
-    "dev": "pnpm migrate && pnpm tsx src/index.ts --watch",
-    "migrate": "pnpm tsx --cwd ../../packages/database src/migrate.ts",
+    "dev": "pnpm tsx src/index.ts --watch",
+    "migrate": "pnpm tsx ../../packages/database/src/migrate.ts",
     "start": "node dist/index.mjs"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import type { UpdateUserRequest } from "@namera-ai/schema";
+import type { UpdateUserRequest } from "@namera-ai/schema/dto";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

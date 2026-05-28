@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { useConnectionEffect } from "wagmi";
 
 import { HeadingGroup } from "@/components/misc";
-import { CreateSmartAccountRequest } from "@namera-ai/schema";
 import { Button } from "@namera-ai/ui/components/ui/button";
 
 import { EnsDetails } from "./ens";

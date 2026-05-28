@@ -5,8 +5,6 @@ import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/app/dashboard/-components";
 import { Button } from "@namera-ai/ui/components/ui/button";
 
-import { NewAccountForm } from "../-components";
-
 const Page = () => {
   return (
     <div>
@@ -26,7 +24,7 @@ const Page = () => {
         }
       />
       <div className="mx-auto w-full max-w-2xl px-4 py-12">
-        <NewAccountForm />
+        {/* <NewAccountForm /> */}
       </div>
     </div>
   );

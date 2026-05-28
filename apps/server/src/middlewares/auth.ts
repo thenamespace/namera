@@ -1,8 +1,103 @@
-import { Effect, Layer, Redacted } from "effect";
+import { Effect, Layer, Redacted, Schema } from "effect";
 
-import { AuthenticatedUser, Authorization } from "@namera-ai/api";
-import { AdminDatabase } from "@namera-ai/database";
-import { Unauthorized } from "@namera-ai/schema";
+import { Authorization, CurrentActor } from "@namera-ai/api";
+import {
+  AdminDatabase,
+  Database,
+  TransactionOrDatabase,
+} from "@namera-ai/database";
+import {
+  mapToDatabaseError,
+  mapToInternalError,
+  Unauthorized,
+} from "@namera-ai/schema";
+import {
+  OrganizationMember,
+  OrganizationRole,
+} from "@namera-ai/schema/database";
+import {
+  GetOrganizationResponse,
+  GetSessionResponse,
+  GetUserResponse,
+  type CurrentActorResponse,
+} from "@namera-ai/schema/dto";
+
+const getCurrentUserActor = Effect.fnUntraced(
+  function* (credential: Redacted.Redacted<string>) {
+    const db = yield* TransactionOrDatabase;
+
+    const res = yield* db.query.session.findFirst({
+      where: {
+        token: { eq: Redacted.value(credential) },
+        revokedAt: { isNull: true },
+        deletedAt: { isNull: true },
+        expiresAt: { gt: new Date() },
+      },
+      with: {
+        user: true,
+        organization: true,
+      },
+    });
+
+    if (!res || !res.user || !res.organization) {
+      return yield* Effect.fail(new Unauthorized());
+    }
+
+    const { user, organization, ...restSession } = res;
+
+    // Get member
+    const memberRes = yield* db.query.member.findFirst({
+      where: {
+        userId: { eq: user.id },
+        deletedAt: { isNull: true },
+        removedAt: { isNull: true },
+      },
+      with: {
+        role: {
+          with: {
+            systemRole: true,
+          },
+        },
+      },
+    });
+
+    if (!memberRes || !memberRes.role) {
+      return yield* Effect.fail(new Unauthorized());
+    }
+
+    const { role: r, ...restMember } = memberRes;
+    const { systemRole, ...restRole } = r;
+
+    let role = { ...restRole };
+    if (role.systemRoleId && systemRole) {
+      role.key = systemRole.key;
+      role.metadata = systemRole.metadata;
+      role.permissions = systemRole.permissions;
+      role.version = systemRole.version;
+    }
+
+    const parsedSession =
+      Schema.decodeUnknownSync(GetSessionResponse)(restSession);
+    const parsedUser = Schema.decodeUnknownSync(GetUserResponse)(user);
+    const parsedOrg = Schema.decodeUnknownSync(GetOrganizationResponse)(
+      organization,
+    );
+    const parsedMember =
+      Schema.decodeUnknownSync(OrganizationMember)(restMember);
+    const parsedRole = Schema.decodeUnknownSync(OrganizationRole)(role);
+
+    return {
+      type: "user",
+      user: parsedUser,
+      session: parsedSession,
+      organization: parsedOrg,
+      member: parsedMember,
+      role: parsedRole,
+    } satisfies CurrentActorResponse;
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
 export const AuthMiddleware = Layer.effect(
   Authorization,
@@ -10,82 +105,13 @@ export const AuthMiddleware = Layer.effect(
     const db = yield* AdminDatabase.AdminDatabase;
 
     return {
-      authToken: (effect, { credential }) =>
+      authToken: (effect, opts) =>
         Effect.provideServiceEffect(
           effect,
-          AuthenticatedUser,
+          CurrentActor,
           Effect.gen(function* () {
-            // Get Session with user
-            const res = yield* db.query.session
-              .findFirst({
-                where: {
-                  token: { eq: Redacted.value(credential) },
-                  revokedAt: { isNull: true },
-                  deletedAt: { isNull: true },
-                  expiresAt: { gt: new Date() },
-                },
-                with: {
-                  user: true,
-                },
-              })
-              .pipe(Effect.catch(() => Effect.fail(new Unauthorized())));
-
-            if (!res?.user) return yield* Effect.fail(new Unauthorized());
-
-            const { user, ...session } = res;
-            const { token: _token, ...sessionWithoutToken } = session;
-            yield* Effect.annotateCurrentSpan("userId", user.id);
-
-            if (!session.activeOrganizationId) {
-              return {
-                user,
-                session: sessionWithoutToken,
-              };
-            }
-
-            const organization = yield* db.query.organization
-              .findFirst({
-                where: {
-                  id: { eq: session.activeOrganizationId },
-                  deletedAt: { isNull: true },
-                },
-                with: {
-                  members: {
-                    where: {
-                      userId: {
-                        eq: user.id,
-                      },
-                    },
-                    with: {
-                      role: true,
-                    },
-                  },
-                },
-              })
-              .pipe(Effect.catch(() => Effect.fail(new Unauthorized())));
-
-            if (!organization) return { user, session: sessionWithoutToken };
-
-            const { members, ...restOrg } = organization;
-            const member = members[0];
-
-            if (!member) {
-              return {
-                user,
-                session: sessionWithoutToken,
-                organization: restOrg,
-              };
-            }
-
-            const { roleId: _roleId, role, ...m } = member;
-
-            return {
-              user,
-              session: sessionWithoutToken,
-              organization: restOrg,
-              member: { ...m, role: role! },
-            };
-          }).pipe(Effect.withSpan("getCurrentUser")),
+            return yield* getCurrentUserActor(opts.credential);
+          }).pipe(Effect.provideService(Database.Database, db)),
         ),
     };
   }),

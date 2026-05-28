@@ -9,6 +9,7 @@ export const TracingMiddleware = Layer.succeed(
 
   return (
     req.method === "OPTIONS" ||
+    req.method === "HEAD" ||
     url.startsWith("/health") ||
     url.startsWith("/rpc") ||
     url.startsWith("/auth/me")

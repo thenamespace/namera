@@ -1,4 +1,4 @@
-import type { ListSessionResponse } from "@namera-ai/schema";
+import type { ListSessionsResponse } from "@namera-ai/schema/dto";
 
 import { GoogleLogoIcon } from "@phosphor-icons/react";
 import { UAParser } from "ua-parser-js";
@@ -58,7 +58,9 @@ export const SecurityContainer = () => {
   );
 };
 
-const SessionCard = ({ ipAddress, userAgent }: ListSessionResponse[number]) => {
+const SessionCard = ({
+  metadata: { ipAddress, userAgent },
+}: ListSessionsResponse[number]) => {
   const { data: location } = useIpLocation(ipAddress ?? undefined);
   const { browser, os } = UAParser(userAgent ?? "");
   return (

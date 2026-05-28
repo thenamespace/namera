@@ -1,4 +1,4 @@
-import type { SigInMagicLinkBody } from "@namera-ai/schema";
+import type { SigInMagicLinkBody } from "@namera-ai/schema/dto";
 
 import { Effect } from "effect";
 
@@ -30,10 +30,12 @@ export const signInWithMagicLink = async (
       const env = yield* Env.Env;
       const successCallback = new URL("/dashboard", env.baseUrl);
       successCallback.searchParams.set("success", "true");
+      const errorCallbackUrl = env.baseUrl;
 
       yield* client.magicLink.signIn({
         payload: {
           ...data,
+          errorCallbackUrl,
           callbackUrl: successCallback,
           newUserCallbackUrl: successCallback,
         },

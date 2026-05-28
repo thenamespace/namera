@@ -1,9 +1,9 @@
 import type {
   SigInMagicLinkBody,
   VerifyMagicLinkBody,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/dto";
 
-import { Effect } from "effect";
+import { Effect, Redacted } from "effect";
 
 import { HttpServerResponse } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
@@ -12,19 +12,22 @@ import { createOrganization } from "@/common";
 import { api } from "@namera-ai/api";
 import { Auth, AuthConfig } from "@namera-ai/auth";
 import { AdminDatabase, Transaction } from "@namera-ai/database";
-import { mapDatabaseError } from "@namera-ai/schema";
+import { mapToDatabaseError, mapToInternalError } from "@namera-ai/schema";
 
 const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
   Effect.gen(function* () {
     const db = yield* AdminDatabase.AdminDatabase;
     const auth = yield* Auth.Auth;
 
-    yield* db.transaction((tx) =>
+    const { url } = yield* db.transaction((tx) =>
       Effect.gen(function* () {
-        yield* auth.magicLink.signInMagicLink(payload);
+        return yield* auth.magicLink.signInMagicLink(payload);
       }).pipe(Transaction.withTx(tx)),
     );
-  }).pipe(mapDatabaseError);
+
+    // TODO: Send Email
+    yield* Effect.log(url.toString());
+  }).pipe(mapToDatabaseError, mapToInternalError);
 
 const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
   Effect.gen(function* () {
@@ -38,12 +41,16 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
 
         if (result.isNewUser) {
           // Create User Initial Organization
-          yield* createOrganization(result.user.id, result.session.id, {
-            name: result.user.name,
-            metadata: {
-              logo: {
-                type: "icon",
-                value: "building",
+          yield* createOrganization({
+            sessionId: result.session.id,
+            userId: result.user.id,
+            payload: {
+              name: "Personal",
+              metadata: {
+                logo: {
+                  type: "icon",
+                  value: "building",
+                },
               },
             },
           });
@@ -55,13 +62,17 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
 
     return yield* HttpServerResponse.redirect(res.redirectUrl)
       .pipe(
-        HttpServerResponse.setCookie(authConfig.session.cookieName, res.token, {
-          ...authConfig.session.cookieOpts,
-          maxAge: authConfig.session.expiresIn,
-        }),
+        HttpServerResponse.setCookie(
+          authConfig.session.cookieName,
+          Redacted.value(res.token),
+          {
+            ...authConfig.session.cookieOpts,
+            maxAge: authConfig.session.expiresIn,
+          },
+        ),
       )
       .pipe(Effect.orDie);
-  }).pipe(mapDatabaseError);
+  }).pipe(mapToDatabaseError, mapToInternalError);
 
 export const MagicLinkGroupLive = HttpApiBuilder.group(
   api,

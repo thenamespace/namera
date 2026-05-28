@@ -2,7 +2,7 @@ import type { HttpServerRequest } from "effect/unstable/http";
 
 import type { Session, User } from "@namera-ai/schema/database";
 
-import { Effect, Layer, Context, DateTime, Metric } from "effect";
+import { Effect, Layer, Context, DateTime, Metric, Redacted } from "effect";
 
 import { createNewUser, getHttpRequestMetadata } from "@/helpers";
 import { originCheck } from "@/helpers/origin";
@@ -37,6 +37,7 @@ export type MagicLink = {
       redirectUrl: URL;
       user: User;
       session: Session;
+      token: Redacted.Redacted<string>;
     },
     MagicLinkError | DatabaseError,
     | HttpServerRequest.HttpServerRequest
@@ -212,6 +213,7 @@ const verifyMagicLink = Effect.fn("verifyMagicLink")(function* (
     isNewUser,
     session,
     user,
+    token: Redacted.make(token),
     redirectUrl: new URL(redirectUrl),
   };
 

@@ -8,7 +8,7 @@ import { HeadingGroup } from "@/components/misc";
 import { useCurrentUser } from "@/hooks/auth";
 import { useUpdateOrganization } from "@/hooks/auth/organization";
 import { useAutoSave } from "@/hooks/misc";
-import { UpdateOrganizationRequest } from "@namera-ai/schema";
+import { UpdateOrganizationRequest } from "@namera-ai/schema/dto";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Card, CardContent } from "@namera-ai/ui/components/ui/card";
 import {

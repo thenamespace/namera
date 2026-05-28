@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { useCurrentUser, useUpdateUser } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/misc";
-import { UpdateUserRequest } from "@namera-ai/schema";
+import { UpdateUserRequest } from "@namera-ai/schema/dto";
 import {
   Field,
   FieldError,
@@ -25,8 +25,10 @@ export const ProfileForm = () => {
     <ProfileFormInner
       key={currentUser.user.id}
       initialValues={{
-        name: currentUser.user.name,
-        image: currentUser.user.image,
+        metadata: {
+          name: currentUser.user.name,
+          image: currentUser.user.image,
+        },
       }}
     />
   );
@@ -35,10 +37,7 @@ export const ProfileForm = () => {
 export const ProfileFormInner = ({
   initialValues,
 }: {
-  initialValues: {
-    name: string;
-    image?: string | null;
-  };
+  initialValues: UpdateUserRequest;
 }) => {
   const { mutateAsync: updateUser } = useUpdateUser();
 
@@ -50,13 +49,9 @@ export const ProfileFormInner = ({
   });
 
   const saveProfile = async (value: UpdateUserRequest) => {
-    const savedValue = {
-      name: value.name,
-      image: value.image ?? "",
-    };
-    await updateUser(savedValue);
+    await updateUser(value);
     toast.success("Profile updated successfully");
-    return savedValue;
+    return value;
   };
 
   const { resetBaseline } = useAutoSave({ form, onSave: saveProfile });
@@ -75,7 +70,7 @@ export const ProfileFormInner = ({
       </div>
       <div className="bg-card divide-input/50 flex flex-col gap-3 divide-y rounded-xl border px-4">
         <Controller
-          name="image"
+          name="metadata.image"
           control={form.control}
           render={({ field, fieldState }) => {
             const isInvalid = fieldState.invalid;
@@ -104,7 +99,7 @@ export const ProfileFormInner = ({
           </div>
         </Field>
         <Controller
-          name="name"
+          name="metadata.name"
           control={form.control}
           render={({ field, fieldState }) => {
             const isInvalid = fieldState.invalid;

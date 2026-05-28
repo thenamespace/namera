@@ -1,4 +1,4 @@
-import type { NotificationPreferences } from "@namera-ai/schema";
+import type { NotificationPreferences } from "@namera-ai/schema/database";
 
 import { Controller, type UseFormReturn } from "react-hook-form";
 

@@ -3,18 +3,18 @@ import { Effect } from "effect";
 import { HttpServerResponse } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { AuthenticatedUser, api } from "@namera-ai/api";
+import { CurrentActor, api } from "@namera-ai/api";
 import { AuthConfig } from "@namera-ai/auth";
 import { Database, Transaction } from "@namera-ai/database";
 import * as AuthRepo from "@namera-ai/domain/auth";
-import { mapDatabaseError } from "@namera-ai/schema";
+import { mapToDatabaseError, mapToInternalError } from "@namera-ai/schema";
 
 const currentUserHandler = Effect.fnUntraced(function* () {
-  return yield* AuthenticatedUser;
+  return yield* CurrentActor;
 });
 
 const listSessionsHandler = Effect.gen(function* () {
-  const user = (yield* AuthenticatedUser).user;
+  const user = (yield* CurrentActor).user;
   const authRepo = yield* AuthRepo.AuthRepo;
   const db = yield* Database.Database;
 
@@ -31,10 +31,10 @@ const listSessionsHandler = Effect.gen(function* () {
   return sessions.map(({ token: _t, ...session }) => {
     return session;
   });
-}).pipe(mapDatabaseError);
+}).pipe(mapToDatabaseError, mapToInternalError);
 
 const logoutHandler = Effect.gen(function* () {
-  const authUser = yield* AuthenticatedUser;
+  const authUser = yield* CurrentActor;
   const authConfig = yield* AuthConfig.AuthConfig;
   const authRepo = yield* AuthRepo.AuthRepo;
   const db = yield* Database.Database;
@@ -57,10 +57,10 @@ const logoutHandler = Effect.gen(function* () {
       ),
     )
     .pipe(Effect.orDie);
-}).pipe(mapDatabaseError);
+}).pipe(mapToDatabaseError, mapToInternalError);
 
 const revokeOtherSessionsHandler = Effect.gen(function* () {
-  const authUser = yield* AuthenticatedUser;
+  const authUser = yield* CurrentActor;
   const authRepo = yield* AuthRepo.AuthRepo;
   const db = yield* Database.Database;
 
@@ -74,7 +74,7 @@ const revokeOtherSessionsHandler = Effect.gen(function* () {
   );
 
   return revokedSessions.length;
-}).pipe(mapDatabaseError);
+}).pipe(mapToDatabaseError, mapToInternalError);
 
 export const AuthCoreGroupLive = HttpApiBuilder.group(api, "auth", (handlers) =>
   handlers

@@ -1,21 +1,25 @@
+import type { CurrentActorResponse } from "@namera-ai/schema/dto";
+
 import { Context } from "effect";
 
 import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 
-import { AuthenticatedUserResponse, Unauthorized } from "@namera-ai/schema";
+import { InternalError, Unauthorized } from "@namera-ai/schema";
 
-export class AuthenticatedUser extends Context.Service<
-  AuthenticatedUser,
-  AuthenticatedUserResponse
->()("AuthenticatedUser") {}
+export class A extends Context.Service<A, {}>()("A") {}
+
+export class CurrentActor extends Context.Service<
+  CurrentActor,
+  CurrentActorResponse
+>()("CurrentActor") {}
 
 export class Authorization extends HttpApiMiddleware.Service<
   Authorization,
   {
-    provides: AuthenticatedUser;
+    provides: CurrentActor;
   }
 >()("Authorization", {
-  error: Unauthorized,
+  error: [Unauthorized, InternalError],
   security: {
     authToken: HttpApiSecurity.apiKey({
       in: "cookie",

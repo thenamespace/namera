@@ -22,11 +22,19 @@ import {
   type MemberPermission,
 } from "@namera-ai/schema/database";
 import {
+  GetOrganizationRequest,
   OrganizationError,
   type ListUserOrganizationsResponse,
 } from "@namera-ai/schema/dto";
 
 export type OrganizationRepo = {
+  get: (
+    data: GetOrganizationRequest,
+  ) => Effect.Effect<
+    Organization | undefined,
+    DatabaseError | OrganizationError,
+    Database.Database
+  >;
   create: (
     data: OrganizationInsert,
   ) => Effect.Effect<
@@ -101,6 +109,23 @@ const hasPermissions = Effect.fnUntraced(function* (
 export const layer = Layer.succeed(
   OrganizationRepo,
   OrganizationRepo.of({
+    get: Effect.fn("getOrganization")(function* (data) {
+      const db = yield* TransactionOrDatabase;
+      const res = yield* db.query.organization.findFirst({
+        where: {
+          id: { eq: data.id },
+          deletedAt: { isNull: true },
+        },
+      });
+
+      if (!res) {
+        return yield* new OrganizationError({
+          code: "ORGANIZATION_NOT_FOUND",
+        });
+      }
+
+      return Schema.decodeUnknownSync(Organization)(res);
+    }, mapToDatabaseError),
     listOrgsCreatedByUser: Effect.fn("listOrgsCreatedByUser")(function* (
       userId,
     ) {

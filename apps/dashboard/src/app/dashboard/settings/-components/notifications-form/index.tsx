@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { HeadingGroup } from "@/components/misc";
 import { useUpdateUserPreference, useUserPreference } from "@/hooks/core";
 import { useAutoSave } from "@/hooks/misc";
-import { NotificationPreferences } from "@namera-ai/schema";
+import { NotificationPreferences } from "@namera-ai/schema/database";
 
 import { AccountUpdates } from "./account";
 import { ProductUpdates } from "./product-updates";
