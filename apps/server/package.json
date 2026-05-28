@@ -8,7 +8,7 @@
     "build": "tsdown",
     "dev": "pnpm migrate && pnpm tsx src/index.ts --watch",
     "migrate": "pnpm tsx ./scripts/migrate.ts",
-    "start": "node dist/migrate.js && node dist/index.mjs"
+    "start": "node dist/migrate.mjs && node dist/index.mjs"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
