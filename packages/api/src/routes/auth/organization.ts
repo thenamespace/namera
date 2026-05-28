@@ -1,62 +1,46 @@
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 import { Authorization } from "@/middlewares";
+import { InternalError } from "@namera-ai/schema";
 import {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
-  DatabaseError,
-  GetFullOrganizationRequest,
-  GetFullOrganizationResponse,
-  ListOrganizationsResponse,
+  GetOrganizationRequest,
+  GetOrganizationResponse,
+  ListUserOrganizationsResponse,
   OrganizationError,
   SetActiveOrganizationRequest,
   SetActiveOrganizationResponse,
   UpdateOrganizationRequest,
   UpdateOrganizationResponse,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/dto";
 
 export const organizationGroup = HttpApiGroup.make("organization")
   .add(
-    // Create Organization
     HttpApiEndpoint.post("create", "/organization/create", {
       payload: CreateOrganizationRequest,
-      error: [OrganizationError, DatabaseError],
+      error: [OrganizationError, InternalError],
       success: CreateOrganizationResponse,
     }),
-
-    // List user's organizations
     HttpApiEndpoint.get("list", "/organization/list", {
-      success: ListOrganizationsResponse,
-      error: [OrganizationError, DatabaseError],
+      success: ListUserOrganizationsResponse,
+      error: [OrganizationError, InternalError],
     }),
-    // Set current user's active organization
     HttpApiEndpoint.post("setActive", "/organization/set-active", {
       payload: SetActiveOrganizationRequest,
-      error: [OrganizationError, DatabaseError],
+      error: [OrganizationError, InternalError],
       success: SetActiveOrganizationResponse,
     }),
-    // Get Organization
-    HttpApiEndpoint.get(
-      "getFullOrganization",
-      "/organization/get-full-organization",
-      {
-        params: GetFullOrganizationRequest,
-        error: [OrganizationError, DatabaseError],
-        success: GetFullOrganizationResponse,
-      },
-    ),
-    // Update Organization
+    HttpApiEndpoint.get("getFullOrganization", "/organization/get", {
+      params: GetOrganizationRequest,
+      error: [OrganizationError, InternalError],
+      success: GetOrganizationResponse,
+    }),
     HttpApiEndpoint.post("update", "/organization/update", {
       payload: UpdateOrganizationRequest,
-      error: [OrganizationError, DatabaseError],
+      error: [OrganizationError, InternalError],
       success: UpdateOrganizationResponse,
     }),
-    // TODO: Add Delete Organization in future
-    // HttpApiEndpoint.post("delete", "/organization/delete", {
-    //   payload: DeleteOrganizationRequest,
-    //   error: [OrganizationError, DatabaseError],
-    //   success: DeleteOrganizationResponse,
-    // }),
   )
   .middleware(Authorization)
   .prefix("/auth");

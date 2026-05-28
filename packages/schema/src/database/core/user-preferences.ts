@@ -62,7 +62,7 @@ export const UserPreference = Schema.Struct({
   userId: UserId,
   notificationPreferences: NotificationPreferences,
   metadata: UserPreferenceMetadata,
-}).pipe(Struct.assign(TimestampFields));
+}).mapFields(Struct.assign(TimestampFields));
 
 export const UserPreferenceUpdate = createUpdateSchema(UserPreference);
 export const UserPreferenceInsert = createInsertSchema(

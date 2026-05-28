@@ -6,20 +6,19 @@ import {
   HttpApiSchema,
 } from "effect/unstable/httpapi";
 
+import { InternalError } from "@namera-ai/schema";
 import {
-  DatabaseError,
   MagicLinkError,
   OrganizationError,
   SigInMagicLinkBody,
   VerifyMagicLinkBody,
-} from "@namera-ai/schema";
+} from "@namera-ai/schema/dto";
 
 export const magicLinkGroup = HttpApiGroup.make("magicLink")
   .add(
     HttpApiEndpoint.post("signIn", "/sign-in", {
       payload: SigInMagicLinkBody,
-      error: [MagicLinkError, DatabaseError],
-      success: Schema.Void,
+      error: [MagicLinkError, InternalError],
     }),
   )
   .add(
@@ -27,8 +26,8 @@ export const magicLinkGroup = HttpApiGroup.make("magicLink")
       success: Schema.Void.pipe(HttpApiSchema.status(302)),
       error: [
         MagicLinkError.pipe(HttpApiSchema.status(400)),
-        DatabaseError,
         OrganizationError,
+        InternalError,
       ],
       query: VerifyMagicLinkBody,
     }),

@@ -6,7 +6,7 @@ import {
   HttpApiSchema,
 } from "effect/unstable/httpapi";
 
-import { RpcError, UnsupportedChain } from "@namera-ai/schema";
+import { RpcError, UnsupportedChain } from "@namera-ai/schema/dto";
 
 export const rpcGroup = HttpApiGroup.make("rpc").add(
   HttpApiEndpoint.post("proxy", "/rpc/:chainId", {

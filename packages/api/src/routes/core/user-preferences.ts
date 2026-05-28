@@ -1,24 +1,23 @@
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 import { Authorization } from "@/middlewares";
+import { InternalError, Unauthorized } from "@namera-ai/schema";
 import {
-  DatabaseError,
-  GetUserPreferenceResponse,
-  Unauthorized,
-  UpdateUserPreferenceRequest,
-  UpdateUserPreferenceResponse,
-} from "@namera-ai/schema";
+  GetUserPreferencesResponse,
+  UpdateUserPreferencesRequest,
+  UpdateUserPreferencesResponse,
+} from "@namera-ai/schema/dto";
 
 export const userPreferencesGroup = HttpApiGroup.make("userPreferences")
   .add(
     HttpApiEndpoint.get("get", "/get", {
-      success: GetUserPreferenceResponse,
-      error: [Unauthorized, DatabaseError],
+      success: GetUserPreferencesResponse,
+      error: [Unauthorized, InternalError],
     }),
     HttpApiEndpoint.post("update", "/update", {
-      payload: UpdateUserPreferenceRequest,
-      success: UpdateUserPreferenceResponse,
-      error: [Unauthorized, DatabaseError],
+      payload: UpdateUserPreferencesRequest,
+      success: UpdateUserPreferencesResponse,
+      error: [Unauthorized, InternalError],
     }),
   )
 
