@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { MagicLinkError } from "@namera-ai/schema";
+import { MagicLinkError } from "@namera-ai/schema/dto";
 import { matchesOriginPattern } from "@namera-ai/utils/trusted-origin";
 
 import * as AuthConfig from "../config";

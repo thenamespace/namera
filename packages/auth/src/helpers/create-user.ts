@@ -1,6 +1,6 @@
 import type { Email } from "@namera-ai/schema";
 
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import * as AuthRepo from "@namera-ai/domain/auth";
 import * as CoreRepo from "@namera-ai/domain/core";
@@ -14,7 +14,7 @@ export const createNewUser = ({
   email: Email;
   name?: string;
   emailVerified: boolean;
-  image: string | null;
+  image?: string;
 }) =>
   Effect.gen(function* () {
     const authRepo = yield* AuthRepo.AuthRepo;
@@ -23,10 +23,11 @@ export const createNewUser = ({
     const user = yield* authRepo.user.createUser({
       email,
       emailVerified,
-      name,
-      image,
-      lastLoginAt: new Date(),
-      metadata: {},
+      metadata: {
+        name,
+        image,
+      },
+      lastLoginAt: yield* DateTime.now,
     });
 
     // Create User preferences table.

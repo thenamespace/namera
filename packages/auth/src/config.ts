@@ -30,7 +30,7 @@ export const layer = Layer.effect(
   AuthConfig,
   Effect.gen(function* () {
     const env = yield* AuthEnv;
-    const isProd = env.isProd;
+    const isProd = env.baseURL.host !== "localhost";
 
     const trustedOrigins = (() => {
       if (isProd) {
@@ -40,7 +40,7 @@ export const layer = Layer.effect(
     })();
 
     const cookieOpts: Cookies.Cookie["options"] = {
-      ...(env.isProd ? { domain: "namera.ai" } : {}),
+      ...(isProd ? { domain: "namera.ai" } : {}),
       secure: isProd,
       httpOnly: true,
       path: "/",
@@ -62,8 +62,8 @@ export const layer = Layer.effect(
         cookieOpts,
         cookieName: "auth-token",
         expiresIn: Duration.days(7),
-        secure: env.isProd,
-        ...(env.isProd ? { domain: "namera.ai" } : {}),
+        secure: isProd,
+        ...(isProd ? { domain: "namera.ai" } : {}),
       },
       trustedOrigins,
     });

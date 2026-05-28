@@ -6,7 +6,7 @@ import { createUpdateSchema, createInsertSchema } from "@/database/helpers";
 
 export const UserMetadata = Schema.Struct({
   name: MetadataName,
-  image: Schema.String,
+  image: Schema.optionalKey(Schema.String),
 });
 
 export const User = Schema.Struct({
