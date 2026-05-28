@@ -115,6 +115,11 @@ export const relations = defineRelations(
         from: r.role.id,
         to: r.invitation.roleId,
       }),
+      // 1 role can have a system role.
+      systemRole: r.one.systemRole({
+        from: r.role.systemRoleId,
+        to: r.systemRole.id,
+      }),
     },
     invitation: {
       // 1 invitation belongs to one organization

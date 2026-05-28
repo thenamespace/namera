@@ -9,7 +9,7 @@ import {
 } from "@/database/common";
 
 import { createInsertSchema, createUpdateSchema } from "../helpers";
-import { Permission } from "./permissions";
+import { MemberPermission } from "./member-permissions";
 
 export const SystemRoleKey = Schema.Literals(["owner", "admin", "member"]);
 export const SystemRoleMetadata = Schema.Struct({
@@ -23,7 +23,7 @@ export const SystemRole = Schema.Struct({
   key: SystemRoleKey,
   metadata: SystemRoleMetadata,
   version: Schema.Int,
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
 }).mapFields(Struct.assign(TimestampFields));
 
 export const SystemRoleUpdate = createUpdateSchema(SystemRole);

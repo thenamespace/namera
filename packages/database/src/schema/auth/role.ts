@@ -2,7 +2,7 @@ import type { OrganizationId, OrganizationRoleId } from "@namera-ai/schema";
 import type {
   OrganizationRoleMetadata,
   OrganizationRoleType,
-  Permission,
+  MemberPermission,
 } from "@namera-ai/schema/database";
 
 import { sql } from "drizzle-orm";
@@ -42,7 +42,10 @@ export const role = authSchema.table.withRLS(
     systemRoleId: text("system_role_id").references(() => systemRole.id, {
       onDelete: "cascade",
     }),
-    permissions: text("permissions").array().notNull().$type<Permission>(),
+    permissions: text("permissions")
+      .array()
+      .notNull()
+      .$type<MemberPermission>(),
     metadata: jsonb("metadata").notNull().$type<OrganizationRoleMetadata>(),
     version: integer("version").notNull().default(0),
     ...timestamps,

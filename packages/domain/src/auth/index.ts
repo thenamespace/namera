@@ -38,9 +38,9 @@ export const layer = Layer.effect(
     });
   }),
 ).pipe(
-  Layer.provide(VerificationRepo.layer),
   Layer.provide(UserRepo.layer),
   Layer.provide(SessionRepo.layer),
+  Layer.provide(VerificationRepo.layer),
   Layer.provide(OrganizationRepo.layer),
   Layer.provide(MemberRepo.layer),
   Layer.provide(RoleRepo.layer),

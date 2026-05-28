@@ -10,16 +10,14 @@ import {
 import {
   DatabaseError,
   Email,
-  mapDatabaseError,
-  UserInsert,
-  UserUpdate,
-  type User,
+  mapToDatabaseError,
   type UserId,
 } from "@namera-ai/schema";
+import { User, UserInsert, UserUpdate } from "@namera-ai/schema/database";
 
 export type UserRepo = {
   findUserByEmail: (
-    email: string,
+    email: Email,
   ) => Effect.Effect<User | undefined, DatabaseError, Database.Database>;
   createUser: (
     params: UserInsert,
@@ -34,41 +32,38 @@ export const UserRepo = Context.Service<UserRepo>("UserRepo");
 export const layer = Layer.succeed(
   UserRepo,
   UserRepo.of({
-    createUser: (params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        const parsed = Schema.decodeSync(UserInsert)(params);
-        const res = yield* db.insert(user).values(parsed).returning();
+    createUser: Effect.fn("createUser")(function* (params) {
+      const db = yield* TransactionOrDatabase;
+      const parsed = Schema.encodeSync(UserInsert)(params);
+      const res = yield* db
+        .insert(user)
+        .values(parsed as any)
+        .returning();
 
-        return res[0]!;
-      }).pipe(mapDatabaseError),
-    findUserByEmail: (email) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
+      return Schema.decodeUnknownSync(User)(res[0]!);
+    }, mapToDatabaseError),
+    findUserByEmail: Effect.fn("findUserByEmail")(function* (email) {
+      const db = yield* TransactionOrDatabase;
 
-        const parsedEmail = Schema.decodeSync(Email)(email);
-
-        const res = yield* db.query.user.findFirst({
-          where: {
-            email: {
-              eq: parsedEmail,
-            },
+      const res = yield* db.query.user.findFirst({
+        where: {
+          email: {
+            eq: email,
           },
-        });
+        },
+      });
 
-        return res;
-      }).pipe(mapDatabaseError),
-    updateUser: (id, params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-
-        const parsed = Schema.decodeSync(UserUpdate)(params);
-        const res = yield* db
-          .update(user)
-          .set(parsed)
-          .where(eq(user.id, id))
-          .returning();
-        return res[0]!;
-      }).pipe(mapDatabaseError),
+      return res ? Schema.decodeUnknownSync(User)(res) : undefined;
+    }, mapToDatabaseError),
+    updateUser: Effect.fn("updateUser")(function* (id, params) {
+      const db = yield* TransactionOrDatabase;
+      const parsed = Schema.encodeSync(UserUpdate)(params);
+      const res = yield* db
+        .update(user)
+        .set(parsed as any)
+        .where(eq(user.id, id))
+        .returning();
+      return Schema.decodeUnknownSync(User)(res[0]!);
+    }, mapToDatabaseError),
   }),
 );

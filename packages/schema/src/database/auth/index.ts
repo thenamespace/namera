@@ -9,4 +9,4 @@ export * from "./member";
 export * from "./invitation";
 export * from "./role";
 export * from "./system-role";
-export * from "./permissions";
+export * from "./member-permissions";

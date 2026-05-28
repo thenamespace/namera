@@ -1,7 +1,7 @@
 import type { SystemRoleId } from "@namera-ai/schema";
 import type {
   OrganizationRoleMetadata,
-  Permission,
+  MemberPermission,
   SystemRoleKey,
 } from "@namera-ai/schema/database";
 
@@ -26,7 +26,10 @@ export const systemRole = authSchema.table.withRLS(
       .$defaultFn(generateUniqueId)
       .$type<SystemRoleId>(),
     key: text("key").notNull().$type<SystemRoleKey>(),
-    permissions: text("permissions").array().notNull().$type<Permission>(),
+    permissions: text("permissions")
+      .array()
+      .notNull()
+      .$type<MemberPermission>(),
     metadata: jsonb("metadata").notNull().$type<OrganizationRoleMetadata>(),
     version: integer("version").notNull().default(0),
     ...timestamps,

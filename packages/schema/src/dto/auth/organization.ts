@@ -36,12 +36,14 @@ export const CreateOrganizationRequest = OrganizationInsert.mapFields(
 );
 export const CreateOrganizationResponse = GetOrganizationResponse;
 
-export const ListUserOrganizationsResponse = Schema.Array(
-  Schema.Struct({
-    organization: GetOrganizationResponse,
-    member: OrganizationMember, // TODO: Update
-    role: OrganizationRole, // TODO: Update
-  }),
+export const ListUserOrganizationsResponse = Schema.mutable(
+  Schema.Array(
+    Schema.Struct({
+      organization: GetOrganizationResponse,
+      member: OrganizationMember, // TODO: Update
+      role: OrganizationRole, // TODO: Update
+    }),
+  ),
 );
 
 export const SetActiveOrganizationRequest = Schema.Struct({

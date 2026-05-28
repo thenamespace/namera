@@ -9,7 +9,7 @@ import {
 } from "@/database/common";
 import { createInsertSchema, createUpdateSchema } from "@/database/helpers";
 
-import { Permission } from "./permissions";
+import { MemberPermission } from "./member-permissions";
 
 export const OrganizationRoleMetadata = Schema.Struct({
   name: MetadataName,
@@ -34,7 +34,7 @@ export const OrganizationRole = Schema.Struct({
   type: OrganizationRoleType,
   key: OrganizationRoleKey,
   systemRoleId: Schema.NullOr(SystemRoleId),
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
   metadata: OrganizationRoleMetadata,
   version: Schema.Int,
 }).mapFields(Struct.assign(TimestampFields));

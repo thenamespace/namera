@@ -1,4 +1,6 @@
-import { Effect, Layer, Context } from "effect";
+import type { OrganizationError } from "@namera-ai/schema/dto";
+
+import { Effect, Layer, Context, Schema } from "effect";
 
 import {
   type Database,
@@ -7,19 +9,19 @@ import {
 } from "@namera-ai/database";
 import {
   DatabaseError,
-  OrganizationError,
+  mapToDatabaseError,
   OrganizationId,
-  OrganizationRole,
-  mapDatabaseError,
-  memberRole,
-  ownerRole,
 } from "@namera-ai/schema";
+import {
+  OrganizationRole,
+  OrganizationRoleInsert,
+} from "@namera-ai/schema/database";
 
 export type RoleRepo = {
   createSystemRoles: (
     organizationId: OrganizationId,
   ) => Effect.Effect<
-    { ownerRole: OrganizationRole; memberRole: OrganizationRole },
+    OrganizationRole[],
     DatabaseError | OrganizationError,
     Database.Database
   >;
@@ -30,24 +32,39 @@ export const RoleRepo = Context.Service<RoleRepo>("RoleRepo");
 export const layer = Layer.succeed(
   RoleRepo,
   RoleRepo.of({
-    createSystemRoles: (orgId) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        const res = yield* db
-          .insert(role)
-          .values([
-            {
-              ...ownerRole,
-              organizationId: orgId,
-            },
-            {
-              ...memberRole,
-              organizationId: orgId,
-            },
-          ])
-          .returning();
+    createSystemRoles: Effect.fn("createSystemRoles")(function* (orgId) {
+      const db = yield* TransactionOrDatabase;
 
-        return { ownerRole: res[0]!, memberRole: res[1]! };
-      }).pipe(mapDatabaseError),
+      const systemRoles = yield* db.query.systemRole.findMany({
+        where: {
+          deletedAt: { isNull: true },
+        },
+      });
+
+      const toInsert: OrganizationRoleInsert[] = [];
+
+      for (const systemRole of systemRoles) {
+        toInsert.push({
+          key: systemRole.key,
+          metadata: systemRole.metadata,
+          systemRoleId: systemRole.id,
+          type: "system",
+          permissions: [],
+          version: 0,
+          organizationId: orgId,
+        });
+      }
+
+      const encoded = toInsert.map((e) =>
+        Schema.encodeUnknownSync(OrganizationRoleInsert)(e),
+      );
+
+      const res = yield* db
+        .insert(role)
+        .values(encoded as any)
+        .returning();
+
+      return res.map((r) => Schema.decodeUnknownSync(OrganizationRole)(r));
+    }, mapToDatabaseError),
   }),
 );

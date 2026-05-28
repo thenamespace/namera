@@ -8,18 +8,20 @@ import {
   verification,
 } from "@namera-ai/database";
 import {
-  Verification,
   VerificationId,
-  type VerificationInsert,
-  type VerificationUpdate,
-  mapDatabaseError,
   DatabaseError,
+  mapToDatabaseError,
 } from "@namera-ai/schema";
+import {
+  Verification,
+  VerificationInsert,
+  VerificationUpdate,
+} from "@namera-ai/schema/database";
 
 export type VerificationRepo = {
   createVerification: (
     params: VerificationInsert,
-  ) => Effect.Effect<void, DatabaseError, Database.Database>;
+  ) => Effect.Effect<Verification, DatabaseError, Database.Database>;
   findVerification: (params: {
     identifier: string;
   }) => Effect.Effect<
@@ -33,7 +35,7 @@ export type VerificationRepo = {
   updateVerification: (
     verificationId: VerificationId,
     params: VerificationUpdate,
-  ) => Effect.Effect<void, DatabaseError, Database.Database>;
+  ) => Effect.Effect<Verification, DatabaseError, Database.Database>;
 };
 
 export const VerificationRepo =
@@ -42,41 +44,49 @@ export const VerificationRepo =
 export const layer = Layer.succeed(
   VerificationRepo,
   VerificationRepo.of({
-    createVerification: (params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        yield* db.insert(verification).values(params);
-      }).pipe(mapDatabaseError),
-    deleteVerification: (params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
+    createVerification: Effect.fn("createVerification")(function* (params) {
+      const db = yield* TransactionOrDatabase;
+      const encoded = Schema.encodeSync(VerificationInsert)(params);
+      const res = yield* db
+        .insert(verification)
+        .values(encoded as any)
+        .returning();
 
-        yield* db
-          .delete(verification)
-          .where(eq(verification.identifier, params.identifier));
-      }).pipe(mapDatabaseError),
-    findVerification: (params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
+      return Schema.decodeUnknownSync(Verification)(res[0]);
+    }, mapToDatabaseError),
+    deleteVerification: Effect.fn("deleteVerification")(function* (params) {
+      const db = yield* TransactionOrDatabase;
 
-        const res = yield* db.query.verification.findFirst({
-          where: {
-            identifier: {
-              eq: params.identifier,
-            },
+      yield* db
+        .delete(verification)
+        .where(eq(verification.identifier, params.identifier));
+    }, mapToDatabaseError),
+    findVerification: Effect.fn("findVerification")(function* (params) {
+      const db = yield* TransactionOrDatabase;
+
+      const res = yield* db.query.verification.findFirst({
+        where: {
+          identifier: {
+            eq: params.identifier,
           },
-        });
+        },
+      });
 
-        return Schema.decodeUnknownSync(Verification)(res);
-      }).pipe(mapDatabaseError),
+      return Schema.decodeUnknownSync(Verification)(res);
+    }, mapToDatabaseError),
+    updateVerification: Effect.fn("updateVerification")(function* (
+      verificationId,
+      params,
+    ) {
+      const db = yield* TransactionOrDatabase;
+      const encoded = Schema.encodeSync(VerificationUpdate)(params);
+      const res = yield* db
+        .update(verification)
+        .set(encoded as any)
+        .where(eq(verification.id, verificationId))
+        .returning();
 
-    updateVerification: (verificationId, params) =>
-      Effect.gen(function* () {
-        const db = yield* TransactionOrDatabase;
-        yield* db
-          .update(verification)
-          .set(params)
-          .where(eq(verification.id, verificationId));
-      }).pipe(mapDatabaseError),
+      return Schema.decodeUnknownSync(Verification)(res[0]);
+    }, mapToDatabaseError),
   }),
 );

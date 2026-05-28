@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import type { SystemRoleInsert } from "./system-role";
+
 // Organization Permissions
 const orgPermissions = [
   "org:read", // Read Organization details such as name, slug, etc.
@@ -27,12 +29,11 @@ const rolePermissions = [
   "role:create", // Create a role in an organization
   "role:update", // Update existing role in an organization
   "role:delete", // Delete a role in an organization
-  "role:assign", // Assign a role to a user
 ] as const;
 
 // Invitation Permissions
 const invitationPermissions = [
-  "invitation:read", // Read Organization Invitations
+  "invitation:read", // Read Organization Pending and Past invitations
   "invitation:create", // Invite a user to an organization
   "invitation:update", // Update an invitation, such as revoking it, changing the role, etc.
   "invitation:delete", // Delete an invitation
@@ -40,22 +41,24 @@ const invitationPermissions = [
 
 // Smart Account Permissions
 const smartAccountPermissions = [
-  "smart_account:read",
-  "smart_account:create",
-  "smart_account:update",
-  "smart_account:delete",
+  "smart_account:read", // Read all smart accounts in the org.
+  "smart_account:create", // Create a new Smart Account in org.
+  "smart_account:update", // Update Smart Account Metadata such as logo, name, description.
+  "smart_account:delete", // Delete a smart account
+  "smart_account:execute_tx", // Execute Transactions from smart account.
 ] as const;
 
 // Session Key Permissions
 const sessionKeyPermissions = [
-  "session_key:read",
-  "session_key:create",
-  "session_key:update",
-  "session_key:delete",
-  "session_key:revoke",
+  "session_key:read", // Read all Session Keys in an org
+  "session_key:create", // Create session keys
+  "session_key:update", // Update Session key metadata, name, description
+  "session_key:delete", // Delete Session Key
+  "session_key:revoke", // Revoke Session Keys
+  "session_key:execute_tx", // Execute Transactions from session keys
 ] as const;
 
-export const Permission = Schema.Literals([
+export const MemberPermission = Schema.Literals([
   ...orgPermissions,
   ...billingPermissions,
   ...memberPermissions,
@@ -65,9 +68,9 @@ export const Permission = Schema.Literals([
   ...sessionKeyPermissions,
 ]);
 
-export type Permission = typeof Permission.Type;
+export type MemberPermission = typeof MemberPermission.Type;
 
-export const ownerRolePermissions: Permission[] = [
+export const ownerRolePermissions: MemberPermission[] = [
   ...orgPermissions,
   ...billingPermissions,
   ...memberPermissions,
@@ -77,7 +80,17 @@ export const ownerRolePermissions: Permission[] = [
   ...sessionKeyPermissions,
 ];
 
-export const memberRolePermissions: Permission[] = [
+export const adminRolePermissions: MemberPermission[] = [
+  "org:read",
+  "billing:read",
+  ...memberPermissions,
+  ...rolePermissions,
+  ...invitationPermissions,
+  ...smartAccountPermissions,
+  ...sessionKeyPermissions,
+];
+
+export const memberRolePermissions: MemberPermission[] = [
   "org:read",
   "member:read",
   "role:read",
@@ -85,10 +98,9 @@ export const memberRolePermissions: Permission[] = [
   "session_key:read",
 ];
 
-export const ownerRole = {
+export const ownerRole: SystemRoleInsert = {
   key: "owner",
   permissions: ownerRolePermissions,
-  isSystem: true,
   version: 0,
   metadata: {
     name: "Owner",
@@ -98,12 +110,25 @@ export const ownerRole = {
       value: "crown",
     },
   },
-} as const;
+};
 
-export const memberRole = {
+export const adminRole: SystemRoleInsert = {
+  key: "admin",
+  permissions: adminRolePermissions,
+  version: 0,
+  metadata: {
+    name: "Admin",
+    description: "System role for admins.",
+    logo: {
+      type: "icon",
+      value: "crown",
+    },
+  },
+};
+
+export const memberRole: SystemRoleInsert = {
   key: "member",
   permissions: memberRolePermissions,
-  isSystem: true,
   version: 0,
   metadata: {
     name: "Member",
@@ -113,4 +138,4 @@ export const memberRole = {
       value: "user",
     },
   },
-} as const;
+};
