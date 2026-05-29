@@ -7,6 +7,10 @@ export const OtelNodeEnv = Config.all({
   otelDataset: Config.option(Config.string("OTEL_DATASET")),
   otelMetricsDataset: Config.option(Config.string("OTEL_METRICS_DATASET")),
   apiToken: Config.option(Config.redacted("OTEL_API_TOKEN")),
+  lowLevelDbSpans: Config.withDefault(
+    Config.boolean("OTEL_LOW_LEVEL_DB_SPANS"),
+    false,
+  ),
 });
 
 export type OtelNodeEnv = Config.Success<typeof OtelNodeEnv>;
@@ -18,6 +22,7 @@ export type OtelNodeConfig = {
   dataset?: string;
   metricsDataset?: string;
   apiToken?: Redacted<string>;
+  lowLevelDbSpans: boolean;
 };
 
 export const OtelNodeConfig = Context.Service<OtelNodeConfig>("OtelNodeConfig");
@@ -34,6 +39,7 @@ export const layer = Layer.effect(
       dataset: Option.getOrUndefined(env.otelDataset),
       metricsDataset: Option.getOrUndefined(env.otelMetricsDataset),
       apiToken: Option.getOrUndefined(env.apiToken),
+      lowLevelDbSpans: env.lowLevelDbSpans,
     };
   }),
 );

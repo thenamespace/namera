@@ -14,8 +14,8 @@ import { Auth, AuthConfig } from "@namera-ai/auth";
 import { AdminDatabase, Transaction } from "@namera-ai/database";
 import { mapToDatabaseError, mapToInternalError } from "@namera-ai/schema";
 
-const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
-  Effect.gen(function* () {
+const signInMagicLinkHandler = Effect.fn("auth.magicLink.signIn")(
+  function* (payload: SigInMagicLinkBody) {
     const db = yield* AdminDatabase.AdminDatabase;
     const auth = yield* Auth.Auth;
 
@@ -27,10 +27,13 @@ const signInMagicLinkHandler = (payload: SigInMagicLinkBody) =>
 
     // TODO: Send Email
     yield* Effect.log(url.toString());
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
-const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
-  Effect.gen(function* () {
+const magicLinkVerifyHandler = Effect.fn("auth.magicLink.verify")(
+  function* (payload: VerifyMagicLinkBody) {
     const auth = yield* Auth.Auth;
     const authConfig = yield* AuthConfig.AuthConfig;
     const db = yield* AdminDatabase.AdminDatabase;
@@ -72,7 +75,10 @@ const magicLinkVerifyHandler = (payload: VerifyMagicLinkBody) =>
         ),
       )
       .pipe(Effect.orDie);
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
 export const MagicLinkGroupLive = HttpApiBuilder.group(
   api,

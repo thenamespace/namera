@@ -16,8 +16,8 @@ import {
   type SetActiveOrganizationRequest,
 } from "@namera-ai/schema/dto";
 
-const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
-  Effect.gen(function* () {
+const createOrganizationHandler = Effect.fn("organization.create")(
+  function* (payload: CreateOrganizationRequest) {
     const currentUser = yield* CurrentActor;
     const db = yield* AdminDatabase.AdminDatabase;
 
@@ -32,9 +32,12 @@ const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
     );
 
     return res;
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
-const listOrgsHandler = Effect.fn("listOrgs")(
+const listOrgsHandler = Effect.fn("organization.list")(
   function* () {
     const currentUser = yield* CurrentActor;
     const auth = yield* AuthRepo.AuthRepo;
@@ -56,8 +59,8 @@ const listOrgsHandler = Effect.fn("listOrgs")(
   mapToInternalError,
 );
 
-const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
-  Effect.gen(function* () {
+const setActiveOrganizationHandler = Effect.fn("organization.setActive")(
+  function* (payload: SetActiveOrganizationRequest) {
     const currentUser = yield* CurrentActor;
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* Database.Database;
@@ -88,10 +91,13 @@ const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
         );
       }).pipe(Transaction.withTx(tx)),
     );
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
-const getOrganizationHandler = (params: GetOrganizationRequest) =>
-  Effect.gen(function* () {
+const getOrganizationHandler = Effect.fn("organization.get")(
+  function* (params: GetOrganizationRequest) {
     const currentUser = yield* CurrentActor;
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
@@ -107,10 +113,13 @@ const getOrganizationHandler = (params: GetOrganizationRequest) =>
     );
 
     return Schema.decodeUnknownSync(GetOrganizationResponse)(res);
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
-const updateOrganizationHandler = (payload: UpdateOrganizationRequest) =>
-  Effect.gen(function* () {
+const updateOrganizationHandler = Effect.fn("organization.update")(
+  function* (payload: UpdateOrganizationRequest) {
     const currentUser = yield* CurrentActor;
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* AdminDatabase.AdminDatabase;
@@ -136,7 +145,10 @@ const updateOrganizationHandler = (payload: UpdateOrganizationRequest) =>
         );
       }).pipe(Transaction.withTx(tx)),
     );
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
 export const OrganizationGroupLive = HttpApiBuilder.group(
   api,

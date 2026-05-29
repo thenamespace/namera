@@ -5,9 +5,12 @@ import { FetchHttpClient, HttpClient } from "effect/unstable/http";
 import { env } from "@/env";
 import { clientRuntime } from "@/lib/runtime";
 
+import { annotateDashboardRoute } from "../telemetry";
+
 export const getIpLocation = (ipAddress?: string) =>
   clientRuntime.runPromise(
-    Effect.gen(function* () {
+    Effect.fn("ipLocation.get")(function* () {
+      yield* annotateDashboardRoute();
       const client = yield* HttpClient.HttpClient;
 
       if (!ipAddress) return null;
@@ -37,5 +40,5 @@ export const getIpLocation = (ipAddress?: string) =>
         regionCode: data.location.state_code,
         country: data.location.country_code2,
       };
-    }).pipe(Effect.provide(FetchHttpClient.layer)),
+    })().pipe(Effect.provide(FetchHttpClient.layer)),
   );

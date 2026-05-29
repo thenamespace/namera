@@ -20,7 +20,6 @@ export const api = HttpApi.make("NameraAPI")
   .add(rpcGroup)
   .add(telemetryGroup)
   .add(healthGroup)
-  .prefix("/api/v1")
   .annotate(OpenApi.Title, "Namera API")
   .annotate(
     OpenApi.Description,

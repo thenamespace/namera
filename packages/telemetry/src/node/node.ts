@@ -1,6 +1,8 @@
-import { NodeSdk } from "@effect/opentelemetry";
+import type { IncomingMessage, RequestOptions } from "node:http";
+
 import { Effect, Layer, Redacted } from "effect";
 
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
@@ -9,7 +11,24 @@ import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 
+import {
+  httpOperationName,
+  normalizeHttpPath,
+  shouldSkipHttpTracing,
+} from "../http-names";
+import { FilteringSpanProcessor, isLowLevelDatabaseSpan } from "../span-filter";
 import * as OtelNodeConfig from "./config";
+
+const getOutgoingUrl = (request: RequestOptions) => {
+  const protocol = request.protocol ?? "http:";
+  const host = request.hostname ?? request.host ?? "localhost";
+  const path = request.path ?? "/";
+
+  return `${protocol}//${host}${path}`;
+};
+
+const getIncomingUrl = (request: IncomingMessage) =>
+  request.url ? new URL(request.url, "http://namera.local").toString() : "/";
 
 export const layer = (serviceName: string) =>
   Layer.unwrap(
@@ -48,9 +67,43 @@ export const layer = (serviceName: string) =>
         headers,
       });
 
+      const spanProcessor = new BatchSpanProcessor(traceExporter);
+
       return NodeSdk.layer(() => {
         return {
-          instrumentations: [getNodeAutoInstrumentations()],
+          instrumentations: [
+            getNodeAutoInstrumentations({
+              "@opentelemetry/instrumentation-fs": {
+                enabled: false,
+              },
+              "@opentelemetry/instrumentation-pg": {
+                enabled: config.lowLevelDbSpans,
+              },
+              "@opentelemetry/instrumentation-http": {
+                ignoreIncomingRequestHook: (request) =>
+                  shouldSkipHttpTracing({
+                    method: request.method,
+                    url: request.url ?? "/",
+                  }),
+                ignoreOutgoingRequestHook: (request) =>
+                  shouldSkipHttpTracing({
+                    method: request.method,
+                    url: getOutgoingUrl(request),
+                  }),
+                applyCustomAttributesOnSpan: (span, request) => {
+                  const method = "method" in request ? request.method : "GET";
+                  const url =
+                    "url" in request
+                      ? getIncomingUrl(request)
+                      : getOutgoingUrl(request);
+                  const operation = httpOperationName(method, url);
+                  span.updateName(operation);
+                  span.setAttribute("namera.operation", operation);
+                  span.setAttribute("http.route", normalizeHttpPath(url));
+                },
+              },
+            }),
+          ],
           logRecordProcessor: new BatchLogRecordProcessor(logExporter),
           metricReader: new PeriodicExportingMetricReader({
             exporter: metricExporter,
@@ -59,7 +112,14 @@ export const layer = (serviceName: string) =>
           resource: {
             serviceName: serviceName,
           },
-          spanProcessor: [new BatchSpanProcessor(traceExporter)],
+          spanProcessor: [
+            config.lowLevelDbSpans
+              ? spanProcessor
+              : new FilteringSpanProcessor(
+                  spanProcessor,
+                  isLowLevelDatabaseSpan,
+                ),
+          ],
         };
       });
     }),

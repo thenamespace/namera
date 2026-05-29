@@ -22,7 +22,7 @@ import {
   type CurrentActorResponse,
 } from "@namera-ai/schema/dto";
 
-const getCurrentUserActor = Effect.fn("getCurrentUserActor")(
+const getCurrentUserActor = Effect.fn("auth.actor.resolve")(
   function* (credential: Redacted.Redacted<string>) {
     const db = yield* TransactionOrDatabase;
 
@@ -86,6 +86,12 @@ const getCurrentUserActor = Effect.fn("getCurrentUserActor")(
       Schema.decodeUnknownSync(OrganizationMember)(restMember);
     const parsedRole = Schema.decodeUnknownSync(OrganizationRole)(role);
 
+    yield* Effect.annotateCurrentSpan({
+      userId: parsedUser.id,
+      "organization.id": parsedOrg.id,
+      "organization.role": parsedRole.key,
+    });
+
     return {
       type: "user",
       user: parsedUser,
@@ -109,9 +115,9 @@ export const AuthMiddleware = Layer.effect(
         Effect.provideServiceEffect(
           effect,
           CurrentActor,
-          Effect.gen(function* () {
-            return yield* getCurrentUserActor(opts.credential);
-          }).pipe(Effect.provideService(Database.Database, db)),
+          getCurrentUserActor(opts.credential).pipe(
+            Effect.provideService(Database.Database, db),
+          ),
         ),
     };
   }),

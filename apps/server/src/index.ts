@@ -48,7 +48,7 @@ const app = HttpApiBuilder.layer(api).pipe(
   Layer.provide(AdminDatabase.layer),
   Layer.provide(Auth.layer),
   Layer.provide(Domain.layer),
-  Layer.provide(OtelNode.layer("namera-backend")),
+  Layer.provide(OtelNode.layer("namera-api")),
   Layer.provide(FetchHttpClient.layer),
   Layer.provide(Env.layer),
 );

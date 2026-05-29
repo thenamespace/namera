@@ -9,24 +9,28 @@ import { Database, Transaction } from "@namera-ai/database";
 import * as CoreRepo from "@namera-ai/domain/core";
 import { mapToDatabaseError, mapToInternalError } from "@namera-ai/schema";
 
-const getUserPreferences = Effect.gen(function* () {
-  const currentUser = yield* CurrentActor;
-  const coreRepo = yield* CoreRepo.CoreRepo;
-  const db = yield* Database.Database;
+const getUserPreferences = Effect.fn("userPreferences.get")(
+  function* () {
+    const currentUser = yield* CurrentActor;
+    const coreRepo = yield* CoreRepo.CoreRepo;
+    const db = yield* Database.Database;
 
-  return yield* db.transaction((tx) =>
-    Effect.gen(function* () {
-      yield* Transaction.setActorContext({
-        actorType: "user",
-        userId: currentUser.user.id,
-      });
-      return yield* coreRepo.userPreference.get(currentUser.user.id);
-    }).pipe(Transaction.withTx(tx)),
-  );
-}).pipe(mapToDatabaseError, mapToInternalError);
+    return yield* db.transaction((tx) =>
+      Effect.gen(function* () {
+        yield* Transaction.setActorContext({
+          actorType: "user",
+          userId: currentUser.user.id,
+        });
+        return yield* coreRepo.userPreference.get(currentUser.user.id);
+      }).pipe(Transaction.withTx(tx)),
+    );
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
-const updateUserPreferences = (payload: UpdateUserPreferencesRequest) =>
-  Effect.gen(function* () {
+const updateUserPreferences = Effect.fn("userPreferences.update")(
+  function* (payload: UpdateUserPreferencesRequest) {
     const currentUser = yield* CurrentActor;
     const coreRepo = yield* CoreRepo.CoreRepo;
     const db = yield* Database.Database;
@@ -43,13 +47,16 @@ const updateUserPreferences = (payload: UpdateUserPreferencesRequest) =>
         );
       }).pipe(Transaction.withTx(tx)),
     );
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
 export const UserPreferencesGroupLive = HttpApiBuilder.group(
   api,
   "userPreferences",
   (handlers) =>
     handlers
-      .handle("get", () => getUserPreferences)
+      .handle("get", () => getUserPreferences())
       .handle("update", ({ payload }) => updateUserPreferences(payload)),
 );
