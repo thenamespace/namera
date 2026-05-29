@@ -20,11 +20,11 @@ export const createOrganization = async (data: CreateOrganizationRequest) =>
 
 export const listUserOrgs = async () =>
   clientRuntime.runPromise(
-    Effect.gen(function* () {
+    Effect.fn("listUserOrgs")(function* () {
       const client = yield* ApiClient.ApiClient;
       const orgs = yield* client.organization.list();
       return orgs;
-    }),
+    })(),
   );
 
 export const switchOrganization = async (id: OrganizationId) =>

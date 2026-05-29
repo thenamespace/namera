@@ -34,8 +34,8 @@ const createOrganizationHandler = (payload: CreateOrganizationRequest) =>
     return res;
   }).pipe(mapToDatabaseError, mapToInternalError);
 
-const listOrgsHandler = () =>
-  Effect.gen(function* () {
+const listOrgsHandler = Effect.fn("listOrgs")(
+  function* () {
     const currentUser = yield* CurrentActor;
     const auth = yield* AuthRepo.AuthRepo;
     const db = yield* Database.Database;
@@ -51,7 +51,10 @@ const listOrgsHandler = () =>
     );
 
     return res;
-  }).pipe(mapToDatabaseError, mapToInternalError);
+  },
+  mapToDatabaseError,
+  mapToInternalError,
+);
 
 const setActiveOrganizationHandler = (payload: SetActiveOrganizationRequest) =>
   Effect.gen(function* () {

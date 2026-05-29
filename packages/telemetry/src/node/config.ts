@@ -2,17 +2,16 @@ import type { Redacted } from "effect/Redacted";
 
 import { Config, Effect, Layer, Context, Option } from "effect";
 
-export const OtelEnv = Config.all({
+export const OtelNodeEnv = Config.all({
   otelBaseUrl: Config.url("OTEL_BASE_URL"),
-  otelMetricsBaseUrl: Config.option(Config.url("OTEL_METRICS_BASE_URL")),
   otelDataset: Config.option(Config.string("OTEL_DATASET")),
   otelMetricsDataset: Config.option(Config.string("OTEL_METRICS_DATASET")),
   apiToken: Config.option(Config.redacted("OTEL_API_TOKEN")),
 });
 
-export type OtelEnv = Config.Success<typeof OtelEnv>;
+export type OtelNodeEnv = Config.Success<typeof OtelNodeEnv>;
 
-export type OtelConfig = {
+export type OtelNodeConfig = {
   metricsUrl: URL;
   traceUrl: URL;
   logsUrl: URL;
@@ -21,18 +20,15 @@ export type OtelConfig = {
   apiToken?: Redacted<string>;
 };
 
-export const OtelConfig = Context.Service<OtelConfig>("OtelConfig");
+export const OtelNodeConfig = Context.Service<OtelNodeConfig>("OtelNodeConfig");
 
 export const layer = Layer.effect(
-  OtelConfig,
+  OtelNodeConfig,
   Effect.gen(function* () {
-    const env = yield* OtelEnv;
+    const env = yield* OtelNodeEnv;
 
     return {
-      metricsUrl: new URL(
-        "/v1/metrics",
-        Option.getOrElse(env.otelMetricsBaseUrl, () => env.otelBaseUrl),
-      ),
+      metricsUrl: new URL("/v1/metrics", env.otelBaseUrl),
       traceUrl: new URL("/v1/traces", env.otelBaseUrl),
       logsUrl: new URL("/v1/logs", env.otelBaseUrl),
       dataset: Option.getOrUndefined(env.otelDataset),

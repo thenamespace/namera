@@ -1,5 +1,5 @@
 import { NodeSdk } from "@effect/opentelemetry";
-import { Effect, Layer, Redacted } from "effect";
+import { Effect, Layer } from "effect";
 
 import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations-web";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
@@ -9,43 +9,23 @@ import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 
-import * as OtelConfig from "./config";
+import * as OtelWebConfig from "./config";
 
 export const layer = (serviceName: string) =>
   Layer.unwrap(
     Effect.gen(function* () {
-      const config = yield* OtelConfig.OtelConfig;
-
-      let headers: Record<string, string> = {};
-      let metricsHeaders: Record<string, string> = {};
-
-      if (config.apiToken) {
-        headers["Authorization"] = `Bearer ${Redacted.value(config.apiToken)}`;
-        metricsHeaders["Authorization"] =
-          `Bearer ${Redacted.value(config.apiToken)}`;
-      }
-
-      if (config.dataset) {
-        headers["X-Axiom-Dataset"] = config.dataset;
-      }
-
-      if (config.metricsDataset) {
-        metricsHeaders["X-Axiom-Dataset"] = config.metricsDataset;
-      }
+      const config = yield* OtelWebConfig.OtelWebConfig;
 
       const metricExporter = new OTLPMetricExporter({
         url: config.metricsUrl.toString(),
-        headers: metricsHeaders,
       });
 
       const traceExporter = new OTLPTraceExporter({
         url: config.traceUrl.toString(),
-        headers,
       });
 
       const logExporter = new OTLPLogExporter({
         url: config.logsUrl.toString(),
-        headers,
       });
 
       return NodeSdk.layer(() => {

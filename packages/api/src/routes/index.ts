@@ -9,6 +9,7 @@ import {
 import { userPreferencesGroup } from "./core";
 import { healthGroup } from "./health";
 import { rpcGroup } from "./rpc";
+import { telemetryGroup } from "./telemetry";
 
 export const api = HttpApi.make("NameraAPI")
   .add(userPreferencesGroup)
@@ -17,7 +18,9 @@ export const api = HttpApi.make("NameraAPI")
   .add(magicLinkGroup)
   .add(userGroup)
   .add(rpcGroup)
+  .add(telemetryGroup)
   .add(healthGroup)
+  .prefix("/api/v1")
   .annotate(OpenApi.Title, "Namera API")
   .annotate(
     OpenApi.Description,

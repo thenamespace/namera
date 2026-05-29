@@ -9,12 +9,12 @@ import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 
-import * as OtelConfig from "./config";
+import * as OtelNodeConfig from "./config";
 
 export const layer = (serviceName: string) =>
   Layer.unwrap(
     Effect.gen(function* () {
-      const config = yield* OtelConfig.OtelConfig;
+      const config = yield* OtelNodeConfig.OtelNodeConfig;
 
       let headers: Record<string, string> = {};
       let metricsHeaders: Record<string, string> = {};
@@ -63,4 +63,4 @@ export const layer = (serviceName: string) =>
         };
       });
     }),
-  ).pipe(Layer.provide(OtelConfig.layer));
+  ).pipe(Layer.provideMerge(OtelNodeConfig.layer));

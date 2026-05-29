@@ -24,7 +24,7 @@
     "lint": "oxlint --fix",
     "lint:check": "oxlint",
     "lint:write": "oxlint --fix",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install && ./scripts/prepare-effect.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.1",

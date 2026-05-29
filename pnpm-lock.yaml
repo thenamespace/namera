@@ -119,6 +119,9 @@ importers:
       '@namera-ai/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@namera-ai/ui':
         specifier: workspace:*
         version: link:../../packages/ui

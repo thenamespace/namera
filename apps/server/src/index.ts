@@ -13,7 +13,7 @@ import { api } from "@namera-ai/api";
 import { Auth } from "@namera-ai/auth";
 import { AdminDatabase, Database } from "@namera-ai/database";
 import { Domain } from "@namera-ai/domain";
-import { OtelNode } from "@namera-ai/telemetry";
+import { OtelNode } from "@namera-ai/telemetry/node";
 
 import * as Env from "./env";
 import { Middlewares } from "./middlewares";
@@ -24,6 +24,7 @@ import {
   HealthGroupLive,
   OrganizationGroupLive,
   RpcGroupLive,
+  TelemetryGroupLive,
   UserGroupLive,
 } from "./routes";
 
@@ -31,6 +32,7 @@ const NameraApiLive = Layer.mergeAll(
   UserPreferencesGroupLive,
   HealthGroupLive,
   RpcGroupLive,
+  TelemetryGroupLive,
   AuthCoreGroupLive,
   UserGroupLive,
   MagicLinkGroupLive,

@@ -22,7 +22,7 @@ import {
   type CurrentActorResponse,
 } from "@namera-ai/schema/dto";
 
-const getCurrentUserActor = Effect.fnUntraced(
+const getCurrentUserActor = Effect.fn("getCurrentUserActor")(
   function* (credential: Redacted.Redacted<string>) {
     const db = yield* TransactionOrDatabase;
 

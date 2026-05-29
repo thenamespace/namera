@@ -1,4 +1,4 @@
-import { Config, ConfigProvider, Effect, Layer, Context } from "effect";
+import { Config, Effect, Layer, Context } from "effect";
 
 export const EnvConfig = Config.all({
   backendUrl: Config.url("VITE_BACKEND_URL"),
@@ -14,13 +14,7 @@ export const layer = Layer.effect(
   Env,
   Effect.gen(function* () {
     const env = yield* EnvConfig;
+    console.log(import.meta.env);
     return env;
-  }).pipe(
-    Effect.provideService(
-      ConfigProvider.ConfigProvider,
-      ConfigProvider.fromEnv({
-        env: import.meta.env,
-      }),
-    ),
-  ),
+  }),
 );

@@ -11,6 +11,7 @@
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [
     { "path": "../../packages/api" },
-    { "path": "../../packages/schema" }
+    { "path": "../../packages/schema" },
+    { "path": "../../packages/telemetry" }
   ]
 }
