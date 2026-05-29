@@ -1,14 +1,12 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Controller, useForm } from "react-hook-form";
 
-import { createOrganization } from "@/actions/auth/organization";
 import { HeadingGroup } from "@/components/misc";
-import { queries } from "@/lib/query";
+import { useCreateOrganization } from "@/hooks/auth/organization";
 import { CreateOrganizationRequest } from "@namera-ai/schema/dto";
 import { Button } from "@namera-ai/ui/components/ui/button";
 import { Card, CardContent } from "@namera-ai/ui/components/ui/card";
@@ -21,9 +19,7 @@ import { IconPicker } from "@namera-ai/ui/components/ui/icon-picker";
 import { Input } from "@namera-ai/ui/components/ui/input";
 
 export const NewWorkspaceForm = () => {
-  const router = useRouter();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const form = useForm<CreateOrganizationRequest>({
     defaultValues: {
       name: "",
@@ -39,12 +35,10 @@ export const NewWorkspaceForm = () => {
     ),
   });
 
+  const { mutateAsync: createOrganization } = useCreateOrganization();
+
   const handleSubmit = async (value: CreateOrganizationRequest) => {
     await createOrganization(value);
-    await queryClient.cancelQueries(queries.auth.me);
-    await queryClient.invalidateQueries(queries.organization.listUserOrgs);
-    await queryClient.fetchQuery(queries.auth.me);
-    await router.invalidate();
     await navigate({ to: "/dashboard" });
   };
 

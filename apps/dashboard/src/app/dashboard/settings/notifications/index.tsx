@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { queries } from "@/lib/query";
+import { coreAtoms, ensureAtomData } from "@/lib/atom";
 
 import { NotificationsForm } from "../-components";
 
@@ -16,7 +16,7 @@ const NotificationsPage = () => {
 
 export const Route = createFileRoute("/dashboard/settings/notifications/")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(queries.userPreference.get);
+    await ensureAtomData(context.atomRegistry, coreAtoms.userPreferences.get);
   },
   component: NotificationsPage,
 });

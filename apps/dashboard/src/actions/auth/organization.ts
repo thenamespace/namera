@@ -6,46 +6,46 @@ import type {
 
 import { Effect } from "effect";
 
-import { clientRuntime } from "@/lib/runtime";
+import { Reactivity } from "effect/unstable/reactivity";
+
+import { annotateDashboardRoute } from "@/actions/telemetry";
+import { atomKeys, atomRuntime } from "@/lib/atom";
 import { ApiClient } from "@/services";
 
-import { annotateDashboardRoute } from "../telemetry";
+export const createOrganization = atomRuntime.fn<CreateOrganizationRequest>()(
+  Effect.fn("organization.create")(function* (data) {
+    yield* annotateDashboardRoute();
+    const client = yield* ApiClient.ApiClient;
+    const org = yield* client.organization.create({ payload: data });
+    yield* Reactivity.invalidate(atomKeys.auth.me);
+    yield* Reactivity.invalidate(atomKeys.organization.listUserOrgs);
+    return org;
+  }),
+);
 
-export const createOrganization = async (data: CreateOrganizationRequest) =>
-  clientRuntime.runPromise(
-    Effect.fn("organization.create")(function* () {
-      yield* annotateDashboardRoute();
-      const client = yield* ApiClient.ApiClient;
-      const org = yield* client.organization.create({ payload: data });
-      return org;
-    })(),
-  );
+export const listUserOrgs = Effect.fn("organization.list")(function* () {
+  yield* annotateDashboardRoute();
+  const client = yield* ApiClient.ApiClient;
+  const orgs = yield* client.organization.list();
+  return orgs;
+});
 
-export const listUserOrgs = async () =>
-  clientRuntime.runPromise(
-    Effect.fn("organization.list")(function* () {
-      yield* annotateDashboardRoute();
-      const client = yield* ApiClient.ApiClient;
-      const orgs = yield* client.organization.list();
-      return orgs;
-    })(),
-  );
+export const switchOrganization = atomRuntime.fn<OrganizationId>()(
+  Effect.fn("organization.setActive")(function* (id) {
+    yield* annotateDashboardRoute();
+    yield* Effect.annotateCurrentSpan("organization.id", id);
+    const client = yield* ApiClient.ApiClient;
+    yield* client.organization.setActive({ payload: { id } });
+    yield* Reactivity.invalidate(atomKeys.auth.me);
+  }),
+);
 
-export const switchOrganization = async (id: OrganizationId) =>
-  clientRuntime.runPromise(
-    Effect.fn("organization.setActive")(function* () {
-      yield* annotateDashboardRoute();
-      yield* Effect.annotateCurrentSpan("organization.id", id);
-      const client = yield* ApiClient.ApiClient;
-      yield* client.organization.setActive({ payload: { id } });
-    })(),
-  );
-
-export const updateOrganization = async (data: UpdateOrganizationRequest) =>
-  clientRuntime.runPromise(
-    Effect.fn("organization.update")(function* () {
-      yield* annotateDashboardRoute();
-      const client = yield* ApiClient.ApiClient;
-      return yield* client.organization.update({ payload: data });
-    })(),
-  );
+export const updateOrganization = atomRuntime.fn<UpdateOrganizationRequest>()(
+  Effect.fn("organization.update")(function* (data) {
+    yield* annotateDashboardRoute();
+    const client = yield* ApiClient.ApiClient;
+    const res = yield* client.organization.update({ payload: data });
+    yield* Reactivity.invalidate(atomKeys.auth.me);
+    return res;
+  }),
+);

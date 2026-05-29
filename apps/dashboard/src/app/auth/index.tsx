@@ -5,7 +5,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useStep } from "usehooks-ts";
 
 import { TransitionWrapper } from "@/components/wrappers";
-import { queries } from "@/lib/query";
+import { authAtoms, ensureAtomData } from "@/lib/atom";
 import { NameraIcon } from "@namera-ai/ui/icons";
 
 import { ConfirmStep, MagicLinkForm } from "./-components";
@@ -41,8 +41,9 @@ const AuthPage = () => {
 
 export const Route = createFileRoute("/auth/")({
   beforeLoad: async ({ context }) => {
-    const currentUser = await context.queryClient.ensureQueryData(
-      queries.auth.me,
+    const currentUser = await ensureAtomData(
+      context.atomRegistry,
+      authAtoms.me,
     );
 
     if (currentUser?.organization) {

@@ -3,7 +3,7 @@ import { Schema, Struct } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm, Controller } from "react-hook-form";
 
-import { signInWithMagicLink } from "@/actions";
+import { useSignInWithMagicLink } from "@/hooks/auth";
 import { Email } from "@namera-ai/schema";
 import { SigInMagicLinkBody } from "@namera-ai/schema/dto";
 import { Button } from "@namera-ai/ui/components/ui/button";
@@ -19,6 +19,7 @@ type MagicLinkFormProps = {
 };
 
 export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
+  const { mutateAsync } = useSignInWithMagicLink();
   const form = useForm({
     defaultValues: {
       email: "",
@@ -27,7 +28,7 @@ export const MagicLinkForm = ({ onSubmit }: MagicLinkFormProps) => {
   });
 
   const handleSubmit = async (value: AuthForm) => {
-    await signInWithMagicLink({
+    await mutateAsync({
       email: Email.make(value.email),
     });
     onSubmit(value);

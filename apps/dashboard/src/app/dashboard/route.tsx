@@ -25,12 +25,9 @@ const DashboardLayout = () => {
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context }) => {
-    return await authMiddleware(context.queryClient);
+    return await authMiddleware(context.atomRegistry);
   },
   component: DashboardLayout,
-  loader: () => {
-    // const res = listSmartAccounts();
-    // return res;
-  },
+
   notFoundComponent: () => <NotFound />,
 });

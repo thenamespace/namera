@@ -92,10 +92,10 @@ const SwitchWorkspaceButton = () => {
               value={currentUser?.organization?.id}
               disabled={isPending}
               onValueChange={async (v) => {
-                await switchOrg({ id: v });
+                await switchOrg(v);
               }}
             >
-              {userOrgs.map((org) => (
+              {userOrgs?.map((org) => (
                 <DropdownMenuRadioItem
                   key={org.organization.id}
                   value={org.organization.id}

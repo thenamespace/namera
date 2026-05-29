@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { authAtoms } from "@/lib/atom";
 
-import { queries } from "@/lib/query";
+import { useAtomQuery } from "../misc";
 
 export const useListSessions = () => {
-  return useQuery(queries.auth.listSessions);
+  return useAtomQuery(authAtoms.listSessions);
 };

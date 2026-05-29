@@ -1,10 +1,14 @@
-import type { QueryClient } from "@tanstack/react-query";
+import type { AtomRegistry } from "effect/unstable/reactivity";
+
 import { redirect } from "@tanstack/react-router";
 
-import { queries } from "@/lib/query";
+import { authAtoms } from "@/lib/atom";
+import { ensureAtomData } from "@/lib/atom/loader";
 
-export const authMiddleware = async (queryClient: QueryClient) => {
-  const currentUser = await queryClient.ensureQueryData(queries.auth.me);
+export const authMiddleware = async (
+  atomRegistry: AtomRegistry.AtomRegistry,
+) => {
+  const currentUser = await ensureAtomData(atomRegistry, authAtoms.me);
 
   if (!currentUser) {
     throw redirect({ to: "/auth" });

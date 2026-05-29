@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { miscAtoms } from "@/lib/atom";
 
-import { queries } from "@/lib/query";
+import { useAtomQuery } from "./use-atom-query";
 
 export const useIpLocation = (ipAddress?: string) => {
-  return useQuery(queries.misc.ipLocation(ipAddress));
+  return useAtomQuery(miscAtoms.ipLocation(ipAddress));
 };

@@ -1,12 +1,11 @@
 import { useRouter } from "@tanstack/react-router";
 
-import { logout } from "@/actions";
+import { createOrganization } from "@/actions/auth";
+import { useAtomMutation } from "@/hooks/misc";
 
-import { useAtomMutation } from "../misc";
-
-export const useLogout = () => {
-  const { mutateAsync, ...rest } = useAtomMutation(logout);
+export const useCreateOrganization = () => {
   const router = useRouter();
+  const { mutateAsync, ...rest } = useAtomMutation(createOrganization);
 
   return {
     mutateAsync: async (value: Parameters<typeof mutateAsync>[0]) => {

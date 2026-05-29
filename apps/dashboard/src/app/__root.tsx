@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import type { AtomRegistry } from "effect/unstable/reactivity";
+
 import {
   createRootRouteWithContext,
   Link,
@@ -14,16 +16,22 @@ import { Button } from "@namera-ai/ui/components/ui/button";
 import "../styles/globals.css";
 import { QueryClient } from "@tanstack/react-query";
 
+import { atomRegistry } from "@/lib/atom";
+import { AtomProvider } from "@/providers/atom";
+
 function RootComponent() {
   return (
-    <ProviderTree>
-      <Outlet />
-    </ProviderTree>
+    <AtomProvider registry={atomRegistry}>
+      <ProviderTree>
+        <Outlet />
+      </ProviderTree>
+    </AtomProvider>
   );
 }
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
+  atomRegistry: AtomRegistry.AtomRegistry;
 }>()({
   component: RootComponent,
   errorComponent: () => <div>Some Error Occurred</div>,

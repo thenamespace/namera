@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { queries } from "@/lib/query";
+import { useAtomQuery } from "@/hooks/misc";
+import { authAtoms } from "@/lib/atom";
 
 export const useCurrentUser = () => {
-  return useQuery(queries.auth.me);
+  return useAtomQuery(authAtoms.me);
 };

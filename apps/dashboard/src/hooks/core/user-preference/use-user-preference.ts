@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { queries } from "@/lib/query";
+import { useAtomQuery } from "@/hooks/misc";
+import { coreAtoms } from "@/lib/atom";
 
 export const useUserPreference = () => {
-  return useQuery(queries.userPreference.get);
+  return useAtomQuery(coreAtoms.userPreferences.get);
 };
