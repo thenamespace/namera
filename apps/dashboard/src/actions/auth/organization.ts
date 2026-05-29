@@ -37,6 +37,7 @@ export const switchOrganization = atomRuntime.fn<OrganizationId>()(
     const client = yield* ApiClient.ApiClient;
     yield* client.organization.setActive({ payload: { id } });
     yield* Reactivity.invalidate(atomKeys.auth.me);
+    yield* Reactivity.invalidate(atomKeys.organization.listUserOrgs);
   }),
 );
 
@@ -46,6 +47,7 @@ export const updateOrganization = atomRuntime.fn<UpdateOrganizationRequest>()(
     const client = yield* ApiClient.ApiClient;
     const res = yield* client.organization.update({ payload: data });
     yield* Reactivity.invalidate(atomKeys.auth.me);
+    yield* Reactivity.invalidate(atomKeys.organization.listUserOrgs);
     return res;
   }),
 );

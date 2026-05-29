@@ -13,7 +13,6 @@
     "@effect/atom-react": "catalog:",
     "@hookform/resolvers": "5.2.2",
     "@lordicon/react": "1.11.0",
-    "@lukemorales/query-key-factory": "1.3.4",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/schema": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",

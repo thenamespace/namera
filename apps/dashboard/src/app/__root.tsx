@@ -14,23 +14,16 @@ import { Button } from "@namera-ai/ui/components/ui/button";
 
 // oxlint-disable-next-line import/no-unassigned-import
 import "../styles/globals.css";
-import { QueryClient } from "@tanstack/react-query";
-
-import { atomRegistry } from "@/lib/atom";
-import { AtomProvider } from "@/providers/atom";
 
 function RootComponent() {
   return (
-    <AtomProvider registry={atomRegistry}>
-      <ProviderTree>
-        <Outlet />
-      </ProviderTree>
-    </AtomProvider>
+    <ProviderTree>
+      <Outlet />
+    </ProviderTree>
   );
 }
 
 export const Route = createRootRouteWithContext<{
-  queryClient: QueryClient;
   atomRegistry: AtomRegistry.AtomRegistry;
 }>()({
   component: RootComponent,

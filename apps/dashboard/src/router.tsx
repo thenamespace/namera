@@ -1,5 +1,7 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 
+import { atomRegistry } from "@/lib/atom";
+
 import { routeTree } from "./route-tree.gen";
 
 export function getRouter() {
@@ -8,6 +10,9 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
+    context: {
+      atomRegistry,
+    },
   });
 
   return router;

@@ -15,3 +15,11 @@ export function ensureAtomData<A, E>(
     }),
   );
 }
+
+export function refreshAtomData<A, E>(
+  registry: AtomRegistry.AtomRegistry,
+  atom: Atom.Atom<AsyncResult<A, E>>,
+) {
+  registry.refresh(atom);
+  return ensureAtomData(registry, atom);
+}
