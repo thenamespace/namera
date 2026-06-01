@@ -1,5 +1,11 @@
 # @namera-ai/sdk
 
+## 0.1.1
+
+### Patch Changes
+
+- [`b0c7fc9`](https://github.com/thenamespace/namera/commit/b0c7fc91fc04b060a77c7af9ec967b9ed360c747) Thanks [@envoy1084](https://github.com/envoy1084)! - - Typescript Config fixes
+
 ## 0.1.0
 
 ### Minor Changes
