@@ -1,5 +1,18 @@
 # @namera-ai/cli
 
+## 0.1.5
+
+### Patch Changes
+
+- [`25e35a2`](https://github.com/thenamespace/namera/commit/25e35a2c9169c8c71ba716cfb06261bae48689c4) Thanks [@envoy1084](https://github.com/envoy1084)! - - Fix JSON Serialization for `bigint` during smart account schema introspection
+
+  - Return `202` status code on local mcp http server for non auth lookups
+
+- [#22](https://github.com/thenamespace/namera/pull/22) [`8918c6a`](https://github.com/thenamespace/namera/commit/8918c6a4a86891959ef53f00ee54c5e10c04b88f) Thanks [@envoy1084](https://github.com/envoy1084)! - Added a runtime-safe mechanism for resolving CLI version information
+
+- Updated dependencies [[`b0c7fc9`](https://github.com/thenamespace/namera/commit/b0c7fc91fc04b060a77c7af9ec967b9ed360c747)]:
+  - @namera-ai/sdk@0.1.1
+
 ## 0.1.4
 
 ### Patch Changes
