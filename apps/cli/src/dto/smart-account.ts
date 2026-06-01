@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 
 import {
-  BigIntFromString,
   EntrypointVersion,
   EthereumAddress,
   KernelVersion,
@@ -11,7 +10,7 @@ import { SupportedChain } from "@/schema/chain";
 
 export const LocalSmartAccount = Schema.Struct({
   entryPointVersion: EntrypointVersion,
-  index: BigIntFromString,
+  index: Schema.BigIntFromString,
   kernelVersion: KernelVersion,
   ownerAlias: Schema.String,
   ownerType: OwnerType,
@@ -35,7 +34,7 @@ export const CreateSmartAccountParams = Schema.Struct({
     description: "The password of the owner keystore",
   }),
   index: Schema.optional(
-    BigIntFromString.check(Schema.makeFilter((v) => v >= 0n)),
+    Schema.BigIntFromString.check(Schema.makeFilter((v) => v >= 0n)),
   ).annotate({
     description: "The index of the smart account",
     default: 0n,

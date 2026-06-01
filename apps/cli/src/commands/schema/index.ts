@@ -52,6 +52,14 @@ export const schemaCommand = Command.make(
       const schema = getSchema(schemas, command);
       const json = Schema.toJsonSchemaDocument(schema);
 
-      yield* Console.log(JSON.stringify(json, null, 2));
+      yield* Console.log(
+        JSON.stringify(
+          json,
+          (_key, value) => {
+            return typeof value === "bigint" ? value.toString() : value;
+          },
+          2,
+        ),
+      );
     }),
 ).pipe(Command.withDescription("Get the schema for a command"));

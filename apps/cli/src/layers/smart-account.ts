@@ -193,9 +193,8 @@ export const layer = Layer.effect(
         });
 
         // Doesn't matter because public client is only needed for 0.6 entrypoints
-        const publicClient = createPublicClient({
-          chain: mainnet,
-          transport: http(),
+        const publicClient = yield* web3Service.getPublicClient({
+          chain: "eth-sepolia",
         });
 
         const entryPointVersion = "0.7";
