@@ -3,7 +3,7 @@ import { Context, Data, Effect, Layer, Schema } from "effect";
 import type { QuitError } from "effect/Terminal";
 import type { Prompt } from "effect/unstable/cli";
 import type { Environment } from "effect/unstable/cli/Prompt";
-import { createPublicClient, http, type PublicClient } from "viem";
+import { http, type PublicClient } from "viem";
 import { mainnet } from "viem/chains";
 
 import {
