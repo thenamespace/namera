@@ -13,4 +13,5 @@ export default defineConfig({
     index: "src/index.ts",
     model: "src/model/index.ts",
   },
+  unbundle: true,
 }) as UserConfig;
