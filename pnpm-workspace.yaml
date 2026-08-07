@@ -19,6 +19,9 @@ catalog:
   "@effect/sql-pg": "4.0.0-beta.104"
   "@effect/sql": "4.0.0-beta.104"
   "@effect/platform-node": "4.0.0-beta.104"
+  "@effect/opentelemetry": "4.0.0-beta.104"
+  "@effect/atom-react": "4.0.0-beta.104"
+  "@effect/vitest": "4.0.0-beta.104"
   "drizzle-orm": "1.0.0-rc.4"
   "drizzle-kit": "1.0.0-rc.4"
   "turbo": 2.10.8
