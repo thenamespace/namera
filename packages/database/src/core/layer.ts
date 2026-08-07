@@ -5,7 +5,7 @@ import * as PgDrizzle from "drizzle-orm/effect-postgres";
 import { types as pgTypes } from "pg";
 
 import { databaseConfig } from "#/config";
-// import { relations } from "#/relations/index";
+import { relations } from "#/relations/index";
 
 const PgLive = PgClient.layerConfig({
   ...databaseConfig,
@@ -19,9 +19,13 @@ const PgLive = PgClient.layerConfig({
   },
 });
 
-export const makeDatabase = PgDrizzle.make({}).pipe(Effect.provide(PgDrizzle.DefaultServices));
+export type Database = PgDrizzle.EffectPgDatabase<typeof relations> & {
+  $client: PgClient.PgClient;
+};
 
-export type Database = Effect.Success<typeof makeDatabase>;
+export const makeDatabase: Effect.Effect<Database, never, PgClient.PgClient> = PgDrizzle.make({
+  relations,
+}).pipe(Effect.provide(PgDrizzle.DefaultServices));
 
 export const Database = Context.Service<Database>("Database");
 
