@@ -6,12 +6,17 @@ export default defineConfig({
     "#/": "./src/",
   },
   exports: {
-    devExports: "@namera-ai/source",
+    devExports: "namera-source",
   },
-  publint: false,
+  attw: {
+    enabled: "ci-only",
+    level: "error",
+    profile: "esm-only",
+  },
   entry: {
     index: "src/index.ts",
     model: "src/model/index.ts",
   },
+  publint: "ci-only",
   unbundle: true,
 }) as UserConfig;

@@ -15,6 +15,7 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/language-service": "catalog:",
@@ -22,11 +23,12 @@
     "lefthook": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
+    "publint": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {
-    "node": ">=22.22.0"
+    "node": ">=24.14.0"
   },
   "packageManager": "pnpm@11.18.0"
 }

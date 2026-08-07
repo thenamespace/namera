@@ -5,6 +5,7 @@
     "build": {
       "dependsOn": ["^build", "typecheck"],
       "env": [
+        "CI",
         "POSTHOG_API_HOST",
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",

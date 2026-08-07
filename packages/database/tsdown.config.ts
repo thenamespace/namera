@@ -1,4 +1,4 @@
-import defineConfig from "klarity/tsdown/library";
+import defineConfig from "klarity/tsdown/node";
 import type { UserConfig } from "tsdown";
 
 export default defineConfig({
@@ -6,11 +6,17 @@ export default defineConfig({
     "#/": "./src/",
   },
   exports: {
-    devExports: "@namera-ai/source",
+    devExports: "namera-source",
   },
-  publint: false,
+  attw: {
+    enabled: "ci-only",
+    level: "error",
+    profile: "esm-only",
+  },
   entry: {
     index: "src/index.ts",
   },
+  publint: "ci-only",
+  target: "node24.14",
   unbundle: true,
 }) as UserConfig;

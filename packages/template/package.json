@@ -12,12 +12,15 @@
   },
   "exports": {
     ".": {
-      "@namera-ai/source": "./src/index.ts",
+      "namera-source": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
   "publishConfig": {
+    "imports": {
+      "#/*": "./dist/*.js"
+    },
     "exports": {
       ".": "./dist/index.js",
       "./package.json": "./package.json"

@@ -1,7 +1,7 @@
 {
   "extends": "klarity/tsconfig/library/node",
   "compilerOptions": {
-    "customConditions": ["@namera-ai/source"],
+    "customConditions": ["namera-source"],
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"]
