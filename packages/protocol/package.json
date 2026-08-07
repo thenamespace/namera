@@ -7,11 +7,7 @@
   ],
   "type": "module",
   "imports": {
-    "#/*": "./src/*",
-    "#/common/*": "./src/common/*",
-    "#/model/*": "./src/model/*",
-    "#/errors/*": "./src/errors/*",
-    "#/dto/*": "./src/dto/*"
+    "#/*": "./src/*.ts"
   },
   "exports": {
     ".": {

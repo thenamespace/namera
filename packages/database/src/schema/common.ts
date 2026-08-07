@@ -1,0 +1,27 @@
+import { type SQL, sql } from "drizzle-orm";
+import { type AnyPgColumn, type PgTimestampConfig, timestamp } from "drizzle-orm/pg-core";
+import { v7 as uuidv7 } from "uuid";
+
+export const generateUniqueId = () => uuidv7();
+
+export const createTimestampField = (
+  name: string,
+  config: PgTimestampConfig<"date"> = {
+    mode: "date",
+    withTimezone: true,
+  },
+) => {
+  return timestamp(name, config);
+};
+
+export const timestamps = {
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+};
+
+export const lower = (value: AnyPgColumn): SQL => {
+  return sql`lower(${value})`;
+};

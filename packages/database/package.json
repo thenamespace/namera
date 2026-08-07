@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/template",
+  "name": "@namera-ai/database",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -30,13 +30,23 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
-    "typecheck": "tsc -p tsconfig.json --pretty false"
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "effect": "catalog:"
+    "@effect/sql-pg": "catalog:",
+    "@namera-ai/protocol": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "effect": "catalog:",
+    "pg": "8.22.0",
+    "uuid": "14.0.1"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "8.20.4",
+    "drizzle-kit": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"
