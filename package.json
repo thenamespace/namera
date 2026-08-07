@@ -17,6 +17,7 @@
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
+    "@effect/language-service": "catalog:",
     "klarity": "catalog:",
     "lefthook": "catalog:",
     "oxfmt": "catalog:",

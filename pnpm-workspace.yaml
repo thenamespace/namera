@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   lefthook: true
+  msgpackr-extract: true
 
 catalog:
   "@commitlint/cli": 21.2.1
@@ -13,5 +14,18 @@ catalog:
   "lefthook": 2.1.10
   "oxfmt": 0.62.0
   "oxlint": 1.76.0
+  "effect": "4.0.0-beta.104"
+  "@effect/language-service": "0.87.1"
+  "@effect/sql-pg": "4.0.0-beta.104"
+  "@effect/sql": "4.0.0-beta.104"
+  "@effect/platform-node": "4.0.0-beta.104"
+  "drizzle-orm": "1.0.0-rc.4"
+  "drizzle-kit": "1.0.0-rc.4"
   "turbo": 2.10.8
+  "tsdown": "0.22.14"
   "typescript": 6.0.3
+
+minimumReleaseAgeExclude:
+  - "effect"
+  - "@effect/*"
+  - "@namera-ai/*"

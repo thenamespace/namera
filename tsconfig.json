@@ -1,0 +1,11 @@
+{
+  "extends": "klarity/tsconfig/base",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ]
+  },
+  "files": []
+}

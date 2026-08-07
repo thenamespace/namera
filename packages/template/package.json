@@ -32,7 +32,9 @@
     "prepack": "pnpm run build",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
-  "dependencies": {},
+  "dependencies": {
+    "effect": "catalog:"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "klarity": "catalog:",
