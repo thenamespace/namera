@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
-    "dev": "node --env-file-if-exists=.env --watch --conditions=namera-source --experimental-strip-types src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env --conditions=namera-source src/index.ts",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
     "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
     "lint": "oxlint . --no-error-on-unmatched-pattern",
@@ -30,6 +30,7 @@
     "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {
