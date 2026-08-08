@@ -2,7 +2,7 @@ import type { OrganizationId, OrganizationRoleId, SystemRoleId } from "@namera-a
 import type {
   OrganizationRoleKey,
   OrganizationRoleMetadata,
-  Permission,
+  MemberPermission,
 } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
 import { text, jsonb } from "drizzle-orm/pg-core";
@@ -26,7 +26,7 @@ export const organizationRole = authSchema.table(
     systemRoleId: text("system_role_id")
       .$type<SystemRoleId>()
       .references(() => systemRole.id, { onDelete: "restrict" }),
-    permissions: text("permissions").array().$type<Permission>(),
+    permissions: text("permissions").array().$type<MemberPermission>(),
     metadata: jsonb("metadata").$type<OrganizationRoleMetadata>(),
     ...timestamps,
   },

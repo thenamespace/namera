@@ -57,11 +57,4 @@ export const OrganizationRoleKey = Schema.String.check(
   }),
 );
 
-export const Permission = Schema.String.check(
-  Schema.isPattern(/^[a-z][a-z0-9._-]*:[a-z][a-z0-9._-]*$/, {
-    message: "Permission must use resource:action format",
-  }),
-);
-
 export type OrganizationRoleKey = typeof OrganizationRoleKey.Type;
-export type Permission = typeof Permission.Type;

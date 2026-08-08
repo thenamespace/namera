@@ -6,9 +6,28 @@ import {
   MetadataLogo,
   MetadataName,
   OrganizationRoleKey,
-  Permission,
   TimestampFields,
 } from "#/model/common";
+
+export const MemberPermission = Schema.Literals([
+  "organization:read",
+  "organization:update",
+  "organization:delete",
+  "member:read",
+  "member:update",
+  "member:remove",
+  "invitation:read",
+  "invitation:create",
+  "invitation:update",
+  "invitation:cancel",
+  "role:read",
+  "role:create",
+  "role:update",
+  "role:delete",
+  "billing:read",
+  "billing:update",
+  "billing:cancel",
+]);
 
 export const OrganizationRoleMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -23,7 +42,7 @@ const OrganizationRoleFields = {
   id: OrganizationRoleId,
   organizationId: OrganizationId,
   key: OrganizationRoleKey,
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
   metadata: OrganizationRoleMetadata,
   ...TimestampFields,
 };
@@ -49,7 +68,7 @@ export const SystemOrganizationRoleInsert = Schema.Struct({
 export const CustomOrganizationRoleInsert = Schema.Struct({
   organizationId: OrganizationId,
   key: OrganizationRoleKey,
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
   metadata: OrganizationRoleMetadata,
 });
 
@@ -60,13 +79,14 @@ export const OrganizationRoleInsert = Schema.Union([
 
 export const OrganizationRoleUpdate = Schema.Struct({
   key: Schema.optionalKey(OrganizationRoleKey),
-  permissions: Schema.optionalKey(Schema.Array(Permission)),
+  permissions: Schema.optionalKey(Schema.Array(MemberPermission)),
   metadata: Schema.optionalKey(OrganizationRoleMetadata),
 });
 
 export type OrganizationRoleMetadata = typeof OrganizationRoleMetadata.Type;
 export type OrganizationRoleType = typeof OrganizationRoleType.Type;
 export type OrganizationRole = typeof OrganizationRole.Type;
+export type MemberPermission = typeof MemberPermission.Type;
 export type SystemOrganizationRoleInsert = typeof SystemOrganizationRoleInsert.Type;
 export type CustomOrganizationRoleInsert = typeof CustomOrganizationRoleInsert.Type;
 export type OrganizationRoleUpdate = typeof OrganizationRoleUpdate.Type;

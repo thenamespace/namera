@@ -3,10 +3,11 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import { OrganizationService } from "@namera-ai/application";
+import type { MemberPermission } from "@namera-ai/protocol/model";
 
 import { enforceActor, toInvitationResponse } from "#/helpers/index";
 
-const actorData = (permissions: readonly string[] = []) =>
+const actorData = (permissions: readonly MemberPermission[] = []) =>
   Effect.gen(function* () {
     const actor = yield* CurrentActor;
     return yield* enforceActor({
@@ -31,7 +32,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
       )
       .handle("listInvitations", () =>
         Effect.gen(function* () {
-          const actor = yield* actorData(["invitation:list"]);
+          const actor = yield* actorData(["invitation:read"]);
           return (yield* organizations.listInvitations(actor.organization.id)).map(
             toInvitationResponse,
           );

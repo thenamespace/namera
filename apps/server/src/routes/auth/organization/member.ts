@@ -15,7 +15,7 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
         const data = yield* enforceActor({
           actor,
           allowedActors: ["user"],
-          requiredPermissions: { user: ["member:list"] },
+          requiredPermissions: { user: ["member:read"] },
         });
         return (yield* organizations.listMembers(data.organization.id)).map(toMemberResponse);
       }),

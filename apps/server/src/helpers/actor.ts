@@ -2,12 +2,13 @@ import { Effect } from "effect";
 import { HttpApiError } from "effect/unstable/httpapi";
 
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
+import type { MemberPermission } from "@namera-ai/protocol/model";
 
 type ActorType = CurrentActorResponse["type"];
 type ActorOfType<Type extends ActorType> = Extract<CurrentActorResponse, { readonly type: Type }>;
 
 export type ActorPermissionRequirements = {
-  readonly user: readonly string[];
+  readonly user: readonly MemberPermission[];
 };
 
 type SupportedActorType = keyof ActorPermissionRequirements & ActorType;
@@ -22,9 +23,9 @@ export type EnforceActorProps<AllowedActor extends SupportedActorType> = {
 
 type AnyEnforceActorProps = EnforceActorProps<SupportedActorType>;
 
-const hasRequiredPermissions = <Permission extends string>(
-  grantedPermissions: readonly Permission[],
-  requiredPermissions: readonly Permission[] = [],
+const hasRequiredPermissions = (
+  grantedPermissions: readonly MemberPermission[],
+  requiredPermissions: readonly MemberPermission[] = [],
 ) => requiredPermissions.every((permission) => grantedPermissions.includes(permission));
 
 const isAllowedActor = <AllowedActor extends SupportedActorType>(

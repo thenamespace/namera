@@ -1,7 +1,9 @@
 import { Schema, Struct } from "effect";
 
 import { SystemRoleId } from "#/common/index";
-import { MetadataDescription, MetadataName, Permission, TimestampFields } from "#/model/common";
+import { MetadataDescription, MetadataName, TimestampFields } from "#/model/common";
+
+import { MemberPermission } from "./role.js";
 
 export const SystemRoleKey = Schema.Literals(["owner", "admin", "member"]);
 export const SystemRoleMetadata = Schema.Struct({
@@ -14,18 +16,18 @@ export const SystemRole = Schema.Struct({
   id: SystemRoleId,
   key: SystemRoleKey,
   metadata: SystemRoleMetadata,
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
 }).mapFields(Struct.assign(TimestampFields));
 
 export const SystemRoleInsert = Schema.Struct({
   key: SystemRoleKey,
   metadata: SystemRoleMetadata,
-  permissions: Schema.Array(Permission),
+  permissions: Schema.Array(MemberPermission),
 });
 
 export const SystemRoleUpdate = Schema.Struct({
   metadata: Schema.optionalKey(SystemRoleMetadata),
-  permissions: Schema.optionalKey(Schema.Array(Permission)),
+  permissions: Schema.optionalKey(Schema.Array(MemberPermission)),
 });
 
 export type SystemRoleKey = typeof SystemRoleKey.Type;

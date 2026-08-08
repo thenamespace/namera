@@ -3,10 +3,11 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import { OrganizationService } from "@namera-ai/application";
+import type { MemberPermission } from "@namera-ai/protocol/model";
 
 import { enforceActor, toMemberResponse, toOrganizationResponse } from "#/helpers/index";
 
-const actorData = (permissions: readonly string[] = []) =>
+const actorData = (permissions: readonly MemberPermission[] = []) =>
   Effect.gen(function* () {
     const actor = yield* CurrentActor;
     return yield* enforceActor({
