@@ -16,6 +16,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   PostgreSQL layer, transactions, and repositories.
 - [`packages/emails`](packages/emails/README.md) — typed hosted-template email
   delivery through Resend.
+- [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
+  and shared low-cardinality metric definitions.
 - [`packages/application`](packages/application/README.md) — backend use cases
   and business workflow composition.
 - [`packages/api`](packages/api/README.md) — public Effect `HttpApi` definition;
@@ -42,6 +44,8 @@ Additional rules:
 - `api` may depend on `protocol`; it must not contain handlers or business logic.
 - `database` and `emails` may depend on `protocol`; they must not depend on
   `application` or `api`.
+- `telemetry` contains vendor export layers and shared metric definitions. It
+  must not depend on application or transport packages.
 - `protocol` must not depend on infrastructure or application packages.
 - `utils` must not depend on project Effect services. Reuse it before creating
   duplicate low-level helpers.
