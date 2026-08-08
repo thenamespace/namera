@@ -13,7 +13,7 @@ const CryptoLive = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
 const EmailLive = Layer.unwrap(
   Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
-    environment === "production" ? EmailService.layer : EmailService.developmentLayer,
+    environment === "development" ? EmailService.developmentLayer : EmailService.layer,
   ),
 );
 
