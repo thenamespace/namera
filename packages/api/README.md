@@ -15,7 +15,7 @@ metadata. It does not start a server or implement backend workflows.
 ## Usage
 
 ```ts
-import { api } from "@namera-ai/api";
+import { NameraApi } from "@namera-ai/api";
 ```
 
 The future `apps/server` package supplies handlers, middleware implementations,

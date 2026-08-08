@@ -252,9 +252,9 @@ The implementation contract is documented in
 
 ### API and user experience
 
-- [ ] Add the generic `POST /auth/magic-link/request` endpoint.
-- [ ] Add the non-consuming `GET /auth/magic-link` confirmation page.
-- [ ] Add `POST /auth/magic-link/verify` for link and code verification.
+- [x] Add the generic `POST /auth/magic-link/request` endpoint.
+- [x] Add the non-consuming `GET /auth/magic-link` confirmation page.
+- [x] Add `POST /auth/magic-link/verify` for link and code verification.
 - [ ] Add no-store, no-referrer, CSP, framing, and content-type security headers.
 - [ ] Remove credentials from the browser URL before rendering additional content.
 - [ ] Set a fresh `__Host-namera-session` cookie only after transaction commit.

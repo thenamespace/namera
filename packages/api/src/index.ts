@@ -3,14 +3,23 @@ import { HttpApi, OpenApi } from "effect/unstable/httpapi";
 import {
   HealthGroup,
   InvitationGroup,
+  MagicLinkGroup,
   MemberGroup,
   OrganizationGroup,
   SessionGroup,
   UserGroup,
 } from "./routes/index.js";
 
-export const api = HttpApi.make("NameraAPI")
-  .add(HealthGroup, InvitationGroup, MemberGroup, OrganizationGroup, SessionGroup, UserGroup)
+export class NameraApi extends HttpApi.make("NameraAPI")
+  .add(
+    HealthGroup,
+    InvitationGroup,
+    MagicLinkGroup,
+    MemberGroup,
+    OrganizationGroup,
+    SessionGroup,
+    UserGroup,
+  )
   .annotate(OpenApi.Title, "Namera API")
   .annotate(OpenApi.Description, "Backend API for Namera built using Effect and Drizzle")
   .annotate(
@@ -30,4 +39,4 @@ export const api = HttpApi.make("NameraAPI")
   .annotate(OpenApi.License, {
     name: "Apache-2.0",
     url: "https://opensource.org/licenses/Apache-2.0",
-  });
+  }) {}
