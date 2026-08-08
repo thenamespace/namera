@@ -1,24 +1,34 @@
 import { Schema, Struct } from "effect";
 
-import { VerificationId } from "#/common/index";
+import { Email, VerificationId } from "#/common/index";
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
+export const VerificationPurpose = Schema.Literal("magic-link-signin");
+
 export const Verification = Schema.Struct({
   id: VerificationId,
-  identifier: NonEmptyString,
-  value: NonEmptyString,
+  purpose: VerificationPurpose,
+  identifier: Email,
+  tokenHash: NonEmptyString,
+  codeHmac: NonEmptyString,
+  attempts: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
   expiresAt: Schema.DateTimeUtcFromDate,
+  consumedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
 }).mapFields(Struct.assign(TimestampFields));
 
 export const VerificationUpdate = createUpdateSchema(Verification);
 export const VerificationInsert = createInsertSchema(
   Verification,
+  "purpose",
   "identifier",
-  "value",
+  "tokenHash",
+  "codeHmac",
   "expiresAt",
 );
 
+export type VerificationPurpose = typeof VerificationPurpose.Type;
 export type Verification = typeof Verification.Type;
 export type VerificationUpdate = typeof VerificationUpdate.Type;
 export type VerificationInsert = typeof VerificationInsert.Type;

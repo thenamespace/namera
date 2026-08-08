@@ -1,10 +1,15 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
 import { Context, Effect, Layer, Schema } from "effect";
 
-import type { DatabaseError } from "@namera-ai/protocol";
+import type { DatabaseError, Email } from "@namera-ai/protocol";
 import { type VerificationId } from "@namera-ai/protocol";
-import { Verification, VerificationInsert, VerificationUpdate } from "@namera-ai/protocol/model";
-import { eq } from "drizzle-orm";
+import {
+  Verification,
+  VerificationInsert,
+  type VerificationPurpose,
+  VerificationUpdate,
+} from "@namera-ai/protocol/model";
+import { and, eq } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -13,13 +18,17 @@ import { verification } from "#/schema/index";
 export interface VerificationRepositoryService {
   insert: (params: VerificationInsert) => Effect.Effect<Verification, DatabaseError>;
   findByIdentifier: (params: {
-    identifier: string;
+    purpose: VerificationPurpose;
+    identifier: Email;
   }) => Effect.Effect<Verification | undefined, DatabaseError>;
   update: (
     verificationId: VerificationId,
     params: VerificationUpdate,
   ) => Effect.Effect<Verification, DatabaseError>;
-  delete: (params: { identifier: string }) => Effect.Effect<void, DatabaseError>;
+  delete: (params: {
+    purpose: VerificationPurpose;
+    identifier: Email;
+  }) => Effect.Effect<void, DatabaseError>;
 }
 
 export class VerificationRepository extends Context.Service<
@@ -47,6 +56,7 @@ export class VerificationRepository extends Context.Service<
 
           const res = yield* db.query.verification.findFirst({
             where: {
+              purpose: { eq: params.purpose },
               identifier: { eq: params.identifier },
             },
           });
@@ -67,7 +77,14 @@ export class VerificationRepository extends Context.Service<
         delete: Effect.fn("deleteVerification")(function* (params) {
           const db = yield* transactionOrDatabase(database);
 
-          yield* db.delete(verification).where(eq(verification.identifier, params.identifier));
+          yield* db
+            .delete(verification)
+            .where(
+              and(
+                eq(verification.purpose, params.purpose),
+                eq(verification.identifier, params.identifier),
+              ),
+            );
         }, mapToDatabaseError),
       });
     }),

@@ -7,7 +7,7 @@ import type {
 } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
 import { text, jsonb } from "drizzle-orm/pg-core";
-import { index, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { check, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { generateUniqueId, timestamps } from "#/schema/common";
 
@@ -35,6 +35,7 @@ export const organizationRole = authSchema.table(
     ...timestamps,
   },
   (table) => [
+    unique("organization_role_id_organization_unique").on(table.id, table.organizationId),
     uniqueIndex("organization_role_organization_key_uidx").on(table.organizationId, table.key),
     index("organization_role_system_role_idx").on(table.systemRoleId),
     check(

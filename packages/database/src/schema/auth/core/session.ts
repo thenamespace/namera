@@ -16,7 +16,7 @@ export const session = authSchema.table(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "cascade" }),
-    token: text("token").notNull(),
+    tokenHash: text("token_hash").notNull(),
     activeOrganizationId: text("active_organization_id")
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "set null" }),
@@ -27,7 +27,7 @@ export const session = authSchema.table(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("session_token_uidx").on(table.token),
+    uniqueIndex("session_token_hash_uidx").on(table.tokenHash),
     index("session_user_active_idx").on(table.userId, table.expiresAt),
     index("session_active_user_created_at_idx")
       .on(table.userId, table.createdAt.desc())

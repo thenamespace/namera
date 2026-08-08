@@ -1,5 +1,4 @@
-import { type SQL, sql } from "drizzle-orm";
-import { type AnyPgColumn, type PgTimestampConfig, timestamp } from "drizzle-orm/pg-core";
+import { type PgTimestampConfig, timestamp } from "drizzle-orm/pg-core";
 import { v7 as uuidv7 } from "uuid";
 
 export const generateUniqueId = () => uuidv7();
@@ -20,8 +19,4 @@ export const timestamps = {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-};
-
-export const lower = (value: AnyPgColumn): SQL => {
-  return sql`lower(${value})`;
 };

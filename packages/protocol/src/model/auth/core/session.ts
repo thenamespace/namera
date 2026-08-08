@@ -7,7 +7,7 @@ import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 export const Session = Schema.Struct({
   id: SessionId,
   userId: UserId,
-  token: NonEmptyString,
+  tokenHash: NonEmptyString,
   activeOrganizationId: Schema.NullOr(OrganizationId),
   ipAddress: Schema.NullOr(Schema.String),
   userAgent: Schema.NullOr(Schema.String),
@@ -16,7 +16,7 @@ export const Session = Schema.Struct({
 }).mapFields(Struct.assign(TimestampFields));
 
 export const SessionUpdate = createUpdateSchema(Session);
-export const SessionInsert = createInsertSchema(Session, "userId", "token", "expiresAt");
+export const SessionInsert = createInsertSchema(Session, "userId", "tokenHash", "expiresAt");
 
 export type Session = typeof Session.Type;
 export type SessionUpdate = typeof SessionUpdate.Type;

@@ -2,7 +2,7 @@
 import { Context, Effect, Layer, Schema } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
-import { Email, type InvitationId, type OrganizationId } from "@namera-ai/protocol";
+import { type Email, type InvitationId, type OrganizationId } from "@namera-ai/protocol";
 import type { OrganizationRole } from "@namera-ai/protocol/model";
 import {
   Invitation,
@@ -81,10 +81,7 @@ export class OrganizationInvitationRepository extends Context.Service<
         return OrganizationInvitationRepository.of({
           insert: Effect.fn("insertOrganizationInvitation")(function* (data) {
             const db = yield* transactionOrDatabase(database);
-            const parsed = Schema.encodeSync(InvitationInsert)({
-              ...data,
-              email: Schema.decodeSync(Email)(data.email.toLowerCase()),
-            });
+            const parsed = Schema.encodeSync(InvitationInsert)(data);
             const res = yield* db
               .insert(invitation)
               .values(parsed as any)

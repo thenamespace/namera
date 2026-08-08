@@ -12,7 +12,7 @@ import { session } from "#/schema/index";
 
 export interface SessionRepositoryService {
   insert: (data: SessionInsert) => Effect.Effect<Session, DatabaseError>;
-  findByToken: (token: string) => Effect.Effect<Session | undefined, DatabaseError>;
+  findByTokenHash: (tokenHash: string) => Effect.Effect<Session | undefined, DatabaseError>;
   findById: (sessionId: SessionId) => Effect.Effect<Session | undefined, DatabaseError>;
   findSessionsForUserId: (userId: UserId) => Effect.Effect<Array<Session>, DatabaseError>;
   updateAllExcept: (
@@ -43,12 +43,12 @@ export class SessionRepository extends Context.Service<
 
           return Schema.decodeSync(Session)(res[0]!);
         }, mapToDatabaseError),
-        findByToken: Effect.fn("findSessionByToken")(function* (token) {
+        findByTokenHash: Effect.fn("findSessionByTokenHash")(function* (tokenHash) {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.session.findFirst({
             where: {
-              token: { eq: token },
+              tokenHash: { eq: tokenHash },
             },
           });
 
