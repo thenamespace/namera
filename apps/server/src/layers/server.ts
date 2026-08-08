@@ -4,6 +4,7 @@ import { NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
 
+import { DatabaseMigration } from "@namera-ai/database";
 import { TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
@@ -12,6 +13,7 @@ import { ApiReferenceRoutes, ApiRoutes } from "#/routes/index";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
+    yield* DatabaseMigration;
     const config = yield* ServerConfig;
 
     return NodeHttpServer.layer(createServer, {
@@ -19,7 +21,7 @@ const NodeServerLive = Layer.unwrap(
       port: config.port,
     });
   }),
-);
+).pipe(Layer.provide(DatabaseMigration.layer));
 
 const Routes = Layer.mergeAll(ApiReferenceRoutes, ApiRoutes, CorsMiddleware);
 

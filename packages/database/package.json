@@ -4,7 +4,8 @@
   "private": true,
   "license": "Apache-2.0",
   "files": [
-    "dist"
+    "dist",
+    "migrations"
   ],
   "type": "module",
   "imports": {
@@ -35,7 +36,7 @@
     "prepack": "pnpm run build",
     "typecheck": "tsc -p tsconfig.json --pretty false",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx --env-file-if-exists=.env --conditions=namera-source src/migrations/run.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
@@ -47,11 +48,13 @@
     "uuid": "14.0.1"
   },
   "devDependencies": {
+    "@effect/platform-node": "catalog:",
     "@types/node": "catalog:",
     "@types/pg": "8.20.4",
     "drizzle-kit": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

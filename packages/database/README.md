@@ -12,6 +12,7 @@ repositories.
 - `src/core/layer.ts` — PostgreSQL client and `Database` service.
 - `src/core/transaction.ts` — transaction context and `TransactionService`.
 - `src/repositories/` — class-based repository services and aggregate layer.
+- `src/migrations/` — startup migrator and canonical system-role data.
 - `drizzle.config.ts` — Drizzle Kit configuration.
 - `migrations/` — generated migrations when present.
 
@@ -66,6 +67,15 @@ pnpm --filter @namera-ai/database db:studio
 
 Change tables and protocol models together. Business workflows belong in
 `@namera-ai/application`, not repositories.
+
+`DatabaseMigration.layer` applies pending Drizzle migrations and upserts the
+canonical owner, admin, and member roles. The server waits for this layer before
+opening its HTTP port. The upsert preserves system-role IDs while replacing
+metadata and permission arrays with their code-owned definitions.
+
+For a multi-service deployment, run the same migrator as a release job instead
+of making every service migrate. The migrator also takes a PostgreSQL advisory
+lock so concurrent server starts serialize safely.
 
 ## Organization persistence
 

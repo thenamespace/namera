@@ -15,6 +15,10 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/layers/` — runtime and dependency composition.
 - `src/index.ts` — Node process entry point.
 
+Before binding the HTTP port, the server applies pending database migrations
+and synchronizes the canonical system roles through
+`@namera-ai/database/DatabaseMigration`.
+
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
 is enabled globally except for the Scalar reference route.
 
