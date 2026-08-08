@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/source",
+  "name": "namera",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,6 +19,7 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/language-service": "catalog:",
+    "effect": "catalog:",
     "klarity": "catalog:",
     "lefthook": "catalog:",
     "oxfmt": "catalog:",

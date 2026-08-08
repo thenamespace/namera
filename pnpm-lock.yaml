@@ -19,8 +19,8 @@ catalogs:
       specifier: 0.87.1
       version: 0.87.1
     '@effect/sql-pg':
-      specifier: 4.0.0-beta.104
-      version: 4.0.0-beta.104
+      specifier: 4.0.0-beta.105
+      version: 4.0.0-beta.105
     '@types/node':
       specifier: 26.1.2
       version: 26.1.2
@@ -31,8 +31,8 @@ catalogs:
       specifier: 1.0.0-rc.4
       version: 1.0.0-rc.4
     effect:
-      specifier: 4.0.0-beta.104
-      version: 4.0.0-beta.104
+      specifier: 4.0.0-beta.105
+      version: 4.0.0-beta.105
     klarity:
       specifier: 0.2.0
       version: 0.2.0
@@ -74,6 +74,9 @@ importers:
       '@effect/language-service':
         specifier: 'catalog:'
         version: 0.87.1
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.105
       klarity:
         specifier: 'catalog:'
         version: 0.2.0(@commitlint/cli@21.2.1(@types/node@26.1.2)(conventional-commits-parser@7.1.2)(typescript@6.0.3))(@commitlint/config-conventional@21.2.0)(lefthook@2.1.10)(oxfmt@0.62.0)(oxlint@1.76.0)(publint@0.3.23)(tsdown@0.22.14(@arethetypeswrong/core@0.18.5)(publint@0.3.23)(typescript@6.0.3))(turbo@2.10.8)(typescript@6.0.3)
@@ -96,20 +99,39 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  packages/api:
+    dependencies:
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.105
+    devDependencies:
+      klarity:
+        specifier: 'catalog:'
+        version: 0.2.0(@commitlint/cli@21.2.1(@types/node@26.1.2)(conventional-commits-parser@7.1.2)(typescript@6.0.3))(@commitlint/config-conventional@21.2.0)(lefthook@2.1.10)(oxfmt@0.62.0)(oxlint@1.76.0)(publint@0.3.23)(tsdown@0.22.14(@arethetypeswrong/core@0.18.5)(publint@0.3.23)(typescript@6.0.3))(turbo@2.10.8)(typescript@6.0.3)
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(@arethetypeswrong/core@0.18.5)(publint@0.3.23)(typescript@6.0.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   packages/database:
     dependencies:
       '@effect/sql-pg':
         specifier: 'catalog:'
-        version: 4.0.0-beta.104(effect@4.0.0-beta.104)
+        version: 4.0.0-beta.105(effect@4.0.0-beta.105)
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.104(effect@4.0.0-beta.104))(@types/pg@8.20.4)(effect@4.0.0-beta.104)(pg@8.22.0)
+        version: 1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.104
+        version: 4.0.0-beta.105
       pg:
         specifier: 8.22.0
         version: 8.22.0
@@ -140,7 +162,7 @@ importers:
     dependencies:
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.104
+        version: 4.0.0-beta.105
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -159,7 +181,7 @@ importers:
     dependencies:
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.104
+        version: 4.0.0-beta.105
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -286,10 +308,10 @@ packages:
     resolution: {integrity: sha512-kcljlJmEgqg5mFAM6UShJYJjMqJb3TbHHxrK8Qoubvwugc0aVWpRkbdgQvK5b17puOt3BKXXKOmcV+oQt0oQqQ==}
     hasBin: true
 
-  '@effect/sql-pg@4.0.0-beta.104':
-    resolution: {integrity: sha512-buqIVXOdeQF2uKd4SNjGT0YqhAMtPGTSBBVkivSOH4pXE//XNqZ9lmbQytWa8eLBNoHZdm9ao8a6cd6WNj/wqQ==}
+  '@effect/sql-pg@4.0.0-beta.105':
+    resolution: {integrity: sha512-Jz2DYIR+lyPdExOeYKV2BRcNZ/kj3Ldyz3xqDsT3nRM2zWo/9zWKH7XON/P1pvTbIxJPwuS63MPd4F6GYtz+bA==}
     peerDependencies:
-      effect: ^4.0.0-beta.104
+      effect: ^4.0.0-beta.105
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -1246,8 +1268,8 @@ packages:
       oxc-resolver:
         optional: true
 
-  effect@4.0.0-beta.104:
-    resolution: {integrity: sha512-YSSaaMc8gBoHnabYXlgHpKVctsj4ezTSoojdd8SA3NWHoZ7LMPiUDhCnP1ZSOfQ7ly6P6XLhAw216NfLEHfg2A==}
+  effect@4.0.0-beta.105:
+    resolution: {integrity: sha512-7U5OzWVNlpnZFvXiZfOeu8V+dCQUa3Om569HnYG2Dx8C8V6uoKS920kFJkIDEYVhlSGhzkRqaGKmYY9bPkBMMQ==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -1943,9 +1965,9 @@ snapshots:
 
   '@effect/language-service@0.87.1': {}
 
-  '@effect/sql-pg@4.0.0-beta.104(effect@4.0.0-beta.104)':
+  '@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105)':
     dependencies:
-      effect: 4.0.0-beta.104
+      effect: 4.0.0-beta.105
       pg: 8.22.0
       pg-connection-string: 2.14.0
       pg-cursor: 2.21.0(pg@8.22.0)
@@ -2407,16 +2429,16 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.6.1
 
-  drizzle-orm@1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.104(effect@4.0.0-beta.104))(@types/pg@8.20.4)(effect@4.0.0-beta.104)(pg@8.22.0):
+  drizzle-orm@1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0):
     optionalDependencies:
-      '@effect/sql-pg': 4.0.0-beta.104(effect@4.0.0-beta.104)
+      '@effect/sql-pg': 4.0.0-beta.105(effect@4.0.0-beta.105)
       '@types/pg': 8.20.4
-      effect: 4.0.0-beta.104
+      effect: 4.0.0-beta.105
       pg: 8.22.0
 
   dts-resolver@3.0.0: {}
 
-  effect@4.0.0-beta.104:
+  effect@4.0.0-beta.105:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
