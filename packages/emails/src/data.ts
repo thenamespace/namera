@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { MagicLinkVariables } from "./types.ts";
+import { MagicLinkVariables } from "./types.js";
 
 export const emailTemplates = {
   "magic-link": {

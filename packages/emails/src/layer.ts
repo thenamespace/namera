@@ -65,4 +65,15 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
       return EmailService.of({ send });
     }),
   );
+
+  static readonly developmentLayer = Layer.succeed(
+    EmailService,
+    EmailService.of({
+      send: Effect.fn("EmailService.sendDevelopment")(function* (input) {
+        yield* Effect.logInfo("Development email sent", input);
+
+        return Schema.decodeSync(EmailProviderId)("development");
+      }),
+    }),
+  );
 }
