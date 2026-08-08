@@ -1,4 +1,4 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 
 import { OrganizationId, OrganizationRoleId, SystemRoleId } from "#/common/index";
 import {
@@ -9,7 +9,6 @@ import {
   Permission,
   TimestampFields,
 } from "#/model/common";
-import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
 export const OrganizationRoleMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -20,29 +19,55 @@ export const OrganizationRoleMetadata = Schema.Struct({
 
 export const OrganizationRoleType = Schema.Literals(["system", "custom"]);
 
-export const OrganizationRole = Schema.Struct({
+const OrganizationRoleFields = {
   id: OrganizationRoleId,
   organizationId: OrganizationId,
-  type: OrganizationRoleType,
   key: OrganizationRoleKey,
-  systemRoleId: Schema.NullOr(SystemRoleId),
-  permissions: Schema.NullOr(Schema.Array(Permission)),
+  permissions: Schema.Array(Permission),
   metadata: OrganizationRoleMetadata,
-}).mapFields(Struct.assign(TimestampFields));
+  ...TimestampFields,
+};
 
-export const OrganizationRoleUpdate = createUpdateSchema(OrganizationRole);
-export const OrganizationRoleInsert = createInsertSchema(
-  OrganizationRole,
-  "organizationId",
-  "type",
-  "key",
-  "systemRoleId",
-  "permissions",
-  "metadata",
-);
+export const OrganizationRole = Schema.Union([
+  Schema.Struct({
+    ...OrganizationRoleFields,
+    type: Schema.Literal("system"),
+    systemRoleId: SystemRoleId,
+  }),
+  Schema.Struct({
+    ...OrganizationRoleFields,
+    type: Schema.Literal("custom"),
+    systemRoleId: Schema.Null,
+  }),
+]);
+
+export const SystemOrganizationRoleInsert = Schema.Struct({
+  organizationId: OrganizationId,
+  systemRoleId: SystemRoleId,
+});
+
+export const CustomOrganizationRoleInsert = Schema.Struct({
+  organizationId: OrganizationId,
+  key: OrganizationRoleKey,
+  permissions: Schema.Array(Permission),
+  metadata: OrganizationRoleMetadata,
+});
+
+export const OrganizationRoleInsert = Schema.Union([
+  SystemOrganizationRoleInsert,
+  CustomOrganizationRoleInsert,
+]);
+
+export const OrganizationRoleUpdate = Schema.Struct({
+  key: Schema.optionalKey(OrganizationRoleKey),
+  permissions: Schema.optionalKey(Schema.Array(Permission)),
+  metadata: Schema.optionalKey(OrganizationRoleMetadata),
+});
 
 export type OrganizationRoleMetadata = typeof OrganizationRoleMetadata.Type;
 export type OrganizationRoleType = typeof OrganizationRoleType.Type;
 export type OrganizationRole = typeof OrganizationRole.Type;
+export type SystemOrganizationRoleInsert = typeof SystemOrganizationRoleInsert.Type;
+export type CustomOrganizationRoleInsert = typeof CustomOrganizationRoleInsert.Type;
 export type OrganizationRoleUpdate = typeof OrganizationRoleUpdate.Type;
 export type OrganizationRoleInsert = typeof OrganizationRoleInsert.Type;

@@ -65,3 +65,15 @@ pnpm --filter @namera-ai/database db:studio
 
 Change tables and protocol models together. Business workflows belong in
 `@namera-ai/application`, not repositories.
+
+## Organization persistence
+
+- Organizations are addressed by ID. They do not have slugs; the authenticated
+  session stores the currently selected organization ID.
+- Selecting an active organization succeeds only when the session user has an
+  active membership. Authorization must recheck that membership on requests.
+- An organization role is either a reference to a global system role or a custom
+  role with local key, metadata, and permissions. System-role values are resolved
+  from `system_role` and are not duplicated in `organization_role`.
+- Membership and invitation state transitions are organization-scoped and
+  conditional. Compose multi-record operations with `TransactionService`.

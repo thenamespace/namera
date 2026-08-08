@@ -1,8 +1,13 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
-import { type OrganizationId, type OrganizationMemberId, type UserId } from "@namera-ai/protocol";
+import {
+  type OrganizationId,
+  type OrganizationMemberId,
+  type OrganizationRoleId,
+  type UserId,
+} from "@namera-ai/protocol";
 import type { OrganizationRole } from "@namera-ai/protocol/model";
 import {
   Organization,
@@ -11,17 +16,21 @@ import {
   OrganizationMemberUpdate,
   User,
 } from "@namera-ai/protocol/model";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/common";
-import { organizationMember } from "#/schema/index";
+import {
+  organizationMember,
+  organizationRole as organizationRoleTable,
+  systemRole as systemRoleTable,
+} from "#/schema/index";
 
 export interface OrganizationMemberRepositoryService {
   insert: (data: OrganizationMemberInsert) => Effect.Effect<OrganizationMember, DatabaseError>;
   findOrganizationMembersForOrg: (orgId: OrganizationId) => Effect.Effect<
-    Array<{
+    ReadonlyArray<{
       organizationMember: OrganizationMember;
       organizationRole: OrganizationRole;
       user: User;
@@ -29,7 +38,7 @@ export interface OrganizationMemberRepositoryService {
     DatabaseError
   >;
   findMembershipsForUser: (userId: UserId) => Effect.Effect<
-    Array<{
+    ReadonlyArray<{
       organizationMember: OrganizationMember;
       organization: Organization;
       organizationRole: OrganizationRole;
@@ -50,10 +59,16 @@ export interface OrganizationMemberRepositoryService {
     | undefined,
     DatabaseError
   >;
-  update: (
+  assignRole: (
     id: OrganizationMemberId,
-    data: OrganizationMemberUpdate,
-  ) => Effect.Effect<OrganizationMember, DatabaseError>;
+    organizationId: OrganizationId,
+    organizationRoleId: OrganizationRoleId,
+  ) => Effect.Effect<OrganizationMember | undefined, DatabaseError>;
+  remove: (
+    id: OrganizationMemberId,
+    organizationId: OrganizationId,
+    removedAt: DateTime.Utc,
+  ) => Effect.Effect<OrganizationMember | undefined, DatabaseError>;
 }
 
 export class OrganizationMemberRepository extends Context.Service<
@@ -84,6 +99,7 @@ export class OrganizationMemberRepository extends Context.Service<
           const res = yield* db.query.organizationMember.findMany({
             where: {
               organizationId: { eq: orgId },
+              removedAt: { isNull: true },
             },
             with: {
               organizationRole: {
@@ -111,6 +127,7 @@ export class OrganizationMemberRepository extends Context.Service<
           const res = yield* db.query.organizationMember.findMany({
             where: {
               userId: { eq: userId },
+              removedAt: { isNull: true },
             },
             with: {
               organization: true,
@@ -167,16 +184,59 @@ export class OrganizationMemberRepository extends Context.Service<
             user: Schema.decodeSync(User)(user),
           };
         }, mapToDatabaseError),
-        update: Effect.fn("updateOrganizationMember")(function* (id, data) {
+        assignRole: Effect.fn("assignOrganizationMemberRole")(function* (
+          id,
+          organizationId,
+          organizationRoleId,
+        ) {
           const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(OrganizationMemberUpdate)(data);
+          const parsed = Schema.encodeSync(OrganizationMemberUpdate)({ organizationRoleId });
           const res = yield* db
             .update(organizationMember)
             .set(parsed as any)
-            .where(eq(organizationMember.id, id))
+            .where(
+              and(
+                eq(organizationMember.id, id),
+                eq(organizationMember.organizationId, organizationId),
+                isNull(organizationMember.removedAt),
+                sql`NOT EXISTS (
+                  SELECT 1
+                  FROM ${organizationRoleTable}
+                  JOIN ${systemRoleTable}
+                    ON ${systemRoleTable.id} = ${organizationRoleTable.systemRoleId}
+                  WHERE ${organizationRoleTable.id} = ${organizationMember.organizationRoleId}
+                    AND ${systemRoleTable.key} = 'owner'
+                )`,
+              ),
+            )
             .returning();
 
-          return Schema.decodeSync(OrganizationMember)(res[0]!);
+          return res[0] ? Schema.decodeSync(OrganizationMember)(res[0]) : undefined;
+        }, mapToDatabaseError),
+        remove: Effect.fn("removeOrganizationMember")(function* (id, organizationId, removedAt) {
+          const db = yield* transactionOrDatabase(database);
+          const parsed = Schema.encodeSync(OrganizationMemberUpdate)({ removedAt });
+          const res = yield* db
+            .update(organizationMember)
+            .set(parsed as any)
+            .where(
+              and(
+                eq(organizationMember.id, id),
+                eq(organizationMember.organizationId, organizationId),
+                isNull(organizationMember.removedAt),
+                sql`NOT EXISTS (
+                  SELECT 1
+                  FROM ${organizationRoleTable}
+                  JOIN ${systemRoleTable}
+                    ON ${systemRoleTable.id} = ${organizationRoleTable.systemRoleId}
+                  WHERE ${organizationRoleTable.id} = ${organizationMember.organizationRoleId}
+                    AND ${systemRoleTable.key} = 'owner'
+                )`,
+              ),
+            )
+            .returning();
+
+          return res[0] ? Schema.decodeSync(OrganizationMember)(res[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),

@@ -30,12 +30,7 @@ export const invitation = authSchema.table(
       .notNull()
       .$type<UserId>()
       .references(() => user.id, { onDelete: "restrict" }),
-    status: text("status", {
-      enum: ["pending", "accepted", "rejected", "canceled", "expired"],
-    })
-      .notNull()
-      .default("pending")
-      .$type<InvitationStatus>(),
+    status: text("status").notNull().default("pending").$type<InvitationStatus>(),
     expiresAt: createTimestampField("expires_at").notNull(),
     ...timestamps,
   },

@@ -1,26 +1,40 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
-import { type SessionId, type UserId } from "@namera-ai/protocol";
+import { type OrganizationId, type SessionId, type UserId } from "@namera-ai/protocol";
 import { Session, SessionInsert, SessionUpdate } from "@namera-ai/protocol/model";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { session } from "#/schema/index";
+import { organizationMember, session } from "#/schema/index";
 
 export interface SessionRepositoryService {
   insert: (data: SessionInsert) => Effect.Effect<Session, DatabaseError>;
   findByTokenHash: (tokenHash: string) => Effect.Effect<Session | undefined, DatabaseError>;
   findById: (sessionId: SessionId) => Effect.Effect<Session | undefined, DatabaseError>;
-  findSessionsForUserId: (userId: UserId) => Effect.Effect<Array<Session>, DatabaseError>;
+  findSessionsForUserId: (userId: UserId) => Effect.Effect<ReadonlyArray<Session>, DatabaseError>;
   updateAllExcept: (
     userId: UserId,
     sessionId: SessionId,
     data: SessionUpdate,
-  ) => Effect.Effect<Array<Session>, DatabaseError>;
-  update: (id: SessionId, data: SessionUpdate) => Effect.Effect<Session, DatabaseError>;
+  ) => Effect.Effect<ReadonlyArray<Session>, DatabaseError>;
+  update: (id: SessionId, data: SessionUpdate) => Effect.Effect<Session | undefined, DatabaseError>;
+  setActiveOrganization: (
+    sessionId: SessionId,
+    userId: UserId,
+    organizationId: OrganizationId,
+    now: DateTime.Utc,
+  ) => Effect.Effect<Session | undefined, DatabaseError>;
+  clearActiveOrganization: (
+    sessionId: SessionId,
+    userId: UserId,
+  ) => Effect.Effect<Session | undefined, DatabaseError>;
+  clearActiveOrganizationForUser: (
+    userId: UserId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<ReadonlyArray<Session>, DatabaseError>;
 }
 
 export class SessionRepository extends Context.Service<
@@ -96,7 +110,65 @@ export class SessionRepository extends Context.Service<
             .where(eq(session.id, id))
             .returning();
 
-          return Schema.decodeSync(Session)(res[0]!);
+          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
+        }, mapToDatabaseError),
+        setActiveOrganization: Effect.fn("setSessionActiveOrganization")(function* (
+          sessionId,
+          userId,
+          organizationId,
+          now,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+          const res = yield* db
+            .update(session)
+            .set({ activeOrganizationId: organizationId })
+            .where(
+              and(
+                eq(session.id, sessionId),
+                eq(session.userId, userId),
+                sql`${session.revokedAt} IS NULL`,
+                sql`${session.expiresAt} > ${encodedNow}`,
+                sql`EXISTS (
+                  SELECT 1
+                  FROM ${organizationMember}
+                  WHERE ${organizationMember.userId} = ${userId}
+                    AND ${organizationMember.organizationId} = ${organizationId}
+                    AND ${organizationMember.removedAt} IS NULL
+                )`,
+              ),
+            )
+            .returning();
+
+          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
+        }, mapToDatabaseError),
+        clearActiveOrganizationForUser: Effect.fn("clearUserActiveOrganization")(function* (
+          userId,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const res = yield* db
+            .update(session)
+            .set({ activeOrganizationId: null })
+            .where(
+              and(eq(session.userId, userId), eq(session.activeOrganizationId, organizationId)),
+            )
+            .returning();
+
+          return Schema.decodeSync(Schema.Array(Session))(res);
+        }, mapToDatabaseError),
+        clearActiveOrganization: Effect.fn("clearSessionActiveOrganization")(function* (
+          sessionId,
+          userId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const res = yield* db
+            .update(session)
+            .set({ activeOrganizationId: null })
+            .where(and(eq(session.id, sessionId), eq(session.userId, userId)))
+            .returning();
+
+          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),

@@ -13,10 +13,7 @@ export const organization = authSchema.table(
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<OrganizationId>(),
     metadata: jsonb("metadata").notNull().$type<OrganizationMetadata>(),
-    plan: text("plan", { enum: ["free"] })
-      .notNull()
-      .default("free")
-      .$type<OrganizationPlan>(),
+    plan: text("plan").notNull().default("free").$type<OrganizationPlan>(),
     createdById: text("created_by_id")
       .notNull()
       .$type<UserId>()

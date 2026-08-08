@@ -1,5 +1,5 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
 import { type Email, type InvitationId, type OrganizationId } from "@namera-ai/protocol";
@@ -11,7 +11,7 @@ import {
   Organization,
   User,
 } from "@namera-ai/protocol/model";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, lte } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -33,17 +33,25 @@ export interface OrganizationInvitationRepositoryService {
     | undefined,
     DatabaseError
   >;
-  findForOrgId: (organizationId: OrganizationId) => Effect.Effect<
-    Array<{
+  findPendingForOrgId: (
+    organizationId: OrganizationId,
+    now: DateTime.Utc,
+  ) => Effect.Effect<
+    ReadonlyArray<{
       invitation: Invitation;
+      organization: Organization;
       organizationRole: OrganizationRole;
       inviter: User;
     }>,
     DatabaseError
   >;
-  findForEmail: (email: Email) => Effect.Effect<
-    Array<{
+  findPendingForEmail: (
+    email: Email,
+    now: DateTime.Utc,
+  ) => Effect.Effect<
+    ReadonlyArray<{
       invitation: Invitation;
+      organization: Organization;
       organizationRole: OrganizationRole;
       inviter: User;
     }>,
@@ -62,10 +70,25 @@ export interface OrganizationInvitationRepositoryService {
     | undefined,
     DatabaseError
   >;
-  update: (
+  acceptPending: (
     invitationId: InvitationId,
-    data: InvitationUpdate,
+    email: Email,
+    now: DateTime.Utc,
   ) => Effect.Effect<Invitation | undefined, DatabaseError>;
+  rejectPending: (
+    invitationId: InvitationId,
+    email: Email,
+    now: DateTime.Utc,
+  ) => Effect.Effect<Invitation | undefined, DatabaseError>;
+  cancelPending: (
+    invitationId: InvitationId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<Invitation | undefined, DatabaseError>;
+  expirePendingForEmail: (
+    organizationId: OrganizationId,
+    email: Email,
+    now: DateTime.Utc,
+  ) => Effect.Effect<ReadonlyArray<Invitation>, DatabaseError>;
 }
 
 export class OrganizationInvitationRepository extends Context.Service<
@@ -121,15 +144,22 @@ export class OrganizationInvitationRepository extends Context.Service<
               inviter: Schema.decodeSync(User)(inviter),
             };
           }, mapToDatabaseError),
-          findForOrgId: Effect.fn("findInvitationsForOrgId")(function* (organizationId) {
+          findPendingForOrgId: Effect.fn("findPendingInvitationsForOrgId")(function* (
+            organizationId,
+            now,
+          ) {
             const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
 
             const res = yield* db.query.invitation.findMany({
               where: {
                 organizationId: { eq: organizationId },
+                status: { eq: "pending" },
+                expiresAt: { gt: encodedNow },
               },
               with: {
                 inviter: true,
+                organization: true,
                 organizationRole: {
                   with: {
                     systemRole: true,
@@ -139,24 +169,29 @@ export class OrganizationInvitationRepository extends Context.Service<
             });
 
             return res.map((row) => {
-              const { inviter, organizationRole, ...invitationRow } = row;
+              const { inviter, organization, organizationRole, ...invitationRow } = row;
 
               return {
                 invitation: Schema.decodeSync(Invitation)(invitationRow),
+                organization: Schema.decodeSync(Organization)(organization),
                 organizationRole: decodeJoinedOrganizationRole(organizationRole),
                 inviter: Schema.decodeSync(User)(inviter),
               };
             });
           }, mapToDatabaseError),
-          findForEmail: Effect.fn("findInvitationsForEmail")(function* (email) {
+          findPendingForEmail: Effect.fn("findPendingInvitationsForEmail")(function* (email, now) {
             const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
 
             const res = yield* db.query.invitation.findMany({
               where: {
                 email: { eq: email },
+                status: { eq: "pending" },
+                expiresAt: { gt: encodedNow },
               },
               with: {
                 inviter: true,
+                organization: true,
                 organizationRole: {
                   with: {
                     systemRole: true,
@@ -166,10 +201,11 @@ export class OrganizationInvitationRepository extends Context.Service<
             });
 
             return res.map((row) => {
-              const { inviter, organizationRole, ...invitationRow } = row;
+              const { inviter, organization, organizationRole, ...invitationRow } = row;
 
               return {
                 invitation: Schema.decodeSync(Invitation)(invitationRow),
+                organization: Schema.decodeSync(Organization)(organization),
                 organizationRole: decodeJoinedOrganizationRole(organizationRole),
                 inviter: Schema.decodeSync(User)(inviter),
               };
@@ -207,17 +243,94 @@ export class OrganizationInvitationRepository extends Context.Service<
               inviter: Schema.decodeSync(User)(inviter),
             };
           }, mapToDatabaseError),
-          update: Effect.fn("updateOrganizationInvitation")(function* (invitationId, data) {
+          acceptPending: Effect.fn("acceptPendingOrganizationInvitation")(function* (
+            invitationId,
+            email,
+            now,
+          ) {
             const db = yield* transactionOrDatabase(database);
-            const parsed = Schema.encodeSync(InvitationUpdate)(data);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const parsed = Schema.encodeSync(InvitationUpdate)({ status: "accepted" });
             const res = yield* db
               .update(invitation)
               .set(parsed as any)
-              .where(eq(invitation.id, invitationId))
+              .where(
+                and(
+                  eq(invitation.id, invitationId),
+                  eq(invitation.email, email),
+                  eq(invitation.status, "pending"),
+                  gt(invitation.expiresAt, encodedNow),
+                ),
+              )
               .returning();
 
             return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
           }, mapToDatabaseError),
+          rejectPending: Effect.fn("rejectPendingOrganizationInvitation")(function* (
+            invitationId,
+            email,
+            now,
+          ) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const parsed = Schema.encodeSync(InvitationUpdate)({ status: "rejected" });
+            const res = yield* db
+              .update(invitation)
+              .set(parsed as any)
+              .where(
+                and(
+                  eq(invitation.id, invitationId),
+                  eq(invitation.email, email),
+                  eq(invitation.status, "pending"),
+                  gt(invitation.expiresAt, encodedNow),
+                ),
+              )
+              .returning();
+
+            return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
+          }, mapToDatabaseError),
+          cancelPending: Effect.fn("cancelPendingOrganizationInvitation")(function* (
+            invitationId,
+            organizationId,
+          ) {
+            const db = yield* transactionOrDatabase(database);
+            const parsed = Schema.encodeSync(InvitationUpdate)({ status: "canceled" });
+            const res = yield* db
+              .update(invitation)
+              .set(parsed as any)
+              .where(
+                and(
+                  eq(invitation.id, invitationId),
+                  eq(invitation.organizationId, organizationId),
+                  eq(invitation.status, "pending"),
+                ),
+              )
+              .returning();
+
+            return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
+          }, mapToDatabaseError),
+          expirePendingForEmail: Effect.fn("expirePendingOrganizationInvitationsForEmail")(
+            function* (organizationId, email, now) {
+              const db = yield* transactionOrDatabase(database);
+              const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+              const parsed = Schema.encodeSync(InvitationUpdate)({ status: "expired" });
+              const res = yield* db
+                .update(invitation)
+                .set(parsed as any)
+                .where(
+                  and(
+                    eq(invitation.organizationId, organizationId),
+                    eq(invitation.email, email),
+                    eq(invitation.status, "pending"),
+                    lte(invitation.expiresAt, encodedNow),
+                  ),
+                )
+                .returning();
+
+              return Schema.decodeSync(Schema.Array(Invitation))(res);
+            },
+            mapToDatabaseError,
+          ),
         });
       }),
     );

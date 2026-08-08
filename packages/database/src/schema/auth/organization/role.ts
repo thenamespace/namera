@@ -2,7 +2,6 @@ import type { OrganizationId, OrganizationRoleId, SystemRoleId } from "@namera-a
 import type {
   OrganizationRoleKey,
   OrganizationRoleMetadata,
-  OrganizationRoleType,
   Permission,
 } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
@@ -23,28 +22,34 @@ export const organizationRole = authSchema.table(
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "restrict" }),
-    type: text("type", { enum: ["system", "custom"] })
-      .notNull()
-      .$type<OrganizationRoleType>(),
-    key: text("key").notNull().$type<OrganizationRoleKey>(),
+    key: text("key").$type<OrganizationRoleKey>(),
     systemRoleId: text("system_role_id")
       .$type<SystemRoleId>()
       .references(() => systemRole.id, { onDelete: "restrict" }),
     permissions: text("permissions").array().$type<Permission>(),
-    metadata: jsonb("metadata").notNull().$type<OrganizationRoleMetadata>(),
+    metadata: jsonb("metadata").$type<OrganizationRoleMetadata>(),
     ...timestamps,
   },
   (table) => [
     unique("organization_role_id_organization_unique").on(table.id, table.organizationId),
-    uniqueIndex("organization_role_organization_key_uidx").on(table.organizationId, table.key),
+    uniqueIndex("organization_role_organization_system_role_uidx")
+      .on(table.organizationId, table.systemRoleId)
+      .where(sql`${table.systemRoleId} IS NOT NULL`),
+    uniqueIndex("organization_role_organization_custom_key_uidx")
+      .on(table.organizationId, table.key)
+      .where(sql`${table.systemRoleId} IS NULL`),
     index("organization_role_system_role_idx").on(table.systemRoleId),
     check(
       "organization_role_source_check",
       sql`(
-        (${table.type} = 'system' AND ${table.systemRoleId} IS NOT NULL AND ${table.permissions} IS NULL)
+        (${table.systemRoleId} IS NOT NULL AND ${table.key} IS NULL AND ${table.metadata} IS NULL AND ${table.permissions} IS NULL)
         OR
-        (${table.type} = 'custom' AND ${table.systemRoleId} IS NULL AND ${table.permissions} IS NOT NULL)
+        (${table.systemRoleId} IS NULL AND ${table.key} IS NOT NULL AND ${table.metadata} IS NOT NULL AND ${table.permissions} IS NOT NULL)
       )`,
+    ),
+    check(
+      "organization_role_custom_key_not_system_check",
+      sql`${table.systemRoleId} IS NOT NULL OR ${table.key} NOT IN ('owner', 'admin', 'member')`,
     ),
   ],
 );

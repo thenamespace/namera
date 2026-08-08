@@ -2,7 +2,6 @@ import { Schema, Struct } from "effect";
 
 import { OrganizationId, OrganizationMemberId, OrganizationRoleId, UserId } from "#/common/index";
 import { TimestampFields } from "#/model/common";
-import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
 export const OrganizationMember = Schema.Struct({
   id: OrganizationMemberId,
@@ -13,14 +12,16 @@ export const OrganizationMember = Schema.Struct({
   removedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
 }).mapFields(Struct.assign(TimestampFields));
 
-export const OrganizationMemberUpdate = createUpdateSchema(OrganizationMember);
-export const OrganizationMemberInsert = createInsertSchema(
-  OrganizationMember,
-  "userId",
-  "organizationId",
-  "organizationRoleId",
-  "joinedAt",
-);
+export const OrganizationMemberInsert = Schema.Struct({
+  userId: UserId,
+  organizationId: OrganizationId,
+  organizationRoleId: OrganizationRoleId,
+});
+
+export const OrganizationMemberUpdate = Schema.Struct({
+  organizationRoleId: Schema.optionalKey(OrganizationRoleId),
+  removedAt: Schema.optionalKey(Schema.NullOr(Schema.DateTimeUtcFromDate)),
+});
 
 export type OrganizationMember = typeof OrganizationMember.Type;
 export type OrganizationMemberUpdate = typeof OrganizationMemberUpdate.Type;

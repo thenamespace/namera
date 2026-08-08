@@ -42,10 +42,12 @@ export const organizationMember = authSchema.table(
       foreignColumns: [organizationRole.id, organizationRole.organizationId],
     }).onDelete("restrict"),
     index("organization_member_user_idx").on(table.userId),
+    index("organization_member_active_user_organization_idx")
+      .on(table.userId, table.organizationId)
+      .where(sql`${table.removedAt} IS NULL`),
     index("organization_member_organization_role_idx").on(
       table.organizationRoleId,
       table.organizationId,
     ),
-    index("organization_member_removed_at_idx").on(table.removedAt),
   ],
 );

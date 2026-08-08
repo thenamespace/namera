@@ -19,16 +19,21 @@ export const decodeOrganizationRole = (
   organizationRole: OrganizationRoleRow,
   systemRole?: SystemRoleRow | null,
 ): OrganizationRole => {
-  const decodedRole = Schema.decodeSync(OrganizationRole)(organizationRole as any);
-
-  if (decodedRole.type !== "system" || systemRole === null) {
-    return decodedRole;
+  if (organizationRole.systemRoleId === null) {
+    return Schema.decodeSync(OrganizationRole)({
+      ...organizationRole,
+      type: "custom",
+    } as any);
   }
 
+  if (systemRole === null || systemRole === undefined) {
+    throw new Error("System organization role is missing its system role");
+  }
   const decodedSystemRole = Schema.decodeSync(SystemRole)(systemRole as any);
 
   return Schema.decodeSync(OrganizationRole)({
-    ...decodedRole,
+    ...organizationRole,
+    type: "system",
     key: decodedSystemRole.key,
     metadata: decodedSystemRole.metadata,
     permissions: decodedSystemRole.permissions,

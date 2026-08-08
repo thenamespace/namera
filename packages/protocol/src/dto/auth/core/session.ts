@@ -20,7 +20,7 @@ export const ListSessionsRequest = Schema.Void;
 export const ListSessionsResponse = Schema.Array(GetSessionResponse);
 
 export const SetActiveOrganizationRequest = Schema.Struct({
-  id: OrganizationId,
+  organizationId: OrganizationId,
 });
 export const SetActiveOrganizationResponse = Schema.Void;
 

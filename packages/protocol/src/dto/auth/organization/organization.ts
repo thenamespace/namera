@@ -1,12 +1,12 @@
 import { Schema, Struct } from "effect";
 
 import { OrganizationId } from "#/common/index";
-import { Organization, OrganizationInsert } from "#/model/index";
+import { Organization, OrganizationInsert, OrganizationUpdate } from "#/model/index";
 
 import { GetOrganizationMemberResponse } from "./member.js";
 
 export const GetOrganizationRequest = Schema.Struct({
-  id: OrganizationId,
+  organizationId: OrganizationId,
 });
 export const GetOrganizationResponse = Organization.mapFields(
   Struct.pick(["id", "plan", "metadata"]),
@@ -22,7 +22,7 @@ export const ListUserOrganizationsResponse = Schema.Array(
   }),
 );
 
-export const UpdateOrganizationRequest = Organization.mapFields(Struct.pick(["metadata"]));
+export const UpdateOrganizationRequest = OrganizationUpdate;
 export const UpdateOrganizationResponse = GetOrganizationResponse;
 
 export type GetOrganizationRequest = typeof GetOrganizationRequest.Type;

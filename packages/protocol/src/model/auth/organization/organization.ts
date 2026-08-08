@@ -2,7 +2,6 @@ import { Schema, Struct } from "effect";
 
 import { OrganizationId, UserId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName, TimestampFields } from "#/model/common";
-import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
 export const OrganizationMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -19,13 +18,15 @@ export const Organization = Schema.Struct({
   createdById: UserId,
 }).mapFields(Struct.assign(TimestampFields));
 
-export const OrganizationUpdate = createUpdateSchema(Organization);
-export const OrganizationInsert = createInsertSchema(
-  Organization,
-  "metadata",
-  "plan",
-  "createdById",
-);
+export const OrganizationInsert = Schema.Struct({
+  metadata: OrganizationMetadata,
+  plan: Schema.optionalKey(OrganizationPlan),
+  createdById: UserId,
+});
+
+export const OrganizationUpdate = Schema.Struct({
+  metadata: OrganizationMetadata,
+});
 
 export type OrganizationMetadata = typeof OrganizationMetadata.Type;
 export type OrganizationPlan = typeof OrganizationPlan.Type;

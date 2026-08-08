@@ -4,6 +4,7 @@ import { InvitationId } from "#/common/index";
 import { Invitation } from "#/model/index";
 
 import { GetUserResponse } from "../core/index.js";
+import { GetOrganizationResponse } from "./organization.js";
 import { GetOrganizationRoleResponse } from "./role.js";
 
 export const GetInvitationRequest = Schema.Struct({
@@ -22,6 +23,7 @@ export const GetInvitationResponse = Schema.Struct({
     ]),
   ),
   inviter: GetUserResponse,
+  organization: GetOrganizationResponse,
   organizationRole: GetOrganizationRoleResponse,
 });
 

@@ -11,9 +11,7 @@ export const systemRole = authSchema.table(
   "system_role",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<SystemRoleId>(),
-    key: text("key", { enum: ["owner", "admin", "member"] })
-      .notNull()
-      .$type<SystemRoleKey>(),
+    key: text("key").notNull().$type<SystemRoleKey>(),
     metadata: jsonb("metadata").notNull().$type<SystemRoleMetadata>(),
     permissions: text("permissions").array().notNull().$type<Permission>(),
     ...timestamps,

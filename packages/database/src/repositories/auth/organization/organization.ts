@@ -3,7 +3,12 @@ import { Context, Effect, Layer, Schema } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
 import { type OrganizationId, type UserId } from "@namera-ai/protocol";
-import { Organization, OrganizationInsert, OrganizationUpdate } from "@namera-ai/protocol/model";
+import {
+  Organization,
+  OrganizationInsert,
+  type OrganizationMetadata,
+  OrganizationUpdate,
+} from "@namera-ai/protocol/model";
 import { eq } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
@@ -13,11 +18,13 @@ import { organization } from "#/schema/index";
 export interface OrganizationRepositoryService {
   insert: (data: OrganizationInsert) => Effect.Effect<Organization, DatabaseError>;
   findById: (id: OrganizationId) => Effect.Effect<Organization | undefined, DatabaseError>;
-  findOrgsCreatedByUserId: (userId: UserId) => Effect.Effect<Array<Organization>, DatabaseError>;
+  findOrgsCreatedByUserId: (
+    userId: UserId,
+  ) => Effect.Effect<ReadonlyArray<Organization>, DatabaseError>;
   update: (
     orgId: OrganizationId,
-    data: OrganizationUpdate,
-  ) => Effect.Effect<Organization, DatabaseError>;
+    metadata: OrganizationMetadata,
+  ) => Effect.Effect<Organization | undefined, DatabaseError>;
 }
 
 export class OrganizationRepository extends Context.Service<
@@ -62,16 +69,16 @@ export class OrganizationRepository extends Context.Service<
 
           return [...Schema.decodeSync(Schema.Array(Organization))(res)];
         }, mapToDatabaseError),
-        update: Effect.fn("updateOrganization")(function* (orgId, data) {
+        update: Effect.fn("updateOrganization")(function* (orgId, metadata) {
           const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(OrganizationUpdate)(data);
+          const parsed = Schema.encodeSync(OrganizationUpdate)({ metadata });
           const res = yield* db
             .update(organization)
             .set(parsed as any)
             .where(eq(organization.id, orgId))
             .returning();
 
-          return Schema.decodeSync(Organization)(res[0]!);
+          return res[0] ? Schema.decodeSync(Organization)(res[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),
