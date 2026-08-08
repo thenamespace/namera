@@ -49,17 +49,26 @@ repository operations but does not coordinate the complete sign-in use case.
 ### Application package
 
 Owns the `MagicLinkService` workflow, policy, transaction boundaries, rate-limit
-decisions, and mapping from internal failures to public errors.
+decisions, email-delivery worker program, and mapping from internal failures to
+public errors.
+
+### Email package
+
+Owns the provider-neutral `EmailService`, email message and template models, the
+Resend adapter, webhook signature verification, and provider-error mapping. It does
+not decide when a magic link should be issued or coordinate authentication state.
 
 ### API package
 
 Owns HTTP routes, cookies, security headers, request decoding, and redirects. Route
 handlers delegate business behavior to `MagicLinkService`.
 
-### Infrastructure
+### Server application
 
-Owns the email provider, outbox worker, rate-limit backend, secrets, telemetry, and
-scheduled cleanup of expired records.
+`apps/server` is the composition root. It reads and validates environment variables,
+selects the Resend, database, rate-limit, encryption, and OpenTelemetry live layers,
+provides them to the application and API layers, and launches the HTTP server and
+application background programs. It contains no authentication business rules.
 
 ## Data model
 
@@ -153,16 +162,33 @@ Expected dependencies:
 - `UserRepository`;
 - `SessionRepository`;
 - `Transaction`;
-- `EmailOutboxRepository` or `EmailService`;
+- `EmailOutboxRepository`;
 - `RateLimiter`;
 - cryptographic random and hashing services;
 - Effect `Clock`;
 - validated authentication configuration.
 
+`MagicLinkService` must not call Resend directly. A separate application
+`EmailDeliveryWorker` depends on `EmailOutboxRepository`, encryption, `EmailService`,
+`Clock`, and retry policy. This keeps the request transaction short and makes email
+delivery durable and independently testable.
+
 Use `Effect.fn` for named operations and spans. Use `Clock` rather than `Date.now()`
 so expiration behavior is deterministic in tests. Annotate telemetry with a
-verification selector or salted correlation hash, never the raw token, code, or
-session credential.
+request or trace identifier and safe outcome fields, never the verification
+selector, email, token, code, or session credential.
+
+### Effect workflow decision
+
+Use ordinary request-scoped Effects for requesting and verifying a magic link. Use
+the database outbox and an Effect background worker with schedules, leases, and
+bounded retry for email delivery. Do not create one durable workflow that waits for
+the user to open the email: verification is a later independent HTTP request
+correlated through the verification record.
+
+Do not add `@effect/workflow` for the initial implementation. Reassess it only when
+Namera has long-running multi-step processes that must suspend and resume across
+process restarts, such as approval chains or timed onboarding sequences.
 
 Suggested repository operations:
 
@@ -240,9 +266,10 @@ The email should contain:
 - a statement that no action is needed if the recipient did not request it;
 - the expected product and domain so phishing is easier to identify.
 
-Use a dedicated transactional sending domain with SPF, DKIM, and DMARC configured.
-Track provider delivery events without putting credentials in event metadata.
-Handle bounces and suppression-list responses, and expose resend behavior in the UI.
+Use Resend through the provider-neutral email service and pass the outbox
+idempotency key on every send. Track provider delivery events without putting
+credentials in event metadata. Handle bounces and suppression-list responses, and
+expose resend behavior in the UI.
 
 ## Link landing flow
 
