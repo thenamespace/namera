@@ -185,3 +185,6 @@ gas-report.*
 
 # Local Deployments
 broadcast/**/31337
+
+# Research
+research

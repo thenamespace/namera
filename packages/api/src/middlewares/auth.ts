@@ -19,6 +19,5 @@ export class Authorization extends HttpApiMiddleware.Service<
       in: "cookie",
       key: "auth-token",
     }),
-    bearerToken: HttpApiSecurity.bearer,
   },
 }) {}
