@@ -2,7 +2,7 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, Email, UserId } from "@namera-ai/protocol";
-import { User, UserInsert } from "@namera-ai/protocol/model";
+import { User, UserInsert, type UserMetadata, UserUpdate } from "@namera-ai/protocol/model";
 import { eq } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
@@ -17,6 +17,10 @@ export interface UserRepositoryService {
   markEmailVerifiedAndLogin: (
     userId: UserId,
     loggedInAt: DateTime.Utc,
+  ) => Effect.Effect<User | undefined, DatabaseError>;
+  updateMetadata: (
+    userId: UserId,
+    metadata: UserMetadata,
   ) => Effect.Effect<User | undefined, DatabaseError>;
 }
 
@@ -94,6 +98,17 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
               emailVerified: true,
               lastLoginAt: encodedLoggedInAt,
             })
+            .where(eq(user.id, userId))
+            .returning();
+
+          return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
+        }, mapToDatabaseError),
+        updateMetadata: Effect.fn("UserRepository.updateMetadata")(function* (userId, metadata) {
+          const db = yield* transactionOrDatabase(database);
+          const parsed = Schema.encodeSync(UserUpdate)({ metadata });
+          const rows = yield* db
+            .update(user)
+            .set(parsed as any)
             .where(eq(user.id, userId))
             .returning();
 

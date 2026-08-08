@@ -32,6 +32,9 @@ export interface AuthPolicy {
     readonly requestBySubnet: RateLimitPolicy;
     readonly verifyByIp: RateLimitPolicy;
   };
+  readonly invitation: {
+    readonly timeToLive: Duration.Duration;
+  };
 }
 
 export interface RateLimitPolicy {
@@ -86,5 +89,8 @@ export const authPolicy = {
       limit: 20,
       window: Duration.minutes(5),
     },
+  },
+  invitation: {
+    timeToLive: Duration.days(7),
   },
 } as const satisfies AuthPolicy;

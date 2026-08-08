@@ -175,9 +175,18 @@ importers:
 
   packages/application:
     dependencies:
+      '@namera-ai/database':
+        specifier: workspace:*
+        version: link:../database
+      '@namera-ai/emails':
+        specifier: workspace:*
+        version: link:../emails
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       '@namera-ai/utils':
         specifier: workspace:*
         version: link:../utils

@@ -17,6 +17,7 @@ export const Session = Schema.Struct({
 export const SessionInsert = Schema.Struct({
   userId: UserId,
   tokenHash: NonEmptyString,
+  activeOrganizationId: Schema.optionalKey(OrganizationId),
   ipAddress: Schema.optionalKey(Schema.String),
   userAgent: Schema.optionalKey(Schema.String),
   expiresAt: Schema.DateTimeUtcFromDate,
