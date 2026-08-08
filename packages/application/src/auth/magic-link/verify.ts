@@ -50,7 +50,13 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
         verification.revokedAt !== null ||
         DateTime.toEpochMillis(verification.expiresAt) <= DateTime.toEpochMillis(now)
       ) {
-        yield* Metric.update(magicLinkVerificationResults, "invalid");
+        yield* Metric.update(
+          magicLinkVerificationResults,
+          verification &&
+            DateTime.toEpochMillis(verification.expiresAt) <= DateTime.toEpochMillis(now)
+            ? "expired"
+            : "invalid",
+        );
         return yield* new MagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
       }
 

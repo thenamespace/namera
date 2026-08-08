@@ -1,4 +1,4 @@
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
@@ -12,6 +12,7 @@ import {
   type UserId,
 } from "@namera-ai/protocol";
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
+import { organizationInvitationEvents } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
 
@@ -132,6 +133,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
       if (!invitation) {
         return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
       }
+      yield* Metric.update(organizationInvitationEvents, "created");
       yield* Effect.logInfo("invitation.created");
       return invitation;
     },
@@ -182,6 +184,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           );
         }),
       );
+      yield* Metric.update(organizationInvitationEvents, "accepted");
       yield* Effect.logInfo("invitation.accepted");
     },
     Effect.catchTag("DatabaseError", Effect.die),
@@ -197,6 +200,8 @@ export const makeInvitationApplication = Effect.gen(function* () {
       if (!rejected) {
         return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
       }
+      yield* Metric.update(organizationInvitationEvents, "rejected");
+      yield* Effect.logInfo("invitation.rejected");
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -210,6 +215,8 @@ export const makeInvitationApplication = Effect.gen(function* () {
       if (!canceled) {
         return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
       }
+      yield* Metric.update(organizationInvitationEvents, "canceled");
+      yield* Effect.logInfo("invitation.canceled");
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

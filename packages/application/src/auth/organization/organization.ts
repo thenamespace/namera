@@ -1,4 +1,4 @@
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
@@ -14,6 +14,7 @@ import type {
   OrganizationRole,
   User,
 } from "@namera-ai/protocol/model";
+import { organizationCreations } from "@namera-ai/telemetry";
 
 import { createOrganizationWithOwner } from "./helpers.js";
 
@@ -63,6 +64,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
           return { ...created, metadata };
         }),
       );
+      yield* Metric.update(organizationCreations, 1);
       yield* Effect.logInfo("organization.created");
       return organization;
     },
