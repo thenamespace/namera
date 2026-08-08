@@ -7,6 +7,11 @@ export class CurrentActor extends Context.Service<CurrentActor, CurrentActorResp
   "@namera-ai/api/CurrentActor",
 ) {}
 
+export const AuthTokenSecurity = HttpApiSecurity.apiKey({
+  in: "cookie",
+  key: "auth-token",
+});
+
 export class Authorization extends HttpApiMiddleware.Service<
   Authorization,
   {
@@ -15,9 +20,6 @@ export class Authorization extends HttpApiMiddleware.Service<
 >()("@namera-ai/api/Authorization", {
   error: HttpApiError.UnauthorizedNoContent,
   security: {
-    authToken: HttpApiSecurity.apiKey({
-      in: "cookie",
-      key: "auth-token",
-    }),
+    authToken: AuthTokenSecurity,
   },
 }) {}

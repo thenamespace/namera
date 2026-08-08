@@ -4,7 +4,15 @@ import { HttpApiError } from "effect/unstable/httpapi";
 import { Authorization, CurrentActor } from "@namera-ai/api";
 import { cryptoPurpose, CryptoService } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
-import type { CurrentActorResponse, GetOrganizationRoleResponse } from "@namera-ai/protocol/dto";
+import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
+
+import {
+  toMemberResponse,
+  toOrganizationResponse,
+  toRoleResponse,
+  toSessionResponse,
+  toUserResponse,
+} from "#/helpers/dto";
 
 export const AuthorizationLive = Layer.effect(
   Authorization,
@@ -35,62 +43,16 @@ export const AuthorizationLive = Layer.effect(
           return yield* new HttpApiError.Unauthorized();
         }
 
-        const user = {
-          id: membership.user.id,
-          email: membership.user.email,
-          emailVerified: membership.user.emailVerified,
-          metadata: membership.user.metadata,
-          lastLoginAt: membership.user.lastLoginAt,
-        };
-        const organization = {
-          id: membership.organization.id,
-          plan: membership.organization.plan,
-          metadata: membership.organization.metadata,
-        };
-        const organizationRole: GetOrganizationRoleResponse =
-          membership.organizationRole.type === "system"
-            ? {
-                id: membership.organizationRole.id,
-                key: membership.organizationRole.key,
-                metadata: membership.organizationRole.metadata,
-                type: membership.organizationRole.type,
-                permissions: membership.organizationRole.permissions,
-                systemRoleId: membership.organizationRole.systemRoleId,
-              }
-            : {
-                id: membership.organizationRole.id,
-                key: membership.organizationRole.key,
-                metadata: membership.organizationRole.metadata,
-                type: membership.organizationRole.type,
-                permissions: membership.organizationRole.permissions,
-                systemRoleId: membership.organizationRole.systemRoleId,
-              };
-        const organizationMember = {
-          id: membership.organizationMember.id,
-          userId: membership.organizationMember.userId,
-          organizationId: membership.organizationMember.organizationId,
-          organizationRoleId: membership.organizationMember.organizationRoleId,
-          joinedAt: membership.organizationMember.joinedAt,
-        };
+        const user = toUserResponse(membership.user);
+        const organization = toOrganizationResponse(membership.organization);
+        const organizationRole = toRoleResponse(membership.organizationRole);
         const actor: CurrentActorResponse = {
           type: "user",
           data: {
-            session: {
-              id: session.id,
-              userId: session.userId,
-              activeOrganizationId: session.activeOrganizationId,
-              ipAddress: session.ipAddress,
-              userAgent: session.userAgent,
-              expiresAt: session.expiresAt,
-              revokedAt: session.revokedAt,
-            },
+            session: toSessionResponse(session),
             user,
             organization,
-            member: {
-              organizationMember,
-              user,
-              organizationRole,
-            },
+            member: toMemberResponse(membership),
             role: organizationRole,
           },
         };

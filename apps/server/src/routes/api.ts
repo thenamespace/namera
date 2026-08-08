@@ -3,7 +3,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { NameraApi } from "@namera-ai/api";
 
-import { ServicesLive } from "#/layers/services";
+import { ApplicationLive, ServicesLive } from "#/layers/services";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import {
   InvitationRoutes,
@@ -23,7 +23,11 @@ const ApiHandlers = Layer.mergeAll(
   OrganizationRoutes,
   SessionRoutes,
   UserRoutes,
-).pipe(Layer.provide(AuthorizationLive), Layer.provide(ServicesLive));
+).pipe(
+  Layer.provide(AuthorizationLive),
+  Layer.provide(ApplicationLive),
+  Layer.provide(ServicesLive),
+);
 
 export const ApiRoutes = HttpApiBuilder.layer(NameraApi, {
   openapiPath: "/openapi.json",

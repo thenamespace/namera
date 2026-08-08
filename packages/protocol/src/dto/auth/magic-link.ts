@@ -49,7 +49,9 @@ export const VerifyMagicLinkRequest = Schema.Union([
   }),
 ]);
 
-export const VerifyMagicLinkResponse = Schema.Void;
+export const VerifyMagicLinkResponse = Schema.Struct({
+  returnTo: MagicLinkReturnTo,
+});
 
 export type MagicLinkToken = typeof MagicLinkToken.Type;
 export type MagicLinkCode = typeof MagicLinkCode.Type;
