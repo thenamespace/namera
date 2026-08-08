@@ -10,6 +10,8 @@ import {
   UserGroup,
 } from "./routes/index.js";
 
+export * from "./middlewares/index.js";
+
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     HealthGroup,

@@ -59,7 +59,7 @@ export const authPolicy = {
     rotateAfter: Duration.days(1),
   },
   cookie: {
-    name: "__Host-namera-session",
+    name: "auth-token",
     path: "/",
     httpOnly: true,
     secure: true,

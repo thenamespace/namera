@@ -8,18 +8,20 @@
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
-    "dev": "node --watch --conditions=namera-source --experimental-strip-types src/index.ts",
+    "dev": "node --env-file-if-exists=.env --watch --conditions=namera-source --experimental-strip-types src/index.ts",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
     "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
-    "start": "node dist/index.js",
+    "start": "node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/application": "workspace:*",
+    "@namera-ai/database": "workspace:*",
+    "@namera-ai/emails": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "effect": "catalog:"
