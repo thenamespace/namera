@@ -36,6 +36,7 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@namera-ai/utils": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

@@ -21,7 +21,6 @@ export interface CryptoServiceValue {
 
 export class CryptoError extends Schema.TaggedError<CryptoError>()("CryptoError", {
   reason: Schema.Literals([
-    "INVALID_CONFIGURATION",
     "RANDOM_GENERATION_FAILED",
     "HASH_FAILED",
     "HMAC_FAILED",

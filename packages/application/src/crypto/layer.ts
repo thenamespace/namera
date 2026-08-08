@@ -1,4 +1,6 @@
-import { Context, Effect, Layer, Redacted } from "effect";
+import { Context, Crypto, Effect, Layer, Redacted } from "effect";
+
+import { Base64 } from "@namera-ai/utils";
 
 import { CryptoConfig } from "./config.js";
 import {
@@ -13,16 +15,7 @@ const textDecoder = new TextDecoder();
 const encryptionVersion = "v1";
 
 const encodeText = (value: string) => textEncoder.encode(value);
-const encodeBase64Url = (value: Uint8Array) =>
-  btoa(String.fromCharCode(...value))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-const decodeBase64Url = (value: string) => {
-  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
-  const decoded = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
-  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-};
+const decodeBase64Url = (value: string) => new Uint8Array(Base64.toUint8Array(value));
 const domainSeparatedValue = ({ purpose, value }: CryptoInput) =>
   encodeText(`${purpose.length}:${purpose}${value}`);
 
@@ -36,16 +29,10 @@ export class CryptoService extends Context.Service<CryptoService, CryptoServiceV
     CryptoService,
     Effect.gen(function* () {
       const config = yield* CryptoConfig;
+      const platformCrypto = yield* Crypto.Crypto;
       const webCrypto = globalThis.crypto;
       const hmacSecret = Redacted.value(config.hmacKey);
       const encryptionSecret = Redacted.value(config.encryptionKey);
-
-      if (hmacSecret === encryptionSecret) {
-        return yield* new CryptoError({
-          reason: "INVALID_CONFIGURATION",
-          cause: new Error("HMAC and encryption keys must be different"),
-        });
-      }
 
       const [hmacKey, encryptionKey] = yield* Effect.all([
         Effect.tryPromise({
@@ -73,53 +60,27 @@ export class CryptoService extends Context.Service<CryptoService, CryptoServiceV
       ]);
 
       const randomToken = Effect.fn("CryptoService.randomToken")(function* (byteLength = 32) {
-        if (!Number.isSafeInteger(byteLength) || byteLength <= 0) {
-          return yield* new CryptoError({
-            reason: "RANDOM_GENERATION_FAILED",
-            cause: new Error("Token byte length must be a positive safe integer"),
-          });
-        }
+        const bytes = yield* platformCrypto
+          .randomBytes(byteLength)
+          .pipe(Effect.mapError(mapCryptoError("RANDOM_GENERATION_FAILED")));
 
-        return yield* Effect.try({
-          try: () => encodeBase64Url(webCrypto.getRandomValues(new Uint8Array(byteLength))),
-          catch: mapCryptoError("RANDOM_GENERATION_FAILED"),
-        });
+        return Base64.fromUint8Array(bytes, true);
       });
 
       const randomCode = Effect.fn("CryptoService.randomCode")(function* (digits = 8) {
-        if (!Number.isSafeInteger(digits) || digits <= 0) {
-          return yield* new CryptoError({
-            reason: "RANDOM_GENERATION_FAILED",
-            cause: new Error("Code length must be a positive safe integer"),
-          });
-        }
+        const values = yield* Effect.all(
+          Array.from({ length: digits }, () => platformCrypto.randomIntBetween(0, 9)),
+        );
 
-        return yield* Effect.try({
-          try: () => {
-            let code = "";
-
-            while (code.length < digits) {
-              const bytes = webCrypto.getRandomValues(new Uint8Array(digits - code.length));
-              for (const byte of bytes) {
-                if (byte < 250 && code.length < digits) {
-                  code += String(byte % 10);
-                }
-              }
-            }
-
-            return code;
-          },
-          catch: mapCryptoError("RANDOM_GENERATION_FAILED"),
-        });
+        return values.join("");
       });
 
       const hash = Effect.fn("CryptoService.hash")(function* (input: CryptoInput) {
-        const digest = yield* Effect.tryPromise({
-          try: () => webCrypto.subtle.digest("SHA-256", domainSeparatedValue(input)),
-          catch: mapCryptoError("HASH_FAILED"),
-        });
+        const digest = yield* platformCrypto
+          .digest("SHA-256", domainSeparatedValue(input))
+          .pipe(Effect.mapError(mapCryptoError("HASH_FAILED")));
 
-        return encodeBase64Url(new Uint8Array(digest));
+        return Base64.fromUint8Array(digest, true);
       });
 
       const hmac = Effect.fn("CryptoService.hmac")(function* (input: CryptoInput) {
@@ -128,7 +89,7 @@ export class CryptoService extends Context.Service<CryptoService, CryptoServiceV
           catch: mapCryptoError("HMAC_FAILED"),
         });
 
-        return encodeBase64Url(new Uint8Array(signature));
+        return Base64.fromUint8Array(new Uint8Array(signature), true);
       });
 
       const verifyHmac = Effect.fn("CryptoService.verifyHmac")(function* (
@@ -166,7 +127,7 @@ export class CryptoService extends Context.Service<CryptoService, CryptoServiceV
           catch: mapCryptoError("ENCRYPTION_FAILED"),
         });
 
-        return `${encryptionVersion}.${encodeBase64Url(iv)}.${encodeBase64Url(new Uint8Array(ciphertext))}`;
+        return `${encryptionVersion}.${Base64.fromUint8Array(iv, true)}.${Base64.fromUint8Array(new Uint8Array(ciphertext), true)}`;
       });
 
       const decrypt = Effect.fn("CryptoService.decrypt")(function* (input: CryptoInput) {
