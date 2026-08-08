@@ -35,3 +35,6 @@ minimumReleaseAgeExclude:
   - "effect"
   - "@effect/*"
   - "@namera-ai/*"
+
+patchedDependencies:
+  drizzle-orm@1.0.0-rc.4: patches/drizzle-orm@1.0.0-rc.4.patch

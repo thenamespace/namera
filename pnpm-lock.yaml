@@ -64,6 +64,9 @@ catalogs:
       specifier: 6.0.3
       version: 6.0.3
 
+patchedDependencies:
+  drizzle-orm@1.0.0-rc.4: 1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847
+
 importers:
 
   .:
@@ -116,6 +119,12 @@ importers:
       '@namera-ai/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@namera-ai/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@namera-ai/emails':
+        specifier: workspace:*
+        version: link:../../packages/emails
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
@@ -193,7 +202,7 @@ importers:
         version: link:../protocol
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)
+        version: 1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
@@ -2692,7 +2701,7 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.6.1
 
-  drizzle-orm@1.0.0-rc.4(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0):
+  drizzle-orm@1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0):
     optionalDependencies:
       '@effect/sql-pg': 4.0.0-beta.105(effect@4.0.0-beta.105)
       '@types/pg': 8.20.4
