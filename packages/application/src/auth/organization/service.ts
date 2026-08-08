@@ -230,6 +230,11 @@ export class OrganizationService extends Context.Service<
             );
             if (member) return yield* new InvitationError({ code: "ALREADY_A_MEMBER" });
           }
+          const existingInvitation = (yield* repository.auth.invitation.findPendingForOrgId(
+            input.organizationId,
+            now,
+          )).find((item) => item.invitation.email === input.email);
+          if (existingInvitation) return existingInvitation;
 
           const invitation = yield* transaction.run(
             Effect.gen(function* () {

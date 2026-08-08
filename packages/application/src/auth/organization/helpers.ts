@@ -4,13 +4,39 @@ import type { RepositoryService } from "@namera-ai/database";
 import { OrganizationError } from "@namera-ai/protocol";
 import type { OrganizationId, UserId } from "@namera-ai/protocol";
 
+const manageOrganizationPermissions = [
+  "organization:update",
+  "invitation:list",
+  "invitation:create",
+  "invitation:cancel",
+  "member:list",
+] as const;
+
+const systemRoles = [
+  {
+    key: "owner",
+    metadata: { version: 1, name: "Owner" },
+    permissions: manageOrganizationPermissions,
+  },
+  {
+    key: "admin",
+    metadata: { version: 1, name: "Admin" },
+    permissions: manageOrganizationPermissions,
+  },
+  {
+    key: "member",
+    metadata: { version: 1, name: "Member" },
+    permissions: ["member:list"],
+  },
+] as const;
+
 export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwner")(function* (
   repository: RepositoryService,
   userId: UserId,
   name: string,
 ) {
-  const systemRoles = yield* repository.auth.role.findSystemRoles();
-  const ownerSystemRole = systemRoles.find((role) => role.key === "owner");
+  const availableRoles = yield* repository.auth.role.ensureSystemRoles(systemRoles);
+  const ownerSystemRole = availableRoles.find((role) => role.key === "owner");
   if (!ownerSystemRole) {
     return yield* new OrganizationError({
       code: "ORGANIZATION_CREATE_FAILED",
@@ -23,7 +49,7 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
     metadata: { version: 1, name },
   });
 
-  const roles = yield* Effect.forEach(systemRoles, (role) =>
+  const roles = yield* Effect.forEach(availableRoles, (role) =>
     repository.auth.role.insert({
       organizationId: organization.id,
       systemRoleId: role.id,

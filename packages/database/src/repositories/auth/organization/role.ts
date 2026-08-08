@@ -7,8 +7,9 @@ import {
   OrganizationRoleInsert,
   OrganizationRoleUpdate,
   SystemRole,
+  SystemRoleInsert,
 } from "@namera-ai/protocol/model";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -17,7 +18,7 @@ import {
   decodeOrganizationRole,
   type OrganizationRoleRow,
 } from "#/repositories/auth/organization/common";
-import { organizationRole } from "#/schema/index";
+import { organizationRole, systemRole as systemRoleTable } from "#/schema/index";
 
 export interface OrganizationRoleRepositoryService {
   insert: (data: OrganizationRoleInsert) => Effect.Effect<OrganizationRole, DatabaseError>;
@@ -29,6 +30,9 @@ export interface OrganizationRoleRepositoryService {
     orgId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<OrganizationRole>, DatabaseError>;
   findSystemRoles: () => Effect.Effect<ReadonlyArray<SystemRole>, DatabaseError>;
+  ensureSystemRoles: (
+    roles: ReadonlyArray<SystemRoleInsert>,
+  ) => Effect.Effect<ReadonlyArray<SystemRole>, DatabaseError>;
   updateCustom: (
     organizationId: OrganizationId,
     organizationRoleId: OrganizationRoleId,
@@ -128,6 +132,22 @@ export class OrganizationRoleRepository extends Context.Service<
           const res = yield* db.query.systemRole.findMany();
 
           return [...Schema.decodeSync(Schema.Array(SystemRole))(res as any)];
+        }, mapToDatabaseError),
+        ensureSystemRoles: Effect.fn("ensureSystemRoles")(function* (roles) {
+          const db = yield* transactionOrDatabase(database);
+          const values = roles.map((role) => Schema.encodeSync(SystemRoleInsert)(role));
+          yield* db
+            .insert(systemRoleTable)
+            .values(values as any)
+            .onConflictDoUpdate({
+              target: systemRoleTable.key,
+              set: {
+                metadata: sql`excluded.metadata`,
+                permissions: sql`excluded.permissions`,
+              },
+            });
+          const rows = yield* db.query.systemRole.findMany();
+          return [...Schema.decodeSync(Schema.Array(SystemRole))(rows as any)];
         }, mapToDatabaseError),
         updateCustom: Effect.fn("updateCustomOrganizationRole")(function* (
           organizationId,
