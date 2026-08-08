@@ -9,7 +9,7 @@ import { TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
 import { CorsMiddleware } from "#/middlewares/index";
-import { ApiReferenceRoutes, ApiRoutes } from "#/routes/index";
+import { ApiReferenceRoutes, ApiRoutes, RootRoutes } from "#/routes/index";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
@@ -23,7 +23,7 @@ const NodeServerLive = Layer.unwrap(
   }),
 ).pipe(Layer.provide(DatabaseMigration.layer));
 
-const Routes = Layer.mergeAll(ApiReferenceRoutes, ApiRoutes, CorsMiddleware);
+const Routes = Layer.mergeAll(ApiReferenceRoutes, ApiRoutes, CorsMiddleware, RootRoutes);
 
 export const ServerLive = HttpRouter.serve(Routes, {
   middleware: HttpMiddleware.tracer,
