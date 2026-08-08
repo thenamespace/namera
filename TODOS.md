@@ -1,289 +1,32 @@
 # TODOs
 
-## Code foundations before magic-link authentication
-
-The application package is the use-case and composition boundary. Packages below
-it provide contracts or adapters; `apps/server` is the only composition root that
-reads environment variables and provides production layers.
-
-```text
-apps/server
-  └── provides config, runtime, telemetry, database, Resend, and worker layers
-        ├── packages/api           HTTP routes and cookies
-        └── packages/application   use cases and background programs
-              ├── packages/database
-              ├── packages/emails
-              ├── packages/protocol
-              └── packages/utils
-```
-
-Dependency direction must remain one-way. `application` must not import `api` or
-`apps/server`, and infrastructure packages must not import application services.
-
-### Workspace structure
-
-- [x] Finish and commit the `@namera-ai/application` package scaffold.
-- [x] Create `@namera-ai/emails` for typed hosted-template email delivery and the Resend adapter.
-- [x] Create `apps/server` as the Node runtime and production Layer composition root.
-- [ ] Add explicit package exports and `namera-source` development conditions for the new packages.
-- [ ] Add package references only where required by the repository TypeScript build strategy.
-- [ ] Add `application`, `email`, and `server` tasks to Turbo build, typecheck, lint, and test pipelines.
-- [ ] Add architecture tests or dependency rules that prevent reverse imports and package cycles.
-
-### Protocol contracts
-
-- [x] Reuse the branded verification selector and define validated, unbranded magic-link token and code schemas without exposing persistence details.
-- [x] Define request-email, verify-link, and verify-code DTOs as readonly Effect schemas.
-- [x] Define public responses that do not reveal whether an email belongs to a user.
-- [x] Replace detailed public token failures with `INVALID_OR_EXPIRED_LINK`, `TOO_MANY_ATTEMPTS`, and `SIGN_IN_NOT_ALLOWED`.
-- [ ] Keep Resend, outbox, hashing, database, and tracing errors out of the public protocol package.
-- [x] Define a safe relative `ReturnTo` schema and reject absolute, protocol-relative, and malformed paths.
-
-### Application configuration
-
-- [x] Define `AuthConfig` in `packages/application` containing already-validated runtime values.
-- [x] Include magic-link TTL, code-attempt limit, resend cooldown, session TTL, cookie name, API public origin, dashboard return path, and allowed return paths.
-- [x] Represent secrets with `Redacted` values and keep HMAC and encryption keys separate.
-- [x] Do not call `Config.*`, `process.env`, or Node environment APIs inside application use cases.
-- [ ] Create the production `AuthConfig.layer` in `apps/server` by decoding environment variables once at startup.
-- [ ] Create deterministic test configuration with short TTLs and fixed safe origins.
-- [ ] Fail server startup when required configuration is missing or invalid.
-
-Suggested ownership:
-
-```text
-packages/application  AuthConfig contract and validated value type
-packages/emails       EmailConfig contract and Resend implementation
-apps/server           Config decoding and live Layer construction
-```
-
-### Emails package and Resend adapter
-
-- [x] Define an `EmailService` using the repository's class-based `Context.Service` convention.
-- [x] Define a closed template registry whose `type` discriminant determines the exact required variables.
-- [x] Define readonly recipients, common send properties, tags, template variables, and branded provider-message IDs.
-- [x] Define typed email failure reasons for request failure, provider rejection, and invalid provider responses.
-- [x] Define `EmailConfig` with `Config.all`, a redacted Resend API key, and default sender values.
-- [x] Add the `resend` dependency only to `@namera-ai/emails`.
-- [x] Implement `EmailService.layer` with `Effect.tryPromise` and explicit Resend error mapping.
-- [x] Accept a stable Resend idempotency key on every typed send request.
-- [ ] Persist send idempotency keys and delivery state because Resend's provider-side idempotency window is limited to 24 hours.
-- [ ] Implement a `FakeEmail.layer` that records messages for deterministic tests without network calls.
-- [x] Implement a local-development layer that safely previews or captures email instead of using production recipients.
-- [x] Register the `magic-link` hosted-template alias with typed URL, code, and expiry variables.
-- [ ] Add a contract test that detects drift between the local registry and published Resend templates.
-- [ ] Do not add open/click tracking parameters or third-party assets to authentication email templates.
-- [ ] Implement Resend webhook signature verification against the raw request body.
-- [ ] Decode supported Resend delivery, delayed, failed, bounced, and complained events into provider-neutral events.
-- [ ] Deduplicate webhook processing using the provider webhook event ID.
-- [ ] Unit-test Resend success, rejection, throttling, network failure, malformed response, and duplicate webhook cases.
-
-### Database support
-
-- [x] Replace the generic verification value with typed purpose, purpose-specific data, token hash, code HMAC, attempts, expiry, and lifecycle fields.
-- [ ] Add an atomic `invalidatePendingAndInsert` repository operation for resend behavior.
-- [x] Add atomic `incrementAttempts` and conditional `consume` repository operations.
-- [x] Store only a digest of session credentials and add lookup by digest.
-- [x] Add session revocation, expiry, and active-session repository operations.
-- [ ] Add an `email_outbox` table with status, attempts, next-attempt time, lease, provider message ID, idempotency key, and timestamps.
-- [ ] Encrypt any outbox payload containing a raw magic-link secret or code; never store those credentials as plaintext.
-- [ ] Add email-outbox repository operations for enqueue, lease batch, mark sent, reschedule, and mark permanently failed.
-- [ ] Add a webhook-event table or inbox record with a unique provider event ID for idempotent processing.
-- [ ] Add migrations and indexes for verification lookup, verification cleanup, outbox claiming, and webhook deduplication.
-- [ ] Add concurrency tests proving one verification consumer and one outbox worker can win each record.
-
-### Application services
-
-- [x] Implement `MagicLinkService` in `packages/application` using class-based `Context.Service` and named `Effect.fn` operations.
-- [ ] Make `MagicLinkService.request` depend on configuration, repositories, crypto, clock, rate limiting, and the outbox—not directly on Resend.
-- [ ] In one transaction, invalidate prior credentials, insert the new verification, and enqueue the encrypted email payload.
-- [x] Make `MagicLinkService.verify` atomically consume the credential, find or create the user according to policy, and create a fresh session.
-- [x] Keep session hashing and revocation in application services rather than HTTP handlers.
-- [ ] Implement `EmailDeliveryWorker` in `packages/application` using the outbox repository and typed `EmailService`.
-- [ ] Poll or wake the worker with Effect scheduling, lease jobs transactionally, send with Resend idempotency, and apply bounded exponential retry with jitter.
-- [ ] Model permanent Resend rejections separately from retryable transport and rate-limit failures.
-- [ ] Decrypt sensitive email payloads only immediately before delivery and avoid attaching them to errors, logs, spans, or metrics.
-- [ ] Implement `EmailWebhookService` to apply provider-neutral delivery events and suppression decisions.
-- [ ] Export one `ApplicationLive` layer containing application services and one explicit background-program layer for workers.
-- [ ] Provide repositories and adapters into application layers with `Layer.provide`; do not expose raw infrastructure through `Layer.provideMerge`.
-
-### Effect workflow decision
-
-- [x] Use ordinary `Effect` operations for magic-link request and verification; they are short request-scoped transactions.
-- [ ] Use a database outbox plus `EmailDeliveryWorker` for durable email retries and crash recovery.
-- [x] Do not make one workflow wait for the user to click the email; verification is a separate authenticated request correlated by the database record.
-- [x] Do not add `@effect/workflow` for the first magic-link implementation.
-- [ ] Reassess `@effect/workflow` only when the product has genuinely long-running, multi-step processes that must suspend and resume across deploys, such as approval chains or timed onboarding sequences.
-- [ ] If durable workflows are adopted later, keep their engine and persistence adapter in the server composition root while workflow definitions remain in `packages/application`.
-
-### API package
-
-- [x] Make auth route handlers depend on application services rather than database repositories.
-- [x] Add the generic magic-link request endpoint.
-- [ ] Add the non-consuming landing `GET` and consuming verification `POST` endpoints.
-- [ ] Add the Resend webhook endpoint with access to the exact raw body required for signature verification.
-- [ ] Map application errors to public protocol errors only at the HTTP boundary.
-- [x] Centralize session-cookie creation and clearing in one server helper.
-- [ ] Set the host-only `__Host-namera-session` cookie only after successful application service completion.
-- [ ] Centralize exact trusted-origin checks and credentialed CORS middleware.
-- [ ] Add request IDs and propagate trace context before invoking route handlers.
-- [x] Keep route handlers thin: decode, call application service, map result, set cookie or response.
-
-### Server composition root
-
-- [ ] Create `apps/server/src/config.ts` as the only environment-variable decoding boundary.
-- [ ] Create focused live layers for database, repositories, auth config, Resend config, email, rate limiting, encryption, telemetry, API, and workers.
-- [x] Compose infrastructure into `ApplicationLive`, then provide application services to `ApiLive`.
-- [ ] Launch the HTTP server and email worker in the same Effect runtime and shared process while keeping them as separately testable layers.
-- [ ] Ensure a failure in one supervised background worker is logged and restarted according to policy instead of silently terminating delivery.
-- [x] Use `NodeRuntime.runMain` or `Layer.launch` for lifecycle, signals, finalizers, and graceful shutdown.
-- [ ] Keep `apps/server` free of business rules; it selects implementations and supplies runtime configuration only.
-- [ ] Add a server composition test that constructs the complete layer graph with test adapters and catches missing dependencies.
-
-Suggested shape:
-
-```ts
-const InfrastructureLive = Layer.mergeAll(
-  DatabaseLive,
-  AuthConfigLive,
-  ResendConfigLive,
-  RateLimiterLive,
-  CryptoLive,
-  TelemetryLive,
-);
-
-const ApplicationLive = Application.layer.pipe(Layer.provide(InfrastructureLive));
-
-const ServerLive = Layer.mergeAll(
-  Api.layer.pipe(Layer.provide(ApplicationLive)),
-  EmailDeliveryWorker.layer.pipe(Layer.provide(ApplicationLive)),
-);
-```
-
-The final implementation may need a shared intermediate layer for repositories
-and adapters. Preserve dependency direction rather than forcing this exact snippet.
-
-### OpenTelemetry, metrics, tracing, and logs
-
-- [ ] Add `@effect/opentelemetry` to `apps/server`; keep exporter SDK dependencies out of application and email packages.
-- [ ] Start with Effect's native OTLP tracer, metrics, and logger layers when exporting directly to an OpenTelemetry collector.
-- [ ] Use the OpenTelemetry `NodeSdk` integration only if the server needs third-party OpenTelemetry SDK instrumentation that native Effect telemetry does not provide.
-- [ ] Configure OTLP endpoints, resource attributes, service name, environment, sampling, batching, and shutdown flush in `apps/server`.
-- [x] Use `Effect.fn("Service.operation")` for application and adapter methods so operations receive consistent spans and stack traces.
-- [ ] Add explicit child spans around transaction, outbox enqueue, Resend request, webhook processing, and worker-batch boundaries.
-- [ ] Let database and HTTP instrumentation produce low-level spans; do not duplicate a span for every repository helper unless it adds useful semantics.
-- [ ] Propagate trace context into outbox records so asynchronous email delivery can link to the requesting trace without storing sensitive values.
-- [ ] Define Effect metrics close to the owning code and export them through the server telemetry layer.
-- [ ] Add counters for magic-link requests, verification outcomes, resend attempts, email outcomes, webhook outcomes, and rate-limit decisions.
-- [ ] Add histograms for request-to-verification time, Resend latency, worker batch duration, and delivery attempts.
-- [ ] Add gauges for pending outbox jobs and oldest pending-job age.
-- [x] Keep metric attributes low-cardinality: outcome and verification method only.
-- [x] Never use email, user ID, verification ID, token, request ID, or provider message ID as metric attributes.
-- [ ] Use structured `Effect.log*` events with stable event names and safe fields such as outcome, attempt number, and error category.
-- [ ] Annotate logs with request and trace context, but redact tokens, codes, cookies, authorization headers, recipient addresses, and full callback URLs.
-- [ ] Log expected typed failures at the boundary that handles them; avoid logging the same failure in repository, application, and API layers.
-- [ ] Preserve unexpected defects and causes for diagnostics while sanitizing provider responses that may contain recipient data.
-- [ ] Add telemetry tests using in-memory or test exporters to verify span names, metric changes, error status, and credential redaction.
-
-Recommended semantic names:
-
-```text
-Spans
-  Auth.MagicLink.request
-  Auth.MagicLink.verify
-  Email.Outbox.enqueue
-  Email.Outbox.deliver
-  Email.Resend.send
-  Email.Resend.webhook
-
-Metrics
-  auth.magic_link.requests
-  auth.magic_link.verifications
-  auth.magic_link.verification_duration
-  email.send.attempts
-  email.send.duration
-  email.outbox.pending
-  email.outbox.oldest_age
-```
-
-### Foundation tests and start gate
-
-- [ ] Verify package-boundary and circular-dependency checks pass.
-- [ ] Verify server configuration decoding fails before opening a network port when required values are invalid.
-- [ ] Verify the fake email, test clock, deterministic crypto, test rate limiter, and in-memory telemetry layers compose with `ApplicationLive`.
-- [ ] Verify an outbox record and business change commit or roll back together.
-- [ ] Verify a worker crash after Resend accepts a message does not produce duplicates when retried with the same idempotency key.
-- [ ] Verify application and email tests perform no network calls and read no process environment.
-- [ ] Verify logs, spans, metrics, and test failure output contain no raw credentials or recipient addresses.
-- [ ] Begin the magic-link feature checklist below after these package contracts, test layers, and server composition boundaries exist.
-
 ## Magic-link authentication
 
-The implementation contract is documented in
-[`packages/application/MAGIC_LINK.md`](packages/application/MAGIC_LINK.md).
+The backend magic-link flow is implemented. It creates verified users, their
+Personal organization and owner membership, then creates a fresh session in the
+same transaction. The session cookie is intentionally named `auth-token`.
 
-### Design and protocol
+### Backend
 
-- [ ] Confirm whether verified emails may create new users or only sign in existing users.
-- [x] Define validated magic-link request, link-verification, and code-verification schemas, branding only domain identifiers.
-- [x] Replace detailed public token errors with `INVALID_OR_EXPIRED_LINK`, `TOO_MANY_ATTEMPTS`, and `SIGN_IN_NOT_ALLOWED`.
-- [ ] Define and test the allowlisted relative `returnTo` policy.
-- [x] Add validated magic-link configuration and secret handling.
+- [x] Implement request and single-use token/code verification workflows.
+- [x] Store only token, code, and session digests.
+- [x] Create the user, Personal organization, system roles, owner membership, and session atomically.
+- [x] Return a generic `202 Accepted` response and `Cache-Control: no-store` from magic-link endpoints.
+- [x] Keep development email delivery silent so credentials and recipient data are not logged.
+- [x] Add safe logs, traces, and low-cardinality authentication metrics.
+- [ ] Enforce the configured allowlist for `returnTo` paths.
+- [ ] Add request and verification rate limiting.
+- [ ] Configure and verify the production Resend magic-link template.
+- [ ] Add durable email delivery with idempotency and bounded retries before production.
+- [ ] Add retention cleanup for old verification and session records.
 
-### Database
+### Dashboard — future
 
-- [x] Add typed purpose, purpose-specific data, token hash, code HMAC, attempts, and lifecycle fields to verification persistence.
-- [ ] Add indexes for selector lookup, outstanding email verification, and expiration cleanup.
-- [x] Add repository operations for issuing, invalidating, finding, incrementing attempts, and consuming verifications.
-- [x] Implement conditional, single-use verification consumption.
-- [ ] Add an email outbox table and idempotent delivery records.
-- [ ] Add a retention job for expired and consumed verification records.
+- [ ] Build the non-consuming magic-link confirmation and code-entry page.
+- [ ] Remove credentials from the browser URL and apply strict page security headers.
+- [ ] Add resend, expiration, invalid-code, and account-switch experiences.
 
-### Application services
+### Completion
 
-- [x] Implement the class-based `MagicLinkService` and live layer.
-- [x] Use Effect clock services, named `Effect.fn` operations, spans, and safe logs.
-- [ ] Implement layered request and verification rate limiting.
-- [x] Implement secure link-secret and eight-digit code generation.
-- [x] Store only token/code digests and use timing-safe HMAC comparison for codes.
-- [x] Implement resend invalidation and request cooldown behavior.
-- [x] Atomically consume verification, find/create the user, verify email, and create the session.
-- [ ] Define behavior for disabled users, existing sessions, and account switching.
-
-### API and user experience
-
-- [x] Add the generic `POST /auth/magic-link/request` endpoint.
-- [ ] Add the dashboard-owned, non-consuming `/auth/magic-link` confirmation page.
-- [x] Add `POST /auth/magic-link/verify` for link and code verification.
-- [ ] Add no-store, no-referrer, CSP, framing, and content-type security headers.
-- [ ] Remove credentials from the browser URL before rendering additional content.
-- [ ] Set a fresh `__Host-namera-session` cookie only after transaction commit.
-- [ ] Navigate from the dashboard to a server-validated relative path after verification.
-- [ ] Add resend, expired-link, invalid-code, and account-switch user interfaces.
-- [ ] Keep invitation acceptance and other authorization changes separate from authentication.
-
-### Email delivery
-
-- [ ] Implement an idempotent email-outbox worker with bounded retries.
-- [ ] Create the branded link-and-code email template.
-- [ ] Handle Resend webhook events, suppressions, provider failures, and resend behavior.
-- [ ] Ensure provider payloads and events do not retain credentials unnecessarily.
-
-### Security and privacy
-
-- [ ] Redact callback query strings, tokens, codes, sessions, and sensitive PII from application logs, spans, metrics, and errors.
-- [ ] Confirm public responses and timings do not disclose account existence.
-- [ ] Verify email scanners cannot consume credentials with a `GET` request.
-- [ ] Add protection against replay, brute force, redirect abuse, session fixation, and concurrent consumption.
-- [ ] Require step-up authentication for high-risk account and authorization changes.
-- [ ] Implement HMAC key versioning so credentials can be verified during a bounded rotation window.
-
-### Testing
-
-- [ ] Add unit tests for normalization, redirects, expiry, attempts, hashing, and public error mapping.
-- [ ] Add database tests for resend invalidation, atomic consumption, concurrency, and rollback.
-- [ ] Add API tests for non-consuming GET, POST verification, headers, cookies, and redirects.
-- [ ] Add cross-device, two-tab, expired-page, disabled-user, and existing-session tests.
-- [ ] Test outbox idempotency, retry behavior, bounce handling, and log redaction.
-- [ ] Add request, delivery, verification, replay, expiration, and rate-limit metrics.
-- [ ] Implement a supported resend or alternative recovery path for email-delivery failures.
+- [ ] Add focused unit, database, API, and end-to-end tests after the dashboard flow is implemented.
+- [ ] Run a final security review covering replay, concurrent consumption, redirect handling, cookies, rate limits, and credential redaction.
