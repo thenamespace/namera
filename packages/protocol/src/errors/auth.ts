@@ -1,14 +1,7 @@
 import { Schema } from "effect";
 
 export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()("MagicLinkError", {
-  code: Schema.Literals([
-    "INVALID_TOKEN",
-    "TOKEN_EXPIRED",
-    "SEND_EMAIL_FAILED",
-    "ATTEMPTS_EXCEEDED",
-    "TOKEN_NOT_FOUND",
-    "INVALID_ORIGIN",
-  ]),
+  code: Schema.Literals(["INVALID_OR_EXPIRED_LINK", "TOO_MANY_ATTEMPTS", "SIGN_IN_NOT_ALLOWED"]),
   message: Schema.optional(Schema.String),
 }) {}
 

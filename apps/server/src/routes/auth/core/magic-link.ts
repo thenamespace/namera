@@ -1,8 +1,10 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { AuthTokenSecurity, NameraApi } from "@namera-ai/api";
-import { authPolicy, MagicLinkService } from "@namera-ai/application";
+import { NameraApi } from "@namera-ai/api";
+import { MagicLinkService } from "@namera-ai/application";
+
+import { setAuthCookie } from "#/helpers/index";
 
 export const MagicLinkRoutes = HttpApiBuilder.group(NameraApi, "magicLink", (handlers) =>
   Effect.gen(function* () {
@@ -13,13 +15,7 @@ export const MagicLinkRoutes = HttpApiBuilder.group(NameraApi, "magicLink", (han
       .handle("verify", ({ payload }) =>
         Effect.gen(function* () {
           const verified = yield* magicLink.verify(payload);
-          yield* HttpApiBuilder.securitySetCookie(AuthTokenSecurity, verified.sessionToken, {
-            path: authPolicy.cookie.path,
-            httpOnly: authPolicy.cookie.httpOnly,
-            secure: authPolicy.cookie.secure,
-            sameSite: authPolicy.cookie.sameSite,
-            maxAge: authPolicy.session.timeToLive,
-          });
+          yield* setAuthCookie(verified.sessionToken);
           return { returnTo: verified.returnTo };
         }),
       );

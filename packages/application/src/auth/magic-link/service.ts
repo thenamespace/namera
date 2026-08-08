@@ -39,7 +39,7 @@ export interface MagicLinkServiceValue {
   ) => Effect.Effect<VerifyMagicLinkResult, MagicLinkError>;
 }
 
-const invalidLink = () => new MagicLinkError({ code: "INVALID_TOKEN" });
+const invalidLink = () => new MagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
 
 export class MagicLinkService extends Context.Service<MagicLinkService, MagicLinkServiceValue>()(
   "@namera-ai/application/MagicLinkService",
@@ -177,7 +177,7 @@ export class MagicLinkService extends Context.Service<MagicLinkService, MagicLin
               });
               if (attempted && attempted.attempts >= config.magicLink.maximumAttempts) {
                 yield* Metric.update(magicLinkVerificationResults, "attempts_exceeded");
-                return yield* new MagicLinkError({ code: "ATTEMPTS_EXCEEDED" });
+                return yield* new MagicLinkError({ code: "TOO_MANY_ATTEMPTS" });
               }
             }
             yield* Metric.update(magicLinkVerificationResults, "invalid");
