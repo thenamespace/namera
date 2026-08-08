@@ -58,6 +58,7 @@ const createUserAndSession = Effect.gen(function* () {
 ## Commands
 
 ```sh
+pnpm dev:services:up
 pnpm --filter @namera-ai/database db:generate
 pnpm --filter @namera-ai/database db:migrate
 pnpm --filter @namera-ai/database db:studio

@@ -4,8 +4,8 @@ The Node.js composition root for the Namera API. It owns the HTTP runtime,
 transport middleware, API handler implementations, authorization, and assembly
 of live infrastructure and application layers.
 
-No API handlers are implemented yet. The current scaffold starts an Effect HTTP
-server and exposes the `@namera-ai/api` contract through Scalar at `/reference`.
+The server exposes the `@namera-ai/api` contract through Scalar at `/reference`
+and delegates authenticated workflows to `@namera-ai/application` services.
 
 ## Structure
 
@@ -42,11 +42,16 @@ pnpm --filter @namera-ai/server build
 pnpm --filter @namera-ai/server start
 ```
 
-Start the local Grafana LGTM stack before the development server:
+Start PostgreSQL and the local Grafana LGTM stack before the development server:
 
 ```sh
-pnpm telemetry:up
+pnpm dev:services:up
 ```
 
-Grafana is available at `http://localhost:3001`; OTLP/HTTP is available at
-`http://localhost:4318`.
+PostgreSQL is available at `localhost:5432` using the credentials in
+`.env.example`. Grafana is available at `http://localhost:3001`; OTLP/HTTP is
+available at `http://localhost:4318`.
+
+Use `pnpm dev:services:logs` to follow container logs and
+`pnpm dev:services:down` to stop the stack. Named volumes preserve database and
+LGTM data between restarts.
