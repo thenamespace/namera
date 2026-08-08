@@ -12,7 +12,7 @@ apps/server
         ├── packages/api           HTTP routes and cookies
         └── packages/application   use cases and background programs
               ├── packages/database
-              ├── packages/email
+              ├── packages/emails
               ├── packages/protocol
               └── packages/utils
 ```
@@ -22,8 +22,8 @@ Dependency direction must remain one-way. `application` must not import `api` or
 
 ### Workspace structure
 
-- [ ] Finish and commit the `@namera-ai/application` package scaffold.
-- [ ] Create `@namera-ai/email` for the provider-independent email service, templates, and Resend adapter.
+- [x] Finish and commit the `@namera-ai/application` package scaffold.
+- [x] Create `@namera-ai/emails` for typed hosted-template email delivery and the Resend adapter.
 - [ ] Create `apps/server` as the Node runtime and production Layer composition root.
 - [ ] Add explicit package exports and `namera-source` development conditions for the new packages.
 - [ ] Add package references only where required by the repository TypeScript build strategy.
@@ -53,24 +53,25 @@ Suggested ownership:
 
 ```text
 packages/application  AuthConfig contract and validated value type
-packages/email        EmailConfig and ResendConfig contracts
+packages/emails       EmailConfig contract and Resend implementation
 apps/server           Config decoding and live Layer construction
 ```
 
-### Email package and Resend adapter
+### Emails package and Resend adapter
 
-- [ ] Define an `EmailService` using the repository's class-based `Context.Service` convention.
-- [ ] Keep the application-facing operation provider-neutral, for example `send(message, idempotencyKey)`.
-- [ ] Define readonly message, address, provider-message-ID, tag, and delivery-result schemas.
-- [ ] Define typed `EmailSendError`, `EmailRateLimitedError`, `EmailRejectedError`, and `EmailConfigurationError` failures.
-- [ ] Add the `resend` dependency only to `@namera-ai/email`.
-- [ ] Implement `ResendEmail.layer` with `Effect.tryPromise`, interruption handling where supported, and explicit provider-error mapping.
-- [ ] Pass a stable Resend idempotency key for every send operation.
-- [ ] Keep Resend's 24-hour idempotency window in mind; application persistence remains the durable source of delivery state.
+- [x] Define an `EmailService` using the repository's class-based `Context.Service` convention.
+- [x] Define a closed template registry whose `type` discriminant determines the exact required variables.
+- [x] Define readonly recipients, common send properties, tags, template variables, and branded provider-message IDs.
+- [x] Define typed email failure reasons for request failure, provider rejection, and invalid provider responses.
+- [x] Define `EmailConfig` with `Config.all`, a redacted Resend API key, and default sender values.
+- [x] Add the `resend` dependency only to `@namera-ai/emails`.
+- [x] Implement `EmailService.layer` with `Effect.tryPromise` and explicit Resend error mapping.
+- [x] Accept a stable Resend idempotency key on every typed send request.
+- [ ] Persist send idempotency keys and delivery state because Resend's provider-side idempotency window is limited to 24 hours.
 - [ ] Implement a `FakeEmail.layer` that records messages for deterministic tests without network calls.
 - [ ] Implement a local-development layer that safely previews or captures email instead of using production recipients.
-- [ ] Add HTML and plain-text magic-link templates with an explicit typed input model.
-- [ ] Keep template rendering pure and snapshot-test the important content, URL, code, and expiry text.
+- [x] Register the `magic-link` hosted-template alias with typed URL, code, and expiry variables.
+- [ ] Add a contract test that detects drift between the local registry and published Resend templates.
 - [ ] Do not add open/click tracking parameters or third-party assets to authentication email templates.
 - [ ] Implement Resend webhook signature verification against the raw request body.
 - [ ] Decode supported Resend delivery, delayed, failed, bounced, and complained events into provider-neutral events.
@@ -98,7 +99,7 @@ apps/server           Config decoding and live Layer construction
 - [ ] In one transaction, invalidate prior credentials, insert the new verification, and enqueue the encrypted email payload.
 - [ ] Make `MagicLinkService.verify` atomically consume the credential, find or create the user according to policy, and create a fresh session.
 - [ ] Implement `SessionService` so API routes never coordinate session hashing, rotation, or revocation themselves.
-- [ ] Implement `EmailDeliveryWorker` in `packages/application` using the outbox repository and provider-neutral `EmailService`.
+- [ ] Implement `EmailDeliveryWorker` in `packages/application` using the outbox repository and typed `EmailService`.
 - [ ] Poll or wake the worker with Effect scheduling, lease jobs transactionally, send with Resend idempotency, and apply bounded exponential retry with jitter.
 - [ ] Model permanent Resend rejections separately from retryable transport and rate-limit failures.
 - [ ] Decrypt sensitive email payloads only immediately before delivery and avoid attaching them to errors, logs, spans, or metrics.

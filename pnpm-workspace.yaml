@@ -26,6 +26,7 @@ catalog:
   "@effect/vitest": "4.0.0-beta.105"
   "drizzle-orm": "1.0.0-rc.4"
   "drizzle-kit": "1.0.0-rc.4"
+  "resend": "6.18.1"
   "turbo": 2.10.8
   "tsdown": "0.22.14"
   "typescript": 6.0.3

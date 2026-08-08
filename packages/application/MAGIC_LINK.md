@@ -52,11 +52,12 @@ Owns the `MagicLinkService` workflow, policy, transaction boundaries, rate-limit
 decisions, email-delivery worker program, and mapping from internal failures to
 public errors.
 
-### Email package
+### Emails package
 
-Owns the provider-neutral `EmailService`, email message and template models, the
-Resend adapter, webhook signature verification, and provider-error mapping. It does
-not decide when a magic link should be issued or coordinate authentication state.
+`@namera-ai/emails` owns a closed, typed hosted-template registry, `EmailService`,
+the Resend adapter, webhook signature verification, and provider-error mapping. A
+template `type` determines its exact variables at compile time. The package does not
+decide when a magic link should be issued or coordinate authentication state.
 
 ### API package
 
@@ -266,7 +267,7 @@ The email should contain:
 - a statement that no action is needed if the recipient did not request it;
 - the expected product and domain so phishing is easier to identify.
 
-Use Resend through the provider-neutral email service and pass the outbox
+Use Resend through the typed hosted-template email service and pass the outbox
 idempotency key on every send. Track provider delivery events without putting
 credentials in event metadata. Handle bounces and suppression-list responses, and
 expose resend behavior in the UI.
