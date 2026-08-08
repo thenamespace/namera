@@ -25,11 +25,9 @@ export const GetInvitationResponse = Schema.Struct({
   organizationRole: GetOrganizationRoleResponse,
 });
 
-export const ListOrganizationInvitationsResponse = Schema.mutable(
-  Schema.Array(GetInvitationResponse),
-);
+export const ListOrganizationInvitationsResponse = Schema.Array(GetInvitationResponse);
 
-export const ListUserInvitationsResponse = Schema.mutable(Schema.Array(GetInvitationResponse));
+export const ListUserInvitationsResponse = Schema.Array(GetInvitationResponse);
 
 export const InviteMemberRequest = Invitation.mapFields(
   Struct.pick(["email", "organizationRoleId"]),

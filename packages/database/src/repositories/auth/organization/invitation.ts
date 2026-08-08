@@ -18,7 +18,7 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/common";
 import { invitation } from "#/schema/index";
 
-export type OrganizationInvitationRepository = {
+export interface OrganizationInvitationRepositoryService {
   insert: (data: InvitationInsert) => Effect.Effect<Invitation, DatabaseError>;
   findById: (
     id: InvitationId,
@@ -66,161 +66,162 @@ export type OrganizationInvitationRepository = {
     invitationId: InvitationId,
     data: InvitationUpdate,
   ) => Effect.Effect<Invitation | undefined, DatabaseError>;
-};
+}
 
-export const OrganizationInvitationRepository = Context.Service<OrganizationInvitationRepository>(
-  "OrganizationInvitationRepository",
-);
+export class OrganizationInvitationRepository extends Context.Service<
+  OrganizationInvitationRepository,
+  OrganizationInvitationRepositoryService
+>()("@namera-ai/database/OrganizationInvitationRepository") {
+  static readonly layer: Layer.Layer<OrganizationInvitationRepository, never, Database> =
+    Layer.effect(
+      OrganizationInvitationRepository,
+      Effect.gen(function* () {
+        const database = yield* Database;
 
-export const layer: Layer.Layer<OrganizationInvitationRepository, never, Database.Database> =
-  Layer.effect(
-    OrganizationInvitationRepository,
-    Effect.gen(function* () {
-      const database = yield* Database.Database;
+        return OrganizationInvitationRepository.of({
+          insert: Effect.fn("insertOrganizationInvitation")(function* (data) {
+            const db = yield* transactionOrDatabase(database);
+            const parsed = Schema.encodeSync(InvitationInsert)({
+              ...data,
+              email: Schema.decodeSync(Email)(data.email.toLowerCase()),
+            });
+            const res = yield* db
+              .insert(invitation)
+              .values(parsed as any)
+              .returning();
 
-      return OrganizationInvitationRepository.of({
-        insert: Effect.fn("insertOrganizationInvitation")(function* (data) {
-          const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(InvitationInsert)({
-            ...data,
-            email: Schema.decodeSync(Email)(data.email.toLowerCase()),
-          });
-          const res = yield* db
-            .insert(invitation)
-            .values(parsed as any)
-            .returning();
+            return Schema.decodeSync(Invitation)(res[0]!);
+          }, mapToDatabaseError),
+          findById: Effect.fn("findOrganizationInvitationById")(function* (id, orgId) {
+            const db = yield* transactionOrDatabase(database);
 
-          return Schema.decodeSync(Invitation)(res[0]!);
-        }, mapToDatabaseError),
-        findById: Effect.fn("findOrganizationInvitationById")(function* (id, orgId) {
-          const db = yield* transactionOrDatabase(database);
-
-          const res = yield* db.query.invitation.findFirst({
-            where: {
-              id: { eq: id },
-              organizationId: { eq: orgId },
-            },
-            with: {
-              inviter: true,
-              organization: true,
-              organizationRole: {
-                with: {
-                  systemRole: true,
+            const res = yield* db.query.invitation.findFirst({
+              where: {
+                id: { eq: id },
+                organizationId: { eq: orgId },
+              },
+              with: {
+                inviter: true,
+                organization: true,
+                organizationRole: {
+                  with: {
+                    systemRole: true,
+                  },
                 },
               },
-            },
-          });
+            });
 
-          if (!res) {
-            return undefined;
-          }
+            if (!res) {
+              return undefined;
+            }
 
-          const { inviter, organization, organizationRole, ...invitationRow } = res;
-
-          return {
-            organization: Schema.decodeSync(Organization)(organization),
-            invitation: Schema.decodeSync(Invitation)(invitationRow),
-            organizationRole: decodeJoinedOrganizationRole(organizationRole),
-            inviter: Schema.decodeSync(User)(inviter),
-          };
-        }, mapToDatabaseError),
-        findForOrgId: Effect.fn("findInvitationsForOrgId")(function* (organizationId) {
-          const db = yield* transactionOrDatabase(database);
-
-          const res = yield* db.query.invitation.findMany({
-            where: {
-              organizationId: { eq: organizationId },
-            },
-            with: {
-              inviter: true,
-              organizationRole: {
-                with: {
-                  systemRole: true,
-                },
-              },
-            },
-          });
-
-          return res.map((row) => {
-            const { inviter, organizationRole, ...invitationRow } = row;
+            const { inviter, organization, organizationRole, ...invitationRow } = res;
 
             return {
+              organization: Schema.decodeSync(Organization)(organization),
               invitation: Schema.decodeSync(Invitation)(invitationRow),
               organizationRole: decodeJoinedOrganizationRole(organizationRole),
               inviter: Schema.decodeSync(User)(inviter),
             };
-          });
-        }, mapToDatabaseError),
-        findForEmail: Effect.fn("findInvitationsForEmail")(function* (email) {
-          const db = yield* transactionOrDatabase(database);
+          }, mapToDatabaseError),
+          findForOrgId: Effect.fn("findInvitationsForOrgId")(function* (organizationId) {
+            const db = yield* transactionOrDatabase(database);
 
-          const res = yield* db.query.invitation.findMany({
-            where: {
-              email: { eq: email },
-            },
-            with: {
-              inviter: true,
-              organizationRole: {
-                with: {
-                  systemRole: true,
+            const res = yield* db.query.invitation.findMany({
+              where: {
+                organizationId: { eq: organizationId },
+              },
+              with: {
+                inviter: true,
+                organizationRole: {
+                  with: {
+                    systemRole: true,
+                  },
                 },
               },
-            },
-          });
+            });
 
-          return res.map((row) => {
-            const { inviter, organizationRole, ...invitationRow } = row;
+            return res.map((row) => {
+              const { inviter, organizationRole, ...invitationRow } = row;
+
+              return {
+                invitation: Schema.decodeSync(Invitation)(invitationRow),
+                organizationRole: decodeJoinedOrganizationRole(organizationRole),
+                inviter: Schema.decodeSync(User)(inviter),
+              };
+            });
+          }, mapToDatabaseError),
+          findForEmail: Effect.fn("findInvitationsForEmail")(function* (email) {
+            const db = yield* transactionOrDatabase(database);
+
+            const res = yield* db.query.invitation.findMany({
+              where: {
+                email: { eq: email },
+              },
+              with: {
+                inviter: true,
+                organizationRole: {
+                  with: {
+                    systemRole: true,
+                  },
+                },
+              },
+            });
+
+            return res.map((row) => {
+              const { inviter, organizationRole, ...invitationRow } = row;
+
+              return {
+                invitation: Schema.decodeSync(Invitation)(invitationRow),
+                organizationRole: decodeJoinedOrganizationRole(organizationRole),
+                inviter: Schema.decodeSync(User)(inviter),
+              };
+            });
+          }, mapToDatabaseError),
+          findByIdForEmail: Effect.fn("findInvitationByIdForEmail")(function* (id, email) {
+            const db = yield* transactionOrDatabase(database);
+
+            const res = yield* db.query.invitation.findFirst({
+              where: {
+                id: { eq: id },
+                email: { eq: email },
+              },
+              with: {
+                inviter: true,
+                organization: true,
+                organizationRole: {
+                  with: {
+                    systemRole: true,
+                  },
+                },
+              },
+            });
+
+            if (!res) {
+              return undefined;
+            }
+
+            const { inviter, organization, organizationRole, ...invitationRow } = res;
 
             return {
+              organization: Schema.decodeSync(Organization)(organization),
               invitation: Schema.decodeSync(Invitation)(invitationRow),
               organizationRole: decodeJoinedOrganizationRole(organizationRole),
               inviter: Schema.decodeSync(User)(inviter),
             };
-          });
-        }, mapToDatabaseError),
-        findByIdForEmail: Effect.fn("findInvitationByIdForEmail")(function* (id, email) {
-          const db = yield* transactionOrDatabase(database);
+          }, mapToDatabaseError),
+          update: Effect.fn("updateOrganizationInvitation")(function* (invitationId, data) {
+            const db = yield* transactionOrDatabase(database);
+            const parsed = Schema.encodeSync(InvitationUpdate)(data);
+            const res = yield* db
+              .update(invitation)
+              .set(parsed as any)
+              .where(eq(invitation.id, invitationId))
+              .returning();
 
-          const res = yield* db.query.invitation.findFirst({
-            where: {
-              id: { eq: id },
-              email: { eq: email },
-            },
-            with: {
-              inviter: true,
-              organization: true,
-              organizationRole: {
-                with: {
-                  systemRole: true,
-                },
-              },
-            },
-          });
-
-          if (!res) {
-            return undefined;
-          }
-
-          const { inviter, organization, organizationRole, ...invitationRow } = res;
-
-          return {
-            organization: Schema.decodeSync(Organization)(organization),
-            invitation: Schema.decodeSync(Invitation)(invitationRow),
-            organizationRole: decodeJoinedOrganizationRole(organizationRole),
-            inviter: Schema.decodeSync(User)(inviter),
-          };
-        }, mapToDatabaseError),
-        update: Effect.fn("updateOrganizationInvitation")(function* (invitationId, data) {
-          const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(InvitationUpdate)(data);
-          const res = yield* db
-            .update(invitation)
-            .set(parsed as any)
-            .where(eq(invitation.id, invitationId))
-            .returning();
-
-          return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
-        }, mapToDatabaseError),
-      });
-    }),
-  );
+            return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
+          }, mapToDatabaseError),
+        });
+      }),
+    );
+}

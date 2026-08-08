@@ -1,4 +1,10 @@
-export * as OrganizationInvitationRepository from "./invitation.js";
-export * as OrganizationMemberRepository from "./member.js";
-export * as OrganizationRepository from "./organization.js";
-export * as OrganizationRoleRepository from "./role.js";
+export {
+  OrganizationInvitationRepository,
+  type OrganizationInvitationRepositoryService,
+} from "./invitation.js";
+export {
+  OrganizationMemberRepository,
+  type OrganizationMemberRepositoryService,
+} from "./member.js";
+export { OrganizationRepository, type OrganizationRepositoryService } from "./organization.js";
+export { OrganizationRoleRepository, type OrganizationRoleRepositoryService } from "./role.js";

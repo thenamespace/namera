@@ -15,9 +15,7 @@ export const GetOrganizationMemberResponse = Schema.Struct({
 });
 
 export const ListOrganizationMemberRequest = Schema.Void;
-export const ListOrganizationMemberResponse = Schema.mutable(
-  Schema.Array(GetOrganizationMemberResponse),
-);
+export const ListOrganizationMemberResponse = Schema.Array(GetOrganizationMemberResponse);
 
 export type GetOrganizationMemberRequest = typeof GetOrganizationMemberRequest.Type;
 export type GetOrganizationMemberResponse = typeof GetOrganizationMemberResponse.Type;

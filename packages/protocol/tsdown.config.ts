@@ -16,6 +16,7 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     model: "src/model/index.ts",
+    dto: "src/dto/index.ts",
   },
   publint: "ci-only",
   unbundle: true,

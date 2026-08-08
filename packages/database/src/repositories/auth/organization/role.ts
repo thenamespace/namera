@@ -19,7 +19,7 @@ import {
 } from "#/repositories/auth/organization/common";
 import { organizationRole } from "#/schema/index";
 
-export type OrganizationRoleRepository = {
+export interface OrganizationRoleRepositoryService {
   insert: (data: OrganizationRoleInsert) => Effect.Effect<OrganizationRole, DatabaseError>;
   findOrganizationRolesForOrgId: (
     orgId: OrganizationId,
@@ -29,17 +29,16 @@ export type OrganizationRoleRepository = {
     organizationRoleId: OrganizationRoleId,
     data: OrganizationRoleUpdate,
   ) => Effect.Effect<OrganizationRole, DatabaseError>;
-};
+}
 
-export const OrganizationRoleRepository = Context.Service<OrganizationRoleRepository>(
-  "OrganizationRoleRepository",
-);
-
-export const layer: Layer.Layer<OrganizationRoleRepository, never, Database.Database> =
-  Layer.effect(
+export class OrganizationRoleRepository extends Context.Service<
+  OrganizationRoleRepository,
+  OrganizationRoleRepositoryService
+>()("@namera-ai/database/OrganizationRoleRepository") {
+  static readonly layer: Layer.Layer<OrganizationRoleRepository, never, Database> = Layer.effect(
     OrganizationRoleRepository,
     Effect.gen(function* () {
-      const database = yield* Database.Database;
+      const database = yield* Database;
 
       const decodeRole = function* (roleRow: OrganizationRoleRow) {
         if (roleRow.systemRoleId === null) {
@@ -104,3 +103,4 @@ export const layer: Layer.Layer<OrganizationRoleRepository, never, Database.Data
       });
     }),
   );
+}

@@ -1,3 +1,3 @@
-export * as SessionRepository from "./session.js";
-export * as UserRepository from "./user.js";
-export * as VerificationRepository from "./verification.js";
+export { SessionRepository, type SessionRepositoryService } from "./session.js";
+export { UserRepository, type UserRepositoryService } from "./user.js";
+export { VerificationRepository, type VerificationRepositoryService } from "./verification.js";

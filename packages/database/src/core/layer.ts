@@ -7,7 +7,7 @@ import { types as pgTypes } from "pg";
 import { databaseConfig } from "#/config";
 import { relations } from "#/relations/index";
 
-const PgLive = PgClient.layerConfig({
+export const PgLive = PgClient.layerConfig({
   ...databaseConfig,
   types: {
     getTypeParser: Config.succeed(((typeId, format) => {
@@ -19,14 +19,17 @@ const PgLive = PgClient.layerConfig({
   },
 });
 
-export type Database = PgDrizzle.EffectPgDatabase<typeof relations> & {
+export type DatabaseService = PgDrizzle.EffectPgDatabase<typeof relations> & {
   $client: PgClient.PgClient;
 };
 
-export const makeDatabase: Effect.Effect<Database, never, PgClient.PgClient> = PgDrizzle.make({
-  relations,
-}).pipe(Effect.provide(PgDrizzle.DefaultServices));
+export const makeDatabase: Effect.Effect<DatabaseService, never, PgClient.PgClient> =
+  PgDrizzle.make({
+    relations,
+  }).pipe(Effect.provide(PgDrizzle.DefaultServices));
 
-export const Database = Context.Service<Database>("Database");
-
-export const layer = Layer.provideMerge(Layer.effect(Database, makeDatabase), PgLive);
+export class Database extends Context.Service<Database, DatabaseService>()(
+  "@namera-ai/database/Database",
+) {
+  static readonly layer = Layer.effect(Database, makeDatabase).pipe(Layer.provide(PgLive));
+}

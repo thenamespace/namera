@@ -1,3 +1,3 @@
-export * as Database from "./layer.js";
-export * as TransactionService from "./transaction.js";
+export { Database, type DatabaseService, makeDatabase, PgLive } from "./layer.js";
+export { TransactionService, type TransactionServiceService } from "./transaction.js";
 export * from "./errors.js";

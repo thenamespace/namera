@@ -15,13 +15,11 @@ export const GetOrganizationResponse = Organization.mapFields(
 export const CreateOrganizationRequest = OrganizationInsert.mapFields(Struct.pick(["metadata"]));
 export const CreateOrganizationResponse = GetOrganizationResponse;
 
-export const ListUserOrganizationsResponse = Schema.mutable(
-  Schema.Array(
-    Schema.Struct({
-      organization: GetOrganizationResponse,
-      organizationMember: GetOrganizationMemberResponse,
-    }),
-  ),
+export const ListUserOrganizationsResponse = Schema.Array(
+  Schema.Struct({
+    organization: GetOrganizationResponse,
+    organizationMember: GetOrganizationMemberResponse,
+  }),
 );
 
 export const UpdateOrganizationRequest = Organization.mapFields(Struct.pick(["metadata"]));

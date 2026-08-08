@@ -18,7 +18,7 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/common";
 import { organizationMember } from "#/schema/index";
 
-export type OrganizationMemberRepository = {
+export interface OrganizationMemberRepositoryService {
   insert: (data: OrganizationMemberInsert) => Effect.Effect<OrganizationMember, DatabaseError>;
   findOrganizationMembersForOrg: (orgId: OrganizationId) => Effect.Effect<
     Array<{
@@ -54,17 +54,16 @@ export type OrganizationMemberRepository = {
     id: OrganizationMemberId,
     data: OrganizationMemberUpdate,
   ) => Effect.Effect<OrganizationMember, DatabaseError>;
-};
+}
 
-export const OrganizationMemberRepository = Context.Service<OrganizationMemberRepository>(
-  "OrganizationMemberRepository",
-);
-
-export const layer: Layer.Layer<OrganizationMemberRepository, never, Database.Database> =
-  Layer.effect(
+export class OrganizationMemberRepository extends Context.Service<
+  OrganizationMemberRepository,
+  OrganizationMemberRepositoryService
+>()("@namera-ai/database/OrganizationMemberRepository") {
+  static readonly layer: Layer.Layer<OrganizationMemberRepository, never, Database> = Layer.effect(
     OrganizationMemberRepository,
     Effect.gen(function* () {
-      const database = yield* Database.Database;
+      const database = yield* Database;
 
       return OrganizationMemberRepository.of({
         insert: Effect.fn("insertOrganizationMember")(function* (data) {
@@ -182,3 +181,4 @@ export const layer: Layer.Layer<OrganizationMemberRepository, never, Database.Da
       });
     }),
   );
+}

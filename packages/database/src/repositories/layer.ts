@@ -11,53 +11,55 @@ import {
   VerificationRepository,
 } from "#/repositories/auth/index";
 
-export type Repository = {
+export interface RepositoryService {
   auth: {
-    invitation: OrganizationInvitationRepository.OrganizationInvitationRepository;
-    member: OrganizationMemberRepository.OrganizationMemberRepository;
-    organization: OrganizationRepository.OrganizationRepository;
-    role: OrganizationRoleRepository.OrganizationRoleRepository;
-    session: SessionRepository.SessionRepository;
-    user: UserRepository.UserRepository;
-    verification: VerificationRepository.VerificationRepository;
+    invitation: OrganizationInvitationRepository["Service"];
+    member: OrganizationMemberRepository["Service"];
+    organization: OrganizationRepository["Service"];
+    role: OrganizationRoleRepository["Service"];
+    session: SessionRepository["Service"];
+    user: UserRepository["Service"];
+    verification: VerificationRepository["Service"];
   };
-};
+}
 
-export const Repository = Context.Service<Repository>("Repository");
+export class Repository extends Context.Service<Repository, RepositoryService>()(
+  "@namera-ai/database/Repository",
+) {
+  static readonly layer: Layer.Layer<Repository, never, Database> = Layer.effect(
+    Repository,
+    Effect.gen(function* () {
+      const invitation = yield* OrganizationInvitationRepository;
+      const member = yield* OrganizationMemberRepository;
+      const organization = yield* OrganizationRepository;
+      const role = yield* OrganizationRoleRepository;
+      const session = yield* SessionRepository;
+      const user = yield* UserRepository;
+      const verification = yield* VerificationRepository;
 
-export const layer: Layer.Layer<Repository, never, Database.Database> = Layer.effect(
-  Repository,
-  Effect.gen(function* () {
-    const invitation = yield* OrganizationInvitationRepository.OrganizationInvitationRepository;
-    const member = yield* OrganizationMemberRepository.OrganizationMemberRepository;
-    const organization = yield* OrganizationRepository.OrganizationRepository;
-    const role = yield* OrganizationRoleRepository.OrganizationRoleRepository;
-    const session = yield* SessionRepository.SessionRepository;
-    const user = yield* UserRepository.UserRepository;
-    const verification = yield* VerificationRepository.VerificationRepository;
-
-    return Repository.of({
-      auth: {
-        invitation,
-        organization,
-        member,
-        role,
-        session,
-        user,
-        verification,
-      },
-    });
-  }),
-).pipe(
-  Layer.provide(
-    Layer.mergeAll(
-      OrganizationInvitationRepository.layer,
-      OrganizationMemberRepository.layer,
-      OrganizationRepository.layer,
-      OrganizationRoleRepository.layer,
-      SessionRepository.layer,
-      UserRepository.layer,
-      VerificationRepository.layer,
+      return Repository.of({
+        auth: {
+          invitation,
+          organization,
+          member,
+          role,
+          session,
+          user,
+          verification,
+        },
+      });
+    }),
+  ).pipe(
+    Layer.provide(
+      Layer.mergeAll(
+        OrganizationInvitationRepository.layer,
+        OrganizationMemberRepository.layer,
+        OrganizationRepository.layer,
+        OrganizationRoleRepository.layer,
+        SessionRepository.layer,
+        UserRepository.layer,
+        VerificationRepository.layer,
+      ),
     ),
-  ),
-);
+  );
+}

@@ -10,7 +10,7 @@ import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { organization } from "#/schema/index";
 
-export type OrganizationRepository = {
+export interface OrganizationRepositoryService {
   insert: (data: OrganizationInsert) => Effect.Effect<Organization, DatabaseError>;
   findById: (id: OrganizationId) => Effect.Effect<Organization | undefined, DatabaseError>;
   findOrgsCreatedByUserId: (userId: UserId) => Effect.Effect<Array<Organization>, DatabaseError>;
@@ -18,60 +18,62 @@ export type OrganizationRepository = {
     orgId: OrganizationId,
     data: OrganizationUpdate,
   ) => Effect.Effect<Organization, DatabaseError>;
-};
+}
 
-export const OrganizationRepository =
-  Context.Service<OrganizationRepository>("OrganizationRepository");
-
-export const layer: Layer.Layer<OrganizationRepository, never, Database.Database> = Layer.effect(
+export class OrganizationRepository extends Context.Service<
   OrganizationRepository,
-  Effect.gen(function* () {
-    const database = yield* Database.Database;
+  OrganizationRepositoryService
+>()("@namera-ai/database/OrganizationRepository") {
+  static readonly layer: Layer.Layer<OrganizationRepository, never, Database> = Layer.effect(
+    OrganizationRepository,
+    Effect.gen(function* () {
+      const database = yield* Database;
 
-    return OrganizationRepository.of({
-      insert: Effect.fn("insertOrganization")(function* (data) {
-        const db = yield* transactionOrDatabase(database);
-        const parsed = Schema.encodeSync(OrganizationInsert)(data);
-        const res = yield* db
-          .insert(organization)
-          .values(parsed as any)
-          .returning();
+      return OrganizationRepository.of({
+        insert: Effect.fn("insertOrganization")(function* (data) {
+          const db = yield* transactionOrDatabase(database);
+          const parsed = Schema.encodeSync(OrganizationInsert)(data);
+          const res = yield* db
+            .insert(organization)
+            .values(parsed as any)
+            .returning();
 
-        return Schema.decodeSync(Organization)(res[0]!);
-      }, mapToDatabaseError),
-      findById: Effect.fn("findOrganizationById")(function* (id) {
-        const db = yield* transactionOrDatabase(database);
+          return Schema.decodeSync(Organization)(res[0]!);
+        }, mapToDatabaseError),
+        findById: Effect.fn("findOrganizationById")(function* (id) {
+          const db = yield* transactionOrDatabase(database);
 
-        const res = yield* db.query.organization.findFirst({
-          where: {
-            id: { eq: id },
-          },
-        });
+          const res = yield* db.query.organization.findFirst({
+            where: {
+              id: { eq: id },
+            },
+          });
 
-        return res ? Schema.decodeSync(Organization)(res) : undefined;
-      }, mapToDatabaseError),
-      findOrgsCreatedByUserId: Effect.fn("findOrgsCreatedByUserId")(function* (userId) {
-        const db = yield* transactionOrDatabase(database);
+          return res ? Schema.decodeSync(Organization)(res) : undefined;
+        }, mapToDatabaseError),
+        findOrgsCreatedByUserId: Effect.fn("findOrgsCreatedByUserId")(function* (userId) {
+          const db = yield* transactionOrDatabase(database);
 
-        const res = yield* db.query.organization.findMany({
-          where: {
-            createdById: { eq: userId },
-          },
-        });
+          const res = yield* db.query.organization.findMany({
+            where: {
+              createdById: { eq: userId },
+            },
+          });
 
-        return [...Schema.decodeSync(Schema.Array(Organization))(res)];
-      }, mapToDatabaseError),
-      update: Effect.fn("updateOrganization")(function* (orgId, data) {
-        const db = yield* transactionOrDatabase(database);
-        const parsed = Schema.encodeSync(OrganizationUpdate)(data);
-        const res = yield* db
-          .update(organization)
-          .set(parsed as any)
-          .where(eq(organization.id, orgId))
-          .returning();
+          return [...Schema.decodeSync(Schema.Array(Organization))(res)];
+        }, mapToDatabaseError),
+        update: Effect.fn("updateOrganization")(function* (orgId, data) {
+          const db = yield* transactionOrDatabase(database);
+          const parsed = Schema.encodeSync(OrganizationUpdate)(data);
+          const res = yield* db
+            .update(organization)
+            .set(parsed as any)
+            .where(eq(organization.id, orgId))
+            .returning();
 
-        return Schema.decodeSync(Organization)(res[0]!);
-      }, mapToDatabaseError),
-    });
-  }),
-);
+          return Schema.decodeSync(Organization)(res[0]!);
+        }, mapToDatabaseError),
+      });
+    }),
+  );
+}
