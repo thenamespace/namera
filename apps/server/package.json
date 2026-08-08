@@ -19,6 +19,7 @@
   "dependencies": {
     "@effect/platform-node": "catalog:",
     "@namera-ai/api": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

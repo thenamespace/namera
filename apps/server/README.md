@@ -15,6 +15,9 @@ server and exposes the `@namera-ai/api` contract through Scalar at `/reference`.
 - `src/layers/` — runtime and dependency composition.
 - `src/index.ts` — Node process entry point.
 
+`@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
+is enabled globally except for the Scalar reference route.
+
 Future route files implement groups from `@namera-ai/api` and call services from
 `@namera-ai/application`. Business workflows do not belong in this app.
 
@@ -38,3 +41,12 @@ pnpm --filter @namera-ai/server dev
 pnpm --filter @namera-ai/server build
 pnpm --filter @namera-ai/server start
 ```
+
+Start the local Grafana LGTM stack before the development server:
+
+```sh
+pnpm telemetry:up
+```
+
+Grafana is available at `http://localhost:3001`; OTLP/HTTP is available at
+`http://localhost:4318`.

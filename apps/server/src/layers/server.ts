@@ -2,7 +2,9 @@ import { createServer } from "node:http";
 
 import { NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
-import { HttpRouter } from "effect/unstable/http";
+import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
+
+import { TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
 import { CorsMiddleware } from "#/middlewares/index";
@@ -21,4 +23,10 @@ const NodeServerLive = Layer.unwrap(
 
 const Routes = Layer.mergeAll(ApiReferenceRoutes, CorsMiddleware);
 
-export const ServerLive = HttpRouter.serve(Routes).pipe(Layer.provide(NodeServerLive));
+export const ServerLive = HttpRouter.serve(Routes, {
+  middleware: HttpMiddleware.tracer,
+}).pipe(
+  Layer.provide(HttpMiddleware.layerTracerDisabledForUrls(["/reference"])),
+  Layer.provide(TelemetryLive),
+  Layer.provide(NodeServerLive),
+);

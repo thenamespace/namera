@@ -113,6 +113,9 @@ importers:
       '@namera-ai/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
