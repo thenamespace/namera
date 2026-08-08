@@ -113,6 +113,12 @@ importers:
       '@namera-ai/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@namera-ai/application':
+        specifier: workspace:*
+        version: link:../../packages/application
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
       '@namera-ai/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
