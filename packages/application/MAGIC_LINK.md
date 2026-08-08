@@ -61,8 +61,13 @@ decide when a magic link should be issued or coordinate authentication state.
 
 ### API package
 
-Owns HTTP routes, cookies, security headers, request decoding, and redirects. Route
-handlers delegate business behavior to `MagicLinkService`.
+Owns HTTP routes, session cookies, and request decoding. Route handlers delegate
+business behavior to `MagicLinkService`.
+
+### Dashboard application
+
+Owns the non-consuming magic-link landing page, confirmation UI, page security
+headers, credential removal from the browser URL, and navigation after sign-in.
 
 ### Server application
 
@@ -122,19 +127,16 @@ Hash the secret and code independently. A keyed HMAC using a dedicated rotating
 server secret is preferred for short numeric codes because their search space is
 small. Compare digests with a timing-safe equality operation.
 
-Configuration must provide:
+Environment configuration must provide:
 
 ```text
-MAGIC_LINK_PUBLIC_ORIGIN
-MAGIC_LINK_TOKEN_HMAC_SECRET
-MAGIC_LINK_TTL
-MAGIC_LINK_MAX_ATTEMPTS
-MAGIC_LINK_DEFAULT_RETURN_PATH
-MAGIC_LINK_ALLOWED_RETURN_PATHS
+AUTH_API_PUBLIC_ORIGIN
+AUTH_DASHBOARD_PUBLIC_ORIGIN
 ```
 
-Construct email URLs only from the configured public origin. Never derive them
-from `Host`, `Forwarded`, or `X-Forwarded-Host` request headers.
+The remaining magic-link and session policy is defined in application code.
+Construct email links from `AUTH_DASHBOARD_PUBLIC_ORIGIN`, never from `Host`,
+`Forwarded`, or `X-Forwarded-Host` request headers.
 
 ## Application services
 
@@ -274,15 +276,16 @@ expose resend behavior in the UI.
 
 ## Link landing flow
 
-The email button opens a minimal first-party page:
+The email button opens a minimal page owned by the dashboard application:
 
 ```http
-GET /auth/magic-link?id=<selector>&token=<secret>
+GET https://dashboard.namera.ai/auth/magic-link?id=<selector>&token=<secret>
 ```
 
-This `GET` must not consume the token, modify the user, or create a session. It only
-renders a confirmation page with a form that performs the verification `POST`.
-This protects ordinary users from link-prefetching and email-scanning systems.
+This page must not call the verification endpoint automatically. It renders a
+confirmation action, and only an explicit user action performs the verification
+`POST`. This protects ordinary users from link-prefetching and email-scanning
+systems.
 
 The landing response must use at least:
 
@@ -298,9 +301,11 @@ Do not include analytics, third-party scripts, pixels, external fonts, or resour
 URLs that could receive a referrer. Capture the token for the form and immediately
 remove it from the visible browser URL with `history.replaceState`.
 
-The page should require an explicit **Continue signing in** action. Do not bind the
-credential to the browser that requested it: users frequently request on one device
-and open email on another.
+The page should require an explicit **Continue signing in** action. That action
+posts the credential to `https://api.namera.ai/auth/magic-link/verify`. On success,
+the API sets the HttpOnly session cookie and the dashboard navigates to the validated
+return path. Do not bind the credential to the browser that requested it: users
+frequently request on one device and open email on another.
 
 ## Verification flow
 
@@ -313,6 +318,7 @@ POST /auth/magic-link/verify
 Content-Type: application/json
 
 {
+  "type": "token",
   "id": "<selector>",
   "token": "<secret>"
 }
@@ -325,6 +331,7 @@ POST /auth/magic-link/verify
 Content-Type: application/json
 
 {
+  "type": "code",
   "email": "user@example.com",
   "code": "01234567"
 }

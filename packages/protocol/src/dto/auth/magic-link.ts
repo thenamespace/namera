@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { Email, VerificationId } from "#/common/index";
+import { ApplicationRelativePath, Email, VerificationId } from "#/common/index";
 
 export const MagicLinkToken = Schema.String.check(
   Schema.isPattern(/^[A-Za-z0-9_-]+$/, {
@@ -20,14 +20,7 @@ export const MagicLinkCode = Schema.String.check(
   }),
 );
 
-export const MagicLinkReturnTo = Schema.String.check(
-  Schema.isPattern(/^\/(?!\/)[^\s\\]*$/, {
-    message: "Return path must be an application-relative path",
-  }),
-  Schema.isMaxLength(2048, {
-    message: "Return path is too long",
-  }),
-);
+export const MagicLinkReturnTo = ApplicationRelativePath;
 
 export const RequestMagicLinkRequest = Schema.Struct({
   email: Email,
