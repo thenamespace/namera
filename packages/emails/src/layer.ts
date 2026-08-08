@@ -7,6 +7,8 @@ import { EmailConfig } from "#/config";
 import { EmailProviderId, emailTemplates } from "#/data";
 import { type SendEmailProps } from "#/types";
 
+const developmentEmailProviderId = Schema.decodeSync(EmailProviderId)("development");
+
 export interface EmailServiceValue {
   readonly send: (input: SendEmailProps) => Effect.Effect<EmailProviderId, EmailError>;
 }
@@ -69,11 +71,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
   static readonly developmentLayer = Layer.succeed(
     EmailService,
     EmailService.of({
-      send: Effect.fn("EmailService.sendDevelopment")(function* (input) {
-        yield* Effect.logInfo("Development email sent", input);
-
-        return Schema.decodeSync(EmailProviderId)("development");
-      }),
+      send: () => Effect.succeed(developmentEmailProviderId),
     }),
   );
 }

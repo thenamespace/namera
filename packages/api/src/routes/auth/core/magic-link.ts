@@ -1,4 +1,5 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
+import { Schema } from "effect";
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi";
 
 import { MagicLinkError } from "@namera-ai/protocol";
 import {
@@ -10,17 +11,24 @@ import {
 
 import { CommonErrors } from "#/common";
 
+const NoStoreHeaders = {
+  "cache-control": Schema.Literal("no-store"),
+};
+
 export class MagicLinkGroup extends HttpApiGroup.make("magicLink")
   .add(
     HttpApiEndpoint.post("request", "/request", {
       payload: RequestMagicLinkRequest,
       error: [MagicLinkError, ...CommonErrors],
-      success: RequestMagicLinkResponse,
+      success: HttpApiSchema.WithHeaders(
+        RequestMagicLinkResponse.pipe(HttpApiSchema.status("Accepted")),
+        NoStoreHeaders,
+      ),
     }).annotate(OpenApi.Summary, "Request a magic-link sign-in email"),
     HttpApiEndpoint.post("verify", "/verify", {
       payload: VerifyMagicLinkRequest,
       error: [MagicLinkError, ...CommonErrors],
-      success: VerifyMagicLinkResponse,
+      success: HttpApiSchema.WithHeaders(VerifyMagicLinkResponse, NoStoreHeaders),
     }).annotate(OpenApi.Summary, "Verify a magic link or email code"),
   )
   .annotate(OpenApi.Description, "Passwordless authentication")
