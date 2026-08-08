@@ -9,7 +9,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 - `src/common/` — shared primitives such as normalized email and branded IDs.
 - `src/model/` — persistence/domain models and insert/update schemas.
 - `src/dto/` — public API request and response schemas.
-- `src/errors/` — shared typed errors.
+- `src/errors/` — typed errors used across the project.
 - `src/index.ts` — common values and errors.
 
 ## Public imports
@@ -28,5 +28,5 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   Ordinary validated strings do not need brands.
 - DTOs describe the public wire contract. Models describe shared domain or
   persistence shapes; do not expose sensitive model fields through DTOs.
-- Add errors here when they are shared across package or API boundaries.
+- Define typed project errors here and import them from the owning package.
 - Keep schemas readonly unless mutation is explicitly required.

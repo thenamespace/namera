@@ -4,5 +4,3 @@ export const cryptoPurpose = {
   sessionToken: "auth.session.token",
   emailOutbox: "email.outbox.payload",
 } as const;
-
-export type CryptoPurpose = (typeof cryptoPurpose)[keyof typeof cryptoPurpose];

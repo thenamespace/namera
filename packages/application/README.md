@@ -13,7 +13,6 @@ and adapts HTTP requests to application methods.
 - `src/crypto/config.ts` — redacted cryptographic secrets.
 - `src/crypto/data.ts` — stable domain-separation purposes.
 - `src/crypto/layer.ts` — reusable hashing, HMAC, encryption, and random-value service.
-- `src/crypto/types.ts` — crypto service contracts and error.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
 Future feature folders should expose class-based Effect services with named

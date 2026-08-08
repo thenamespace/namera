@@ -74,7 +74,7 @@ follow its linked local documentation when relevant. Search
   trusted configuration.
 - Brand values only when identity or confusion between values would cause a real
   defect. Do not brand every string.
-- Put public request/response schemas and shared errors in `protocol`. Keep
+- Put public request/response schemas and typed errors in `protocol`. Keep
   sensitive persistence fields out of public DTOs.
 - Put business workflows in `application`, transport definitions in `api`, HTTP
   handlers and authorization in `apps/server`, and queries in `database`.

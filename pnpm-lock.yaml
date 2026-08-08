@@ -123,6 +123,9 @@ importers:
 
   packages/application:
     dependencies:
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../protocol
       '@namera-ai/utils':
         specifier: workspace:*
         version: link:../utils
