@@ -7,12 +7,14 @@ import { GetOrganizationMemberResponse } from "./member.js";
 
 export const GetOrganizationRequest = Schema.Struct({
   organizationId: OrganizationId,
-});
+}).annotate({ identifier: "GetOrganizationRequest" });
 export const GetOrganizationResponse = Organization.mapFields(
   Struct.pick(["id", "plan", "metadata"]),
-);
+).annotate({ identifier: "OrganizationResponse", description: "Organization details" });
 
-export const CreateOrganizationRequest = OrganizationInsert.mapFields(Struct.pick(["metadata"]));
+export const CreateOrganizationRequest = OrganizationInsert.mapFields(
+  Struct.pick(["metadata"]),
+).annotate({ identifier: "CreateOrganizationRequest" });
 export const CreateOrganizationResponse = GetOrganizationResponse;
 
 export const ListUserOrganizationsResponse = Schema.Array(
@@ -20,9 +22,11 @@ export const ListUserOrganizationsResponse = Schema.Array(
     organization: GetOrganizationResponse,
     organizationMember: GetOrganizationMemberResponse,
   }),
-);
+).annotate({ identifier: "ListUserOrganizationsResponse" });
 
-export const UpdateOrganizationRequest = OrganizationUpdate;
+export const UpdateOrganizationRequest = OrganizationUpdate.annotate({
+  identifier: "UpdateOrganizationRequest",
+});
 export const UpdateOrganizationResponse = GetOrganizationResponse;
 
 export type GetOrganizationRequest = typeof GetOrganizationRequest.Type;

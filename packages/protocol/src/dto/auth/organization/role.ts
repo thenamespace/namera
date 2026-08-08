@@ -22,7 +22,7 @@ const OrganizationRoleResponseFields = [
 export const GetOrganizationRoleResponse = Schema.Union([
   OrganizationRole.members[0].mapFields(Struct.pick(OrganizationRoleResponseFields)),
   OrganizationRole.members[1].mapFields(Struct.pick(OrganizationRoleResponseFields)),
-]);
+]).annotate({ identifier: "OrganizationRoleResponse" });
 
 export const CreateCustomOrganizationRoleRequest = CustomOrganizationRoleInsert.mapFields(
   Struct.omit(["organizationId"]),

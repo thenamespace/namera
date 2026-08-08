@@ -13,14 +13,16 @@ export const UserActorData = Schema.Struct({
   organization: GetOrganizationResponse,
   member: GetOrganizationMemberResponse,
   role: GetOrganizationRoleResponse,
-});
+}).annotate({ identifier: "UserActorData" });
 
 export const UserActor = Schema.Struct({
   type: Schema.Literal("user"),
   data: UserActorData,
-});
+}).annotate({ identifier: "UserActor" });
 
-export const CurrentActorResponse = Schema.Union([UserActor]);
+export const CurrentActorResponse = Schema.Union([UserActor]).annotate({
+  identifier: "CurrentActorResponse",
+});
 
 export type UserActorData = typeof UserActorData.Type;
 export type UserActor = typeof UserActor.Type;

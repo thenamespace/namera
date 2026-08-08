@@ -12,24 +12,27 @@ export const MagicLinkToken = Schema.String.check(
   Schema.isMaxLength(128, {
     message: "Magic-link token is too long",
   }),
-);
+).annotate({ identifier: "MagicLinkToken", description: "Single-use token from a sign-in email" });
 
 export const MagicLinkCode = Schema.String.check(
   Schema.isPattern(/^\d{8}$/, {
     message: "Magic-link code must contain exactly eight digits",
   }),
-);
+).annotate({ identifier: "MagicLinkCode", description: "Eight-digit email sign-in code" });
 
 export const MagicLinkReturnTo = ApplicationRelativePath;
 
 export const RequestMagicLinkRequest = Schema.Struct({
   email: Email,
   returnTo: Schema.optionalKey(MagicLinkReturnTo),
+}).annotate({
+  identifier: "RequestMagicLinkRequest",
+  description: "Requests a passwordless sign-in email",
 });
 
 export const RequestMagicLinkResponse = Schema.Struct({
   message: Schema.Literal("If this email can sign in, we sent a sign-in email."),
-});
+}).annotate({ identifier: "RequestMagicLinkResponse" });
 
 export const GetMagicLinkRequest = Schema.Struct({
   id: VerificationId,
@@ -47,11 +50,14 @@ export const VerifyMagicLinkRequest = Schema.Union([
     email: Email,
     code: MagicLinkCode,
   }),
-]);
+]).annotate({
+  identifier: "VerifyMagicLinkRequest",
+  description: "Verifies either an email link token or an email code",
+});
 
 export const VerifyMagicLinkResponse = Schema.Struct({
   returnTo: MagicLinkReturnTo,
-});
+}).annotate({ identifier: "VerifyMagicLinkResponse" });
 
 export type MagicLinkToken = typeof MagicLinkToken.Type;
 export type MagicLinkCode = typeof MagicLinkCode.Type;

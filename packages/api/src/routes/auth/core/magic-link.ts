@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
 import { MagicLinkError } from "@namera-ai/protocol";
 import {
@@ -16,11 +16,12 @@ export class MagicLinkGroup extends HttpApiGroup.make("magicLink")
       payload: RequestMagicLinkRequest,
       error: [MagicLinkError, ...CommonErrors],
       success: RequestMagicLinkResponse,
-    }),
+    }).annotate(OpenApi.Summary, "Request a magic-link sign-in email"),
     HttpApiEndpoint.post("verify", "/verify", {
       payload: VerifyMagicLinkRequest,
       error: [MagicLinkError, ...CommonErrors],
       success: VerifyMagicLinkResponse,
-    }),
+    }).annotate(OpenApi.Summary, "Verify a magic link or email code"),
   )
+  .annotate(OpenApi.Description, "Passwordless authentication")
   .prefix("/auth/magic-link") {}

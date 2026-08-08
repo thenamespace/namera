@@ -12,10 +12,12 @@ export const GetOrganizationMemberResponse = Schema.Struct({
   ),
   user: GetUserResponse,
   organizationRole: GetOrganizationRoleResponse,
-});
+}).annotate({ identifier: "OrganizationMemberResponse" });
 
 export const ListOrganizationMemberRequest = Schema.Void;
-export const ListOrganizationMemberResponse = Schema.Array(GetOrganizationMemberResponse);
+export const ListOrganizationMemberResponse = Schema.Array(GetOrganizationMemberResponse).annotate({
+  identifier: "ListOrganizationMembersResponse",
+});
 
 export type GetOrganizationMemberRequest = typeof GetOrganizationMemberRequest.Type;
 export type GetOrganizationMemberResponse = typeof GetOrganizationMemberResponse.Type;

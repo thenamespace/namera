@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
 import { OrganizationError } from "@namera-ai/protocol";
 import { ListOrganizationMemberResponse } from "@namera-ai/protocol/dto";
@@ -11,7 +11,8 @@ export class MemberGroup extends HttpApiGroup.make("member")
     HttpApiEndpoint.get("listOrgMembers", "/list-org-members", {
       error: [OrganizationError, ...CommonErrors],
       success: ListOrganizationMemberResponse,
-    }),
+    }).annotate(OpenApi.Summary, "List active organization members"),
   )
+  .annotate(OpenApi.Description, "Organization membership")
   .middleware(Authorization)
   .prefix("/auth/member") {}

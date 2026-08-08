@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
 import { UpdateUserRequest, UpdateUserResponse } from "@namera-ai/protocol/dto";
 
@@ -11,7 +11,8 @@ export class UserGroup extends HttpApiGroup.make("user")
       error: CommonErrors,
       payload: UpdateUserRequest,
       success: UpdateUserResponse,
-    }),
+    }).annotate(OpenApi.Summary, "Update the current user profile"),
   )
+  .annotate(OpenApi.Description, "Authenticated user operations")
   .middleware(Authorization)
   .prefix("/auth/user") {}
