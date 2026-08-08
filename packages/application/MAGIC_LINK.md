@@ -78,21 +78,23 @@ application background programs. It contains no authentication business rules.
 
 ## Data model
 
-Use a purpose-specific verification record rather than treating verification as an
-unstructured key-value entry.
+Use shared columns for verification lifecycle and security state, with JSON data
+for the context specific to each purpose.
 
 ```ts
 interface MagicLinkVerificationRecord {
   readonly id: VerificationId;
   readonly purpose: "magic-link-signin";
   readonly identifier: Email;
+  readonly data: {
+    readonly returnTo?: string;
+  };
   readonly tokenHash: string;
-  readonly codeHash: string;
+  readonly codeHmac: string;
   readonly attempts: number;
   readonly expiresAt: Date;
   readonly consumedAt: Date | null;
-  readonly returnPath: string | null;
-  readonly requestedIpHash: string | null;
+  readonly revokedAt: Date | null;
   readonly createdAt: Date;
 }
 ```
@@ -101,9 +103,10 @@ Requirements:
 
 - `id` is an opaque selector, preferably UUIDv7.
 - `identifier` contains the normalized email produced by the protocol schema.
-- `tokenHash` and `codeHash` contain hashes or keyed hashes, never plaintext.
+- `tokenHash` and `codeHmac` contain hashes or keyed hashes, never plaintext.
 - `purpose` prevents a token issued for one workflow from being used by another.
-- `returnPath` is either `null` or a validated application-relative path.
+- `data` contains only purpose-specific context. For magic-link sign-in,
+  `data.returnTo` is an optional validated application-relative path.
 - `consumedAt` supports replay detection and audit; it is set exactly once.
 - expired and consumed records are removed later by a scheduled retention job.
 - indexes support selector lookup, outstanding verification lookup by normalized

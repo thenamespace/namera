@@ -80,7 +80,7 @@ apps/server           Config decoding and live Layer construction
 
 ### Database support
 
-- [ ] Replace the generic verification value with purpose, token hash, code HMAC, attempts, expiry, consumed time, and safe return-path fields.
+- [x] Replace the generic verification value with typed purpose, purpose-specific data, token hash, code HMAC, attempts, expiry, and lifecycle fields.
 - [ ] Add an atomic `invalidatePendingAndInsert` repository operation for resend behavior.
 - [ ] Add atomic `incrementAttempts` and conditional `consume` repository operations.
 - [ ] Store only a digest of session credentials and add lookup by digest.
@@ -232,7 +232,7 @@ The implementation contract is documented in
 
 ### Database
 
-- [ ] Add purpose, token hash, code hash, attempts, consumed time, and safe return path to verification persistence.
+- [x] Add typed purpose, purpose-specific data, token hash, code HMAC, attempts, and lifecycle fields to verification persistence.
 - [ ] Add indexes for selector lookup, outstanding email verification, and expiration cleanup.
 - [ ] Add repository operations for issuing, invalidating, finding, incrementing attempts, consuming, and cleaning verifications.
 - [ ] Implement conditional, single-use verification consumption.
