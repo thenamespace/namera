@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
-import { OrganizationService } from "@namera-ai/application";
+import * as Application from "@namera-ai/application";
 import type { MemberPermission } from "@namera-ai/protocol/model";
 
 import { enforceActor, toMemberResponse, toOrganizationResponse } from "#/helpers/index";
@@ -19,7 +19,8 @@ const actorData = (permissions: readonly MemberPermission[] = []) =>
 
 export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization", (handlers) =>
   Effect.gen(function* () {
-    const organizations = yield* OrganizationService;
+    const app = yield* Application.Application;
+    const organizations = app.organization;
 
     return handlers
       .handle("create", ({ payload }) =>

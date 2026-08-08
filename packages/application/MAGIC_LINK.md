@@ -48,9 +48,9 @@ repository operations but does not coordinate the complete sign-in use case.
 
 ### Application package
 
-Owns the `MagicLinkService` workflow, policy, transaction boundaries, rate-limit
-decisions, email-delivery worker program, and mapping from internal failures to
-public errors.
+Owns the `Application.magicLink` workflow, policy, transaction boundaries,
+rate-limit decisions, email-delivery worker program, and mapping from internal
+failures to public errors.
 
 ### Emails package
 
@@ -62,7 +62,7 @@ decide when a magic link should be issued or coordinate authentication state.
 ### API package
 
 Owns HTTP routes, session cookies, and request decoding. Route handlers delegate
-business behavior to `MagicLinkService`.
+business behavior to the aggregate `Application` service.
 
 ### Dashboard application
 
@@ -141,22 +141,22 @@ The remaining magic-link and session policy is defined in application code.
 Construct email links from `AUTH_DASHBOARD_PUBLIC_ORIGIN`, never from `Host`,
 `Forwarded`, or `X-Forwarded-Host` request headers.
 
-## Application services
+## Application service
 
-The central workflow should follow the repository's class-based Effect service
-convention.
+The central workflow is one branch of the aggregate class-based Effect service.
 
 ```ts
-export interface MagicLinkServiceShape {
-  readonly request: (input: MagicLinkRequest) => Effect.Effect<void, MagicLinkRequestError>;
-
-  readonly verify: (
-    input: MagicLinkVerification,
-  ) => Effect.Effect<AuthenticatedSession, MagicLinkVerificationError>;
+export interface ApplicationService {
+  readonly magicLink: {
+    readonly request: (input: MagicLinkRequest) => Effect.Effect<void, MagicLinkRequestError>;
+    readonly verify: (
+      input: MagicLinkVerification,
+    ) => Effect.Effect<AuthenticatedSession, MagicLinkVerificationError>;
+  };
 }
 
-export class MagicLinkService extends Context.Service<MagicLinkService, MagicLinkServiceShape>()(
-  "@namera-ai/application/MagicLinkService",
+export class Application extends Context.Service<Application, ApplicationService>()(
+  "@namera-ai/application/Application",
 ) {
   static readonly layer = Layer.effect(/* implementation */);
 }
@@ -174,7 +174,7 @@ Expected dependencies:
 - Effect `Clock`;
 - validated authentication configuration.
 
-`MagicLinkService` must not call Resend directly. A separate application
+`Application.magicLink` should eventually enqueue email rather than call Resend directly. A separate application
 `EmailDeliveryWorker` depends on `EmailOutboxRepository`, encryption, `EmailService`,
 `Clock`, and retry policy. This keeps the request transaction short and makes email
 delivery durable and independently testable.

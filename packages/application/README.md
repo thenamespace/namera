@@ -8,6 +8,9 @@ and adapts HTTP requests to application methods.
 
 ## Structure
 
+- `src/application.ts` — the single aggregate `Application` service and live layer.
+- `src/auth/*/service.ts` — internal domain operation builders used by `Application`.
+- `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/crypto/config.ts` — redacted cryptographic secrets.
@@ -15,8 +18,22 @@ and adapts HTTP requests to application methods.
 - `src/crypto/layer.ts` — reusable hashing, HMAC, encryption, and random-value service.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
-Future feature folders should expose class-based Effect services with named
-operations and focused layers.
+Future feature folders should add a focused operation builder to the aggregate
+service rather than exposing another public `Context.Service`.
+
+## Usage
+
+```ts
+import { Effect } from "effect";
+import * as Application from "@namera-ai/application";
+
+const program = Effect.gen(function* () {
+  const app = yield* Application.Application;
+  return yield* app.organization.list(userId);
+});
+```
+
+`Application.layer` is the only application layer provided by the server.
 
 ## Environment
 

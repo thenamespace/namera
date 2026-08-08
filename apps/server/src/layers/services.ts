@@ -1,12 +1,7 @@
 import { NodeCrypto } from "@effect/platform-node";
 import { Config, Effect, Layer } from "effect";
 
-import {
-  AccountService,
-  CryptoService,
-  MagicLinkService,
-  OrganizationService,
-} from "@namera-ai/application";
+import { Application, CryptoService } from "@namera-ai/application";
 import { Database, Repository, TransactionService } from "@namera-ai/database";
 import { EmailService } from "@namera-ai/emails";
 
@@ -24,8 +19,4 @@ const EmailLive = Layer.unwrap(
 
 export const ServicesLive = Layer.mergeAll(PersistenceLive, CryptoLive, EmailLive);
 
-export const ApplicationLive = Layer.mergeAll(
-  AccountService.layer,
-  MagicLinkService.layer,
-  OrganizationService.layer,
-);
+export const ApplicationLive = Application.layer;
