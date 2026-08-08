@@ -1,9 +1,8 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError, Email } from "@namera-ai/protocol";
-import { type UserId } from "@namera-ai/protocol";
-import { User, UserInsert, UserUpdate } from "@namera-ai/protocol/model";
+import type { DatabaseError, Email, UserId } from "@namera-ai/protocol";
+import { User, UserInsert } from "@namera-ai/protocol/model";
 import { eq } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
@@ -11,10 +10,14 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { user } from "#/schema/index";
 
 export interface UserRepositoryService {
-  findById: (id: UserId) => Effect.Effect<User | undefined, DatabaseError>;
+  findById: (userId: UserId) => Effect.Effect<User | undefined, DatabaseError>;
   findByEmail: (email: Email) => Effect.Effect<User | undefined, DatabaseError>;
-  insert: (params: UserInsert) => Effect.Effect<User, DatabaseError>;
-  update: (id: UserId, params: UserUpdate) => Effect.Effect<User, DatabaseError>;
+  create: (data: UserInsert) => Effect.Effect<User, DatabaseError>;
+  findOrCreateByEmail: (data: UserInsert) => Effect.Effect<User, DatabaseError>;
+  markEmailVerifiedAndLogin: (
+    userId: UserId,
+    loggedInAt: DateTime.Utc,
+  ) => Effect.Effect<User | undefined, DatabaseError>;
 }
 
 export class UserRepository extends Context.Service<UserRepository, UserRepositoryService>()(
@@ -25,51 +28,76 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
     Effect.gen(function* () {
       const database = yield* Database;
 
-      return UserRepository.of({
-        findById: Effect.fn("findUserById")(function* (id) {
-          const db = yield* transactionOrDatabase(database);
+      const findByEmail = Effect.fn("UserRepository.findByEmail")(function* (email: Email) {
+        const db = yield* transactionOrDatabase(database);
+        const row = yield* db.query.user.findFirst({
+          where: {
+            email: { eq: email },
+          },
+        });
 
-          const res = yield* db.query.user.findFirst({
+        return row ? Schema.decodeSync(User)(row) : undefined;
+      }, mapToDatabaseError);
+
+      return UserRepository.of({
+        findById: Effect.fn("UserRepository.findById")(function* (userId) {
+          const db = yield* transactionOrDatabase(database);
+          const row = yield* db.query.user.findFirst({
             where: {
-              id: { eq: id },
+              id: { eq: userId },
             },
           });
 
-          return res ? Schema.decodeSync(User)(res) : undefined;
+          return row ? Schema.decodeSync(User)(row) : undefined;
         }, mapToDatabaseError),
-        insert: Effect.fn("insertUser")(function* (params) {
+        findByEmail,
+        create: Effect.fn("UserRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
-
-          const parsed = Schema.encodeSync(UserInsert)(params);
-
-          const res = yield* db
+          const parsed = Schema.encodeSync(UserInsert)(data);
+          const rows = yield* db
             .insert(user)
             .values(parsed as any)
             .returning();
 
-          return Schema.decodeSync(User)(res[0]!);
+          return Schema.decodeSync(User)(rows[0]!);
         }, mapToDatabaseError),
-        findByEmail: Effect.fn("findUserByEmail")(function* (email) {
+        findOrCreateByEmail: Effect.fn("UserRepository.findOrCreateByEmail")(function* (data) {
           const db = yield* transactionOrDatabase(database);
-
-          const res = yield* db.query.user.findFirst({
-            where: {
-              email: { eq: email },
-            },
-          });
-
-          return res ? Schema.decodeSync(User)(res) : undefined;
-        }, mapToDatabaseError),
-        update: Effect.fn("updateUser")(function* (id, params) {
-          const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(UserUpdate)(params);
-          const res = yield* db
-            .update(user)
-            .set(parsed as any)
-            .where(eq(user.id, id))
+          const parsed = Schema.encodeSync(UserInsert)(data);
+          const rows = yield* db
+            .insert(user)
+            .values(parsed as any)
+            .onConflictDoNothing({ target: user.email })
             .returning();
 
-          return Schema.decodeSync(User)(res[0]!);
+          if (rows[0]) {
+            return Schema.decodeSync(User)(rows[0]);
+          }
+
+          return yield* findByEmail(data.email).pipe(
+            Effect.flatMap((existing) =>
+              existing
+                ? Effect.succeed(existing)
+                : Effect.die("User disappeared after resolving the unique email conflict"),
+            ),
+          );
+        }, mapToDatabaseError),
+        markEmailVerifiedAndLogin: Effect.fn("UserRepository.markEmailVerifiedAndLogin")(function* (
+          userId,
+          loggedInAt,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedLoggedInAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(loggedInAt);
+          const rows = yield* db
+            .update(user)
+            .set({
+              emailVerified: true,
+              lastLoginAt: encodedLoggedInAt,
+            })
+            .where(eq(user.id, userId))
+            .returning();
+
+          return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),

@@ -47,8 +47,8 @@ const createUserAndSession = Effect.gen(function* () {
 
   return yield* transactions.run(
     Effect.gen(function* () {
-      const user = yield* repositories.auth.user.insert(userInput);
-      const session = yield* repositories.auth.session.insert(sessionInput(user.id));
+      const user = yield* repositories.auth.user.create(userInput);
+      const session = yield* repositories.auth.session.create(sessionInput(user.id));
       return { user, session };
     }),
   );

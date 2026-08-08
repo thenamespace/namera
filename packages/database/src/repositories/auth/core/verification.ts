@@ -1,34 +1,44 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError, Email } from "@namera-ai/protocol";
-import { type VerificationId } from "@namera-ai/protocol";
+import type { DatabaseError, Email, VerificationId } from "@namera-ai/protocol";
 import {
   Verification,
   VerificationInsert,
   type VerificationPurpose,
-  VerificationUpdate,
 } from "@namera-ai/protocol/model";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { verification } from "#/schema/index";
 
 export interface VerificationRepositoryService {
-  insert: (params: VerificationInsert) => Effect.Effect<Verification, DatabaseError>;
-  findByIdentifier: (params: {
-    purpose: VerificationPurpose;
-    identifier: Email;
-  }) => Effect.Effect<Verification | undefined, DatabaseError>;
-  update: (
+  create: (data: VerificationInsert) => Effect.Effect<Verification, DatabaseError>;
+  findById: (
     verificationId: VerificationId,
-    params: VerificationUpdate,
-  ) => Effect.Effect<Verification, DatabaseError>;
-  delete: (params: {
+  ) => Effect.Effect<Verification | undefined, DatabaseError>;
+  findPendingByIdentifier: (params: {
     purpose: VerificationPurpose;
     identifier: Email;
-  }) => Effect.Effect<void, DatabaseError>;
+    now: DateTime.Utc;
+    maxAttempts: number;
+  }) => Effect.Effect<Verification | undefined, DatabaseError>;
+  revokePending: (params: {
+    purpose: VerificationPurpose;
+    identifier: Email;
+    revokedAt: DateTime.Utc;
+  }) => Effect.Effect<ReadonlyArray<Verification>, DatabaseError>;
+  incrementAttempts: (params: {
+    verificationId: VerificationId;
+    now: DateTime.Utc;
+    maxAttempts: number;
+  }) => Effect.Effect<Verification | undefined, DatabaseError>;
+  consume: (params: {
+    verificationId: VerificationId;
+    consumedAt: DateTime.Utc;
+    maxAttempts: number;
+  }) => Effect.Effect<Verification | undefined, DatabaseError>;
 }
 
 export class VerificationRepository extends Context.Service<
@@ -41,50 +51,117 @@ export class VerificationRepository extends Context.Service<
       const database = yield* Database;
 
       return VerificationRepository.of({
-        insert: Effect.fn("insertVerification")(function* (params) {
+        create: Effect.fn("VerificationRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(VerificationInsert)(params);
-          const res = yield* db
+          const parsed = Schema.encodeSync(VerificationInsert)(data);
+          const rows = yield* db
             .insert(verification)
             .values(parsed as any)
             .returning();
 
-          return Schema.decodeSync(Verification)(res[0]!);
+          return Schema.decodeSync(Verification)(rows[0]!);
         }, mapToDatabaseError),
-        findByIdentifier: Effect.fn("findVerificationByIdentifier")(function* (params) {
+        findById: Effect.fn("VerificationRepository.findById")(function* (verificationId) {
           const db = yield* transactionOrDatabase(database);
-
-          const res = yield* db.query.verification.findFirst({
+          const row = yield* db.query.verification.findFirst({
             where: {
-              purpose: { eq: params.purpose },
-              identifier: { eq: params.identifier },
+              id: { eq: verificationId },
             },
           });
 
-          return res ? Schema.decodeSync(Verification)(res) : undefined;
+          return row ? Schema.decodeSync(Verification)(row) : undefined;
         }, mapToDatabaseError),
-        update: Effect.fn("updateVerification")(function* (verificationId, params) {
+        findPendingByIdentifier: Effect.fn("VerificationRepository.findPendingByIdentifier")(
+          function* ({ purpose, identifier, now, maxAttempts }) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const rows = yield* db
+              .select()
+              .from(verification)
+              .where(
+                and(
+                  eq(verification.purpose, purpose),
+                  eq(verification.identifier, identifier),
+                  isNull(verification.consumedAt),
+                  isNull(verification.revokedAt),
+                  gt(verification.expiresAt, encodedNow),
+                  lt(verification.attempts, maxAttempts),
+                ),
+              )
+              .orderBy(desc(verification.createdAt))
+              .limit(1);
+
+            return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+          },
+          mapToDatabaseError,
+        ),
+        revokePending: Effect.fn("VerificationRepository.revokePending")(function* ({
+          purpose,
+          identifier,
+          revokedAt,
+        }) {
           const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(VerificationUpdate)(params);
-          const res = yield* db
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
             .update(verification)
-            .set(parsed as any)
-            .where(eq(verification.id, verificationId))
-            .returning();
-
-          return Schema.decodeSync(Verification)(res[0]!);
-        }, mapToDatabaseError),
-        delete: Effect.fn("deleteVerification")(function* (params) {
-          const db = yield* transactionOrDatabase(database);
-
-          yield* db
-            .delete(verification)
+            .set({ revokedAt: encodedRevokedAt })
             .where(
               and(
-                eq(verification.purpose, params.purpose),
-                eq(verification.identifier, params.identifier),
+                eq(verification.purpose, purpose),
+                eq(verification.identifier, identifier),
+                isNull(verification.consumedAt),
+                isNull(verification.revokedAt),
               ),
-            );
+            )
+            .returning();
+
+          return Schema.decodeSync(Schema.Array(Verification))(rows);
+        }, mapToDatabaseError),
+        incrementAttempts: Effect.fn("VerificationRepository.incrementAttempts")(function* ({
+          verificationId,
+          now,
+          maxAttempts,
+        }) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+          const rows = yield* db
+            .update(verification)
+            .set({ attempts: sql`${verification.attempts} + 1` })
+            .where(
+              and(
+                eq(verification.id, verificationId),
+                isNull(verification.consumedAt),
+                isNull(verification.revokedAt),
+                gt(verification.expiresAt, encodedNow),
+                lt(verification.attempts, maxAttempts),
+              ),
+            )
+            .returning();
+
+          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+        }, mapToDatabaseError),
+        consume: Effect.fn("VerificationRepository.consume")(function* ({
+          verificationId,
+          consumedAt,
+          maxAttempts,
+        }) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedConsumedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(consumedAt);
+          const rows = yield* db
+            .update(verification)
+            .set({ consumedAt: encodedConsumedAt })
+            .where(
+              and(
+                eq(verification.id, verificationId),
+                isNull(verification.consumedAt),
+                isNull(verification.revokedAt),
+                gt(verification.expiresAt, encodedConsumedAt),
+                lt(verification.attempts, maxAttempts),
+              ),
+            )
+            .returning();
+
+          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),

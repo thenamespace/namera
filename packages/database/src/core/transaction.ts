@@ -10,7 +10,10 @@ class TransactionClient extends Context.Service<TransactionClient, TransactionCl
   "@namera-ai/database/TransactionClient",
 ) {}
 
-export type DatabaseExecutor = Pick<DatabaseService, "delete" | "insert" | "query" | "update">;
+export type DatabaseExecutor = Pick<
+  DatabaseService,
+  "delete" | "insert" | "query" | "select" | "update"
+>;
 
 export const transactionOrDatabase = Effect.fn("transactionOrDatabase")(function* (
   database: DatabaseService,

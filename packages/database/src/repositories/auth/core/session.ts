@@ -1,26 +1,34 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError } from "@namera-ai/protocol";
-import { type OrganizationId, type SessionId, type UserId } from "@namera-ai/protocol";
-import { Session, SessionInsert, SessionUpdate } from "@namera-ai/protocol/model";
-import { and, eq, ne, sql } from "drizzle-orm";
+import type { DatabaseError, OrganizationId, SessionId, UserId } from "@namera-ai/protocol";
+import { Session, SessionInsert } from "@namera-ai/protocol/model";
+import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
 
 import { Database, mapToDatabaseError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { organizationMember, session } from "#/schema/index";
 
 export interface SessionRepositoryService {
-  insert: (data: SessionInsert) => Effect.Effect<Session, DatabaseError>;
-  findByTokenHash: (tokenHash: string) => Effect.Effect<Session | undefined, DatabaseError>;
-  findById: (sessionId: SessionId) => Effect.Effect<Session | undefined, DatabaseError>;
-  findSessionsForUserId: (userId: UserId) => Effect.Effect<ReadonlyArray<Session>, DatabaseError>;
-  updateAllExcept: (
+  create: (data: SessionInsert) => Effect.Effect<Session, DatabaseError>;
+  findActiveByTokenHash: (
+    tokenHash: string,
+    now: DateTime.Utc,
+  ) => Effect.Effect<Session | undefined, DatabaseError>;
+  findActiveForUser: (
     userId: UserId,
-    sessionId: SessionId,
-    data: SessionUpdate,
+    now: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<Session>, DatabaseError>;
-  update: (id: SessionId, data: SessionUpdate) => Effect.Effect<Session | undefined, DatabaseError>;
+  revoke: (
+    sessionId: SessionId,
+    userId: UserId,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<Session | undefined, DatabaseError>;
+  revokeOthers: (
+    userId: UserId,
+    currentSessionId: SessionId,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<number, DatabaseError>;
   setActiveOrganization: (
     sessionId: SessionId,
     userId: UserId,
@@ -47,72 +55,90 @@ export class SessionRepository extends Context.Service<
       const database = yield* Database;
 
       return SessionRepository.of({
-        insert: Effect.fn("insertSession")(function* (data) {
+        create: Effect.fn("SessionRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(SessionInsert)(data);
-          const res = yield* db
+          const rows = yield* db
             .insert(session)
             .values(parsed as any)
             .returning();
 
-          return Schema.decodeSync(Session)(res[0]!);
+          return Schema.decodeSync(Session)(rows[0]!);
         }, mapToDatabaseError),
-        findByTokenHash: Effect.fn("findSessionByTokenHash")(function* (tokenHash) {
+        findActiveByTokenHash: Effect.fn("SessionRepository.findActiveByTokenHash")(function* (
+          tokenHash,
+          now,
+        ) {
           const db = yield* transactionOrDatabase(database);
+          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+          const rows = yield* db
+            .select()
+            .from(session)
+            .where(
+              and(
+                eq(session.tokenHash, tokenHash),
+                isNull(session.revokedAt),
+                gt(session.expiresAt, encodedNow),
+              ),
+            )
+            .limit(1);
 
-          const res = yield* db.query.session.findFirst({
-            where: {
-              tokenHash: { eq: tokenHash },
-            },
-          });
-
-          return res ? Schema.decodeSync(Session)(res) : undefined;
+          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
         }, mapToDatabaseError),
-        findById: Effect.fn("findSessionById")(function* (sessionId) {
+        findActiveForUser: Effect.fn("SessionRepository.findActiveForUser")(function* (
+          userId,
+          now,
+        ) {
           const db = yield* transactionOrDatabase(database);
+          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+          const rows = yield* db
+            .select()
+            .from(session)
+            .where(
+              and(
+                eq(session.userId, userId),
+                isNull(session.revokedAt),
+                gt(session.expiresAt, encodedNow),
+              ),
+            );
 
-          const res = yield* db.query.session.findFirst({
-            where: {
-              id: { eq: sessionId },
-            },
-          });
-
-          return res ? Schema.decodeSync(Session)(res) : undefined;
+          return Schema.decodeSync(Schema.Array(Session))(rows);
         }, mapToDatabaseError),
-        findSessionsForUserId: Effect.fn("findSessionsForUserId")(function* (userId) {
+        revoke: Effect.fn("SessionRepository.revoke")(function* (sessionId, userId, revokedAt) {
           const db = yield* transactionOrDatabase(database);
-
-          const res = yield* db.query.session.findMany({
-            where: {
-              userId: { eq: userId },
-            },
-          });
-
-          return [...Schema.decodeSync(Schema.Array(Session))(res)];
-        }, mapToDatabaseError),
-        updateAllExcept: Effect.fn("updateAllSessionsExcept")(function* (userId, sessionId, data) {
-          const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(SessionUpdate)(data);
-          const res = yield* db
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
             .update(session)
-            .set(parsed as any)
-            .where(and(eq(session.userId, userId), ne(session.id, sessionId)))
+            .set({ revokedAt: encodedRevokedAt })
+            .where(
+              and(eq(session.id, sessionId), eq(session.userId, userId), isNull(session.revokedAt)),
+            )
             .returning();
 
-          return [...Schema.decodeSync(Schema.Array(Session))(res)];
+          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
         }, mapToDatabaseError),
-        update: Effect.fn("updateSession")(function* (id, data) {
+        revokeOthers: Effect.fn("SessionRepository.revokeOthers")(function* (
+          userId,
+          currentSessionId,
+          revokedAt,
+        ) {
           const db = yield* transactionOrDatabase(database);
-          const parsed = Schema.encodeSync(SessionUpdate)(data);
-          const res = yield* db
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
             .update(session)
-            .set(parsed as any)
-            .where(eq(session.id, id))
-            .returning();
+            .set({ revokedAt: encodedRevokedAt })
+            .where(
+              and(
+                eq(session.userId, userId),
+                ne(session.id, currentSessionId),
+                isNull(session.revokedAt),
+              ),
+            )
+            .returning({ id: session.id });
 
-          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
+          return rows.length;
         }, mapToDatabaseError),
-        setActiveOrganization: Effect.fn("setSessionActiveOrganization")(function* (
+        setActiveOrganization: Effect.fn("SessionRepository.setActiveOrganization")(function* (
           sessionId,
           userId,
           organizationId,
@@ -120,15 +146,15 @@ export class SessionRepository extends Context.Service<
         ) {
           const db = yield* transactionOrDatabase(database);
           const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-          const res = yield* db
+          const rows = yield* db
             .update(session)
             .set({ activeOrganizationId: organizationId })
             .where(
               and(
                 eq(session.id, sessionId),
                 eq(session.userId, userId),
-                sql`${session.revokedAt} IS NULL`,
-                sql`${session.expiresAt} > ${encodedNow}`,
+                isNull(session.revokedAt),
+                gt(session.expiresAt, encodedNow),
                 sql`EXISTS (
                   SELECT 1
                   FROM ${organizationMember}
@@ -140,14 +166,13 @@ export class SessionRepository extends Context.Service<
             )
             .returning();
 
-          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
+          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
         }, mapToDatabaseError),
-        clearActiveOrganizationForUser: Effect.fn("clearUserActiveOrganization")(function* (
-          userId,
-          organizationId,
-        ) {
+        clearActiveOrganizationForUser: Effect.fn(
+          "SessionRepository.clearActiveOrganizationForUser",
+        )(function* (userId, organizationId) {
           const db = yield* transactionOrDatabase(database);
-          const res = yield* db
+          const rows = yield* db
             .update(session)
             .set({ activeOrganizationId: null })
             .where(
@@ -155,20 +180,20 @@ export class SessionRepository extends Context.Service<
             )
             .returning();
 
-          return Schema.decodeSync(Schema.Array(Session))(res);
+          return Schema.decodeSync(Schema.Array(Session))(rows);
         }, mapToDatabaseError),
-        clearActiveOrganization: Effect.fn("clearSessionActiveOrganization")(function* (
+        clearActiveOrganization: Effect.fn("SessionRepository.clearActiveOrganization")(function* (
           sessionId,
           userId,
         ) {
           const db = yield* transactionOrDatabase(database);
-          const res = yield* db
+          const rows = yield* db
             .update(session)
             .set({ activeOrganizationId: null })
             .where(and(eq(session.id, sessionId), eq(session.userId, userId)))
             .returning();
 
-          return res[0] ? Schema.decodeSync(Session)(res[0]) : undefined;
+          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
         }, mapToDatabaseError),
       });
     }),
