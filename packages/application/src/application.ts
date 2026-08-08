@@ -1,19 +1,31 @@
 import { Context, Effect, Layer } from "effect";
 
+import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
+import { makeUserApplication, type UserApplication } from "#/auth/core/user";
 import {
-  makeAccountApplication,
-  type SessionApplication,
-  type UserApplication,
-} from "#/auth/account/service";
-import { makeMagicLinkApplication, type MagicLinkApplication } from "#/auth/magic-link/service";
+  makeRequestMagicLinkApplication,
+  type RequestMagicLinkApplication,
+} from "#/auth/magic-link/request";
+import {
+  makeVerifyMagicLinkApplication,
+  type VerifyMagicLinkApplication,
+} from "#/auth/magic-link/verify";
+import {
+  makeInvitationApplication,
+  type InvitationApplication,
+} from "#/auth/organization/invitation";
+import { makeMemberApplication, type MemberApplication } from "#/auth/organization/member";
 import {
   makeOrganizationApplication,
   type OrganizationApplication,
-} from "#/auth/organization/service";
+} from "#/auth/organization/organization";
 
 export interface ApplicationService {
-  readonly magicLink: MagicLinkApplication;
-  readonly organization: OrganizationApplication;
+  readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
+  readonly organization: OrganizationApplication & {
+    readonly invitation: InvitationApplication;
+    readonly member: MemberApplication;
+  };
   readonly session: SessionApplication;
   readonly user: UserApplication;
 }
@@ -24,15 +36,19 @@ export class Application extends Context.Service<Application, ApplicationService
   static readonly layer = Layer.effect(
     Application,
     Effect.gen(function* () {
-      const account = yield* makeAccountApplication;
-      const magicLink = yield* makeMagicLinkApplication;
+      const session = yield* makeSessionApplication;
+      const user = yield* makeUserApplication;
+      const magicLinkRequest = yield* makeRequestMagicLinkApplication;
+      const magicLinkVerify = yield* makeVerifyMagicLinkApplication;
       const organization = yield* makeOrganizationApplication;
+      const invitation = yield* makeInvitationApplication;
+      const member = yield* makeMemberApplication;
 
       return Application.of({
-        magicLink,
-        organization,
-        session: account.session,
-        user: account.user,
+        magicLink: { ...magicLinkRequest, ...magicLinkVerify },
+        organization: { ...organization, invitation, member },
+        session,
+        user,
       });
     }),
   );

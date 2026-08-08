@@ -11,31 +11,9 @@ import {
   type SessionId,
   type UserId,
 } from "@namera-ai/protocol";
-import type {
-  Invitation,
-  Organization,
-  OrganizationMember,
-  OrganizationMetadata,
-  OrganizationRole,
-  User,
-} from "@namera-ai/protocol/model";
+import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
 
 import { AuthConfig } from "#/auth/config";
-
-import { createOrganizationWithOwner, requireActiveOrganization } from "./helpers.js";
-
-export interface MembershipView {
-  readonly organizationMember: OrganizationMember;
-  readonly organization: Organization;
-  readonly organizationRole: OrganizationRole;
-  readonly user: User;
-}
-
-export interface MemberView {
-  readonly organizationMember: OrganizationMember;
-  readonly organizationRole: OrganizationRole;
-  readonly user: User;
-}
 
 export interface InvitationView {
   readonly invitation: Invitation;
@@ -44,29 +22,7 @@ export interface InvitationView {
   readonly inviter: User;
 }
 
-export interface OrganizationApplication {
-  readonly create: (
-    userId: UserId,
-    sessionId: SessionId,
-    metadata: OrganizationMetadata,
-  ) => Effect.Effect<Organization, OrganizationError>;
-  readonly list: (userId: UserId) => Effect.Effect<ReadonlyArray<MembershipView>>;
-  readonly get: (
-    userId: UserId,
-    organizationId: OrganizationId,
-  ) => Effect.Effect<Organization, OrganizationError>;
-  readonly setActive: (
-    userId: UserId,
-    sessionId: SessionId,
-    organizationId: OrganizationId,
-  ) => Effect.Effect<void, OrganizationError>;
-  readonly update: (
-    organizationId: OrganizationId,
-    metadata: OrganizationMetadata,
-  ) => Effect.Effect<Organization, OrganizationError>;
-  readonly listMembers: (
-    organizationId: OrganizationId,
-  ) => Effect.Effect<ReadonlyArray<MemberView>>;
+export interface InvitationApplication {
   readonly getInvitation: (
     invitationId: InvitationId,
     email: Email,
@@ -75,7 +31,7 @@ export interface OrganizationApplication {
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<InvitationView>>;
   readonly listUserInvitations: (email: Email) => Effect.Effect<ReadonlyArray<InvitationView>>;
-  readonly inviteMember: (input: {
+  readonly createInvitation: (input: {
     email: Email;
     inviterId: UserId;
     organizationId: OrganizationId;
@@ -97,85 +53,23 @@ export interface OrganizationApplication {
   ) => Effect.Effect<void, InvitationError>;
 }
 
-const invitationNotFound = () => new InvitationError({ code: "INVITATION_NOT_FOUND" });
-
-export const makeOrganizationApplication = Effect.gen(function* () {
+export const makeInvitationApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
-  const create = Effect.fn("Application.organization.create")(
-    function* (userId: UserId, sessionId: SessionId, metadata: OrganizationMetadata) {
-      const now = yield* DateTime.now;
-      const organization = yield* transaction.run(
-        Effect.gen(function* () {
-          const created = yield* createOrganizationWithOwner(repository, userId, metadata.name);
-          if (metadata.logo !== undefined || metadata.description !== undefined) {
-            yield* repository.auth.organization.update(created.id, metadata);
-          }
-          yield* repository.auth.session.setActiveOrganization(sessionId, userId, created.id, now);
-          return { ...created, metadata };
-        }),
-      );
-      yield* Effect.logInfo("organization.created");
-      return organization;
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const list = Effect.fn("Application.organization.list")(
-    function* (userId: UserId) {
-      return yield* repository.auth.member.findMembershipsForUser(userId);
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const get = Effect.fn("Application.organization.get")(
-    function* (userId: UserId, organizationId: OrganizationId) {
-      const membership = yield* repository.auth.member.findActiveMembership(userId, organizationId);
-      return (yield* requireActiveOrganization(membership)).organization;
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const setActive = Effect.fn("Application.organization.setActive")(
-    function* (userId: UserId, sessionId: SessionId, organizationId: OrganizationId) {
-      const updated = yield* repository.auth.session.setActiveOrganization(
-        sessionId,
-        userId,
-        organizationId,
-        yield* DateTime.now,
-      );
-      if (!updated) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const update = Effect.fn("Application.organization.update")(
-    function* (organizationId: OrganizationId, metadata: OrganizationMetadata) {
-      return yield* repository.auth.organization
-        .update(organizationId, metadata)
-        .pipe(Effect.flatMap(requireActiveOrganization));
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const listMembers = Effect.fn("Application.organization.listMembers")(
-    function* (organizationId: OrganizationId) {
-      return yield* repository.auth.member.findOrganizationMembersForOrg(organizationId);
-    },
-    Effect.catchTag("DatabaseError", Effect.die),
-  );
-
-  const getInvitation = Effect.fn("Application.organization.getInvitation")(
+  const getInvitation = Effect.fn("Application.organization.invitation.getInvitation")(
     function* (invitationId: InvitationId, email: Email) {
       const invitation = yield* repository.auth.invitation.findByIdForEmail(invitationId, email);
-      return yield* invitation ? Effect.succeed(invitation) : Effect.fail(invitationNotFound());
+      if (!invitation) {
+        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+      }
+      return invitation;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listInvitations = Effect.fn("Application.organization.listInvitations")(
+  const listInvitations = Effect.fn("Application.organization.invitation.listInvitations")(
     function* (organizationId: OrganizationId) {
       return yield* repository.auth.invitation.findPendingForOrgId(
         organizationId,
@@ -185,14 +79,14 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listUserInvitations = Effect.fn("Application.organization.listUserInvitations")(
+  const listUserInvitations = Effect.fn("Application.organization.invitation.listUserInvitations")(
     function* (email: Email) {
       return yield* repository.auth.invitation.findPendingForEmail(email, yield* DateTime.now);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const inviteMember = Effect.fn("Application.organization.inviteMember")(
+  const createInvitation = Effect.fn("Application.organization.invitation.createInvitation")(
     function* (input: {
       email: Email;
       inviterId: UserId;
@@ -205,6 +99,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
         input.organizationRoleId,
       );
       if (!role) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+
       const existingUser = yield* repository.auth.user.findByEmail(input.email);
       if (existingUser) {
         const member = yield* repository.auth.member.findActiveMembership(
@@ -213,6 +108,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
         );
         if (member) return yield* new InvitationError({ code: "ALREADY_A_MEMBER" });
       }
+
       const existingInvitation = (yield* repository.auth.invitation.findPendingForOrgId(
         input.organizationId,
         now,
@@ -233,14 +129,16 @@ export const makeOrganizationApplication = Effect.gen(function* () {
           return yield* repository.auth.invitation.findById(created.id, input.organizationId);
         }),
       );
-      if (!invitation) return yield* invitationNotFound();
+      if (!invitation) {
+        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+      }
       yield* Effect.logInfo("invitation.created");
       return invitation;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const acceptInvitation = Effect.fn("Application.organization.acceptInvitation")(
+  const acceptInvitation = Effect.fn("Application.organization.invitation.acceptInvitation")(
     function* (input: {
       invitationId: InvitationId;
       email: Email;
@@ -254,18 +152,23 @@ export const makeOrganizationApplication = Effect.gen(function* () {
             input.invitationId,
             input.email,
           );
-          if (!found) return yield* invitationNotFound();
+          if (!found) {
+            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+          }
           const member = yield* repository.auth.member.findActiveMembership(
             input.userId,
             found.invitation.organizationId,
           );
           if (member) return yield* new InvitationError({ code: "ALREADY_A_MEMBER" });
+
           const accepted = yield* repository.auth.invitation.acceptPending(
             input.invitationId,
             input.email,
             now,
           );
-          if (!accepted) return yield* invitationNotFound();
+          if (!accepted) {
+            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+          }
           yield* repository.auth.member.insert({
             userId: input.userId,
             organizationId: accepted.organizationId,
@@ -284,42 +187,40 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const rejectInvitation = Effect.fn("Application.organization.rejectInvitation")(
+  const rejectInvitation = Effect.fn("Application.organization.invitation.rejectInvitation")(
     function* (invitationId: InvitationId, email: Email) {
       const rejected = yield* repository.auth.invitation.rejectPending(
         invitationId,
         email,
         yield* DateTime.now,
       );
-      if (!rejected) return yield* invitationNotFound();
+      if (!rejected) {
+        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+      }
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const cancelInvitation = Effect.fn("Application.organization.cancelInvitation")(
+  const cancelInvitation = Effect.fn("Application.organization.invitation.cancelInvitation")(
     function* (invitationId: InvitationId, organizationId: OrganizationId) {
       const canceled = yield* repository.auth.invitation.cancelPending(
         invitationId,
         organizationId,
       );
-      if (!canceled) return yield* invitationNotFound();
+      if (!canceled) {
+        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+      }
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   return {
-    create,
-    list,
-    get,
-    setActive,
-    update,
-    listMembers,
     getInvitation,
     listInvitations,
     listUserInvitations,
-    inviteMember,
+    createInvitation,
     acceptInvitation,
     rejectInvitation,
     cancelInvitation,
-  } satisfies OrganizationApplication;
+  } satisfies InvitationApplication;
 });

@@ -1,8 +1,7 @@
 import { Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
-import { OrganizationError, type Email } from "@namera-ai/protocol";
-import type { OrganizationId, UserId } from "@namera-ai/protocol";
+import { OrganizationError, type Email, type UserId } from "@namera-ai/protocol";
 
 export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwner")(function* (
   repository: RepositoryService,
@@ -51,11 +50,3 @@ export const createUserWithPersonalOrganization = Effect.fn("createUserWithPerso
     return { user, organization };
   },
 );
-
-export const requireActiveOrganization = <A>(
-  value: A | undefined,
-  code: "ORGANIZATION_NOT_FOUND" | "ORGANIZATION_MEMBER_NOT_FOUND" = "ORGANIZATION_NOT_FOUND",
-): Effect.Effect<A, OrganizationError> =>
-  value === undefined ? Effect.fail(new OrganizationError({ code })) : Effect.succeed(value);
-
-export type OrganizationScope = { readonly organizationId: OrganizationId };

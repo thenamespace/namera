@@ -9,7 +9,9 @@ and adapts HTTP requests to application methods.
 ## Structure
 
 - `src/application.ts` — the single aggregate `Application` service and live layer.
-- `src/auth/*/service.ts` — internal domain operation builders used by `Application`.
+- `src/auth/core/` — focused user and session operations.
+- `src/auth/magic-link/` — request and verification workflows.
+- `src/auth/organization/` — organization, member, invitation, and setup operations.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
@@ -29,7 +31,7 @@ import * as Application from "@namera-ai/application";
 
 const program = Effect.gen(function* () {
   const app = yield* Application.Application;
-  return yield* app.organization.list(userId);
+  return yield* app.organization.invitation.createInvitation(input);
 });
 ```
 

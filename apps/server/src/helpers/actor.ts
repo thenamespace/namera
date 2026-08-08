@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { HttpApiError } from "effect/unstable/httpapi";
 
+import { CurrentActor } from "@namera-ai/api";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
 import type { MemberPermission } from "@namera-ai/protocol/model";
 
@@ -62,3 +63,14 @@ export function enforceActor(
 ): Effect.Effect<ActorData<SupportedActorType>, HttpApiError.Forbidden> {
   return enforceActorEffect(props);
 }
+
+export const enforceCurrentUser = Effect.fn("enforceCurrentUser")(function* (
+  requiredPermissions: readonly MemberPermission[] = [],
+) {
+  const actor = yield* CurrentActor;
+  return yield* enforceActor({
+    actor,
+    allowedActors: ["user"],
+    requiredPermissions: { user: requiredPermissions },
+  });
+});
