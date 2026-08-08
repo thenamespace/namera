@@ -32,19 +32,19 @@ Dependency direction must remain one-way. `application` must not import `api` or
 
 ### Protocol contracts
 
-- [ ] Define branded `MagicLinkRequestId`, `MagicLinkToken`, and `MagicLinkCode` schemas without exposing persistence details.
-- [ ] Define request-email, verify-link, and verify-code DTOs as readonly Effect schemas.
-- [ ] Define public responses that do not reveal whether an email belongs to a user.
+- [x] Reuse the branded verification selector and define validated, unbranded magic-link token and code schemas without exposing persistence details.
+- [x] Define request-email, verify-link, and verify-code DTOs as readonly Effect schemas.
+- [x] Define public responses that do not reveal whether an email belongs to a user.
 - [ ] Replace detailed public token failures with `INVALID_OR_EXPIRED_LINK`, `TOO_MANY_ATTEMPTS`, and `SIGN_IN_NOT_ALLOWED`.
 - [ ] Keep Resend, outbox, hashing, database, and tracing errors out of the public protocol package.
-- [ ] Define a safe relative `ReturnTo` schema and reject absolute, protocol-relative, and malformed paths.
+- [x] Define a safe relative `ReturnTo` schema and reject absolute, protocol-relative, and malformed paths.
 
 ### Application configuration
 
-- [ ] Define an `AuthConfig` service in `packages/application` containing already-validated runtime values.
-- [ ] Include magic-link TTL, code-attempt limit, resend cooldown, session TTL, cookie name, API public origin, dashboard return path, and allowed return paths.
-- [ ] Represent secrets with `Redacted` values and keep token-HMAC and outbox-encryption keys separate.
-- [ ] Do not call `Config.*`, `process.env`, or Node environment APIs inside application use cases.
+- [x] Define `AuthConfig` in `packages/application` containing already-validated runtime values.
+- [x] Include magic-link TTL, code-attempt limit, resend cooldown, session TTL, cookie name, API public origin, dashboard return path, and allowed return paths.
+- [x] Represent secrets with `Redacted` values and keep HMAC and encryption keys separate.
+- [x] Do not call `Config.*`, `process.env`, or Node environment APIs inside application use cases.
 - [ ] Create the production `AuthConfig.layer` in `apps/server` by decoding environment variables once at startup.
 - [ ] Create deterministic test configuration with short TTLs and fixed safe origins.
 - [ ] Fail server startup when required configuration is missing or invalid.
@@ -225,10 +225,10 @@ The implementation contract is documented in
 ### Design and protocol
 
 - [ ] Confirm whether verified emails may create new users or only sign in existing users.
-- [ ] Define branded magic-link request, link-verification, and code-verification schemas.
+- [x] Define validated magic-link request, link-verification, and code-verification schemas, branding only domain identifiers.
 - [ ] Replace detailed public token errors with `INVALID_OR_EXPIRED_LINK`, `TOO_MANY_ATTEMPTS`, and `SIGN_IN_NOT_ALLOWED`.
 - [ ] Define and test the allowlisted relative `returnTo` policy.
-- [ ] Add validated magic-link configuration and secret handling.
+- [x] Add validated magic-link configuration and secret handling.
 
 ### Database
 

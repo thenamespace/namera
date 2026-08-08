@@ -1,0 +1,90 @@
+import { Duration } from "effect";
+
+export interface AuthPolicy {
+  readonly magicLink: {
+    readonly purpose: "magic-link-signin";
+    readonly timeToLive: Duration.Duration;
+    readonly resendCooldown: Duration.Duration;
+    readonly maximumAttempts: number;
+    readonly tokenBytes: number;
+    readonly codeDigits: number;
+    readonly createUnknownUsers: boolean;
+  };
+  readonly session: {
+    readonly timeToLive: Duration.Duration;
+    readonly tokenBytes: number;
+    readonly rotateAfter: Duration.Duration;
+  };
+  readonly cookie: {
+    readonly name: string;
+    readonly path: "/";
+    readonly httpOnly: true;
+    readonly secure: true;
+    readonly sameSite: "lax";
+  };
+  readonly returnTo: {
+    readonly defaultPath: string;
+    readonly allowedPrefixes: ReadonlyArray<string>;
+  };
+  readonly rateLimit: {
+    readonly requestByEmail: RateLimitPolicy;
+    readonly requestByIp: RateLimitPolicy;
+    readonly requestBySubnet: RateLimitPolicy;
+    readonly verifyByIp: RateLimitPolicy;
+  };
+}
+
+export interface RateLimitPolicy {
+  readonly limit: number;
+  readonly window: Duration.Duration;
+}
+
+/**
+ * Non-secret authentication policy. Edit these values in code and deploy them
+ * through the normal review process.
+ */
+export const authPolicy = {
+  magicLink: {
+    purpose: "magic-link-signin",
+    timeToLive: Duration.minutes(10),
+    resendCooldown: Duration.minutes(1),
+    maximumAttempts: 5,
+    tokenBytes: 32,
+    codeDigits: 8,
+    createUnknownUsers: true,
+  },
+  session: {
+    timeToLive: Duration.days(30),
+    tokenBytes: 32,
+    rotateAfter: Duration.days(1),
+  },
+  cookie: {
+    name: "__Host-namera-session",
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+  },
+  returnTo: {
+    defaultPath: "/dashboard",
+    allowedPrefixes: ["/dashboard"],
+  },
+  rateLimit: {
+    requestByEmail: {
+      limit: 5,
+      window: Duration.minutes(15),
+    },
+    requestByIp: {
+      limit: 10,
+      window: Duration.minutes(1),
+    },
+    requestBySubnet: {
+      limit: 50,
+      window: Duration.minutes(1),
+    },
+    verifyByIp: {
+      limit: 20,
+      window: Duration.minutes(5),
+    },
+  },
+} as const satisfies AuthPolicy;
