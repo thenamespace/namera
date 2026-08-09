@@ -6,7 +6,13 @@ import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
 import type { QueryKey } from "@/atoms/query-keys";
 
-export const toQuery = <Args extends ReadonlyArray<unknown>, A, E>(
+type MutationVariables<Input> = Omit<Input, "reactivityKeys">;
+type MutationArguments<Input> =
+  {} extends MutationVariables<Input>
+    ? [input?: MutationVariables<Input>]
+    : [input: MutationVariables<Input>];
+
+export const toQuery = <Args extends readonly unknown[], A, E>(
   getAtom: (...args: Args) => Atom.Atom<AsyncResult.AsyncResult<A, E>>,
 ) => {
   return function useQuery(...args: Args) {
@@ -42,7 +48,8 @@ export const toMutation = <
   Input extends {
     readonly reactivityKeys?:
       | ReadonlyArray<unknown>
-      | Readonly<Record<string, ReadonlyArray<unknown>>>;
+      | Readonly<Record<string, ReadonlyArray<unknown>>>
+      | undefined;
   },
   A,
   E,
@@ -51,7 +58,7 @@ export const toMutation = <
   options?: {
     readonly invalidates?:
       | ReadonlyArray<QueryKey>
-      | ((input: Omit<Input, "reactivityKeys">) => ReadonlyArray<QueryKey>);
+      | ((input: MutationVariables<Input>) => ReadonlyArray<QueryKey>);
   },
 ) => {
   const invalidates = options?.invalidates;
@@ -63,7 +70,7 @@ export const toMutation = <
     const isPending = result.waiting;
     const isError = AsyncResult.isFailure(result) && !isPending;
     const isSuccess = AsyncResult.isSuccess(result) && !isPending;
-    const withInvalidation = useCallback((input: Omit<Input, "reactivityKeys">) => {
+    const withInvalidation = useCallback((input: MutationVariables<Input>) => {
       if (!invalidates) {
         return input as Input;
       }
@@ -74,11 +81,13 @@ export const toMutation = <
       } as Input;
     }, []);
     const mutate = useCallback(
-      (input: Omit<Input, "reactivityKeys">) => set(withInvalidation(input)),
+      (...args: MutationArguments<Input>) =>
+        set(withInvalidation((args[0] ?? {}) as MutationVariables<Input>)),
       [set, withInvalidation],
     );
     const mutateAsync = useCallback(
-      (input: Omit<Input, "reactivityKeys">) => setAsync(withInvalidation(input)),
+      (...args: MutationArguments<Input>) =>
+        setAsync(withInvalidation((args[0] ?? {}) as MutationVariables<Input>)),
       [setAsync, withInvalidation],
     );
     const reset = useCallback(() => set(Atom.Reset), [set]);

@@ -9,7 +9,8 @@ Workspace package imports continue to use their package names.
 ## Structure
 
 - `src/routes/` — file-based TanStack Router routes.
-- `src/atoms/` — typed API atoms, React hook adapters, invalidation keys, and loader prefetching.
+- `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
+- `src/hooks/` — React Atom adapters and domain hooks.
 - `src/env.ts` — required browser environment decoded synchronously with Effect Config.
 - `src/router.tsx` — router construction.
 - `src/router-context.ts` — services shared by route loaders and the rendered application.
