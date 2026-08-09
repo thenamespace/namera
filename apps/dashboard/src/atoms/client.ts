@@ -4,7 +4,7 @@ import { AtomHttpApi } from "effect/unstable/reactivity";
 
 import { NameraApi } from "@namera-ai/api";
 
-import { env } from "../env.js";
+import { env } from "@/env";
 
 const HttpClientLive = Layer.merge(
   FetchHttpClient.layer,

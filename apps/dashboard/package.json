@@ -2,9 +2,6 @@
   "name": "@namera-ai/dashboard",
   "private": true,
   "type": "module",
-  "imports": {
-    "#/*": "./src/*"
-  },
   "scripts": {
     "build": "vite build",
     "dev": "vite dev --port 3000",

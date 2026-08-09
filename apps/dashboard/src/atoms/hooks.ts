@@ -4,7 +4,7 @@ import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-
 import { Option } from "effect";
 import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
-import type { QueryKey } from "./query-keys.js";
+import type { QueryKey } from "@/atoms/query-keys";
 
 export const toQuery = <Args extends ReadonlyArray<unknown>, A, E>(
   getAtom: (...args: Args) => Atom.Atom<AsyncResult.AsyncResult<A, E>>,

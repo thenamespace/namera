@@ -3,6 +3,9 @@
 Namera's browser dashboard. It uses Vite, React, TanStack Router, Tailwind CSS,
 and the shared `@namera-ai/ui` component package.
 
+Dashboard-local imports use the `@/` alias for `src/` and omit file extensions.
+Workspace package imports continue to use their package names.
+
 ## Structure
 
 - `src/routes/` — file-based TanStack Router routes.

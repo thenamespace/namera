@@ -3,7 +3,7 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { RegistryContext, scheduleTask } from "@effect/atom-react";
 import { AtomRegistry } from "effect/unstable/reactivity";
 
-import { routeTree } from "./routeTree.gen";
+import { routeTree } from "@/routeTree.gen";
 
 export function getRouter() {
   const atomRegistry = AtomRegistry.make({
