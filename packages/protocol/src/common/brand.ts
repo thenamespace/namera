@@ -20,6 +20,10 @@ export const OrganizationRoleId = createBrandedId("OrganizationRoleId");
 export const InvitationId = createBrandedId("InvitationId");
 export const SystemRoleId = createBrandedId("SystemRoleId");
 
+// Core Tables
+export const WalletKeyId = createBrandedId("WalletKeyId");
+export const WalletId = createBrandedId("WalletId");
+
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
@@ -30,3 +34,5 @@ export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;
 export type InvitationId = typeof InvitationId.Type;
 export type SystemRoleId = typeof SystemRoleId.Type;
+export type WalletKeyId = typeof WalletKeyId.Type;
+export type WalletId = typeof WalletId.Type;
