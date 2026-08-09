@@ -13,7 +13,6 @@ export const AuthConfig = AuthEnvironmentConfig.pipe(
     session: authPolicy.session,
     cookie: authPolicy.cookie,
     returnTo: authPolicy.returnTo,
-    rateLimit: authPolicy.rateLimit,
     invitation: authPolicy.invitation,
     apiPublicOrigin,
     dashboardPublicOrigin,

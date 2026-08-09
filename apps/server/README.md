@@ -22,6 +22,28 @@ and synchronizes the canonical system roles through
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
 is enabled globally except for the Scalar reference route.
 
+## Rate limiting
+
+The server uses Effect's process-local in-memory `RateLimiter`. One shared layer
+backs both the global IP limit and stricter operation limits. Policies are kept
+in `src/rate-limit.ts`; each counter is isolated by a namespaced key such as
+`magic-link.request.ip:<address>`.
+
+For a new sensitive operation, add its policy under `rateLimitPolicy`, then call
+`consumeRateLimit` in the route before invoking the application method. Use a
+stable, low-cardinality scope name and an appropriate identifier such as the
+client address, authenticated user ID, organization ID, or normalized email.
+Never include the identifier in logs or metric attributes.
+
+The in-memory store is suitable while the server runs as a single instance. It
+resets on restart and does not coordinate between replicas. Before horizontally
+scaling the server, replace `RateLimiter.layerStoreMemory` with Effect's Redis
+store while retaining the policies and namespaced keys.
+
+Client addresses currently come from the server connection. Only enable
+forwarded-address middleware when the origin accepts traffic exclusively from a
+trusted reverse proxy; otherwise clients can spoof the forwarded header.
+
 Future route files implement groups from `@namera-ai/api` and call services from
 `@namera-ai/application`. Business workflows do not belong in this app.
 

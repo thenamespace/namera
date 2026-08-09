@@ -26,20 +26,9 @@ export interface AuthPolicy {
     readonly defaultPath: string;
     readonly allowedPrefixes: ReadonlyArray<string>;
   };
-  readonly rateLimit: {
-    readonly requestByEmail: RateLimitPolicy;
-    readonly requestByIp: RateLimitPolicy;
-    readonly requestBySubnet: RateLimitPolicy;
-    readonly verifyByIp: RateLimitPolicy;
-  };
   readonly invitation: {
     readonly timeToLive: Duration.Duration;
   };
-}
-
-export interface RateLimitPolicy {
-  readonly limit: number;
-  readonly window: Duration.Duration;
 }
 
 /**
@@ -71,24 +60,6 @@ export const authPolicy = {
   returnTo: {
     defaultPath: "/dashboard",
     allowedPrefixes: ["/dashboard"],
-  },
-  rateLimit: {
-    requestByEmail: {
-      limit: 5,
-      window: Duration.minutes(15),
-    },
-    requestByIp: {
-      limit: 10,
-      window: Duration.minutes(1),
-    },
-    requestBySubnet: {
-      limit: 50,
-      window: Duration.minutes(1),
-    },
-    verifyByIp: {
-      limit: 20,
-      window: Duration.minutes(5),
-    },
   },
   invitation: {
     timeToLive: Duration.days(7),
