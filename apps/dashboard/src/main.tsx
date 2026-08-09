@@ -2,6 +2,8 @@ import ReactDOM from "react-dom/client";
 
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 
+import { RegistryProvider } from "@effect/atom-react";
+
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
@@ -24,5 +26,9 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-  root.render(<RouterProvider router={router} />);
+  root.render(
+    <RegistryProvider>
+      <RouterProvider router={router} />
+    </RegistryProvider>,
+  );
 }

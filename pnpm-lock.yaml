@@ -15,6 +15,9 @@ catalogs:
     '@commitlint/config-conventional':
       specifier: 21.2.0
       version: 21.2.0
+    '@effect/atom-react':
+      specifier: 4.0.0-beta.105
+      version: 4.0.0-beta.105
     '@effect/language-service':
       specifier: 0.87.1
       version: 0.87.1
@@ -158,6 +161,12 @@ importers:
 
   apps/dashboard:
     dependencies:
+      '@effect/atom-react':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.105(effect@4.0.0-beta.105)(react@19.2.8)(scheduler@0.27.0)
+      '@namera-ai/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@namera-ai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -173,6 +182,9 @@ importers:
       '@tanstack/react-router-devtools':
         specifier: 'catalog:'
         version: 1.167.1(@tanstack/react-router@1.170.24(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@tanstack/router-core@1.171.20)(csstype@3.2.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.105
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -670,6 +682,13 @@ packages:
 
   '@drizzle-team/brocli@0.12.0':
     resolution: {integrity: sha512-mlUE+rZ8CatQekLhnaiN91Iemdd+e2gFKooGlnRB3oPTL3VghLfX24dx7HrzMNeC1JrIB/0kpsfyty3f5HNfxQ==}
+
+  '@effect/atom-react@4.0.0-beta.105':
+    resolution: {integrity: sha512-ldHOwlnrHMYCDb6ln6+uR+LwYV8Q2aQksaXQ92wAxP+YMvIpXP8PVfBdBoAooagmj9hGBgbyRnyE+wnjQRPkTQ==}
+    peerDependencies:
+      effect: ^4.0.0-beta.105
+      react: '>=19.2.7 <20.0.0'
+      scheduler: '>=0.27.0 <0.28.0'
 
   '@effect/language-service@0.87.1':
     resolution: {integrity: sha512-kcljlJmEgqg5mFAM6UShJYJjMqJb3TbHHxrK8Qoubvwugc0aVWpRkbdgQvK5b17puOt3BKXXKOmcV+oQt0oQqQ==}
@@ -5096,6 +5115,12 @@ snapshots:
   '@conventional-changelog/template@1.2.1': {}
 
   '@drizzle-team/brocli@0.12.0': {}
+
+  '@effect/atom-react@4.0.0-beta.105(effect@4.0.0-beta.105)(react@19.2.8)(scheduler@0.27.0)':
+    dependencies:
+      effect: 4.0.0-beta.105
+      react: 19.2.8
+      scheduler: 0.27.0
 
   '@effect/language-service@0.87.1': {}
 

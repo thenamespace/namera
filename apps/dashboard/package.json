@@ -17,11 +17,14 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@effect/atom-react": "catalog:",
+    "@namera-ai/api": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-devtools": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-router-devtools": "catalog:",
+    "effect": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:"
