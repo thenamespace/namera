@@ -24,6 +24,7 @@ export const WalletInsert = createInsertSchema(
 
 export type EvmWallet = typeof EvmWallet.Type;
 export type Wallet = typeof Wallet.Type;
+export type WalletEncoded = typeof Wallet.Encoded;
 export type WalletUpdate = typeof WalletUpdate.Type;
 export type WalletInsert = typeof WalletInsert.Type;
 

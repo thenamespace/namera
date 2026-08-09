@@ -11,6 +11,8 @@ import {
   systemRole,
   user,
   verification,
+  wallet,
+  walletKey,
 } from "../schema/index.js";
 
 export const relations = defineRelations(
@@ -25,6 +27,8 @@ export const relations = defineRelations(
     systemRole,
     user,
     verification,
+    wallet,
+    walletKey,
   },
   (r) => ({
     actor: {
@@ -37,6 +41,10 @@ export const relations = defineRelations(
         from: r.actor.id,
         to: r.organizationMember.actorId,
         optional: false,
+      }),
+      createdWallets: r.many.wallet({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.wallet.createdByActorId, r.wallet.organizationId],
       }),
     },
     user: {
@@ -112,6 +120,14 @@ export const relations = defineRelations(
         from: r.organization.id,
         to: r.invitation.organizationId,
       }),
+      walletKeys: r.many.walletKey({
+        from: r.organization.id,
+        to: r.walletKey.organizationId,
+      }),
+      wallets: r.many.wallet({
+        from: r.organization.id,
+        to: r.wallet.organizationId,
+      }),
     },
     systemRole: {
       // One system role can be attached to many organization roles.
@@ -185,6 +201,34 @@ export const relations = defineRelations(
       inviter: r.one.user({
         from: r.invitation.inviterId,
         to: r.user.id,
+        optional: false,
+      }),
+    },
+    walletKey: {
+      organization: r.one.organization({
+        from: r.walletKey.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      wallets: r.many.wallet({
+        from: [r.walletKey.id, r.walletKey.organizationId],
+        to: [r.wallet.walletKeyId, r.wallet.organizationId],
+      }),
+    },
+    wallet: {
+      organization: r.one.organization({
+        from: r.wallet.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      walletKey: r.one.walletKey({
+        from: [r.wallet.walletKeyId, r.wallet.organizationId],
+        to: [r.walletKey.id, r.walletKey.organizationId],
+        optional: false,
+      }),
+      creator: r.one.actor({
+        from: [r.wallet.createdByActorId, r.wallet.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
         optional: false,
       }),
     },
