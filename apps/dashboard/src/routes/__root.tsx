@@ -21,9 +21,9 @@ const devtoolsPlugins = [
 
 function RootComponent() {
   return (
-    <>
+    <div className="bg-background text-foreground min-h-screen">
       <Outlet />
       <TanStackDevtools config={devtoolsConfig} plugins={devtoolsPlugins} />
-    </>
+    </div>
   );
 }
