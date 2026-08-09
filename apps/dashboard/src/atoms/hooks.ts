@@ -4,6 +4,8 @@ import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-
 import { Option } from "effect";
 import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
+import type { QueryKey } from "./query-keys.js";
+
 export const toQuery = <Args extends ReadonlyArray<unknown>, A, E>(
   getAtom: (...args: Args) => Atom.Atom<AsyncResult.AsyncResult<A, E>>,
 ) => {
@@ -36,7 +38,24 @@ export const toQuery = <Args extends ReadonlyArray<unknown>, A, E>(
   };
 };
 
-export const toMutation = <Input, A, E>(atom: Atom.AtomResultFn<Input, A, E>) => {
+export const toMutation = <
+  Input extends {
+    readonly reactivityKeys?:
+      | ReadonlyArray<unknown>
+      | Readonly<Record<string, ReadonlyArray<unknown>>>;
+  },
+  A,
+  E,
+>(
+  atom: Atom.AtomResultFn<Input, A, E>,
+  options?: {
+    readonly invalidates?:
+      | ReadonlyArray<QueryKey>
+      | ((input: Omit<Input, "reactivityKeys">) => ReadonlyArray<QueryKey>);
+  },
+) => {
+  const invalidates = options?.invalidates;
+
   return function useMutation() {
     const [result, set] = useAtom(atom);
     const setAsync = useAtomSet(atom, { mode: "promise" });
@@ -44,8 +63,24 @@ export const toMutation = <Input, A, E>(atom: Atom.AtomResultFn<Input, A, E>) =>
     const isPending = result.waiting;
     const isError = AsyncResult.isFailure(result) && !isPending;
     const isSuccess = AsyncResult.isSuccess(result) && !isPending;
-    const mutate = useCallback((input: Input) => set(input), [set]);
-    const mutateAsync = useCallback((input: Input) => setAsync(input), [setAsync]);
+    const withInvalidation = useCallback((input: Omit<Input, "reactivityKeys">) => {
+      if (!invalidates) {
+        return input as Input;
+      }
+
+      return {
+        ...input,
+        reactivityKeys: typeof invalidates === "function" ? invalidates(input) : invalidates,
+      } as Input;
+    }, []);
+    const mutate = useCallback(
+      (input: Omit<Input, "reactivityKeys">) => set(withInvalidation(input)),
+      [set, withInvalidation],
+    );
+    const mutateAsync = useCallback(
+      (input: Omit<Input, "reactivityKeys">) => setAsync(withInvalidation(input)),
+      [setAsync, withInvalidation],
+    );
     const reset = useCallback(() => set(Atom.Reset), [set]);
     const cancel = useCallback(() => set(Atom.Interrupt), [set]);
 

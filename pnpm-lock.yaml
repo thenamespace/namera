@@ -167,6 +167,9 @@ importers:
       '@namera-ai/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
       '@namera-ai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
