@@ -14,7 +14,7 @@ same transaction. The session cookie is intentionally named `auth-token`.
 - [x] Return a generic `202 Accepted` response and `Cache-Control: no-store` from magic-link endpoints.
 - [x] Add safe logs, traces, and low-cardinality authentication metrics.
 - [ ] Enforce the configured allowlist for `returnTo` paths.
-- [ ] Add request and verification rate limiting.
+- [x] Add request and verification rate limiting.
 - [ ] Add retention cleanup for old verification and session records.
 
 ### Emails
