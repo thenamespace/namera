@@ -1,6 +1,8 @@
 import { PgClient } from "@effect/sql-pg";
+import { PgliteClient } from "@effect/sql-pglite";
 import { Config, Context, Effect, Layer } from "effect";
 
+import * as PgliteDrizzle from "drizzle-orm/effect-pglite";
 import * as PgDrizzle from "drizzle-orm/effect-postgres";
 import { types as pgTypes } from "pg";
 
@@ -19,9 +21,7 @@ export const PgLive = PgClient.layerConfig({
   },
 });
 
-export type DatabaseService = PgDrizzle.EffectPgDatabase<typeof relations> & {
-  $client: PgClient.PgClient;
-};
+export type DatabaseService = PgDrizzle.EffectPgDatabase<typeof relations>;
 
 export const makeDatabase: Effect.Effect<DatabaseService, never, PgClient.PgClient> =
   PgDrizzle.make({
@@ -32,4 +32,9 @@ export class Database extends Context.Service<Database, DatabaseService>()(
   "@namera-ai/database/Database",
 ) {
   static readonly layer = Layer.effect(Database, makeDatabase).pipe(Layer.provide(PgLive));
+
+  static readonly pgliteLayer = Layer.effect(
+    Database,
+    PgliteDrizzle.makeWithDefaults({ relations }),
+  ).pipe(Layer.provide(PgliteClient.layer()));
 }

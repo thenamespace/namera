@@ -24,6 +24,9 @@ catalogs:
     '@effect/sql-pg':
       specifier: 4.0.0-beta.105
       version: 4.0.0-beta.105
+    '@effect/sql-pglite':
+      specifier: 4.0.0-beta.105
+      version: 4.0.0-beta.105
     '@types/node':
       specifier: 26.1.2
       version: 26.1.2
@@ -212,12 +215,15 @@ importers:
       '@effect/sql-pg':
         specifier: 'catalog:'
         version: 4.0.0-beta.105(effect@4.0.0-beta.105)
+      '@effect/sql-pglite':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.105(effect@4.0.0-beta.105)
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)
+        version: 1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@effect/sql-pglite@4.0.0-beta.105(effect@4.0.0-beta.105))(@electric-sql/pglite@0.5.4)(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
@@ -483,6 +489,14 @@ packages:
     resolution: {integrity: sha512-Jz2DYIR+lyPdExOeYKV2BRcNZ/kj3Ldyz3xqDsT3nRM2zWo/9zWKH7XON/P1pvTbIxJPwuS63MPd4F6GYtz+bA==}
     peerDependencies:
       effect: ^4.0.0-beta.105
+
+  '@effect/sql-pglite@4.0.0-beta.105':
+    resolution: {integrity: sha512-OYSCWtYSkpwZpT0uFw2pnks1HgBQtH7ecbVaUsFUs64LmchrpWlzyTMnxTR0luyv/diq22jTxbJMBbi8xr/LsQ==}
+    peerDependencies:
+      effect: ^4.0.0-beta.105
+
+  '@electric-sql/pglite@0.5.4':
+    resolution: {integrity: sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -2424,6 +2438,13 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
+  '@effect/sql-pglite@4.0.0-beta.105(effect@4.0.0-beta.105)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.4
+      effect: 4.0.0-beta.105
+
+  '@electric-sql/pglite@0.5.4': {}
+
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
 
@@ -2971,9 +2992,11 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.6.1
 
-  drizzle-orm@1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0):
+  drizzle-orm@1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@effect/sql-pglite@4.0.0-beta.105(effect@4.0.0-beta.105))(@electric-sql/pglite@0.5.4)(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0):
     optionalDependencies:
       '@effect/sql-pg': 4.0.0-beta.105(effect@4.0.0-beta.105)
+      '@effect/sql-pglite': 4.0.0-beta.105(effect@4.0.0-beta.105)
+      '@electric-sql/pglite': 0.5.4
       '@types/pg': 8.20.4
       effect: 4.0.0-beta.105
       pg: 8.22.0

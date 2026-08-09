@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@effect/sql-pg": "catalog:",
+    "@effect/sql-pglite": "catalog:",
     "@namera-ai/protocol": "workspace:*",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",
