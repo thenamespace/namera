@@ -4,6 +4,8 @@ import { AtomHttpApi } from "effect/unstable/reactivity";
 
 import { NameraApi } from "@namera-ai/api";
 
+import { env } from "../env.js";
+
 const HttpClientLive = Layer.merge(
   FetchHttpClient.layer,
   Layer.succeed(FetchHttpClient.RequestInit, {
@@ -15,7 +17,7 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
   "@namera-ai/dashboard/NameraClient",
   {
     api: NameraApi,
-    baseUrl: import.meta.env.VITE_API_URL ?? "http://localhost:8080",
+    baseUrl: env.backendUrl,
     httpClient: HttpClientLive,
   },
 ) {}

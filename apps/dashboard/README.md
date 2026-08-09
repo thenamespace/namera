@@ -7,11 +7,18 @@ and the shared `@namera-ai/ui` component package.
 
 - `src/routes/` — file-based TanStack Router routes.
 - `src/atoms/` — typed API atoms, React hook adapters, invalidation keys, and loader prefetching.
+- `src/env.ts` — required browser environment decoded synchronously with Effect Config.
 - `src/router.tsx` — router construction.
 - `src/router-context.ts` — services shared by route loaders and the rendered application.
 - `src/routeTree.gen.ts` — generated route tree; do not edit manually.
 - `src/styles.css` — application stylesheet entry importing Namera UI styles.
 - `vite.config.ts` — Vite, Router, React, Tailwind, and devtools plugins.
+
+## Environment
+
+| Variable       | Description             |
+| -------------- | ----------------------- |
+| `VITE_API_URL` | Namera API base origin. |
 
 ## Commands
 
