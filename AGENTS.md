@@ -8,6 +8,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 
 - [`apps/server`](apps/server/README.md) — Node HTTP runtime, transport
   middleware, API handlers, authorization, and live layer composition.
+- [`apps/dashboard`](apps/dashboard/README.md) — Vite React dashboard using
+  TanStack Router and the shared UI package.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/utils`](packages/utils/README.md) — shared helpers that do not

@@ -25,20 +25,37 @@ catalog:
   "@effect/opentelemetry": "4.0.0-beta.105"
   "@effect/atom-react": "4.0.0-beta.105"
   "@effect/vitest": "4.0.0-beta.105"
+  "@tailwindcss/vite": 4.3.3
+  "@tanstack/devtools-vite": 0.8.3
+  "@tanstack/react-devtools": 0.10.9
+  "@tanstack/react-router": 1.170.24
+  "@tanstack/react-router-devtools": 1.167.1
+  "@tanstack/router-cli": 1.167.26
+  "@tanstack/router-plugin": 1.168.28
   "@types/react": 19.2.18
+  "@types/react-dom": 19.2.4
+  "@vitejs/plugin-react": 6.0.5
   "drizzle-orm": "1.0.0-rc.4"
   "drizzle-kit": "1.0.0-rc.4"
   "resend": "6.18.1"
   "react": 19.2.8
+  "react-dom": 19.2.8
+  "tailwindcss": 4.3.3
   "turbo": 2.10.8
   "tsdown": "0.22.14"
   "tsx": 4.23.1
   "typescript": 6.0.3
+  "vite": 8.2.1
 
 minimumReleaseAgeExclude:
   - "effect"
   - "@effect/*"
   - "@namera-ai/*"
+  - "@tanstack/react-router@1.170.24"
+  - "@tanstack/router-cli@1.167.26"
+  - "@tanstack/router-core@1.171.20"
+  - "@tanstack/router-generator@1.167.26"
+  - "@tanstack/router-plugin@1.168.28"
 
 patchedDependencies:
   drizzle-orm@1.0.0-rc.4: patches/drizzle-orm@1.0.0-rc.4.patch
