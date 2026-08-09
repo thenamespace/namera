@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Duration, Schema } from "effect";
 
 import { MagicLinkVariables } from "./types.js";
 
@@ -7,6 +7,10 @@ export const emailTemplates = {
     id: "magic-link", // TODO: Update
     variables: MagicLinkVariables,
   },
+} as const;
+
+export const emailPolicy = {
+  requestTimeout: Duration.seconds(10),
 } as const;
 
 export type EmailTemplateType = keyof typeof emailTemplates;

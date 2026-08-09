@@ -20,6 +20,8 @@ with `type`; TypeScript derives the required template variables from that value.
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
 Set the hosted template ID in `src/data.ts` before sending that template.
+Provider requests time out after ten seconds; this editable policy also lives in
+`src/data.ts`.
 
 ## Usage
 

@@ -4,7 +4,7 @@ import { EmailError } from "@namera-ai/protocol";
 import { Resend } from "resend";
 
 import { EmailConfig } from "#/config";
-import { EmailProviderId, emailTemplates } from "#/data";
+import { EmailProviderId, emailPolicy, emailTemplates } from "#/data";
 import { type SendEmailProps } from "#/types";
 
 const developmentEmailProviderId = Schema.decodeSync(EmailProviderId)("development");
@@ -50,7 +50,18 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
                 : { idempotencyKey: input.idempotencyKey },
             ),
           catch: (cause) => new EmailError({ reason: "REQUEST_FAILED", cause }),
-        });
+        }).pipe(
+          Effect.timeoutOrElse({
+            duration: emailPolicy.requestTimeout,
+            orElse: () =>
+              Effect.fail(
+                new EmailError({
+                  reason: "REQUEST_FAILED",
+                  cause: new Error("Email provider request timed out"),
+                }),
+              ),
+          }),
+        );
 
         if (response.error !== null) {
           return yield* new EmailError({

@@ -21,7 +21,10 @@ same transaction. The session cookie is intentionally named `auth-token`.
 
 - [x] Keep development email delivery silent so credentials and recipient data are not logged.
 - [ ] Configure and verify the production Resend magic-link template.
-- [ ] Add durable email delivery with idempotency and bounded retries before production.
+
+### Reliability — later
+
+- [ ] Add a durable email outbox with idempotency and bounded retries when delivery reliability or server scaling requires it.
 
 ## Dashboard — future
 
