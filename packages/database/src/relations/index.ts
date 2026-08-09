@@ -2,6 +2,7 @@ import { defineRelations } from "drizzle-orm";
 
 import {
   account,
+  actor,
   invitation,
   organization,
   organizationMember,
@@ -15,6 +16,7 @@ import {
 export const relations = defineRelations(
   {
     account,
+    actor,
     invitation,
     organization,
     organizationMember,
@@ -25,6 +27,18 @@ export const relations = defineRelations(
     verification,
   },
   (r) => ({
+    actor: {
+      organization: r.one.organization({
+        from: r.actor.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      organizationMember: r.one.organizationMember({
+        from: r.actor.id,
+        to: r.organizationMember.actorId,
+        optional: false,
+      }),
+    },
     user: {
       // One user can have many active or historical sessions.
       sessions: r.many.session({ from: r.user.id, to: r.session.userId }),
@@ -89,6 +103,10 @@ export const relations = defineRelations(
         from: r.organization.id,
         to: r.organizationMember.organizationId,
       }),
+      actors: r.many.actor({
+        from: r.organization.id,
+        to: r.actor.organizationId,
+      }),
       // One organization can have many invitations.
       invitations: r.many.invitation({
         from: r.organization.id,
@@ -126,6 +144,11 @@ export const relations = defineRelations(
       }),
     },
     organizationMember: {
+      actor: r.one.actor({
+        from: r.organizationMember.actorId,
+        to: r.actor.id,
+        optional: false,
+      }),
       // Each membership connects one user.
       user: r.one.user({
         from: r.organizationMember.userId,

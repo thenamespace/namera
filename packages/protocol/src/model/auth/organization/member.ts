@@ -1,10 +1,17 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, OrganizationMemberId, OrganizationRoleId, UserId } from "#/common/index";
+import {
+  ActorId,
+  OrganizationId,
+  OrganizationMemberId,
+  OrganizationRoleId,
+  UserId,
+} from "#/common/index";
 import { TimestampFields } from "#/model/common";
 
 export const OrganizationMember = Schema.Struct({
   id: OrganizationMemberId,
+  actorId: ActorId,
   userId: UserId,
   organizationId: OrganizationId,
   organizationRoleId: OrganizationRoleId,
@@ -13,6 +20,7 @@ export const OrganizationMember = Schema.Struct({
 }).mapFields(Struct.assign(TimestampFields));
 
 export const OrganizationMemberInsert = Schema.Struct({
+  actorId: ActorId,
   userId: UserId,
   organizationId: OrganizationId,
   organizationRoleId: OrganizationRoleId,

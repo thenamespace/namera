@@ -11,6 +11,7 @@ export const UserId = createBrandedId("UserId");
 export const SessionId = createBrandedId("SessionId");
 export const AccountId = createBrandedId("AccountId");
 export const VerificationId = createBrandedId("VerificationId");
+export const ActorId = createBrandedId("ActorId");
 
 // Auth Organization Tables
 export const OrganizationId = createBrandedId("OrganizationId");
@@ -23,6 +24,7 @@ export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;
+export type ActorId = typeof ActorId.Type;
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;

@@ -1,7 +1,32 @@
 import { Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
-import { OrganizationError, type Email, type UserId } from "@namera-ai/protocol";
+import {
+  OrganizationError,
+  type Email,
+  type OrganizationId,
+  type OrganizationRoleId,
+  type UserId,
+} from "@namera-ai/protocol";
+
+export const createUserOrganizationMember = Effect.fn("createUserOrganizationMember")(function* (
+  repository: RepositoryService,
+  input: {
+    userId: UserId;
+    organizationId: OrganizationId;
+    organizationRoleId: OrganizationRoleId;
+  },
+) {
+  const actor = yield* repository.auth.actor.insert({
+    organizationId: input.organizationId,
+    type: "user",
+  });
+
+  return yield* repository.auth.member.insert({
+    actorId: actor.id,
+    ...input,
+  });
+});
 
 export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwner")(function* (
   repository: RepositoryService,
@@ -33,7 +58,7 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
     return yield* new OrganizationError({ code: "ORGANIZATION_CREATE_FAILED" });
   }
 
-  yield* repository.auth.member.insert({
+  yield* createUserOrganizationMember(repository, {
     userId,
     organizationId: organization.id,
     organizationRoleId: ownerRole.id,

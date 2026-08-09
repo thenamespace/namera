@@ -15,6 +15,7 @@ import type { Invitation, Organization, OrganizationRole, User } from "@namera-a
 import { organizationInvitationEvents } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
+import { createUserOrganizationMember } from "#/auth/organization/helpers";
 
 export interface InvitationView {
   readonly invitation: Invitation;
@@ -171,7 +172,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           if (!accepted) {
             return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
           }
-          yield* repository.auth.member.insert({
+          yield* createUserOrganizationMember(repository, {
             userId: input.userId,
             organizationId: accepted.organizationId,
             organizationRoleId: accepted.organizationRoleId,

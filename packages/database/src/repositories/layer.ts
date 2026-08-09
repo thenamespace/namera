@@ -2,6 +2,7 @@ import { Context, Effect, Layer } from "effect";
 
 import type { Database } from "#/core/index";
 import {
+  ActorRepository,
   OrganizationInvitationRepository,
   OrganizationMemberRepository,
   OrganizationRepository,
@@ -13,6 +14,7 @@ import {
 
 export interface RepositoryService {
   auth: {
+    actor: ActorRepository["Service"];
     invitation: OrganizationInvitationRepository["Service"];
     member: OrganizationMemberRepository["Service"];
     organization: OrganizationRepository["Service"];
@@ -29,6 +31,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
   static readonly layer: Layer.Layer<Repository, never, Database> = Layer.effect(
     Repository,
     Effect.gen(function* () {
+      const actor = yield* ActorRepository;
       const invitation = yield* OrganizationInvitationRepository;
       const member = yield* OrganizationMemberRepository;
       const organization = yield* OrganizationRepository;
@@ -39,6 +42,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
 
       return Repository.of({
         auth: {
+          actor,
           invitation,
           organization,
           member,
@@ -52,6 +56,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
   ).pipe(
     Layer.provide(
       Layer.mergeAll(
+        ActorRepository.layer,
         OrganizationInvitationRepository.layer,
         OrganizationMemberRepository.layer,
         OrganizationRepository.layer,
