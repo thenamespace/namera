@@ -19,7 +19,6 @@ export const WalletInsert = createInsertSchema(
   "status",
   "createdByActorId",
   "family",
-  "address",
   "data",
 );
 
