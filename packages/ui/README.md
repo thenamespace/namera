@@ -38,3 +38,15 @@ import "@namera-ai/ui/styles.css";
 
 Keep application-specific composition in the consuming app. This package owns
 reusable presentation components and their local styling only.
+
+## Upstream documentation
+
+`@namera-ai/ui` re-exports Namespace UIKit. Follow its
+[component documentation](https://namespace-uikit.vercel.app/llms.txt) and
+[complete reference](https://namespace-uikit.vercel.app/llms-full.txt), replacing
+`@thenamespace/uikit` imports in examples with `@namera-ai/ui`.
+
+Use semantic design tokens rather than hardcoded colors. Preserve the
+accessibility behavior supplied by UIKit and React Aria, including labels,
+descriptions, validation messages, focus visibility, keyboard interaction, and
+appropriate semantics.

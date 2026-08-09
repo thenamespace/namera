@@ -72,7 +72,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
         }),
       );
 
-      const magicLinkUrl = new URL("/auth/magic-link", config.dashboardPublicOrigin);
+      const magicLinkUrl = new URL("/auth/verify", config.dashboardPublicOrigin);
       magicLinkUrl.searchParams.set("id", verification.id);
       magicLinkUrl.searchParams.set("token", token);
 

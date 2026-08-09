@@ -101,6 +101,22 @@ follow its linked local documentation when relevant. Search
 - Keep dependencies owned by the package that uses them.
 - Preserve unrelated worktree changes.
 
+### Frontend UI
+
+- Use `@namera-ai/ui` for shared components, hooks, icons, utilities, and
+  styles. Imports shown as `@thenamespace/uikit` in the
+  [Namespace UIKit docs](https://namespace-uikit.vercel.app/llms.txt) map to
+  `@namera-ai/ui` in this repository.
+- Use UIKit semantic color and typography tokens; do not hardcode palette
+  colors in application UI.
+- Prefer UIKit components for interactive controls, forms, feedback, surfaces,
+  and typography. Use semantic HTML for page structure and router primitives
+  for application navigation.
+- Preserve accessible names, visible focus, keyboard behavior, field
+  descriptions and errors, and live announcements for asynchronous feedback.
+- In `apps/dashboard`, prefetch protected data with the router-owned Effect atom
+  registry so loaders and React hooks share the same cache.
+
 ## Common commands
 
 ```sh

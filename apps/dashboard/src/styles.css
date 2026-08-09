@@ -12,4 +12,11 @@ body,
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a {
+  touch-action: manipulation;
 }
