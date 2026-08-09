@@ -1,22 +1,10 @@
 import ReactDOM from "react-dom/client";
 
-import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 
-import { RegistryProvider } from "@effect/atom-react";
+import { getRouter } from "./router";
 
-import { routeTree } from "./routeTree.gen";
-
-const router = createRouter({
-  routeTree,
-  defaultPreload: "intent",
-  scrollRestoration: true,
-});
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
-}
+const router = getRouter();
 
 const rootElement = document.getElementById("app");
 
@@ -26,9 +14,5 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <RegistryProvider>
-      <RouterProvider router={router} />
-    </RegistryProvider>,
-  );
+  root.render(<RouterProvider router={router} />);
 }
