@@ -18,6 +18,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   delivery through Resend.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
   and shared low-cardinality metric definitions.
+- [`packages/ui`](packages/ui/README.md) — shared React components imported
+  directly from TypeScript source.
 - [`packages/application`](packages/application/README.md) — backend use cases
   and business workflow composition.
 - [`packages/api`](packages/api/README.md) — public Effect `HttpApi` definition;

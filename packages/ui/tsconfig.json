@@ -1,0 +1,7 @@
+{
+  "extends": "klarity/tsconfig/library/react",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
