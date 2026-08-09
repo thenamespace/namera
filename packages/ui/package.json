@@ -4,12 +4,27 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "imports": {
-    "#/*": "./src/*.tsx"
+    "#/*": "./src/*.ts",
+    "#/components/*": "./src/components/*.tsx"
   },
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.tsx",
+    "./icons": "./src/icons.ts",
+    "./hooks": "./src/hooks.ts",
+    "./utils": "./src/utils.ts",
+    "./*": "./src/components/*.tsx",
+    "./styles": {
+      "style": "./src/styles/globals.css",
+      "default": "./src/styles/globals.css"
+    },
+    "./styles.css": {
+      "style": "./src/styles/globals.css",
+      "default": "./src/styles/globals.css"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -18,6 +33,10 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "typecheck": "tsc -p tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@thenamespace/uikit": "0.3.0",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@types/react": "catalog:",

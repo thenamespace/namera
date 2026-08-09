@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@import "@thenamespace/uikit/styles.css";
+
+:root {
+  color-scheme: dark;
+
+  --background: #010102;
+  --foreground: #f7f8f8;
+
+  --accent: #5e6ad2;
+  --accent-foreground: #f7f8f8;
+  --accent-soft-foreground: var(--accent);
+
+  --default: #1f2021;
+  --default-foreground: #f7f8f8;
+
+  --field-background: #151616;
+  --field-border: transparent;
+  --field-foreground: #f7f8f8;
+  --field-placeholder: #939496;
+
+  --muted: #939496;
+
+  --overlay: #151616;
+  --overlay-foreground: #f7f8f8;
+
+  --segment: #333434;
+  --segment-foreground: #f7f8f8;
+
+  --surface: #0f1011;
+  --surface-foreground: #f7f8f8;
+  --surface-secondary: #141516;
+  --surface-secondary-foreground: #f7f8f8;
+  --surface-tertiary: #18191a;
+  --surface-tertiary-foreground: #f7f8f8;
+
+  --success: #27a644;
+  --success-foreground: #161917;
+
+  --warning: #f0bf00;
+  --warning-foreground: #1a1815;
+
+  --danger: #f34e52;
+  --danger-foreground: #f7f8f8;
+
+  --border: #23252a;
+  --focus: #5e69d1;
+  --scrollbar: oklch(70.5% 0.0015 253.83);
+
+  --separator: oklch(25% 0.0015 253.83);
+
+  --radius: 0.5rem;
+  --field-radius: 0.75rem;
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --chart-1: oklch(from var(--accent) calc(l - 0.24) c h);
+  --chart-2: oklch(from var(--accent) calc(l - 0.12) c h);
+  --chart-3: var(--accent);
+  --chart-4: oklch(from var(--accent) calc(l + 0.12) c h);
+  --chart-5: oklch(from var(--accent) calc(l + 0.24) c h);
+}
