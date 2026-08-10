@@ -80,9 +80,10 @@ application crypto service adds purpose-separated HMAC and AES-GCM operations.
 
 `WalletKeys` exposes only key creation and signing. Provider clients and private
 keys stay inside its Layers. The local Layer stores mode `0600` PKCS#8 files in
-the repository's ignored `.data/wallet-keys` directory and supports software
-keys only. The GCP Layer creates `EC_SIGN_P256_SHA256` software or HSM keys in an
-existing key ring and uses Application Default Credentials.
+the repository's ignored `.data/wallet-keys` directory and emulates both
+protection levels for development. The GCP Layer creates P-256, Ed25519, or
+secp256k1 keys in an existing key ring and uses Application Default Credentials.
+P-256 and Ed25519 support software or HSM protection; secp256k1 is HSM-only.
 
 ```ts
 import { Effect } from "effect";
@@ -90,10 +91,15 @@ import { LocalWalletKeysLayer, WalletKeys } from "@namera-ai/application";
 
 const program = Effect.gen(function* () {
   const walletKeys = yield* WalletKeys;
-  const key = yield* walletKeys.create({ id: walletKeyId, protectionLevel: "software" });
+  const key = yield* walletKeys.create({
+    id: walletKeyId,
+    algorithm: "p256",
+    protectionLevel: "software",
+  });
 
   return yield* walletKeys.sign({
     keyVersionName: key.keyVersionName,
+    algorithm: key.algorithm,
     payload: transactionHash,
   });
 }).pipe(Effect.provide(LocalWalletKeysLayer));

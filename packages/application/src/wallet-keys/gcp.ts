@@ -10,7 +10,11 @@ import type { CreateWalletKeyInput, SignWalletKeyInput } from "./data.js";
 import { publicKeyHexFromPem } from "./helpers.js";
 import { WalletKeys } from "./service.js";
 
-const providerAlgorithm = "EC_SIGN_P256_SHA256";
+const providerAlgorithms = {
+  p256: "EC_SIGN_P256_SHA256",
+  ed25519: "EC_SIGN_ED25519",
+  secp256k1: "EC_SIGN_SECP256K1_SHA256",
+} as const;
 
 export const GcpWalletKeysLayer = Layer.effect(
   WalletKeys,
@@ -23,6 +27,7 @@ export const GcpWalletKeysLayer = Layer.effect(
     const keyRingName = client.keyRingPath(config.projectId, config.location, config.keyRing);
 
     const create = Effect.fn("WalletKeys.gcp.create")(function* (input: CreateWalletKeyInput) {
+      const providerAlgorithm = providerAlgorithms[input.algorithm];
       const [key] = yield* Effect.tryPromise({
         try: () =>
           client.createCryptoKey({
@@ -64,11 +69,11 @@ export const GcpWalletKeysLayer = Layer.effect(
         });
       }
 
-      const publicKeyHex = yield* publicKeyHexFromPem(publicKey.pem);
+      const publicKeyHex = yield* publicKeyHexFromPem(publicKey.pem, input.algorithm);
 
       return {
         provider: "gcp-kms",
-        algorithm: "p256",
+        algorithm: input.algorithm,
         protectionLevel: input.protectionLevel,
         keyVersionName,
         publicKeyHex,
@@ -81,13 +86,19 @@ export const GcpWalletKeysLayer = Layer.effect(
     });
 
     const sign = Effect.fn("WalletKeys.gcp.sign")(function* (input: SignWalletKeyInput) {
-      const digest = createHash("sha256").update(input.payload).digest();
       const [response] = yield* Effect.tryPromise({
         try: () =>
-          client.asymmetricSign({
-            name: input.keyVersionName,
-            digest: { sha256: digest },
-          }),
+          client.asymmetricSign(
+            input.algorithm === "ed25519"
+              ? {
+                  name: input.keyVersionName,
+                  data: input.payload,
+                }
+              : {
+                  name: input.keyVersionName,
+                  digest: { sha256: createHash("sha256").update(input.payload).digest() },
+                },
+          ),
         catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
       });
 

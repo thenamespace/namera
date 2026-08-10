@@ -1,14 +1,23 @@
 import type { Hex, WalletKeyId } from "@namera-ai/protocol";
 import type { WalletKey } from "@namera-ai/protocol/model";
 
-export interface CreateWalletKeyInput {
+export type WalletKeyAlgorithmProtection =
+  | {
+      readonly algorithm: "p256" | "ed25519";
+      readonly protectionLevel: "software" | "hsm";
+    }
+  | {
+      readonly algorithm: "secp256k1";
+      readonly protectionLevel: "hsm";
+    };
+
+export type CreateWalletKeyInput = WalletKeyAlgorithmProtection & {
   readonly id: WalletKeyId;
-  readonly protectionLevel: WalletKey["protectionLevel"];
-}
+};
 
 export interface CreatedWalletKey {
   readonly provider: WalletKey["provider"];
-  readonly algorithm: "p256";
+  readonly algorithm: WalletKey["algorithm"];
   readonly protectionLevel: WalletKey["protectionLevel"];
   readonly keyVersionName: string;
   readonly publicKeyHex: Hex;
@@ -17,5 +26,6 @@ export interface CreatedWalletKey {
 
 export interface SignWalletKeyInput {
   readonly keyVersionName: string;
+  readonly algorithm: WalletKey["algorithm"];
   readonly payload: Uint8Array;
 }
