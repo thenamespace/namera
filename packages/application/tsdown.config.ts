@@ -16,6 +16,7 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
   },
+  platform: "node",
   publint: "ci-only",
   unbundle: true,
 }) as UserConfig;

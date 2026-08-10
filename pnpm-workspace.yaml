@@ -6,6 +6,7 @@ allowBuilds:
   esbuild: true
   lefthook: true
   msgpackr-extract: true
+  protobufjs: true
 
 catalog:
   "@arethetypeswrong/core": 0.18.5

@@ -7,12 +7,18 @@ import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 export const WalletKeyAlgorithm = Schema.Literals(["p256", "secp256k1", "ed25519"]);
 export const WalletKeyProtectionLevel = Schema.Literals(["software", "hsm"]);
 export const WalletKeyStatus = Schema.Literals(["active", "disabled", "destroyed"]);
-export const WalletKeyProvider = Schema.Literals(["gcp-kms"]);
-export const WalletKeyData = Schema.Struct({
-  version: Schema.Literal(1),
-  providerAlgorithm: Schema.String,
-  cryptoKeyName: Schema.String,
-});
+export const WalletKeyProvider = Schema.Literals(["gcp-kms", "local"]);
+export const WalletKeyData = Schema.Union([
+  Schema.Struct({
+    version: Schema.Literal(1),
+    providerAlgorithm: Schema.String,
+    cryptoKeyName: Schema.String,
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    fileName: Schema.NonEmptyString,
+  }),
+]);
 
 export const WalletKey = Schema.Struct({
   id: WalletKeyId,

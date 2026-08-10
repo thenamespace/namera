@@ -39,6 +39,9 @@ node_modules/
 .env.*
 !.env.example
 
+# Local development data
+.data/
+
 # TypeScript
 *.tsbuildinfo
 

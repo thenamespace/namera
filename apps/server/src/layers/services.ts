@@ -1,7 +1,12 @@
 import { NodeCrypto } from "@effect/platform-node";
 import { Config, Effect, Layer } from "effect";
 
-import { Application, CryptoService } from "@namera-ai/application";
+import {
+  Application,
+  CryptoService,
+  GcpWalletKeysLayer,
+  LocalWalletKeysLayer,
+} from "@namera-ai/application";
 import { Database, Repository, TransactionService } from "@namera-ai/database";
 import { EmailService } from "@namera-ai/emails";
 
@@ -17,6 +22,13 @@ const EmailLive = Layer.unwrap(
   ),
 );
 
-export const ServicesLive = Layer.mergeAll(PersistenceLive, CryptoLive, EmailLive);
+const WalletKeysLive = Layer.unwrap(
+  Effect.map(
+    Config.literals(["local", "gcp-kms"], "WALLET_KEYS_PROVIDER").pipe(Config.withDefault("local")),
+    (provider) => (provider === "gcp-kms" ? GcpWalletKeysLayer : LocalWalletKeysLayer),
+  ),
+);
+
+export const ServicesLive = Layer.mergeAll(PersistenceLive, CryptoLive, EmailLive, WalletKeysLive);
 
 export const ApplicationLive = Application.layer;

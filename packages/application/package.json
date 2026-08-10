@@ -36,6 +36,7 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@google-cloud/kms": "5.7.0",
     "@namera-ai/database": "workspace:*",
     "@namera-ai/emails": "workspace:*",
     "@namera-ai/protocol": "workspace:*",

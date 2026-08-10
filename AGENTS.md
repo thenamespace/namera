@@ -54,6 +54,9 @@ Additional rules:
 - `utils` must not depend on project Effect services. Reuse it before creating
   duplicate low-level helpers.
 - `application` must not import `api` or `apps/server`.
+- Wallet key provider clients and private key material stay inside
+  `application/src/wallet-keys`; workflows receive only the provider-neutral
+  `WalletKeys` service.
 - `apps/server` is the composition root. It provides Node/runtime layers,
   implements API handlers and authorization, and reads deployment environment.
 

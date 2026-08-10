@@ -51,14 +51,21 @@ Future route files implement groups from `@namera-ai/api` and call services from
 
 All values have local development defaults.
 
-| Variable             | Default                 | Purpose                         |
-| -------------------- | ----------------------- | ------------------------------- |
-| `SERVER_HOST`        | `0.0.0.0`               | HTTP listen host.               |
-| `SERVER_PORT`        | `8080`                  | HTTP listen port.               |
-| `SERVER_CORS_ORIGIN` | `http://localhost:3000` | Allowed credentialed UI origin. |
+| Variable                      | Default                        | Purpose                              |
+| ----------------------------- | ------------------------------ | ------------------------------------ |
+| `SERVER_HOST`                 | `0.0.0.0`                      | HTTP listen host.                    |
+| `SERVER_PORT`                 | `8080`                         | HTTP listen port.                    |
+| `SERVER_CORS_ORIGIN`          | `http://localhost:3000`        | Allowed credentialed UI origin.      |
+| `WALLET_KEYS_PROVIDER`        | `local`                        | Wallet signer: `local` or `gcp-kms`. |
+| `WALLET_KEYS_LOCAL_DIRECTORY` | Repository `.data/wallet-keys` | Local development key directory.     |
 
 Only one exact CORS origin is allowed because credentialed requests must not use
 a wildcard origin.
+
+When `WALLET_KEYS_PROVIDER=gcp-kms`, also set `GCP_PROJECT_ID`,
+`GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with Application
+Default Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may point to a
+credential file. The configured key ring must already exist.
 
 ## Commands
 
