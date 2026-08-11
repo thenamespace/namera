@@ -1,6 +1,7 @@
 {
   "extends": "klarity/tsconfig/library/react",
   "compilerOptions": {
+    "customConditions": ["namera-source"],
     "rootDir": "src"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]

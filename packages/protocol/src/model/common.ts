@@ -40,6 +40,8 @@ export const MetadataLogo = Schema.Union([
   }),
 ]);
 
+export type MetadataIcon = typeof MetadataLogo.Type;
+
 export const TimestampFields = {
   createdAt: Schema.DateTimeUtcFromDate,
   updatedAt: Schema.DateTimeUtcFromDate,

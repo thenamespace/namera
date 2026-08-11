@@ -8,6 +8,7 @@ does not have a build output or build script.
 
 - `src/index.ts` — package entry point for intentionally shared exports.
 - `src/components/*.tsx` — direct proxies for UIKit component subpaths.
+- `src/components/icon-picker` — controlled metadata icon, emoji, and image picker.
 - `src/icons.ts`, `src/hooks.ts`, and `src/utils.ts` — UIKit secondary entry points.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
@@ -34,6 +35,15 @@ import { useTheme } from "@namera-ai/ui/hooks";
 import { Icon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 import "@namera-ai/ui/styles.css";
+```
+
+The icon picker uses the shared protocol value and can expose any non-empty set
+of supported tabs:
+
+```tsx
+import { IconPicker } from "@namera-ai/ui/icon-picker";
+
+<IconPicker value={icon} setValue={setIcon} supportedTypes={["icon", "emoji"]} />;
 ```
 
 Keep application-specific composition in the consuming app. This package owns

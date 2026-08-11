@@ -13,6 +13,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./icon-picker": "./src/components/icon-picker/index.tsx",
     "./icons": "./src/icons/index.ts",
     "./hooks": "./src/hooks.ts",
     "./utils": "./src/utils.ts",
@@ -35,7 +36,9 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@namera-ai/protocol": "workspace:*",
     "@thenamespace/uikit": "0.3.0",
+    "emojibase-data": "17.0.0",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
