@@ -99,7 +99,7 @@ export function EmojiPanel({
       onSelectionChange={handleSelectionChange}
     >
       <div
-        className="emoji-picker__popover emoji-picker__popover--lg relative w-full overflow-visible rounded-none shadow-none"
+        className="emoji-picker__popover emoji-picker__popover--lg relative w-full overflow-visible rounded-none shadow-none h-118"
         ref={gridContainerRef}
       >
         <EmojiPicker.Content className="overflow-visible p-0">

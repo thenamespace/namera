@@ -714,6 +714,7 @@ export const iconMap: Record<string, IconData> = Object.fromEntries(
 );
 
 export const ICON_COLORS = [
+  "#f7f8f8",
   "#ef4444",
   "#f97316",
   "#eab308",

@@ -56,7 +56,7 @@ export function ImagePanel({
           Save
         </Button>
       </div>
-      <div className="bg-muted/20 h-80 overflow-hidden rounded-lg">
+      <div className="bg-muted/20 overflow-hidden rounded-lg w-full aspect-square">
         <img
           alt=""
           className="size-full object-cover"

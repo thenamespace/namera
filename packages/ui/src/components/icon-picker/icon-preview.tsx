@@ -26,11 +26,7 @@ export function IconPreview({ value }: { value: MetadataIcon }) {
 
   if (value.type === "emoji") {
     return (
-      <span
-        aria-hidden
-        className="flex size-full items-center justify-center text-xl"
-        style={emojiStyle}
-      >
+      <span aria-hidden className="flex size-full items-center justify-center" style={emojiStyle}>
         {value.value}
       </span>
     );

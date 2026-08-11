@@ -26,7 +26,7 @@ const TYPE_LABELS: Record<IconPickerType, string> = {
 };
 
 function defaultValue(type: IconPickerType): MetadataIcon {
-  if (type === "icon") return { type, value: "home-01", color: "#3b82f6" };
+  if (type === "icon") return { type, value: "home-01", color: "#f7f8f8" };
   if (type === "emoji") return { type, value: "😀" };
   return { type, value: "" };
 }
@@ -71,7 +71,7 @@ export function IconPicker({
         isIconOnly
         aria-label={ariaLabel}
         className="size-10 cursor-pointer overflow-hidden rounded-lg p-0"
-        variant="ghost"
+        variant="tertiary"
       >
         <IconPreview value={value} />
       </Button>
@@ -80,7 +80,7 @@ export function IconPicker({
         <Modal.Container size="md">
           <Modal.Dialog className="px-2 py-2">
             <Modal.CloseTrigger />
-            <Modal.Body className="min-h-128 max-h-128">
+            <Modal.Body className="min-h-136 max-h-128">
               <Tabs
                 selectedKey={draft.type}
                 onSelectionChange={handleTabChange}

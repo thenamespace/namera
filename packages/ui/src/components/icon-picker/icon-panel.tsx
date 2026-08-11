@@ -105,7 +105,7 @@ export function IconPanel({
         </ColorSwatchPicker>
       </div>
 
-      <div className="grid max-h-80 grid-cols-10 gap-1 overflow-y-auto place-items-center">
+      <div className="grid max-h-88 grid-cols-10 gap-1 overflow-y-auto place-items-center">
         {icons.map(({ component, icon, name }) => (
           <IconOption
             color={selectedColor}

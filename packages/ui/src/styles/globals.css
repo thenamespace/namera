@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@thenamespace/uikit/styles.css";
 
+@source "../components";
+
 :root {
   color-scheme: dark;
 
