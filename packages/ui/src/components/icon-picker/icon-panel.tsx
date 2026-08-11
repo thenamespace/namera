@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { Button, ColorSwatchPicker, SearchField, parseColor } from "@thenamespace/uikit";
+import { Button, ColorSwatchPicker, SearchField, cn, parseColor } from "@thenamespace/uikit";
 import { HugeiconsIcon } from "@thenamespace/uikit/icons";
 
 import { ICON_COLORS, ICON_DATA } from "./data.js";
@@ -12,18 +12,18 @@ function IconOption({
   icon,
   isSelected,
   name,
-  setValue,
+  onSelect,
 }: {
   color: string;
   component: string;
   icon: (typeof ICON_DATA)[number]["icon"];
   isSelected: boolean;
   name: string;
-  setValue: (value: MetadataIcon) => void;
+  onSelect: (value: MetadataIcon) => void;
 }) {
   const handlePress = useCallback(
-    () => setValue({ type: "icon", value: name, color }),
-    [color, name, setValue],
+    () => onSelect({ type: "icon", value: name, color }),
+    [color, name, onSelect],
   );
 
   return (
@@ -31,11 +31,19 @@ function IconOption({
       isIconOnly
       aria-label={component}
       aria-pressed={isSelected}
-      size="sm"
-      variant={isSelected ? "secondary" : "ghost"}
+      size="md"
+      variant={isSelected ? "tertiary" : "ghost"}
       onPress={handlePress}
     >
-      <HugeiconsIcon aria-hidden className="size-4" icon={icon} />
+      <HugeiconsIcon
+        aria-hidden
+        className={cn("size-4")}
+        icon={icon}
+        // oxlint-disable-next-line react-perf/jsx-no-new-object-as-prop
+        style={{
+          color,
+        }}
+      />
     </Button>
   );
 }
@@ -43,13 +51,15 @@ function IconOption({
 export function IconPanel({
   value,
   setValue,
+  onSelect,
 }: {
   value: MetadataIcon;
   setValue: (value: MetadataIcon) => void;
+  onSelect: (value: MetadataIcon) => void;
 }) {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
-  const selectedColor = value.type === "icon" ? value.color : ICON_COLORS[5];
+  const selectedColor = value.type === "icon" ? value.color : ICON_COLORS[0];
   const selectedIcon = value.type === "icon" ? value.value : "home-01";
   const icons = useMemo(() => {
     if (!deferredSearch) return ICON_DATA;
@@ -84,22 +94,7 @@ export function IconPanel({
         </SearchField.Group>
       </SearchField>
 
-      <div className="grid max-h-72 grid-cols-8 gap-1 overflow-y-auto">
-        {icons.map(({ component, icon, name }) => (
-          <IconOption
-            color={selectedColor}
-            component={component}
-            icon={icon}
-            isSelected={selectedIcon === name}
-            key={name}
-            name={name}
-            setValue={setValue}
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-muted text-sm">Color</span>
+      <div className="flex flex-col gap-2 pb-2">
         <ColorSwatchPicker value={parseColor(selectedColor)} onChange={handleColorChange}>
           {ICON_COLORS.map((color) => (
             <ColorSwatchPicker.Item color={color} key={color}>
@@ -108,6 +103,20 @@ export function IconPanel({
             </ColorSwatchPicker.Item>
           ))}
         </ColorSwatchPicker>
+      </div>
+
+      <div className="grid max-h-80 grid-cols-10 gap-1 overflow-y-auto place-items-center">
+        {icons.map(({ component, icon, name }) => (
+          <IconOption
+            color={selectedColor}
+            component={component}
+            icon={icon}
+            isSelected={selectedIcon === name}
+            key={name}
+            name={name}
+            onSelect={onSelect}
+          />
+        ))}
       </div>
     </div>
   );

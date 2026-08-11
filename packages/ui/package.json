@@ -38,6 +38,7 @@
   "dependencies": {
     "@namera-ai/protocol": "workspace:*",
     "@thenamespace/uikit": "0.3.0",
+    "emojibase": "17.0.0",
     "emojibase-data": "17.0.0",
     "tailwindcss": "catalog:"
   },

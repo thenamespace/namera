@@ -38,13 +38,17 @@ export function IconPicker({
   "aria-label": ariaLabel = "Choose icon",
 }: IconPickerProps) {
   const firstType = supportedTypes[0];
+  const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<MetadataIcon>(
     supportedTypes.includes(value.type) ? value : defaultValue(firstType),
   );
 
   const handleOpenChange = useCallback(
-    (isOpen: boolean) => {
-      if (isOpen) setDraft(supportedTypes.includes(value.type) ? value : defaultValue(firstType));
+    (nextOpen: boolean) => {
+      setIsOpen(nextOpen);
+      if (nextOpen) {
+        setDraft(supportedTypes.includes(value.type) ? value : defaultValue(firstType));
+      }
     },
     [firstType, supportedTypes, value],
   );
@@ -52,28 +56,37 @@ export function IconPicker({
     const type = String(key) as IconPickerType;
     setDraft((current) => (current.type === type ? current : defaultValue(type)));
   }, []);
-  const handleSave = useCallback(() => setValue(draft), [draft, setValue]);
+  const handleSelect = useCallback(
+    (nextValue: MetadataIcon) => {
+      setValue(nextValue);
+      setDraft(nextValue);
+      setIsOpen(false);
+    },
+    [setValue],
+  );
 
   return (
-    <Modal onOpenChange={handleOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={handleOpenChange}>
       <Button
         isIconOnly
         aria-label={ariaLabel}
-        className="size-11 overflow-hidden p-0"
-        variant="secondary"
+        className="size-10 cursor-pointer overflow-hidden rounded-lg p-0"
+        variant="ghost"
       >
         <IconPreview value={value} />
       </Button>
+
       <Modal.Backdrop>
         <Modal.Container size="md">
-          <Modal.Dialog>
+          <Modal.Dialog className="px-2 py-2">
             <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>Choose an icon</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <Tabs selectedKey={draft.type} onSelectionChange={handleTabChange}>
-                <Tabs.ListContainer>
+            <Modal.Body className="min-h-128 max-h-128">
+              <Tabs
+                selectedKey={draft.type}
+                onSelectionChange={handleTabChange}
+                variant="secondary"
+              >
+                <Tabs.ListContainer className="w-fit">
                   <Tabs.List aria-label="Icon type">
                     {supportedTypes.map((type) => (
                       <Tabs.Tab id={type} key={type}>
@@ -85,33 +98,21 @@ export function IconPicker({
                 </Tabs.ListContainer>
                 {supportedTypes.includes("icon") ? (
                   <Tabs.Panel className="pt-4" id="icon">
-                    <IconPanel setValue={setDraft} value={draft} />
+                    <IconPanel onSelect={handleSelect} setValue={setDraft} value={draft} />
                   </Tabs.Panel>
                 ) : null}
                 {supportedTypes.includes("emoji") ? (
                   <Tabs.Panel className="pt-4" id="emoji">
-                    <EmojiPanel setValue={setDraft} value={draft} />
+                    <EmojiPanel onSelect={handleSelect} value={draft} />
                   </Tabs.Panel>
                 ) : null}
                 {supportedTypes.includes("image") ? (
                   <Tabs.Panel className="pt-4" id="image">
-                    <ImagePanel setValue={setDraft} value={draft} />
+                    <ImagePanel onSave={handleSelect} setValue={setDraft} value={draft} />
                   </Tabs.Panel>
                 ) : null}
               </Tabs>
             </Modal.Body>
-            <Modal.Footer>
-              <Button slot="close" variant="secondary">
-                Cancel
-              </Button>
-              <Button
-                isDisabled={draft.value.trim().length === 0}
-                slot="close"
-                onPress={handleSave}
-              >
-                Save
-              </Button>
-            </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
