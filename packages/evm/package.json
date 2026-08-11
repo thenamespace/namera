@@ -38,6 +38,7 @@
   "dependencies": {
     "@namera-ai/protocol": "workspace:*",
     "effect": "catalog:",
+    "ox": "catalog:",
     "permissionless": "0.3.7",
     "viem": "catalog:"
   },
