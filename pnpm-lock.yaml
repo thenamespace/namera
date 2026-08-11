@@ -69,6 +69,9 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: 6.0.5
       version: 6.0.5
+    '@zerodev/sdk':
+      specifier: 5.5.10
+      version: 5.5.10
     drizzle-kit:
       specifier: 1.0.0-rc.4
       version: 1.0.0-rc.4
@@ -443,6 +446,9 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@zerodev/sdk':
+        specifier: 'catalog:'
+        version: 5.5.10(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
@@ -3052,6 +3058,11 @@ packages:
 
   '@yuku-toolchain/types@0.8.3':
     resolution: {integrity: sha512-9LN3HYs3A9qSPVFunsxlbfwBcUgexti3TmhOzIxB/UH8zFuaHQJXTRDcN17DW6cp1GsyZtiZA7f18uIra36Jag==}
+
+  '@zerodev/sdk@5.5.10':
+    resolution: {integrity: sha512-WVyj2XR9F6zK2GdXrvappx7yo6zoJ46cWe42dOIArp3xDjFBninjA4O1O94MwohB0G+yFqtXNsEU+WxdE67SgQ==}
+    peerDependencies:
+      viem: ^2.28.0
 
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
@@ -7564,6 +7575,11 @@ snapshots:
     optional: true
 
   '@yuku-toolchain/types@0.8.3': {}
+
+  '@zerodev/sdk@5.5.10(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))':
+    dependencies:
+      semver: 7.8.5
+      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
 
   abitype@1.2.3(typescript@6.0.3)(zod@4.4.3):
     optionalDependencies:

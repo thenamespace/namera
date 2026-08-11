@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@namera-ai/protocol": "workspace:*",
+    "@zerodev/sdk": "catalog:",
     "effect": "catalog:",
     "ox": "catalog:",
     "permissionless": "0.3.7",
