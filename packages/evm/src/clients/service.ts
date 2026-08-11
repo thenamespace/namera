@@ -1,21 +1,23 @@
-import { Context, Effect, Layer, Redacted } from "effect";
+import { Context, Effect, Layer } from "effect";
 
-import { UnsupportedChainError } from "@namera-ai/protocol";
+import type { UnsupportedChainError } from "@namera-ai/protocol";
 import { createPublicClient, http } from "viem";
-import type { Chain, PublicClient, Transport } from "viem";
-import {
-  createBundlerClient,
-  createPaymasterClient,
-  type BundlerClient,
-  type PaymasterClient,
-} from "viem/account-abstraction";
+import { createBundlerClient, createPaymasterClient } from "viem/account-abstraction";
 
-import { getChainDataByChainId } from "../chains/helpers.js";
-import { EvmConfig } from "../config.js";
+import { Evm } from "../layer.js";
 
-export type EvmPublicClient = PublicClient<Transport, Chain>;
-export type EvmBundlerClient = BundlerClient<Transport, Chain>;
-export type EvmPaymasterClient = PaymasterClient<Transport>;
+export interface EvmRpcRequest {
+  readonly method: string;
+  readonly params?: readonly unknown[] | Readonly<Record<string, unknown>>;
+}
+
+export interface EvmRpcClient {
+  readonly request: <TResult = unknown>(request: EvmRpcRequest) => Promise<TResult>;
+}
+
+export type EvmPublicClient = EvmRpcClient;
+export type EvmBundlerClient = EvmRpcClient;
+export type EvmPaymasterClient = EvmRpcClient;
 
 export interface EvmClientsService {
   readonly getPublicClient: (
@@ -35,25 +37,11 @@ export class EvmClients extends Context.Service<EvmClients, EvmClientsService>()
   static readonly layer = Layer.effect(
     EvmClients,
     Effect.gen(function* () {
-      const config = yield* EvmConfig;
-      const alchemyApiKey = encodeURIComponent(Redacted.value(config.alchemyApiKey));
-      const pimlicoApiKey = encodeURIComponent(Redacted.value(config.pimlicoApiKey));
+      const evm = yield* Evm;
 
       const publicClients = new Map<number, EvmPublicClient>();
       const bundlerClients = new Map<number, EvmBundlerClient>();
       const paymasterClients = new Map<number, EvmPaymasterClient>();
-
-      const resolveChain = Effect.fn("EvmClients.resolveChain")(function* (chainId: number) {
-        const data = getChainDataByChainId(chainId);
-        if (data === undefined) {
-          return yield* new UnsupportedChainError({
-            namespace: "eip155",
-            chainId: `eip155:${chainId}`,
-          });
-        }
-
-        return data;
-      });
 
       const getPublicClient = Effect.fn("EvmClients.getPublicClient")(function* (chainId: number) {
         const cached = publicClients.get(chainId);
@@ -61,14 +49,16 @@ export class EvmClients extends Context.Service<EvmClients, EvmClientsService>()
           return cached;
         }
 
-        const data = yield* resolveChain(chainId);
-        const client: EvmPublicClient = createPublicClient({
-          chain: data.chain,
-          transport: http(`https://${data.alchemyChain}.g.alchemy.com/v2/${alchemyApiKey}`),
+        const rpcUrl = yield* evm.getRpcUrl(chainId, "public");
+        const client = createPublicClient({
+          transport: http(rpcUrl),
         });
-        publicClients.set(chainId, client);
+        const rpcClient: EvmPublicClient = {
+          request: (request) => client.request(request as never) as Promise<never>,
+        };
+        publicClients.set(chainId, rpcClient);
 
-        return client;
+        return rpcClient;
       });
 
       const getBundlerClient = Effect.fn("EvmClients.getBundlerClient")(function* (
@@ -79,14 +69,16 @@ export class EvmClients extends Context.Service<EvmClients, EvmClientsService>()
           return cached;
         }
 
-        const data = yield* resolveChain(chainId);
-        const client: EvmBundlerClient = createBundlerClient({
-          chain: data.chain,
-          transport: http(`https://api.pimlico.io/v2/${data.chain.id}/rpc?apikey=${pimlicoApiKey}`),
+        const rpcUrl = yield* evm.getRpcUrl(chainId, "bundler");
+        const client = createBundlerClient({
+          transport: http(rpcUrl),
         });
-        bundlerClients.set(chainId, client);
+        const rpcClient: EvmBundlerClient = {
+          request: (request) => client.request(request as never) as Promise<never>,
+        };
+        bundlerClients.set(chainId, rpcClient);
 
-        return client;
+        return rpcClient;
       });
 
       const getPaymasterClient = Effect.fn("EvmClients.getPaymasterClient")(function* (
@@ -97,16 +89,19 @@ export class EvmClients extends Context.Service<EvmClients, EvmClientsService>()
           return cached;
         }
 
-        const data = yield* resolveChain(chainId);
-        const client: EvmPaymasterClient = createPaymasterClient({
-          transport: http(`https://api.pimlico.io/v2/${data.chain.id}/rpc?apikey=${pimlicoApiKey}`),
+        const rpcUrl = yield* evm.getRpcUrl(chainId, "paymaster");
+        const client = createPaymasterClient({
+          transport: http(rpcUrl),
         });
-        paymasterClients.set(chainId, client);
+        const rpcClient: EvmPaymasterClient = {
+          request: (request) => client.request(request as never) as Promise<never>,
+        };
+        paymasterClients.set(chainId, rpcClient);
 
-        return client;
+        return rpcClient;
       });
 
       return EvmClients.of({ getPublicClient, getBundlerClient, getPaymasterClient });
     }),
-  );
+  ).pipe(Layer.provide(Evm.layer));
 }
