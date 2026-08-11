@@ -27,24 +27,53 @@ import {
   unichainSepolia,
 } from "viem/chains";
 
-interface ChainData {
+export type SupportedChain =
+  | "arb-mainnet"
+  | "arb-sepolia"
+  | "arc-testnet"
+  | "avax-fuji"
+  | "avax-mainnet"
+  | "base-mainnet"
+  | "base-sepolia"
+  | "celo-mainnet"
+  | "eth-mainnet"
+  | "eth-sepolia"
+  | "hyperevm-mainnet"
+  | "megaeth-mainnet"
+  | "megaeth-testnet"
+  | "monad-mainnet"
+  | "monad-testnet"
+  | "opt-mainnet"
+  | "opt-sepolia"
+  | "polygon-amoy"
+  | "polygon-mainnet"
+  | "scroll-mainnet"
+  | "scroll-sepolia"
+  | "tempo-mainnet"
+  | "tempo-moderato"
+  | "unichain-mainnet"
+  | "unichain-sepolia";
+
+export type AlchemyChain = Exclude<SupportedChain, "hyperevm-mainnet"> | "hyperliquid-mainnet";
+
+export interface ChainData {
   readonly chain: Chain;
   readonly chainId: `eip155:${number}`;
   readonly namespace: "eip155";
-  readonly alchemyChain: string;
+  readonly alchemyChain: AlchemyChain;
 }
 
-const chainData = <const TChain extends Chain, const TAlchemyChain extends string>(
+const chainData = <const TChain extends Chain, const TAlchemyChain extends AlchemyChain>(
   chain: TChain,
   alchemyChain: TAlchemyChain,
-) => ({
+): ChainData => ({
   chain,
   chainId: `eip155:${chain.id}` as const,
   namespace: "eip155" as const,
   alchemyChain,
 });
 
-export const chains = {
+export const chains: Readonly<Record<SupportedChain, ChainData>> = {
   "arb-mainnet": chainData(arbitrum, "arb-mainnet"),
   "arb-sepolia": chainData(arbitrumSepolia, "arb-sepolia"),
   "arc-testnet": chainData(arcTestnet, "arc-testnet"),
@@ -70,9 +99,7 @@ export const chains = {
   "tempo-moderato": chainData(tempoModerato, "tempo-moderato"),
   "unichain-mainnet": chainData(unichain, "unichain-mainnet"),
   "unichain-sepolia": chainData(unichainSepolia, "unichain-sepolia"),
-} as const satisfies Record<string, ChainData>;
+};
 
-export type SupportedChain = keyof typeof chains;
-export type SupportedChainId = (typeof chains)[SupportedChain]["chainId"];
-export type ChainNamespace = (typeof chains)[SupportedChain]["namespace"];
-export type AlchemyChain = (typeof chains)[SupportedChain]["alchemyChain"];
+export type SupportedChainId = ChainData["chainId"];
+export type ChainNamespace = ChainData["namespace"];
