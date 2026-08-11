@@ -13,7 +13,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./icons": "./src/icons.ts",
+    "./icons": "./src/icons/index.ts",
     "./hooks": "./src/hooks.ts",
     "./utils": "./src/utils.ts",
     "./*": "./src/components/*.tsx",

@@ -1,4 +1,9 @@
+@import "@fontsource-variable/inter";
 @import "@namera-ai/ui/styles.css";
+
+:root {
+  --font-inter: "Inter Variable", sans-serif;
+}
 
 * {
   box-sizing: border-box;

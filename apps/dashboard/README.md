@@ -9,6 +9,11 @@ Workspace package imports continue to use their package names.
 ## Structure
 
 - `src/routes/` — file-based TanStack Router routes.
+- `src/routes/**/-components/` — UI used by one route or route group. Keep a
+  single-file component directly in this directory. Give it a folder with an
+  `index.tsx` entry only after it is split across multiple files.
+- `src/components/` — components shared by unrelated routes. Do not move route-only
+  components here.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/env.ts` — required browser environment decoded synchronously with Effect Config.
@@ -20,15 +25,11 @@ Workspace package imports continue to use their package names.
 
 ## Authentication routes
 
-- `/` redirects to `/dashboard`.
-- `/_authenticated` is the pathless protected layout. Its loader prefetches the
-  current user with the router's shared Effect atom registry and redirects
-  unauthenticated requests to `/auth`.
-- `/auth` requests a single-use magic link.
-- `/auth/verify` validates the link parameters, asks for browser-session
-  consent, verifies the token, and follows the server-provided return path.
-- `/dashboard` renders inside the protected layout and reads the prefetched
-  actor without a duplicate request.
+- `/auth` contains the magic-link request UI.
+- `/auth/verify` contains the browser-session confirmation UI.
+
+The routes are currently presentation-only. API behavior is added through atoms
+and hooks after the interaction design is settled.
 
 ## UI conventions
 
@@ -44,6 +45,12 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 - Preserve React Aria labels, descriptions, validation, focus states, and
   keyboard behavior. Async form feedback must be announced with `role="alert"`
   or an appropriate live region.
+- Keep route files small: declare the TanStack route and render a component from
+  the nearest `-components/` directory. Do not create one-file component folders.
+- Use Motion for restrained state transitions and microinteractions. Respect
+  reduced-motion preferences and do not animate UIKit components internally.
+- Use `usehooks-ts` for established reusable browser behaviors such as
+  debouncing, media queries, and stepped state. Keep one-off local state local.
 - Keep route loaders and rendered queries on the same router-owned atom
   registry so prefetched values are reused.
 

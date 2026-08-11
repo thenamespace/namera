@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@effect/atom-react": "catalog:",
+    "@fontsource-variable/inter": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/ui": "workspace:*",
@@ -23,9 +24,11 @@
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-router-devtools": "catalog:",
     "effect": "catalog:",
+    "motion": "^13.0.0",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "usehooks-ts": "^3.1.1"
   },
   "devDependencies": {
     "@tanstack/devtools-vite": "catalog:",

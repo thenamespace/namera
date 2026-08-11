@@ -117,6 +117,16 @@ follow its linked local documentation when relevant. Search
   for application navigation.
 - Preserve accessible names, visible focus, keyboard behavior, field
   descriptions and errors, and live announcements for asynchronous feedback.
+- Keep route-only components beside their route or route group in a
+  `-components/` directory. Keep single-file components directly in that
+  directory. When a component needs multiple subcomponents, hooks, or helpers,
+  move it into a folder and export its public surface from `index.tsx`. Reserve
+  `apps/dashboard/src/components` for UI shared by unrelated routes.
+- Keep route files declarative and small. Split large screens along meaningful
+  UI or workflow boundaries instead of accumulating a single large component.
+- Use Motion for purposeful transitions and microinteractions, with reduced
+  motion support. Use `usehooks-ts` for reusable browser interactions such as
+  debouncing and stepped state instead of reimplementing generic hooks.
 - In `apps/dashboard`, prefetch protected data with the router-owned Effect atom
   registry so loaders and React hooks share the same cache.
 
