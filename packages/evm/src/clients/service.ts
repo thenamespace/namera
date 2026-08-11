@@ -1,107 +1,102 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
 
-import type { UnsupportedChainError } from "@namera-ai/protocol";
-import { createPublicClient, http } from "viem";
-import { createBundlerClient, createPaymasterClient } from "viem/account-abstraction";
+import { UnsupportedChainError } from "@namera-ai/protocol";
+import { createPublicClient as createViemPublicClient, http } from "viem";
+import type { Chain } from "viem";
+import {
+  createBundlerClient as createViemBundlerClient,
+  createPaymasterClient as createViemPaymasterClient,
+} from "viem/account-abstraction";
 
-import { Evm } from "../layer.js";
+import { getChainDataByChainId } from "../chains/helpers.js";
+import type { EvmService } from "../layer.js";
 
-export interface EvmRpcRequest {
-  readonly method: string;
-  readonly params?: readonly unknown[] | Readonly<Record<string, unknown>>;
-}
+const createPublicClient = (chain: Chain, rpcUrl: string) =>
+  createViemPublicClient({
+    chain,
+    transport: http(rpcUrl),
+  });
 
-export interface EvmRpcClient {
-  readonly request: <TResult = unknown>(request: EvmRpcRequest) => Promise<TResult>;
-}
+const createBundlerClient = (chain: Chain, rpcUrl: string) =>
+  createViemBundlerClient({
+    chain,
+    transport: http(rpcUrl),
+  });
 
-export type EvmPublicClient = EvmRpcClient;
-export type EvmBundlerClient = EvmRpcClient;
-export type EvmPaymasterClient = EvmRpcClient;
+const createPaymasterClient = (rpcUrl: string) =>
+  createViemPaymasterClient({
+    transport: http(rpcUrl),
+  });
 
-export interface EvmClientsService {
-  readonly getPublicClient: (
-    chainId: number,
-  ) => Effect.Effect<EvmPublicClient, UnsupportedChainError>;
-  readonly getBundlerClient: (
-    chainId: number,
-  ) => Effect.Effect<EvmBundlerClient, UnsupportedChainError>;
-  readonly getPaymasterClient: (
-    chainId: number,
-  ) => Effect.Effect<EvmPaymasterClient, UnsupportedChainError>;
-}
+type PublicClient = ReturnType<typeof createPublicClient>;
+type BundlerClient = ReturnType<typeof createBundlerClient>;
+type PaymasterClient = ReturnType<typeof createPaymasterClient>;
 
-export class EvmClients extends Context.Service<EvmClients, EvmClientsService>()(
-  "@namera-ai/evm/EvmClients",
-) {
-  static readonly layer = Layer.effect(
-    EvmClients,
-    Effect.gen(function* () {
-      const evm = yield* Evm;
+export const makeClients = (getRpcUrl: EvmService["getRpcUrl"]) => {
+  const publicClients = new Map<number, PublicClient>();
+  const bundlerClients = new Map<number, BundlerClient>();
+  const paymasterClients = new Map<number, PaymasterClient>();
 
-      const publicClients = new Map<number, EvmPublicClient>();
-      const bundlerClients = new Map<number, EvmBundlerClient>();
-      const paymasterClients = new Map<number, EvmPaymasterClient>();
-
-      const getPublicClient = Effect.fn("EvmClients.getPublicClient")(function* (chainId: number) {
-        const cached = publicClients.get(chainId);
-        if (cached !== undefined) {
-          return cached;
-        }
-
-        const rpcUrl = yield* evm.getRpcUrl(chainId, "public");
-        const client = createPublicClient({
-          transport: http(rpcUrl),
-        });
-        const rpcClient: EvmPublicClient = {
-          request: (request) => client.request(request as never) as Promise<never>,
-        };
-        publicClients.set(chainId, rpcClient);
-
-        return rpcClient;
+  const getChain = Effect.fn("EvmClients.getChain")(function* (chainId: number) {
+    const data = getChainDataByChainId(chainId);
+    if (data === undefined) {
+      return yield* new UnsupportedChainError({
+        namespace: "eip155",
+        chainId: `eip155:${chainId}`,
       });
+    }
 
-      const getBundlerClient = Effect.fn("EvmClients.getBundlerClient")(function* (
-        chainId: number,
-      ) {
-        const cached = bundlerClients.get(chainId);
-        if (cached !== undefined) {
-          return cached;
-        }
+    return data.chain;
+  });
 
-        const rpcUrl = yield* evm.getRpcUrl(chainId, "bundler");
-        const client = createBundlerClient({
-          transport: http(rpcUrl),
-        });
-        const rpcClient: EvmBundlerClient = {
-          request: (request) => client.request(request as never) as Promise<never>,
-        };
-        bundlerClients.set(chainId, rpcClient);
+  const getPublicClient = Effect.fn("EvmClients.getPublicClient")(function* (chainId: number) {
+    const cached = publicClients.get(chainId);
+    if (cached !== undefined) {
+      return cached;
+    }
 
-        return rpcClient;
-      });
+    const chain = yield* getChain(chainId);
+    const rpcUrl = yield* getRpcUrl(chainId, "public");
+    const client = createPublicClient(chain, rpcUrl);
+    publicClients.set(chainId, client);
 
-      const getPaymasterClient = Effect.fn("EvmClients.getPaymasterClient")(function* (
-        chainId: number,
-      ) {
-        const cached = paymasterClients.get(chainId);
-        if (cached !== undefined) {
-          return cached;
-        }
+    return client;
+  });
 
-        const rpcUrl = yield* evm.getRpcUrl(chainId, "paymaster");
-        const client = createPaymasterClient({
-          transport: http(rpcUrl),
-        });
-        const rpcClient: EvmPaymasterClient = {
-          request: (request) => client.request(request as never) as Promise<never>,
-        };
-        paymasterClients.set(chainId, rpcClient);
+  const getBundlerClient = Effect.fn("EvmClients.getBundlerClient")(function* (chainId: number) {
+    const cached = bundlerClients.get(chainId);
+    if (cached !== undefined) {
+      return cached;
+    }
 
-        return rpcClient;
-      });
+    const chain = yield* getChain(chainId);
+    const rpcUrl = yield* getRpcUrl(chainId, "bundler");
+    const client = createBundlerClient(chain, rpcUrl);
+    bundlerClients.set(chainId, client);
 
-      return EvmClients.of({ getPublicClient, getBundlerClient, getPaymasterClient });
-    }),
-  ).pipe(Layer.provide(Evm.layer));
-}
+    return client;
+  });
+
+  const getPaymasterClient = Effect.fn("EvmClients.getPaymasterClient")(function* (
+    chainId: number,
+  ) {
+    const cached = paymasterClients.get(chainId);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const rpcUrl = yield* getRpcUrl(chainId, "paymaster");
+    const client = createPaymasterClient(rpcUrl);
+    paymasterClients.set(chainId, client);
+
+    return client;
+  });
+
+  return {
+    getPublicClient,
+    getBundlerClient,
+    getPaymasterClient,
+  } as const;
+};
+
+export type EvmClients = ReturnType<typeof makeClients>;

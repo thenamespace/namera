@@ -9,7 +9,7 @@ behind the same root `Evm` service.
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
-- `src/clients/` — public `EvmClients` service with focused JSON-RPC clients.
+- `src/clients/` — internal cached Viem public, bundler, and paymaster clients.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -32,6 +32,6 @@ const program = Effect.gen(function* () {
 }).pipe(Effect.provide(Evm.layer));
 ```
 
-`getRpcUrl` supports `public`, `bundler`, and `paymaster` endpoints. `EvmClients`
-is also a supported public export for consumers that need cached JSON-RPC
-clients directly without exposing Viem's full generic client types.
+`getRpcUrl` supports `public`, `bundler`, and `paymaster` endpoints. Full Viem
+clients stay internal to this package and are used to implement focused wallet
+and execution operations without exposing their generic types to consumers.
