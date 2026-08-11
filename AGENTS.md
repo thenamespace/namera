@@ -106,6 +106,10 @@ follow its linked local documentation when relevant. Search
 
 ### Frontend UI
 
+- Treat the existing frontend file and folder structure as intentional. Follow
+  the nearest established pattern and do not move, rename, flatten, or
+  reorganize existing code unless the user explicitly requests it. For example,
+  keep shared wrappers in the existing `components/wrappers/` directory.
 - Use `@namera-ai/ui` for shared components, hooks, icons, utilities, and
   styles. Imports shown as `@thenamespace/uikit` in the
   [Namespace UIKit docs](https://namespace-uikit.vercel.app/llms.txt) map to
@@ -118,10 +122,12 @@ follow its linked local documentation when relevant. Search
 - Preserve accessible names, visible focus, keyboard behavior, field
   descriptions and errors, and live announcements for asynchronous feedback.
 - Keep route-only components beside their route or route group in a
-  `-components/` directory. Keep single-file components directly in that
-  directory. When a component needs multiple subcomponents, hooks, or helpers,
-  move it into a folder and export its public surface from `index.tsx`. Reserve
-  `apps/dashboard/src/components` for UI shared by unrelated routes.
+  `-components/` directory and reserve `apps/dashboard/src/components` for UI
+  shared by unrelated routes. Follow the structure already used in that area.
+- Keep frontend code modular and easy to maintain. A single-file component can
+  remain flat; when it genuinely needs multiple subcomponents, hooks, or
+  helpers, it can be split into a folder with an `index.tsx` public entry. Do not
+  restructure components preemptively for possible future complexity.
 - Keep route files declarative and small. Split large screens along meaningful
   UI or workflow boundaries instead of accumulating a single large component.
 - Use Motion for purposeful transitions and microinteractions, with reduced
