@@ -3,7 +3,6 @@ import type { PropsWithChildren } from "react";
 import { Sidebar } from "@namera-ai/ui";
 
 import { SidebarGroup } from "../sidebar-group";
-import { SidebarMain } from "../sidebar-main";
 import { adminGroupItems } from "./admin";
 import { agentsGroupItems } from "./agents";
 import { coreGroupItems } from "./core";
@@ -22,7 +21,7 @@ export const AppSidebar = ({ children }: PropsWithChildren) => {
           <SidebarGroup {...adminGroupItems} />
         </Sidebar.Content>
       </Sidebar>
-      <SidebarMain>{children}</SidebarMain>
+      {children}
     </Sidebar.Provider>
   );
 };
