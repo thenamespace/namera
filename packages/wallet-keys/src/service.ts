@@ -11,5 +11,5 @@ export interface WalletKeysService {
 }
 
 export class WalletKeys extends Context.Service<WalletKeys, WalletKeysService>()(
-  "@namera-ai/application/WalletKeys",
+  "@namera-ai/wallet-keys/WalletKeys",
 ) {}

@@ -58,6 +58,8 @@ All values have local development defaults.
 | `SERVER_CORS_ORIGIN`          | `http://localhost:3000`        | Allowed credentialed UI origin.      |
 | `WALLET_KEYS_PROVIDER`        | `local`                        | Wallet signer: `local` or `gcp-kms`. |
 | `WALLET_KEYS_LOCAL_DIRECTORY` | Repository `.data/wallet-keys` | Local development key directory.     |
+| `EVM_ALCHEMY_API_KEY`         | —                              | Alchemy execution RPC key.           |
+| `EVM_PIMLICO_API_KEY`         | —                              | Pimlico bundler and paymaster key.   |
 
 Only one exact CORS origin is allowed because credentialed requests must not use
 a wildcard origin.

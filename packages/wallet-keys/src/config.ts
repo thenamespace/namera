@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Config } from "effect";
 
 const localWalletKeysDirectory = fileURLToPath(
-  new URL("../../../../.data/wallet-keys/", import.meta.url),
+  new URL("../../../.data/wallet-keys/", import.meta.url),
 );
 
 export const GcpWalletKeysConfig = Config.all({

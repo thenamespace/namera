@@ -18,6 +18,10 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   PostgreSQL layer, transactions, and repositories.
 - [`packages/emails`](packages/emails/README.md) — typed hosted-template email
   delivery through Resend.
+- [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
+  wallet-key creation and signing through local files or Google Cloud KMS.
+- [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
+  clients, and future smart-account execution and policy logic.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
   and shared low-cardinality metric definitions.
 - [`packages/ui`](packages/ui/README.md) — shared React components imported
@@ -39,6 +43,8 @@ apps/server              runtime, handlers, authorization, environment, live lay
   └── packages/application
         ├── packages/database
         ├── packages/emails
+        ├── packages/wallet-keys
+        ├── packages/evm
         ├── packages/protocol
         └── packages/utils
 ```
@@ -55,8 +61,11 @@ Additional rules:
   duplicate low-level helpers.
 - `application` must not import `api` or `apps/server`.
 - Wallet key provider clients and private key material stay inside
-  `application/src/wallet-keys`; workflows receive only the provider-neutral
-  `WalletKeys` service.
+  `packages/wallet-keys`; application workflows receive only the
+  provider-neutral `WalletKeys` service.
+- Chain adapters such as `evm` own chain metadata, clients, account construction,
+  execution, and chain-specific policy evaluation. They must not depend on
+  `application` or `apps/server`.
 - `apps/server` is the composition root. It provides Node/runtime layers,
   implements API handlers and authorization, and reads deployment environment.
 
