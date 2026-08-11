@@ -10,7 +10,7 @@ export const CorsMiddleware = Layer.unwrap(
     return HttpRouter.cors({
       allowedOrigins: [config.corsOrigin],
       allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Content-Type", "B3", "Traceparent", "Tracestate", "Baggage"],
       credentials: true,
       maxAge: 86400,
     });

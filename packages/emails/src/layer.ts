@@ -82,7 +82,14 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
   static readonly developmentLayer = Layer.succeed(
     EmailService,
     EmailService.of({
-      send: () => Effect.succeed(developmentEmailProviderId),
+      send: Effect.fn("EmailService.development.send")(function* (input) {
+        yield* Effect.logInfo("email.development.sent", {
+          type: input.type,
+          variables: input.variables,
+        });
+
+        return developmentEmailProviderId;
+      }),
     }),
   );
 }

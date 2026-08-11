@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { NameraIcon } from "@namera-ai/ui/icons";
 import { useEventCallback, useStep } from "usehooks-ts";
 
 import { AuthShell } from "../auth-shell";
@@ -27,5 +28,10 @@ export function AuthForm() {
       <EmailConfirmation email={email} onBack={reset} />
     );
 
-  return <AuthShell stepKey={`auth-step-${step}`}>{content}</AuthShell>;
+  return (
+    <AuthShell stepKey={`auth-step-${step}`}>
+      <NameraIcon aria-hidden="true" className="fill-foreground mx-auto mb-10 h-10 w-auto" />
+      {content}
+    </AuthShell>
+  );
 }

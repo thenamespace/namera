@@ -1,19 +1,18 @@
 import type { PropsWithChildren } from "react";
 
 import { cn } from "@namera-ai/ui";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 
 type TransitionWrapperProps = PropsWithChildren<{
   className?: string;
   stepKey: string;
 }>;
 
-const transition = {
-  damping: 30,
-  mass: 0.8,
-  stiffness: 400,
-  type: "spring",
-} as const;
+const transition: Transition = {
+  type: "tween",
+  ease: "easeIn",
+  duration: 0.15,
+};
 
 const reducedTransition = { duration: 0 } as const;
 const visible = { opacity: 1, y: 0 } as const;

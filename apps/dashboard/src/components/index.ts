@@ -1,1 +1,1 @@
-export * from "./transition-wrapper";
+export * from "./wrappers/transition";
