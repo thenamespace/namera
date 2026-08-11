@@ -18,7 +18,7 @@ export const WalletInsert = createInsertSchema(
   "metadata",
   "status",
   "createdByActorId",
-  "family",
+  "namespace",
   "data",
 );
 

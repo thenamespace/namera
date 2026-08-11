@@ -13,7 +13,7 @@ export const KernelWalletData = Schema.Struct({
 });
 
 export const EvmWalletData = Schema.Struct({
-  family: Schema.Literal("evm"),
+  namespace: Schema.Literal("eip155"),
   data: KernelWalletData,
 });
 

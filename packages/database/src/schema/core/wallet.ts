@@ -21,7 +21,7 @@ export const wallet = coreSchema.table(
     metadata: jsonb("metadata").notNull().$type<Wallet["metadata"]>(),
     status: text("status").notNull().default("active").$type<Wallet["status"]>(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
-    family: text("family").notNull().$type<Wallet["family"]>(),
+    namespace: text("namespace").notNull().$type<Wallet["namespace"]>(),
     data: jsonb("data").notNull().$type<WalletEncoded["data"]>(),
     ...timestamps,
   },
