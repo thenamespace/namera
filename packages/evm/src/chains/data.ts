@@ -29,36 +29,50 @@ import {
 
 interface ChainData {
   readonly chain: Chain;
+  readonly chainId: `eip155:${number}`;
+  readonly namespace: "eip155";
   readonly alchemyChain: string;
 }
 
+const chainData = <const TChain extends Chain, const TAlchemyChain extends string>(
+  chain: TChain,
+  alchemyChain: TAlchemyChain,
+) => ({
+  chain,
+  chainId: `eip155:${chain.id}` as const,
+  namespace: "eip155" as const,
+  alchemyChain,
+});
+
 export const chains = {
-  "arb-mainnet": { chain: arbitrum, alchemyChain: "arb-mainnet" },
-  "arb-sepolia": { chain: arbitrumSepolia, alchemyChain: "arb-sepolia" },
-  "arc-testnet": { chain: arcTestnet, alchemyChain: "arc-testnet" },
-  "avax-fuji": { chain: avalancheFuji, alchemyChain: "avax-fuji" },
-  "avax-mainnet": { chain: avalanche, alchemyChain: "avax-mainnet" },
-  "base-mainnet": { chain: base, alchemyChain: "base-mainnet" },
-  "base-sepolia": { chain: baseSepolia, alchemyChain: "base-sepolia" },
-  "celo-mainnet": { chain: celo, alchemyChain: "celo-mainnet" },
-  "eth-mainnet": { chain: mainnet, alchemyChain: "eth-mainnet" },
-  "eth-sepolia": { chain: sepolia, alchemyChain: "eth-sepolia" },
-  "hyperevm-mainnet": { chain: hyperEvm, alchemyChain: "hyperliquid-mainnet" },
-  "megaeth-mainnet": { chain: megaeth, alchemyChain: "megaeth-mainnet" },
-  "megaeth-testnet": { chain: megaethTestnet, alchemyChain: "megaeth-testnet" },
-  "monad-mainnet": { chain: monad, alchemyChain: "monad-mainnet" },
-  "monad-testnet": { chain: monadTestnet, alchemyChain: "monad-testnet" },
-  "opt-mainnet": { chain: optimism, alchemyChain: "opt-mainnet" },
-  "opt-sepolia": { chain: optimismSepolia, alchemyChain: "opt-sepolia" },
-  "polygon-amoy": { chain: polygonAmoy, alchemyChain: "polygon-amoy" },
-  "polygon-mainnet": { chain: polygon, alchemyChain: "polygon-mainnet" },
-  "scroll-mainnet": { chain: scroll, alchemyChain: "scroll-mainnet" },
-  "scroll-sepolia": { chain: scrollSepolia, alchemyChain: "scroll-sepolia" },
-  "tempo-mainnet": { chain: tempo, alchemyChain: "tempo-mainnet" },
-  "tempo-moderato": { chain: tempoModerato, alchemyChain: "tempo-moderato" },
-  "unichain-mainnet": { chain: unichain, alchemyChain: "unichain-mainnet" },
-  "unichain-sepolia": { chain: unichainSepolia, alchemyChain: "unichain-sepolia" },
+  "arb-mainnet": chainData(arbitrum, "arb-mainnet"),
+  "arb-sepolia": chainData(arbitrumSepolia, "arb-sepolia"),
+  "arc-testnet": chainData(arcTestnet, "arc-testnet"),
+  "avax-fuji": chainData(avalancheFuji, "avax-fuji"),
+  "avax-mainnet": chainData(avalanche, "avax-mainnet"),
+  "base-mainnet": chainData(base, "base-mainnet"),
+  "base-sepolia": chainData(baseSepolia, "base-sepolia"),
+  "celo-mainnet": chainData(celo, "celo-mainnet"),
+  "eth-mainnet": chainData(mainnet, "eth-mainnet"),
+  "eth-sepolia": chainData(sepolia, "eth-sepolia"),
+  "hyperevm-mainnet": chainData(hyperEvm, "hyperliquid-mainnet"),
+  "megaeth-mainnet": chainData(megaeth, "megaeth-mainnet"),
+  "megaeth-testnet": chainData(megaethTestnet, "megaeth-testnet"),
+  "monad-mainnet": chainData(monad, "monad-mainnet"),
+  "monad-testnet": chainData(monadTestnet, "monad-testnet"),
+  "opt-mainnet": chainData(optimism, "opt-mainnet"),
+  "opt-sepolia": chainData(optimismSepolia, "opt-sepolia"),
+  "polygon-amoy": chainData(polygonAmoy, "polygon-amoy"),
+  "polygon-mainnet": chainData(polygon, "polygon-mainnet"),
+  "scroll-mainnet": chainData(scroll, "scroll-mainnet"),
+  "scroll-sepolia": chainData(scrollSepolia, "scroll-sepolia"),
+  "tempo-mainnet": chainData(tempo, "tempo-mainnet"),
+  "tempo-moderato": chainData(tempoModerato, "tempo-moderato"),
+  "unichain-mainnet": chainData(unichain, "unichain-mainnet"),
+  "unichain-sepolia": chainData(unichainSepolia, "unichain-sepolia"),
 } as const satisfies Record<string, ChainData>;
 
 export type SupportedChain = keyof typeof chains;
+export type SupportedChainId = (typeof chains)[SupportedChain]["chainId"];
+export type ChainNamespace = (typeof chains)[SupportedChain]["namespace"];
 export type AlchemyChain = (typeof chains)[SupportedChain]["alchemyChain"];
