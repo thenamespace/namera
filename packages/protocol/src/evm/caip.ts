@@ -22,6 +22,31 @@ export const Caip10AccountId = Schema.String.check(
     description: "A CAIP-10 blockchain account identifier",
   });
 
+export const Caip19AssetType = Schema.String.check(
+  Schema.isPattern(/^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/[-a-z0-9]{3,8}:[-.%a-zA-Z0-9]{1,128}$/, {
+    message: "Invalid CAIP-19 asset type",
+  }),
+)
+  .pipe(Schema.brand("Caip19AssetType"))
+  .annotate({
+    identifier: "Caip19AssetType",
+    description: "A CAIP-19 fungible asset or asset collection identifier",
+  });
+
+export const Caip19AssetId = Schema.String.check(
+  Schema.isPattern(
+    /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/[-a-z0-9]{3,8}:[-.%a-zA-Z0-9]{1,128}\/[-.%a-zA-Z0-9]{1,78}$/,
+    {
+      message: "Invalid CAIP-19 asset ID",
+    },
+  ),
+)
+  .pipe(Schema.brand("Caip19AssetId"))
+  .annotate({
+    identifier: "Caip19AssetId",
+    description: "A CAIP-19 individual asset identifier",
+  });
+
 export const Eip155ChainId = Caip2ChainId.check(
   Schema.isPattern(/^eip155:(0|[1-9][0-9]{0,31})$/, {
     message: "Invalid EIP-155 CAIP-2 chain ID",
@@ -46,5 +71,7 @@ export const Eip155AccountId = Caip10AccountId.check(
 
 export type Caip2ChainId = typeof Caip2ChainId.Type;
 export type Caip10AccountId = typeof Caip10AccountId.Type;
+export type Caip19AssetType = typeof Caip19AssetType.Type;
+export type Caip19AssetId = typeof Caip19AssetId.Type;
 export type Eip155ChainId = typeof Eip155ChainId.Type;
 export type Eip155AccountId = typeof Eip155AccountId.Type;
