@@ -121,6 +121,12 @@ follow its linked local documentation when relevant. Search
   for application navigation.
 - Preserve accessible names, visible focus, keyboard behavior, field
   descriptions and errors, and live announcements for asynchronous feedback.
+- Use React Hook Form for frontend form state and submission. Define validation
+  with an Effect `Schema` beside the form, convert it with
+  `Schema.toStandardSchemaV1`, and pass it to `standardSchemaResolver` from
+  `@hookform/resolvers/standard-schema`. Use `useController` for controlled
+  UIKit fields and render resolver messages through UIKit field errors. Do not
+  duplicate the schema with manual parsing or validation.
 - Keep route-only components beside their route or route group in a
   `-components/` directory and reserve `apps/dashboard/src/components` for UI
   shared by unrelated routes. Follow the structure already used in that area.

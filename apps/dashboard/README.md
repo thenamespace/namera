@@ -45,6 +45,10 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 - Preserve React Aria labels, descriptions, validation, focus states, and
   keyboard behavior. Async form feedback must be announced with `role="alert"`
   or an appropriate live region.
+- Use React Hook Form with adjacent Effect schemas for forms. Adapt Effect v4
+  schemas through `Schema.toStandardSchemaV1` and
+  `@hookform/resolvers/standard-schema`, and connect controlled UIKit fields
+  with `useController`.
 - Keep route files small: declare the TanStack route and render a component from
   the nearest `-components/` directory. Do not create one-file component folders.
 - Use Motion for restrained state transitions and microinteractions. Respect
