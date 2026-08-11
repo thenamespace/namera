@@ -2,12 +2,15 @@ import type { Key } from "react";
 import { useCallback, useState } from "react";
 
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { Button, Modal, Tabs } from "@thenamespace/uikit";
+import { Button, Modal, Tabs, cn } from "@thenamespace/uikit";
 
 import { EmojiPanel } from "./emoji-panel.js";
 import { IconPanel } from "./icon-panel.js";
-import { IconPreview } from "./icon-preview.js";
+import { IconPreview, type IconPreviewSize } from "./icon-preview.js";
 import { ImagePanel } from "./image-panel.js";
+
+export { IconPreview } from "./icon-preview.js";
+export type { IconPreviewProps, IconPreviewSize } from "./icon-preview.js";
 
 export type IconPickerType = MetadataIcon["type"];
 
@@ -15,6 +18,8 @@ export type IconPickerProps = {
   value: MetadataIcon;
   setValue: (value: MetadataIcon) => void;
   supportedTypes?: readonly [IconPickerType, ...IconPickerType[]];
+  size?: IconPreviewSize;
+  triggerClassName?: string;
   "aria-label"?: string;
 };
 
@@ -23,6 +28,12 @@ const TYPE_LABELS: Record<IconPickerType, string> = {
   icon: "Icons",
   emoji: "Emoji",
   image: "Image",
+};
+const TRIGGER_SIZE_CLASSES: Record<IconPreviewSize, string> = {
+  xs: "size-6 rounded-md",
+  sm: "size-8 rounded-md",
+  md: "size-10 rounded-lg",
+  lg: "size-12 rounded-xl",
 };
 
 function defaultValue(type: IconPickerType): MetadataIcon {
@@ -35,6 +46,8 @@ export function IconPicker({
   value,
   setValue,
   supportedTypes = DEFAULT_TYPES,
+  size = "md",
+  triggerClassName,
   "aria-label": ariaLabel = "Choose icon",
 }: IconPickerProps) {
   const firstType = supportedTypes[0];
@@ -64,16 +77,18 @@ export function IconPicker({
     },
     [setValue],
   );
+  const triggerClassNameValue =
+    cn("cursor-pointer overflow-hidden p-0", TRIGGER_SIZE_CLASSES[size], triggerClassName) ?? "";
 
   return (
     <Modal isOpen={isOpen} onOpenChange={handleOpenChange}>
       <Button
         isIconOnly
         aria-label={ariaLabel}
-        className="size-10 cursor-pointer overflow-hidden rounded-lg p-0"
+        className={triggerClassNameValue}
         variant="tertiary"
       >
-        <IconPreview value={value} />
+        <IconPreview size={size} value={value} />
       </Button>
 
       <Modal.Backdrop>

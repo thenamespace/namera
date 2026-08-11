@@ -43,7 +43,21 @@ of supported tabs:
 ```tsx
 import { IconPicker } from "@namera-ai/ui/icon-picker";
 
-<IconPicker value={icon} setValue={setIcon} supportedTypes={["icon", "emoji"]} />;
+<IconPicker
+  size="sm"
+  value={icon}
+  setValue={setIcon}
+  supportedTypes={["icon", "emoji"]}
+  triggerClassName="rounded-full"
+/>;
+```
+
+Render the same metadata value without the picker using the shared size variants:
+
+```tsx
+import { IconPreview } from "@namera-ai/ui/icon-picker";
+
+<IconPreview className="rounded-full" size="lg" value={icon} />;
 ```
 
 Keep application-specific composition in the consuming app. This package owns
