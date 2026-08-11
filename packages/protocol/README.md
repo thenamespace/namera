@@ -9,6 +9,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 - `src/common/` — shared primitives such as normalized email and branded IDs.
 - `src/model/` — persistence/domain models and insert/update schemas.
 - `src/dto/` — public API request and response schemas.
+- `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.
 - `src/index.ts` — common values and errors.
 
@@ -17,6 +18,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 ```ts
 import { Email, UserId } from "@namera-ai/protocol";
 import { RequestMagicLinkRequest } from "@namera-ai/protocol/dto";
+import { Eip155ChainId, EvmCall } from "@namera-ai/protocol/evm";
 import { User, UserInsert } from "@namera-ai/protocol/model";
 ```
 

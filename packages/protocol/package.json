@@ -18,6 +18,10 @@
       "namera-source": "./src/dto/index.ts",
       "default": "./dist/dto.js"
     },
+    "./evm": {
+      "namera-source": "./src/evm/index.ts",
+      "default": "./dist/evm.js"
+    },
     "./model": {
       "namera-source": "./src/model/index.ts",
       "default": "./dist/model.js"
@@ -31,6 +35,7 @@
     "exports": {
       ".": "./dist/index.js",
       "./dto": "./dist/dto.js",
+      "./evm": "./dist/evm.js",
       "./model": "./dist/model.js",
       "./package.json": "./package.json"
     }
