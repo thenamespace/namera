@@ -22,6 +22,7 @@
     "@namera-ai/ui": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-devtools": "catalog:",
+    "@tanstack/react-hotkeys": "^0.10.0",
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-router-devtools": "catalog:",
     "effect": "catalog:",

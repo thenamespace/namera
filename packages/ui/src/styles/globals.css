@@ -11,7 +11,7 @@
   --accent-foreground: #f7f8f8;
   --accent-soft-foreground: var(--accent);
 
-  --default: #1f2021;
+  --default: #252628;
   --default-foreground: #f7f8f8;
 
   --field-background: #151616;
@@ -21,7 +21,7 @@
 
   --muted: #939496;
 
-  --overlay: #151616;
+  --overlay: #1b1b1c;
   --overlay-foreground: #f7f8f8;
 
   --segment: #333434;
@@ -60,4 +60,19 @@
   --chart-3: var(--accent);
   --chart-4: oklch(from var(--accent) calc(l + 0.12) c h);
   --chart-5: oklch(from var(--accent) calc(l + 0.24) c h);
+}
+
+.dropdown__popover {
+  border-radius: 16px;
+}
+
+.menu-item {
+  border-radius: 12px;
+}
+
+.sidebar__menu-item-content {
+  min-height: 30px;
+  height: 30px;
+  border-radius: 8px;
+  gap: 6px;
 }

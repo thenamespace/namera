@@ -1,4 +1,4 @@
-import config from "klarity/oxlint/next";
+import config from "klarity/oxlint/react";
 import { defineConfig } from "oxlint";
 
 export default defineConfig({

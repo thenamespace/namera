@@ -1,27 +1,6 @@
 @import "@fontsource-variable/inter";
 @import "@namera-ai/ui/styles.css";
 
-:root {
+@theme inline {
   --font-inter: "Inter Variable", sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#app {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  overflow-x: hidden;
-  text-rendering: optimizeLegibility;
-}
-
-button,
-a {
-  touch-action: manipulation;
 }

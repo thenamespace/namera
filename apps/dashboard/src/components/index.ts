@@ -1,1 +1,1 @@
-export * from "./wrappers/transition";
+export * from "./sidebar";
