@@ -41,6 +41,7 @@ catalog:
   "drizzle-orm": "1.0.0-rc.4"
   "drizzle-kit": "1.0.0-rc.4"
   "resend": "6.18.1"
+  "viem": "2.55.11"
   "react": 19.2.8
   "react-dom": 19.2.8
   "react-hook-form": 7.85.0
