@@ -47,6 +47,9 @@ the supported email preference topics; inbox UI is not implemented yet.
 Settings forms are currently presentation-only. They validate against protocol
 DTOs but do not call mutations until their interaction design is finalized.
 
+The remaining main and settings sidebar destinations render an empty
+`DashboardPage` placeholder until their feature UI is implemented.
+
 Shared page and section composition should use `DashboardPage`,
 `HeadingGroup.Title`/`Description`, and `DashboardCard` rows/fields so route
 layouts retain the same hierarchy without duplicating structural styles.

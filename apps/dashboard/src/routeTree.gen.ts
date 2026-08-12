@@ -10,15 +10,60 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountsRouteImport } from './routes/accounts'
+import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AssetsRouteImport } from './routes/assets'
+import { Route as IdentityRouteImport } from './routes/identity'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as SessionKeysRouteImport } from './routes/session-keys'
+import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as SettingsNotificationsRouteImport } from './routes/settings/notifications'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
+import { Route as SettingsWorkspaceBillingsRouteImport } from './routes/settings/workspace_.billings'
+import { Route as SettingsWorkspaceMembersRouteImport } from './routes/settings/workspace_.members'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssetsRoute = AssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityRoute = IdentityRouteImport.update({
+  id: '/identity',
+  path: '/identity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionKeysRoute = SessionKeysRouteImport.update({
+  id: '/session-keys',
+  path: '/session-keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -41,71 +86,158 @@ const SettingsProfileRoute = SettingsProfileRouteImport.update({
   path: '/settings/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsWorkspaceRoute = SettingsWorkspaceRouteImport.update({
   id: '/settings/workspace',
   path: '/settings/workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsWorkspaceBillingsRoute =
+  SettingsWorkspaceBillingsRouteImport.update({
+    id: '/settings/workspace_/billings',
+    path: '/settings/workspace/billings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SettingsWorkspaceMembersRoute =
+  SettingsWorkspaceMembersRouteImport.update({
+    id: '/settings/workspace_/members',
+    path: '/settings/workspace/members',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
+  '/activity': typeof ActivityRoute
+  '/assets': typeof AssetsRoute
+  '/identity': typeof IdentityRoute
+  '/mcp': typeof McpRoute
+  '/session-keys': typeof SessionKeysRoute
+  '/templates': typeof TemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth/': typeof AuthIndexRoute
+  '/settings/workspace/billings': typeof SettingsWorkspaceBillingsRoute
+  '/settings/workspace/members': typeof SettingsWorkspaceMembersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
+  '/activity': typeof ActivityRoute
+  '/assets': typeof AssetsRoute
+  '/identity': typeof IdentityRoute
+  '/mcp': typeof McpRoute
+  '/session-keys': typeof SessionKeysRoute
+  '/templates': typeof TemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth': typeof AuthIndexRoute
+  '/settings/workspace/billings': typeof SettingsWorkspaceBillingsRoute
+  '/settings/workspace/members': typeof SettingsWorkspaceMembersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
+  '/activity': typeof ActivityRoute
+  '/assets': typeof AssetsRoute
+  '/identity': typeof IdentityRoute
+  '/mcp': typeof McpRoute
+  '/session-keys': typeof SessionKeysRoute
+  '/templates': typeof TemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth/': typeof AuthIndexRoute
+  '/settings/workspace_/billings': typeof SettingsWorkspaceBillingsRoute
+  '/settings/workspace_/members': typeof SettingsWorkspaceMembersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounts'
+    | '/activity'
+    | '/assets'
+    | '/identity'
+    | '/mcp'
+    | '/session-keys'
+    | '/templates'
     | '/auth/verify'
     | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
     | '/settings/workspace'
     | '/auth/'
+    | '/settings/workspace/billings'
+    | '/settings/workspace/members'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
+    | '/activity'
+    | '/assets'
+    | '/identity'
+    | '/mcp'
+    | '/session-keys'
+    | '/templates'
     | '/auth/verify'
     | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
     | '/settings/workspace'
     | '/auth'
+    | '/settings/workspace/billings'
+    | '/settings/workspace/members'
   id:
     | '__root__'
     | '/'
+    | '/accounts'
+    | '/activity'
+    | '/assets'
+    | '/identity'
+    | '/mcp'
+    | '/session-keys'
+    | '/templates'
     | '/auth/verify'
     | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
     | '/settings/workspace'
     | '/auth/'
+    | '/settings/workspace_/billings'
+    | '/settings/workspace_/members'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
+  ActivityRoute: typeof ActivityRoute
+  AssetsRoute: typeof AssetsRoute
+  IdentityRoute: typeof IdentityRoute
+  McpRoute: typeof McpRoute
+  SessionKeysRoute: typeof SessionKeysRoute
+  TemplatesRoute: typeof TemplatesRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   SettingsNotificationsRoute: typeof SettingsNotificationsRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsSecurityRoute: typeof SettingsSecurityRoute
   SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  SettingsWorkspaceBillingsRoute: typeof SettingsWorkspaceBillingsRoute
+  SettingsWorkspaceMembersRoute: typeof SettingsWorkspaceMembersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -115,6 +247,55 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assets': {
+      id: '/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AssetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity': {
+      id: '/identity'
+      path: '/identity'
+      fullPath: '/identity'
+      preLoaderRoute: typeof IdentityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session-keys': {
+      id: '/session-keys'
+      path: '/session-keys'
+      fullPath: '/session-keys'
+      preLoaderRoute: typeof SessionKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/': {
@@ -145,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/workspace': {
       id: '/settings/workspace'
       path: '/settings/workspace'
@@ -152,16 +340,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/workspace_/billings': {
+      id: '/settings/workspace_/billings'
+      path: '/settings/workspace/billings'
+      fullPath: '/settings/workspace/billings'
+      preLoaderRoute: typeof SettingsWorkspaceBillingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/workspace_/members': {
+      id: '/settings/workspace_/members'
+      path: '/settings/workspace/members'
+      fullPath: '/settings/workspace/members'
+      preLoaderRoute: typeof SettingsWorkspaceMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
+  ActivityRoute: ActivityRoute,
+  AssetsRoute: AssetsRoute,
+  IdentityRoute: IdentityRoute,
+  McpRoute: McpRoute,
+  SessionKeysRoute: SessionKeysRoute,
+  TemplatesRoute: TemplatesRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   SettingsNotificationsRoute: SettingsNotificationsRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  SettingsSecurityRoute: SettingsSecurityRoute,
   SettingsWorkspaceRoute: SettingsWorkspaceRoute,
   AuthIndexRoute: AuthIndexRoute,
+  SettingsWorkspaceBillingsRoute: SettingsWorkspaceBillingsRoute,
+  SettingsWorkspaceMembersRoute: SettingsWorkspaceMembersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
