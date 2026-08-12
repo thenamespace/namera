@@ -31,6 +31,10 @@ export const OrganizationEventId = createBrandedId("OrganizationEventId");
 // Job Tables
 export const EmailJobId = createBrandedId("EmailJobId");
 
+// Notification Tables
+export const NotificationId = createBrandedId("NotificationId");
+export const NotificationPreferenceId = createBrandedId("NotificationPreferenceId");
+
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
@@ -46,3 +50,5 @@ export type WalletId = typeof WalletId.Type;
 export type UserEventId = typeof UserEventId.Type;
 export type OrganizationEventId = typeof OrganizationEventId.Type;
 export type EmailJobId = typeof EmailJobId.Type;
+export type NotificationId = typeof NotificationId.Type;
+export type NotificationPreferenceId = typeof NotificationPreferenceId.Type;
