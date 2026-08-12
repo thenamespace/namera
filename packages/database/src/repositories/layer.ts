@@ -12,6 +12,7 @@ import {
   UserRepository,
   VerificationRepository,
 } from "#/repositories/auth/index";
+import { EmailJobRepository } from "#/repositories/jobs/index";
 
 export interface RepositoryService {
   audit: {
@@ -27,6 +28,9 @@ export interface RepositoryService {
     session: SessionRepository["Service"];
     user: UserRepository["Service"];
     verification: VerificationRepository["Service"];
+  };
+  jobs: {
+    email: EmailJobRepository["Service"];
   };
 }
 
@@ -46,6 +50,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const verification = yield* VerificationRepository;
       const organizationEvent = yield* OrganizationEventRepository;
       const userEvent = yield* UserEventRepository;
+      const emailJob = yield* EmailJobRepository;
 
       return Repository.of({
         audit: {
@@ -62,6 +67,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           user,
           verification,
         },
+        jobs: {
+          email: emailJob,
+        },
       });
     }),
   ).pipe(
@@ -77,6 +85,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         VerificationRepository.layer,
         OrganizationEventRepository.layer,
         UserEventRepository.layer,
+        EmailJobRepository.layer,
       ),
     ),
   );

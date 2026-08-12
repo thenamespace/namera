@@ -22,7 +22,7 @@ export const emailJob = jobsSchema.table(
     leaseExpiresAt: createTimestampField("lease_expires_at"),
     providerMessageId: text("provider_message_id"),
     sentAt: createTimestampField("sent_at"),
-    lastErrorCode: text("last_error_code"),
+    lastErrorCode: text("last_error_code").$type<NonNullable<EmailJob["lastErrorCode"]>>(),
     ...timestamps,
   },
   (table) => [
