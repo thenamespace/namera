@@ -3,6 +3,7 @@ import { defineRelations } from "drizzle-orm";
 import {
   account,
   actor,
+  emailJob,
   invitation,
   organization,
   organizationEvent,
@@ -21,6 +22,7 @@ export const relations = defineRelations(
   {
     account,
     actor,
+    emailJob,
     invitation,
     organization,
     organizationEvent,

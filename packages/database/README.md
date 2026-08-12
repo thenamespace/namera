@@ -123,3 +123,12 @@ Organization events use a composite actor/organization foreign key so an event
 cannot be attributed to an actor from another tenant. Audit tables intentionally
 have no `updated_at`; the user and organization audit repositories expose only
 append and newest-first history reads.
+
+## Email job persistence
+
+The `jobs.email_jobs` table is the durable email outbox. It stores an encrypted,
+provider-neutral payload, delivery state, retry availability, lease ownership,
+expiry, and the eventual provider message ID. Its unique idempotency key prevents
+the same business operation from creating duplicate jobs. Jobs have no user or
+organization relation; recipients and template variables remain inside the
+encrypted payload owned by `@namera-ai/emails`.

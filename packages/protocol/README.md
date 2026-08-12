@@ -8,7 +8,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 
 - `src/common/` — shared primitives such as normalized email and branded IDs.
 - `src/model/` — persistence/domain models and insert/update schemas, including
-  discriminated audit-event unions.
+  discriminated audit-event unions and provider-neutral durable jobs.
 - `src/dto/` — public API request and response schemas.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.

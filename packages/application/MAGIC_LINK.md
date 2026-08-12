@@ -66,8 +66,8 @@ then:
 6. revokes the pending verification if synchronous delivery fails while still
    returning the generic accepted response.
 
-Email delivery is currently request-scoped. A durable outbox is intentionally
-deferred until reliability or horizontal scaling requires it.
+Email delivery is currently request-scoped. The durable email-job model and
+database table exist, but enqueueing and worker processing are not wired yet.
 
 ## Verification
 

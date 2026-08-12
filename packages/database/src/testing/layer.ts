@@ -11,6 +11,7 @@ import { systemRoles } from "#/migrations/data";
 import {
   account,
   actor,
+  emailJob,
   invitation,
   organization,
   organizationEvent,
@@ -59,6 +60,7 @@ export class TestDatabase extends Context.Service<
         const database = yield* Database;
 
         const reset = Effect.fn("TestDatabase.reset")(function* () {
+          yield* database.delete(emailJob);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
           yield* database.delete(wallet);

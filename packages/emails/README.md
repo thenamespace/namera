@@ -70,3 +70,7 @@ debugging and must not be used in shared or production environments.
 `EmailService.testLayer` captures messages in `TestEmails` without contacting
 Resend. Integration tests can inspect `TestEmails.latest` or `TestEmails.sent`
 and clear captured messages between cases.
+
+The protocol model and `jobs.email_jobs` persistence table for durable delivery
+exist. The package job service, worker, bounded retries, and application enqueue
+integration are not wired yet, so application delivery remains synchronous.
