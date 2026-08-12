@@ -111,7 +111,9 @@ Successful verification runs one transaction that:
 4. marks the email verified and records the login time;
 5. ensures the user has an active organization;
 6. stores only the fresh session-token hash;
-7. appends the appropriate user and organization audit events.
+7. appends the appropriate user and organization audit events;
+8. records a new-sign-in notification and, when email preferences allow it,
+   enqueues a durable security email containing the captured client context.
 
 After commit, the server sets the raw credential in the `auth-token` cookie and
 returns the stored application-relative `returnTo` value. The cookie is
@@ -146,9 +148,8 @@ Frontend navigation is UX only; the server remains authoritative.
 
 Verification exposes only the typed `MagicLinkError` codes:
 
-- `INVALID_OR_EXPIRED_LINK`;
-- `TOO_MANY_ATTEMPTS`;
-- `SIGN_IN_NOT_ALLOWED`.
+- `INVALID_OR_EXPIRED_LINK` (`400`);
+- `TOO_MANY_ATTEMPTS` (`429`).
 
 Database and provider defects remain internal. Do not add public distinctions
 for missing, consumed, revoked, or malformed credentials.

@@ -13,6 +13,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/config.ts` — common telemetry and production Axiom configuration.
 - `src/data.ts` — code-owned service identity and exporter timing.
 - `src/layer.ts` — environment-selected OTLP exporter layer.
+- `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.

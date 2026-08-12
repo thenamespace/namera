@@ -136,7 +136,13 @@ encrypted payload owned by `@namera-ai/emails`.
 `EmailJobRepository.enqueue` reports whether it inserted or found an existing
 idempotent job. Claims use `FOR UPDATE SKIP LOCKED`; all completion, retry, and
 terminal transitions require the current lease token. Keep delivery and retry
-policy in `@namera-ai/emails`, not in the repository.
+policy in `@namera-ai/emails`, not in the repository. Pending jobs can be
+canceled by idempotency key; canceled jobs are terminal and discard ciphertext.
+
+`auth.verification` has a partial unique index on purpose and identifier for
+active records. Credential replacement and conflict-safe creation ensure that
+only one pending magic-link credential per normalized email can be consumed,
+including under concurrent requests.
 
 ## Notification persistence
 

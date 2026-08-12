@@ -26,6 +26,10 @@ After migrations complete, the server starts the scoped email worker. It polls
 the durable outbox, uses leases safe for multiple instances, and stops with the
 server scope. HTTP requests only enqueue email work.
 
+Authenticated responses use `Cache-Control: no-store`. If authorization finds
+an invalid session or a session whose active membership no longer exists, it
+also expires the stale `auth-token` cookie so the browser can recover cleanly.
+
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
 is enabled globally except for the Scalar reference route.
 
@@ -41,6 +45,10 @@ For a new sensitive operation, add its policy under `rateLimitPolicy`, then call
 stable, low-cardinality scope name and an appropriate identifier such as the
 client address, authenticated user ID, organization ID, or normalized email.
 Never include the identifier in logs or metric attributes.
+
+Invitation creation currently has separate organization and normalized-recipient
+limits in addition to the global limit. Magic-link request and verification use
+their own IP/email policies.
 
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally

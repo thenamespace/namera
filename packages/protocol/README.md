@@ -32,6 +32,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - DTOs describe the public wire contract. Models describe shared domain or
   persistence shapes; do not expose sensitive model fields through DTOs.
 - Define typed project errors here and import them from the owning package.
+- Give public `HttpApi` errors their semantic status in schema annotations and
+  add each union alternative to endpoints so statuses are preserved in OpenAPI
+  and runtime responses.
 - Keep schemas readonly unless mutation is explicitly required.
 - Audit event payloads are versioned discriminated unions. Their `data` is
   required and must contain only safe historical context, never credentials or
@@ -41,7 +44,8 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   storing an untyped object.
 - Notification payloads are versioned discriminated unions. Add a concrete
   payload before persisting a new notification type; preference categories and
-  delivery channels remain separate closed schemas.
+  delivery channels remain separate closed schemas. Public preference DTOs
+  expose only pairs that application policy currently allows users to change.
 
 ## Adding a contract
 

@@ -22,8 +22,10 @@ claims and delivers them outside the request lifecycle.
 | `EMAIL_FROM`     | Yes      | Default sender accepted by Resend.           |
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
-Set the magic-link, new-sign-in, and organization-invitation hosted template IDs
-in `src/data.ts` before sending those templates.
+Replace the TODO magic-link, new-sign-in, and organization-invitation hosted
+template IDs in `src/data.ts` before production delivery. Invitation variables
+include the effective role name; new-sign-in variables include the captured IP
+address and user agent when available.
 Provider requests time out after ten seconds; this editable policy also lives in
 `src/data.ts`. Durable payload encryption also requires the shared configuration
 documented by `@namera-ai/crypto`; the server composition root provides it.
@@ -65,7 +67,8 @@ The worker uses atomic `FOR UPDATE SKIP LOCKED` claims and lease-conditional
 state transitions so multiple worker instances can share the table. Delivery
 has a ten-second provider timeout, five total attempts, capped exponential
 backoff, stale-lease recovery, job expiry, and Resend idempotency. Terminal jobs
-clear encrypted payload ciphertext.
+clear encrypted payload ciphertext. A pending job can also be canceled by its
+business idempotency key when the source action is resolved before delivery.
 
 The server runs the scoped worker after migrations complete. `processOnce` is
 public for deterministic tests and explicit worker runtimes; request handlers
