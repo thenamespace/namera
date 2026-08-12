@@ -50,12 +50,14 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
         crypto.hmac({ purpose: cryptoPurpose.magicLinkCode, value: code }),
       ]);
       const returnTo = input.returnTo;
+      const returnUrl =
+        returnTo === undefined ? undefined : new URL(returnTo, config.dashboardPublicOrigin);
       const allowedReturnTo =
-        returnTo !== undefined &&
+        returnUrl !== undefined &&
         config.returnTo.allowedPrefixes.some(
-          (prefix) => returnTo === prefix || returnTo.startsWith(`${prefix}/`),
+          (prefix) => returnUrl.pathname === prefix || returnUrl.pathname.startsWith(`${prefix}/`),
         )
-          ? returnTo
+          ? `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`
           : undefined;
       yield* transaction.run(
         Effect.gen(function* () {

@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Option } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
@@ -41,11 +41,12 @@ export class Audit extends Context.Service<Audit, AuditService>()("@namera-ai/ap
       const repository = yield* Repository;
 
       const fields = Effect.fn("Audit.fields")(function* (options?: AuditOptions) {
+        const span = yield* Effect.option(Effect.currentSpan);
         return {
           source: options?.source ?? ("api" as const),
           correlationId: options?.correlationId ?? (yield* crypto.randomToken(18)),
           requestId: null,
-          traceId: null,
+          traceId: Option.getOrNull(Option.map(span, (current) => current.traceId)),
         };
       });
 

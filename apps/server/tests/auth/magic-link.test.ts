@@ -167,6 +167,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const client = yield* makeTestApiClient;
       const allowed = Schema.decodeSync(MagicLinkReturnTo)("/dashboard/wallets");
       const denied = Schema.decodeSync(MagicLinkReturnTo)("/admin");
+      const traversal = Schema.decodeSync(MagicLinkReturnTo)("/dashboard/../admin");
 
       const allowedLink = yield* requestMagicLink(
         client,
@@ -187,6 +188,20 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         payload: { type: "token", id: deniedLink.id, token: deniedLink.token },
       });
       expect(deniedResult.body.returnTo).toBe("/dashboard");
+
+      const traversalLink = yield* requestMagicLink(
+        client,
+        testEmail("traversal-return@example.com"),
+        traversal,
+      );
+      const traversalResult = yield* client.magicLink.verify({
+        payload: {
+          type: "token",
+          id: traversalLink.id,
+          token: traversalLink.token,
+        },
+      });
+      expect(traversalResult.body.returnTo).toBe("/dashboard");
     }),
   );
 

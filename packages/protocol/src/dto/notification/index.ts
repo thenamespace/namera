@@ -4,8 +4,6 @@ import { NotificationId, OrganizationId } from "#/common/index";
 import {
   InvitationReceivedNotification,
   NewSignInNotification,
-  NotificationCategory,
-  NotificationChannel,
   NotificationPreference,
 } from "#/model/notification/index";
 
@@ -58,8 +56,8 @@ export const ListNotificationPreferencesResponse = Schema.Array(
 
 const NotificationPreferenceScope = {
   organizationId: Schema.NullOr(OrganizationId),
-  category: NotificationCategory,
-  channel: NotificationChannel,
+  category: Schema.Literals(["security", "organization"]),
+  channel: Schema.Literal("email"),
 };
 
 export const UpdateNotificationPreferenceRequest = Schema.Struct({
