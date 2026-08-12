@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
 
@@ -64,6 +64,33 @@ layer(TestServerLayer)("notification preference routes", (it) => {
         })
         .pipe(Effect.flip);
       expect(error).toMatchObject({ _tag: "Forbidden" });
+    }),
+  );
+
+  it.effect("suppresses configurable sign-in email while keeping the in-app notification", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const email = testEmail("notification-suppressed@example.com");
+      const first = yield* signIn(client, email);
+      yield* client.notification.updatePreference({
+        payload: {
+          organizationId: null,
+          category: "security",
+          channel: "email",
+          enabled: false,
+        },
+      });
+
+      yield* signIn(client, email);
+      const repository = yield* Repository;
+      const rows = yield* repository.notification.inbox.listForUser({
+        userId: first.actor.user.id,
+        limit: 10,
+        now: yield* DateTime.now,
+      });
+      expect(rows).toHaveLength(2);
+      expect(rows[0]?.recipient.emailJobId).toBeNull();
     }),
   );
 });

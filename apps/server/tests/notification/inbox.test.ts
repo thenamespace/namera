@@ -73,4 +73,42 @@ layer(TestServerLayer)("notification inbox routes", (it) => {
       expect(job?.status).toBe("pending");
     }),
   );
+
+  it.effect("paginates deterministically and marks every inbox item as read", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("notification-page@example.com"));
+      const repository = yield* Repository;
+
+      for (let index = 0; index < 31; index += 1) {
+        const created = yield* repository.notification.inbox.create({
+          organizationId: null,
+          actorId: null,
+          type: "auth.new-sign-in",
+          resourceType: "session",
+          resourceId: signedIn.actor.session.id,
+          data: { version: 1 },
+          idempotencyKey: `test:notification-page:${index}`,
+          correlationId: `test-notification-page-${index}`,
+          expiresAt: null,
+        });
+        yield* repository.notification.inbox.addRecipient({
+          notificationId: created.notification.id,
+          userId: signedIn.actor.user.id,
+        });
+      }
+
+      const first = yield* client.notification.list({ query: {} });
+      expect(first.items).toHaveLength(30);
+      expect(first.nextCursor).not.toBeNull();
+      if (first.nextCursor === null) return yield* Effect.die("Expected a next cursor");
+      const second = yield* client.notification.list({ query: { cursor: first.nextCursor } });
+      expect(second.items).toHaveLength(2);
+      expect(second.nextCursor).toBeNull();
+
+      expect(yield* client.notification.markAllRead()).toEqual({ count: 32 });
+      expect(yield* client.notification.unreadCount()).toEqual({ count: 0 });
+    }),
+  );
 });

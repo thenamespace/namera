@@ -51,4 +51,23 @@ layer(TestServerLayer)("notification delivery", (it) => {
       );
     }),
   );
+
+  it.effect("enqueues invitation email when the recipient does not have an account", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("unknown-invite-owner@example.com"));
+      const invitation = yield* inviteMember(
+        client,
+        testEmail("unknown-invite-recipient@example.com"),
+        owner.actor.organization.id,
+      );
+      const repository = yield* Repository;
+      const job = yield* repository.jobs.email.findByIdempotencyKey(
+        `organization-invitation:${invitation.invitation.id}`,
+      );
+      expect(job?.type).toBe("organization-invitation");
+      expect(job?.status).toBe("pending");
+    }),
+  );
 });

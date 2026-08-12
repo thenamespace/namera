@@ -17,13 +17,20 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
   const emailJobs = yield* EmailJobs;
   const emails = yield* TestEmails;
   let sent = (yield* emails.sent).findLast(
-    (message) => message.type === "magic-link" && message.to === email,
+    (message) =>
+      message.type === "magic-link" &&
+      message.to === email &&
+      new URL(message.variables.magicLinkUrl).searchParams.get("id") === requested.verification.id,
   );
   for (let attempt = 0; sent === undefined && attempt < 20; attempt += 1) {
     const processed = yield* emailJobs.processOnce;
     if (processed === 0) break;
     sent = (yield* emails.sent).findLast(
-      (message) => message.type === "magic-link" && message.to === email,
+      (message) =>
+        message.type === "magic-link" &&
+        message.to === email &&
+        new URL(message.variables.magicLinkUrl).searchParams.get("id") ===
+          requested.verification.id,
     );
   }
   if (sent === undefined || sent.type !== "magic-link") {
