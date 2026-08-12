@@ -41,6 +41,8 @@ the supported email preference topics; inbox UI is not implemented yet.
   loading and update behavior are intentionally not connected yet.
 - `/settings/notifications` contains grouped product, account, and organization
   email preference forms backed by the notification preference DTO.
+- `/settings/security` presents active sessions using the session response
+  contract. It currently uses demo data and has no revocation behavior.
 - `/settings/workspace` contains the organization logo and name form backed by
   the organization update DTO.
 
