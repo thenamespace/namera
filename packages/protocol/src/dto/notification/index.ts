@@ -10,8 +10,8 @@ import {
 } from "#/model/notification/index";
 
 const NotificationRecipientState = {
-  readAt: Schema.NullOr(Schema.DateTimeUtc),
-  receivedAt: Schema.DateTimeUtc,
+  readAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  receivedAt: Schema.DateTimeUtcFromDate,
 };
 
 export const NotificationResponse = Schema.Union([
