@@ -79,6 +79,29 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 - Put required `VITE_*` values in `src/env.ts` and decode them at startup. Do not
   read `import.meta.env` throughout feature code.
 
+### Auto-saving forms
+
+Use `useAutoSave` with React Hook Form for profile, organization, and other
+editable settings. It validates and saves two seconds after the latest change,
+serializes overlapping saves, marks the submitted values as the new form
+baseline, and shows shared UIKit toasts. TanStack Router navigation waits for a
+dirty form to save; validation or delivery failures keep the user on the page.
+Browser unloads use the native dirty-form warning because ordinary asynchronous
+requests cannot be guaranteed after a tab closes.
+
+```tsx
+const form = useForm<ProfileInput, unknown, ProfileOutput>({
+  defaultValues: profile,
+  resolver: standardSchemaResolver(ProfileValidator),
+});
+const updateUser = useUpdateUser();
+
+const autoSave = useAutoSave({
+  form,
+  onSave: (profile) => updateUser.mutateAsync({ payload: profile }),
+});
+```
+
 ## Environment
 
 | Variable       | Description             |

@@ -4,6 +4,8 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
+import { Toast } from "@namera-ai/ui";
+
 import "@/styles.css";
 import { AppSidebar, SettingsSidebar } from "@/components";
 import type { RouterContext } from "@/router-context";
@@ -37,6 +39,7 @@ function RootComponent() {
       <Sidebar>
         <Outlet />
       </Sidebar>
+      <Toast.Provider placement="bottom end" />
       <TanStackDevtools config={devtoolsConfig} plugins={devtoolsPlugins} />
     </div>
   );
