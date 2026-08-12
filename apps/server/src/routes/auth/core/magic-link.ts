@@ -1,4 +1,5 @@
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
+import { HttpServerRequest } from "effect/unstable/http";
 import { HttpApiBuilder, HttpApiSchema } from "effect/unstable/httpapi";
 
 import { NameraApi } from "@namera-ai/api";
@@ -43,7 +44,11 @@ export const MagicLinkRoutes = HttpApiBuilder.group(NameraApi, "magicLink", (han
             rateLimitPolicy.magicLink.verifyByIp,
           );
 
-          const verified = yield* app.magicLink.verify(payload);
+          const request = yield* HttpServerRequest.HttpServerRequest;
+          const verified = yield* app.magicLink.verify(payload, {
+            ipAddress: Option.getOrNull(request.remoteAddress),
+            userAgent: request.headers["user-agent"] ?? null,
+          });
           yield* setAuthCookie(verified.sessionToken);
           return HttpApiSchema.withHeaders({
             body: { returnTo: verified.returnTo },

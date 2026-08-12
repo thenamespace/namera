@@ -88,7 +88,7 @@ layer(TestServerLayer)("notification inbox routes", (it) => {
           type: "auth.new-sign-in",
           resourceType: "session",
           resourceId: signedIn.actor.session.id,
-          data: { version: 1 },
+          data: { version: 1, ipAddress: null, userAgent: null },
           idempotencyKey: `test:notification-page:${index}`,
           correlationId: `test-notification-page-${index}`,
           expiresAt: null,

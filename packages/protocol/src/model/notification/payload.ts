@@ -16,6 +16,8 @@ export const NewSignInNotificationPayload = Schema.Struct({
   resourceId: SessionId,
   data: Schema.Struct({
     version: Schema.Literal(1),
+    ipAddress: Schema.NullOr(Schema.String),
+    userAgent: Schema.NullOr(Schema.String),
   }),
 });
 

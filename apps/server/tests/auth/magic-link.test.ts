@@ -1,8 +1,11 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Schema } from "effect";
+import { DateTime, Effect, Schema } from "effect";
 
-import { MagicLinkCode, MagicLinkToken } from "@namera-ai/protocol/dto";
+import { NameraApi } from "@namera-ai/api";
+import { Repository } from "@namera-ai/database";
+import { MagicLinkCode, MagicLinkReturnTo, MagicLinkToken } from "@namera-ai/protocol/dto";
 
+import { handledApi } from "../helpers/http-api-test.js";
 import {
   makeTestApiClient,
   requestMagicLink,
@@ -83,6 +86,63 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       expect(result.body.returnTo).toBe("/dashboard");
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.cookies.cookies["auth-token"]?.value).toBeTruthy();
+    }),
+  );
+
+  it.effect("persists request context on the session and security notification", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* handledApi(NameraApi, {
+        headers: { "user-agent": "Namera test client" },
+        remoteAddress: "203.0.113.10",
+      });
+      const signedIn = yield* signIn(client, testEmail("context@example.com"));
+
+      expect(signedIn.actor.session.ipAddress).toBe("203.0.113.10");
+      expect(signedIn.actor.session.userAgent).toBe("Namera test client");
+
+      const repository = yield* Repository;
+      const notifications = yield* repository.notification.inbox.listForUser({
+        userId: signedIn.actor.user.id,
+        limit: 10,
+        now: yield* DateTime.now,
+      });
+      const notification = notifications.find(
+        (item) => item.notification.type === "auth.new-sign-in",
+      )?.notification;
+      expect(notification?.data).toMatchObject({
+        ipAddress: "203.0.113.10",
+        userAgent: "Namera test client",
+      });
+    }),
+  );
+
+  it.effect("keeps only configured application return paths", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const allowed = Schema.decodeSync(MagicLinkReturnTo)("/dashboard/wallets");
+      const denied = Schema.decodeSync(MagicLinkReturnTo)("/admin");
+
+      const allowedLink = yield* requestMagicLink(
+        client,
+        testEmail("allowed-return@example.com"),
+        allowed,
+      );
+      const allowedResult = yield* client.magicLink.verify({
+        payload: { type: "token", id: allowedLink.id, token: allowedLink.token },
+      });
+      expect(allowedResult.body.returnTo).toBe(allowed);
+
+      const deniedLink = yield* requestMagicLink(
+        client,
+        testEmail("denied-return@example.com"),
+        denied,
+      );
+      const deniedResult = yield* client.magicLink.verify({
+        payload: { type: "token", id: deniedLink.id, token: deniedLink.token },
+      });
+      expect(deniedResult.body.returnTo).toBe("/dashboard");
     }),
   );
 

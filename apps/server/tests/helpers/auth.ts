@@ -4,7 +4,11 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import { VerificationId, type Email } from "@namera-ai/protocol";
-import { MagicLinkToken, type UserActorData } from "@namera-ai/protocol/dto";
+import {
+  MagicLinkToken,
+  type MagicLinkReturnTo,
+  type UserActorData,
+} from "@namera-ai/protocol/dto";
 
 import { TestEmails } from "../layers/index.js";
 import { useAuthCookie, type TestApiClient } from "./api.js";
@@ -12,8 +16,9 @@ import { useAuthCookie, type TestApiClient } from "./api.js";
 export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
   client: TestApiClient,
   email: Email,
+  returnTo?: MagicLinkReturnTo,
 ) {
-  const requested = yield* enqueueMagicLink(client, email);
+  const requested = yield* enqueueMagicLink(client, email, returnTo);
   const emailJobs = yield* EmailJobs;
   const emails = yield* TestEmails;
   let sent = (yield* emails.sent).findLast(
@@ -56,9 +61,10 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
 export const enqueueMagicLink = Effect.fn("enqueueMagicLink")(function* (
   client: TestApiClient,
   email: Email,
+  returnTo?: MagicLinkReturnTo,
 ) {
   const [body, response] = yield* client.magicLink.request({
-    payload: { email },
+    payload: { email, ...(returnTo === undefined ? {} : { returnTo }) },
     responseMode: "decoded-and-response",
   });
   const repository = yield* Repository;

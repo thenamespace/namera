@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Option } from "effect";
 import type { FileSystem } from "effect/FileSystem";
 import type { Path } from "effect/Path";
 import type { Scope } from "effect/Scope";
@@ -27,7 +27,11 @@ export const handledApi = Effect.fnUntraced(function* <
   Groups extends HttpApiGroup.Constraint,
 >(
   api: HttpApi<ApiId, Groups>,
-  options?: { readonly baseUrl?: string | URL },
+  options?: {
+    readonly baseUrl?: string | URL;
+    readonly headers?: Readonly<Record<string, string>>;
+    readonly remoteAddress?: string;
+  },
 ): Effect.fn.Return<
   Client<Groups>,
   never,
@@ -52,7 +56,14 @@ export const handledApi = Effect.fnUntraced(function* <
   const handler = yield* HttpRouter.toHttpEffect(layer);
   const httpClient = HttpClient.make(
     Effect.fnUntraced(function* (request) {
-      const serverRequest = HttpServerRequest.fromClientRequest(request);
+      const serverRequest = HttpServerRequest.fromClientRequest(request).modify({
+        ...(options?.headers === undefined
+          ? {}
+          : { headers: { ...request.headers, ...options.headers } }),
+        ...(options?.remoteAddress === undefined
+          ? {}
+          : { remoteAddress: Option.some(options.remoteAddress) }),
+      });
       let handledResponse: HttpServerResponse.HttpServerResponse | undefined;
 
       yield* HttpEffect.toHandled(handler, (_request, response) =>

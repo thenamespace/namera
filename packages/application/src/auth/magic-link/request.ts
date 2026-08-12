@@ -49,6 +49,14 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
         crypto.hash({ purpose: cryptoPurpose.magicLinkToken, value: token }),
         crypto.hmac({ purpose: cryptoPurpose.magicLinkCode, value: code }),
       ]);
+      const returnTo = input.returnTo;
+      const allowedReturnTo =
+        returnTo !== undefined &&
+        config.returnTo.allowedPrefixes.some(
+          (prefix) => returnTo === prefix || returnTo.startsWith(`${prefix}/`),
+        )
+          ? returnTo
+          : undefined;
       yield* transaction.run(
         Effect.gen(function* () {
           yield* repository.auth.verification.revokePending({
@@ -59,7 +67,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
           const verification = yield* repository.auth.verification.create({
             purpose: config.magicLink.purpose,
             identifier: input.email,
-            data: input.returnTo === undefined ? {} : { returnTo: input.returnTo },
+            data: allowedReturnTo === undefined ? {} : { returnTo: allowedReturnTo },
             tokenHash,
             codeHmac,
             expiresAt: DateTime.addDuration(now, config.magicLink.timeToLive),

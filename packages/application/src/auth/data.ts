@@ -8,12 +8,10 @@ export interface AuthPolicy {
     readonly maximumAttempts: number;
     readonly tokenBytes: number;
     readonly codeDigits: number;
-    readonly createUnknownUsers: boolean;
   };
   readonly session: {
     readonly timeToLive: Duration.Duration;
     readonly tokenBytes: number;
-    readonly rotateAfter: Duration.Duration;
   };
   readonly cookie: {
     readonly name: string;
@@ -43,12 +41,10 @@ export const authPolicy = {
     maximumAttempts: 5,
     tokenBytes: 32,
     codeDigits: 8,
-    createUnknownUsers: true,
   },
   session: {
     timeToLive: Duration.days(30),
     tokenBytes: 32,
-    rotateAfter: Duration.days(1),
   },
   cookie: {
     name: "auth-token",

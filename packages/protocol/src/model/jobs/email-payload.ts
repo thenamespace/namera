@@ -37,12 +37,15 @@ export const MagicLinkEmailVariables = Schema.Struct({
 
 export const NewSignInEmailVariables = Schema.Struct({
   signedInAt: NonEmptyString,
+  ipAddress: NonEmptyString,
+  userAgent: NonEmptyString,
 });
 
 export const OrganizationInvitationEmailVariables = Schema.Struct({
   invitationUrl: NonEmptyString,
   organizationName: NonEmptyString,
   inviterName: NonEmptyString,
+  roleName: NonEmptyString,
   expiresAt: NonEmptyString,
 });
 

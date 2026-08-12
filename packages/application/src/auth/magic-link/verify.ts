@@ -20,9 +20,15 @@ export interface VerifyMagicLinkResult {
   readonly returnTo: string;
 }
 
+export interface VerifyMagicLinkContext {
+  readonly ipAddress: string | null;
+  readonly userAgent: string | null;
+}
+
 export interface VerifyMagicLinkApplication {
   readonly verify: (
     input: VerifyMagicLinkRequest,
+    context: VerifyMagicLinkContext,
   ) => Effect.Effect<VerifyMagicLinkResult, MagicLinkError>;
 }
 
@@ -35,7 +41,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const createNotification = yield* makeCreateNotification;
 
   const verify = Effect.fn("Application.magicLink.verify")(
-    function* (input: VerifyMagicLinkRequest) {
+    function* (input: VerifyMagicLinkRequest, context: VerifyMagicLinkContext) {
       const now = yield* DateTime.now;
       const verification =
         input.type === "token"
@@ -128,6 +134,8 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             userId: user.id,
             tokenHash: sessionTokenHash,
             activeOrganizationId: organization.id,
+            ...(context.ipAddress === null ? {} : { ipAddress: context.ipAddress }),
+            ...(context.userAgent === null ? {} : { userAgent: context.userAgent }),
             expiresAt: DateTime.addDuration(now, config.session.timeToLive),
           });
           const signedInEvent = yield* audit.user({
@@ -147,7 +155,11 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             type: "auth.new-sign-in",
             resourceType: "session",
             resourceId: session.id,
-            data: { version: 1 },
+            data: {
+              version: 1,
+              ipAddress: context.ipAddress,
+              userAgent: context.userAgent,
+            },
             idempotencyKey: `notification:auth.new-sign-in:${session.id}`,
             correlationId: signedInEvent.correlationId,
             expiresAt: null,
@@ -157,7 +169,11 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
                 email: {
                   type: "new-sign-in",
                   to: user.email,
-                  variables: { signedInAt: DateTime.formatIso(now) },
+                  variables: {
+                    signedInAt: DateTime.formatIso(now),
+                    ipAddress: context.ipAddress ?? "Unknown",
+                    userAgent: context.userAgent ?? "Unknown",
+                  },
                   expiresAt: DateTime.addDuration(
                     now,
                     notificationPolicy["auth.new-sign-in"].emailTimeToLive,

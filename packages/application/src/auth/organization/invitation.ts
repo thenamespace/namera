@@ -164,6 +164,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
               ).toString(),
               organizationName: view.organization.metadata.name,
               inviterName: view.inviter.metadata.name ?? view.inviter.email,
+              roleName: view.organizationRole.metadata.name,
               expiresAt: DateTime.formatIso(created.expiresAt),
             },
             expiresAt: created.expiresAt,

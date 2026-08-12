@@ -38,6 +38,19 @@ layer(TestServerLayer)("session routes", (it) => {
     }),
   );
 
+  it.effect("prevents authenticated responses from being cached", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("no-store@example.com"));
+
+      const [, response] = yield* client.session.currentUser({
+        responseMode: "decoded-and-response",
+      });
+      expect(response.headers["cache-control"]).toBe("no-store");
+    }),
+  );
+
   it.effect("revokes every session except the current session", () =>
     Effect.gen(function* () {
       yield* resetTestState();

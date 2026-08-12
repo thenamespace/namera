@@ -1,4 +1,5 @@
 import { DateTime, Effect, Layer, Redacted } from "effect";
+import { HttpEffect, HttpServerResponse } from "effect/unstable/http";
 import { HttpApiError } from "effect/unstable/httpapi";
 
 import { Authorization, CurrentActor } from "@namera-ai/api";
@@ -22,6 +23,9 @@ export const AuthorizationLive = Layer.effect(
 
     return Authorization.of({
       authToken: Effect.fn("Authorization.authToken")(function* (httpEffect, { credential }) {
+        yield* HttpEffect.appendPreResponseHandler((_request, response) =>
+          Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
+        );
         const tokenHash = yield* crypto.hash({
           purpose: cryptoPurpose.sessionToken,
           value: Redacted.value(credential),
