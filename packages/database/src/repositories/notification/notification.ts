@@ -7,7 +7,9 @@ import {
   NotificationInsert,
   NotificationRecipient,
   NotificationRecipientInsert,
+  type Notification as NotificationModel,
   type NotificationRecipient as NotificationRecipientModel,
+  type NotificationType,
 } from "@namera-ai/protocol/model";
 import { and, count, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 
@@ -57,6 +59,11 @@ export interface NotificationRepositoryService {
     readonly userId: UserId;
     readonly archivedAt: DateTime.Utc;
   }) => Effect.Effect<NotificationRecipientModel | undefined, DatabaseError>;
+  readonly expireByResource: (input: {
+    readonly type: NotificationType;
+    readonly resourceId: NotificationModel["resourceId"];
+    readonly expiresAt: DateTime.Utc;
+  }) => Effect.Effect<number, DatabaseError>;
 }
 
 const encodeDate = Schema.encodeSync(Schema.DateTimeUtcFromDate);
@@ -230,6 +237,17 @@ export class NotificationRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(NotificationRecipient)(rows[0]) : undefined;
+        }, mapToDatabaseError),
+        expireByResource: Effect.fn("NotificationRepository.expireByResource")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(notification)
+            .set({ expiresAt: encodeDate(input.expiresAt) })
+            .where(
+              and(eq(notification.type, input.type), eq(notification.resourceId, input.resourceId)),
+            )
+            .returning({ id: notification.id });
+          return rows.length;
         }, mapToDatabaseError),
       });
     }),

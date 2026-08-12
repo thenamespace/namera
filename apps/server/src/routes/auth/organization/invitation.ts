@@ -5,6 +5,7 @@ import { NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
 import { enforceCurrentUser, toInvitationResponse } from "#/helpers/index";
+import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (handlers) =>
   Effect.gen(function* () {
@@ -39,12 +40,23 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
       .handle("inviteMember", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser(["invitation:create"]);
+          yield* consumeRateLimit(
+            "invitation.create.organization",
+            actor.organization.id,
+            rateLimitPolicy.invitation.createByOrganization,
+          );
+          yield* consumeRateLimit(
+            "invitation.create.recipient",
+            payload.email,
+            rateLimitPolicy.invitation.createByRecipient,
+          );
           return toInvitationResponse(
             yield* invitations.createInvitation({
               ...payload,
               actorId: actor.actorId,
               inviterId: actor.user.id,
               organizationId: actor.organization.id,
+              inviterPermissions: actor.role.permissions,
             }),
           );
         }),

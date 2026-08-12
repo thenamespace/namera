@@ -14,6 +14,7 @@ import {
   type UserId,
 } from "@namera-ai/protocol";
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
+import type { MemberPermission } from "@namera-ai/protocol/model";
 import { organizationInvitationEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
@@ -43,6 +44,7 @@ export interface InvitationApplication {
     inviterId: UserId;
     organizationId: OrganizationId;
     organizationRoleId: OrganizationRoleId;
+    inviterPermissions: ReadonlyArray<MemberPermission>;
   }) => Effect.Effect<InvitationView, InvitationError | OrganizationError>;
   readonly acceptInvitation: (input: {
     invitationId: InvitationId;
@@ -105,6 +107,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
       inviterId: UserId;
       organizationId: OrganizationId;
       organizationRoleId: OrganizationRoleId;
+      inviterPermissions: ReadonlyArray<MemberPermission>;
     }) {
       const now = yield* DateTime.now;
       const role = yield* repository.auth.role.findById(
@@ -112,6 +115,9 @@ export const makeInvitationApplication = Effect.gen(function* () {
         input.organizationRoleId,
       );
       if (!role) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+      if (!role.permissions.every((permission) => input.inviterPermissions.includes(permission))) {
+        return yield* new OrganizationError({ code: "INSUFFICIENT_PERMISSIONS" });
+      }
 
       const existingUser = yield* repository.auth.user.findByEmail(input.email);
       if (existingUser) {
@@ -257,6 +263,14 @@ export const makeInvitationApplication = Effect.gen(function* () {
             event: "session.active_organization_changed",
             data: { version: 1, organizationId: accepted.organizationId },
           });
+          yield* repository.notification.inbox.expireByResource({
+            type: "organization.invitation.received",
+            resourceId: accepted.id,
+            expiresAt: now,
+          });
+          yield* repository.jobs.email.cancelPendingByIdempotencyKey(
+            `notification:organization.invitation:${accepted.id}:${input.userId}:email`,
+          );
         }),
       );
       yield* Metric.update(organizationInvitationEvents, "accepted");
@@ -267,12 +281,13 @@ export const makeInvitationApplication = Effect.gen(function* () {
 
   const rejectInvitation = Effect.fn("Application.organization.invitation.rejectInvitation")(
     function* (invitationId: InvitationId, email: Email, userId: UserId) {
+      const now = yield* DateTime.now;
       const rejected = yield* transaction.run(
         Effect.gen(function* () {
           const invitation = yield* repository.auth.invitation.rejectPending(
             invitationId,
             email,
-            yield* DateTime.now,
+            now,
           );
           if (!invitation) return undefined;
           yield* audit.organization({
@@ -283,6 +298,14 @@ export const makeInvitationApplication = Effect.gen(function* () {
             resourceId: invitation.id,
             data: { version: 1, userId },
           });
+          yield* repository.notification.inbox.expireByResource({
+            type: "organization.invitation.received",
+            resourceId: invitation.id,
+            expiresAt: now,
+          });
+          yield* repository.jobs.email.cancelPendingByIdempotencyKey(
+            `notification:organization.invitation:${invitation.id}:${userId}:email`,
+          );
           return invitation;
         }),
       );
@@ -297,6 +320,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
 
   const cancelInvitation = Effect.fn("Application.organization.invitation.cancelInvitation")(
     function* (invitationId: InvitationId, organizationId: OrganizationId, actorId: ActorId) {
+      const now = yield* DateTime.now;
       const canceled = yield* transaction.run(
         Effect.gen(function* () {
           const invitation = yield* repository.auth.invitation.cancelPending(
@@ -312,6 +336,17 @@ export const makeInvitationApplication = Effect.gen(function* () {
             resourceId: invitation.id,
             data: { version: 1 },
           });
+          yield* repository.notification.inbox.expireByResource({
+            type: "organization.invitation.received",
+            resourceId: invitation.id,
+            expiresAt: now,
+          });
+          const recipient = yield* repository.auth.user.findByEmail(invitation.email);
+          yield* repository.jobs.email.cancelPendingByIdempotencyKey(
+            recipient === undefined
+              ? `organization-invitation:${invitation.id}`
+              : `notification:organization.invitation:${invitation.id}:${recipient.id}:email`,
+          );
           return invitation;
         }),
       );

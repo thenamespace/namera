@@ -83,4 +83,29 @@ layer(TestServerLayer)("invitation permissions", (it) => {
       expect(forbidden).toMatchObject({ _tag: "Forbidden" });
     }),
   );
+
+  it.effect("prevents an admin from inviting a member into the owner role", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("owner-role-owner@example.com"));
+      const admin = yield* createMember(client, testEmail("owner-role-admin@example.com"), "admin");
+      const ownerRole = yield* findOrganizationRole(owner.actor.organization.id, "owner");
+      yield* setAuthToken(admin.memberToken);
+
+      const error = yield* client.invitation
+        .inviteMember({
+          payload: {
+            email: testEmail("owner-role-target@example.com"),
+            organizationRoleId: ownerRole.id,
+          },
+        })
+        .pipe(Effect.flip);
+
+      expect(error).toMatchObject({
+        _tag: "OrganizationError",
+        code: "INSUFFICIENT_PERMISSIONS",
+      });
+    }),
+  );
 });

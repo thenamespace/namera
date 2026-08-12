@@ -28,6 +28,18 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  invitation: {
+    createByOrganization: {
+      limit: 30,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
+    createByRecipient: {
+      limit: 5,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
+  },
 } as const;
 
 export const RateLimiterLive = RateLimiter.layer.pipe(Layer.provide(RateLimiter.layerStoreMemory));

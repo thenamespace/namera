@@ -12,6 +12,7 @@ export const EmailJobStatus = Schema.Literals([
   "sent",
   "failed",
   "expired",
+  "canceled",
 ]);
 
 export const EmailJobErrorCode = Schema.Literals([

@@ -17,6 +17,9 @@ export interface EmailJobRepositoryService {
   readonly findByIdempotencyKey: (
     idempotencyKey: string,
   ) => Effect.Effect<EmailJob | undefined, DatabaseError>;
+  readonly cancelPendingByIdempotencyKey: (
+    idempotencyKey: string,
+  ) => Effect.Effect<EmailJob | undefined, DatabaseError>;
   readonly claim: (input: {
     readonly now: DateTime.Utc;
     readonly leaseToken: string;
@@ -85,6 +88,22 @@ export class EmailJobRepository extends Context.Service<
             where: { idempotencyKey: { eq: idempotencyKey } },
           });
           return row ? Schema.decodeSync(EmailJob)(row) : undefined;
+        }, mapToDatabaseError),
+        cancelPendingByIdempotencyKey: Effect.fn(
+          "EmailJobRepository.cancelPendingByIdempotencyKey",
+        )(function* (idempotencyKey) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(emailJob)
+            .set({
+              status: "canceled",
+              encryptedPayload: null,
+              leaseToken: null,
+              leaseExpiresAt: null,
+            })
+            .where(and(eq(emailJob.idempotencyKey, idempotencyKey), eq(emailJob.status, "pending")))
+            .returning();
+          return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
         }, mapToDatabaseError),
         claim: Effect.fn("EmailJobRepository.claim")(function* ({
           now,

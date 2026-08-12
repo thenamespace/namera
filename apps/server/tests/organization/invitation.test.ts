@@ -1,6 +1,8 @@
 import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
 
+import { Repository } from "@namera-ai/database";
+
 import {
   inviteMember,
   makeTestApiClient,
@@ -73,6 +75,12 @@ layer(TestServerLayer)("invitation routes", (it) => {
       expect(actor.organization.id).toBe(owner.actor.organization.id);
       expect(actor.role.key).toBe("admin");
       expect(yield* client.invitation.listUserInvitations()).toHaveLength(0);
+      const notifications = yield* client.notification.list({ query: {} });
+      expect(
+        notifications.items.some(
+          (item) => item.notification.resourceId === invitation.invitation.id,
+        ),
+      ).toBe(false);
 
       const repeated = yield* client.invitation
         .acceptInvitation({ payload: { invitationId: invitation.invitation.id } })
@@ -132,6 +140,12 @@ layer(TestServerLayer)("invitation routes", (it) => {
         payload: { invitationId: invitation.invitation.id },
       });
       expect(yield* client.invitation.listInvitations()).toHaveLength(0);
+      const repository = yield* Repository;
+      expect(
+        (yield* repository.jobs.email.findByIdempotencyKey(
+          `organization-invitation:${invitation.invitation.id}`,
+        ))?.status,
+      ).toBe("canceled");
 
       const repeated = yield* client.invitation
         .cancelInvitation({ payload: { invitationId: invitation.invitation.id } })

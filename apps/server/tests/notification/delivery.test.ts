@@ -14,7 +14,7 @@ import {
 import { TestServerLayer } from "../layers/index.js";
 
 layer(TestServerLayer)("notification delivery", (it) => {
-  it.effect("creates an in-app notification and durable email for an existing invitee", () =>
+  it.effect("creates invitation delivery and retires it after acceptance", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
@@ -49,6 +49,85 @@ layer(TestServerLayer)("notification delivery", (it) => {
       expect((yield* repository.jobs.email.findById(emailJobId))?.type).toBe(
         "organization-invitation",
       );
+
+      yield* client.invitation.acceptInvitation({
+        payload: { invitationId: invitation.invitation.id },
+      });
+      expect(
+        (yield* client.notification.list({ query: {} })).items.some(
+          (item) => item.notification.resourceId === invitation.invitation.id,
+        ),
+      ).toBe(false);
+      expect((yield* repository.jobs.email.findById(emailJobId))?.status).toBe("canceled");
+    }),
+  );
+
+  it.effect("honors a recipient's organization email preference", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("preference-invite-owner@example.com"));
+      const recipient = yield* signIn(client, testEmail("preference-invite-recipient@example.com"));
+      yield* client.notification.updatePreference({
+        payload: {
+          organizationId: null,
+          category: "organization",
+          channel: "email",
+          enabled: false,
+        },
+      });
+      yield* setAuthToken(owner.cookie.value);
+
+      yield* inviteMember(client, recipient.actor.user.email, owner.actor.organization.id);
+      const repository = yield* Repository;
+      const rows = yield* repository.notification.inbox.listForUser({
+        userId: recipient.actor.user.id,
+        limit: 10,
+        now: yield* DateTime.now,
+      });
+      const invitation = rows.find(
+        (item) => item.notification.type === "organization.invitation.received",
+      );
+      expect(invitation?.recipient.emailJobId).toBeNull();
+    }),
+  );
+
+  it.effect("retires invitation delivery after rejection", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("reject-notify-owner@example.com"));
+      const recipient = yield* signIn(client, testEmail("reject-notify-recipient@example.com"));
+      yield* setAuthToken(owner.cookie.value);
+      const invitation = yield* inviteMember(
+        client,
+        recipient.actor.user.email,
+        owner.actor.organization.id,
+      );
+      yield* setAuthToken(recipient.cookie.value);
+
+      const repository = yield* Repository;
+      const before = yield* repository.notification.inbox.listForUser({
+        userId: recipient.actor.user.id,
+        limit: 10,
+        now: yield* DateTime.now,
+      });
+      const emailJobId = before.find(
+        (item) => item.notification.resourceId === invitation.invitation.id,
+      )?.recipient.emailJobId;
+      if (emailJobId === null || emailJobId === undefined) {
+        return yield* Effect.die("Expected an invitation email job");
+      }
+
+      yield* client.invitation.rejectInvitation({
+        payload: { invitationId: invitation.invitation.id },
+      });
+      expect(
+        (yield* client.notification.list({ query: {} })).items.some(
+          (item) => item.notification.resourceId === invitation.invitation.id,
+        ),
+      ).toBe(false);
+      expect((yield* repository.jobs.email.findById(emailJobId))?.status).toBe("canceled");
     }),
   );
 
