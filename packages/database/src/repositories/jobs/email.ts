@@ -10,8 +10,13 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { emailJob } from "#/schema/index";
 
 export interface EmailJobRepositoryService {
-  readonly enqueue: (data: EmailJobInsert) => Effect.Effect<EmailJob, DatabaseError>;
+  readonly enqueue: (
+    data: EmailJobInsert,
+  ) => Effect.Effect<{ readonly job: EmailJob; readonly inserted: boolean }, DatabaseError>;
   readonly findById: (id: EmailJobId) => Effect.Effect<EmailJob | undefined, DatabaseError>;
+  readonly findByIdempotencyKey: (
+    idempotencyKey: string,
+  ) => Effect.Effect<EmailJob | undefined, DatabaseError>;
   readonly claim: (input: {
     readonly now: DateTime.Utc;
     readonly leaseToken: string;
@@ -59,17 +64,26 @@ export class EmailJobRepository extends Context.Service<
             .onConflictDoNothing({ target: emailJob.idempotencyKey })
             .returning();
           if (inserted[0]) {
-            return Schema.decodeSync(EmailJob)(inserted[0]);
+            return { job: Schema.decodeSync(EmailJob)(inserted[0]), inserted: true };
           }
 
           const existing = yield* db.query.emailJob.findFirst({
             where: { idempotencyKey: { eq: data.idempotencyKey } },
           });
-          return Schema.decodeSync(EmailJob)(existing!);
+          return { job: Schema.decodeSync(EmailJob)(existing!), inserted: false };
         }, mapToDatabaseError),
         findById: Effect.fn("EmailJobRepository.findById")(function* (id) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.emailJob.findFirst({ where: { id: { eq: id } } });
+          return row ? Schema.decodeSync(EmailJob)(row) : undefined;
+        }, mapToDatabaseError),
+        findByIdempotencyKey: Effect.fn("EmailJobRepository.findByIdempotencyKey")(function* (
+          idempotencyKey,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const row = yield* db.query.emailJob.findFirst({
+            where: { idempotencyKey: { eq: idempotencyKey } },
+          });
           return row ? Schema.decodeSync(EmailJob)(row) : undefined;
         }, mapToDatabaseError),
         claim: Effect.fn("EmailJobRepository.claim")(function* ({
@@ -198,7 +212,13 @@ export class EmailJobRepository extends Context.Service<
             })
             .where(
               and(
-                inArray(emailJob.status, ["pending", "processing"]),
+                or(
+                  eq(emailJob.status, "pending"),
+                  and(
+                    eq(emailJob.status, "processing"),
+                    lte(emailJob.leaseExpiresAt, encodeDate(now)),
+                  ),
+                ),
                 lte(emailJob.expiresAt, encodeDate(now)),
               ),
             )

@@ -3,8 +3,8 @@ import { Config, Effect, Layer } from "effect";
 
 import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
-import { Database, Repository, TransactionService } from "@namera-ai/database";
-import { EmailService } from "@namera-ai/emails";
+import { Database, DatabaseMigration, Repository, TransactionService } from "@namera-ai/database";
+import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Evm } from "@namera-ai/evm";
 import { GcpWalletKeysLayer, LocalWalletKeysLayer } from "@namera-ai/wallet-keys";
 
@@ -14,10 +14,16 @@ const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.laye
 
 const CryptoLive = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
-const EmailLive = Layer.unwrap(
+const EmailProviderLive = Layer.unwrap(
   Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
     environment === "development" ? EmailService.developmentLayer : EmailService.layer,
   ),
+);
+
+const EmailJobsLive = EmailJobs.layer.pipe(
+  Layer.provide(PersistenceLive),
+  Layer.provide(CryptoLive),
+  Layer.provide(EmailProviderLive),
 );
 
 const WalletKeysLive = Layer.unwrap(
@@ -30,9 +36,16 @@ const WalletKeysLive = Layer.unwrap(
 export const ServicesLive = Layer.mergeAll(
   PersistenceLive,
   CryptoLive,
-  EmailLive,
+  EmailJobsLive,
   WalletKeysLive,
   Evm.layer,
 );
 
 export const ApplicationLive = Application.layer;
+
+export const EmailWorkerLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* DatabaseMigration;
+    return EmailWorkerLayer;
+  }),
+).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));

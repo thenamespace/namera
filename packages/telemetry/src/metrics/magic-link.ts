@@ -16,8 +16,3 @@ export const magicLinkVerificationResults = Metric.frequency(
     preregisteredWords: ["success", "invalid", "expired", "attempts_exceeded"],
   },
 );
-
-export const magicLinkEmailResults = Metric.frequency("namera.auth.magic_link.email.results", {
-  description: "Result of magic-link email delivery attempts",
-  preregisteredWords: ["success", "failure"],
-});

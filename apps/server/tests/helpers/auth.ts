@@ -2,6 +2,7 @@ import { DateTime, Duration, Effect, Schema } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
+import { EmailJobs } from "@namera-ai/emails";
 import { VerificationId, type Email } from "@namera-ai/protocol";
 import { MagicLinkToken, type UserActorData } from "@namera-ai/protocol/dto";
 
@@ -12,10 +13,9 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
   client: TestApiClient,
   email: Email,
 ) {
-  const [body, response] = yield* client.magicLink.request({
-    payload: { email },
-    responseMode: "decoded-and-response",
-  });
+  const requested = yield* enqueueMagicLink(client, email);
+  const emailJobs = yield* EmailJobs;
+  yield* emailJobs.processOnce;
   const emails = yield* TestEmails;
   const sent = yield* emails.latest;
   if (sent.type !== "magic-link") {
@@ -30,11 +30,42 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
   }
 
   return {
-    body: body.body,
-    response,
+    body: requested.body,
+    response: requested.response,
     code: sent.variables.code,
     id: Schema.decodeSync(VerificationId)(id),
     token: Schema.decodeSync(MagicLinkToken)(token),
+  };
+});
+
+export const enqueueMagicLink = Effect.fn("enqueueMagicLink")(function* (
+  client: TestApiClient,
+  email: Email,
+) {
+  const [body, response] = yield* client.magicLink.request({
+    payload: { email },
+    responseMode: "decoded-and-response",
+  });
+  const repository = yield* Repository;
+  const verification = yield* repository.auth.verification.findPendingByIdentifier({
+    purpose: "magic-link-signin",
+    identifier: email,
+    now: yield* DateTime.now,
+    maxAttempts: 5,
+  });
+  if (verification === undefined) {
+    return yield* Effect.die("Expected a pending magic-link verification");
+  }
+  const job = yield* repository.jobs.email.findByIdempotencyKey(verification.id);
+  if (job === undefined) {
+    return yield* Effect.die("Expected a durable magic-link email job");
+  }
+
+  return {
+    body: body.body,
+    response,
+    verification,
+    job,
   };
 });
 

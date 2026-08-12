@@ -36,7 +36,10 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@namera-ai/crypto": "workspace:*",
+    "@namera-ai/database": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "effect": "catalog:",
     "resend": "catalog:"
   },

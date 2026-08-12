@@ -5,7 +5,7 @@ import { HttpRouter, HttpServer } from "effect/unstable/http";
 import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TestDatabase, TransactionService } from "@namera-ai/database";
-import { EmailService } from "@namera-ai/emails";
+import { EmailJobs, EmailService } from "@namera-ai/emails";
 
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
@@ -34,11 +34,12 @@ const TestPersistenceLayer = Layer.mergeAll(Repository.layer, TransactionService
 
 const TestCryptoLayer = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
-const TestServicesLayer = Layer.mergeAll(
-  TestPersistenceLayer,
-  TestCryptoLayer,
-  EmailService.testLayer,
-).pipe(Layer.provide(TestConfigLayer));
+const TestServicesLayer = EmailJobs.layer.pipe(
+  Layer.provideMerge(EmailService.testLayer),
+  Layer.provideMerge(TestPersistenceLayer),
+  Layer.provideMerge(TestCryptoLayer),
+  Layer.provide(TestConfigLayer),
+);
 
 const TestApplicationLayer = Application.layer.pipe(
   Layer.provide(TestServicesLayer),
@@ -66,9 +67,7 @@ export const TestServerLayer = Layer.mergeAll(
   TestHandlersLayer,
   TestAuthorizationLayer,
   RateLimiterLive,
-  TestPersistenceLayer,
-  TestCryptoLayer,
-  EmailService.testLayer,
+  TestServicesLayer,
   TestAuthTokenStateLayer,
   TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
   HttpServer.layerServices,

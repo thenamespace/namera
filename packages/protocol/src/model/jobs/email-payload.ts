@@ -5,7 +5,10 @@ import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals(["magic-link"]);
 
-export const EmailRecipient = Schema.Union([Email, Schema.Array(Email)]);
+export const EmailRecipient = Schema.Union([
+  Email,
+  Schema.Array(Email).check(Schema.isMinLength(1)),
+]);
 
 export const EmailTag = Schema.Struct({
   name: NonEmptyString,

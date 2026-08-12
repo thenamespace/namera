@@ -1,6 +1,7 @@
 import { Context, Effect, Layer, Option, Redacted, Ref, Schema } from "effect";
 
 import { EmailError } from "@namera-ai/protocol";
+import type { EmailRecipient } from "@namera-ai/protocol/model";
 import { Resend } from "resend";
 
 import { EmailConfig } from "#/config";
@@ -9,6 +10,9 @@ import { type SendEmailProps } from "#/types";
 
 const developmentEmailProviderId = Schema.decodeSync(EmailProviderId)("development");
 const testEmailProviderId = Schema.decodeSync(EmailProviderId)("test");
+
+const toProviderRecipients = (recipients: EmailRecipient): string | Array<string> =>
+  typeof recipients === "string" ? recipients : [...recipients];
 
 export interface EmailServiceValue {
   readonly send: (input: SendEmailProps) => Effect.Effect<EmailProviderId, EmailError>;
@@ -19,18 +23,22 @@ export class TestEmails extends Context.Service<
   {
     readonly capture: (input: SendEmailProps) => Effect.Effect<void>;
     readonly clear: Effect.Effect<void>;
+    readonly failNext: (count?: number) => Effect.Effect<void>;
     readonly latest: Effect.Effect<SendEmailProps>;
     readonly sent: Effect.Effect<ReadonlyArray<SendEmailProps>>;
+    readonly takeFailure: Effect.Effect<boolean>;
   }
 >()("@namera-ai/emails/TestEmails") {
   static readonly layer = Layer.effect(
     TestEmails,
     Effect.gen(function* () {
       const messages = yield* Ref.make<ReadonlyArray<SendEmailProps>>([]);
+      const failures = yield* Ref.make(0);
 
       return TestEmails.of({
         capture: (input) => Ref.update(messages, (sent) => [...sent, input]),
-        clear: Ref.set(messages, []),
+        clear: Effect.all([Ref.set(messages, []), Ref.set(failures, 0)]).pipe(Effect.asVoid),
+        failNext: (count = 1) => Ref.set(failures, count),
         latest: Ref.get(messages).pipe(
           Effect.flatMap((sent) => {
             const latest = sent.at(-1);
@@ -40,6 +48,10 @@ export class TestEmails extends Context.Service<
           }),
         ),
         sent: Ref.get(messages),
+        takeFailure: Ref.modify(failures, (remaining) => [
+          remaining > 0,
+          Math.max(0, remaining - 1),
+        ]),
       });
     }),
   );
@@ -62,7 +74,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
             resend.emails.send(
               {
                 from: input.from ?? config.from,
-                to: input.to,
+                to: toProviderRecipients(input.to),
                 template: {
                   id: template.id,
                   variables: input.variables,
@@ -72,10 +84,12 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
                   ? configuredReplyTo === undefined
                     ? {}
                     : { replyTo: configuredReplyTo }
-                  : { replyTo: input.replyTo }),
-                ...(input.cc === undefined ? {} : { cc: input.cc }),
-                ...(input.bcc === undefined ? {} : { bcc: input.bcc }),
-                ...(input.tags === undefined ? {} : { tags: [...input.tags] }),
+                  : { replyTo: toProviderRecipients(input.replyTo) }),
+                ...(input.cc === undefined ? {} : { cc: toProviderRecipients(input.cc) }),
+                ...(input.bcc === undefined ? {} : { bcc: toProviderRecipients(input.bcc) }),
+                ...(input.tags === undefined
+                  ? {}
+                  : { tags: input.tags.map((tag) => ({ ...tag })) }),
               },
               input.idempotencyKey === undefined
                 ? undefined
@@ -132,6 +146,13 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
 
       return EmailService.of({
         send: Effect.fn("EmailService.test.send")(function* (input) {
+          const shouldFail = yield* emails.takeFailure;
+          if (shouldFail) {
+            return yield* new EmailError({
+              reason: "REQUEST_FAILED",
+              cause: new Error("Test email provider failure"),
+            });
+          }
           yield* emails.capture(input);
           return testEmailProviderId;
         }),

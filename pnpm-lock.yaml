@@ -458,9 +458,18 @@ importers:
 
   packages/emails:
     dependencies:
+      '@namera-ai/crypto':
+        specifier: workspace:*
+        version: link:../crypto
+      '@namera-ai/database':
+        specifier: workspace:*
+        version: link:../database
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105

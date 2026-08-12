@@ -8,6 +8,7 @@ import { DatabaseMigration } from "@namera-ai/database";
 import { TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
+import { EmailWorkerLive } from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
 import { ApiReferenceRoutes, ApiRoutes, RootRoutes } from "#/routes/index";
@@ -24,7 +25,13 @@ const NodeServerLive = Layer.unwrap(
   }),
 ).pipe(Layer.provide(DatabaseMigration.layer));
 
-const Routes = Layer.mergeAll(ApiReferenceRoutes, ApiRoutes, CorsMiddleware, RootRoutes);
+const Routes = Layer.mergeAll(
+  ApiReferenceRoutes,
+  ApiRoutes,
+  CorsMiddleware,
+  RootRoutes,
+  EmailWorkerLive,
+);
 
 export const ServerLive = HttpRouter.serve(Routes, {
   middleware: (httpEffect) => HttpMiddleware.tracer(RateLimitMiddleware(httpEffect)),

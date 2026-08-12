@@ -2,13 +2,9 @@ import { DateTime, Duration, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
-import { EmailService } from "@namera-ai/emails";
+import { EmailJobs } from "@namera-ai/emails";
 import type { RequestMagicLinkRequest, RequestMagicLinkResponse } from "@namera-ai/protocol/dto";
-import {
-  magicLinkEmailResults,
-  magicLinkRequestDuration,
-  magicLinkRequests,
-} from "@namera-ai/telemetry";
+import { magicLinkRequestDuration, magicLinkRequests } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
 
@@ -23,7 +19,7 @@ export interface RequestMagicLinkApplication {
 export const makeRequestMagicLinkApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
   const crypto = yield* CryptoService;
-  const email = yield* EmailService;
+  const emailJobs = yield* EmailJobs;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
@@ -53,14 +49,14 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
         crypto.hash({ purpose: cryptoPurpose.magicLinkToken, value: token }),
         crypto.hmac({ purpose: cryptoPurpose.magicLinkCode, value: code }),
       ]);
-      const verification = yield* transaction.run(
+      yield* transaction.run(
         Effect.gen(function* () {
           yield* repository.auth.verification.revokePending({
             purpose: config.magicLink.purpose,
             identifier: input.email,
             revokedAt: now,
           });
-          return yield* repository.auth.verification.create({
+          const verification = yield* repository.auth.verification.create({
             purpose: config.magicLink.purpose,
             identifier: input.email,
             data: input.returnTo === undefined ? {} : { returnTo: input.returnTo },
@@ -68,38 +64,24 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
             codeHmac,
             expiresAt: DateTime.addDuration(now, config.magicLink.timeToLive),
           });
+
+          const magicLinkUrl = new URL("/auth/verify", config.dashboardPublicOrigin);
+          magicLinkUrl.searchParams.set("id", verification.id);
+          magicLinkUrl.searchParams.set("token", token);
+
+          yield* emailJobs.enqueue({
+            type: "magic-link",
+            to: input.email,
+            idempotencyKey: verification.id,
+            expiresAt: verification.expiresAt,
+            variables: {
+              magicLinkUrl: magicLinkUrl.toString(),
+              code,
+              expiresInMinutes: Math.ceil(Duration.toMillis(config.magicLink.timeToLive) / 60_000),
+            },
+          });
         }),
       );
-
-      const magicLinkUrl = new URL("/auth/verify", config.dashboardPublicOrigin);
-      magicLinkUrl.searchParams.set("id", verification.id);
-      magicLinkUrl.searchParams.set("token", token);
-
-      yield* email
-        .send({
-          type: "magic-link",
-          to: input.email,
-          idempotencyKey: verification.id,
-          variables: {
-            magicLinkUrl: magicLinkUrl.toString(),
-            code,
-            expiresInMinutes: Math.ceil(Duration.toMillis(config.magicLink.timeToLive) / 60_000),
-          },
-        })
-        .pipe(
-          Effect.tap(() => Metric.update(magicLinkEmailResults, "success")),
-          Effect.catchTag("EmailError", () =>
-            Effect.gen(function* () {
-              yield* repository.auth.verification.revokePending({
-                purpose: config.magicLink.purpose,
-                identifier: input.email,
-                revokedAt: now,
-              });
-              yield* Metric.update(magicLinkEmailResults, "failure");
-              yield* Effect.logWarning("magic_link.email_failed");
-            }),
-          ),
-        );
       yield* Effect.logInfo("magic_link.requested");
       return accepted;
     },
