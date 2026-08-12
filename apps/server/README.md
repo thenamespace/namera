@@ -77,7 +77,8 @@ own README documents a default.
 The composition root also loads:
 
 - PostgreSQL configuration from `@namera-ai/database`;
-- authentication origins and crypto secrets from `@namera-ai/application`;
+- authentication origins from `@namera-ai/application`;
+- cryptographic secrets from `@namera-ai/crypto`;
 - Alchemy and Pimlico credentials from `@namera-ai/evm`;
 - local or GCP signer configuration from `@namera-ai/wallet-keys`;
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;

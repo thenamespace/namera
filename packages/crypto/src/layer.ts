@@ -32,7 +32,7 @@ export class CryptoService extends Context.Service<
     readonly encrypt: (input: CryptoInput) => Effect.Effect<string>;
     readonly decrypt: (input: CryptoInput) => Effect.Effect<string, CryptoError>;
   }
->()("@namera-ai/application/CryptoService") {
+>()("@namera-ai/crypto/CryptoService") {
   static readonly layer = Layer.effect(
     CryptoService,
     Effect.gen(function* () {
@@ -65,7 +65,6 @@ export class CryptoService extends Context.Service<
 
       const randomToken = Effect.fn("CryptoService.randomToken")(function* (byteLength = 32) {
         const bytes = yield* platformCrypto.randomBytes(byteLength).pipe(Effect.orDie);
-
         return Base64.fromUint8Array(bytes, true);
       });
 
@@ -73,7 +72,6 @@ export class CryptoService extends Context.Service<
         const values = yield* Effect.all(
           Array.from({ length: digits }, () => platformCrypto.randomIntBetween(0, 9)),
         );
-
         return values.join("");
       });
 
@@ -81,7 +79,6 @@ export class CryptoService extends Context.Service<
         const digest = yield* platformCrypto
           .digest("SHA-256", domainSeparatedValue(input))
           .pipe(Effect.orDie);
-
         return Base64.fromUint8Array(digest, true);
       });
 
@@ -89,7 +86,6 @@ export class CryptoService extends Context.Service<
         const signature = yield* Effect.promise(() =>
           webCrypto.subtle.sign("HMAC", hmacKey, domainSeparatedValue(input)),
         );
-
         return Base64.fromUint8Array(new Uint8Array(signature), true);
       });
 
@@ -133,9 +129,7 @@ export class CryptoService extends Context.Service<
           encodedIv === undefined ||
           encodedCiphertext === undefined
         ) {
-          return yield* new CryptoError({
-            cause: new Error("Unsupported encrypted payload"),
-          });
+          return yield* new CryptoError({ cause: new Error("Unsupported encrypted payload") });
         }
 
         const plaintext = yield* Effect.tryPromise({

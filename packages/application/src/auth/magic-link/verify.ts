@@ -1,5 +1,6 @@
 import { DateTime, Effect, Metric } from "effect";
 
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { MagicLinkError } from "@namera-ai/protocol";
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
@@ -11,8 +12,6 @@ import {
   createOrganizationWithOwner,
   createUserWithPersonalOrganization,
 } from "#/auth/organization/helpers";
-import { cryptoPurpose } from "#/crypto/data";
-import { CryptoService } from "#/crypto/layer";
 
 export interface VerifyMagicLinkResult {
   readonly sessionToken: string;

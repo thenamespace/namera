@@ -23,6 +23,7 @@
     "@effect/platform-node": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/application": "workspace:*",
+    "@namera-ai/crypto": "workspace:*",
     "@namera-ai/database": "workspace:*",
     "@namera-ai/emails": "workspace:*",
     "@namera-ai/evm": "workspace:*",

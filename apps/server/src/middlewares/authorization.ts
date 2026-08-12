@@ -2,7 +2,7 @@ import { DateTime, Effect, Layer, Redacted } from "effect";
 import { HttpApiError } from "effect/unstable/httpapi";
 
 import { Authorization, CurrentActor } from "@namera-ai/api";
-import { cryptoPurpose, CryptoService } from "@namera-ai/application";
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
 

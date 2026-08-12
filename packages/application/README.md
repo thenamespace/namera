@@ -16,9 +16,6 @@ and adapts HTTP requests to application methods.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
-- `src/crypto/config.ts` — redacted cryptographic secrets.
-- `src/crypto/data.ts` — stable domain-separation purposes.
-- `src/crypto/layer.ts` — reusable hashing, HMAC, encryption, and random-value service.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
 Future feature folders should add a focused operation builder to the aggregate
@@ -82,7 +79,8 @@ Editable TTLs, limits, cookie settings, and return paths live in
 ```ts
 import { Effect, Layer } from "effect";
 import { NodeCrypto } from "@effect/platform-node";
-import { AuthConfig, CryptoService } from "@namera-ai/application";
+import { AuthConfig } from "@namera-ai/application";
+import { CryptoService } from "@namera-ai/crypto";
 
 const CryptoLive = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
@@ -94,7 +92,7 @@ const program = Effect.gen(function* () {
 ```
 
 Effect's `Crypto` service provides secure randomness and SHA digests. The
-application crypto service adds purpose-separated HMAC and AES-GCM operations.
+shared crypto service adds purpose-separated HMAC and AES-GCM operations.
 `apps/server` must provide `NodeCrypto.layer`.
 
 Do not import API route definitions or read `process.env` in application use

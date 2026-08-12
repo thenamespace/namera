@@ -1,5 +1,6 @@
 import { DateTime, Duration, Effect, Metric } from "effect";
 
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { EmailService } from "@namera-ai/emails";
 import type { RequestMagicLinkRequest, RequestMagicLinkResponse } from "@namera-ai/protocol/dto";
@@ -10,8 +11,6 @@ import {
 } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
-import { cryptoPurpose } from "#/crypto/data";
-import { CryptoService } from "#/crypto/layer";
 
 const accepted: RequestMagicLinkResponse = {
   message: "If this email can sign in, we sent a sign-in email.",

@@ -1,6 +1,6 @@
 import { DateTime, Duration, Effect, Schema } from "effect";
 
-import { CryptoService, cryptoPurpose } from "@namera-ai/application";
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { VerificationId, type Email } from "@namera-ai/protocol";
 import { MagicLinkToken, type UserActorData } from "@namera-ai/protocol/dto";

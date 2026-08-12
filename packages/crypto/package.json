@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/application",
+  "name": "@namera-ai/crypto",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -36,11 +36,8 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
-    "@namera-ai/crypto": "workspace:*",
-    "@namera-ai/database": "workspace:*",
-    "@namera-ai/emails": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
-    "@namera-ai/telemetry": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

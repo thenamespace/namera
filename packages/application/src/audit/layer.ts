@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 
+import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import type { DatabaseError } from "@namera-ai/protocol";
 import type {
@@ -9,8 +10,6 @@ import type {
   UserEvent,
   UserEventInsert,
 } from "@namera-ai/protocol/model";
-
-import { CryptoService } from "#/crypto/layer";
 
 type AuditFields = "correlationId" | "requestId" | "source" | "traceId";
 type AuditInput<Event> = Event extends unknown ? Omit<Event, AuditFields> : never;

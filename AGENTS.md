@@ -12,6 +12,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   TanStack Router and the shared UI package.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
+- [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
+  hashing, HMAC, authenticated encryption, and credential generation.
 - [`packages/utils`](packages/utils/README.md) — shared helpers that do not
   depend on Effect services or application state.
 - [`packages/database`](packages/database/README.md) — Drizzle schema,
@@ -79,9 +81,10 @@ not duplicate secrets or arbitrary payloads.
 ## Dependency direction
 
 ```text
-apps/server      -> api, application, database, emails, telemetry, evm, wallet-keys
-application      -> database, emails, telemetry, protocol, utils
+apps/server      -> api, application, crypto, database, emails, telemetry, evm, wallet-keys
+application      -> crypto, database, emails, telemetry, protocol
 api              -> protocol
+crypto           -> protocol, utils
 database         -> protocol
 emails           -> protocol
 evm              -> protocol
@@ -93,7 +96,7 @@ ui               -> protocol, Namespace UIKit
 Additional rules:
 
 - `api` may depend on `protocol`; it must not contain handlers or business logic.
-- `database`, `emails`, `evm`, and `wallet-keys` may depend on `protocol`; they
+- `crypto`, `database`, `emails`, `evm`, and `wallet-keys` may depend on `protocol`; they
   must not depend on `application` or `api`.
 - `telemetry` contains vendor export layers and shared metric definitions. It
   must not depend on application or transport packages.

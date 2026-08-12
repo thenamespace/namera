@@ -1,7 +1,8 @@
 import { NodeCrypto } from "@effect/platform-node";
 import { Config, Effect, Layer } from "effect";
 
-import { Application, CryptoService } from "@namera-ai/application";
+import { Application } from "@namera-ai/application";
+import { CryptoService } from "@namera-ai/crypto";
 import { Database, Repository, TransactionService } from "@namera-ai/database";
 import { EmailService } from "@namera-ai/emails";
 import { Evm } from "@namera-ai/evm";
