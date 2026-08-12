@@ -24,6 +24,9 @@ export const verification = authSchema.table(
   },
   (table) => [
     uniqueIndex("verification_token_hash_uidx").on(table.tokenHash),
+    uniqueIndex("verification_pending_identifier_uidx")
+      .on(table.purpose, table.identifier)
+      .where(sql`${table.consumedAt} IS NULL AND ${table.revokedAt} IS NULL`),
     index("verification_purpose_identifier_idx").on(table.purpose, table.identifier),
     index("verification_expires_at_idx").on(table.expiresAt),
     check(

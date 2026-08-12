@@ -18,6 +18,8 @@ import type { Client } from "effect/unstable/httpapi/HttpApiClient";
 import type * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import type * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
+let testClientAddress = 0;
+
 /**
  * Effect's in-memory HttpApi client with the real pre-response phase enabled.
  * This preserves cookies and headers installed by HttpEffect handlers.
@@ -44,6 +46,8 @@ export const handledApi = Effect.fnUntraced(function* <
   | Path
   | Scope
 > {
+  testClientAddress += 1;
+  const remoteAddress = options?.remoteAddress ?? `192.0.2.${testClientAddress}`;
   const context = yield* Effect.context<HttpApiGroup.ToService<ApiId, Groups>>();
 
   const layer = HttpApiBuilder.layer(api).pipe(
@@ -60,9 +64,7 @@ export const handledApi = Effect.fnUntraced(function* <
         ...(options?.headers === undefined
           ? {}
           : { headers: { ...request.headers, ...options.headers } }),
-        ...(options?.remoteAddress === undefined
-          ? {}
-          : { remoteAddress: Option.some(options.remoteAddress) }),
+        remoteAddress: Option.some(remoteAddress),
       });
       let handledResponse: HttpServerResponse.HttpServerResponse | undefined;
 

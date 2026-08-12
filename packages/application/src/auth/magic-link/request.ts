@@ -72,6 +72,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
             codeHmac,
             expiresAt: DateTime.addDuration(now, config.magicLink.timeToLive),
           });
+          if (verification === undefined) return false;
 
           const magicLinkUrl = new URL("/auth/verify", config.dashboardPublicOrigin);
           magicLinkUrl.searchParams.set("id", verification.id);
@@ -88,6 +89,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
               expiresInMinutes: Math.ceil(Duration.toMillis(config.magicLink.timeToLive) / 60_000),
             },
           });
+          return true;
         }),
       );
       yield* Effect.logInfo("magic_link.requested");

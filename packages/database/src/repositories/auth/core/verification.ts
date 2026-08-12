@@ -14,7 +14,7 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { verification } from "#/schema/index";
 
 export interface VerificationRepositoryService {
-  create: (data: VerificationInsert) => Effect.Effect<Verification, DatabaseError>;
+  create: (data: VerificationInsert) => Effect.Effect<Verification | undefined, DatabaseError>;
   findById: (
     verificationId: VerificationId,
   ) => Effect.Effect<Verification | undefined, DatabaseError>;
@@ -57,9 +57,10 @@ export class VerificationRepository extends Context.Service<
           const rows = yield* db
             .insert(verification)
             .values(parsed as any)
+            .onConflictDoNothing()
             .returning();
 
-          return Schema.decodeSync(Verification)(rows[0]!);
+          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
         }, mapToDatabaseError),
         findById: Effect.fn("VerificationRepository.findById")(function* (verificationId) {
           const db = yield* transactionOrDatabase(database);

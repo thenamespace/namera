@@ -4,6 +4,7 @@ import { DateTime, Effect, Schema } from "effect";
 import { NameraApi } from "@namera-ai/api";
 import { Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
+import { VerificationId } from "@namera-ai/protocol";
 import { MagicLinkCode, MagicLinkReturnTo, MagicLinkToken } from "@namera-ai/protocol/dto";
 
 import { handledApi } from "../helpers/http-api-test.js";
@@ -44,6 +45,40 @@ layer(TestServerLayer)("magic-link routes", (it) => {
 
       const emails = yield* TestEmails;
       expect((yield* emails.sent).length).toBe(1);
+    }),
+  );
+
+  it.effect("keeps only one active credential for concurrent requests", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const email = testEmail("concurrent@example.com");
+
+      yield* Effect.all(
+        [
+          client.magicLink.request({ payload: { email } }),
+          client.magicLink.request({ payload: { email } }),
+        ],
+        { concurrency: "unbounded" },
+      );
+      const emailJobs = yield* EmailJobs;
+      const emails = yield* TestEmails;
+      while ((yield* emailJobs.processOnce) > 0) {
+        // Drain the deterministic test outbox.
+      }
+      const messages = (yield* emails.sent).filter((message) => message.type === "magic-link");
+      const responses = yield* Effect.forEach(messages, (message) => {
+        const url = new URL(message.variables.magicLinkUrl);
+        return client.magicLink.verify({
+          payload: {
+            type: "token",
+            id: Schema.decodeSync(VerificationId)(url.searchParams.get("id") ?? ""),
+            token: Schema.decodeSync(MagicLinkToken)(url.searchParams.get("token") ?? ""),
+          },
+          responseMode: "response-only",
+        });
+      });
+      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 400]);
     }),
   );
 
