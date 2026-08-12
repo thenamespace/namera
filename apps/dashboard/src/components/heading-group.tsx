@@ -1,13 +1,8 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { Typography, cn } from "@namera-ai/ui";
 
-export type HeadingGroupProps = ComponentProps<"div"> & {
-  heading: ReactNode;
-  description?: ReactNode;
-  level?: 1 | 2 | 3 | 4 | 5 | 6;
-  size?: "sm" | "md" | "lg";
-};
+type HeadingGroupSize = "sm" | "md" | "lg";
 
 const headingSizes = {
   sm: "text-lg",
@@ -21,24 +16,54 @@ const descriptionSizes = {
   lg: "sm",
 } as const;
 
-export function HeadingGroup({
+const HeadingGroupRoot = ({ className, ...props }: ComponentProps<"div">) => (
+  <div className={cn("flex flex-col gap-1.5", className)} {...props} />
+);
+
+type HeadingGroupTitleProps = ComponentProps<typeof Typography.Heading> & {
+  size?: HeadingGroupSize;
+};
+
+const HeadingGroupTitle = ({
   className,
-  description,
-  heading,
   level = 2,
   size = "md",
   ...props
-}: HeadingGroupProps) {
-  return (
-    <div className={cn("flex flex-col gap-1.5", className)} {...props}>
-      <Typography.Heading className={headingSizes[size]} level={level} weight="semibold">
-        {heading}
-      </Typography.Heading>
-      {description !== undefined && description !== null ? (
-        <Typography.Paragraph color="muted" size={descriptionSizes[size]}>
-          {description}
-        </Typography.Paragraph>
-      ) : null}
-    </div>
-  );
-}
+}: HeadingGroupTitleProps) => (
+  <Typography.Heading
+    className={cn(headingSizes[size], className) ?? headingSizes[size]}
+    level={level}
+    weight="semibold"
+    {...props}
+  />
+);
+
+type HeadingGroupDescriptionProps = Omit<ComponentProps<typeof Typography.Paragraph>, "size"> & {
+  size?: HeadingGroupSize;
+};
+
+const HeadingGroupDescription = ({
+  className,
+  size = "md",
+  ...props
+}: HeadingGroupDescriptionProps) => (
+  <Typography.Paragraph
+    className={className ?? ""}
+    color="muted"
+    size={descriptionSizes[size]}
+    {...props}
+  />
+);
+
+type HeadingGroupComponent = typeof HeadingGroupRoot & {
+  Title: typeof HeadingGroupTitle;
+  Description: typeof HeadingGroupDescription;
+};
+
+export const HeadingGroup: HeadingGroupComponent = Object.assign(HeadingGroupRoot, {
+  Title: HeadingGroupTitle,
+  Description: HeadingGroupDescription,
+});
+
+export type { HeadingGroupDescriptionProps, HeadingGroupSize, HeadingGroupTitleProps };
+export { HeadingGroupDescription, HeadingGroupRoot, HeadingGroupTitle };

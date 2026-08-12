@@ -1,13 +1,13 @@
 import { Schema, Struct } from "effect";
 
 import { Email, UserId } from "#/common/index";
-import { MetadataName, TimestampFields } from "#/model/common";
+import { MetadataLogo, MetadataName, TimestampFields } from "#/model/common";
 import { createUpdateSchema } from "#/model/helpers";
 
 export const UserMetadata = Schema.Struct({
   version: Schema.Literal(1),
   name: Schema.optionalKey(MetadataName),
-  image: Schema.optionalKey(Schema.String),
+  image: Schema.optionalKey(MetadataLogo),
 });
 
 export const User = Schema.Struct({

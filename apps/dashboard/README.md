@@ -40,9 +40,9 @@ implemented yet.
 - `/settings/profile` contains the React Hook Form profile presentation. Data
   loading and update behavior are intentionally not connected yet.
 
-Shared page and section typography should use `DashboardPage` and
-`HeadingGroup` so route layouts retain the same hierarchy without duplicating
-spacing or heading styles.
+Shared page and section composition should use `DashboardPage`,
+`HeadingGroup.Title`/`Description`, and `DashboardCard` rows/fields so route
+layouts retain the same hierarchy without duplicating structural styles.
 
 ## Adding frontend behavior
 
@@ -73,10 +73,11 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 - Preserve React Aria labels, descriptions, validation, focus states, and
   keyboard behavior. Async form feedback must be announced with `role="alert"`
   or an appropriate live region.
-- Use React Hook Form with adjacent Effect schemas for forms. Adapt Effect v4
-  schemas through `Schema.toStandardSchemaV1` and
-  `@hookform/resolvers/standard-schema`, and connect controlled UIKit fields
-  with `useController`.
+- Use React Hook Form with the existing protocol DTO schema when the form maps
+  to an API operation. Create an adjacent Effect schema only for presentation-only
+  forms without a shared contract. Adapt Effect v4 schemas through
+  `Schema.toStandardSchemaV1` and `@hookform/resolvers/standard-schema`, and
+  connect controlled UIKit fields with `useController`.
 - Keep route files small: declare the TanStack route and render a component from
   the nearest `-components/` directory. Do not create one-file component folders.
 - Use Motion for restrained state transitions and microinteractions. Respect

@@ -1,70 +1,74 @@
+import { Schema } from "effect";
+
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Avatar, Card, FieldError, Form, Input, Label, TextField, Typography } from "@namera-ai/ui";
-import { HugeiconsIcon, UserCircleIcon } from "@namera-ai/ui/icons";
+import { UpdateUserRequest } from "@namera-ai/protocol/dto";
+import type { MetadataIcon } from "@namera-ai/protocol/model";
+import { FieldError, Form, IconPicker, Input, Label, Typography } from "@namera-ai/ui";
 import { useController, useForm } from "react-hook-form";
 
-import { ProfileFormValidator, type ProfileFormInput, type ProfileFormOutput } from "./schema";
+import { DashboardCard } from "@/components/dashboard-card";
 
-const defaultValues: ProfileFormInput = {
-  email: "",
-  image: "",
-  name: "",
+const defaultImage: MetadataIcon = { type: "emoji", value: "👤" };
+
+const defaultValues: UpdateUserRequest = {
+  metadata: {
+    version: 1,
+    image: defaultImage,
+    name: "",
+  },
 };
 
 export function ProfileForm() {
-  const form = useForm<ProfileFormInput, unknown, ProfileFormOutput>({
+  const form = useForm<UpdateUserRequest>({
     defaultValues,
-    resolver: standardSchemaResolver(ProfileFormValidator),
+    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
   });
-  const image = useController({ control: form.control, name: "image" });
-  const email = useController({ control: form.control, name: "email" });
-  const name = useController({ control: form.control, name: "name" });
+  const image = useController({ control: form.control, name: "metadata.image" });
+  const name = useController({ control: form.control, name: "metadata.name" });
   const handleSubmit = form.handleSubmit(() => undefined);
 
   return (
     <Form onSubmit={handleSubmit} validationBehavior="aria">
-      <Card variant="secondary" className="overflow-hidden">
-        <Card.Content className="divide-separator divide-y p-0">
-          <div className="grid min-h-20 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-5 py-4 sm:px-6">
-            <Typography weight="medium">Profile picture</Typography>
-            <Avatar size="lg">
-              {image.field.value ? (
-                <Avatar.Image alt="Profile picture" src={image.field.value} />
-              ) : null}
-              <Avatar.Fallback>
-                <HugeiconsIcon icon={UserCircleIcon} />
-              </Avatar.Fallback>
-            </Avatar>
-          </div>
+      <DashboardCard>
+        <DashboardCard.Content>
+          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
+            <Typography className="text-sm!">Profile picture</Typography>
+            <IconPicker
+              aria-label="Choose profile picture"
+              setValue={image.field.onChange}
+              size="lg"
+              value={image.field.value ?? defaultImage}
+            />
+          </DashboardCard.Row>
 
-          <div className="grid min-h-18 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-5 py-4 sm:px-6">
-            <Typography weight="medium">Email</Typography>
-            <Typography color="muted" truncate>
-              {email.field.value || "No email address"}
+          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
+            <Typography className="text-sm!">Email</Typography>
+            <Typography className="text-sm" color="muted" truncate>
+              vedant@envoy1084.xyz
             </Typography>
-          </div>
+          </DashboardCard.Row>
 
-          <TextField
-            className="grid min-h-20 grid-cols-1 items-start gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] sm:items-center sm:gap-6 sm:px-6"
+          <DashboardCard.Field
             isInvalid={name.fieldState.invalid}
             isRequired
             name={name.field.name}
             onChange={name.field.onChange}
-            value={name.field.value}
+            value={name.field.value ?? ""}
           >
-            <Label className="font-medium">Full name</Label>
+            <Label>Full name</Label>
             <div>
               <Input
                 autoComplete="name"
                 onBlur={name.field.onBlur}
                 placeholder="Enter your full name"
                 ref={name.field.ref}
+                variant="secondary"
               />
               <FieldError>{name.fieldState.error?.message}</FieldError>
             </div>
-          </TextField>
-        </Card.Content>
-      </Card>
+          </DashboardCard.Field>
+        </DashboardCard.Content>
+      </DashboardCard>
     </Form>
   );
 }
