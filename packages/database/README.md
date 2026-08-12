@@ -113,6 +113,10 @@ integration-test isolation.
   from `system_role` and are not duplicated in `organization_role`.
 - Membership and invitation state transitions are organization-scoped and
   conditional. Compose multi-record operations with `TransactionService`.
+- Member role assignment and removal compare the expected current role during
+  the write and reject owner rows. This prevents concurrent changes from
+  bypassing application hierarchy checks and keeps ownership mutations out of
+  generic member administration.
 
 ## Audit persistence
 

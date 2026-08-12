@@ -56,7 +56,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
               actorId: actor.actorId,
               inviterId: actor.user.id,
               organizationId: actor.organization.id,
-              inviterPermissions: actor.role.permissions,
+              inviterRole: actor.role,
             }),
           );
         }),

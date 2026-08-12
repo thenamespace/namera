@@ -72,6 +72,13 @@ Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data
 must remain safe historical context and must never contain credentials.
 
+Member administration uses permission dominance as a partial role hierarchy.
+An actor may manage only roles whose permissions are a strict subset of their
+own and may assign only roles within their own permissions. Assigning the system
+Owner role additionally requires the acting role to be the system Owner. Direct
+owner mutation and removal remain unavailable; ownership transfer should be a
+separate explicit workflow.
+
 ## Environment
 
 | Variable                       | Required | Purpose                           |

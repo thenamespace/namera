@@ -12,15 +12,16 @@ import {
   type OrganizationMemberId,
   type OrganizationRoleId,
 } from "@namera-ai/protocol";
-import type {
-  MemberPermission,
-  OrganizationMember,
-  OrganizationRole,
-  User,
-} from "@namera-ai/protocol/model";
+import type { OrganizationMember, OrganizationRole, User } from "@namera-ai/protocol/model";
 import { organizationMemberEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+
+import {
+  canAssignOrganizationRole,
+  canManageOrganizationRole,
+  type OrganizationRoleAuthority,
+} from "./permissions.js";
 
 export interface MemberView {
   readonly organizationMember: OrganizationMember;
@@ -34,30 +35,18 @@ export interface MemberApplication {
   ) => Effect.Effect<ReadonlyArray<MemberView>>;
   readonly updateRole: (input: {
     actorId: ActorId;
-    actorPermissions: ReadonlyArray<MemberPermission>;
+    actorRole: OrganizationRoleAuthority;
     organizationId: OrganizationId;
     organizationMemberId: OrganizationMemberId;
     organizationRoleId: OrganizationRoleId;
   }) => Effect.Effect<MemberView, OrganizationError | OrganizationMemberError>;
   readonly remove: (input: {
     actorId: ActorId;
-    actorPermissions: ReadonlyArray<MemberPermission>;
+    actorRole: OrganizationRoleAuthority;
     organizationId: OrganizationId;
     organizationMemberId: OrganizationMemberId;
   }) => Effect.Effect<void, OrganizationError | OrganizationMemberError>;
 }
-
-const includesAllPermissions = (
-  granted: ReadonlyArray<MemberPermission>,
-  required: ReadonlyArray<MemberPermission>,
-) => required.every((permission) => granted.includes(permission));
-
-const canManageRole = (
-  actorPermissions: ReadonlyArray<MemberPermission>,
-  targetPermissions: ReadonlyArray<MemberPermission>,
-) =>
-  includesAllPermissions(actorPermissions, targetPermissions) &&
-  actorPermissions.some((permission) => !targetPermissions.includes(permission));
 
 export const makeMemberApplication = Effect.gen(function* () {
   const audit = yield* Audit;
@@ -74,7 +63,7 @@ export const makeMemberApplication = Effect.gen(function* () {
   const updateRole = Effect.fn("Application.organization.member.updateRole")(
     function* (input: {
       actorId: ActorId;
-      actorPermissions: ReadonlyArray<MemberPermission>;
+      actorRole: OrganizationRoleAuthority;
       organizationId: OrganizationId;
       organizationMemberId: OrganizationMemberId;
       organizationRoleId: OrganizationRoleId;
@@ -90,7 +79,7 @@ export const makeMemberApplication = Effect.gen(function* () {
               code: "ORGANIZATION_MEMBER_NOT_FOUND",
             });
           }
-          if (!canManageRole(input.actorPermissions, target.organizationRole.permissions)) {
+          if (!canManageOrganizationRole(input.actorRole, target.organizationRole)) {
             return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
           }
 
@@ -101,7 +90,7 @@ export const makeMemberApplication = Effect.gen(function* () {
           if (!role) {
             return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
           }
-          if (!includesAllPermissions(input.actorPermissions, role.permissions)) {
+          if (!canAssignOrganizationRole(input.actorRole, role)) {
             return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
           }
           if (target.organizationMember.organizationRoleId === role.id) {
@@ -153,7 +142,7 @@ export const makeMemberApplication = Effect.gen(function* () {
   const remove = Effect.fn("Application.organization.member.remove")(
     function* (input: {
       actorId: ActorId;
-      actorPermissions: ReadonlyArray<MemberPermission>;
+      actorRole: OrganizationRoleAuthority;
       organizationId: OrganizationId;
       organizationMemberId: OrganizationMemberId;
     }) {
@@ -168,7 +157,7 @@ export const makeMemberApplication = Effect.gen(function* () {
               code: "ORGANIZATION_MEMBER_NOT_FOUND",
             });
           }
-          if (!canManageRole(input.actorPermissions, target.organizationRole.permissions)) {
+          if (!canManageOrganizationRole(input.actorRole, target.organizationRole)) {
             return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
           }
 

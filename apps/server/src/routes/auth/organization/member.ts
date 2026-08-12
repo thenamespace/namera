@@ -25,7 +25,7 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
             yield* app.organization.member.updateRole({
               ...payload,
               actorId: actor.actorId,
-              actorPermissions: actor.role.permissions,
+              actorRole: actor.role,
               organizationId: actor.organization.id,
             }),
           );
@@ -37,7 +37,7 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
           yield* app.organization.member.remove({
             ...payload,
             actorId: actor.actorId,
-            actorPermissions: actor.role.permissions,
+            actorRole: actor.role,
             organizationId: actor.organization.id,
           });
         }),

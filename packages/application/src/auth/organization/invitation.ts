@@ -18,12 +18,15 @@ import {
   type UserId,
 } from "@namera-ai/protocol";
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
-import type { MemberPermission } from "@namera-ai/protocol/model";
 import { organizationInvitationEvents, sessionLifecycleEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { createUserOrganizationMember } from "#/auth/organization/helpers";
+import {
+  canAssignOrganizationRole,
+  type OrganizationRoleAuthority,
+} from "#/auth/organization/permissions";
 import { makeCreateNotification } from "#/notification/create";
 
 export interface InvitationView {
@@ -48,7 +51,7 @@ export interface InvitationApplication {
     inviterId: UserId;
     organizationId: OrganizationId;
     organizationRoleId: OrganizationRoleId;
-    inviterPermissions: ReadonlyArray<MemberPermission>;
+    inviterRole: OrganizationRoleAuthority;
   }) => Effect.Effect<InvitationView, InvitationError | OrganizationError>;
   readonly acceptInvitation: (input: {
     invitationId: InvitationId;
@@ -111,7 +114,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
       inviterId: UserId;
       organizationId: OrganizationId;
       organizationRoleId: OrganizationRoleId;
-      inviterPermissions: ReadonlyArray<MemberPermission>;
+      inviterRole: OrganizationRoleAuthority;
     }) {
       const now = yield* DateTime.now;
       const role = yield* repository.auth.role.findById(
@@ -121,7 +124,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
       if (!role) {
         return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
       }
-      if (!role.permissions.every((permission) => input.inviterPermissions.includes(permission))) {
+      if (!canAssignOrganizationRole(input.inviterRole, role)) {
         return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
       }
 
