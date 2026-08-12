@@ -35,6 +35,24 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 
 Read the relevant package README before changing that package.
 
+## Progress tracking
+
+Feature implementation status is recorded in the repository-local `progress/`
+directory. The directory is intentionally gitignored: it preserves working
+context without turning temporary plans into permanent architecture docs.
+
+- Read the relevant progress file before extending an existing feature.
+- After implementing or removing behavior, update its progress file in the same
+  change. Record only facts visible in the repository: contracts, tables,
+  repositories, application operations, routes, authorization, metrics, audit
+  events, tests, and concrete remaining work.
+- Create one focused progress file when introducing a new feature or entity.
+  Update an existing file instead of creating overlapping plans.
+- Keep stable architecture and coding rules in `AGENTS.md` and package READMEs.
+  Progress files must not become a second source of architectural truth.
+- Do not mark work complete because a schema, DTO, or placeholder exists. State
+  which boundaries are actually wired and tested.
+
 ## Feature flow
 
 Add a backend feature in dependency order:
@@ -49,6 +67,8 @@ Add a backend feature in dependency order:
    as rate limiting or cookies, call `Application`, and map the result.
 6. Add frontend atoms, hooks, loader prefetching, and UI only after the contract
    exists.
+7. Update the matching local `progress/` record with the implemented boundaries,
+   observability, audit coverage, tests, and remaining work.
 
 For successful mutations, decide explicitly whether an audit event is required.
 State changes and their audit rows must share one transaction. Metrics describe
