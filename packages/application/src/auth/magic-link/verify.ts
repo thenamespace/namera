@@ -12,6 +12,8 @@ import {
   createOrganizationWithOwner,
   createUserWithPersonalOrganization,
 } from "#/auth/organization/helpers";
+import { makeCreateNotification } from "#/notification/create";
+import { notificationPolicy } from "#/notification/data";
 
 export interface VerifyMagicLinkResult {
   readonly sessionToken: string;
@@ -30,6 +32,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
+  const createNotification = yield* makeCreateNotification;
 
   const verify = Effect.fn("Application.magicLink.verify")(
     function* (input: VerifyMagicLinkRequest) {
@@ -127,7 +130,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             activeOrganizationId: organization.id,
             expiresAt: DateTime.addDuration(now, config.session.timeToLive),
           });
-          yield* audit.user({
+          const signedInEvent = yield* audit.user({
             userId: user.id,
             sessionId: session.id,
             event: "user.signed_in",
@@ -137,6 +140,31 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
               ipAddress: session.ipAddress,
               userAgent: session.userAgent,
             },
+          });
+          yield* createNotification({
+            organizationId: null,
+            actorId: null,
+            type: "auth.new-sign-in",
+            resourceType: "session",
+            resourceId: session.id,
+            data: { version: 1 },
+            idempotencyKey: `notification:auth.new-sign-in:${session.id}`,
+            correlationId: signedInEvent.correlationId,
+            expiresAt: null,
+            recipients: [
+              {
+                userId: user.id,
+                email: {
+                  type: "new-sign-in",
+                  to: user.email,
+                  variables: { signedInAt: DateTime.formatIso(now) },
+                  expiresAt: DateTime.addDuration(
+                    now,
+                    notificationPolicy["auth.new-sign-in"].emailTimeToLive,
+                  ),
+                },
+              },
+            ],
           });
         }),
       );

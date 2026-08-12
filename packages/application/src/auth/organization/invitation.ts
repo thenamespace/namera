@@ -1,6 +1,7 @@
 import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
+import { EmailJobs } from "@namera-ai/emails";
 import {
   InvitationError,
   OrganizationError,
@@ -18,6 +19,7 @@ import { organizationInvitationEvents } from "@namera-ai/telemetry";
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { createUserOrganizationMember } from "#/auth/organization/helpers";
+import { makeCreateNotification } from "#/notification/create";
 
 export interface InvitationView {
   readonly invitation: Invitation;
@@ -63,8 +65,10 @@ export interface InvitationApplication {
 export const makeInvitationApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
   const audit = yield* Audit;
+  const emailJobs = yield* EmailJobs;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
+  const createNotification = yield* makeCreateNotification;
 
   const getInvitation = Effect.fn("Application.organization.invitation.getInvitation")(
     function* (invitationId: InvitationId, email: Email) {
@@ -138,7 +142,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
             organizationRoleId: input.organizationRoleId,
             expiresAt: DateTime.addDuration(now, config.invitation.timeToLive),
           });
-          yield* audit.organization({
+          const createdEvent = yield* audit.organization({
             organizationId: input.organizationId,
             actorId: input.actorId,
             event: "invitation.created",
@@ -146,12 +150,46 @@ export const makeInvitationApplication = Effect.gen(function* () {
             resourceId: created.id,
             data: { version: 1 },
           });
-          return yield* repository.auth.invitation.findById(created.id, input.organizationId);
+          const view = yield* repository.auth.invitation.findById(created.id, input.organizationId);
+          if (!view) {
+            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+          }
+          const email = {
+            type: "organization-invitation" as const,
+            to: input.email,
+            variables: {
+              invitationUrl: new URL(
+                `/invitations/${created.id}`,
+                config.dashboardPublicOrigin,
+              ).toString(),
+              organizationName: view.organization.metadata.name,
+              inviterName: view.inviter.metadata.name ?? view.inviter.email,
+              expiresAt: DateTime.formatIso(created.expiresAt),
+            },
+            expiresAt: created.expiresAt,
+          };
+          if (existingUser) {
+            yield* createNotification({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              type: "organization.invitation.received",
+              resourceType: "invitation",
+              resourceId: created.id,
+              data: { version: 1 },
+              idempotencyKey: `notification:organization.invitation:${created.id}`,
+              correlationId: createdEvent.correlationId,
+              expiresAt: created.expiresAt,
+              recipients: [{ userId: existingUser.id, email }],
+            });
+          } else {
+            yield* emailJobs.enqueue({
+              ...email,
+              idempotencyKey: `organization-invitation:${created.id}`,
+            });
+          }
+          return view;
         }),
       );
-      if (!invitation) {
-        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
-      }
       yield* Metric.update(organizationInvitationEvents, "created");
       yield* Effect.logInfo("invitation.created");
       return invitation;

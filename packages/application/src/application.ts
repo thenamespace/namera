@@ -20,9 +20,11 @@ import {
   makeOrganizationApplication,
   type OrganizationApplication,
 } from "#/auth/organization/organization";
+import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 
 export interface ApplicationService {
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
+  readonly notification: NotificationApplication;
   readonly organization: OrganizationApplication & {
     readonly invitation: InvitationApplication;
     readonly member: MemberApplication;
@@ -44,9 +46,11 @@ export class Application extends Context.Service<Application, ApplicationService
       const organization = yield* makeOrganizationApplication;
       const invitation = yield* makeInvitationApplication;
       const member = yield* makeMemberApplication;
+      const notification = yield* makeNotificationApplication;
 
       return Application.of({
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },
+        notification,
         organization: { ...organization, invitation, member },
         session,
         user,
