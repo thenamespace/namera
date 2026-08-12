@@ -35,6 +35,15 @@ Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`; notification UI is not
 implemented yet.
 
+## Settings routes
+
+- `/settings/profile` contains the React Hook Form profile presentation. Data
+  loading and update behavior are intentionally not connected yet.
+
+Shared page and section typography should use `DashboardPage` and
+`HeadingGroup` so route layouts retain the same hierarchy without duplicating
+spacing or heading styles.
+
 ## Adding frontend behavior
 
 1. Add or reuse a typed client atom in `src/atoms/<feature>/`. Keep query atoms,
