@@ -8,7 +8,7 @@ import { useController, useForm } from "react-hook-form";
 
 import { DashboardCard } from "@/components/dashboard-card";
 
-const defaultImage: MetadataIcon = { type: "emoji", value: "👤" };
+const defaultImage: MetadataIcon = { type: "image", value: "https://euc.li/envoy1084.eth" };
 
 const defaultValues: UpdateUserRequest = {
   metadata: {
@@ -36,7 +36,7 @@ export function ProfileForm() {
             <IconPicker
               aria-label="Choose profile picture"
               setValue={image.field.onChange}
-              size="lg"
+              size="md"
               // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
               supportedTypes={["image"]}
               value={image.field.value ?? defaultImage}

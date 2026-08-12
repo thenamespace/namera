@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { Button, toast } from "@namera-ai/ui";
+import { toast } from "@namera-ai/ui";
 
 type EmailDisplayProps = {
   email: string;
@@ -15,15 +15,13 @@ export function EmailDisplay({ email }: EmailDisplayProps) {
   }, [email]);
 
   return (
-    <Button
-      className="text-muted hover:text-foreground h-auto min-w-0 justify-start p-0"
-      size="sm"
+    <button
+      className="text-muted hover:text-foreground h-auto min-w-0 justify-start p-0 cursor-pointer transition-all duration-100 ease-in-out"
       type="button"
-      variant="ghost"
-      onPress={copyEmail}
+      onClick={copyEmail}
     >
       <span className="truncate">{email}</span>
-    </Button>
+    </button>
   );
 }
 

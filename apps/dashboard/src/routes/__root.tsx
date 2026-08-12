@@ -1,8 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import { Toast } from "@namera-ai/ui";
 
@@ -14,17 +12,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
 });
 
-const devtoolsConfig = {
-  position: "bottom-right",
-} as const;
-
-const devtoolsPlugins = [
-  {
-    name: "TanStack Router",
-    render: <TanStackRouterDevtoolsPanel />,
-  },
-];
-
 function RootComponent() {
   const { pathname } = useLocation();
 
@@ -35,12 +22,11 @@ function RootComponent() {
   })();
 
   return (
-    <div className="bg-background text-foreground min-h-screen font-inter">
+    <div className="bg-[#010102] text-foreground min-h-screen font-inter">
       <Sidebar>
         <Outlet />
       </Sidebar>
       <Toast.Provider placement="bottom end" />
-      <TanStackDevtools config={devtoolsConfig} plugins={devtoolsPlugins} />
     </div>
   );
 }

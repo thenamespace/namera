@@ -8,7 +8,7 @@ type OrganizationRoleDisplayProps = {
 export function OrganizationRoleDisplay({ role }: OrganizationRoleDisplayProps) {
   return (
     <Chip color={role.key === "owner" ? "accent" : "default"} size="sm" variant="soft">
-      <Chip.Label>{role.metadata.name}</Chip.Label>
+      <Chip.Label className="font-normal">{role.metadata.name}</Chip.Label>
     </Chip>
   );
 }

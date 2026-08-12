@@ -11,7 +11,7 @@ export const adminGroupItems: SidebarGroupItemsProps = {
       icon: Settings02Icon,
       label: "Settings",
       textValue: "Settings",
-      href: "/settings",
+      href: "/settings/profile",
       tooltip: {
         text: "settings",
       },

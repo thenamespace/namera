@@ -21,7 +21,7 @@ export function MetadataDisplay({ fallbackName, metadata }: MetadataDisplayProps
   return (
     <div className="flex min-w-0 items-center gap-2.5">
       <IconPreview size="xs" value={icon} />
-      <Typography className="truncate text-sm!" weight="medium">
+      <Typography className="truncate text-sm!" weight="normal">
         {name}
       </Typography>
     </div>

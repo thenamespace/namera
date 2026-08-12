@@ -10,7 +10,7 @@
 :root {
   color-scheme: dark;
 
-  --background: #010102;
+  --background: #121213;
   --foreground: #f7f8f8;
 
   --accent: #5e6ad2;
@@ -33,9 +33,9 @@
   --segment: #333434;
   --segment-foreground: #f7f8f8;
 
-  --surface: #0f1011;
+  --surface: #1a1a1b;
   --surface-foreground: #f7f8f8;
-  --surface-secondary: #141516;
+  --surface-secondary: #1a1a1b;
   --surface-secondary-foreground: #f7f8f8;
   --surface-tertiary: #18191a;
   --surface-tertiary-foreground: #f7f8f8;
@@ -54,7 +54,7 @@
   --focus: #5e69d1;
   --scrollbar: oklch(70.5% 0.0015 253.83);
 
-  --separator: oklch(25% 0.0015 253.83);
+  --separator: #2e2c2e;
 
   --radius: 0.5rem;
   --field-radius: 0.75rem;

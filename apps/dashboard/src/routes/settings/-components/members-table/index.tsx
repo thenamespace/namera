@@ -85,6 +85,7 @@ const renderEmptyState = () => "No members found.";
 export function MembersTable() {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
+
   const visibleMembers = useMemo(
     () =>
       demoMembers.filter(({ user }) => {
@@ -102,6 +103,7 @@ export function MembersTable() {
           className="w-full sm:max-w-80"
           value={query}
           onChange={setQuery}
+          variant="secondary"
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
