@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { Email, InvitationId, OrganizationId } from "@namera-ai/protocol";
+import { Email, InvitationId, OrganizationId, OrganizationMemberId } from "@namera-ai/protocol";
 
 export const testEmail = (value: string) => Schema.decodeSync(Email)(value);
 
@@ -14,4 +14,8 @@ export const missingOrganizationId = Schema.decodeSync(OrganizationId)(
 
 export const missingInvitationId = Schema.decodeSync(InvitationId)(
   "01900000-0000-7000-8000-000000000002",
+);
+
+export const missingOrganizationMemberId = Schema.decodeSync(OrganizationMemberId)(
+  "01900000-0000-7000-8000-000000000003",
 );

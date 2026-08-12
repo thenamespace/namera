@@ -114,4 +114,34 @@ layer(TestServerLayer)("organization routes", (it) => {
       expect(error).toMatchObject({ _tag: "Forbidden" });
     }),
   );
+
+  it.effect("requires organization read permission for an organization-scoped read", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("org-read-owner@example.com"));
+      const member = yield* createMember(client, testEmail("org-read-member@example.com"));
+      yield* setAuthToken(member.ownerToken);
+      const repository = yield* Repository;
+      const customRole = yield* repository.auth.role.insert({
+        organizationId: member.owner.organization.id,
+        key: "member-viewer",
+        metadata: { version: 1, name: "Member viewer" },
+        permissions: ["member:read"],
+      });
+      yield* client.member.updateMemberRole({
+        payload: {
+          organizationMemberId: member.actor.member.organizationMember.id,
+          organizationRoleId: customRole.id,
+        },
+      });
+      yield* setAuthToken(member.memberToken);
+
+      expect(yield* client.member.listOrgMembers()).toHaveLength(2);
+      const error = yield* client.organization
+        .getOrganization({ query: { organizationId: member.owner.organization.id } })
+        .pipe(Effect.flip);
+      expect(error).toMatchObject({ _tag: "Forbidden" });
+    }),
+  );
 });
