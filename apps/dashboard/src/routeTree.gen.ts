@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as SettingsNotificationsRouteImport } from './routes/settings/notifications'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,43 +31,80 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
+  id: '/settings/notifications',
+  path: '/settings/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
   id: '/settings/profile',
   path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsWorkspaceRoute = SettingsWorkspaceRouteImport.update({
+  id: '/settings/workspace',
+  path: '/settings/workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth/': typeof AuthIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth': typeof AuthIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
   '/auth/': typeof AuthIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/verify' | '/settings/profile' | '/auth/'
+  fullPaths:
+    | '/'
+    | '/auth/verify'
+    | '/settings/notifications'
+    | '/settings/profile'
+    | '/settings/workspace'
+    | '/auth/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/verify' | '/settings/profile' | '/auth'
-  id: '__root__' | '/' | '/auth/verify' | '/settings/profile' | '/auth/'
+  to:
+    | '/'
+    | '/auth/verify'
+    | '/settings/notifications'
+    | '/settings/profile'
+    | '/settings/workspace'
+    | '/auth'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth/verify'
+    | '/settings/notifications'
+    | '/settings/profile'
+    | '/settings/workspace'
+    | '/auth/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  SettingsNotificationsRoute: typeof SettingsNotificationsRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
@@ -92,11 +131,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/notifications': {
+      id: '/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof SettingsNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/profile': {
       id: '/settings/profile'
       path: '/settings/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/workspace': {
+      id: '/settings/workspace'
+      path: '/settings/workspace'
+      fullPath: '/settings/workspace'
+      preLoaderRoute: typeof SettingsWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -105,7 +158,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  SettingsNotificationsRoute: SettingsNotificationsRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  SettingsWorkspaceRoute: SettingsWorkspaceRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
 export const routeTree = rootRouteImport

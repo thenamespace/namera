@@ -39,6 +39,13 @@ implemented yet.
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data
   loading and update behavior are intentionally not connected yet.
+- `/settings/notifications` contains email preference forms backed by the
+  notification preference DTO.
+- `/settings/workspace` contains the organization logo and name form backed by
+  the organization update DTO.
+
+Settings forms are currently presentation-only. They validate against protocol
+DTOs but do not call mutations until their interaction design is finalized.
 
 Shared page and section composition should use `DashboardPage`,
 `HeadingGroup.Title`/`Description`, and `DashboardCard` rows/fields so route

@@ -3,6 +3,10 @@
 
 @source "../components";
 
+@theme {
+  --default-border-width: 0.5px;
+}
+
 :root {
   color-scheme: dark;
 
@@ -46,6 +50,7 @@
   --danger-foreground: #f7f8f8;
 
   --border: #23252a;
+  --border-width-field: 0.5px;
   --focus: #5e69d1;
   --scrollbar: oklch(70.5% 0.0015 253.83);
 
