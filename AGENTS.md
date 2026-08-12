@@ -18,8 +18,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   depend on Effect services or application state.
 - [`packages/database`](packages/database/README.md) — Drizzle schema,
   PostgreSQL layer, transactions, and repositories.
-- [`packages/emails`](packages/emails/README.md) — typed hosted-template email
-  delivery through Resend.
+- [`packages/emails`](packages/emails/README.md) — durable typed email jobs,
+  background delivery, and the Resend provider adapter.
 - [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
   wallet-key creation and signing through local files or Google Cloud KMS.
 - [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
@@ -86,7 +86,7 @@ application      -> crypto, database, emails, telemetry, protocol
 api              -> protocol
 crypto           -> protocol, utils
 database         -> protocol
-emails           -> protocol
+emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
 apps/dashboard   -> api, protocol, ui
@@ -96,8 +96,11 @@ ui               -> protocol, Namespace UIKit
 Additional rules:
 
 - `api` may depend on `protocol`; it must not contain handlers or business logic.
-- `crypto`, `database`, `emails`, `evm`, and `wallet-keys` may depend on `protocol`; they
+- `crypto`, `database`, `evm`, and `wallet-keys` may depend on `protocol`; they
   must not depend on `application` or `api`.
+- `emails` may depend on `crypto`, `database`, `telemetry`, and `protocol` to
+  own its durable encrypted outbox. It must not depend on `application`, `api`,
+  or server runtime code.
 - `telemetry` contains vendor export layers and shared metric definitions. It
   must not depend on application or transport packages.
 - `protocol` must not depend on infrastructure or application packages.
@@ -148,6 +151,8 @@ follow its linked local documentation when relevant. Search
   `TransactionService.run`; use the existing transaction context rather than
   passing raw transaction clients through public APIs.
 - Store credential digests/HMACs, not raw session or verification credentials.
+- Enqueue emails through `EmailJobs` inside the business transaction. Do not
+  call the provider adapter directly from application workflows.
 - Use readonly arrays and objects unless mutation is required.
 - Use `#/*` for internal package imports. Use package exports for cross-package
   imports. Include `.js` on relative ESM imports.

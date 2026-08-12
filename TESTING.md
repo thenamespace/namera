@@ -37,6 +37,8 @@ The test layer should implement the same contract and expose only useful test
 control or observations. For example:
 
 - `EmailService.testLayer` captures typed messages in `TestEmails`.
+- `EmailJobs.processOnce` deterministically claims and processes one durable
+  job; use `TestEmails.failNext` and the Effect test clock for retry cases.
 - `TestDatabase.layer` creates PGlite, applies real migrations, seeds system
   roles, and exposes `reset`.
 
@@ -122,6 +124,8 @@ set by handlers are observable.
   unrelated large suites before they consume production limits during setup.
 - Use unique emails across scenarios.
 - Use Effect's test clock for expiry, cooldown, and retry behavior. Do not sleep.
+- Do not run the continuous email worker in route tests. Drive queued work with
+  `EmailJobs.processOnce` so delivery, retry, and lease assertions are stable.
 
 ## What route tests should assert
 

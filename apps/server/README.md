@@ -22,6 +22,10 @@ Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
 `@namera-ai/database/DatabaseMigration`.
 
+After migrations complete, the server starts the scoped email worker. It polls
+the durable outbox, uses leases safe for multiple instances, and stops with the
+server scope. HTTP requests only enqueue email work.
+
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
 is enabled globally except for the Scalar reference route.
 

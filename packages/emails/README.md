@@ -1,14 +1,17 @@
 # @namera-ai/emails
 
-Typed email delivery through Resend hosted templates. Callers select a template
-with `type`; TypeScript derives the required template variables from that value.
+Durable, typed email delivery through Resend hosted templates. Application
+workflows enqueue encrypted, provider-neutral payloads in PostgreSQL; the worker
+claims and delivers them outside the request lifecycle.
 
 ## Structure
 
 - `src/config.ts` — Effect configuration for Resend and sender defaults.
-- `src/data.ts` — closed template registry and provider message ID schema.
-- `src/types.ts` — typed send input and template-variable schemas.
-- `src/layer.ts` — `EmailService` and the Resend implementation.
+- `src/data.ts` — template IDs and bounded delivery policies.
+- `src/types.ts` — enqueue and provider-send input types.
+- `src/layer.ts` — internal provider adapter and live/development/test layers.
+- `src/jobs.ts` — public `EmailJobs` enqueue and single-job processing service.
+- `src/worker.ts` — scoped background polling worker.
 - `src/index.ts` — public exports.
 
 ## Environment
@@ -21,21 +24,23 @@ with `type`; TypeScript derives the required template variables from that value.
 
 Set the hosted template ID in `src/data.ts` before sending that template.
 Provider requests time out after ten seconds; this editable policy also lives in
-`src/data.ts`.
+`src/data.ts`. Durable payload encryption also requires the shared configuration
+documented by `@namera-ai/crypto`; the server composition root provides it.
 
 ## Usage
 
 ```ts
+import { EmailJobs } from "@namera-ai/emails";
 import { Effect } from "effect";
-import { EmailService } from "@namera-ai/emails";
 
-const sendMagicLink = Effect.gen(function* () {
-  const email = yield* EmailService;
+const enqueueMagicLink = Effect.gen(function* () {
+  const emails = yield* EmailJobs;
 
-  return yield* email.send({
+  return yield* emails.enqueue({
     type: "magic-link",
     to: recipient,
     idempotencyKey: verificationId,
+    expiresAt: verificationExpiresAt,
     variables: {
       magicLinkUrl,
       code,
@@ -43,34 +48,43 @@ const sendMagicLink = Effect.gen(function* () {
     },
   });
 });
-
-const EmailLive = EmailService.layer;
 ```
 
-Do not add an untyped generic template payload. Register each template and its
-variable schema in `src/data.ts` and `src/types.ts`.
+Enqueue the job inside the same `TransactionService.run` boundary as the state
+change that requires it. This gives the workflow transactional outbox semantics:
+either both records commit or neither does.
+
+`EmailService` is the provider adapter used by `EmailJobs` and the server
+composition root. Application workflows must use `EmailJobs.enqueue`, not call
+the provider directly.
+
+## Delivery
+
+The worker uses atomic `FOR UPDATE SKIP LOCKED` claims and lease-conditional
+state transitions so multiple worker instances can share the table. Delivery
+has a ten-second provider timeout, five total attempts, capped exponential
+backoff, stale-lease recovery, job expiry, and Resend idempotency. Terminal jobs
+clear encrypted payload ciphertext.
+
+The server runs the scoped worker after migrations complete. `processOnce` is
+public for deterministic tests and explicit worker runtimes; request handlers
+must not call it.
 
 ## Adding an email
 
 1. Create the hosted template in Resend.
-2. Add its stable type, template ID, and Effect schema for variables to the
-   registry. The `SendEmailProps` discriminated union must infer variables from
-   `type`.
-3. Call `EmailService.send` from an application workflow with an idempotency key
-   tied to the durable operation when duplicate sends matter.
-4. Map provider failures to `EmailError`; keep bounded timeout and retry policy
-   near the provider layer. Do not retry indefinitely in request handlers.
-5. Extend `testLayer` behavior only when tests need additional deterministic
-   provider semantics.
+2. Add its stable type and variables to the `EmailJobPayload` discriminated
+   union in `@namera-ai/protocol`.
+3. Add its Resend template ID to `src/data.ts`.
+4. Enqueue it from the owning application transaction with a stable business
+   idempotency key and meaningful expiry.
+5. Add delivery and retry tests through `EmailJobs.processOnce`.
 
-Do not put JSX, generic HTML sending, business decisions, or authentication
-tokens in this package. `developmentLayer` logs template variables for local
+Do not add an untyped generic payload, JSX, generic HTML sending, or business
+decisions here. `developmentLayer` logs template variables for explicit local
 debugging and must not be used in shared or production environments.
 
 `EmailService.testLayer` captures messages in `TestEmails` without contacting
-Resend. Integration tests can inspect `TestEmails.latest` or `TestEmails.sent`
-and clear captured messages between cases.
-
-The protocol model and `jobs.email_jobs` persistence table for durable delivery
-exist. The package job service, worker, bounded retries, and application enqueue
-integration are not wired yet, so application delivery remains synchronous.
+Resend. It can fail the next bounded number of sends for retry tests. Integration
+tests can inspect `TestEmails.latest` or `TestEmails.sent` and clear captured
+messages between cases.

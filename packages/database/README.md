@@ -132,3 +132,8 @@ expiry, and the eventual provider message ID. Its unique idempotency key prevent
 the same business operation from creating duplicate jobs. Jobs have no user or
 organization relation; recipients and template variables remain inside the
 encrypted payload owned by `@namera-ai/emails`.
+
+`EmailJobRepository.enqueue` reports whether it inserted or found an existing
+idempotent job. Claims use `FOR UPDATE SKIP LOCKED`; all completion, retry, and
+terminal transitions require the current lease token. Keep delivery and retry
+policy in `@namera-ai/emails`, not in the repository.

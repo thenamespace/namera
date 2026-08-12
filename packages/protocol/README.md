@@ -36,6 +36,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Audit event payloads are versioned discriminated unions. Their `data` is
   required and must contain only safe historical context, never credentials or
   provider secrets.
+- Email job payloads are closed discriminated unions decoded again by the
+  worker after decryption. Add template variables to that union rather than
+  storing an untyped object.
 
 ## Adding a contract
 

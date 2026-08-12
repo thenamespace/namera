@@ -25,7 +25,7 @@ scanners and link previewers from creating sessions.
 - `protocol` owns request, response, model, and public error schemas.
 - `database` owns verification, user, session, organization, role, membership,
   actor, and audit persistence.
-- `emails` owns the typed Resend template contract and provider layers.
+- `emails` owns the typed durable job service, Resend adapter, and worker.
 - `application` owns request and verification workflows and their transactions.
 - `api` owns the declarative `HttpApi` endpoints.
 - `apps/server` owns rate limits, cookies, CORS, authorization, headers, and
@@ -59,15 +59,15 @@ then:
 1. respects the resend cooldown without revealing whether the user exists;
 2. generates the token and code with cryptographic randomness;
 3. stores a purpose-separated token hash and code HMAC, never plaintext;
-4. revokes earlier pending sign-in verifications and inserts the new one in one
-   transaction;
-5. sends the typed `magic-link` template with the verification ID as its
-   idempotency key;
-6. revokes the pending verification if synchronous delivery fails while still
-   returning the generic accepted response.
+4. revokes earlier pending sign-in verifications, inserts the new one, and
+   enqueues the encrypted `magic-link` email job in one transaction;
+5. uses the verification ID as the email idempotency key and the verification
+   expiry as the delivery deadline;
+6. returns after commit without waiting for Resend.
 
-Email delivery is currently request-scoped. The durable email-job model and
-database table exist, but enqueueing and worker processing are not wired yet.
+The server worker delivers the job with bounded retries and stale-lease
+recovery. A permanent provider failure does not revoke the credential; it
+expires normally and remains safe because no plaintext credential is persisted.
 
 ## Verification
 
@@ -121,7 +121,7 @@ returns the stored application-relative `returnTo` value. The cookie is
 ## Security invariants
 
 - Request responses do not disclose account existence or provider delivery
-  failures.
+  failures, and do not wait for provider delivery.
 - Raw verification tokens, codes, and session tokens are never persisted.
 - Only a state-changing `POST` can consume a credential.
 - Consumption and session creation are atomic and single-use.
