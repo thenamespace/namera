@@ -37,6 +37,8 @@ export function ProfileForm() {
               aria-label="Choose profile picture"
               setValue={image.field.onChange}
               size="lg"
+              // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+              supportedTypes={["image"]}
               value={image.field.value ?? defaultImage}
             />
           </DashboardCard.Row>
@@ -56,9 +58,10 @@ export function ProfileForm() {
             value={name.field.value ?? ""}
           >
             <Label>Full name</Label>
-            <div>
+            <div className="w-full">
               <Input
                 autoComplete="name"
+                fullWidth
                 onBlur={name.field.onBlur}
                 placeholder="Enter your full name"
                 ref={name.field.ref}

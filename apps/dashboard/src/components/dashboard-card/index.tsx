@@ -22,7 +22,14 @@ type DashboardCardFieldProps = Omit<ComponentProps<typeof TextField>, "className
 };
 
 const DashboardCardField = ({ className, ...props }: DashboardCardFieldProps) => (
-  <TextField className={cn(rowClassName, className) ?? rowClassName} {...props} />
+  <TextField
+    className={
+      cn(rowClassName, "[&>*:last-child]:w-full sm:[&>*:last-child]:justify-self-end", className) ??
+      rowClassName
+    }
+    fullWidth
+    {...props}
+  />
 );
 
 type DashboardCardComponent = typeof DashboardCardRoot & {
