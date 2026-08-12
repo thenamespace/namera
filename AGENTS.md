@@ -151,6 +151,12 @@ follow its linked local documentation when relevant. Search
 - In `apps/dashboard`, prefetch protected data with the router-owned Effect atom
   registry so loaders and React hooks share the same cache.
 
+### Testing
+
+Read [`TESTING.md`](TESTING.md) before adding tests. Keep provider substitutes
+in the package that owns the service, and compose them into boundary tests in
+`apps/server/tests` instead of mocking application internals.
+
 ## Common commands
 
 ```sh

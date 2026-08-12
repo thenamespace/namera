@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Redacted, Schema } from "effect";
+import { Context, Effect, Layer, Option, Redacted, Ref, Schema } from "effect";
 
 import { EmailError } from "@namera-ai/protocol";
 import { Resend } from "resend";
@@ -8,9 +8,41 @@ import { EmailProviderId, emailPolicy, emailTemplates } from "#/data";
 import { type SendEmailProps } from "#/types";
 
 const developmentEmailProviderId = Schema.decodeSync(EmailProviderId)("development");
+const testEmailProviderId = Schema.decodeSync(EmailProviderId)("test");
 
 export interface EmailServiceValue {
   readonly send: (input: SendEmailProps) => Effect.Effect<EmailProviderId, EmailError>;
+}
+
+export class TestEmails extends Context.Service<
+  TestEmails,
+  {
+    readonly capture: (input: SendEmailProps) => Effect.Effect<void>;
+    readonly clear: Effect.Effect<void>;
+    readonly latest: Effect.Effect<SendEmailProps>;
+    readonly sent: Effect.Effect<ReadonlyArray<SendEmailProps>>;
+  }
+>()("@namera-ai/emails/TestEmails") {
+  static readonly layer = Layer.effect(
+    TestEmails,
+    Effect.gen(function* () {
+      const messages = yield* Ref.make<ReadonlyArray<SendEmailProps>>([]);
+
+      return TestEmails.of({
+        capture: (input) => Ref.update(messages, (sent) => [...sent, input]),
+        clear: Ref.set(messages, []),
+        latest: Ref.get(messages).pipe(
+          Effect.flatMap((sent) => {
+            const latest = sent.at(-1);
+            return latest === undefined
+              ? Effect.die("Expected an email to have been sent")
+              : Effect.succeed(latest);
+          }),
+        ),
+        sent: Ref.get(messages),
+      });
+    }),
+  );
 }
 
 export class EmailService extends Context.Service<EmailService, EmailServiceValue>()(
@@ -92,4 +124,18 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
       }),
     }),
   );
+
+  static readonly testLayer = Layer.effect(
+    EmailService,
+    Effect.gen(function* () {
+      const emails = yield* TestEmails;
+
+      return EmailService.of({
+        send: Effect.fn("EmailService.test.send")(function* (input) {
+          yield* emails.capture(input);
+          return testEmailProviderId;
+        }),
+      });
+    }),
+  ).pipe(Layer.provideMerge(TestEmails.layer));
 }

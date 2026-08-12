@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "check": "oxfmt --check . && turbo run lint typecheck build",
+    "check": "oxfmt --check . && turbo run lint typecheck typecheck:test build",
     "dev": "turbo run dev",
     "dev:services:down": "docker compose down",
     "dev:services:logs": "docker compose logs -f",
@@ -15,10 +15,12 @@
     "lint": "turbo run lint",
     "lint:fix": "oxlint --fix .",
     "prepare": "lefthook install",
+    "test": "turbo run test",
     "telemetry:down": "docker compose stop lgtm",
     "telemetry:logs": "docker compose logs -f lgtm",
     "telemetry:up": "docker compose up -d lgtm",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "typecheck:test": "turbo run typecheck:test"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",

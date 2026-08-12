@@ -77,6 +77,10 @@ For a multi-service deployment, run the same migrator as a release job instead
 of making every service migrate. The migrator also takes a PostgreSQL advisory
 lock so concurrent server starts serialize safely.
 
+`TestDatabase.layer` creates an in-memory PGlite database, applies the real
+Drizzle migrations, seeds system roles, and exposes a reset operation for
+integration-test isolation.
+
 ## Organization persistence
 
 - Organizations are addressed by ID. They do not have slugs; the authenticated

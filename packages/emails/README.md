@@ -49,3 +49,7 @@ const EmailLive = EmailService.layer;
 
 Do not add an untyped generic template payload. Register each template and its
 variable schema in `src/data.ts` and `src/types.ts`.
+
+`EmailService.testLayer` captures messages in `TestEmails` without contacting
+Resend. Integration tests can inspect `TestEmails.latest` or `TestEmails.sent`
+and clear captured messages between cases.

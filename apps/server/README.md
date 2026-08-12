@@ -75,7 +75,14 @@ credential file. The configured key ring must already exist.
 pnpm --filter @namera-ai/server dev
 pnpm --filter @namera-ai/server build
 pnpm --filter @namera-ai/server start
+pnpm --filter @namera-ai/server test
+pnpm --filter @namera-ai/server typecheck:test
 ```
+
+Server feature tests live in `tests/` and exercise the typed in-memory HTTP API
+against the real application, repositories, transactions, authorization, and
+PGlite migrations. Shared provider substitutes come from their owning packages.
+See the root [`TESTING.md`](../../TESTING.md) before adding tests.
 
 Start PostgreSQL and the local Grafana LGTM stack before the development server:
 
