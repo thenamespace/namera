@@ -15,10 +15,25 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/layer.ts` — environment-selected OTLP exporter layer.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.
+- `src/metrics/organization.ts` — organization and invitation workflow metrics.
 
 Metric files contain definitions only. Business services decide when metrics are
 updated. Metric attributes must be bounded values; never use emails, tokens,
 session IDs, user IDs, URLs, or arbitrary error messages.
+
+## Adding telemetry
+
+- Wrap named Effect operations with spans through `Effect.fn`; add span
+  attributes only when they are safe and useful.
+- Log concise decisions and state transitions where they occur. Do not log the
+  same payload at every layer or log secrets and unbounded objects.
+- Add shared metrics under `src/metrics/<feature>.ts`, export them through the
+  metrics barrel, and update them in the application or transport layer that
+  owns the event.
+- Prefer counters, timers, and preregistered frequency values. Labels and
+  frequency words must have bounded cardinality.
+- Keep exporter URLs, tokens, dataset selection, and environment switching in
+  `TelemetryLive`; feature packages must remain vendor-neutral.
 
 ## Environment
 
@@ -49,9 +64,10 @@ Track a shared metric inside an application workflow:
 import { magicLinkRequests } from "@namera-ai/telemetry";
 import { Effect, Metric } from "effect";
 
-const requestMagicLink = workflow.pipe(
-  Effect.track(Metric.withConstantInput(magicLinkRequests, 1)),
-);
+const requestMagicLink = Effect.gen(function* () {
+  yield* Metric.update(magicLinkRequests, 1);
+  // run the workflow
+});
 ```
 
 Effect logs emitted inside spans are exported with their trace and span IDs.

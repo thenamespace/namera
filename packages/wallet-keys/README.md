@@ -30,6 +30,28 @@ server packages.
 The GCP layer uses Application Default Credentials. The local layer stores
 mode `0600` PKCS#8 files under `.data/wallet-keys` by default.
 
+Supported combinations are `p256` and `ed25519` at software or HSM protection,
+and `secp256k1` at HSM protection. The service returns public key material and a
+provider key-version reference; it never returns a private key.
+The local layer is a development substitute and never provides real hardware
+protection, even when exercising an HSM-shaped workflow.
+
+## Adding a key provider or operation
+
+1. Extend the provider-neutral input/result types and `WalletKeys` contract only
+   when every provider can expose the same semantic operation.
+2. Implement provider details in a focused layer and map failures to
+   `WalletKeyError`. Keep provider identifiers and opaque metadata in the
+   protocol wallet-key model.
+3. Preserve algorithm/protection constraints in the discriminated input type.
+   Do not claim a provider supports an algorithm it cannot create and sign.
+4. Return raw signatures and public key material only. Chain-specific signature
+   formatting and account construction belong in the chain adapter.
+5. Keep private key material non-exportable for KMS and mode `0600` for local
+   development. Never log payloads, signatures, key files, or credentials.
+6. Provide a deterministic package-owned test layer when application/server
+   tests need the capability.
+
 ## Usage
 
 ```ts

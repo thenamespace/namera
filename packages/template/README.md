@@ -24,3 +24,18 @@ Then update `name`, `private`, dependencies, and exports in `package.json`. Keep
 
 Use `#/*` for imports within the package and export the supported public API from
 `src/index.ts`.
+
+## Package checklist
+
+- Keep the Klarity configuration and unbundled tsdown build unless the runtime
+  requires something different.
+- Keep the `namera-source` condition for direct workspace iteration and matching
+  `publishConfig` paths for built output.
+- Add dependencies to the package that imports them and prefer the workspace
+  catalog for shared versions.
+- Use `#/*` internally, package exports across workspaces, and `.js` on relative
+  ESM imports.
+- Keep one intentional public entry point unless consumers need a stable
+  secondary entry such as `dto` or `model`.
+- Update the new package README and root package map when its responsibility is
+  established.

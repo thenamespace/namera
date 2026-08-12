@@ -25,6 +25,26 @@ Future feature folders should add a focused operation builder to the aggregate
 service. Infrastructure capabilities remain focused `Context.Service` values
 that the aggregate can consume.
 
+## Adding an operation
+
+1. Put the operation in the smallest matching feature file and expose it through
+   the existing `Application` aggregate; do not create a parallel application
+   service for each entity.
+2. Yield repositories and provider services once in the feature builder. Define
+   the public operation with `Effect.fn("Application.feature.operation")`.
+3. Enforce business invariants here, but leave HTTP actor permissions, cookies,
+   headers, and status codes in `apps/server`.
+4. Wrap dependent writes in `TransactionService.run`. Repository calls inside
+   it automatically use the same transaction.
+5. Append the typed audit event inside that transaction for successful state
+   changes. Do not audit reads or failed changes. Add or update the event union
+   in `protocol` first.
+6. Add a shared metric only for useful aggregate behavior and bounded labels.
+   Emit short semantic logs at meaningful transitions; never log credentials,
+   email content, or arbitrary request payloads.
+7. Add the provider test layer in the owning package and exercise the operation
+   through server feature tests.
+
 ## Usage
 
 ```ts

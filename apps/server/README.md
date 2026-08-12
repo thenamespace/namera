@@ -10,8 +10,11 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 ## Structure
 
 - `src/config.ts` — server host, port, and browser origin configuration.
-- `src/routes/` — HTTP handler layers and the Scalar API reference route.
-- `src/middlewares/` — transport middleware such as CORS and future authorization.
+- `src/routes/` — grouped HTTP handler layers, root route, health route, and
+  Scalar API reference.
+- `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
+- `src/middlewares/` — authorization, CORS, and rate-limit middleware.
+- `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
 - `src/layers/` — runtime and dependency composition.
 - `src/index.ts` — Node process entry point.
 
@@ -44,8 +47,20 @@ Client addresses currently come from the server connection. Only enable
 forwarded-address middleware when the origin accepts traffic exclusively from a
 trusted reverse proxy; otherwise clients can spoof the forwarded header.
 
-Future route files implement groups from `@namera-ai/api` and call services from
-`@namera-ai/application`. Business workflows do not belong in this app.
+## Adding a handler
+
+Authenticated handlers follow this order:
+
+1. Call `enforceCurrentUser(requiredPermissions)` and keep only the returned
+   actor data.
+2. Apply transport concerns required by that endpoint: rate limits, request
+   metadata, cookies, cache headers, or response status.
+3. Call one operation on `Application` and map domain values to public DTOs.
+
+Handlers must not query repositories for business data or coordinate workflows.
+Authorization and HTTP adaptation belong here; intrinsic business invariants and
+transactions belong in `application`. Keep one route file per API group and use
+the matching group/folder names from `@namera-ai/api`.
 
 ## Environment
 

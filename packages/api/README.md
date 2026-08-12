@@ -6,7 +6,7 @@ metadata. It does not start a server or implement backend workflows.
 
 ## Structure
 
-- `src/index.ts` — complete `NameraAPI` definition and OpenAPI metadata.
+- `src/index.ts` — complete `NameraApi` definition and OpenAPI metadata.
 - `src/routes/health.ts` — health endpoint group.
 - `src/routes/auth/core/` — core authentication endpoints such as magic links,
   sessions, and users.
@@ -21,15 +21,19 @@ metadata. It does not start a server or implement backend workflows.
 import { NameraApi } from "@namera-ai/api";
 ```
 
-The future `apps/server` package supplies handlers, middleware implementations,
-application services, runtime layers, and the HTTP server.
+`apps/server` supplies handlers, middleware implementations, application
+services, runtime layers, and the HTTP server.
 
-When adding an endpoint:
+## Adding an endpoint
 
 1. Define its request, response, and public error schemas in
    `@namera-ai/protocol`.
-2. Add the endpoint to the appropriate `HttpApiGroup` here.
-3. Implement the handler in the server using an application service.
+2. Add one declarative endpoint to the appropriate `HttpApiGroup`, including
+   method, path, payload/query, success status, errors, middleware, and OpenAPI
+   annotations.
+3. Export the group through its existing barrels and add it to `NameraApi`.
+4. Implement the use case in `application` and the adapter in `apps/server`.
 
 Keep route definitions declarative. Do not query repositories, read environment
-variables, or implement business logic in this package.
+variables, set cookies, rate-limit, or implement business logic in this package.
+Reuse protocol DTOs rather than defining transport shapes inline.

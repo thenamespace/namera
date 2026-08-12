@@ -21,7 +21,7 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 - [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
   wallet-key creation and signing through local files or Google Cloud KMS.
 - [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
-  clients, and future smart-account execution and policy logic.
+  clients, smart-account construction, and future execution and policy logic.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
   and shared low-cardinality metric definitions.
 - [`packages/ui`](packages/ui/README.md) — shared React components imported
@@ -35,25 +35,46 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 
 Read the relevant package README before changing that package.
 
+## Feature flow
+
+Add a backend feature in dependency order:
+
+1. Define shared primitives, models, DTOs, and expected errors in `protocol`.
+2. Add tables, constraints, relations, migrations, and focused repositories in
+   `database` when persistence changes.
+3. Implement the use case in `application`, including its transaction boundary,
+   audit event, and only useful logs or low-cardinality metrics.
+4. Declare the transport contract in `api`.
+5. Implement the server handler: enforce the actor, apply transport policy such
+   as rate limiting or cookies, call `Application`, and map the result.
+6. Add frontend atoms, hooks, loader prefetching, and UI only after the contract
+   exists.
+
+For successful mutations, decide explicitly whether an audit event is required.
+State changes and their audit rows must share one transaction. Metrics describe
+aggregate behavior and must use bounded attributes; audit events preserve typed
+historical context. Logs should record concise decisions or transitions and must
+not duplicate secrets or arbitrary payloads.
+
 ## Dependency direction
 
 ```text
-apps/server              runtime, handlers, authorization, environment, live layers
-  ├── packages/api       HTTP contracts
-  └── packages/application
-        ├── packages/database
-        ├── packages/emails
-        ├── packages/wallet-keys
-        ├── packages/evm
-        ├── packages/protocol
-        └── packages/utils
+apps/server      -> api, application, database, emails, telemetry, evm, wallet-keys
+application      -> database, emails, telemetry, protocol, utils
+api              -> protocol
+database         -> protocol
+emails           -> protocol
+evm              -> protocol
+wallet-keys      -> protocol
+apps/dashboard   -> api, protocol, ui
+ui               -> protocol, Namespace UIKit
 ```
 
 Additional rules:
 
 - `api` may depend on `protocol`; it must not contain handlers or business logic.
-- `database` and `emails` may depend on `protocol`; they must not depend on
-  `application` or `api`.
+- `database`, `emails`, `evm`, and `wallet-keys` may depend on `protocol`; they
+  must not depend on `application` or `api`.
 - `telemetry` contains vendor export layers and shared metric definitions. It
   must not depend on application or transport packages.
 - `protocol` must not depend on infrastructure or application packages.
@@ -112,6 +133,8 @@ follow its linked local documentation when relevant. Search
   unless a package has a documented reason to differ.
 - Keep dependencies owned by the package that uses them.
 - Preserve unrelated worktree changes.
+- Keep each feature file focused. Extend the existing aggregate service or
+  barrel instead of creating a second competing entry point.
 
 ### Frontend UI
 

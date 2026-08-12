@@ -1,10 +1,9 @@
 # @namera-ai/evm
 
-EVM chain adapter infrastructure for Namera. It currently owns supported-chain
-metadata, provider RPC URLs, and internal Viem client factories for Alchemy and
-Pimlico.
-Smart-account construction, execution, and policy evaluation will be added
-behind the same root `Evm` service.
+EVM chain adapter infrastructure for Namera. It owns supported-chain metadata,
+provider RPC URLs, internal Viem client factories, wallet-key WebAuthn owners,
+and smart-account construction for Kernel and Safe. Execution and EVM policy
+evaluation will be added behind the same root `Evm` service.
 
 ## Structure
 
@@ -13,6 +12,23 @@ behind the same root `Evm` service.
 - `src/accounts/` — smart-account and wallet-key owner construction.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
+
+## Adding EVM behavior
+
+1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain
+   IDs or provider slugs through operations.
+2. Keep Viem client factories as plain internal helpers. Create clients inside
+   the operation using `EvmConfig`; do not expose their large generic types from
+   the public service.
+3. Add account implementations under `accounts` and route them through the
+   discriminated `Evm.createAccount` input so the implementation-specific result
+   remains inferred.
+4. Convert provider, account, and signing failures into protocol errors at the
+   adapter boundary. Keep key creation and persistence in application workflows,
+   not this package.
+5. Put EVM-specific transaction normalization, simulation, execution, and policy
+   evaluation here. The application package selects the wallet/grants and
+   coordinates persistence; the server only adapts HTTP.
 
 ## Environment
 

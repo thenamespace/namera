@@ -36,3 +36,20 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Audit event payloads are versioned discriminated unions. Their `data` is
   required and must contain only safe historical context, never credentials or
   provider secrets.
+
+## Adding a contract
+
+1. Put reusable primitives and branded identities in `common`, persistence
+   shapes in `model`, public wire shapes in `dto`, and expected tagged failures
+   in `errors`.
+2. Define the Effect `Schema` first and derive its TypeScript type. Do not keep a
+   parallel handwritten interface for the same data.
+3. Annotate public DTOs and errors with stable identifiers and useful OpenAPI
+   descriptions. Keep hashes, encrypted values, provider metadata, and opaque
+   persistence data out of DTOs.
+4. Keep validation proportionate to the boundary. Enforce important wire and
+   persistence invariants here; avoid elaborate checks for code-owned values.
+5. When adding a mutation, extend the relevant versioned audit-event union if a
+   historical record is required. Adding a new payload shape is preferred to
+   changing the meaning of an existing version.
+6. Export through only the intended root, `dto`, `model`, or `evm` entry point.

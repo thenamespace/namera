@@ -8,8 +8,8 @@ does not have a build output or build script.
 
 - `src/index.ts` — package entry point for intentionally shared exports.
 - `src/components/*.tsx` — direct proxies for UIKit component subpaths.
-- `src/components/icon-picker` — controlled metadata icon, emoji, and image picker.
-- `src/icons.ts`, `src/hooks.ts`, and `src/utils.ts` — UIKit secondary entry points.
+- `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
+- `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
 
@@ -62,6 +62,21 @@ import { IconPreview } from "@namera-ai/ui/icon-picker";
 
 Keep application-specific composition in the consuming app. This package owns
 reusable presentation components and their local styling only.
+
+## Adding shared UI
+
+1. Check Namespace UIKit first. Re-export or proxy an upstream component instead
+   of recreating it.
+2. Add a custom component here only when it is reused across applications or
+   unrelated features. Route composition belongs in the consuming app.
+3. Keep a small component in one file. Split it into a folder with an
+   `index.tsx` entry only when it has real subcomponents, data, or helpers.
+4. Use controlled values for reusable inputs, semantic UIKit tokens, and the
+   existing `cn` utility. Preserve React Aria behavior and expose accessible
+   names for icon-only controls.
+5. Export only supported entry points in `package.json` and `src/index.ts`.
+   Because this package is source-only, consuming Tailwind builds must scan its
+   source and import `@namera-ai/ui/styles.css` once.
 
 ## Upstream documentation
 

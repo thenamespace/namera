@@ -19,3 +19,15 @@ import { Base64, getOrigin, matchesOriginPattern } from "@namera-ai/utils";
 
 Keep this package dependency-light. Effect services, configuration, business
 rules, database logic, and provider adapters belong in their owning packages.
+
+## Adding a helper
+
+- Add a helper only when at least two packages need the same dependency-light
+  behavior.
+- Keep inputs and outputs explicit and deterministic when possible. A helper
+  that requires configuration, resources, retries, logging, or substitution in
+  tests should be an Effect service in its owning package instead.
+- Use platform cryptography for security-sensitive randomness; do not add
+  `Math.random` helpers.
+- Export the helper from `src/index.ts` and keep provider-specific or domain
+  policy code out of this package.

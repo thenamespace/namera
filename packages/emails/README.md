@@ -50,6 +50,23 @@ const EmailLive = EmailService.layer;
 Do not add an untyped generic template payload. Register each template and its
 variable schema in `src/data.ts` and `src/types.ts`.
 
+## Adding an email
+
+1. Create the hosted template in Resend.
+2. Add its stable type, template ID, and Effect schema for variables to the
+   registry. The `SendEmailProps` discriminated union must infer variables from
+   `type`.
+3. Call `EmailService.send` from an application workflow with an idempotency key
+   tied to the durable operation when duplicate sends matter.
+4. Map provider failures to `EmailError`; keep bounded timeout and retry policy
+   near the provider layer. Do not retry indefinitely in request handlers.
+5. Extend `testLayer` behavior only when tests need additional deterministic
+   provider semantics.
+
+Do not put JSX, generic HTML sending, business decisions, or authentication
+tokens in this package. `developmentLayer` logs template variables for local
+debugging and must not be used in shared or production environments.
+
 `EmailService.testLayer` captures messages in `TestEmails` without contacting
 Resend. Integration tests can inspect `TestEmails.latest` or `TestEmails.sent`
 and clear captured messages between cases.

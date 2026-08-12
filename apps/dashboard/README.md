@@ -31,6 +31,21 @@ Workspace package imports continue to use their package names.
 The routes are currently presentation-only. API behavior is added through atoms
 and hooks after the interaction design is settled.
 
+## Adding frontend behavior
+
+1. Add or reuse a typed client atom in `src/atoms/<feature>/`. Keep query atoms,
+   mutation atoms, and hierarchical invalidation keys outside components.
+2. Adapt atoms to React in `src/hooks/<feature>/` with the shared `toQuery` and
+   `toMutation` helpers. Components should consume domain hooks, not construct
+   clients.
+3. Prefetch protected route data in the TanStack loader with
+   `prefetchQuery(context.atomRegistry, atom, abortSignal)`. The loader and
+   rendered hooks must use the same registry.
+4. Keep the route declaration small and render route-owned UI from its adjacent
+   `-components/` directory. Shared components remain in `src/components/`.
+5. Treat frontend guards as navigation UX only; the server remains authoritative
+   for authentication and permissions.
+
 ## UI conventions
 
 Use components, hooks, icons, utilities, and styles through `@namera-ai/ui`.
@@ -57,6 +72,8 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
   debouncing, media queries, and stepped state. Keep one-off local state local.
 - Keep route loaders and rendered queries on the same router-owned atom
   registry so prefetched values are reused.
+- Put required `VITE_*` values in `src/env.ts` and decode them at startup. Do not
+  read `import.meta.env` throughout feature code.
 
 ## Environment
 

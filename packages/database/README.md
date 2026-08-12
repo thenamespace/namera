@@ -12,6 +12,7 @@ repositories.
 - `src/core/layer.ts` — PostgreSQL client and `Database` service.
 - `src/core/transaction.ts` — transaction context and `TransactionService`.
 - `src/repositories/` — class-based repository services and aggregate layer.
+- `src/testing/` — PGlite test database layer and reset service.
 - `src/migrations/` — startup migrator and canonical system-role data.
 - `drizzle.config.ts` — Drizzle Kit configuration.
 - `migrations/` — generated migrations when present.
@@ -67,6 +68,26 @@ pnpm --filter @namera-ai/database db:studio
 
 Change tables and protocol models together. Business workflows belong in
 `@namera-ai/application`, not repositories.
+
+## Adding persistence
+
+1. Update the protocol persistence model and Drizzle table together.
+2. Use database constraints for invariants that must hold for every caller:
+   uniqueness, foreign keys, tenant scope, canonical values, and atomic state
+   transitions. Keep project-owned literal unions as `text(...).$type<>()`; do
+   not add PostgreSQL enums.
+3. Add indexes for actual lookup and ordering patterns. Organization-owned
+   references should include organization scope where cross-tenant linkage must
+   be impossible.
+4. Update `relations`, generate and inspect the migration, and keep PGlite reset
+   order aligned with foreign keys.
+5. Add focused repository methods using `transactionOrDatabase`. Encode inputs
+   and decode returned rows with the protocol schema.
+6. Export the repository through the existing aggregate. Do not expose raw
+   Drizzle clients or accept transaction clients in repository APIs.
+
+Repositories perform persistence only. Cross-repository decisions, audit
+selection, provider calls, logs, and metrics belong in `application`.
 
 `DatabaseMigration.layer` applies pending Drizzle migrations and upserts the
 canonical owner, admin, and member roles. The server waits for this layer before
