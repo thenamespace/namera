@@ -41,7 +41,9 @@ that the aggregate can consume.
    in `protocol` first.
 6. Add a shared metric only for useful aggregate behavior and bounded labels.
    Emit short semantic logs at meaningful transitions; never log credentials,
-   email content, or arbitrary request payloads.
+   email content, or arbitrary request payloads in shared or production layers.
+   Provider-owned local development layers may deliberately expose test data,
+   as documented by that provider package.
 7. Add the provider test layer in the owning package and exercise the operation
    through server feature tests.
 

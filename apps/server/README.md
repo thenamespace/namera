@@ -64,25 +64,36 @@ the matching group/folder names from `@namera-ai/api`.
 
 ## Environment
 
-All values have local development defaults.
+Copy `.env.example` to `apps/server/.env` for local development. Server-owned
+values have defaults; composed package configuration remains required unless its
+own README documents a default.
 
-| Variable                      | Default                        | Purpose                              |
-| ----------------------------- | ------------------------------ | ------------------------------------ |
-| `SERVER_HOST`                 | `0.0.0.0`                      | HTTP listen host.                    |
-| `SERVER_PORT`                 | `8080`                         | HTTP listen port.                    |
-| `SERVER_CORS_ORIGIN`          | `http://localhost:3000`        | Allowed credentialed UI origin.      |
-| `WALLET_KEYS_PROVIDER`        | `local`                        | Wallet signer: `local` or `gcp-kms`. |
-| `WALLET_KEYS_LOCAL_DIRECTORY` | Repository `.data/wallet-keys` | Local development key directory.     |
-| `EVM_ALCHEMY_API_KEY`         | —                              | Alchemy execution RPC key.           |
-| `EVM_PIMLICO_API_KEY`         | —                              | Pimlico bundler and paymaster key.   |
+| Variable             | Default                 | Purpose                         |
+| -------------------- | ----------------------- | ------------------------------- |
+| `SERVER_HOST`        | `0.0.0.0`               | HTTP listen host.               |
+| `SERVER_PORT`        | `8080`                  | HTTP listen port.               |
+| `SERVER_CORS_ORIGIN` | `http://localhost:3000` | Allowed credentialed UI origin. |
+
+The composition root also loads:
+
+- PostgreSQL configuration from `@namera-ai/database`;
+- authentication origins and crypto secrets from `@namera-ai/application`;
+- Alchemy and Pimlico credentials from `@namera-ai/evm`;
+- local or GCP signer configuration from `@namera-ai/wallet-keys`;
+- local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
+- Resend configuration from `@namera-ai/emails` outside development.
+
+The complete local set and provider-specific comments are kept in
+`apps/server/.env.example`. Package READMEs remain authoritative for each
+service's variables.
 
 Only one exact CORS origin is allowed because credentialed requests must not use
 a wildcard origin.
 
-When `WALLET_KEYS_PROVIDER=gcp-kms`, also set `GCP_PROJECT_ID`,
-`GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with Application
-Default Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may point to a
-credential file. The configured key ring must already exist.
+`WALLET_KEYS_PROVIDER` defaults to `local`. When it is `gcp-kms`, also set
+`GCP_PROJECT_ID`, `GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with
+Application Default Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may
+point to a credential file. The configured key ring must already exist.
 
 ## Commands
 
