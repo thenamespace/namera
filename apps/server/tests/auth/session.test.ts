@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
 
@@ -96,6 +96,24 @@ layer(TestServerLayer)("session routes", (it) => {
       yield* setAuthToken(signedIn.cookie.value);
       const revoked = yield* client.session.currentUser().pipe(Effect.flip);
       expect(revoked).toMatchObject({ _tag: "Unauthorized" });
+    }),
+  );
+
+  it.effect("clears a stale cookie after the session is revoked elsewhere", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("stale-cookie@example.com"));
+      const repository = yield* Repository;
+      yield* repository.auth.session.revoke(
+        signedIn.actor.session.id,
+        signedIn.actor.user.id,
+        yield* DateTime.now,
+      );
+
+      const response = yield* client.session.currentUser({ responseMode: "response-only" });
+      expect(response.status).toBe(401);
+      expect(response.cookies.cookies["auth-token"]?.value).toBe("");
     }),
   );
 });
