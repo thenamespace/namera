@@ -15,11 +15,19 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
 ) {
   const requested = yield* enqueueMagicLink(client, email);
   const emailJobs = yield* EmailJobs;
-  yield* emailJobs.processOnce;
   const emails = yield* TestEmails;
-  const sent = yield* emails.latest;
-  if (sent.type !== "magic-link") {
-    return yield* Effect.die("Expected a magic-link email");
+  let sent = (yield* emails.sent).findLast(
+    (message) => message.type === "magic-link" && message.to === email,
+  );
+  for (let attempt = 0; sent === undefined && attempt < 20; attempt += 1) {
+    const processed = yield* emailJobs.processOnce;
+    if (processed === 0) break;
+    sent = (yield* emails.sent).findLast(
+      (message) => message.type === "magic-link" && message.to === email,
+    );
+  }
+  if (sent === undefined || sent.type !== "magic-link") {
+    return yield* Effect.die("Expected a magic-link email for the requested recipient");
   }
 
   const url = new URL(sent.variables.magicLinkUrl);
