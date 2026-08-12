@@ -22,6 +22,12 @@ export const QueryKeys = {
     details: ["invitation:details"] as const,
     detail: (invitationId: InvitationId) => [`invitation:detail:${invitationId}`] as const,
   },
+  notification: {
+    all: ["notification:all"] as const,
+    lists: ["notification:lists"] as const,
+    unreadCount: ["notification:unread-count"] as const,
+    preferences: ["notification:preferences"] as const,
+  },
 } as const;
 
 export type QueryKey =
@@ -37,4 +43,8 @@ export type QueryKey =
   | (typeof QueryKeys.invitation.lists)[number]
   | (typeof QueryKeys.invitation.userLists)[number]
   | (typeof QueryKeys.invitation.details)[number]
-  | ReturnType<typeof QueryKeys.invitation.detail>[number];
+  | ReturnType<typeof QueryKeys.invitation.detail>[number]
+  | (typeof QueryKeys.notification.all)[number]
+  | (typeof QueryKeys.notification.lists)[number]
+  | (typeof QueryKeys.notification.unreadCount)[number]
+  | (typeof QueryKeys.notification.preferences)[number];
