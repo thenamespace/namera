@@ -7,7 +7,8 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 ## Structure
 
 - `src/common/` — shared primitives such as normalized email and branded IDs.
-- `src/model/` — persistence/domain models and insert/update schemas.
+- `src/model/` — persistence/domain models and insert/update schemas, including
+  discriminated audit-event unions.
 - `src/dto/` — public API request and response schemas.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.
@@ -32,3 +33,6 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   persistence shapes; do not expose sensitive model fields through DTOs.
 - Define typed project errors here and import them from the owning package.
 - Keep schemas readonly unless mutation is explicitly required.
+- Audit event payloads are versioned discriminated unions. Their `data` is
+  required and must contain only safe historical context, never credentials or
+  provider secrets.

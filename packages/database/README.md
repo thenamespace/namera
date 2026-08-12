@@ -92,3 +92,12 @@ integration-test isolation.
   from `system_role` and are not duplicated in `organization_role`.
 - Membership and invitation state transitions are organization-scoped and
   conditional. Compose multi-record operations with `TransactionService`.
+
+## Audit persistence
+
+The `audit` schema contains append-only `user_events` and
+`organization_events`. Drizzle stores their event payloads as JSONB while the
+protocol package defines the exact versioned `event` and `data` unions.
+Organization events use a composite actor/organization foreign key so an event
+cannot be attributed to an actor from another tenant. Audit tables intentionally
+have no `updated_at`; repositories must expose insertion and reading only.

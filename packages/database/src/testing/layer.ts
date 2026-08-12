@@ -13,11 +13,13 @@ import {
   actor,
   invitation,
   organization,
+  organizationEvent,
   organizationMember,
   organizationRole,
   session,
   systemRole,
   user,
+  userEvent,
   verification,
   wallet,
   walletKey,
@@ -57,6 +59,8 @@ export class TestDatabase extends Context.Service<
         const database = yield* Database;
 
         const reset = Effect.fn("TestDatabase.reset")(function* () {
+          yield* database.delete(organizationEvent);
+          yield* database.delete(userEvent);
           yield* database.delete(wallet);
           yield* database.delete(walletKey);
           yield* database.delete(invitation);

@@ -5,11 +5,13 @@ import {
   actor,
   invitation,
   organization,
+  organizationEvent,
   organizationMember,
   organizationRole,
   session,
   systemRole,
   user,
+  userEvent,
   verification,
   wallet,
   walletKey,
@@ -21,11 +23,13 @@ export const relations = defineRelations(
     actor,
     invitation,
     organization,
+    organizationEvent,
     organizationMember,
     organizationRole,
     session,
     systemRole,
     user,
+    userEvent,
     verification,
     wallet,
     walletKey,
@@ -45,6 +49,10 @@ export const relations = defineRelations(
       createdWallets: r.many.wallet({
         from: [r.actor.id, r.actor.organizationId],
         to: [r.wallet.createdByActorId, r.wallet.organizationId],
+      }),
+      auditEvents: r.many.organizationEvent({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.organizationEvent.actorId, r.organizationEvent.organizationId],
       }),
     },
     user: {
@@ -66,6 +74,10 @@ export const relations = defineRelations(
       sentInvitations: r.many.invitation({
         from: r.user.id,
         to: r.invitation.inviterId,
+      }),
+      auditEvents: r.many.userEvent({
+        from: r.user.id,
+        to: r.userEvent.userId,
       }),
     },
     session: {
@@ -127,6 +139,10 @@ export const relations = defineRelations(
       wallets: r.many.wallet({
         from: r.organization.id,
         to: r.wallet.organizationId,
+      }),
+      auditEvents: r.many.organizationEvent({
+        from: r.organization.id,
+        to: r.organizationEvent.organizationId,
       }),
     },
     systemRole: {
@@ -230,6 +246,24 @@ export const relations = defineRelations(
         from: [r.wallet.createdByActorId, r.wallet.organizationId],
         to: [r.actor.id, r.actor.organizationId],
         optional: false,
+      }),
+    },
+    userEvent: {
+      user: r.one.user({
+        from: r.userEvent.userId,
+        to: r.user.id,
+        optional: false,
+      }),
+    },
+    organizationEvent: {
+      organization: r.one.organization({
+        from: r.organizationEvent.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      actor: r.one.actor({
+        from: [r.organizationEvent.actorId, r.organizationEvent.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
       }),
     },
   }),

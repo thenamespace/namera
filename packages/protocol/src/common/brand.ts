@@ -24,6 +24,10 @@ export const SystemRoleId = createBrandedId("SystemRoleId");
 export const WalletKeyId = createBrandedId("WalletKeyId");
 export const WalletId = createBrandedId("WalletId");
 
+// Audit Tables
+export const UserEventId = createBrandedId("UserEventId");
+export const OrganizationEventId = createBrandedId("OrganizationEventId");
+
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
@@ -36,3 +40,5 @@ export type InvitationId = typeof InvitationId.Type;
 export type SystemRoleId = typeof SystemRoleId.Type;
 export type WalletKeyId = typeof WalletKeyId.Type;
 export type WalletId = typeof WalletId.Type;
+export type UserEventId = typeof UserEventId.Type;
+export type OrganizationEventId = typeof OrganizationEventId.Type;
