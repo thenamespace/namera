@@ -21,16 +21,17 @@ export const notificationPreference = notificationSchema.table(
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "restrict" }),
     category: text("category").notNull().$type<NotificationPreference["category"]>(),
+    topic: text("topic").notNull().$type<NotificationPreference["topic"]>(),
     channel: text("channel").notNull().$type<NotificationPreference["channel"]>(),
     enabled: boolean("enabled").notNull().default(true),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("notification_preferences_global_uidx")
-      .on(table.userId, table.category, table.channel)
+      .on(table.userId, table.category, table.topic, table.channel)
       .where(sql`${table.organizationId} IS NULL`),
     uniqueIndex("notification_preferences_organization_uidx")
-      .on(table.userId, table.organizationId, table.category, table.channel)
+      .on(table.userId, table.organizationId, table.category, table.topic, table.channel)
       .where(sql`${table.organizationId} IS NOT NULL`),
   ],
 );

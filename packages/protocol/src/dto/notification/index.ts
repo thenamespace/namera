@@ -5,6 +5,8 @@ import {
   InvitationReceivedNotification,
   NewSignInNotification,
   NotificationPreference,
+  NotificationPreferenceChannel,
+  withNotificationPreferenceTarget,
 } from "#/model/notification/index";
 
 const NotificationRecipientState = {
@@ -54,21 +56,20 @@ export const ListNotificationPreferencesResponse = Schema.Array(
   NotificationPreferenceResponse,
 ).annotate({ identifier: "ListNotificationPreferencesResponse" });
 
-const NotificationPreferenceScope = {
+const NotificationPreferenceRequestFields = {
   organizationId: Schema.NullOr(OrganizationId),
-  category: Schema.Literals(["security", "organization"]),
-  channel: Schema.Literal("email"),
+  channel: NotificationPreferenceChannel,
 };
 
-export const UpdateNotificationPreferenceRequest = Schema.Struct({
-  ...NotificationPreferenceScope,
+export const UpdateNotificationPreferenceRequest = withNotificationPreferenceTarget({
+  ...NotificationPreferenceRequestFields,
   enabled: Schema.Boolean,
 }).annotate({ identifier: "UpdateNotificationPreferenceRequest" });
 
 export const UpdateNotificationPreferenceResponse = NotificationPreferenceResponse;
 
-export const ResetNotificationPreferenceRequest = Schema.Struct(
-  NotificationPreferenceScope,
+export const ResetNotificationPreferenceRequest = withNotificationPreferenceTarget(
+  NotificationPreferenceRequestFields,
 ).annotate({ identifier: "ResetNotificationPreferenceRequest" });
 
 export const ResetNotificationPreferenceResponse = Schema.Void;

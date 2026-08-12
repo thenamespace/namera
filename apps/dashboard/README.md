@@ -32,15 +32,15 @@ The routes are currently presentation-only. API behavior is added through atoms
 and hooks after the interaction design is settled.
 
 Notification inbox and preference atoms/hooks are available under
-`src/atoms/notification` and `src/hooks/notification`; notification UI is not
-implemented yet.
+`src/atoms/notification` and `src/hooks/notification`. The settings page renders
+the supported email preference topics; inbox UI is not implemented yet.
 
 ## Settings routes
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data
   loading and update behavior are intentionally not connected yet.
-- `/settings/notifications` contains email preference forms backed by the
-  notification preference DTO.
+- `/settings/notifications` contains grouped product, account, and organization
+  email preference forms backed by the notification preference DTO.
 - `/settings/workspace` contains the organization logo and name form backed by
   the organization update DTO.
 

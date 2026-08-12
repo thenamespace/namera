@@ -33,7 +33,7 @@ const HeadingGroupTitle = ({
   <Typography.Heading
     className={cn(headingSizes[size], className) ?? headingSizes[size]}
     level={level}
-    weight="semibold"
+    weight="medium"
     {...props}
   />
 );

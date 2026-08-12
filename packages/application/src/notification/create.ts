@@ -34,24 +34,23 @@ export const makeCreateNotification = Effect.gen(function* () {
 
     for (const recipient of recipients) {
       const emailPreference =
-        policy.email === "always"
+        (input.organizationId === null
           ? undefined
-          : ((input.organizationId === null
-              ? undefined
-              : yield* repository.notification.preference.findForScope({
-                  userId: recipient.userId,
-                  organizationId: input.organizationId,
-                  category: policy.category,
-                  channel: "email",
-                })) ??
-            (yield* repository.notification.preference.findForScope({
+          : yield* repository.notification.preference.findForScope({
               userId: recipient.userId,
-              organizationId: null,
-              category: policy.category,
+              organizationId: input.organizationId,
+              ...policy.target,
               channel: "email",
-            })));
+            })) ??
+        (yield* repository.notification.preference.findForScope({
+          userId: recipient.userId,
+          organizationId: null,
+          ...policy.target,
+          channel: "email",
+        }));
+      const emailEnabled = emailPreference?.enabled ?? policy.emailDefaultEnabled;
       const emailJob =
-        recipient.email === undefined || emailPreference?.enabled === false
+        recipient.email === undefined || !emailEnabled
           ? undefined
           : yield* emailJobs.enqueue({
               ...recipient.email,

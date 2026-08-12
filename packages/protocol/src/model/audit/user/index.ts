@@ -4,7 +4,10 @@ import { createInsertSchema } from "#/model/helpers";
 
 import { UserCreatedEventData, UserSignedInEventData, UserUpdatedEventData } from "./account.js";
 import { UserEventCommon } from "./base.js";
-import { NotificationPreferenceUpdatedEventData } from "./notification.js";
+import {
+  NotificationPreferenceUpdatedEventData,
+  NotificationPreferenceUpdatedEventDataV1,
+} from "./notification.js";
 import {
   OtherSessionsRevokedEventData,
   SessionActiveOrganizationChangedEventData,
@@ -32,6 +35,9 @@ export const SessionActiveOrganizationChangedEvent = UserEventCommon.mapFields(
 export const NotificationPreferenceUpdatedEvent = UserEventCommon.mapFields(
   Struct.assign(NotificationPreferenceUpdatedEventData.fields),
 );
+export const NotificationPreferenceUpdatedEventV1 = UserEventCommon.mapFields(
+  Struct.assign(NotificationPreferenceUpdatedEventDataV1.fields),
+);
 
 export const UserEvent = Schema.Union([
   UserCreatedEvent,
@@ -40,6 +46,7 @@ export const UserEvent = Schema.Union([
   SessionRevokedEvent,
   OtherSessionsRevokedEvent,
   SessionActiveOrganizationChangedEvent,
+  NotificationPreferenceUpdatedEventV1,
   NotificationPreferenceUpdatedEvent,
 ]);
 

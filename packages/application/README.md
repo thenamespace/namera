@@ -48,8 +48,11 @@ that the aggregate can consume.
    through server feature tests.
 
 Notification-producing workflows call the shared creator inside their business
-transaction. It writes the occurrence and recipients, resolves organization
-then global preferences, and optionally enqueues a durable email job.
+transaction. It writes the occurrence and recipients, maps each notification
+type to a category/topic policy, resolves organization then global email
+overrides before the policy default, and optionally enqueues a durable email
+job. In-app recipients are always created and are not controlled by user
+preferences.
 
 ## Usage
 

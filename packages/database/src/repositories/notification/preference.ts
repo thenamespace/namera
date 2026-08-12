@@ -1,12 +1,11 @@
 // oxlint-disable typescript/no-explicit-any
 import { Context, Effect, Layer, Schema } from "effect";
 
-import type { DatabaseError, OrganizationId, UserId } from "@namera-ai/protocol";
+import type { DatabaseError, UserId } from "@namera-ai/protocol";
 import {
   NotificationPreference,
   NotificationPreferenceInsert,
-  type NotificationCategory,
-  type NotificationChannel,
+  type NotificationPreferenceScope,
 } from "@namera-ai/protocol/model";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
@@ -18,21 +17,15 @@ export interface NotificationPreferenceRepositoryService {
   readonly listForUser: (
     userId: UserId,
   ) => Effect.Effect<ReadonlyArray<NotificationPreference>, DatabaseError>;
-  readonly findForScope: (input: {
-    readonly userId: UserId;
-    readonly organizationId: OrganizationId | null;
-    readonly category: NotificationCategory;
-    readonly channel: NotificationChannel;
-  }) => Effect.Effect<NotificationPreference | undefined, DatabaseError>;
+  readonly findForScope: (
+    input: NotificationPreferenceScope,
+  ) => Effect.Effect<NotificationPreference | undefined, DatabaseError>;
   readonly upsert: (
     input: NotificationPreferenceInsert,
   ) => Effect.Effect<NotificationPreference, DatabaseError>;
-  readonly remove: (input: {
-    readonly userId: UserId;
-    readonly organizationId: OrganizationId | null;
-    readonly category: NotificationCategory;
-    readonly channel: NotificationChannel;
-  }) => Effect.Effect<NotificationPreference | undefined, DatabaseError>;
+  readonly remove: (
+    input: NotificationPreferenceScope,
+  ) => Effect.Effect<NotificationPreference | undefined, DatabaseError>;
 }
 
 export class NotificationPreferenceRepository extends Context.Service<
@@ -53,7 +46,7 @@ export class NotificationPreferenceRepository extends Context.Service<
             const rows = yield* db.query.notificationPreference.findMany({
               where: { userId: { eq: userId } },
             });
-            return Schema.decodeSync(Schema.Array(NotificationPreference))(rows);
+            return Schema.decodeUnknownSync(Schema.Array(NotificationPreference))(rows);
           }, mapToDatabaseError),
           findForScope: Effect.fn("NotificationPreferenceRepository.findForScope")(function* (
             input,
@@ -65,10 +58,11 @@ export class NotificationPreferenceRepository extends Context.Service<
                 organizationId:
                   input.organizationId === null ? { isNull: true } : { eq: input.organizationId },
                 category: { eq: input.category },
+                topic: { eq: input.topic },
                 channel: { eq: input.channel },
               },
             });
-            return row ? Schema.decodeSync(NotificationPreference)(row) : undefined;
+            return row ? Schema.decodeUnknownSync(NotificationPreference)(row) : undefined;
           }, mapToDatabaseError),
           upsert: Effect.fn("NotificationPreferenceRepository.upsert")(function* (input) {
             const db = yield* transactionOrDatabase(database);
@@ -82,12 +76,14 @@ export class NotificationPreferenceRepository extends Context.Service<
                   ? [
                       notificationPreference.userId,
                       notificationPreference.category,
+                      notificationPreference.topic,
                       notificationPreference.channel,
                     ]
                   : [
                       notificationPreference.userId,
                       notificationPreference.organizationId,
                       notificationPreference.category,
+                      notificationPreference.topic,
                       notificationPreference.channel,
                     ],
                 targetWhere: global
@@ -100,7 +96,7 @@ export class NotificationPreferenceRepository extends Context.Service<
             if (preference === undefined) {
               return yield* Effect.die("Notification preference upsert returned no row");
             }
-            return Schema.decodeSync(NotificationPreference)(preference);
+            return Schema.decodeUnknownSync(NotificationPreference)(preference);
           }, mapToDatabaseError),
           remove: Effect.fn("NotificationPreferenceRepository.remove")(function* (input) {
             const db = yield* transactionOrDatabase(database);
@@ -113,11 +109,12 @@ export class NotificationPreferenceRepository extends Context.Service<
                     ? isNull(notificationPreference.organizationId)
                     : eq(notificationPreference.organizationId, input.organizationId),
                   eq(notificationPreference.category, input.category),
+                  eq(notificationPreference.topic, input.topic),
                   eq(notificationPreference.channel, input.channel),
                 ),
               )
               .returning();
-            return rows[0] ? Schema.decodeSync(NotificationPreference)(rows[0]) : undefined;
+            return rows[0] ? Schema.decodeUnknownSync(NotificationPreference)(rows[0]) : undefined;
           }, mapToDatabaseError),
         });
       }),

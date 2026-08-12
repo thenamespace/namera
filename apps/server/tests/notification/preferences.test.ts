@@ -22,7 +22,8 @@ layer(TestServerLayer)("notification preference routes", (it) => {
       const updated = yield* client.notification.updatePreference({
         payload: {
           organizationId: null,
-          category: "security",
+          category: "account",
+          topic: "activity",
           channel: "email",
           enabled: false,
         },
@@ -31,7 +32,8 @@ layer(TestServerLayer)("notification preference routes", (it) => {
       yield* client.notification.updatePreference({
         payload: {
           organizationId: null,
-          category: "security",
+          category: "account",
+          topic: "activity",
           channel: "email",
           enabled: false,
         },
@@ -40,19 +42,29 @@ layer(TestServerLayer)("notification preference routes", (it) => {
 
       const repository = yield* Repository;
       const events = yield* repository.audit.user.findForUser(signedIn.actor.user.id);
-      expect(events.some((event) => event.event === "notification.preference_updated")).toBe(true);
+      expect(
+        events.find((event) => event.event === "notification.preference_updated")?.data,
+      ).toMatchObject({
+        version: 2,
+        category: "account",
+        topic: "activity",
+        channel: "email",
+        enabled: false,
+      });
 
       yield* client.notification.resetPreference({
         payload: {
           organizationId: null,
-          category: "security",
+          category: "account",
+          topic: "activity",
           channel: "email",
         },
       });
       yield* client.notification.resetPreference({
         payload: {
           organizationId: null,
-          category: "security",
+          category: "account",
+          topic: "activity",
           channel: "email",
         },
       });
@@ -77,6 +89,7 @@ layer(TestServerLayer)("notification preference routes", (it) => {
           payload: {
             organizationId: second.actor.organization.id,
             category: "organization",
+            topic: "invitations",
             channel: "email",
             enabled: false,
           },
@@ -95,7 +108,8 @@ layer(TestServerLayer)("notification preference routes", (it) => {
       yield* client.notification.updatePreference({
         payload: {
           organizationId: null,
-          category: "security",
+          category: "account",
+          topic: "activity",
           channel: "email",
           enabled: false,
         },
@@ -110,6 +124,34 @@ layer(TestServerLayer)("notification preference routes", (it) => {
       });
       expect(rows).toHaveLength(2);
       expect(rows[0]?.recipient.emailJobId).toBeNull();
+    }),
+  );
+
+  it.effect("applies preferences only to the matching topic", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const email = testEmail("notification-topic@example.com");
+      const first = yield* signIn(client, email);
+      yield* client.notification.updatePreference({
+        payload: {
+          organizationId: null,
+          category: "account",
+          topic: "security",
+          channel: "email",
+          enabled: false,
+        },
+      });
+
+      yield* signIn(client, email);
+      const repository = yield* Repository;
+      const rows = yield* repository.notification.inbox.listForUser({
+        userId: first.actor.user.id,
+        limit: 10,
+        now: yield* DateTime.now,
+      });
+      expect(rows[0]?.notification.type).toBe("auth.new-sign-in");
+      expect(rows[0]?.recipient.emailJobId).not.toBeNull();
     }),
   );
 });

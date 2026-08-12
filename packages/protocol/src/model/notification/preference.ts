@@ -1,24 +1,29 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 
 import { NotificationPreferenceId, OrganizationId, UserId } from "#/common/index";
 import { TimestampFields } from "#/model/common";
 
-import { NotificationCategory, NotificationChannel } from "./common.js";
+import { NotificationPreferenceChannel, withNotificationPreferenceTarget } from "./common.js";
 
-export const NotificationPreference = Schema.Struct({
+const NotificationPreferenceScopeFields = {
+  userId: UserId,
+  organizationId: Schema.NullOr(OrganizationId),
+  channel: NotificationPreferenceChannel,
+};
+
+export const NotificationPreferenceScope = withNotificationPreferenceTarget(
+  NotificationPreferenceScopeFields,
+);
+
+export const NotificationPreference = withNotificationPreferenceTarget({
   id: NotificationPreferenceId,
-  userId: UserId,
-  organizationId: Schema.NullOr(OrganizationId),
-  category: NotificationCategory,
-  channel: NotificationChannel,
+  ...NotificationPreferenceScopeFields,
   enabled: Schema.Boolean,
-}).mapFields(Struct.assign(TimestampFields));
+  ...TimestampFields,
+});
 
-export const NotificationPreferenceInsert = Schema.Struct({
-  userId: UserId,
-  organizationId: Schema.NullOr(OrganizationId),
-  category: NotificationCategory,
-  channel: NotificationChannel,
+export const NotificationPreferenceInsert = withNotificationPreferenceTarget({
+  ...NotificationPreferenceScopeFields,
   enabled: Schema.Boolean,
 });
 
@@ -27,5 +32,6 @@ export const NotificationPreferenceUpdate = Schema.Struct({
 });
 
 export type NotificationPreference = typeof NotificationPreference.Type;
+export type NotificationPreferenceScope = typeof NotificationPreferenceScope.Type;
 export type NotificationPreferenceInsert = typeof NotificationPreferenceInsert.Type;
 export type NotificationPreferenceUpdate = typeof NotificationPreferenceUpdate.Type;

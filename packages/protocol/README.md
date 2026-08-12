@@ -43,9 +43,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   worker after decryption. Add template variables to that union rather than
   storing an untyped object.
 - Notification payloads are versioned discriminated unions. Add a concrete
-  payload before persisting a new notification type; preference categories and
-  delivery channels remain separate closed schemas. Public preference DTOs
-  expose only pairs that application policy currently allows users to change.
+  payload before persisting a new notification type. Preferences use typed
+  category/topic pairs and currently allow only the email channel; in-app
+  delivery is mandatory. Keep legacy audit payload versions decodable when the
+  preference taxonomy changes.
 
 ## Adding a contract
 

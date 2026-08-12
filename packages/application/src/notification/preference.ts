@@ -1,32 +1,28 @@
 import { Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import type { OrganizationId, SessionId, UserId } from "@namera-ai/protocol";
+import type { SessionId, UserId } from "@namera-ai/protocol";
 import type {
-  NotificationCategory,
-  NotificationChannel,
   NotificationPreference,
+  NotificationPreferenceScope,
+  NotificationPreferenceTarget,
 } from "@namera-ai/protocol/model";
 import { notificationPreferenceChanges } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 
-export interface NotificationPreferenceScope {
-  readonly userId: UserId;
+type NotificationPreferenceApplicationScope = NotificationPreferenceScope & {
   readonly sessionId: SessionId;
-  readonly organizationId: OrganizationId | null;
-  readonly category: NotificationCategory;
-  readonly channel: NotificationChannel;
-}
+};
 
 export interface NotificationPreferenceApplication {
   readonly listPreferences: (
     userId: UserId,
   ) => Effect.Effect<ReadonlyArray<NotificationPreference>>;
   readonly updatePreference: (
-    input: NotificationPreferenceScope & { readonly enabled: boolean },
+    input: NotificationPreferenceApplicationScope & { readonly enabled: boolean },
   ) => Effect.Effect<NotificationPreference>;
-  readonly resetPreference: (input: NotificationPreferenceScope) => Effect.Effect<void>;
+  readonly resetPreference: (input: NotificationPreferenceApplicationScope) => Effect.Effect<void>;
 }
 
 export const makeNotificationPreferenceApplication = Effect.gen(function* () {
@@ -42,7 +38,8 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
   );
 
   const updatePreference = Effect.fn("Application.notification.updatePreference")(
-    function* (input: NotificationPreferenceScope & { readonly enabled: boolean }) {
+    function* (input: NotificationPreferenceApplicationScope & { readonly enabled: boolean }) {
+      const target: NotificationPreferenceTarget = input;
       const result = yield* transaction.run(
         Effect.gen(function* () {
           const current = yield* repository.notification.preference.findForScope(input);
@@ -55,9 +52,9 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
             sessionId: input.sessionId,
             event: "notification.preference_updated",
             data: {
-              version: 1,
+              ...target,
+              version: 2,
               organizationId: input.organizationId,
-              category: input.category,
               channel: input.channel,
               enabled: input.enabled,
             },
@@ -72,6 +69,7 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
         );
         yield* Effect.logInfo("notification.preference_updated", {
           category: input.category,
+          topic: input.topic,
           channel: input.channel,
           scope: input.organizationId === null ? "global" : "organization",
         });
@@ -82,7 +80,8 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
   );
 
   const resetPreference = Effect.fn("Application.notification.resetPreference")(
-    function* (input: NotificationPreferenceScope) {
+    function* (input: NotificationPreferenceApplicationScope) {
+      const target: NotificationPreferenceTarget = input;
       const removed = yield* transaction.run(
         Effect.gen(function* () {
           const preference = yield* repository.notification.preference.remove(input);
@@ -92,9 +91,9 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
             sessionId: input.sessionId,
             event: "notification.preference_updated",
             data: {
-              version: 1,
+              ...target,
+              version: 2,
               organizationId: input.organizationId,
-              category: input.category,
               channel: input.channel,
               enabled: null,
             },
@@ -109,6 +108,7 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
         );
         yield* Effect.logInfo("notification.preference_reset", {
           category: input.category,
+          topic: input.topic,
           channel: input.channel,
           scope: input.organizationId === null ? "global" : "organization",
         });

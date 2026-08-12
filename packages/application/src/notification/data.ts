@@ -1,27 +1,24 @@
 import { Duration } from "effect";
 
-import type { NotificationType } from "@namera-ai/protocol/model";
+import type { NotificationPreferenceTarget, NotificationType } from "@namera-ai/protocol/model";
 
 interface NotificationPolicy {
-  readonly category: "security" | "organization";
-  readonly inApp: "always" | "configurable";
-  readonly email: "always" | "configurable";
+  readonly target: NotificationPreferenceTarget;
+  readonly emailDefaultEnabled: boolean;
   readonly emailTimeToLive: Duration.Duration;
 }
 
-export const notificationPolicy: Readonly<Record<NotificationType, NotificationPolicy>> = {
+export const notificationPolicy = {
   "auth.new-sign-in": {
-    category: "security",
-    inApp: "always",
-    email: "configurable",
+    target: { category: "account", topic: "activity" },
+    emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(1),
   },
   "organization.invitation.received": {
-    category: "organization",
-    inApp: "always",
-    email: "configurable",
+    target: { category: "organization", topic: "invitations" },
+    emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(7),
   },
-};
+} as const satisfies Readonly<Record<NotificationType, NotificationPolicy>>;
 
 export const notificationPageSize = 30;

@@ -73,6 +73,7 @@ layer(TestServerLayer)("notification delivery", (it) => {
         payload: {
           organizationId: null,
           category: "organization",
+          topic: "invitations",
           channel: "email",
           enabled: false,
         },

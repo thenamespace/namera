@@ -154,9 +154,11 @@ state and preferences:
   business idempotency key.
 - `notification_recipients` stores read/archive state for each user and may link
   one durable `jobs.email_jobs` delivery.
-- `notification_preferences` stores global or organization-specific category
-  and channel overrides. Partial unique indexes prevent duplicate global and
-  organization overrides when `organization_id` is nullable.
+- `notification_preferences` stores sparse global or organization-specific
+  category/topic email overrides. Partial unique indexes prevent duplicate
+  global and organization overrides when `organization_id` is nullable. The
+  repository decodes category/topic pairs through the protocol union so an
+  invalid pair cannot cross the persistence boundary.
 
 Resolve organization recipients in the application workflow and persist them
 when the notification is created. Do not recalculate historical inbox visibility
