@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { DateTime } from "effect";
+
 import type { GetOrganizationMemberResponse } from "@namera-ai/protocol/dto";
 import { Button, DataGrid, SearchField, type DataGridColumn } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
@@ -14,33 +16,56 @@ import {
 import { demoMembers } from "./data";
 import { MemberActions } from "./member-actions";
 
+const memberCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+});
+
 const memberColumns: DataGridColumn<GetOrganizationMemberResponse>[] = [
   {
+    allowsSorting: true,
     cell: ({ user }) => <MetadataDisplay fallbackName={user.email} metadata={user.metadata} />,
     header: "Name",
     id: "name",
     isRowHeader: true,
     minWidth: 180,
+    sortFn: (left, right) =>
+      memberCollator.compare(
+        left.user.metadata.name ?? left.user.email,
+        right.user.metadata.name ?? right.user.email,
+      ),
   },
   {
+    allowsSorting: true,
     cell: ({ user }) => <EmailDisplay email={user.email} />,
     header: "Email",
     id: "email",
     minWidth: 220,
+    sortFn: (left, right) => memberCollator.compare(left.user.email, right.user.email),
   },
   {
+    allowsSorting: true,
     cell: ({ organizationRole }) => <OrganizationRoleDisplay role={organizationRole} />,
     header: "Role",
     id: "role",
     minWidth: 120,
+    sortFn: (left, right) =>
+      memberCollator.compare(
+        left.organizationRole.metadata.name,
+        right.organizationRole.metadata.name,
+      ),
   },
   {
+    allowsSorting: true,
     cell: ({ organizationMember }) => (
       <DateDisplay label="Joined" value={organizationMember.joinedAt} />
     ),
     header: "Joined",
     id: "joinedAt",
     minWidth: 140,
+    sortFn: (left, right) =>
+      DateTime.toEpochMillis(left.organizationMember.joinedAt) -
+      DateTime.toEpochMillis(right.organizationMember.joinedAt),
   },
   {
     align: "end",
