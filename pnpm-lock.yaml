@@ -69,6 +69,9 @@ catalogs:
     '@types/react-dom':
       specifier: 19.2.4
       version: 19.2.4
+    '@types/ua-parser-js':
+      specifier: 0.7.39
+      version: 0.7.39
     '@vitejs/plugin-react':
       specifier: 6.0.5
       version: 6.0.5
@@ -129,6 +132,9 @@ catalogs:
     typescript:
       specifier: 6.0.3
       version: 6.0.3
+    ua-parser-js:
+      specifier: 1.0.41
+      version: 1.0.41
     viem:
       specifier: 2.55.11
       version: 2.55.11
@@ -236,6 +242,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
+      ua-parser-js:
+        specifier: 'catalog:'
+        version: 1.0.41
       usehooks-ts:
         specifier: ^3.1.1
         version: 3.1.1(react@19.2.8)
@@ -258,6 +267,9 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.2.4(@types/react@19.2.18)
+      '@types/ua-parser-js':
+        specifier: 'catalog:'
+        version: 0.7.39
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.0.5(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1))
@@ -2957,6 +2969,9 @@ packages:
   '@types/react@19.2.18':
     resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
 
+  '@types/ua-parser-js@0.7.39':
+    resolution: {integrity: sha512-P/oDfpofrdtF5xw433SPALpdSchtJmY7nsJItf8h3KXqOslkbySh8zq4dSWXH2oTjRvJ5PczVEoCZPow6GicLg==}
+
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
@@ -5328,6 +5343,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ua-parser-js@1.0.41:
+    resolution: {integrity: sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==}
+    hasBin: true
+
   unconfig-core@7.5.0:
     resolution: {integrity: sha512-Su3FauozOGP44ZmKdHy2oE6LPjk51M/TRRjHv2HNCWiDvfvCoxC2lno6jevMA91MYAdCdwP05QnWdWpSbncX/w==}
 
@@ -7666,6 +7685,8 @@ snapshots:
   '@types/react@19.2.18':
     dependencies:
       csstype: 3.2.3
+
+  '@types/ua-parser-js@0.7.39': {}
 
   '@types/unist@2.0.11': {}
 
@@ -10102,6 +10123,8 @@ snapshots:
   typescript@5.6.1-rc: {}
 
   typescript@6.0.3: {}
+
+  ua-parser-js@1.0.41: {}
 
   unconfig-core@7.5.0:
     dependencies:

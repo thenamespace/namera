@@ -2,77 +2,10 @@ import { DateTime } from "effect";
 
 import type { GetSessionResponse } from "@namera-ai/protocol/dto";
 import { Button, Chip, ItemCard } from "@namera-ai/ui";
-import {
-  AndroidIcon,
-  AppleIcon,
-  ChromeIcon,
-  Fire03Icon,
-  HugeiconsIcon,
-  LogoutSquare01Icon,
-  MonitorDotIcon,
-  SafariIcon,
-  WindowsOldIcon,
-  type HugeiconsProps,
-} from "@namera-ai/ui/icons";
+import { HugeiconsIcon, LogoutSquare01Icon } from "@namera-ai/ui/icons";
+import { UAParser } from "ua-parser-js";
 
-type DeviceIconProps = Omit<HugeiconsProps, "icon"> & {
-  browser: string;
-  os: string;
-};
-
-export function DeviceIcon({ browser, os, ...props }: DeviceIconProps) {
-  const normalizedBrowser = browser.toLowerCase();
-  const normalizedOs = os.toLowerCase();
-
-  if (normalizedBrowser.includes("edge")) {
-    return <HugeiconsIcon icon={WindowsOldIcon} {...props} />;
-  }
-
-  if (normalizedBrowser.includes("chrome")) {
-    return <HugeiconsIcon icon={ChromeIcon} {...props} />;
-  }
-
-  if (normalizedBrowser.includes("safari")) {
-    return <HugeiconsIcon icon={SafariIcon} {...props} />;
-  }
-
-  if (normalizedBrowser.includes("firefox")) {
-    return <HugeiconsIcon icon={Fire03Icon} {...props} />;
-  }
-
-  if (normalizedOs.includes("macos") || normalizedOs.includes("ios")) {
-    return <HugeiconsIcon icon={AppleIcon} {...props} />;
-  }
-
-  if (normalizedOs.includes("android")) {
-    return <HugeiconsIcon icon={AndroidIcon} {...props} />;
-  }
-
-  return <HugeiconsIcon icon={MonitorDotIcon} {...props} />;
-}
-
-const getSessionDevice = (userAgent: string | null) => {
-  const value = userAgent?.toLowerCase() ?? "";
-
-  const browser = (() => {
-    if (value.includes("edg/")) return "Edge";
-    if (value.includes("firefox/")) return "Firefox";
-    if (value.includes("chrome/") || value.includes("crios/")) return "Chrome";
-    if (value.includes("safari/")) return "Safari";
-    return "Browser";
-  })();
-
-  const os = (() => {
-    if (value.includes("iphone") || value.includes("ipad")) return "iOS";
-    if (value.includes("android")) return "Android";
-    if (value.includes("mac os")) return "macOS";
-    if (value.includes("windows")) return "Windows";
-    if (value.includes("linux")) return "Linux";
-    return "Unknown device";
-  })();
-
-  return { browser, os };
-};
+import { DeviceIcon } from "@/components";
 
 interface SessionCardProps {
   isCurrent?: boolean;
@@ -80,13 +13,15 @@ interface SessionCardProps {
 }
 
 export function SessionCard({ isCurrent = false, session }: SessionCardProps) {
-  const device = getSessionDevice(session.userAgent);
-  const label = `${device.browser} on ${device.os}`;
+  const userAgent = new UAParser(session.userAgent ?? undefined).getResult();
+  const browser = userAgent.browser.name ?? "Browser";
+  const os = userAgent.os.name ?? "Unknown device";
+  const label = `${browser} on ${os}`;
 
   return (
     <ItemCard className="group min-h-16 border" variant="default">
       <ItemCard.Icon>
-        <DeviceIcon aria-hidden browser={device.browser} os={device.os} />
+        <DeviceIcon aria-hidden browser={browser} os={os} />
       </ItemCard.Icon>
       <ItemCard.Content>
         <ItemCard.Title className="flex max-w-full items-center gap-2">

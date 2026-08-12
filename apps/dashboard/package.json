@@ -31,6 +31,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "tailwindcss": "catalog:",
+    "ua-parser-js": "catalog:",
     "usehooks-ts": "^3.1.1"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/ua-parser-js": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "klarity": "catalog:",
     "typescript": "catalog:",
