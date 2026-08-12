@@ -1,6 +1,8 @@
 import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
 
+import { Repository } from "@namera-ai/database";
+
 import {
   createMember,
   createOrganization,
@@ -36,7 +38,13 @@ layer(TestServerLayer)("organization routes", (it) => {
       ).toBe(created.id);
 
       yield* client.organization.setActive({ payload: { organizationId: personalId } });
+      yield* client.organization.setActive({ payload: { organizationId: personalId } });
       expect((yield* client.session.currentUser()).organization.id).toBe(personalId);
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.user.findForUser(signedIn.actor.user.id)).filter(
+        (event) => event.event === "session.active_organization_changed",
+      );
+      expect(events).toHaveLength(2);
     }),
   );
 
@@ -51,7 +59,14 @@ layer(TestServerLayer)("organization routes", (it) => {
       };
 
       const updated = yield* client.organization.update({ payload: { metadata } });
+      yield* client.organization.update({ payload: { metadata } });
       expect(updated.metadata).toEqual(metadata);
+      const actor = yield* client.session.currentUser();
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.organization.findForOrganization(
+        actor.organization.id,
+      )).filter((event) => event.event === "organization.updated");
+      expect(events).toHaveLength(1);
     }),
   );
 

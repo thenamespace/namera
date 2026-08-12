@@ -43,8 +43,12 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
 
   const updatePreference = Effect.fn("Application.notification.updatePreference")(
     function* (input: NotificationPreferenceScope & { readonly enabled: boolean }) {
-      const preference = yield* transaction.run(
+      const result = yield* transaction.run(
         Effect.gen(function* () {
+          const current = yield* repository.notification.preference.findForScope(input);
+          if (current?.enabled === input.enabled) {
+            return { preference: current, changed: false } as const;
+          }
           const updated = yield* repository.notification.preference.upsert(input);
           yield* audit.user({
             userId: input.userId,
@@ -58,23 +62,31 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
               enabled: input.enabled,
             },
           });
-          return updated;
+          return { preference: updated, changed: true } as const;
         }),
       );
-      yield* Metric.update(
-        Metric.withAttributes(notificationPreferenceChanges, { action: "updated" }),
-        1,
-      );
-      return preference;
+      if (result.changed) {
+        yield* Metric.update(
+          Metric.withAttributes(notificationPreferenceChanges, { action: "updated" }),
+          1,
+        );
+        yield* Effect.logInfo("notification.preference_updated", {
+          category: input.category,
+          channel: input.channel,
+          scope: input.organizationId === null ? "global" : "organization",
+        });
+      }
+      return result.preference;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const resetPreference = Effect.fn("Application.notification.resetPreference")(
     function* (input: NotificationPreferenceScope) {
-      yield* transaction.run(
+      const removed = yield* transaction.run(
         Effect.gen(function* () {
-          yield* repository.notification.preference.remove(input);
+          const preference = yield* repository.notification.preference.remove(input);
+          if (preference === undefined) return false;
           yield* audit.user({
             userId: input.userId,
             sessionId: input.sessionId,
@@ -87,12 +99,20 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
               enabled: null,
             },
           });
+          return true;
         }),
       );
-      yield* Metric.update(
-        Metric.withAttributes(notificationPreferenceChanges, { action: "reset" }),
-        1,
-      );
+      if (removed) {
+        yield* Metric.update(
+          Metric.withAttributes(notificationPreferenceChanges, { action: "reset" }),
+          1,
+        );
+        yield* Effect.logInfo("notification.preference_reset", {
+          category: input.category,
+          channel: input.channel,
+          scope: input.organizationId === null ? "global" : "organization",
+        });
+      }
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

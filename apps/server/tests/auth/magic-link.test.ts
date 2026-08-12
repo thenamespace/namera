@@ -3,6 +3,7 @@ import { DateTime, Effect, Schema } from "effect";
 
 import { NameraApi } from "@namera-ai/api";
 import { Repository } from "@namera-ai/database";
+import { EmailJobs } from "@namera-ai/emails";
 import { MagicLinkCode, MagicLinkReturnTo, MagicLinkToken } from "@namera-ai/protocol/dto";
 
 import { handledApi } from "../helpers/http-api-test.js";
@@ -111,6 +112,14 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         (item) => item.notification.type === "auth.new-sign-in",
       )?.notification;
       expect(notification?.data).toMatchObject({
+        ipAddress: "203.0.113.10",
+        userAgent: "Namera test client",
+      });
+      const emailJobs = yield* EmailJobs;
+      yield* emailJobs.processOnce;
+      const emails = yield* TestEmails;
+      const email = (yield* emails.sent).findLast((message) => message.type === "new-sign-in");
+      expect(email?.variables).toMatchObject({
         ipAddress: "203.0.113.10",
         userAgent: "Namera test client",
       });

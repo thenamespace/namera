@@ -15,6 +15,11 @@ export interface SessionRepositoryService {
     tokenHash: string,
     now: DateTime.Utc,
   ) => Effect.Effect<Session | undefined, DatabaseError>;
+  findActiveById: (
+    sessionId: SessionId,
+    userId: UserId,
+    now: DateTime.Utc,
+  ) => Effect.Effect<Session | undefined, DatabaseError>;
   findActiveForUser: (
     userId: UserId,
     now: DateTime.Utc,
@@ -85,6 +90,26 @@ export class SessionRepository extends Context.Service<
 
           return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
         }, mapToDatabaseError),
+        findActiveById: Effect.fn("SessionRepository.findActiveById")(function* (
+          sessionId,
+          userId,
+          now,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(session)
+            .where(
+              and(
+                eq(session.id, sessionId),
+                eq(session.userId, userId),
+                isNull(session.revokedAt),
+                gt(session.expiresAt, Schema.encodeSync(Schema.DateTimeUtcFromDate)(now)),
+              ),
+            )
+            .limit(1);
+          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
+        }, mapToDatabaseError),
         findActiveForUser: Effect.fn("SessionRepository.findActiveForUser")(function* (
           userId,
           now,
@@ -132,6 +157,7 @@ export class SessionRepository extends Context.Service<
                 eq(session.userId, userId),
                 ne(session.id, currentSessionId),
                 isNull(session.revokedAt),
+                gt(session.expiresAt, encodedRevokedAt),
               ),
             )
             .returning({ id: session.id });

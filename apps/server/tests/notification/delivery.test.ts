@@ -2,6 +2,7 @@ import { expect, layer } from "@effect/vitest";
 import { DateTime, Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
+import { EmailJobs } from "@namera-ai/emails";
 
 import {
   inviteMember,
@@ -11,7 +12,7 @@ import {
   signIn,
   testEmail,
 } from "../helpers/index.js";
-import { TestServerLayer } from "../layers/index.js";
+import { TestEmails, TestServerLayer } from "../layers/index.js";
 
 layer(TestServerLayer)("notification delivery", (it) => {
   it.effect("creates invitation delivery and retires it after acceptance", () =>
@@ -147,6 +148,22 @@ layer(TestServerLayer)("notification delivery", (it) => {
       );
       expect(job?.type).toBe("organization-invitation");
       expect(job?.status).toBe("pending");
+
+      const emailJobs = yield* EmailJobs;
+      const emails = yield* TestEmails;
+      let delivered = (yield* emails.sent).findLast(
+        (message) => message.type === "organization-invitation",
+      );
+      for (let attempt = 0; delivered === undefined && attempt < 5; attempt += 1) {
+        yield* emailJobs.processOnce;
+        delivered = (yield* emails.sent).findLast(
+          (message) => message.type === "organization-invitation",
+        );
+      }
+      expect(delivered?.variables).toMatchObject({
+        organizationName: owner.actor.organization.metadata.name,
+        roleName: "Member",
+      });
     }),
   );
 });

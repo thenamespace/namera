@@ -28,6 +28,14 @@ layer(TestServerLayer)("notification preference routes", (it) => {
         },
       });
       expect(updated.enabled).toBe(false);
+      yield* client.notification.updatePreference({
+        payload: {
+          organizationId: null,
+          category: "security",
+          channel: "email",
+          enabled: false,
+        },
+      });
       expect(yield* client.notification.listPreferences()).toHaveLength(1);
 
       const repository = yield* Repository;
@@ -41,7 +49,18 @@ layer(TestServerLayer)("notification preference routes", (it) => {
           channel: "email",
         },
       });
+      yield* client.notification.resetPreference({
+        payload: {
+          organizationId: null,
+          category: "security",
+          channel: "email",
+        },
+      });
       expect(yield* client.notification.listPreferences()).toHaveLength(0);
+      const preferenceEvents = (yield* repository.audit.user.findForUser(
+        signedIn.actor.user.id,
+      )).filter((event) => event.event === "notification.preference_updated");
+      expect(preferenceEvents).toHaveLength(2);
     }),
   );
 

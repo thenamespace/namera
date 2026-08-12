@@ -1,6 +1,8 @@
 import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
 
+import { Repository } from "@namera-ai/database";
+
 import {
   createSession,
   makeTestApiClient,
@@ -61,10 +63,16 @@ layer(TestServerLayer)("session routes", (it) => {
 
       expect(yield* client.session.listSessions()).toHaveLength(2);
       expect(yield* client.session.revokeOtherSessions()).toBe(1);
+      expect(yield* client.session.revokeOtherSessions()).toBe(0);
 
       const remaining = yield* client.session.listSessions();
       expect(remaining).toHaveLength(1);
       expect(remaining[0]?.id).toBe(second.session.id);
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.user.findForUser(signedIn.actor.user.id)).filter(
+        (event) => event.event === "session.others_revoked",
+      );
+      expect(events).toHaveLength(1);
 
       yield* setAuthToken(signedIn.cookie.value);
       const revoked = yield* client.session.currentUser().pipe(Effect.flip);

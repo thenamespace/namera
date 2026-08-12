@@ -15,7 +15,7 @@ import {
 } from "@namera-ai/protocol";
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
 import type { MemberPermission } from "@namera-ai/protocol/model";
-import { organizationInvitationEvents } from "@namera-ai/telemetry";
+import { organizationInvitationEvents, sessionLifecycleEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
@@ -274,6 +274,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
         }),
       );
       yield* Metric.update(organizationInvitationEvents, "accepted");
+      yield* Metric.update(sessionLifecycleEvents, "active_organization_changed");
       yield* Effect.logInfo("invitation.accepted");
     },
     Effect.catchTag("DatabaseError", Effect.die),

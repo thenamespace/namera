@@ -1,4 +1,4 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Effect, Equal, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
@@ -15,7 +15,11 @@ import type {
   OrganizationRole,
   User,
 } from "@namera-ai/protocol/model";
-import { organizationCreations } from "@namera-ai/telemetry";
+import {
+  organizationCreations,
+  organizationUpdates,
+  sessionLifecycleEvents,
+} from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 
@@ -81,6 +85,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
         }),
       );
       yield* Metric.update(organizationCreations, 1);
+      yield* Metric.update(sessionLifecycleEvents, "active_organization_changed");
       yield* Effect.logInfo("organization.created");
       return organization;
     },
@@ -107,33 +112,50 @@ export const makeOrganizationApplication = Effect.gen(function* () {
 
   const setActive = Effect.fn("Application.organization.setActive")(
     function* (userId: UserId, sessionId: SessionId, organizationId: OrganizationId) {
-      const updated = yield* transaction.run(
+      const result = yield* transaction.run(
         Effect.gen(function* () {
+          const now = yield* DateTime.now;
+          const current = yield* repository.auth.session.findActiveById(sessionId, userId, now);
+          if (!current) return "not-found" as const;
+          if (current.activeOrganizationId === organizationId) return "unchanged" as const;
           const session = yield* repository.auth.session.setActiveOrganization(
             sessionId,
             userId,
             organizationId,
-            yield* DateTime.now,
+            now,
           );
-          if (!session) return undefined;
+          if (!session) return "not-found" as const;
           yield* audit.user({
             userId,
             sessionId,
             event: "session.active_organization_changed",
             data: { version: 1, organizationId },
           });
-          return session;
+          return "changed" as const;
         }),
       );
-      if (!updated) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+      if (result === "not-found") {
+        return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+      }
+      if (result === "changed") {
+        yield* Metric.update(sessionLifecycleEvents, "active_organization_changed");
+        yield* Effect.logInfo("organization.active_changed");
+      }
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const update = Effect.fn("Application.organization.update")(
     function* (actorId: ActorId, organizationId: OrganizationId, metadata: OrganizationMetadata) {
-      return yield* transaction.run(
+      const result = yield* transaction.run(
         Effect.gen(function* () {
+          const current = yield* repository.auth.organization.findById(organizationId);
+          if (!current) {
+            return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+          }
+          if (Equal.equals(current.metadata, metadata)) {
+            return { organization: current, changed: false } as const;
+          }
           const organization = yield* repository.auth.organization.update(organizationId, metadata);
           if (!organization) {
             return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
@@ -146,9 +168,14 @@ export const makeOrganizationApplication = Effect.gen(function* () {
             resourceId: organizationId,
             data: { version: 1, changedFields: ["metadata"] },
           });
-          return organization;
+          return { organization, changed: true } as const;
         }),
       );
+      if (result.changed) {
+        yield* Metric.update(organizationUpdates, 1);
+        yield* Effect.logInfo("organization.updated");
+      }
+      return result.organization;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

@@ -1,8 +1,9 @@
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import type { SessionId, UserId } from "@namera-ai/protocol";
 import type { Session } from "@namera-ai/protocol/model";
+import { sessionLifecycleEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 
@@ -25,14 +26,14 @@ export const makeSessionApplication = Effect.gen(function* () {
     sessionId: SessionId,
     userId: UserId,
   ) {
-    yield* transaction.run(
+    const revoked = yield* transaction.run(
       Effect.gen(function* () {
-        const revoked = yield* repository.auth.session.revoke(
+        const session = yield* repository.auth.session.revoke(
           sessionId,
           userId,
           yield* DateTime.now,
         );
-        if (revoked) {
+        if (session) {
           yield* audit.user({
             userId,
             sessionId,
@@ -40,9 +41,13 @@ export const makeSessionApplication = Effect.gen(function* () {
             data: { version: 1, sessionId },
           });
         }
+        return session !== undefined;
       }),
     );
-    yield* Effect.logInfo("session.revoked", { scope: "current" });
+    if (revoked) {
+      yield* Metric.update(sessionLifecycleEvents, "revoked");
+      yield* Effect.logInfo("session.revoked", { scope: "current" });
+    }
   }, Effect.orDie);
 
   const revokeOthers = Effect.fn("Application.session.revokeOthers")(function* (
@@ -56,16 +61,21 @@ export const makeSessionApplication = Effect.gen(function* () {
           sessionId,
           yield* DateTime.now,
         );
-        yield* audit.user({
-          userId,
-          sessionId,
-          event: "session.others_revoked",
-          data: { version: 1, count: revoked },
-        });
+        if (revoked > 0) {
+          yield* audit.user({
+            userId,
+            sessionId,
+            event: "session.others_revoked",
+            data: { version: 1, count: revoked },
+          });
+        }
         return revoked;
       }),
     );
-    yield* Effect.logInfo("session.revoked", { scope: "other", count });
+    if (count > 0) {
+      yield* Metric.update(sessionLifecycleEvents, "others_revoked");
+      yield* Effect.logInfo("session.revoked", { scope: "other", count });
+    }
     return count;
   }, Effect.orDie);
 
