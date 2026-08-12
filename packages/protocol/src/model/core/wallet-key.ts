@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
-import { Hex, OrganizationId, WalletKeyId } from "#/common/index";
+import { OrganizationId, WalletKeyId } from "#/common/index";
+import { Hex } from "#/evm/index";
 import { TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 

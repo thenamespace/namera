@@ -10,6 +10,7 @@ behind the same root `Evm` service.
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
 - `src/clients/` — internal plain Viem public, bundler, and paymaster factories.
+- `src/accounts/` — smart-account and wallet-key owner construction.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 

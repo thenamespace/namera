@@ -1,15 +1,20 @@
 import { Schema } from "effect";
 
-import { Hex } from "#/common/web3";
+export const Hex = Schema.TemplateLiteral(["0x", Schema.String])
+  .check(
+    Schema.isPattern(/^0x[0-9a-fA-F]*$/, {
+      message: "Hex must be a 0x-prefixed hexadecimal string",
+    }),
+  )
+  .annotate({ identifier: "Hex", description: "A 0x-prefixed hexadecimal string" });
 
-export const EvmValue = Schema.BigIntFromString.check(
-  Schema.isGreaterThanOrEqualToBigInt(0n, {
-    message: "EVM value must not be negative",
+export const EthereumAddress = Hex.check(
+  Schema.isPattern(/^0x[0-9a-fA-F]{40}$/, {
+    message: "Invalid Ethereum address",
   }),
-).annotate({
-  identifier: "EvmValue",
-  description: "A non-negative EVM value encoded as a base-10 integer string",
-});
+)
+  .pipe(Schema.brand("EthereumAddress"))
+  .annotate({ identifier: "EthereumAddress", description: "A 20-byte Ethereum address" });
 
 export const Bytes32 = Hex.check(
   Schema.isPattern(/^0x[0-9a-fA-F]{64}$/, {
@@ -32,7 +37,15 @@ export const UserOperationHash = Bytes32.pipe(Schema.brand("UserOperationHash"))
   description: "An ERC-4337 UserOperation hash",
 });
 
-export type EvmValue = typeof EvmValue.Type;
+export const EntryPointVersion = Schema.Literal("0.7");
+export const KernelVersion = Schema.Literal("0.3.3");
+export const SafeVersion = Schema.Literal("1.4.1");
+
+export type Hex = typeof Hex.Type;
+export type EthereumAddress = typeof EthereumAddress.Type;
 export type Bytes32 = typeof Bytes32.Type;
 export type TransactionHash = typeof TransactionHash.Type;
 export type UserOperationHash = typeof UserOperationHash.Type;
+export type EntryPointVersion = typeof EntryPointVersion.Type;
+export type KernelVersion = typeof KernelVersion.Type;
+export type SafeVersion = typeof SafeVersion.Type;

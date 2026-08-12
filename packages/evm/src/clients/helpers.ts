@@ -1,4 +1,5 @@
 import { createPublicClient as createViemPublicClient, http } from "viem";
+import type { PublicClient } from "viem";
 import {
   createBundlerClient as createViemBundlerClient,
   createPaymasterClient as createViemPaymasterClient,
@@ -6,7 +7,6 @@ import {
 
 import type { ChainData } from "../chains/data.js";
 
-type PublicClient = ReturnType<typeof createViemPublicClient>;
 type BundlerClient = ReturnType<typeof createViemBundlerClient>;
 type PaymasterClient = ReturnType<typeof createViemPaymasterClient>;
 
