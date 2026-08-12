@@ -37,6 +37,18 @@ export interface OrganizationMemberRepositoryService {
     }>,
     DatabaseError
   >;
+  findActiveById: (
+    id: OrganizationMemberId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<
+    | {
+        organizationMember: OrganizationMember;
+        organizationRole: OrganizationRole;
+        user: User;
+      }
+    | undefined,
+    DatabaseError
+  >;
   findMembershipsForUser: (userId: UserId) => Effect.Effect<
     ReadonlyArray<{
       organizationMember: OrganizationMember;
@@ -62,11 +74,13 @@ export interface OrganizationMemberRepositoryService {
   assignRole: (
     id: OrganizationMemberId,
     organizationId: OrganizationId,
+    expectedOrganizationRoleId: OrganizationRoleId,
     organizationRoleId: OrganizationRoleId,
   ) => Effect.Effect<OrganizationMember | undefined, DatabaseError>;
   remove: (
     id: OrganizationMemberId,
     organizationId: OrganizationId,
+    expectedOrganizationRoleId: OrganizationRoleId,
     removedAt: DateTime.Utc,
   ) => Effect.Effect<OrganizationMember | undefined, DatabaseError>;
 }
@@ -120,6 +134,35 @@ export class OrganizationMemberRepository extends Context.Service<
               user: Schema.decodeSync(User)(user),
             };
           });
+        }, mapToDatabaseError),
+        findActiveById: Effect.fn("findActiveOrganizationMemberById")(function* (
+          id,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const res = yield* db.query.organizationMember.findFirst({
+            where: {
+              id: { eq: id },
+              organizationId: { eq: organizationId },
+              removedAt: { isNull: true },
+            },
+            with: {
+              organizationRole: {
+                with: {
+                  systemRole: true,
+                },
+              },
+              user: true,
+            },
+          });
+
+          if (!res) return undefined;
+          const { organizationRole, user, ...organizationMemberRow } = res;
+          return {
+            organizationMember: Schema.decodeSync(OrganizationMember)(organizationMemberRow),
+            organizationRole: decodeJoinedOrganizationRole(organizationRole),
+            user: Schema.decodeSync(User)(user),
+          };
         }, mapToDatabaseError),
         findMembershipsForUser: Effect.fn("findMembershipsForUser")(function* (userId) {
           const db = yield* transactionOrDatabase(database);
@@ -187,6 +230,7 @@ export class OrganizationMemberRepository extends Context.Service<
         assignRole: Effect.fn("assignOrganizationMemberRole")(function* (
           id,
           organizationId,
+          expectedOrganizationRoleId,
           organizationRoleId,
         ) {
           const db = yield* transactionOrDatabase(database);
@@ -198,6 +242,7 @@ export class OrganizationMemberRepository extends Context.Service<
               and(
                 eq(organizationMember.id, id),
                 eq(organizationMember.organizationId, organizationId),
+                eq(organizationMember.organizationRoleId, expectedOrganizationRoleId),
                 isNull(organizationMember.removedAt),
                 sql`NOT EXISTS (
                   SELECT 1
@@ -213,7 +258,12 @@ export class OrganizationMemberRepository extends Context.Service<
 
           return res[0] ? Schema.decodeSync(OrganizationMember)(res[0]) : undefined;
         }, mapToDatabaseError),
-        remove: Effect.fn("removeOrganizationMember")(function* (id, organizationId, removedAt) {
+        remove: Effect.fn("removeOrganizationMember")(function* (
+          id,
+          organizationId,
+          expectedOrganizationRoleId,
+          removedAt,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationMemberUpdate)({ removedAt });
           const res = yield* db
@@ -223,6 +273,7 @@ export class OrganizationMemberRepository extends Context.Service<
               and(
                 eq(organizationMember.id, id),
                 eq(organizationMember.organizationId, organizationId),
+                eq(organizationMember.organizationRoleId, expectedOrganizationRoleId),
                 isNull(organizationMember.removedAt),
                 sql`NOT EXISTS (
                   SELECT 1
