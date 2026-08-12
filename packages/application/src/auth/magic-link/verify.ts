@@ -2,7 +2,11 @@ import { DateTime, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
-import { MagicLinkError } from "@namera-ai/protocol";
+import {
+  InvalidMagicLinkError,
+  MagicLinkAttemptsExceededError,
+  type MagicLinkError,
+} from "@namera-ai/protocol";
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
 import { magicLinkVerificationResults } from "@namera-ai/telemetry";
 
@@ -67,7 +71,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             ? "expired"
             : "invalid",
         );
-        return yield* new MagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
+        return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
       }
 
       const matches =
@@ -90,11 +94,11 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           });
           if (attempted && attempted.attempts >= config.magicLink.maximumAttempts) {
             yield* Metric.update(magicLinkVerificationResults, "attempts_exceeded");
-            return yield* new MagicLinkError({ code: "TOO_MANY_ATTEMPTS" });
+            return yield* new MagicLinkAttemptsExceededError({ code: "TOO_MANY_ATTEMPTS" });
           }
         }
         yield* Metric.update(magicLinkVerificationResults, "invalid");
-        return yield* new MagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
+        return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
       }
 
       const sessionToken = yield* crypto.randomToken(config.session.tokenBytes);
@@ -110,26 +114,20 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             maxAttempts: config.magicLink.maximumAttempts,
           });
           if (!consumed) {
-            return yield* new MagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
+            return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
           }
 
           const existingUser = yield* repository.auth.user.findByEmail(verification.identifier);
           const initialized = existingUser
             ? { user: existingUser, organization: undefined }
-            : yield* createUserWithPersonalOrganization(
-                repository,
-                audit,
-                verification.identifier,
-              ).pipe(Effect.catchTag("OrganizationError", Effect.die));
+            : yield* createUserWithPersonalOrganization(repository, audit, verification.identifier);
           const user = initialized.user;
           yield* repository.auth.user.markEmailVerifiedAndLogin(user.id, now);
           const memberships = yield* repository.auth.member.findMembershipsForUser(user.id);
           const organization =
             initialized.organization ??
             memberships[0]?.organization ??
-            (yield* createOrganizationWithOwner(repository, audit, user.id, "Personal").pipe(
-              Effect.catchTag("OrganizationError", Effect.die),
-            ));
+            (yield* createOrganizationWithOwner(repository, audit, user.id, "Personal"));
           const session = yield* repository.auth.session.create({
             userId: user.id,
             tokenHash: sessionTokenHash,

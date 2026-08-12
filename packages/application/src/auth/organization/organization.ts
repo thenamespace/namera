@@ -2,8 +2,9 @@ import { DateTime, Effect, Equal, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
-  OrganizationError,
+  OrganizationNotFoundError,
   type ActorId,
+  type OrganizationError,
   type OrganizationId,
   type SessionId,
   type UserId,
@@ -103,7 +104,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     function* (userId: UserId, organizationId: OrganizationId) {
       const membership = yield* repository.auth.member.findActiveMembership(userId, organizationId);
       if (!membership) {
-        return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+        return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
       }
       return membership.organization;
     },
@@ -135,7 +136,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
         }),
       );
       if (result === "not-found") {
-        return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+        return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
       }
       if (result === "changed") {
         yield* Metric.update(sessionLifecycleEvents, "active_organization_changed");
@@ -151,14 +152,14 @@ export const makeOrganizationApplication = Effect.gen(function* () {
         Effect.gen(function* () {
           const current = yield* repository.auth.organization.findById(organizationId);
           if (!current) {
-            return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+            return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
           }
           if (Equal.equals(current.metadata, metadata)) {
             return { organization: current, changed: false } as const;
           }
           const organization = yield* repository.auth.organization.update(organizationId, metadata);
           if (!organization) {
-            return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+            return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
           }
           yield* audit.organization({
             organizationId,

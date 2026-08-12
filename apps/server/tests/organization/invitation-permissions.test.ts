@@ -70,6 +70,14 @@ layer(TestServerLayer)("invitation permissions", (it) => {
         _tag: "InvitationError",
         code: "ALREADY_A_MEMBER",
       });
+      const conflictResponse = yield* client.invitation.inviteMember({
+        payload: {
+          email: memberEmail,
+          organizationRoleId: member.actor.role.id,
+        },
+        responseMode: "response-only",
+      });
+      expect(conflictResponse.status).toBe(409);
 
       yield* setAuthToken(member.memberToken);
       const forbidden = yield* client.invitation
@@ -106,6 +114,14 @@ layer(TestServerLayer)("invitation permissions", (it) => {
         _tag: "OrganizationError",
         code: "INSUFFICIENT_PERMISSIONS",
       });
+      const response = yield* client.invitation.inviteMember({
+        payload: {
+          email: testEmail("owner-role-target-2@example.com"),
+          organizationRoleId: ownerRole.id,
+        },
+        responseMode: "response-only",
+      });
+      expect(response.status).toBe(403);
     }),
   );
 });

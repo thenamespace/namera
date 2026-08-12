@@ -163,6 +163,12 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const magicLink = yield* requestMagicLink(client, email);
       const invalidToken = Schema.decodeSync(MagicLinkToken)("A".repeat(43));
 
+      const invalidResponse = yield* client.magicLink.verify({
+        payload: { type: "token", id: magicLink.id, token: invalidToken },
+        responseMode: "response-only",
+      });
+      expect(invalidResponse.status).toBe(400);
+
       const invalid = yield* client.magicLink
         .verify({
           payload: { type: "token", id: magicLink.id, token: invalidToken },
@@ -205,6 +211,28 @@ layer(TestServerLayer)("magic-link routes", (it) => {
           code: attempt === 5 ? "TOO_MANY_ATTEMPTS" : "INVALID_OR_EXPIRED_LINK",
         });
       }
+    }),
+  );
+
+  it.effect("returns a rate-limit status when code attempts are exhausted", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const email = testEmail("attempt-status@example.com");
+      yield* requestMagicLink(client, email);
+      const wrongCode = Schema.decodeSync(MagicLinkCode)("00000000");
+
+      for (let attempt = 1; attempt < 5; attempt += 1) {
+        yield* client.magicLink.verify({
+          payload: { type: "code", email, code: wrongCode },
+          responseMode: "response-only",
+        });
+      }
+      const response = yield* client.magicLink.verify({
+        payload: { type: "code", email, code: wrongCode },
+        responseMode: "response-only",
+      });
+      expect(response.status).toBe(429);
     }),
   );
 });

@@ -3,12 +3,16 @@ import { DateTime, Effect, Metric } from "effect";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import {
-  InvitationError,
-  OrganizationError,
+  InvitationConflictError,
+  InvitationNotFoundError,
+  OrganizationNotFoundError,
+  OrganizationPermissionError,
   type ActorId,
   type Email,
   type InvitationId,
+  type InvitationError,
   type OrganizationId,
+  type OrganizationError,
   type OrganizationRoleId,
   type SessionId,
   type UserId,
@@ -76,7 +80,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
     function* (invitationId: InvitationId, email: Email) {
       const invitation = yield* repository.auth.invitation.findByIdForEmail(invitationId, email);
       if (!invitation) {
-        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+        return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
       }
       return invitation;
     },
@@ -114,9 +118,11 @@ export const makeInvitationApplication = Effect.gen(function* () {
         input.organizationId,
         input.organizationRoleId,
       );
-      if (!role) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+      if (!role) {
+        return yield* new OrganizationNotFoundError({ code: "ORGANIZATION_NOT_FOUND" });
+      }
       if (!role.permissions.every((permission) => input.inviterPermissions.includes(permission))) {
-        return yield* new OrganizationError({ code: "INSUFFICIENT_PERMISSIONS" });
+        return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
       }
 
       const existingUser = yield* repository.auth.user.findByEmail(input.email);
@@ -125,7 +131,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           existingUser.id,
           input.organizationId,
         );
-        if (member) return yield* new InvitationError({ code: "ALREADY_A_MEMBER" });
+        if (member) return yield* new InvitationConflictError({ code: "ALREADY_A_MEMBER" });
       }
 
       const existingInvitation = (yield* repository.auth.invitation.findPendingForOrgId(
@@ -158,7 +164,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           });
           const view = yield* repository.auth.invitation.findById(created.id, input.organizationId);
           if (!view) {
-            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+            return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
           }
           const email = {
             type: "organization-invitation" as const,
@@ -219,13 +225,13 @@ export const makeInvitationApplication = Effect.gen(function* () {
             input.email,
           );
           if (!found) {
-            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+            return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
           }
           const member = yield* repository.auth.member.findActiveMembership(
             input.userId,
             found.invitation.organizationId,
           );
-          if (member) return yield* new InvitationError({ code: "ALREADY_A_MEMBER" });
+          if (member) return yield* new InvitationConflictError({ code: "ALREADY_A_MEMBER" });
 
           const accepted = yield* repository.auth.invitation.acceptPending(
             input.invitationId,
@@ -233,7 +239,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
             now,
           );
           if (!accepted) {
-            return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+            return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
           }
           const createdMember = yield* createUserOrganizationMember(repository, audit, {
             userId: input.userId,
@@ -311,7 +317,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
         }),
       );
       if (!rejected) {
-        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+        return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
       }
       yield* Metric.update(organizationInvitationEvents, "rejected");
       yield* Effect.logInfo("invitation.rejected");
@@ -352,7 +358,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
         }),
       );
       if (!canceled) {
-        return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
+        return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
       }
       yield* Metric.update(organizationInvitationEvents, "canceled");
       yield* Effect.logInfo("invitation.canceled");

@@ -2,7 +2,6 @@ import { Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
 import {
-  OrganizationError,
   type Email,
   type OrganizationId,
   type OrganizationRoleId,
@@ -55,10 +54,7 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
   const availableRoles = yield* repository.auth.role.findSystemRoles();
   const ownerSystemRole = availableRoles.find((role) => role.key === "owner");
   if (!ownerSystemRole) {
-    return yield* new OrganizationError({
-      code: "ORGANIZATION_CREATE_FAILED",
-      message: "The owner system role has not been seeded",
-    });
+    return yield* Effect.die("The owner system role has not been seeded");
   }
 
   const organization = yield* repository.auth.organization.insert({
@@ -74,7 +70,7 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
   );
   const ownerRole = roles.find((role) => role.systemRoleId === ownerSystemRole.id);
   if (!ownerRole) {
-    return yield* new OrganizationError({ code: "ORGANIZATION_CREATE_FAILED" });
+    return yield* Effect.die("The owner organization role was not created");
   }
 
   const member = yield* createUserOrganizationMember(repository, audit, {

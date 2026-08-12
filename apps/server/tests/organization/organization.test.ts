@@ -91,6 +91,11 @@ layer(TestServerLayer)("organization routes", (it) => {
         _tag: "OrganizationError",
         code: "ORGANIZATION_NOT_FOUND",
       });
+      const response = yield* client.organization.getOrganization({
+        query: { organizationId: missingOrganizationId },
+        responseMode: "response-only",
+      });
+      expect(response.status).toBe(404);
     }),
   );
 

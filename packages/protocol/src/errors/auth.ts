@@ -1,27 +1,67 @@
 import { Schema } from "effect";
 
-export class MagicLinkError extends Schema.TaggedError<MagicLinkError>()("MagicLinkError", {
-  code: Schema.Literals(["INVALID_OR_EXPIRED_LINK", "TOO_MANY_ATTEMPTS", "SIGN_IN_NOT_ALLOWED"]),
-  message: Schema.optional(Schema.String),
-}) {}
-
-export class OrganizationError extends Schema.TaggedError<OrganizationError>()(
-  "OrganizationError",
+export class InvalidMagicLinkError extends Schema.TaggedError<InvalidMagicLinkError>()(
+  "MagicLinkError",
   {
-    code: Schema.Literals([
-      "ORGANIZATION_CREATE_FAILED",
-      "ORGANIZATION_UPDATE_FAILED",
-      "INSUFFICIENT_PERMISSIONS",
-      "SLUG_ALREADY_TAKEN",
-      "ORGANIZATION_CREATION_LIMIT_REACHED",
-      "ORGANIZATION_NOT_FOUND",
-      "ORGANIZATION_MEMBER_NOT_FOUND",
-    ]),
+    code: Schema.Literal("INVALID_OR_EXPIRED_LINK"),
     message: Schema.optional(Schema.String),
   },
+  { httpApiStatus: 400 },
 ) {}
 
-export class InvitationError extends Schema.TaggedError<InvitationError>()("InvitationError", {
-  code: Schema.Literals(["INVITATION_NOT_FOUND", "ALREADY_A_MEMBER", "INVITATION_EMAIL_MISMATCH"]),
-  message: Schema.optional(Schema.String),
-}) {}
+export class MagicLinkAttemptsExceededError extends Schema.TaggedError<MagicLinkAttemptsExceededError>()(
+  "MagicLinkError",
+  {
+    code: Schema.Literal("TOO_MANY_ATTEMPTS"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 429 },
+) {}
+
+export const MagicLinkErrors = [InvalidMagicLinkError, MagicLinkAttemptsExceededError] as const;
+export const MagicLinkError = Schema.Union(MagicLinkErrors);
+export type MagicLinkError = typeof MagicLinkError.Type;
+
+export class OrganizationNotFoundError extends Schema.TaggedError<OrganizationNotFoundError>()(
+  "OrganizationError",
+  {
+    code: Schema.Literal("ORGANIZATION_NOT_FOUND"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export class OrganizationPermissionError extends Schema.TaggedError<OrganizationPermissionError>()(
+  "OrganizationError",
+  {
+    code: Schema.Literal("INSUFFICIENT_PERMISSIONS"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 403 },
+) {}
+
+export const OrganizationErrors = [OrganizationNotFoundError, OrganizationPermissionError] as const;
+export const OrganizationError = Schema.Union(OrganizationErrors);
+export type OrganizationError = typeof OrganizationError.Type;
+
+export class InvitationNotFoundError extends Schema.TaggedError<InvitationNotFoundError>()(
+  "InvitationError",
+  {
+    code: Schema.Literal("INVITATION_NOT_FOUND"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export class InvitationConflictError extends Schema.TaggedError<InvitationConflictError>()(
+  "InvitationError",
+  {
+    code: Schema.Literal("ALREADY_A_MEMBER"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 409 },
+) {}
+
+export const InvitationErrors = [InvitationNotFoundError, InvitationConflictError] as const;
+export const InvitationError = Schema.Union(InvitationErrors);
+export type InvitationError = typeof InvitationError.Type;
