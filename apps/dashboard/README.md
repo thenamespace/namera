@@ -14,6 +14,8 @@ Workspace package imports continue to use their package names.
   `index.tsx` entry only after it is split across multiple files.
 - `src/components/` — components shared by unrelated routes. Do not move route-only
   components here.
+- `src/components/display/` — reusable compact value renderers for metadata,
+  email addresses, dates, roles, and future table cells.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/env.ts` — required browser environment decoded synchronously with Effect Config.
@@ -45,6 +47,8 @@ the supported email preference topics; inbox UI is not implemented yet.
   contract. It currently uses demo data and has no revocation behavior.
 - `/settings/workspace` contains the organization logo and name form backed by
   the organization update DTO.
+- `/settings/workspace/members` presents searchable organization members with
+  reusable displays and presentation-only row actions.
 
 Settings forms are currently presentation-only. They validate against protocol
 DTOs but do not call mutations until their interaction design is finalized.
