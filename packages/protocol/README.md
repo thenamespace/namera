@@ -31,6 +31,8 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   Ordinary validated strings do not need brands.
 - DTOs describe the public wire contract. Models describe shared domain or
   persistence shapes; do not expose sensitive model fields through DTOs.
+- Session responses expose their creation time as the login timestamp while
+  keeping token hashes private.
 - Define typed project errors here and import them from the owning package.
 - Give public `HttpApi` errors their semantic status in schema annotations and
   add each union alternative to endpoints so statuses are preserved in OpenAPI

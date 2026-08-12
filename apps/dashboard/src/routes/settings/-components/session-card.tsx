@@ -1,3 +1,5 @@
+import { DateTime } from "effect";
+
 import type { GetSessionResponse } from "@namera-ai/protocol/dto";
 import { Button, Chip, ItemCard } from "@namera-ai/ui";
 import {
@@ -95,6 +97,10 @@ export function SessionCard({ isCurrent = false, session }: SessionCardProps) {
             </Chip>
           ) : null}
         </ItemCard.Title>
+        <ItemCard.Description>
+          Logged in{" "}
+          {DateTime.formatLocal(session.createdAt, { dateStyle: "medium", timeStyle: "short" })}
+        </ItemCard.Description>
       </ItemCard.Content>
       <ItemCard.Action className="opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
         <Button aria-label={`Log out ${label}`} size="sm" type="button" variant="danger-soft">

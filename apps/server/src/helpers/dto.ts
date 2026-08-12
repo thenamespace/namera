@@ -31,6 +31,7 @@ export const toSessionResponse = (session: Session): GetSessionResponse => ({
   activeOrganizationId: session.activeOrganizationId,
   ipAddress: session.ipAddress,
   userAgent: session.userAgent,
+  createdAt: session.createdAt,
   expiresAt: session.expiresAt,
   revokedAt: session.revokedAt,
 });

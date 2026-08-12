@@ -37,6 +37,7 @@ layer(TestServerLayer)("session routes", (it) => {
       expect(actor.organization.metadata.name).toBe("Personal");
       expect(sessions).toHaveLength(1);
       expect(sessions[0]?.id).toBe(actor.session.id);
+      expect(sessions[0]?.createdAt).toBeDefined();
     }),
   );
 
