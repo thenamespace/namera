@@ -2,7 +2,7 @@ import { Schema, Struct } from "effect";
 
 import { Email, UserId } from "#/common/index";
 import { MetadataName, TimestampFields } from "#/model/common";
-import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
+import { createUpdateSchema } from "#/model/helpers";
 
 export const UserMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -19,7 +19,7 @@ export const User = Schema.Struct({
 }).mapFields(Struct.assign(TimestampFields));
 
 export const UserUpdate = createUpdateSchema(User);
-export const UserInsert = createInsertSchema(User, "email");
+export const UserInsert = User.mapFields(Struct.pick(["email", "metadata"]));
 
 export type UserMetadata = typeof UserMetadata.Type;
 

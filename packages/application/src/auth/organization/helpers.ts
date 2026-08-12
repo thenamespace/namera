@@ -69,7 +69,10 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
 
 export const createUserWithPersonalOrganization = Effect.fn("createUserWithPersonalOrganization")(
   function* (repository: RepositoryService, email: Email) {
-    const user = yield* repository.auth.user.create({ email });
+    const user = yield* repository.auth.user.create({
+      email,
+      metadata: { version: 1 },
+    });
     const organization = yield* createOrganizationWithOwner(repository, user.id, "Personal");
 
     return { user, organization };
