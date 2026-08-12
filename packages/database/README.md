@@ -137,3 +137,21 @@ encrypted payload owned by `@namera-ai/emails`.
 idempotent job. Claims use `FOR UPDATE SKIP LOCKED`; all completion, retry, and
 terminal transitions require the current lease token. Keep delivery and retry
 policy in `@namera-ai/emails`, not in the repository.
+
+## Notification persistence
+
+The `notification` schema separates immutable occurrences from per-user inbox
+state and preferences:
+
+- `notifications` stores the typed event payload, optional organization and
+  actor context, resource identity, correlation ID, expiry, and a unique
+  business idempotency key.
+- `notification_recipients` stores read/archive state for each user and may link
+  one durable `jobs.email_jobs` delivery.
+- `notification_preferences` stores global or organization-specific category
+  and channel overrides. Partial unique indexes prevent duplicate global and
+  organization overrides when `organization_id` is nullable.
+
+Resolve organization recipients in the application workflow and persist them
+when the notification is created. Do not recalculate historical inbox visibility
+from the user's current memberships.
