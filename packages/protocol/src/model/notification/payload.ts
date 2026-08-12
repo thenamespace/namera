@@ -2,8 +2,16 @@ import { Schema } from "effect";
 
 import { InvitationId, SessionId } from "#/common/index";
 
+const NewSignInNotificationType = Schema.Literal("auth.new-sign-in");
+const InvitationReceivedNotificationType = Schema.Literal("organization.invitation.received");
+
+export const NotificationType = Schema.Union([
+  NewSignInNotificationType,
+  InvitationReceivedNotificationType,
+]);
+
 export const NewSignInNotificationPayload = Schema.Struct({
-  type: Schema.Literal("auth.new-sign-in"),
+  type: NewSignInNotificationType,
   resourceType: Schema.Literal("session"),
   resourceId: SessionId,
   data: Schema.Struct({
@@ -12,7 +20,7 @@ export const NewSignInNotificationPayload = Schema.Struct({
 });
 
 export const InvitationReceivedNotificationPayload = Schema.Struct({
-  type: Schema.Literal("organization.invitation.received"),
+  type: InvitationReceivedNotificationType,
   resourceType: Schema.Literal("invitation"),
   resourceId: InvitationId,
   data: Schema.Struct({
@@ -27,3 +35,4 @@ export const NotificationPayload = Schema.Union([
 
 export type NotificationPayload = typeof NotificationPayload.Type;
 export type NotificationPayloadEncoded = typeof NotificationPayload.Encoded;
+export type NotificationType = typeof NotificationType.Type;

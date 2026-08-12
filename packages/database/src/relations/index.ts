@@ -5,6 +5,9 @@ import {
   actor,
   emailJob,
   invitation,
+  notification,
+  notificationPreference,
+  notificationRecipient,
   organization,
   organizationEvent,
   organizationMember,
@@ -24,6 +27,9 @@ export const relations = defineRelations(
     actor,
     emailJob,
     invitation,
+    notification,
+    notificationPreference,
+    notificationRecipient,
     organization,
     organizationEvent,
     organizationMember,
@@ -56,6 +62,10 @@ export const relations = defineRelations(
         from: [r.actor.id, r.actor.organizationId],
         to: [r.organizationEvent.actorId, r.organizationEvent.organizationId],
       }),
+      notifications: r.many.notification({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.notification.actorId, r.notification.organizationId],
+      }),
     },
     user: {
       // One user can have many active or historical sessions.
@@ -80,6 +90,14 @@ export const relations = defineRelations(
       auditEvents: r.many.userEvent({
         from: r.user.id,
         to: r.userEvent.userId,
+      }),
+      notificationRecipients: r.many.notificationRecipient({
+        from: r.user.id,
+        to: r.notificationRecipient.userId,
+      }),
+      notificationPreferences: r.many.notificationPreference({
+        from: r.user.id,
+        to: r.notificationPreference.userId,
       }),
     },
     session: {
@@ -145,6 +163,14 @@ export const relations = defineRelations(
       auditEvents: r.many.organizationEvent({
         from: r.organization.id,
         to: r.organizationEvent.organizationId,
+      }),
+      notifications: r.many.notification({
+        from: r.organization.id,
+        to: r.notification.organizationId,
+      }),
+      notificationPreferences: r.many.notificationPreference({
+        from: r.organization.id,
+        to: r.notificationPreference.organizationId,
       }),
     },
     systemRole: {
@@ -266,6 +292,53 @@ export const relations = defineRelations(
       actor: r.one.actor({
         from: [r.organizationEvent.actorId, r.organizationEvent.organizationId],
         to: [r.actor.id, r.actor.organizationId],
+      }),
+    },
+    emailJob: {
+      notificationRecipient: r.one.notificationRecipient({
+        from: r.emailJob.id,
+        to: r.notificationRecipient.emailJobId,
+      }),
+    },
+    notification: {
+      organization: r.one.organization({
+        from: r.notification.organizationId,
+        to: r.organization.id,
+      }),
+      actor: r.one.actor({
+        from: [r.notification.actorId, r.notification.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+      }),
+      recipients: r.many.notificationRecipient({
+        from: r.notification.id,
+        to: r.notificationRecipient.notificationId,
+      }),
+    },
+    notificationRecipient: {
+      notification: r.one.notification({
+        from: r.notificationRecipient.notificationId,
+        to: r.notification.id,
+        optional: false,
+      }),
+      user: r.one.user({
+        from: r.notificationRecipient.userId,
+        to: r.user.id,
+        optional: false,
+      }),
+      emailJob: r.one.emailJob({
+        from: r.notificationRecipient.emailJobId,
+        to: r.emailJob.id,
+      }),
+    },
+    notificationPreference: {
+      user: r.one.user({
+        from: r.notificationPreference.userId,
+        to: r.user.id,
+        optional: false,
+      }),
+      organization: r.one.organization({
+        from: r.notificationPreference.organizationId,
+        to: r.organization.id,
       }),
     },
   }),

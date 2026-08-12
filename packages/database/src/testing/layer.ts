@@ -13,6 +13,9 @@ import {
   actor,
   emailJob,
   invitation,
+  notification,
+  notificationPreference,
+  notificationRecipient,
   organization,
   organizationEvent,
   organizationMember,
@@ -60,6 +63,9 @@ export class TestDatabase extends Context.Service<
         const database = yield* Database;
 
         const reset = Effect.fn("TestDatabase.reset")(function* () {
+          yield* database.delete(notificationRecipient);
+          yield* database.delete(notificationPreference);
+          yield* database.delete(notification);
           yield* database.delete(emailJob);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
