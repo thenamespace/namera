@@ -57,18 +57,18 @@ export function ProfileForm() {
             onChange={name.field.onChange}
             value={name.field.value ?? ""}
           >
-            <Label>Full name</Label>
-            <div className="w-full">
-              <Input
-                autoComplete="name"
-                fullWidth
-                onBlur={name.field.onBlur}
-                placeholder="Enter your full name"
-                ref={name.field.ref}
-                variant="secondary"
-              />
+            <DashboardCard.FieldLabel>
+              <Label>Full name</Label>
               <FieldError>{name.fieldState.error?.message}</FieldError>
-            </div>
+            </DashboardCard.FieldLabel>
+            <Input
+              autoComplete="name"
+              fullWidth
+              onBlur={name.field.onBlur}
+              placeholder="Enter your full name"
+              ref={name.field.ref}
+              variant="secondary"
+            />
           </DashboardCard.Field>
         </DashboardCard.Content>
       </DashboardCard>

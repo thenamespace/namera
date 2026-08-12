@@ -48,18 +48,18 @@ export function WorkspaceForm() {
             onChange={name.field.onChange}
             value={name.field.value}
           >
-            <Label>Workspace name</Label>
-            <div className="w-full">
-              <Input
-                autoComplete="organization"
-                fullWidth
-                onBlur={name.field.onBlur}
-                placeholder="Enter workspace name"
-                ref={name.field.ref}
-                variant="secondary"
-              />
+            <DashboardCard.FieldLabel>
+              <Label>Workspace name</Label>
               <FieldError>{name.fieldState.error?.message}</FieldError>
-            </div>
+            </DashboardCard.FieldLabel>
+            <Input
+              autoComplete="organization"
+              fullWidth
+              onBlur={name.field.onBlur}
+              placeholder="Enter workspace name"
+              ref={name.field.ref}
+              variant="secondary"
+            />
           </DashboardCard.Field>
         </DashboardCard.Content>
       </DashboardCard>

@@ -55,6 +55,8 @@ The remaining main and settings sidebar destinations render an empty
 Shared page and section composition should use `DashboardPage`,
 `HeadingGroup.Title`/`Description`, and `DashboardCard` rows/fields so route
 layouts retain the same hierarchy without duplicating structural styles.
+Use `DashboardCard.FieldLabel` to group a field label with its validation error;
+the control remains in the right column and both columns stay top-aligned.
 
 ## Adding frontend behavior
 
