@@ -17,3 +17,8 @@ export const organizationInvitationEvents = Metric.frequency(
     preregisteredWords: ["created", "accepted", "rejected", "canceled"],
   },
 );
+
+export const organizationMemberEvents = Metric.frequency("namera.organization.member.events", {
+  description: "Successful organization member administration events",
+  preregisteredWords: ["role_updated", "removed"],
+});
