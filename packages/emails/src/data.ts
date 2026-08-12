@@ -6,6 +6,12 @@ export const emailTemplates = {
   "magic-link": {
     id: "magic-link", // TODO: Update
   },
+  "new-sign-in": {
+    id: "new-sign-in", // TODO: Update
+  },
+  "organization-invitation": {
+    id: "organization-invitation", // TODO: Update
+  },
 } as const satisfies Record<EmailJobType, { readonly id: string }>;
 
 export const emailPolicy = {
