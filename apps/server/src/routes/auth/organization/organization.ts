@@ -49,7 +49,7 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser(["organization:update"]);
           return toOrganizationResponse(
-            yield* app.organization.update(actor.organization.id, payload.metadata),
+            yield* app.organization.update(actor.actorId, actor.organization.id, payload.metadata),
           );
         }),
       );

@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import { ActorId } from "#/common/index";
+
 import { GetSessionResponse, GetUserResponse } from "./core/index.js";
 import {
   GetOrganizationMemberResponse,
@@ -8,6 +10,7 @@ import {
 } from "./organization/index.js";
 
 export const UserActorData = Schema.Struct({
+  actorId: ActorId,
   session: GetSessionResponse,
   user: GetUserResponse,
   organization: GetOrganizationResponse,

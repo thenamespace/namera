@@ -3,6 +3,7 @@ import { DateTime, Effect, Metric } from "effect";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
   OrganizationError,
+  type ActorId,
   type OrganizationId,
   type SessionId,
   type UserId,
@@ -15,6 +16,8 @@ import type {
   User,
 } from "@namera-ai/protocol/model";
 import { organizationCreations } from "@namera-ai/telemetry";
+
+import { Audit } from "#/audit/layer";
 
 import { createOrganizationWithOwner } from "./helpers.js";
 
@@ -42,6 +45,7 @@ export interface OrganizationApplication {
     organizationId: OrganizationId,
   ) => Effect.Effect<void, OrganizationError>;
   readonly update: (
+    actorId: ActorId,
     organizationId: OrganizationId,
     metadata: OrganizationMetadata,
   ) => Effect.Effect<Organization, OrganizationError>;
@@ -49,6 +53,7 @@ export interface OrganizationApplication {
 
 export const makeOrganizationApplication = Effect.gen(function* () {
   const repository = yield* Repository;
+  const audit = yield* Audit;
   const transaction = yield* TransactionService;
 
   const create = Effect.fn("Application.organization.create")(
@@ -56,11 +61,22 @@ export const makeOrganizationApplication = Effect.gen(function* () {
       const now = yield* DateTime.now;
       const organization = yield* transaction.run(
         Effect.gen(function* () {
-          const created = yield* createOrganizationWithOwner(repository, userId, metadata.name);
+          const created = yield* createOrganizationWithOwner(
+            repository,
+            audit,
+            userId,
+            metadata.name,
+          );
           if (metadata.logo !== undefined || metadata.description !== undefined) {
             yield* repository.auth.organization.update(created.id, metadata);
           }
           yield* repository.auth.session.setActiveOrganization(sessionId, userId, created.id, now);
+          yield* audit.user({
+            userId,
+            sessionId,
+            event: "session.active_organization_changed",
+            data: { version: 1, organizationId: created.id },
+          });
           return { ...created, metadata };
         }),
       );
@@ -91,11 +107,23 @@ export const makeOrganizationApplication = Effect.gen(function* () {
 
   const setActive = Effect.fn("Application.organization.setActive")(
     function* (userId: UserId, sessionId: SessionId, organizationId: OrganizationId) {
-      const updated = yield* repository.auth.session.setActiveOrganization(
-        sessionId,
-        userId,
-        organizationId,
-        yield* DateTime.now,
+      const updated = yield* transaction.run(
+        Effect.gen(function* () {
+          const session = yield* repository.auth.session.setActiveOrganization(
+            sessionId,
+            userId,
+            organizationId,
+            yield* DateTime.now,
+          );
+          if (!session) return undefined;
+          yield* audit.user({
+            userId,
+            sessionId,
+            event: "session.active_organization_changed",
+            data: { version: 1, organizationId },
+          });
+          return session;
+        }),
       );
       if (!updated) return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
     },
@@ -103,12 +131,24 @@ export const makeOrganizationApplication = Effect.gen(function* () {
   );
 
   const update = Effect.fn("Application.organization.update")(
-    function* (organizationId: OrganizationId, metadata: OrganizationMetadata) {
-      const organization = yield* repository.auth.organization.update(organizationId, metadata);
-      if (!organization) {
-        return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
-      }
-      return organization;
+    function* (actorId: ActorId, organizationId: OrganizationId, metadata: OrganizationMetadata) {
+      return yield* transaction.run(
+        Effect.gen(function* () {
+          const organization = yield* repository.auth.organization.update(organizationId, metadata);
+          if (!organization) {
+            return yield* new OrganizationError({ code: "ORGANIZATION_NOT_FOUND" });
+          }
+          yield* audit.organization({
+            organizationId,
+            actorId,
+            event: "organization.updated",
+            resourceType: "organization",
+            resourceId: organizationId,
+            data: { version: 1, changedFields: ["metadata"] },
+          });
+          return organization;
+        }),
+      );
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

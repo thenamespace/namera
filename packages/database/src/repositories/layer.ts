@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
 import type { Database } from "#/core/index";
+import { OrganizationEventRepository, UserEventRepository } from "#/repositories/audit/index";
 import {
   ActorRepository,
   OrganizationInvitationRepository,
@@ -13,6 +14,10 @@ import {
 } from "#/repositories/auth/index";
 
 export interface RepositoryService {
+  audit: {
+    organization: OrganizationEventRepository["Service"];
+    user: UserEventRepository["Service"];
+  };
   auth: {
     actor: ActorRepository["Service"];
     invitation: OrganizationInvitationRepository["Service"];
@@ -39,8 +44,14 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const session = yield* SessionRepository;
       const user = yield* UserRepository;
       const verification = yield* VerificationRepository;
+      const organizationEvent = yield* OrganizationEventRepository;
+      const userEvent = yield* UserEventRepository;
 
       return Repository.of({
+        audit: {
+          organization: organizationEvent,
+          user: userEvent,
+        },
         auth: {
           actor,
           invitation,
@@ -64,6 +75,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionRepository.layer,
         UserRepository.layer,
         VerificationRepository.layer,
+        OrganizationEventRepository.layer,
+        UserEventRepository.layer,
       ),
     ),
   );

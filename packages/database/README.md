@@ -100,4 +100,5 @@ The `audit` schema contains append-only `user_events` and
 protocol package defines the exact versioned `event` and `data` unions.
 Organization events use a composite actor/organization foreign key so an event
 cannot be attributed to an actor from another tenant. Audit tables intentionally
-have no `updated_at`; repositories must expose insertion and reading only.
+have no `updated_at`; the user and organization audit repositories expose only
+append and newest-first history reads.

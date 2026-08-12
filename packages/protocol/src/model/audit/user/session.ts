@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { SessionId } from "#/common/index";
+import { OrganizationId, SessionId } from "#/common/index";
 
 export const SessionRevokedEventData = Schema.Struct({
   event: Schema.Literal("session.revoked"),
@@ -15,5 +15,13 @@ export const OtherSessionsRevokedEventData = Schema.Struct({
   data: Schema.Struct({
     version: Schema.Literal(1),
     count: Schema.Int,
+  }),
+});
+
+export const SessionActiveOrganizationChangedEventData = Schema.Struct({
+  event: Schema.Literal("session.active_organization_changed"),
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    organizationId: OrganizationId,
   }),
 });

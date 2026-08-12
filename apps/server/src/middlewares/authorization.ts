@@ -49,6 +49,7 @@ export const AuthorizationLive = Layer.effect(
         const actor: CurrentActorResponse = {
           type: "user",
           data: {
+            actorId: membership.organizationMember.actorId,
             session: toSessionResponse(session),
             user,
             organization,

@@ -9,6 +9,7 @@ and adapts HTTP requests to application methods.
 ## Structure
 
 - `src/application.ts` — the single aggregate `Application` service and live layer.
+- `src/audit/` — internal typed audit-event writer used by application workflows.
 - `src/auth/core/` — focused user and session operations.
 - `src/auth/magic-link/` — request and verification workflows.
 - `src/auth/organization/` — organization, member, invitation, and setup operations.
@@ -37,6 +38,10 @@ const program = Effect.gen(function* () {
 ```
 
 `Application.layer` is the only application layer provided by the server.
+
+Successful mutations append audit events in the same `TransactionService.run`
+boundary as the state change. Read-only operations are not audited. Audit data
+must remain safe historical context and must never contain credentials.
 
 ## Environment
 

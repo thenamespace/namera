@@ -9,8 +9,11 @@ import {
   type UserId,
 } from "@namera-ai/protocol";
 
+import type { AuditService } from "#/audit/layer";
+
 export const createUserOrganizationMember = Effect.fn("createUserOrganizationMember")(function* (
   repository: RepositoryService,
+  audit: AuditService,
   input: {
     userId: UserId;
     organizationId: OrganizationId;
@@ -22,14 +25,30 @@ export const createUserOrganizationMember = Effect.fn("createUserOrganizationMem
     type: "user",
   });
 
-  return yield* repository.auth.member.insert({
+  const member = yield* repository.auth.member.insert({
     actorId: actor.id,
     ...input,
   });
+
+  yield* audit.organization({
+    organizationId: input.organizationId,
+    actorId: actor.id,
+    event: "member.created",
+    resourceType: "member",
+    resourceId: member.id,
+    data: {
+      version: 1,
+      userId: input.userId,
+      organizationRoleId: input.organizationRoleId,
+    },
+  });
+
+  return member;
 });
 
 export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwner")(function* (
   repository: RepositoryService,
+  audit: AuditService,
   userId: UserId,
   name: string,
 ) {
@@ -58,22 +77,37 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
     return yield* new OrganizationError({ code: "ORGANIZATION_CREATE_FAILED" });
   }
 
-  yield* createUserOrganizationMember(repository, {
+  const member = yield* createUserOrganizationMember(repository, audit, {
     userId,
     organizationId: organization.id,
     organizationRoleId: ownerRole.id,
+  });
+
+  yield* audit.organization({
+    organizationId: organization.id,
+    actorId: member.actorId,
+    event: "organization.created",
+    resourceType: "organization",
+    resourceId: organization.id,
+    data: { version: 1 },
   });
 
   return organization;
 });
 
 export const createUserWithPersonalOrganization = Effect.fn("createUserWithPersonalOrganization")(
-  function* (repository: RepositoryService, email: Email) {
+  function* (repository: RepositoryService, audit: AuditService, email: Email) {
     const user = yield* repository.auth.user.create({
       email,
       metadata: { version: 1 },
     });
-    const organization = yield* createOrganizationWithOwner(repository, user.id, "Personal");
+    yield* audit.user({
+      userId: user.id,
+      sessionId: null,
+      event: "user.created",
+      data: { version: 1 },
+    });
+    const organization = yield* createOrganizationWithOwner(repository, audit, user.id, "Personal");
 
     return { user, organization };
   },

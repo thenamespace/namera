@@ -4,7 +4,11 @@ import { createInsertSchema } from "#/model/helpers";
 
 import { UserCreatedEventData, UserSignedInEventData, UserUpdatedEventData } from "./account.js";
 import { UserEventCommon } from "./base.js";
-import { OtherSessionsRevokedEventData, SessionRevokedEventData } from "./session.js";
+import {
+  OtherSessionsRevokedEventData,
+  SessionActiveOrganizationChangedEventData,
+  SessionRevokedEventData,
+} from "./session.js";
 
 export const UserCreatedEvent = UserEventCommon.mapFields(
   Struct.assign(UserCreatedEventData.fields),
@@ -21,6 +25,9 @@ export const SessionRevokedEvent = UserEventCommon.mapFields(
 export const OtherSessionsRevokedEvent = UserEventCommon.mapFields(
   Struct.assign(OtherSessionsRevokedEventData.fields),
 );
+export const SessionActiveOrganizationChangedEvent = UserEventCommon.mapFields(
+  Struct.assign(SessionActiveOrganizationChangedEventData.fields),
+);
 
 export const UserEvent = Schema.Union([
   UserCreatedEvent,
@@ -28,6 +35,7 @@ export const UserEvent = Schema.Union([
   UserUpdatedEvent,
   SessionRevokedEvent,
   OtherSessionsRevokedEvent,
+  SessionActiveOrganizationChangedEvent,
 ]);
 
 export const UserEventInsert = createInsertSchema(

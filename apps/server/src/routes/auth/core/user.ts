@@ -12,7 +12,9 @@ export const UserRoutes = HttpApiBuilder.group(NameraApi, "user", (handlers) =>
     return handlers.handle("update", ({ payload }) =>
       Effect.gen(function* () {
         const data = yield* enforceCurrentUser();
-        return toUserResponse(yield* app.user.update(data.user.id, payload.metadata));
+        return toUserResponse(
+          yield* app.user.update(data.user.id, data.session.id, payload.metadata),
+        );
       }),
     );
   }),

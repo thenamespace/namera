@@ -4,6 +4,7 @@ import { Repository, TransactionService } from "@namera-ai/database";
 import {
   InvitationError,
   OrganizationError,
+  type ActorId,
   type Email,
   type InvitationId,
   type OrganizationId,
@@ -14,6 +15,7 @@ import {
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
 import { organizationInvitationEvents } from "@namera-ai/telemetry";
 
+import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { createUserOrganizationMember } from "#/auth/organization/helpers";
 
@@ -35,6 +37,7 @@ export interface InvitationApplication {
   readonly listUserInvitations: (email: Email) => Effect.Effect<ReadonlyArray<InvitationView>>;
   readonly createInvitation: (input: {
     email: Email;
+    actorId: ActorId;
     inviterId: UserId;
     organizationId: OrganizationId;
     organizationRoleId: OrganizationRoleId;
@@ -48,15 +51,18 @@ export interface InvitationApplication {
   readonly rejectInvitation: (
     invitationId: InvitationId,
     email: Email,
+    userId: UserId,
   ) => Effect.Effect<void, InvitationError>;
   readonly cancelInvitation: (
     invitationId: InvitationId,
     organizationId: OrganizationId,
+    actorId: ActorId,
   ) => Effect.Effect<void, InvitationError>;
 }
 
 export const makeInvitationApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
+  const audit = yield* Audit;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
@@ -91,6 +97,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
   const createInvitation = Effect.fn("Application.organization.invitation.createInvitation")(
     function* (input: {
       email: Email;
+      actorId: ActorId;
       inviterId: UserId;
       organizationId: OrganizationId;
       organizationRoleId: OrganizationRoleId;
@@ -125,8 +132,19 @@ export const makeInvitationApplication = Effect.gen(function* () {
             now,
           );
           const created = yield* repository.auth.invitation.insert({
-            ...input,
+            email: input.email,
+            inviterId: input.inviterId,
+            organizationId: input.organizationId,
+            organizationRoleId: input.organizationRoleId,
             expiresAt: DateTime.addDuration(now, config.invitation.timeToLive),
+          });
+          yield* audit.organization({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            event: "invitation.created",
+            resourceType: "invitation",
+            resourceId: created.id,
+            data: { version: 1 },
           });
           return yield* repository.auth.invitation.findById(created.id, input.organizationId);
         }),
@@ -172,7 +190,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           if (!accepted) {
             return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
           }
-          yield* createUserOrganizationMember(repository, {
+          const createdMember = yield* createUserOrganizationMember(repository, audit, {
             userId: input.userId,
             organizationId: accepted.organizationId,
             organizationRoleId: accepted.organizationRoleId,
@@ -183,6 +201,23 @@ export const makeInvitationApplication = Effect.gen(function* () {
             accepted.organizationId,
             now,
           );
+          yield* audit.organization({
+            organizationId: accepted.organizationId,
+            actorId: createdMember.actorId,
+            event: "invitation.accepted",
+            resourceType: "invitation",
+            resourceId: accepted.id,
+            data: {
+              version: 1,
+              organizationMemberId: createdMember.id,
+            },
+          });
+          yield* audit.user({
+            userId: input.userId,
+            sessionId: input.sessionId,
+            event: "session.active_organization_changed",
+            data: { version: 1, organizationId: accepted.organizationId },
+          });
         }),
       );
       yield* Metric.update(organizationInvitationEvents, "accepted");
@@ -192,11 +227,25 @@ export const makeInvitationApplication = Effect.gen(function* () {
   );
 
   const rejectInvitation = Effect.fn("Application.organization.invitation.rejectInvitation")(
-    function* (invitationId: InvitationId, email: Email) {
-      const rejected = yield* repository.auth.invitation.rejectPending(
-        invitationId,
-        email,
-        yield* DateTime.now,
+    function* (invitationId: InvitationId, email: Email, userId: UserId) {
+      const rejected = yield* transaction.run(
+        Effect.gen(function* () {
+          const invitation = yield* repository.auth.invitation.rejectPending(
+            invitationId,
+            email,
+            yield* DateTime.now,
+          );
+          if (!invitation) return undefined;
+          yield* audit.organization({
+            organizationId: invitation.organizationId,
+            actorId: null,
+            event: "invitation.rejected",
+            resourceType: "invitation",
+            resourceId: invitation.id,
+            data: { version: 1, userId },
+          });
+          return invitation;
+        }),
       );
       if (!rejected) {
         return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });
@@ -208,10 +257,24 @@ export const makeInvitationApplication = Effect.gen(function* () {
   );
 
   const cancelInvitation = Effect.fn("Application.organization.invitation.cancelInvitation")(
-    function* (invitationId: InvitationId, organizationId: OrganizationId) {
-      const canceled = yield* repository.auth.invitation.cancelPending(
-        invitationId,
-        organizationId,
+    function* (invitationId: InvitationId, organizationId: OrganizationId, actorId: ActorId) {
+      const canceled = yield* transaction.run(
+        Effect.gen(function* () {
+          const invitation = yield* repository.auth.invitation.cancelPending(
+            invitationId,
+            organizationId,
+          );
+          if (!invitation) return undefined;
+          yield* audit.organization({
+            organizationId,
+            actorId,
+            event: "invitation.canceled",
+            resourceType: "invitation",
+            resourceId: invitation.id,
+            data: { version: 1 },
+          });
+          return invitation;
+        }),
       );
       if (!canceled) {
         return yield* new InvitationError({ code: "INVITATION_NOT_FOUND" });

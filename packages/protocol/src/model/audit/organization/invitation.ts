@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { InvitationId, OrganizationMemberId } from "#/common/index";
+import { InvitationId, OrganizationMemberId, UserId } from "#/common/index";
 
 const InvitationResource = {
   resourceType: Schema.Literal("invitation"),
@@ -29,6 +29,7 @@ export const InvitationRejectedEventData = Schema.Struct({
   ...InvitationResource,
   data: Schema.Struct({
     version: Schema.Literal(1),
+    userId: UserId,
   }),
 });
 

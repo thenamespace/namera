@@ -5,6 +5,7 @@ import { MagicLinkError } from "@namera-ai/protocol";
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
 import { magicLinkVerificationResults } from "@namera-ai/telemetry";
 
+import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import {
   createOrganizationWithOwner,
@@ -26,6 +27,7 @@ export interface VerifyMagicLinkApplication {
 
 export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
+  const audit = yield* Audit;
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
@@ -106,23 +108,36 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           const existingUser = yield* repository.auth.user.findByEmail(verification.identifier);
           const initialized = existingUser
             ? { user: existingUser, organization: undefined }
-            : yield* createUserWithPersonalOrganization(repository, verification.identifier).pipe(
-                Effect.catchTag("OrganizationError", Effect.die),
-              );
+            : yield* createUserWithPersonalOrganization(
+                repository,
+                audit,
+                verification.identifier,
+              ).pipe(Effect.catchTag("OrganizationError", Effect.die));
           const user = initialized.user;
           yield* repository.auth.user.markEmailVerifiedAndLogin(user.id, now);
           const memberships = yield* repository.auth.member.findMembershipsForUser(user.id);
           const organization =
             initialized.organization ??
             memberships[0]?.organization ??
-            (yield* createOrganizationWithOwner(repository, user.id, "Personal").pipe(
+            (yield* createOrganizationWithOwner(repository, audit, user.id, "Personal").pipe(
               Effect.catchTag("OrganizationError", Effect.die),
             ));
-          yield* repository.auth.session.create({
+          const session = yield* repository.auth.session.create({
             userId: user.id,
             tokenHash: sessionTokenHash,
             activeOrganizationId: organization.id,
             expiresAt: DateTime.addDuration(now, config.session.timeToLive),
+          });
+          yield* audit.user({
+            userId: user.id,
+            sessionId: session.id,
+            event: "user.signed_in",
+            data: {
+              version: 1,
+              method: "magic-link",
+              ipAddress: session.ipAddress,
+              userAgent: session.userAgent,
+            },
           });
         }),
       );

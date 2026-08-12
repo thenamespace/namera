@@ -42,6 +42,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
           return toInvitationResponse(
             yield* invitations.createInvitation({
               ...payload,
+              actorId: actor.actorId,
               inviterId: actor.user.id,
               organizationId: actor.organization.id,
             }),
@@ -62,13 +63,21 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
       .handle("rejectInvitation", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser();
-          yield* invitations.rejectInvitation(payload.invitationId, actor.user.email);
+          yield* invitations.rejectInvitation(
+            payload.invitationId,
+            actor.user.email,
+            actor.user.id,
+          );
         }),
       )
       .handle("cancelInvitation", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser(["invitation:cancel"]);
-          yield* invitations.cancelInvitation(payload.invitationId, actor.organization.id);
+          yield* invitations.cancelInvitation(
+            payload.invitationId,
+            actor.organization.id,
+            actor.actorId,
+          );
         }),
       );
   }),

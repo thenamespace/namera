@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 
+import { Audit } from "#/audit/layer";
 import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
 import { makeUserApplication, type UserApplication } from "#/auth/core/user";
 import {
@@ -51,5 +52,5 @@ export class Application extends Context.Service<Application, ApplicationService
         user,
       });
     }),
-  );
+  ).pipe(Layer.provide(Audit.layer));
 }
