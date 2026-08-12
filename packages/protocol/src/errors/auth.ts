@@ -44,6 +44,19 @@ export const OrganizationErrors = [OrganizationNotFoundError, OrganizationPermis
 export const OrganizationError = Schema.Union(OrganizationErrors);
 export type OrganizationError = typeof OrganizationError.Type;
 
+export class OrganizationMemberNotFoundError extends Schema.TaggedError<OrganizationMemberNotFoundError>()(
+  "OrganizationMemberError",
+  {
+    code: Schema.Literal("ORGANIZATION_MEMBER_NOT_FOUND"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export const OrganizationMemberErrors = [OrganizationMemberNotFoundError] as const;
+export const OrganizationMemberError = Schema.Union(OrganizationMemberErrors);
+export type OrganizationMemberError = typeof OrganizationMemberError.Type;
+
 export class InvitationNotFoundError extends Schema.TaggedError<InvitationNotFoundError>()(
   "InvitationError",
   {

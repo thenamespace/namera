@@ -9,7 +9,6 @@ const memberPermissions = [
 const invitationPermissions = [
   "invitation:read",
   "invitation:create",
-  "invitation:update",
   "invitation:cancel",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 

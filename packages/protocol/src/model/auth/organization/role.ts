@@ -12,13 +12,11 @@ import {
 export const MemberPermission = Schema.Literals([
   "organization:read",
   "organization:update",
-  "organization:delete",
   "member:read",
   "member:update",
   "member:remove",
   "invitation:read",
   "invitation:create",
-  "invitation:update",
   "invitation:cancel",
   "role:read",
   "role:create",

@@ -16,3 +16,23 @@ export const MemberCreatedEventData = Schema.Struct({
     organizationRoleId: OrganizationRoleId,
   }),
 });
+
+export const MemberRoleUpdatedEventData = Schema.Struct({
+  event: Schema.Literal("member.role_updated"),
+  ...MemberResource,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    previousOrganizationRoleId: OrganizationRoleId,
+    organizationRoleId: OrganizationRoleId,
+  }),
+});
+
+export const MemberRemovedEventData = Schema.Struct({
+  event: Schema.Literal("member.removed"),
+  ...MemberResource,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    userId: UserId,
+    organizationRoleId: OrganizationRoleId,
+  }),
+});

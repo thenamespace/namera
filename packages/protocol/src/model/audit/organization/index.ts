@@ -9,7 +9,11 @@ import {
   InvitationCreatedEventData,
   InvitationRejectedEventData,
 } from "./invitation.js";
-import { MemberCreatedEventData } from "./member.js";
+import {
+  MemberCreatedEventData,
+  MemberRemovedEventData,
+  MemberRoleUpdatedEventData,
+} from "./member.js";
 import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
 import {
   WalletCreatedEventData,
@@ -28,6 +32,8 @@ export const InvitationAcceptedEvent = organizationEvent(InvitationAcceptedEvent
 export const InvitationRejectedEvent = organizationEvent(InvitationRejectedEventData);
 export const InvitationCanceledEvent = organizationEvent(InvitationCanceledEventData);
 export const MemberCreatedEvent = organizationEvent(MemberCreatedEventData);
+export const MemberRoleUpdatedEvent = organizationEvent(MemberRoleUpdatedEventData);
+export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreationRequestedEvent = organizationEvent(WalletCreationRequestedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const WalletCreationFailedEvent = organizationEvent(WalletCreationFailedEventData);
@@ -41,6 +47,8 @@ export const OrganizationEvent = Schema.Union([
   InvitationRejectedEvent,
   InvitationCanceledEvent,
   MemberCreatedEvent,
+  MemberRoleUpdatedEvent,
+  MemberRemovedEvent,
   WalletCreationRequestedEvent,
   WalletCreatedEvent,
   WalletCreationFailedEvent,
