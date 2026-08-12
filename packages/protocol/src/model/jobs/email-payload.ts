@@ -3,7 +3,11 @@ import { Schema, Struct } from "effect";
 import { Email } from "#/common/index";
 import { NonEmptyString } from "#/model/common";
 
-export const EmailJobType = Schema.Literals(["magic-link"]);
+export const EmailJobType = Schema.Literals([
+  "magic-link",
+  "new-sign-in",
+  "organization-invitation",
+]);
 
 export const EmailRecipient = Schema.Union([
   Email,
@@ -31,10 +35,29 @@ export const MagicLinkEmailVariables = Schema.Struct({
   expiresInMinutes: Schema.Int.check(Schema.isGreaterThan(0)),
 });
 
+export const NewSignInEmailVariables = Schema.Struct({
+  signedInAt: NonEmptyString,
+});
+
+export const OrganizationInvitationEmailVariables = Schema.Struct({
+  invitationUrl: NonEmptyString,
+  organizationName: NonEmptyString,
+  inviterName: NonEmptyString,
+  expiresAt: NonEmptyString,
+});
+
 export const EmailJobPayload = Schema.Union([
   Schema.Struct({
     type: Schema.Literal("magic-link"),
     variables: MagicLinkEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
+    type: Schema.Literal("new-sign-in"),
+    variables: NewSignInEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
+    type: Schema.Literal("organization-invitation"),
+    variables: OrganizationInvitationEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
 ]);
 
@@ -42,4 +65,6 @@ export type EmailJobType = typeof EmailJobType.Type;
 export type EmailRecipient = typeof EmailRecipient.Type;
 export type EmailTag = typeof EmailTag.Type;
 export type MagicLinkEmailVariables = typeof MagicLinkEmailVariables.Type;
+export type NewSignInEmailVariables = typeof NewSignInEmailVariables.Type;
+export type OrganizationInvitationEmailVariables = typeof OrganizationInvitationEmailVariables.Type;
 export type EmailJobPayload = typeof EmailJobPayload.Type;
