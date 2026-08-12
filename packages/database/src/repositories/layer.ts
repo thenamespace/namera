@@ -13,6 +13,10 @@ import {
   VerificationRepository,
 } from "#/repositories/auth/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
+import {
+  NotificationPreferenceRepository,
+  NotificationRepository,
+} from "#/repositories/notification/index";
 
 export interface RepositoryService {
   audit: {
@@ -31,6 +35,10 @@ export interface RepositoryService {
   };
   jobs: {
     email: EmailJobRepository["Service"];
+  };
+  notification: {
+    inbox: NotificationRepository["Service"];
+    preference: NotificationPreferenceRepository["Service"];
   };
 }
 
@@ -51,6 +59,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const organizationEvent = yield* OrganizationEventRepository;
       const userEvent = yield* UserEventRepository;
       const emailJob = yield* EmailJobRepository;
+      const notification = yield* NotificationRepository;
+      const notificationPreference = yield* NotificationPreferenceRepository;
 
       return Repository.of({
         audit: {
@@ -70,6 +80,10 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         jobs: {
           email: emailJob,
         },
+        notification: {
+          inbox: notification,
+          preference: notificationPreference,
+        },
       });
     }),
   ).pipe(
@@ -86,6 +100,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         OrganizationEventRepository.layer,
         UserEventRepository.layer,
         EmailJobRepository.layer,
+        NotificationRepository.layer,
+        NotificationPreferenceRepository.layer,
       ),
     ),
   );
