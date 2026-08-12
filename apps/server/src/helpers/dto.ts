@@ -1,3 +1,4 @@
+import type { NotificationInboxItem } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
   GetOrganizationMemberResponse,
@@ -5,6 +6,7 @@ import type {
   GetOrganizationRoleResponse,
   GetSessionResponse,
   GetUserResponse,
+  NotificationResponse,
 } from "@namera-ai/protocol/dto";
 import type {
   Invitation,
@@ -93,3 +95,20 @@ export const toInvitationResponse = (input: {
   organization: toOrganizationResponse(input.organization),
   organizationRole: toRoleResponse(input.organizationRole),
 });
+
+export const toNotificationResponse = (input: NotificationInboxItem): NotificationResponse => {
+  switch (input.notification.type) {
+    case "auth.new-sign-in":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
+    case "organization.invitation.received":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
+  }
+};
