@@ -154,6 +154,16 @@ export const makeInvitationApplication = Effect.gen(function* () {
             organizationRoleId: input.organizationRoleId,
             expiresAt: DateTime.addDuration(now, config.invitation.timeToLive),
           });
+          if (created === undefined) {
+            const concurrent = (yield* repository.auth.invitation.findPendingForOrgId(
+              input.organizationId,
+              now,
+            )).find((item) => item.invitation.email === input.email);
+            if (concurrent === undefined) {
+              return yield* Effect.die("Invitation conflict did not resolve to a pending row");
+            }
+            return { invitation: concurrent, created: false } as const;
+          }
           const createdEvent = yield* audit.organization({
             organizationId: input.organizationId,
             actorId: input.actorId,
@@ -200,12 +210,14 @@ export const makeInvitationApplication = Effect.gen(function* () {
               idempotencyKey: `organization-invitation:${created.id}`,
             });
           }
-          return view;
+          return { invitation: view, created: true } as const;
         }),
       );
-      yield* Metric.update(organizationInvitationEvents, "created");
-      yield* Effect.logInfo("invitation.created");
-      return invitation;
+      if (invitation.created) {
+        yield* Metric.update(organizationInvitationEvents, "created");
+        yield* Effect.logInfo("invitation.created");
+      }
+      return invitation.invitation;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -246,12 +258,17 @@ export const makeInvitationApplication = Effect.gen(function* () {
             organizationId: accepted.organizationId,
             organizationRoleId: accepted.organizationRoleId,
           });
-          yield* repository.auth.session.setActiveOrganization(
+          const session = yield* repository.auth.session.setActiveOrganization(
             input.sessionId,
             input.userId,
             accepted.organizationId,
             now,
           );
+          if (session === undefined) {
+            return yield* Effect.die(
+              "Authenticated session disappeared while accepting invitation",
+            );
+          }
           yield* audit.organization({
             organizationId: accepted.organizationId,
             actorId: createdMember.actorId,

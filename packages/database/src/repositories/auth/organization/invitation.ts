@@ -19,7 +19,7 @@ import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/c
 import { invitation } from "#/schema/index";
 
 export interface OrganizationInvitationRepositoryService {
-  insert: (data: InvitationInsert) => Effect.Effect<Invitation, DatabaseError>;
+  insert: (data: InvitationInsert) => Effect.Effect<Invitation | undefined, DatabaseError>;
   findById: (
     id: InvitationId,
     orgId: OrganizationId,
@@ -108,9 +108,10 @@ export class OrganizationInvitationRepository extends Context.Service<
             const res = yield* db
               .insert(invitation)
               .values(parsed as any)
+              .onConflictDoNothing()
               .returning();
 
-            return Schema.decodeSync(Invitation)(res[0]!);
+            return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
           }, mapToDatabaseError),
           findById: Effect.fn("findOrganizationInvitationById")(function* (id, orgId) {
             const db = yield* transactionOrDatabase(database);

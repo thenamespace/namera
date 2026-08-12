@@ -75,7 +75,17 @@ export const makeOrganizationApplication = Effect.gen(function* () {
           if (metadata.logo !== undefined || metadata.description !== undefined) {
             yield* repository.auth.organization.update(created.id, metadata);
           }
-          yield* repository.auth.session.setActiveOrganization(sessionId, userId, created.id, now);
+          const session = yield* repository.auth.session.setActiveOrganization(
+            sessionId,
+            userId,
+            created.id,
+            now,
+          );
+          if (session === undefined) {
+            return yield* Effect.die(
+              "Authenticated session disappeared while creating organization",
+            );
+          }
           yield* audit.user({
             userId,
             sessionId,

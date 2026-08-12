@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { Repository } from "@namera-ai/database";
 
 import {
+  findOrganizationRole,
   inviteMember,
   makeTestApiClient,
   resetTestState,
@@ -50,6 +51,40 @@ layer(TestServerLayer)("invitation routes", (it) => {
 
       expect(second.invitation.id).toBe(first.invitation.id);
       expect(yield* client.invitation.listInvitations()).toHaveLength(1);
+    }),
+  );
+
+  it.effect("converges concurrent invitation requests on one delivery", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("concurrent-invite-owner@example.com"));
+      const email = testEmail("concurrent-invite-recipient@example.com");
+      const role = yield* findOrganizationRole(owner.actor.organization.id, "member");
+
+      const invitations = yield* Effect.all(
+        [
+          client.invitation.inviteMember({
+            payload: { email, organizationRoleId: role.id },
+          }),
+          client.invitation.inviteMember({
+            payload: { email, organizationRoleId: role.id },
+          }),
+        ],
+        { concurrency: "unbounded" },
+      );
+      expect(new Set(invitations.map((item) => item.invitation.id)).size).toBe(1);
+
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      )).filter((event) => event.event === "invitation.created");
+      expect(events).toHaveLength(1);
+      expect(
+        yield* repository.jobs.email.findByIdempotencyKey(
+          `organization-invitation:${invitations[0]?.invitation.id}`,
+        ),
+      ).toBeDefined();
     }),
   );
 
