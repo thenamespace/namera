@@ -39,7 +39,7 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
       )
       .handle("getOrganization", ({ query }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
+          const actor = yield* enforceCurrentUser(["organization:read"]);
           return toOrganizationResponse(
             yield* app.organization.get(actor.user.id, query.organizationId),
           );
