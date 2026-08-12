@@ -11,6 +11,7 @@ export type SidebarGroupItemsProps = {
   ariaLabel: string;
   items: {
     id: string;
+    exact?: boolean;
     href?: string;
     textValue: string;
     icon: IconSvgElement;
@@ -34,7 +35,7 @@ export const SidebarGroup = ({ label, ariaLabel, items }: SidebarGroupItemsProps
             ? Boolean(
                 matchRoute({
                   to: item.href,
-                  fuzzy: true,
+                  fuzzy: !item.exact,
                   includeSearch: false,
                 }),
               )

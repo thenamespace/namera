@@ -7,6 +7,7 @@ export const workspaceGroupItems: SidebarGroupItemsProps = {
   label: "Admin",
   items: [
     {
+      exact: true,
       id: "workspace",
       icon: WorkIcon,
       label: "Workspace",
