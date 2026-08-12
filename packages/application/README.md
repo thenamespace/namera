@@ -16,6 +16,7 @@ and adapts HTTP requests to application methods.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
+- `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
 Future feature folders should add a focused operation builder to the aggregate
@@ -45,6 +46,10 @@ that the aggregate can consume.
    as documented by that provider package.
 7. Add the provider test layer in the owning package and exercise the operation
    through server feature tests.
+
+Notification-producing workflows call the shared creator inside their business
+transaction. It writes the occurrence and recipients, resolves organization
+then global preferences, and optionally enqueues a durable email job.
 
 ## Usage
 

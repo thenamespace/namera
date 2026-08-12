@@ -16,6 +16,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.
+- `src/metrics/notification.ts` — occurrence, recipient, and preference metrics.
 - `src/metrics/organization.ts` — organization and invitation workflow metrics.
 
 Metric files contain definitions only. Business services decide when metrics are

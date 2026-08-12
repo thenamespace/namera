@@ -12,6 +12,7 @@ metadata. It does not start a server or implement backend workflows.
   sessions, and users.
 - `src/routes/auth/organization/` — organization, membership, and invitation
   endpoints.
+- `src/routes/auth/notification.ts` — authenticated inbox and preference endpoints.
 - `src/middlewares/` — middleware contracts such as authorization context.
 - `src/common.ts` — errors shared by API groups.
 

@@ -31,6 +31,10 @@ Workspace package imports continue to use their package names.
 The routes are currently presentation-only. API behavior is added through atoms
 and hooks after the interaction design is settled.
 
+Notification inbox and preference atoms/hooks are available under
+`src/atoms/notification` and `src/hooks/notification`; notification UI is not
+implemented yet.
+
 ## Adding frontend behavior
 
 1. Add or reuse a typed client atom in `src/atoms/<feature>/`. Keep query atoms,

@@ -22,7 +22,8 @@ claims and delivers them outside the request lifecycle.
 | `EMAIL_FROM`     | Yes      | Default sender accepted by Resend.           |
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
-Set the hosted template ID in `src/data.ts` before sending that template.
+Set the magic-link, new-sign-in, and organization-invitation hosted template IDs
+in `src/data.ts` before sending those templates.
 Provider requests time out after ten seconds; this editable policy also lives in
 `src/data.ts`. Durable payload encryption also requires the shared configuration
 documented by `@namera-ai/crypto`; the server composition root provides it.
