@@ -30,6 +30,7 @@ export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: Emai
         name={field.name}
         onChange={field.onChange}
         type="email"
+        variant="secondary"
         value={field.value}
       >
         <Label className="sr-only">Email address</Label>

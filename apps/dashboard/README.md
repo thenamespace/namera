@@ -35,6 +35,9 @@ Workspace package imports continue to use their package names.
 - `/auth` contains the magic-link request UI.
 - `/auth/verify` contains the browser-session confirmation UI.
 
+The shared auth layout prefetches the current user and redirects an already
+authenticated browser to `/`.
+
 The request flow uses one React Hook Form instance across its steps, validates
 with the protocol request DTO, and advances only after the request mutation
 succeeds. The verification route validates its URL credentials with the

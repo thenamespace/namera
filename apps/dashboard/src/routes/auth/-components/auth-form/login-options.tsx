@@ -7,7 +7,11 @@ type LoginOptionsProps = {
 export function LoginOptions({ onContinueWithEmail }: LoginOptionsProps) {
   return (
     <div className="grid gap-4">
-      <Typography.Heading className="mb-3 text-center text-balance text-xl" level={1}>
+      <Typography.Heading
+        className="mb-3 text-center text-balance text-xl"
+        level={1}
+        weight="medium"
+      >
         Log in to Namera
       </Typography.Heading>
 

@@ -34,6 +34,7 @@ const Routes = Layer.mergeAll(
 );
 
 export const ServerLive = HttpRouter.serve(Routes, {
+  disableLogger: true,
   middleware: (httpEffect) => HttpMiddleware.tracer(RateLimitMiddleware(httpEffect)),
 }).pipe(
   Layer.provide(HttpMiddleware.layerTracerDisabledForUrls(["/reference"])),

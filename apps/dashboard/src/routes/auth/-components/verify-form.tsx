@@ -1,7 +1,8 @@
 import { Schema } from "effect";
 
 import { GetMagicLinkRequest } from "@namera-ai/protocol/dto";
-import { Button, Link, Typography } from "@namera-ai/ui";
+import { Button, buttonVariants, cn, Link, Typography } from "@namera-ai/ui";
+import { NameraIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import { useVerifyMagicLink } from "@/hooks/auth";
@@ -35,19 +36,16 @@ export function VerifyForm({ search }: VerifyFormProps) {
   const errorMessage = !isValidLink
     ? "This sign-in link is invalid. Request a new link to continue."
     : verifyMagicLink.isError
-      ? "We couldn’t verify this sign-in link. It may be invalid or expired."
+      ? "We couldn't verify this sign-in link. It may be invalid or expired."
       : undefined;
 
   return (
     <AuthShell stepKey="verify-magic-link">
-      <div className="text-center">
+      <div className="text-center flex flex-col items-center justify-center">
+        <NameraIcon aria-hidden="true" className="fill-foreground mx-auto mb-10 h-10 w-auto" />
         <Typography.Heading className="text-balance text-xl" level={1}>
           Sign in to Namera?
         </Typography.Heading>
-        <Typography.Paragraph className="mt-3 text-pretty" color="muted" size="sm">
-          We've sent you a temporary login link. Please check your inbox
-        </Typography.Paragraph>
-
         <Button
           className="mt-8"
           fullWidth
@@ -61,7 +59,10 @@ export function VerifyForm({ search }: VerifyFormProps) {
             {errorMessage}
           </Typography.Paragraph>
         ) : null}
-        <Link className="mt-5 inline-flex" href="/auth">
+        <Link
+          className={cn(buttonVariants({ variant: "ghost" }), "mt-5 w-full") as string}
+          href="/auth"
+        >
           Cancel
         </Link>
       </div>

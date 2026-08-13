@@ -48,7 +48,7 @@ export function AuthForm() {
       <EmailEntry
         errorMessage={
           requestMagicLink.isError
-            ? "Couldn’t send the link. Wait a moment and try again."
+            ? "Couldn't send the link. Wait a moment and try again."
             : undefined
         }
         isPending={requestMagicLink.isPending}
