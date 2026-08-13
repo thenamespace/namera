@@ -8,12 +8,15 @@ import {
 } from "@namera-ai/protocol";
 import type { KernelWalletData } from "@namera-ai/protocol/model";
 import { toKernelSmartAccount } from "permissionless/accounts";
-import type { LocalAccount } from "viem";
+import type { Address, LocalAccount } from "viem";
 import { entryPoint07Address, type WebAuthnAccount } from "viem/account-abstraction";
 
 import { getChainDataByChainId } from "../chains/helpers.js";
 import { createPublicClient } from "../clients/helpers.js";
 import type { EvmConfigValues } from "../config.js";
+
+const kernelPasskeyValidatorV003Address =
+  "0x7ab16Ff354AcB328452F1D445b3Ddee9a91e9e69" satisfies Address;
 
 export type CreateKernelAccountProps = {
   readonly chainId: number;
@@ -47,6 +50,9 @@ export const createKernelAccount = Effect.fn("Evm.createKernelAccount")(function
         index: props.accountIndex,
         owners: [props.owner],
         version: props.kernelVersion,
+        ...(props.owner.type === "webAuthn" && {
+          validatorAddress: kernelPasskeyValidatorV003Address,
+        }),
       }),
     catch: (cause) => new EvmAccountCreationError({ implementation: "kernel", cause }),
   });
