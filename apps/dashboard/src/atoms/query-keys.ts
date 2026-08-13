@@ -15,6 +15,10 @@ export const QueryKeys = {
   member: {
     lists: ["member:lists"] as const,
   },
+  role: {
+    lists: ["role:lists"] as const,
+    assignable: ["role:assignable"] as const,
+  },
   invitation: {
     all: ["invitation:all"] as const,
     lists: ["invitation:lists"] as const,
@@ -39,6 +43,8 @@ export type QueryKey =
   | (typeof QueryKeys.organization.details)[number]
   | ReturnType<typeof QueryKeys.organization.detail>[number]
   | (typeof QueryKeys.member.lists)[number]
+  | (typeof QueryKeys.role.lists)[number]
+  | (typeof QueryKeys.role.assignable)[number]
   | (typeof QueryKeys.invitation.all)[number]
   | (typeof QueryKeys.invitation.lists)[number]
   | (typeof QueryKeys.invitation.userLists)[number]

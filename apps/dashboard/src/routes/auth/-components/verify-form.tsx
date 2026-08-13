@@ -60,7 +60,7 @@ export function VerifyForm({ search }: VerifyFormProps) {
           </Typography.Paragraph>
         ) : null}
         <Link
-          className={cn(buttonVariants({ variant: "ghost" }), "mt-5 w-full") as string}
+          className={cn(buttonVariants({ variant: "ghost" }), "mt-2 w-full") as string}
           href="/auth"
         >
           Cancel

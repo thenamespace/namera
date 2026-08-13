@@ -7,14 +7,19 @@ const includesAllPermissions = (
   required: ReadonlyArray<MemberPermission>,
 ) => required.every((permission) => granted.includes(permission));
 
+const hasStrictlyMorePermissions = (
+  actorRole: OrganizationRoleAuthority,
+  targetRole: OrganizationRoleAuthority,
+) =>
+  includesAllPermissions(actorRole.permissions, targetRole.permissions) &&
+  actorRole.permissions.some((permission) => !targetRole.permissions.includes(permission));
+
 export const canAssignOrganizationRole = (
   actorRole: OrganizationRoleAuthority,
   assignedRole: OrganizationRoleAuthority,
 ) => {
-  if (assignedRole.type === "system" && assignedRole.key === "owner") {
-    return actorRole.type === "system" && actorRole.key === "owner";
-  }
-  return includesAllPermissions(actorRole.permissions, assignedRole.permissions);
+  if (assignedRole.type === "system" && assignedRole.key === "owner") return false;
+  return hasStrictlyMorePermissions(actorRole, assignedRole);
 };
 
 export const canManageOrganizationRole = (
@@ -22,5 +27,4 @@ export const canManageOrganizationRole = (
   targetRole: OrganizationRoleAuthority,
 ) =>
   !(targetRole.type === "system" && targetRole.key === "owner") &&
-  includesAllPermissions(actorRole.permissions, targetRole.permissions) &&
-  actorRole.permissions.some((permission) => !targetRole.permissions.includes(permission));
+  hasStrictlyMorePermissions(actorRole, targetRole);

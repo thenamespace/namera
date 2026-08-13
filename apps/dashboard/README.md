@@ -34,15 +34,20 @@ Workspace package imports continue to use their package names.
 
 - `/auth` contains the magic-link request UI.
 - `/auth/verify` contains the browser-session confirmation UI.
+- `/invitations/$invitationId` is an authenticated, sidebar-free invitation
+  review flow. Logged-out users return there after magic-link sign-in. A signed-in
+  user whose email does not match the invitation is logged out before being sent
+  through the same sign-in flow.
 
 The shared auth layout prefetches the current user and redirects an already
 authenticated browser to `/`.
 
 The request flow uses one React Hook Form instance across its steps, validates
-with the protocol request DTO, and advances only after the request mutation
-succeeds. The verification route validates its URL credentials with the
-protocol schema, creates the cookie-backed session through the verification
-mutation, and replaces the browser location with the returned relative path.
+with the protocol request DTO, preserves a validated application-relative return
+path, and advances only after the request mutation succeeds. The verification
+route validates its URL credentials with the protocol schema, creates the
+cookie-backed session through the verification mutation, and replaces the
+browser location with the returned relative path.
 
 Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`. The settings page renders
@@ -51,19 +56,57 @@ the supported email preference topics; inbox UI is not implemented yet.
 ## Settings routes
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data
-  loading and update behavior are intentionally not connected yet.
+  loads from the current actor and autosaves name and image updates.
 - `/settings/notifications` contains grouped product, account, and organization
   email preference forms backed by the notification preference DTO.
-- `/settings/security` presents active sessions using the session response
-  contract. It currently uses demo data and has no revocation behavior.
+- `/settings/security` presents active sessions through the session query. It
+  supports logout and revoking other sessions.
 - `/settings/workspace` contains the organization logo and name form backed by
   the organization update DTO.
-- `/settings/workspace/members` presents searchable organization members with
-  reusable displays, presentation-only row actions, and an invitation dialog
-  validated against the shared invitation DTO.
+- `/settings/workspace/members` presents queried, searchable organization
+  members with reusable displays, role updates, removal, and an invitation
+  dialog validated against the shared invitation DTO. Its loader and rendered
+  queries fetch role and invitation data only when the current actor has the
+  corresponding read permission, so read-only members can still view the member
+  list.
 
-Settings forms are currently presentation-only. They validate against protocol
-DTOs but do not call mutations until their interaction design is finalized.
+Each settings route loader prefetches the data required by that page into the
+shared Effect atom registry and returns it as route data. Forms and tables use
+that loader data for their initial render while hooks observe the same cache for
+mutation refreshes. Workspace settings routes are grouped under
+`src/routes/_authenticated/settings/workspace/`.
+
+Use `hasPermissions` for non-React permission decisions and `PermissionGuard`
+for conditional UI. These are presentation guards only; the server remains
+authoritative. Role selectors must use the assignable-roles endpoint instead of
+reproducing role hierarchy rules in the dashboard.
+
+### Permission-aware settings
+
+- Derive edit capability from the current actor in the route loader using the
+  same permission required by the mutation endpoint. Return that capability with
+  the prefetched data instead of discovering authorization through a failed
+  mutation.
+- Fetch optional role, invitation, billing, or administration data only when the
+  actor has its read permission. A forbidden optional query must not prevent the
+  rest of a page from loading.
+- Render interactive inputs only when the actor can update the value. Otherwise,
+  render the value with `ReadOnlyInput`, which applies UIKit `inputVariants` to a
+  non-interactive element, or use the corresponding non-interactive preview for
+  richer values such as metadata icons.
+- Pass the same capability to `useAutoSave({ enabled })` and guard the form submit
+  handler. Read-only forms must not register navigation blocking or send update
+  mutations.
+- Hide mutation-only dialogs and row actions unless the actor has the exact
+  required permission. Permission-gated components improve UX only; every server
+  handler must still enforce authorization.
+- Personal profile and notification-preference forms remain editable because
+  their endpoints operate on the authenticated user and do not use organization
+  role permissions.
+
+`/workspace/new` is an authenticated, sidebar-free workspace creation flow. It
+validates against `CreateOrganizationRequest`, creates and activates the new
+workspace through the existing organization operation, then navigates home.
 
 The remaining main and settings sidebar destinations render an empty
 `DashboardPage` placeholder until their feature UI is implemented.
@@ -90,9 +133,10 @@ the control remains in the right column and both columns stay top-aligned.
    for authentication and permissions.
 
 All authenticated pages belong beneath the pathless `_authenticated` route.
-Do not repeat current-user prefetching in child loaders; read the parent loader
-data when the route needs the actor directly, or use `useCurrentUser` to consume
-the same cached atom result in React components.
+Child loaders may prefetch `currentUserAtom` when they need the actor to derive
+another query; the shared registry reuses the parent loader result. Return the
+page's required values as route data rather than starting its initial fetch in
+the rendered component.
 
 ## UI conventions
 
@@ -126,13 +170,17 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 
 ### Auto-saving forms
 
-Use `useAutoSave` with React Hook Form for profile, organization, and other
-editable settings. It validates and saves two seconds after the latest change,
-serializes overlapping saves, marks the submitted values as the new form
-baseline, and shows shared UIKit toasts. TanStack Router navigation waits for a
-dirty form to save; validation or delivery failures keep the user on the page.
-Browser unloads use the native dirty-form warning because ordinary asynchronous
-requests cannot be guaranteed after a tab closes.
+Use `useAutoSave` with React Hook Form for profile, organization, notification
+preferences, and other editable settings. It subscribes to form values and uses
+a trailing three-second debounce: every edit clears and restarts the timer, so
+the mutation runs only after the user stops editing. It serializes overlapping
+saves by rerunning after the active save completes. It exposes
+`idle`, `saving`, `saved`, and `error` status plus `resetBaseline` for server data
+replacements. It also makes a best-effort silent flush of dirty values on route
+unmount and `pagehide`, including when navigation happens before the debounce.
+
+When loader data replaces a mounted form, call both
+`form.reset(nextValue)` and `autoSave.resetBaseline(nextValue)`.
 
 ```tsx
 const form = useForm<ProfileInput, unknown, ProfileOutput>({
@@ -143,9 +191,15 @@ const updateUser = useUpdateUser();
 
 const autoSave = useAutoSave({
   form,
-  onSave: (profile) => updateUser.mutateAsync({ payload: profile }),
+  onSave: async (profile) => {
+    await updateUser.mutateAsync({ payload: profile });
+  },
 });
 ```
+
+Pass `enabled: false` for a read-only form. This prevents queued saves and
+unmount/pagehide flushes in addition to replacing its interactive controls with
+read-only presentation.
 
 ## Environment
 

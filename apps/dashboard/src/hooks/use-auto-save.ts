@@ -1,155 +1,200 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useBlocker } from "@tanstack/react-router";
-
-import { toast } from "@namera-ai/ui";
-import { useFormState, useWatch } from "react-hook-form";
 import type { FieldValues, SubmitHandler, UseFormReturn } from "react-hook-form";
-import { useDebounceCallback, useEventCallback, useIsMounted } from "usehooks-ts";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved" | "error";
 
-type UseAutoSaveOptions<TInput extends FieldValues, TContext, TOutput extends FieldValues> = {
-  form: UseFormReturn<TInput, TContext, TOutput>;
-  onSave: SubmitHandler<TOutput>;
+interface UseAutoSaveOptions<T extends FieldValues, TTransformedValues> {
+  form: UseFormReturn<T, unknown, TTransformedValues>;
+  onSave: SubmitHandler<TTransformedValues>;
   delay?: number;
   enabled?: boolean;
+  flushOnUnmount?: boolean;
+}
+
+const stableStringify = (value: unknown) => JSON.stringify(value);
+
+type SaveOptions = {
+  silent?: boolean;
 };
 
-const getSignature = (value: unknown) => JSON.stringify(value) ?? "undefined";
-
-export function useAutoSave<
-  TInput extends FieldValues,
-  TContext = unknown,
-  TOutput extends FieldValues = TInput,
->({ delay = 2000, enabled = true, form, onSave }: UseAutoSaveOptions<TInput, TContext, TOutput>) {
+export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
+  form,
+  onSave,
+  delay = 3000,
+  enabled = true,
+  flushOnUnmount = true,
+}: UseAutoSaveOptions<T, TTransformedValues>) {
   const [status, setStatus] = useState<AutoSaveStatus>("idle");
-  const values = useWatch({ control: form.control });
-  const { isDirty } = useFormState({ control: form.control });
-  const isMounted = useIsMounted();
-  const currentSignature = useMemo(() => getSignature(values), [values]);
-  const savedSignatureRef = useRef(getSignature(form.getValues()));
-  const inFlightRef = useRef<Promise<boolean> | null>(null);
-  const dirtyRef = useRef(isDirty);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const onSaveRef = useRef(onSave);
   const enabledRef = useRef(enabled);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const statusResetRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const baselineRef = useRef(stableStringify(form.getValues()));
+  const observedSignatureRef = useRef(baselineRef.current);
+  const inFlightRef = useRef(false);
+  const rerunAfterSaveRef = useRef(false);
+  const mountedRef = useRef(true);
+  const saveRef = useRef<(options?: SaveOptions) => Promise<void>>(async () => {});
 
-  dirtyRef.current = isDirty;
-  enabledRef.current = enabled;
+  const clearSaveTimeout = useCallback(() => {
+    if (!timeoutRef.current) return;
 
-  const resetStatus = useDebounceCallback(() => {
-    if (isMounted()) setStatus("idle");
-  }, 2000);
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = undefined;
+  }, []);
 
-  const performSave = useEventCallback(() => {
-    if (inFlightRef.current) return inFlightRef.current;
+  const clearStatusTimeout = useCallback(() => {
+    if (!statusResetRef.current) return;
 
-    const task = (async () => {
-      if (!enabledRef.current || !dirtyRef.current) return true;
+    clearTimeout(statusResetRef.current);
+    statusResetRef.current = undefined;
+  }, []);
 
-      resetStatus.cancel();
-      if (isMounted()) setStatus("saving");
+  const setStatusIfMounted = useCallback((nextStatus: AutoSaveStatus) => {
+    if (mountedRef.current) setStatus(nextStatus);
+  }, []);
+
+  const setPendingIfMounted = useCallback((pending: boolean) => {
+    if (mountedRef.current) setHasPendingChanges(pending);
+  }, []);
+
+  const save = useCallback(
+    async (options: SaveOptions = {}) => {
+      clearSaveTimeout();
+      if (!enabledRef.current) return;
+
+      const data = form.getValues();
+      const dataSignature = stableStringify(data);
+      if (dataSignature === baselineRef.current) {
+        setPendingIfMounted(false);
+        return;
+      }
+
+      if (inFlightRef.current) {
+        rerunAfterSaveRef.current = true;
+        return;
+      }
+
+      inFlightRef.current = true;
+      if (!options.silent) setStatusIfMounted("saving");
 
       try {
-        let saved = false;
-
-        while (true) {
-          const input = form.getValues();
-          const inputSignature = getSignature(input);
-
-          if (inputSignature === savedSignatureRef.current) break;
-
-          let valid = false;
-          // oxlint-disable-next-line no-await-in-loop -- overlapping saves must remain ordered
-          await form.handleSubmit(
-            async (output) => {
-              await onSave(output);
-              valid = true;
-            },
-            () => undefined,
-          )();
-
-          if (!valid) {
-            if (isMounted()) setStatus("error");
-            toast.warning("Fix the highlighted fields before leaving.");
-            return false;
-          }
-
-          saved = true;
-          savedSignatureRef.current = inputSignature;
-
-          const changedWhileSaving = getSignature(form.getValues()) !== inputSignature;
-          form.reset(input, {
-            keepErrors: true,
-            keepIsSubmitted: true,
-            keepSubmitCount: true,
-            keepTouched: true,
-            keepValues: changedWhileSaving,
-          });
-
-          if (!changedWhileSaving) break;
+        let didSave = false;
+        await form.handleSubmit(async (validatedData) => {
+          await onSaveRef.current(validatedData);
+          didSave = true;
+        })();
+        if (!didSave) {
+          setStatusIfMounted("idle");
+          return;
         }
 
-        if (isMounted()) setStatus(saved ? "saved" : "idle");
-        if (saved) {
-          toast.success("Saved");
-          resetStatus();
-        }
+        baselineRef.current = dataSignature;
 
-        return true;
+        const currentSignature = stableStringify(form.getValues());
+        const stillPending = currentSignature !== baselineRef.current;
+        setPendingIfMounted(stillPending);
+
+        if (!options.silent) {
+          setStatusIfMounted("saved");
+          clearStatusTimeout();
+          statusResetRef.current = setTimeout(() => setStatusIfMounted("idle"), 2000);
+        }
       } catch {
-        if (isMounted()) setStatus("error");
-        toast.danger("Couldn’t save changes.");
-        return false;
+        if (!options.silent) setStatusIfMounted("error");
+      } finally {
+        inFlightRef.current = false;
+
+        if (rerunAfterSaveRef.current) {
+          rerunAfterSaveRef.current = false;
+          void save(options);
+        }
       }
-    })();
+    },
+    [clearSaveTimeout, clearStatusTimeout, form, setPendingIfMounted, setStatusIfMounted],
+  );
 
-    inFlightRef.current = task;
-    void task.finally(() => {
-      if (inFlightRef.current === task) inFlightRef.current = null;
-    });
-
-    return task;
-  });
-
-  const queueSave = useDebounceCallback(() => {
-    void performSave();
-  }, delay);
-
-  const save = useEventCallback(() => {
-    queueSave.cancel();
-    return performSave();
-  });
+  const queueSave = useCallback(() => {
+    clearSaveTimeout();
+    timeoutRef.current = setTimeout(() => void save(), delay);
+  }, [clearSaveTimeout, delay, save]);
 
   useEffect(() => {
-    if (!isDirty) {
-      queueSave.cancel();
-      if (!inFlightRef.current) savedSignatureRef.current = currentSignature;
-      return;
-    }
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
 
     if (!enabled) {
-      queueSave.cancel();
+      clearSaveTimeout();
+      setHasPendingChanges(false);
       return;
     }
 
-    queueSave();
-    return queueSave.cancel;
-  }, [currentSignature, enabled, isDirty, queueSave]);
+    const pending = stableStringify(form.getValues()) !== baselineRef.current;
+    setHasPendingChanges(pending);
+    if (pending) queueSave();
+  }, [clearSaveTimeout, enabled, form, queueSave]);
 
-  const shouldBlockNavigation = useEventCallback(async () => {
-    if (!enabledRef.current || !dirtyRef.current) return false;
-    return !(await save());
-  });
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
-  useBlocker({
-    disabled: !enabled,
-    enableBeforeUnload: () => enabledRef.current && dirtyRef.current,
-    shouldBlockFn: shouldBlockNavigation,
-  });
+  useEffect(
+    () =>
+      form.subscribe({
+        formState: { values: true },
+        callback: ({ values }) => {
+          const signature = stableStringify(values);
+          if (signature === observedSignatureRef.current) return;
 
-  return {
-    hasPendingChanges: isDirty,
-    save,
-    status,
-  };
+          observedSignatureRef.current = signature;
+          const pending = enabledRef.current && signature !== baselineRef.current;
+          setPendingIfMounted(pending);
+
+          if (pending) queueSave();
+          else clearSaveTimeout();
+        },
+      }),
+    [clearSaveTimeout, form, queueSave, setPendingIfMounted],
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    const flushPendingChanges = () => {
+      if (!flushOnUnmount || !enabledRef.current) return;
+      if (stableStringify(form.getValues()) === baselineRef.current) return;
+
+      void saveRef.current({ silent: true });
+    };
+
+    window.addEventListener("pagehide", flushPendingChanges);
+
+    return () => {
+      window.removeEventListener("pagehide", flushPendingChanges);
+      clearSaveTimeout();
+      clearStatusTimeout();
+      flushPendingChanges();
+      mountedRef.current = false;
+    };
+  }, [clearSaveTimeout, clearStatusTimeout, flushOnUnmount, form]);
+
+  const resetBaseline = useCallback(
+    (nextValue?: T) => {
+      const signature = stableStringify(nextValue ?? form.getValues());
+      baselineRef.current = signature;
+      observedSignatureRef.current = signature;
+      clearSaveTimeout();
+      clearStatusTimeout();
+      setPendingIfMounted(false);
+      setStatusIfMounted("idle");
+    },
+    [clearSaveTimeout, clearStatusTimeout, form, setPendingIfMounted, setStatusIfMounted],
+  );
+
+  return { hasPendingChanges, resetBaseline, save, status };
 }

@@ -13,7 +13,7 @@ function RootComponent() {
   return (
     <div className="bg-[#010102] text-foreground min-h-screen font-inter">
       <Outlet />
-      <Toast.Provider placement="bottom end" />
+      <Toast.Provider placement="bottom end" maxVisibleToasts={3} />
     </div>
   );
 }

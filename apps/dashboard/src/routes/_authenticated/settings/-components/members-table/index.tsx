@@ -2,8 +2,12 @@ import { useMemo, useState } from "react";
 
 import { DateTime } from "effect";
 
-import type { GetOrganizationMemberResponse } from "@namera-ai/protocol/dto";
-import { DataGrid, SearchField, type DataGridColumn } from "@namera-ai/ui";
+import type {
+  GetOrganizationMemberResponse,
+  GetOrganizationRoleResponse,
+  ListOrganizationMemberResponse,
+} from "@namera-ai/protocol/dto";
+import { DataGrid, SearchField, Typography, type DataGridColumn } from "@namera-ai/ui";
 
 import {
   DateDisplay,
@@ -11,8 +15,9 @@ import {
   MetadataDisplay,
   OrganizationRoleDisplay,
 } from "@/components/display";
+import { PermissionGuard } from "@/components/permission";
+import { useAssignableOrganizationRoles, useOrganizationMembers } from "@/hooks/auth";
 
-import { demoMembers } from "./data";
 import { InviteMemberDialog } from "./invite-member-dialog";
 import { MemberActions } from "./member-actions";
 
@@ -21,7 +26,10 @@ const memberCollator = new Intl.Collator(undefined, {
   sensitivity: "base",
 });
 
-const memberColumns: DataGridColumn<GetOrganizationMemberResponse>[] = [
+const createMemberColumns = (
+  assignableRoles: ReadonlyArray<GetOrganizationRoleResponse>,
+  canManageMembers: boolean,
+): DataGridColumn<GetOrganizationMemberResponse>[] => [
   {
     allowsSorting: true,
     cell: ({ user }) => <MetadataDisplay fallbackName={user.email} metadata={user.metadata} />,
@@ -67,32 +75,113 @@ const memberColumns: DataGridColumn<GetOrganizationMemberResponse>[] = [
       DateTime.toEpochMillis(left.organizationMember.joinedAt) -
       DateTime.toEpochMillis(right.organizationMember.joinedAt),
   },
-  {
-    align: "end",
-    cell: ({ user }) => <MemberActions name={user.metadata.name ?? user.email} />,
-    header: "",
-    id: "actions",
-    pinned: "end",
-    width: 48,
-  },
+  ...(canManageMembers && assignableRoles.length > 0
+    ? [
+        {
+          align: "end" as const,
+          cell: (member: GetOrganizationMemberResponse) => (
+            <MemberActions assignableRoles={assignableRoles} member={member} />
+          ),
+          header: "",
+          id: "actions",
+          pinned: "end" as const,
+          width: 48,
+        },
+      ]
+    : []),
 ];
 
 const getMemberId = ({ organizationMember }: GetOrganizationMemberResponse) =>
   organizationMember.id;
 
 const renderEmptyState = () => "No members found.";
+const invitationCreatePermission = ["invitation:create"] as const;
+const emptyRoles: ReadonlyArray<GetOrganizationRoleResponse> = [];
 
-export function MembersTable() {
+type MembersTableProps = {
+  canManageMembers: boolean;
+  canReadRoles: boolean;
+  initialMembers: ListOrganizationMemberResponse;
+  initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
+};
+
+type MembersTableContentProps = {
+  canManageMembers: boolean;
+  memberData: ListOrganizationMemberResponse;
+  members: ReturnType<typeof useOrganizationMembers>;
+  roleData: ReadonlyArray<GetOrganizationRoleResponse>;
+  rolesError: boolean;
+  rolesLoading: boolean;
+};
+
+export function MembersTable(props: MembersTableProps) {
+  const members = useOrganizationMembers();
+  const memberData = members.data ?? props.initialMembers;
+
+  return props.canReadRoles ? (
+    <MembersTableWithRoles {...props} memberData={memberData} members={members} />
+  ) : (
+    <MembersTableContent
+      canManageMembers={props.canManageMembers}
+      memberData={memberData}
+      members={members}
+      roleData={emptyRoles}
+      rolesError={false}
+      rolesLoading={false}
+    />
+  );
+}
+
+type MembersTableWithRolesProps = {
+  canManageMembers: boolean;
+  initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
+  memberData: ListOrganizationMemberResponse;
+  members: ReturnType<typeof useOrganizationMembers>;
+};
+
+function MembersTableWithRoles({
+  canManageMembers,
+  initialRoles,
+  memberData,
+  members,
+}: MembersTableWithRolesProps) {
+  const roles = useAssignableOrganizationRoles();
+  const roleData = roles.data ?? initialRoles;
+
+  return (
+    <MembersTableContent
+      canManageMembers={canManageMembers}
+      memberData={memberData}
+      members={members}
+      roleData={roleData}
+      rolesError={roles.isError}
+      rolesLoading={roles.isLoading}
+    />
+  );
+}
+
+function MembersTableContent({
+  canManageMembers,
+  memberData,
+  members,
+  roleData,
+  rolesError,
+  rolesLoading,
+}: MembersTableContentProps) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
+  const columns = useMemo(
+    () => createMemberColumns(roleData, canManageMembers),
+    [canManageMembers, roleData],
+  );
 
   const visibleMembers = useMemo(
     () =>
-      demoMembers.filter(({ user }) => {
+      memberData.filter(({ user }) => {
         const name = user.metadata.name?.toLowerCase() ?? "";
         return name.includes(normalizedQuery) || user.email.toLowerCase().includes(normalizedQuery);
       }),
-    [normalizedQuery],
+    [memberData, normalizedQuery],
   );
 
   return (
@@ -103,7 +192,6 @@ export function MembersTable() {
           className="w-full sm:max-w-80"
           value={query}
           onChange={setQuery}
-          variant="secondary"
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
@@ -111,12 +199,20 @@ export function MembersTable() {
             <SearchField.ClearButton aria-label="Clear member filter" />
           </SearchField.Group>
         </SearchField>
-        <InviteMemberDialog />
+        <PermissionGuard required={invitationCreatePermission}>
+          <InviteMemberDialog initialRoles={roleData} />
+        </PermissionGuard>
       </div>
 
+      {members.isLoading || rolesLoading ? (
+        <Typography color="muted">Loading members…</Typography>
+      ) : null}
+      {members.isError || rolesError ? (
+        <Typography className="text-danger">Couldn’t load organization members.</Typography>
+      ) : null}
       <DataGrid
         aria-label="Organization members"
-        columns={memberColumns}
+        columns={columns}
         contentClassName="min-w-[760px]"
         data={visibleMembers}
         getRowId={getMemberId}

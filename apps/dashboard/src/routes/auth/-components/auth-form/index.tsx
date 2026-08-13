@@ -13,17 +13,21 @@ import { EmailFormValidator, type EmailFormInput, type EmailFormOutput } from ".
 
 const totalSteps = 3;
 
-export function AuthForm() {
+type AuthFormProps = {
+  returnTo?: EmailFormOutput["returnTo"];
+};
+
+export function AuthForm({ returnTo }: AuthFormProps) {
   const form = useForm<EmailFormInput, unknown, EmailFormOutput>({
-    defaultValues: { email: "" },
+    defaultValues: { email: "", ...(returnTo === undefined ? {} : { returnTo }) },
     resolver: standardSchemaResolver(EmailFormValidator),
   });
   const [step, { goToNextStep, goToPrevStep, reset: resetStep }] = useStep(totalSteps);
   const requestMagicLink = useRequestMagicLink();
 
-  const continueWithEmail = useEventCallback(async (nextEmail: EmailFormOutput["email"]) => {
+  const continueWithEmail = useEventCallback(async (payload: EmailFormOutput) => {
     try {
-      await requestMagicLink.mutateAsync({ payload: { email: nextEmail } });
+      await requestMagicLink.mutateAsync({ payload });
       goToNextStep();
     } catch {
       return;
@@ -37,7 +41,7 @@ export function AuthForm() {
 
   const backToLogin = useEventCallback(() => {
     requestMagicLink.reset();
-    form.reset();
+    form.reset({ email: "", ...(returnTo === undefined ? {} : { returnTo }) });
     resetStep();
   });
 

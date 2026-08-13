@@ -24,5 +24,4 @@ export const sessionsAtom = NameraClient.query("session", "listSessions", {
 });
 
 export const logoutMutation = NameraClient.mutation("session", "logout");
-
 export const revokeOtherSessionsMutation = NameraClient.mutation("session", "revokeOtherSessions");

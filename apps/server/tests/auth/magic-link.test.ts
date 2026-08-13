@@ -166,6 +166,9 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const allowed = Schema.decodeSync(MagicLinkReturnTo)("/settings/profile");
+      const invitation = Schema.decodeSync(MagicLinkReturnTo)(
+        "/invitations/00000000-0000-4000-8000-000000000001",
+      );
       const denied = Schema.decodeSync(MagicLinkReturnTo)("/admin");
       const traversal = Schema.decodeSync(MagicLinkReturnTo)("/settings/../admin");
 
@@ -178,6 +181,20 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         payload: { type: "token", id: allowedLink.id, token: allowedLink.token },
       });
       expect(allowedResult.body.returnTo).toBe(allowed);
+
+      const invitationLink = yield* requestMagicLink(
+        client,
+        testEmail("invitation-return@example.com"),
+        invitation,
+      );
+      const invitationResult = yield* client.magicLink.verify({
+        payload: {
+          type: "token",
+          id: invitationLink.id,
+          token: invitationLink.token,
+        },
+      });
+      expect(invitationResult.body.returnTo).toBe(invitation);
 
       const deniedLink = yield* requestMagicLink(
         client,

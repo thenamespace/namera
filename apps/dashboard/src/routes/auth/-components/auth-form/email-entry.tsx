@@ -8,13 +8,13 @@ type EmailEntryProps = {
   errorMessage?: string | undefined;
   isPending: boolean;
   onBack: () => void;
-  onContinue: (email: EmailFormOutput["email"]) => Promise<void>;
+  onContinue: (values: EmailFormOutput) => Promise<void>;
 };
 
 export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: EmailEntryProps) {
   const { control, handleSubmit } = useFormContext<EmailFormInput, unknown, EmailFormOutput>();
   const { field, fieldState } = useController({ control, name: "email" });
-  const submit = useEventCallback((values: EmailFormOutput) => onContinue(values.email));
+  const submit = useEventCallback((values: EmailFormOutput) => onContinue(values));
   const handleFormSubmit = handleSubmit(submit);
 
   return (

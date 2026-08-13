@@ -1,15 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { currentUserAtom, sessionsAtom } from "@/atoms/auth/session";
+import { prefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
 import { SecuritySessions } from "./-components/security-sessions";
 
 export const Route = createFileRoute("/_authenticated/settings/security")({
+  loader: async ({ abortController, context }) => {
+    const [currentUser, sessions] = await Promise.all([
+      prefetchQuery(context.atomRegistry, currentUserAtom, abortController.signal),
+      prefetchQuery(context.atomRegistry, sessionsAtom, abortController.signal),
+    ]);
+    if (currentUser === null) throw redirect({ to: "/auth", replace: true });
+    return { currentUser, sessions };
+  },
   component: SecurityPage,
 });
 
 function SecurityPage() {
+  const { currentUser, sessions } = Route.useLoaderData();
+
   return (
     <DashboardPage>
       <DashboardPage.Header className="md:hidden">
@@ -21,7 +33,7 @@ function SecurityPage() {
             Security
           </HeadingGroup.Title>
         </HeadingGroup>
-        <SecuritySessions />
+        <SecuritySessions currentSessionId={currentUser.session.id} initialSessions={sessions} />
       </DashboardPage.Content>
     </DashboardPage>
   );

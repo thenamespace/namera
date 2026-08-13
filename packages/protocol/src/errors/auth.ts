@@ -75,6 +75,19 @@ export class InvitationConflictError extends Schema.TaggedError<InvitationConfli
   { httpApiStatus: 409 },
 ) {}
 
-export const InvitationErrors = [InvitationNotFoundError, InvitationConflictError] as const;
+export class InvitationRecipientMismatchError extends Schema.TaggedError<InvitationRecipientMismatchError>()(
+  "InvitationError",
+  {
+    code: Schema.Literal("INVITATION_RECIPIENT_MISMATCH"),
+    message: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 403 },
+) {}
+
+export const InvitationErrors = [
+  InvitationNotFoundError,
+  InvitationConflictError,
+  InvitationRecipientMismatchError,
+] as const;
 export const InvitationError = Schema.Union(InvitationErrors);
 export type InvitationError = typeof InvitationError.Type;

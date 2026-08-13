@@ -5,7 +5,7 @@ import { prefetchQuery } from "@/atoms/prefetch";
 import { AppSidebar, SettingsSidebar } from "@/components";
 
 export const Route = createFileRoute("/_authenticated")({
-  loader: async ({ abortController, context }) => {
+  loader: async ({ abortController, context, location }) => {
     const currentUser = await prefetchQuery(
       context.atomRegistry,
       currentUserAtom,
@@ -13,6 +13,13 @@ export const Route = createFileRoute("/_authenticated")({
     );
 
     if (currentUser === null) {
+      if (location.pathname.startsWith("/invitations/")) {
+        throw redirect({
+          to: "/auth",
+          search: { returnTo: location.pathname },
+          replace: true,
+        });
+      }
       throw redirect({ to: "/auth", replace: true });
     }
 
@@ -23,6 +30,8 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { pathname } = useLocation();
+  if (pathname === "/workspace/new" || pathname.startsWith("/invitations/")) return <Outlet />;
+
   const Sidebar = pathname.startsWith("/settings") ? SettingsSidebar : AppSidebar;
 
   return (

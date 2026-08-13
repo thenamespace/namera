@@ -3,8 +3,8 @@ import { CreditCardIcon, UserMultiple02Icon, WorkIcon } from "@namera-ai/ui/icon
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
 export const workspaceGroupItems: SidebarGroupItemsProps = {
-  ariaLabel: "Admin",
-  label: "Admin",
+  ariaLabel: "Workspace",
+  label: "Workspace",
   items: [
     {
       exact: true,

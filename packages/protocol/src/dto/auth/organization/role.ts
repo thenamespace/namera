@@ -24,6 +24,13 @@ export const GetOrganizationRoleResponse = Schema.Union([
   OrganizationRole.members[1].mapFields(Struct.pick(OrganizationRoleResponseFields)),
 ]).annotate({ identifier: "OrganizationRoleResponse" });
 
+export const ListOrganizationRolesResponse = Schema.Array(GetOrganizationRoleResponse).annotate({
+  identifier: "ListOrganizationRolesResponse",
+});
+export const ListAssignableOrganizationRolesResponse = Schema.Array(
+  GetOrganizationRoleResponse,
+).annotate({ identifier: "ListAssignableOrganizationRolesResponse" });
+
 export const CreateCustomOrganizationRoleRequest = CustomOrganizationRoleInsert.mapFields(
   Struct.omit(["organizationId"]),
 );
@@ -34,6 +41,9 @@ export const UpdateCustomOrganizationRoleResponse = GetOrganizationRoleResponse;
 
 export type GetOrganizationRoleRequest = typeof GetOrganizationRoleRequest.Type;
 export type GetOrganizationRoleResponse = typeof GetOrganizationRoleResponse.Type;
+export type ListOrganizationRolesResponse = typeof ListOrganizationRolesResponse.Type;
+export type ListAssignableOrganizationRolesResponse =
+  typeof ListAssignableOrganizationRolesResponse.Type;
 export type CreateCustomOrganizationRoleRequest = typeof CreateCustomOrganizationRoleRequest.Type;
 export type CreateCustomOrganizationRoleResponse = typeof CreateCustomOrganizationRoleResponse.Type;
 export type UpdateCustomOrganizationRoleRequest = typeof UpdateCustomOrganizationRoleRequest.Type;

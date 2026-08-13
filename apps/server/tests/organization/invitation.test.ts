@@ -145,7 +145,7 @@ layer(TestServerLayer)("invitation routes", (it) => {
 
       expect(getError).toMatchObject({
         _tag: "InvitationError",
-        code: "INVITATION_NOT_FOUND",
+        code: "INVITATION_RECIPIENT_MISMATCH",
       });
       expect(acceptError).toMatchObject({
         _tag: "InvitationError",

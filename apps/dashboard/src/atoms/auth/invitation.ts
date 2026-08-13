@@ -29,9 +29,6 @@ export const userInvitationsAtom = NameraClient.query("invitation", "listUserInv
 });
 
 export const inviteMemberMutation = NameraClient.mutation("invitation", "inviteMember");
-
 export const acceptInvitationMutation = NameraClient.mutation("invitation", "acceptInvitation");
-
 export const rejectInvitationMutation = NameraClient.mutation("invitation", "rejectInvitation");
-
 export const cancelInvitationMutation = NameraClient.mutation("invitation", "cancelInvitation");

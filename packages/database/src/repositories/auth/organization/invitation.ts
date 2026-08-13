@@ -70,6 +70,7 @@ export interface OrganizationInvitationRepositoryService {
     | undefined,
     DatabaseError
   >;
+  existsById: (id: InvitationId) => Effect.Effect<boolean, DatabaseError>;
   acceptPending: (
     invitationId: InvitationId,
     email: Email,
@@ -243,6 +244,16 @@ export class OrganizationInvitationRepository extends Context.Service<
               organizationRole: decodeJoinedOrganizationRole(organizationRole),
               inviter: Schema.decodeSync(User)(inviter),
             };
+          }, mapToDatabaseError),
+          existsById: Effect.fn("organizationInvitationExistsById")(function* (id) {
+            const db = yield* transactionOrDatabase(database);
+            const res = yield* db
+              .select({ id: invitation.id })
+              .from(invitation)
+              .where(eq(invitation.id, id))
+              .limit(1);
+
+            return res.length > 0;
           }, mapToDatabaseError),
           acceptPending: Effect.fn("acceptPendingOrganizationInvitation")(function* (
             invitationId,

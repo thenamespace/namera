@@ -1,61 +1,80 @@
-import { Schema } from "effect";
+import { useNavigate } from "@tanstack/react-router";
 
-import { ListSessionsResponse } from "@namera-ai/protocol/dto";
+import type { ListSessionsResponse } from "@namera-ai/protocol/dto";
+import { Button, Typography, toast } from "@namera-ai/ui";
+import { useEventCallback } from "usehooks-ts";
 
 import { HeadingGroup } from "@/components/heading-group";
+import { useLogout, useRevokeOtherSessions, useSessions } from "@/hooks/auth";
 
 import { SessionCard } from "./session-card";
 
-const demoSessions = Schema.decodeUnknownSync(ListSessionsResponse)([
-  {
-    id: "0198c451-1139-7abc-8def-0123456789ab",
-    userId: "0198c451-1139-7abc-8def-1123456789ab",
-    activeOrganizationId: null,
-    ipAddress: "103.87.24.19",
-    userAgent:
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-    createdAt: new Date("2026-08-12T09:42:00.000Z"),
-    expiresAt: new Date("2026-09-30T12:00:00.000Z"),
-    revokedAt: null,
-  },
-  {
-    id: "0198c451-1139-7abc-8def-2123456789ab",
-    userId: "0198c451-1139-7abc-8def-1123456789ab",
-    activeOrganizationId: null,
-    ipAddress: "49.36.121.8",
-    userAgent:
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
-    createdAt: new Date("2026-08-10T14:18:00.000Z"),
-    expiresAt: new Date("2026-09-28T08:30:00.000Z"),
-    revokedAt: null,
-  },
-  {
-    id: "0198c451-1139-7abc-8def-3123456789ab",
-    userId: "0198c451-1139-7abc-8def-1123456789ab",
-    activeOrganizationId: null,
-    ipAddress: "152.58.14.210",
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
-    createdAt: new Date("2026-08-04T06:05:00.000Z"),
-    expiresAt: new Date("2026-09-24T17:15:00.000Z"),
-    revokedAt: null,
-  },
-]);
+type SecuritySessionsProps = {
+  currentSessionId: ListSessionsResponse[number]["id"];
+  initialSessions: ListSessionsResponse;
+};
 
-const currentSessionId = demoSessions[0]?.id;
+export function SecuritySessions({ currentSessionId, initialSessions }: SecuritySessionsProps) {
+  const logout = useLogout();
+  const revokeOthers = useRevokeOtherSessions();
+  const sessions = useSessions();
+  const navigate = useNavigate();
+  const sessionData = sessions.data ?? initialSessions;
+  const otherSessionCount = sessionData.filter((session) => session.id !== currentSessionId).length;
 
-export function SecuritySessions() {
+  const handleLogout = useEventCallback(async () => {
+    try {
+      await logout.mutateAsync();
+      await navigate({ to: "/auth", replace: true });
+    } catch {
+      toast.danger("Couldn’t log out this session.");
+    }
+  });
+
+  const handleRevokeOthers = useEventCallback(async () => {
+    try {
+      const count = await revokeOthers.mutateAsync();
+      toast.success(
+        count === 1 ? "Logged out 1 other session" : `Logged out ${count} other sessions`,
+      );
+    } catch {
+      toast.danger("Couldn’t log out other sessions.");
+    }
+  });
+
   return (
     <section aria-labelledby="sessions-heading">
-      <HeadingGroup className="mb-4">
-        <HeadingGroup.Title id="sessions-heading">Sessions</HeadingGroup.Title>
-        <HeadingGroup.Description>
-          Manage the browsers and devices signed in to your account.
-        </HeadingGroup.Description>
-      </HeadingGroup>
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <HeadingGroup>
+          <HeadingGroup.Title id="sessions-heading">Sessions</HeadingGroup.Title>
+          <HeadingGroup.Description>
+            Manage the browsers and devices signed in to your account.
+          </HeadingGroup.Description>
+        </HeadingGroup>
+        {otherSessionCount > 0 ? (
+          <Button
+            isDisabled={revokeOthers.isPending}
+            onPress={handleRevokeOthers}
+            size="sm"
+            variant="danger-soft"
+          >
+            {revokeOthers.isPending ? "Logging out…" : "Log out other sessions"}
+          </Button>
+        ) : null}
+      </div>
+      {sessions.isLoading ? <Typography color="muted">Loading sessions…</Typography> : null}
+      {sessions.isError ? (
+        <Typography className="text-danger">Couldn’t load your sessions.</Typography>
+      ) : null}
       <ul className="space-y-2">
-        {demoSessions.map((session) => (
+        {sessionData.map((session) => (
           <li key={session.id}>
-            <SessionCard isCurrent={session.id === currentSessionId} session={session} />
+            <SessionCard
+              isCurrent={session.id === currentSessionId}
+              isLoggingOut={logout.isPending}
+              onLogout={session.id === currentSessionId ? handleLogout : undefined}
+              session={session}
+            />
           </li>
         ))}
       </ul>

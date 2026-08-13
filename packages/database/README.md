@@ -114,9 +114,13 @@ integration-test isolation.
 - Membership and invitation state transitions are organization-scoped and
   conditional. Compose multi-record operations with `TransactionService`.
 - Member role assignment and removal compare the expected current role during
-  the write and reject owner rows. This prevents concurrent changes from
-  bypassing application hierarchy checks and keeps ownership mutations out of
-  generic member administration.
+  the write. They reject mutations from an Owner role and reject assignments to
+  an Owner role. This prevents concurrent changes from bypassing application
+  hierarchy checks and keeps the organization's single Owner outside generic
+  member administration.
+- A database trigger locks the organization row and rejects a second active
+  Owner membership, preserving the invariant across concurrent inserts and
+  direct repository usage.
 
 ## Audit persistence
 

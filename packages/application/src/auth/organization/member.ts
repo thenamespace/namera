@@ -33,6 +33,13 @@ export interface MemberApplication {
   readonly listMembers: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<MemberView>>;
+  readonly listRoles: (
+    organizationId: OrganizationId,
+  ) => Effect.Effect<ReadonlyArray<OrganizationRole>>;
+  readonly listAssignableRoles: (
+    organizationId: OrganizationId,
+    actorRole: OrganizationRoleAuthority,
+  ) => Effect.Effect<ReadonlyArray<OrganizationRole>>;
   readonly updateRole: (input: {
     actorId: ActorId;
     actorRole: OrganizationRoleAuthority;
@@ -56,6 +63,21 @@ export const makeMemberApplication = Effect.gen(function* () {
   const listMembers = Effect.fn("Application.organization.member.listMembers")(
     function* (organizationId: OrganizationId) {
       return yield* repository.auth.member.findOrganizationMembersForOrg(organizationId);
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  const listRoles = Effect.fn("Application.organization.member.listRoles")(
+    function* (organizationId: OrganizationId) {
+      return yield* repository.auth.role.findOrganizationRolesForOrgId(organizationId);
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  const listAssignableRoles = Effect.fn("Application.organization.member.listAssignableRoles")(
+    function* (organizationId: OrganizationId, actorRole: OrganizationRoleAuthority) {
+      const roles = yield* repository.auth.role.findOrganizationRolesForOrgId(organizationId);
+      return roles.filter((role) => canAssignOrganizationRole(actorRole, role));
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -192,5 +214,11 @@ export const makeMemberApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { listMembers, updateRole, remove } satisfies MemberApplication;
+  return {
+    listMembers,
+    listRoles,
+    listAssignableRoles,
+    updateRole,
+    remove,
+  } satisfies MemberApplication;
 });

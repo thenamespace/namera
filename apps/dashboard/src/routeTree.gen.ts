@@ -21,12 +21,14 @@ import { Route as AuthenticatedSessionKeysRouteImport } from './routes/_authenti
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
-import { Route as AuthenticatedSettingsWorkspaceRouteImport } from './routes/_authenticated/settings/workspace'
-import { Route as AuthenticatedSettingsWorkspaceBillingsRouteImport } from './routes/_authenticated/settings/workspace_.billings'
-import { Route as AuthenticatedSettingsWorkspaceMembersRouteImport } from './routes/_authenticated/settings/workspace_.members'
+import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authenticated/workspace/new'
+import { Route as AuthenticatedSettingsWorkspaceIndexRouteImport } from './routes/_authenticated/settings/workspace/index'
+import { Route as AuthenticatedSettingsWorkspaceBillingsRouteImport } from './routes/_authenticated/settings/workspace/billings'
+import { Route as AuthenticatedSettingsWorkspaceMembersRouteImport } from './routes/_authenticated/settings/workspace/members'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -88,6 +90,12 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthenticatedInvitationsInvitationIdRoute =
+  AuthenticatedInvitationsInvitationIdRouteImport.update({
+    id: '/invitations/$invitationId',
+    path: '/invitations/$invitationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/settings/notifications',
@@ -106,21 +114,27 @@ const AuthenticatedSettingsSecurityRoute =
     path: '/settings/security',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSettingsWorkspaceRoute =
-  AuthenticatedSettingsWorkspaceRouteImport.update({
-    id: '/settings/workspace',
-    path: '/settings/workspace',
+const AuthenticatedWorkspaceNewRoute =
+  AuthenticatedWorkspaceNewRouteImport.update({
+    id: '/workspace/new',
+    path: '/workspace/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsWorkspaceIndexRoute =
+  AuthenticatedSettingsWorkspaceIndexRouteImport.update({
+    id: '/settings/workspace/',
+    path: '/settings/workspace/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsWorkspaceBillingsRoute =
   AuthenticatedSettingsWorkspaceBillingsRouteImport.update({
-    id: '/settings/workspace_/billings',
+    id: '/settings/workspace/billings',
     path: '/settings/workspace/billings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsWorkspaceMembersRoute =
   AuthenticatedSettingsWorkspaceMembersRouteImport.update({
-    id: '/settings/workspace_/members',
+    id: '/settings/workspace/members',
     path: '/settings/workspace/members',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
@@ -137,12 +151,14 @@ export interface FileRoutesByFullPath {
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
+  '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/settings/workspace': typeof AuthenticatedSettingsWorkspaceRoute
+  '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsRoute
@@ -155,12 +171,14 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/settings/workspace': typeof AuthenticatedSettingsWorkspaceRoute
+  '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/settings/workspace': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,12 +194,14 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
-  '/_authenticated/settings/workspace': typeof AuthenticatedSettingsWorkspaceRoute
-  '/_authenticated/settings/workspace_/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
-  '/_authenticated/settings/workspace_/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
+  '/_authenticated/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
+  '/_authenticated/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/_authenticated/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,12 +217,14 @@ export interface FileRouteTypes {
     | '/templates'
     | '/auth/verify'
     | '/auth/'
+    | '/invitations/$invitationId'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
-    | '/settings/workspace'
+    | '/workspace/new'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
+    | '/settings/workspace/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/accounts'
@@ -215,12 +237,14 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/'
     | '/auth'
+    | '/invitations/$invitationId'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
-    | '/settings/workspace'
+    | '/workspace/new'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
+    | '/settings/workspace'
   id:
     | '__root__'
     | '/_authenticated'
@@ -235,12 +259,14 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
+    | '/_authenticated/invitations/$invitationId'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/security'
-    | '/_authenticated/settings/workspace'
-    | '/_authenticated/settings/workspace_/billings'
-    | '/_authenticated/settings/workspace_/members'
+    | '/_authenticated/workspace/new'
+    | '/_authenticated/settings/workspace/billings'
+    | '/_authenticated/settings/workspace/members'
+    | '/_authenticated/settings/workspace/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -334,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_authenticated/invitations/$invitationId': {
+      id: '/_authenticated/invitations/$invitationId'
+      path: '/invitations/$invitationId'
+      fullPath: '/invitations/$invitationId'
+      preLoaderRoute: typeof AuthenticatedInvitationsInvitationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/settings/notifications'
@@ -355,22 +388,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsSecurityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/workspace': {
-      id: '/_authenticated/settings/workspace'
-      path: '/settings/workspace'
-      fullPath: '/settings/workspace'
-      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceRouteImport
+    '/_authenticated/workspace/new': {
+      id: '/_authenticated/workspace/new'
+      path: '/workspace/new'
+      fullPath: '/workspace/new'
+      preLoaderRoute: typeof AuthenticatedWorkspaceNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/workspace_/billings': {
-      id: '/_authenticated/settings/workspace_/billings'
+    '/_authenticated/settings/workspace/': {
+      id: '/_authenticated/settings/workspace/'
+      path: '/settings/workspace'
+      fullPath: '/settings/workspace/'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/workspace/billings': {
+      id: '/_authenticated/settings/workspace/billings'
       path: '/settings/workspace/billings'
       fullPath: '/settings/workspace/billings'
       preLoaderRoute: typeof AuthenticatedSettingsWorkspaceBillingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/workspace_/members': {
-      id: '/_authenticated/settings/workspace_/members'
+    '/_authenticated/settings/workspace/members': {
+      id: '/_authenticated/settings/workspace/members'
       path: '/settings/workspace/members'
       fullPath: '/settings/workspace/members'
       preLoaderRoute: typeof AuthenticatedSettingsWorkspaceMembersRouteImport
@@ -388,12 +428,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSessionKeysRoute: typeof AuthenticatedSessionKeysRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
-  AuthenticatedSettingsWorkspaceRoute: typeof AuthenticatedSettingsWorkspaceRoute
+  AuthenticatedWorkspaceNewRoute: typeof AuthenticatedWorkspaceNewRoute
   AuthenticatedSettingsWorkspaceBillingsRoute: typeof AuthenticatedSettingsWorkspaceBillingsRoute
   AuthenticatedSettingsWorkspaceMembersRoute: typeof AuthenticatedSettingsWorkspaceMembersRoute
+  AuthenticatedSettingsWorkspaceIndexRoute: typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -405,15 +447,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSessionKeysRoute: AuthenticatedSessionKeysRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedInvitationsInvitationIdRoute:
+    AuthenticatedInvitationsInvitationIdRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
-  AuthenticatedSettingsWorkspaceRoute: AuthenticatedSettingsWorkspaceRoute,
+  AuthenticatedWorkspaceNewRoute: AuthenticatedWorkspaceNewRoute,
   AuthenticatedSettingsWorkspaceBillingsRoute:
     AuthenticatedSettingsWorkspaceBillingsRoute,
   AuthenticatedSettingsWorkspaceMembersRoute:
     AuthenticatedSettingsWorkspaceMembersRoute,
+  AuthenticatedSettingsWorkspaceIndexRoute:
+    AuthenticatedSettingsWorkspaceIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

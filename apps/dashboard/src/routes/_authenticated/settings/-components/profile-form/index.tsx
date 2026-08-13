@@ -1,31 +1,34 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { UpdateUserRequest } from "@namera-ai/protocol/dto";
+import { UpdateUserRequest, type GetUserResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import { FieldError, Form, IconPicker, Input, Label, Typography } from "@namera-ai/ui";
 import { useController, useForm } from "react-hook-form";
 
+import { EmailDisplay } from "@/components";
 import { DashboardCard } from "@/components/dashboard-card";
+import { useUpdateUser } from "@/hooks/auth";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
-const defaultImage: MetadataIcon = { type: "image", value: "https://euc.li/envoy1084.eth" };
+const defaultImage: MetadataIcon = { type: "icon", value: "user", color: "#f7f8f8" };
 
-const defaultValues: UpdateUserRequest = {
-  metadata: {
-    version: 1,
-    image: defaultImage,
-    name: "",
-  },
-};
-
-export function ProfileForm() {
+export function ProfileForm({ user }: { user: GetUserResponse }) {
+  const updateUser = useUpdateUser();
   const form = useForm<UpdateUserRequest>({
-    defaultValues,
+    defaultValues: { metadata: user.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
   });
   const image = useController({ control: form.control, name: "metadata.image" });
   const name = useController({ control: form.control, name: "metadata.name" });
-  const handleSubmit = form.handleSubmit(() => undefined);
+  useAutoSave({
+    form,
+    onSave: async (payload) => {
+      await updateUser.mutateAsync({ payload });
+      return payload;
+    },
+  });
+  const handleSubmit = form.handleSubmit((payload) => updateUser.mutateAsync({ payload }));
 
   return (
     <Form onSubmit={handleSubmit} validationBehavior="aria">
@@ -46,7 +49,7 @@ export function ProfileForm() {
           <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
             <Typography className="text-sm!">Email</Typography>
             <Typography className="text-sm" color="muted" truncate>
-              vedant@envoy1084.xyz
+              <EmailDisplay email={user.email} />
             </Typography>
           </DashboardCard.Row>
 

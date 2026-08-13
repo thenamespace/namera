@@ -59,6 +59,7 @@ export const authPolicy = {
       "/activity",
       "/assets",
       "/identity",
+      "/invitations",
       "/mcp",
       "/session-keys",
       "/settings",

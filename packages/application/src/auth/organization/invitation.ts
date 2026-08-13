@@ -5,6 +5,7 @@ import { EmailJobs } from "@namera-ai/emails";
 import {
   InvitationConflictError,
   InvitationNotFoundError,
+  InvitationRecipientMismatchError,
   OrganizationNotFoundError,
   OrganizationPermissionError,
   type ActorId,
@@ -58,7 +59,7 @@ export interface InvitationApplication {
     email: Email;
     userId: UserId;
     sessionId: SessionId;
-  }) => Effect.Effect<void, InvitationError>;
+  }) => Effect.Effect<void, InvitationError | OrganizationError>;
   readonly rejectInvitation: (
     invitationId: InvitationId,
     email: Email,
@@ -83,6 +84,11 @@ export const makeInvitationApplication = Effect.gen(function* () {
     function* (invitationId: InvitationId, email: Email) {
       const invitation = yield* repository.auth.invitation.findByIdForEmail(invitationId, email);
       if (!invitation) {
+        if (yield* repository.auth.invitation.existsById(invitationId)) {
+          return yield* new InvitationRecipientMismatchError({
+            code: "INVITATION_RECIPIENT_MISMATCH",
+          });
+        }
         return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
       }
       return invitation;
@@ -241,6 +247,9 @@ export const makeInvitationApplication = Effect.gen(function* () {
           );
           if (!found) {
             return yield* new InvitationNotFoundError({ code: "INVITATION_NOT_FOUND" });
+          }
+          if (found.organizationRole.type === "system" && found.organizationRole.key === "owner") {
+            return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
           }
           const member = yield* repository.auth.member.findActiveMembership(
             input.userId,

@@ -81,5 +81,6 @@ export type UnreadNotificationCountResponse = typeof UnreadNotificationCountResp
 export type NotificationMutationRequest = typeof NotificationMutationRequest.Type;
 export type MarkAllNotificationsReadResponse = typeof MarkAllNotificationsReadResponse.Type;
 export type NotificationPreferenceResponse = typeof NotificationPreferenceResponse.Type;
+export type ListNotificationPreferencesResponse = typeof ListNotificationPreferencesResponse.Type;
 export type UpdateNotificationPreferenceRequest = typeof UpdateNotificationPreferenceRequest.Type;
 export type ResetNotificationPreferenceRequest = typeof ResetNotificationPreferenceRequest.Type;

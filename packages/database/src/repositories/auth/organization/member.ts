@@ -252,6 +252,14 @@ export class OrganizationMemberRepository extends Context.Service<
                   WHERE ${organizationRoleTable.id} = ${organizationMember.organizationRoleId}
                     AND ${systemRoleTable.key} = 'owner'
                 )`,
+                sql`NOT EXISTS (
+                  SELECT 1
+                  FROM ${organizationRoleTable}
+                  JOIN ${systemRoleTable}
+                    ON ${systemRoleTable.id} = ${organizationRoleTable.systemRoleId}
+                  WHERE ${organizationRoleTable.id} = ${organizationRoleId}
+                    AND ${systemRoleTable.key} = 'owner'
+                )`,
               ),
             )
             .returning();

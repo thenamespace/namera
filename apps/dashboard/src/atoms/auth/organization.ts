@@ -20,7 +20,5 @@ export const organizationAtom = (organizationId: OrganizationId) =>
   });
 
 export const createOrganizationMutation = NameraClient.mutation("organization", "create");
-
 export const switchOrganizationMutation = NameraClient.mutation("organization", "setActive");
-
 export const updateOrganizationMutation = NameraClient.mutation("organization", "update");

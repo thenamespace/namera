@@ -50,7 +50,7 @@ export function ImagePanel({
           value={imageUrl}
           onChange={handleChange}
         >
-          <Input placeholder="https://example.com/image.png" />
+          <Input placeholder="https://example.com/image.png" variant="secondary" />
         </TextField>
         <Button isDisabled={!canSave} onPress={handleSave}>
           Save

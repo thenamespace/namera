@@ -74,10 +74,11 @@ must remain safe historical context and must never contain credentials.
 
 Member administration uses permission dominance as a partial role hierarchy.
 An actor may manage only roles whose permissions are a strict subset of their
-own and may assign only roles within their own permissions. Assigning the system
-Owner role additionally requires the acting role to be the system Owner. Direct
-owner mutation and removal remain unavailable; ownership transfer should be a
-separate explicit workflow.
+own and may assign only roles whose permissions are also a strict subset. This
+means an Admin cannot assign the Admin role to another member. The system Owner
+role is never assignable through invitations or generic member administration,
+and existing owners cannot be modified or removed. A future ownership transfer
+must be a separate explicit workflow that preserves the single-owner invariant.
 
 ## Environment
 

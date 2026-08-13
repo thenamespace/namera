@@ -18,6 +18,21 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
           );
         }),
       )
+      .handle("listOrgRoles", () =>
+        Effect.gen(function* () {
+          const actor = yield* enforceCurrentUser(["role:read"]);
+          return yield* app.organization.member.listRoles(actor.organization.id);
+        }),
+      )
+      .handle("listAssignableRoles", () =>
+        Effect.gen(function* () {
+          const actor = yield* enforceCurrentUser(["role:read"]);
+          return yield* app.organization.member.listAssignableRoles(
+            actor.organization.id,
+            actor.role,
+          );
+        }),
+      )
       .handle("updateMemberRole", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser(["member:update"]);

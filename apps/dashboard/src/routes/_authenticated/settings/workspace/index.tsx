@@ -1,13 +1,17 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { organizationAtom } from "@/atoms/auth/organization";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
+import { hasPermissions } from "@/components/permission";
 
-import { ProfileForm } from "./-components/profile-form";
+import { WorkspaceForm } from "../-components/workspace-form";
 
-export const Route = createFileRoute("/_authenticated/settings/profile")({
+const organizationUpdatePermission = ["organization:update"] as const;
+
+export const Route = createFileRoute("/_authenticated/settings/workspace/")({
   loader: async ({ abortController, context }) => {
     const currentUser = await prefetchQuery(
       context.atomRegistry,
@@ -15,13 +19,21 @@ export const Route = createFileRoute("/_authenticated/settings/profile")({
       abortController.signal,
     );
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
-    return currentUser.user;
+    const organization = await prefetchQuery(
+      context.atomRegistry,
+      organizationAtom(currentUser.organization.id),
+      abortController.signal,
+    );
+    return {
+      canUpdate: hasPermissions(currentUser.role.permissions, organizationUpdatePermission),
+      organization,
+    };
   },
-  component: ProfilePage,
+  component: WorkspacePage,
 });
 
-function ProfilePage() {
-  const user = Route.useLoaderData();
+function WorkspacePage() {
+  const { canUpdate, organization } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -31,10 +43,10 @@ function ProfilePage() {
       <DashboardPage.Content className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 md:py-16">
         <HeadingGroup className="mb-8">
           <HeadingGroup.Title level={1} size="lg">
-            Profile
+            Workspace
           </HeadingGroup.Title>
         </HeadingGroup>
-        <ProfileForm user={user} />
+        <WorkspaceForm canUpdate={canUpdate} organization={organization} />
       </DashboardPage.Content>
     </DashboardPage>
   );

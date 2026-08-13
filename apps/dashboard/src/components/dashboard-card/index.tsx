@@ -28,6 +28,7 @@ const DashboardCardField = ({ className, ...props }: DashboardCardFieldProps) =>
   <TextField
     className={cn(rowClassName, "[&>*:last-child]:w-full", className) ?? rowClassName}
     fullWidth
+    variant="secondary"
     {...props}
   />
 );

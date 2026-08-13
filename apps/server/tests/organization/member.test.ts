@@ -35,6 +35,66 @@ layer(TestServerLayer)("member routes", (it) => {
     }),
   );
 
+  it.effect("lists roles for the active organization", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("member-roles-owner@example.com"));
+
+      const roles = yield* client.member.listOrgRoles();
+
+      expect(roles.map(({ key }) => key)).toEqual(
+        expect.arrayContaining(["owner", "admin", "member"]),
+      );
+    }),
+  );
+
+  it.effect("lists only roles strictly below the current member", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("assignable-owner@example.com"));
+      const admin = yield* createMember(client, testEmail("assignable-admin@example.com"), "admin");
+
+      yield* setAuthToken(admin.ownerToken);
+      const ownerRoles = yield* client.member.listAssignableRoles();
+      expect(ownerRoles.map(({ key }) => key)).toEqual(expect.arrayContaining(["admin", "member"]));
+      expect(ownerRoles.some(({ key }) => key === "owner")).toBe(false);
+
+      yield* setAuthToken(admin.memberToken);
+      const adminRoles = yield* client.member.listAssignableRoles();
+      expect(adminRoles.map(({ key }) => key)).toEqual(["member"]);
+    }),
+  );
+
+  it.effect("enforces one active owner at the database boundary", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("single-owner@example.com"));
+      const repository = yield* Repository;
+      const secondUser = yield* repository.auth.user.create({
+        email: testEmail("second-owner@example.com"),
+        metadata: { version: 1 },
+      });
+      const secondActor = yield* repository.auth.actor.insert({
+        organizationId: owner.actor.organization.id,
+        type: "user",
+      });
+
+      const error = yield* repository.auth.member
+        .insert({
+          actorId: secondActor.id,
+          userId: secondUser.id,
+          organizationId: owner.actor.organization.id,
+          organizationRoleId: owner.actor.role.id,
+        })
+        .pipe(Effect.flip);
+
+      expect(error).toMatchObject({ _tag: "DatabaseError" });
+    }),
+  );
+
   it.effect("updates a lower member role once and records the change", () =>
     Effect.gen(function* () {
       yield* resetTestState();
@@ -133,20 +193,15 @@ layer(TestServerLayer)("member routes", (it) => {
         payload: { organizationMemberId: removable.actor.member.organizationMember.id },
       });
 
-      const promoted = yield* client.member.updateMemberRole({
-        payload: {
-          organizationMemberId: member.actor.member.organizationMember.id,
-          organizationRoleId: adminRole.id,
-        },
-      });
-      expect(promoted.organizationRole.key).toBe("admin");
-
-      const peerRemoval = yield* client.member
-        .removeMember({
-          payload: { organizationMemberId: member.actor.member.organizationMember.id },
+      const peerPromotion = yield* client.member
+        .updateMemberRole({
+          payload: {
+            organizationMemberId: member.actor.member.organizationMember.id,
+            organizationRoleId: adminRole.id,
+          },
         })
         .pipe(Effect.flip);
-      expect(peerRemoval).toMatchObject({
+      expect(peerPromotion).toMatchObject({
         _tag: "OrganizationError",
         code: "INSUFFICIENT_PERMISSIONS",
       });

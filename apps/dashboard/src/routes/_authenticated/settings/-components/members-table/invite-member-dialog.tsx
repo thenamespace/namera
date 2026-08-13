@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { InviteMemberRequest } from "@namera-ai/protocol/dto";
+import type { GetOrganizationRoleResponse } from "@namera-ai/protocol/dto";
 import {
   Button,
   FieldError,
@@ -15,22 +16,29 @@ import {
   Select,
   TextField,
   Typography,
+  toast,
 } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useController, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { demoInviteRoles } from "./data";
+import { useAssignableOrganizationRoles, useInviteMember } from "@/hooks/auth";
 
 type InviteMemberInput = typeof InviteMemberRequest.Encoded;
 type InviteMemberOutput = typeof InviteMemberRequest.Type;
 
-const defaultValues: InviteMemberInput = {
-  email: "",
-  organizationRoleId: "0198a9f6-1000-7000-8000-000000000032",
-};
-
-export function InviteMemberDialog() {
+export function InviteMemberDialog({
+  initialRoles,
+}: {
+  initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
+}) {
+  const roles = useAssignableOrganizationRoles();
+  const inviteMember = useInviteMember();
+  const inviteRoles = roles.data ?? initialRoles;
+  const defaultValues: InviteMemberInput = {
+    email: "",
+    organizationRoleId: inviteRoles[0]?.id ?? "",
+  };
   const [isOpen, setIsOpen] = useState(false);
   const form = useForm<InviteMemberInput, unknown, InviteMemberOutput>({
     defaultValues,
@@ -38,11 +46,26 @@ export function InviteMemberDialog() {
   });
   const email = useController({ control: form.control, name: "email" });
   const role = useController({ control: form.control, name: "organizationRoleId" });
+
+  useEffect(() => {
+    if (!role.field.value && inviteRoles[0]) {
+      form.setValue("organizationRoleId", inviteRoles[0].id);
+    }
+  }, [form, inviteRoles, role.field.value]);
+
   const handleOpenChange = useEventCallback((open: boolean) => {
     setIsOpen(open);
     if (!open) form.reset(defaultValues);
   });
-  const handleSubmit = form.handleSubmit(() => handleOpenChange(false));
+  const handleSubmit = form.handleSubmit(async (payload) => {
+    try {
+      await inviteMember.mutateAsync({ payload });
+      toast.success("Invitation sent");
+      handleOpenChange(false);
+    } catch {
+      toast.danger("Couldn’t send the invitation.");
+    }
+  });
 
   return (
     <Modal isOpen={isOpen} onOpenChange={handleOpenChange}>
@@ -52,7 +75,7 @@ export function InviteMemberDialog() {
       </Button>
 
       <Modal.Backdrop>
-        <Modal.Container size="sm">
+        <Modal.Container size="md">
           <Modal.Dialog>
             <Form onSubmit={handleSubmit} validationBehavior="aria">
               <Modal.CloseTrigger />
@@ -61,7 +84,6 @@ export function InviteMemberDialog() {
               </Modal.Header>
               <Modal.Body className="grid gap-5">
                 <Typography color="muted">Send an invitation to join this organization.</Typography>
-
                 <TextField
                   fullWidth
                   isInvalid={email.fieldState.invalid}
@@ -69,6 +91,7 @@ export function InviteMemberDialog() {
                   name={email.field.name}
                   onChange={email.field.onChange}
                   type="email"
+                  variant="secondary"
                   value={email.field.value}
                 >
                   <Label>Email address</Label>
@@ -85,8 +108,10 @@ export function InviteMemberDialog() {
 
                 <Select
                   fullWidth
+                  isDisabled={roles.isLoading || inviteMember.isPending}
                   isInvalid={role.fieldState.invalid}
                   isRequired
+                  variant="secondary"
                   name={role.field.name}
                   selectedKey={role.field.value}
                   onSelectionChange={role.field.onChange}
@@ -97,7 +122,7 @@ export function InviteMemberDialog() {
                     <Select.Indicator />
                   </Select.Trigger>
                   <Select.Popover>
-                    <ListBox items={demoInviteRoles}>
+                    <ListBox items={inviteRoles}>
                       {(item) => (
                         <ListBox.Item id={item.id} textValue={item.metadata.name}>
                           <div className="grid gap-0.5">
@@ -114,8 +139,8 @@ export function InviteMemberDialog() {
                 </Select>
               </Modal.Body>
               <Modal.Footer>
-                <Button fullWidth type="submit">
-                  Send invite
+                <Button fullWidth isDisabled={inviteMember.isPending} type="submit">
+                  {inviteMember.isPending ? "Sending…" : "Send invite"}
                 </Button>
               </Modal.Footer>
             </Form>
