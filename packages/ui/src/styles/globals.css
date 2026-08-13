@@ -27,7 +27,8 @@
 
   --muted: #939496;
 
-  --overlay: #1b1b1c;
+  /* --overlay: #1b1b1c; */
+  --overlay: #212122;
   --overlay-foreground: #f7f8f8;
 
   --segment: #333434;
