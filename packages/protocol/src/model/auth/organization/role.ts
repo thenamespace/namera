@@ -25,6 +25,8 @@ export const MemberPermission = Schema.Literals([
   "billing:read",
   "billing:update",
   "billing:cancel",
+  "wallet:read",
+  "wallet:create",
 ]);
 
 export const OrganizationRoleMetadata = Schema.Struct({

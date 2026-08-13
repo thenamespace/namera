@@ -52,6 +52,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Billing models are provider-neutral and organization-scoped. Persist the
   code-owned plan key and plan version on subscription history; do not put plan
   state back on the organization model.
+- Wallet responses are namespace-discriminated unions. Add each new chain
+  namespace as its own response member, then discriminate implementation data
+  within that namespace. Never expose wallet-key provider identifiers or
+  provider metadata through public wallet DTOs.
 
 ## Adding a contract
 

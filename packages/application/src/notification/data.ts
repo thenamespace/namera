@@ -19,6 +19,11 @@ export const notificationPolicy = {
     emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(7),
   },
+  "wallet.created": {
+    target: { category: "organization", topic: "wallets" },
+    emailDefaultEnabled: true,
+    emailTimeToLive: Duration.days(7),
+  },
 } as const satisfies Readonly<Record<NotificationType, NotificationPolicy>>;
 
 export const notificationPageSize = 30;

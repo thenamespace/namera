@@ -1,7 +1,6 @@
 import { type PgTimestampConfig, timestamp } from "drizzle-orm/pg-core";
-import { v7 as uuidv7 } from "uuid";
 
-export const generateUniqueId = () => uuidv7();
+export { generateUniqueId } from "@namera-ai/utils";
 
 export const createTimestampField = (
   name: string,

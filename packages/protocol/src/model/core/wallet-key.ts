@@ -36,6 +36,7 @@ export const WalletKey = Schema.Struct({
 export const WalletKeyUpdate = createUpdateSchema(WalletKey);
 export const WalletKeyInsert = createInsertSchema(
   WalletKey,
+  "id",
   "organizationId",
   "provider",
   "algorithm",

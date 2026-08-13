@@ -18,6 +18,7 @@ and adapts HTTP requests to application methods.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
+- `src/wallet/` — wallet creation and organization-scoped wallet reads.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
@@ -75,6 +76,13 @@ existing transaction. Quota-sensitive workflows lock the organization billing
 account, resolve the stored plan/version through `billingPlans`, check current
 usage, and create the resource before that transaction commits. Pending
 invitations reserve member capacity. See `BILLING.md` for the exact semantics.
+
+Wallet creation performs a cheap quota precheck, creates the provider key and
+chain account, then repeats the locked quota check before atomically persisting
+the key, wallet, audit events, notification recipients, and durable email jobs.
+Provider key deletion is intentionally not part of the current service, so a
+failed final transaction may leave an unreferenced provider key for later
+operational reconciliation.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

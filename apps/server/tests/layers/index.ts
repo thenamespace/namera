@@ -6,6 +6,8 @@ import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
+import { Evm } from "@namera-ai/evm";
+import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AuthorizationLive } from "#/middlewares/authorization";
@@ -21,6 +23,7 @@ import {
 } from "#/routes/auth/index";
 import { BillingRoutes } from "#/routes/billing";
 import { HealthRoutes } from "#/routes/health";
+import { WalletRoutes } from "#/routes/wallet";
 
 import { TestAuthToken, TestAuthorizationClientLayer } from "./auth.js";
 import { TestConfigLayer } from "./config.js";
@@ -37,7 +40,7 @@ const TestPersistenceLayer = Layer.mergeAll(Repository.layer, TransactionService
 
 const TestCryptoLayer = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
-const TestServicesLayer = EmailJobs.layer.pipe(
+const TestServicesLayer = Layer.mergeAll(EmailJobs.layer, Evm.testLayer, WalletKeys.testLayer).pipe(
   Layer.provideMerge(EmailService.testLayer),
   Layer.provideMerge(TestPersistenceLayer),
   Layer.provideMerge(TestCryptoLayer),
@@ -64,6 +67,7 @@ const TestHandlersLayer = Layer.mergeAll(
   OrganizationRoutes,
   SessionRoutes,
   UserRoutes,
+  WalletRoutes,
 ).pipe(
   Layer.provide(TestAuthorizationLayer),
   Layer.provide(TestApplicationLayer),

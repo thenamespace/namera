@@ -374,12 +374,21 @@ importers:
       '@namera-ai/emails':
         specifier: workspace:*
         version: link:../emails
+      '@namera-ai/evm':
+        specifier: workspace:*
+        version: link:../evm
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
       '@namera-ai/telemetry':
         specifier: workspace:*
         version: link:../telemetry
+      '@namera-ai/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@namera-ai/wallet-keys':
+        specifier: workspace:*
+        version: link:../wallet-keys
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
@@ -433,6 +442,9 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@namera-ai/utils':
+        specifier: workspace:*
+        version: link:../utils
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-rc.4(patch_hash=1566adf2bdae96497887f6464c2b8539b7a12b1b4487b1336598ecda4f22e847)(@effect/sql-pg@4.0.0-beta.105(effect@4.0.0-beta.105))(@effect/sql-pglite@4.0.0-beta.105(effect@4.0.0-beta.105))(@electric-sql/pglite@0.5.4)(@types/pg@8.20.4)(effect@4.0.0-beta.105)(pg@8.22.0)(zod@4.4.3)
@@ -442,9 +454,6 @@ importers:
       pg:
         specifier: 8.22.0
         version: 8.22.0
-      uuid:
-        specifier: 14.0.1
-        version: 14.0.1
     devDependencies:
       '@effect/platform-node':
         specifier: 'catalog:'
@@ -632,6 +641,9 @@ importers:
       js-base64:
         specifier: 3.9.2
         version: 3.9.2
+      uuid:
+        specifier: 14.0.1
+        version: 14.0.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

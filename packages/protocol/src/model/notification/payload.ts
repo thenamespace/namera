@@ -1,13 +1,17 @@
 import { Schema } from "effect";
 
-import { InvitationId, SessionId } from "#/common/index";
+import { InvitationId, SessionId, WalletId } from "#/common/index";
+import { EthereumAddress } from "#/evm/index";
+import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
 
 const NewSignInNotificationType = Schema.Literal("auth.new-sign-in");
 const InvitationReceivedNotificationType = Schema.Literal("organization.invitation.received");
+const WalletCreatedNotificationType = Schema.Literal("wallet.created");
 
 export const NotificationType = Schema.Union([
   NewSignInNotificationType,
   InvitationReceivedNotificationType,
+  WalletCreatedNotificationType,
 ]);
 
 export const NewSignInNotificationPayload = Schema.Struct({
@@ -30,9 +34,22 @@ export const InvitationReceivedNotificationPayload = Schema.Struct({
   }),
 });
 
+export const WalletCreatedNotificationPayload = Schema.Struct({
+  type: WalletCreatedNotificationType,
+  resourceType: Schema.Literal("wallet"),
+  resourceId: WalletId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    address: EthereumAddress,
+    implementation: Schema.Literals(["kernel", "safe"]),
+    protectionLevel: WalletKeyProtectionLevel,
+  }),
+});
+
 export const NotificationPayload = Schema.Union([
   NewSignInNotificationPayload,
   InvitationReceivedNotificationPayload,
+  WalletCreatedNotificationPayload,
 ]);
 
 export type NotificationPayload = typeof NotificationPayload.Type;

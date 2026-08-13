@@ -17,6 +17,7 @@ import {
 } from "#/routes/auth/index";
 import { BillingRoutes } from "#/routes/billing";
 import { HealthRoutes } from "#/routes/health";
+import { WalletRoutes } from "#/routes/wallet";
 
 const ApiHandlers = Layer.mergeAll(
   BillingRoutes,
@@ -28,6 +29,7 @@ const ApiHandlers = Layer.mergeAll(
   OrganizationRoutes,
   SessionRoutes,
   UserRoutes,
+  WalletRoutes,
 ).pipe(
   Layer.provide(AuthorizationLive),
   Layer.provide(ApplicationLive),

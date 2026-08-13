@@ -12,6 +12,9 @@ export const emailTemplates = {
   "organization-invitation": {
     id: "organization-invitation", // TODO: Update
   },
+  "wallet-created": {
+    id: "wallet-created", // TODO: Update
+  },
 } as const satisfies Record<EmailJobType, { readonly id: string }>;
 
 export const emailPolicy = {

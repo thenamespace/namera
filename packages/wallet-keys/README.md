@@ -18,6 +18,9 @@ signature formatting, smart-account construction, policy evaluation, and HTTP
 transport belong to their respective database, chain adapter, application, and
 server packages.
 
+`WalletKeys.testLayer` supplies deterministic public keys and signatures for
+server boundary tests without writing local files or contacting Google Cloud.
+
 ## Environment
 
 | Variable                      | Required | Purpose                                       |

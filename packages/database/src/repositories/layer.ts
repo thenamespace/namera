@@ -17,6 +17,7 @@ import {
   BillingSubscriptionRepository,
   BillingUsageRepository,
 } from "#/repositories/billing/index";
+import { WalletKeyRepository, WalletRepository } from "#/repositories/core/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
 import {
   NotificationPreferenceRepository,
@@ -42,6 +43,10 @@ export interface RepositoryService {
     account: BillingAccountRepository["Service"];
     subscription: BillingSubscriptionRepository["Service"];
     usage: BillingUsageRepository["Service"];
+  };
+  core: {
+    wallet: WalletRepository["Service"];
+    walletKey: WalletKeyRepository["Service"];
   };
   jobs: {
     email: EmailJobRepository["Service"];
@@ -74,6 +79,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const billingAccount = yield* BillingAccountRepository;
       const billingSubscription = yield* BillingSubscriptionRepository;
       const billingUsage = yield* BillingUsageRepository;
+      const wallet = yield* WalletRepository;
+      const walletKey = yield* WalletKeyRepository;
 
       return Repository.of({
         audit: {
@@ -94,6 +101,10 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           account: billingAccount,
           subscription: billingSubscription,
           usage: billingUsage,
+        },
+        core: {
+          wallet,
+          walletKey,
         },
         jobs: {
           email: emailJob,
@@ -123,6 +134,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         BillingAccountRepository.layer,
         BillingSubscriptionRepository.layer,
         BillingUsageRepository.layer,
+        WalletRepository.layer,
+        WalletKeyRepository.layer,
       ),
     ),
   );

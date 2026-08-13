@@ -19,4 +19,17 @@ export class WalletCreationError extends Schema.TaggedError<WalletCreationError>
     ]),
     namespace: Schema.String,
   },
+  { httpApiStatus: 500 },
 ) {}
+
+export class WalletNotFoundError extends Schema.TaggedError<WalletNotFoundError>()(
+  "WalletError",
+  {
+    code: Schema.Literal("WALLET_NOT_FOUND"),
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export const WalletErrors = [WalletCreationError, WalletNotFoundError] as const;
+export const WalletError = Schema.Union(WalletErrors);
+export type WalletError = typeof WalletError.Type;

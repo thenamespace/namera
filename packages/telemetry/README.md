@@ -19,6 +19,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.
 - `src/metrics/notification.ts` — occurrence, recipient, and preference metrics.
 - `src/metrics/organization.ts` — organization and invitation workflow metrics.
+- `src/metrics/wallet.ts` — wallet creation outcomes and duration.
 
 Metric files contain definitions only. Business services decide when metrics are
 updated. Metric attributes must be bounded values; never use emails, tokens,

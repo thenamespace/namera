@@ -4,7 +4,11 @@ import { ActorId, NotificationId, OrganizationId } from "#/common/index";
 import { NonEmptyString } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 
-import { InvitationReceivedNotificationPayload, NewSignInNotificationPayload } from "./payload.js";
+import {
+  InvitationReceivedNotificationPayload,
+  NewSignInNotificationPayload,
+  WalletCreatedNotificationPayload,
+} from "./payload.js";
 
 const NotificationCommon = Schema.Struct({
   id: NotificationId,
@@ -21,8 +25,13 @@ const notification = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct
 
 export const NewSignInNotification = notification(NewSignInNotificationPayload);
 export const InvitationReceivedNotification = notification(InvitationReceivedNotificationPayload);
+export const WalletCreatedNotification = notification(WalletCreatedNotificationPayload);
 
-export const Notification = Schema.Union([NewSignInNotification, InvitationReceivedNotification]);
+export const Notification = Schema.Union([
+  NewSignInNotification,
+  InvitationReceivedNotification,
+  WalletCreatedNotification,
+]);
 
 export const NotificationInsert = createInsertSchema(
   Notification,

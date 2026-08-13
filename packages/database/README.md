@@ -172,6 +172,15 @@ Resolve organization recipients in the application workflow and persist them
 when the notification is created. Do not recalculate historical inbox visibility
 from the user's current memberships.
 
+## Wallet persistence
+
+`core.wallet_key` stores the public key and opaque provider reference while
+`core.wallet` stores the organization-owned address and namespace-specific
+account data. The repositories expose organization-scoped wallet reads and
+transaction-aware inserts. Provider calls and account construction do not
+belong in repositories; `application` coordinates those capabilities before
+persisting both records in one transaction.
+
 ## Billing persistence
 
 The `billing` schema keeps plan state separate from organization identity:

@@ -52,3 +52,6 @@ const program = Effect.gen(function* () {
 `getRpcUrl` supports `public`, `bundler`, and `paymaster` endpoints. Full Viem
 clients are created inside wallet and execution operations without exposing
 their generic types to package consumers.
+
+`Evm.testLayer` supplies deterministic Kernel and Safe account results for
+server boundary tests while preserving the public discriminated result shapes.

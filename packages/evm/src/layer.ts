@@ -1,6 +1,6 @@
-import { Context, Effect, Layer, Redacted } from "effect";
+import { Context, Effect, Layer, Redacted, Schema } from "effect";
 
-import { UnsupportedChainError } from "@namera-ai/protocol";
+import { EthereumAddress, UnsupportedChainError } from "@namera-ai/protocol";
 import type { EvmAccountCreationError } from "@namera-ai/protocol";
 
 import {
@@ -49,6 +49,44 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       });
 
       return Evm.of({ createAccount, getRpcUrl });
+    }),
+  );
+
+  static readonly testLayer = Layer.succeed(
+    Evm,
+    Evm.of({
+      createAccount: Effect.fn("Evm.test.createAccount")(
+        <const Props extends CreateAccountProps>(props: Props) => {
+          if (props.implementation === "kernel") {
+            return Effect.succeed({
+              version: 1,
+              implementation: "kernel",
+              kernelVersion: props.kernelVersion,
+              entryPointVersion: props.entryPointVersion,
+              validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
+              accountIndex: props.accountIndex,
+              address: Schema.decodeSync(EthereumAddress)(
+                "0x1111111111111111111111111111111111111111",
+              ),
+            } as CreateAccountResult<Props>);
+          }
+
+          return Effect.succeed({
+            version: 1,
+            implementation: "safe",
+            safeVersion: props.safeVersion,
+            entryPointVersion: props.entryPointVersion,
+            validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
+            saltNonce: props.saltNonce,
+            address: Schema.decodeSync(EthereumAddress)(
+              "0x2222222222222222222222222222222222222222",
+            ),
+          } as CreateAccountResult<Props>);
+        },
+      ),
+      getRpcUrl: Effect.fn("Evm.test.getRpcUrl")((chainId, type) =>
+        Effect.succeed(`https://example.test/${chainId}/${type}`),
+      ),
     }),
   );
 }

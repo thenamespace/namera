@@ -10,6 +10,7 @@ import {
   OrganizationGroup,
   SessionGroup,
   UserGroup,
+  WalletGroup,
 } from "./routes/index.js";
 
 export * from "./middlewares/index.js";
@@ -25,6 +26,7 @@ export class NameraApi extends HttpApi.make("NameraAPI")
     OrganizationGroup,
     SessionGroup,
     UserGroup,
+    WalletGroup,
   )
   .annotate(OpenApi.Title, "Namera API")
   .annotate(OpenApi.Description, "Backend API for Namera built using Effect and Drizzle")

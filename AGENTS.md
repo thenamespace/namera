@@ -82,10 +82,10 @@ not duplicate secrets or arbitrary payloads.
 
 ```text
 apps/server      -> api, application, crypto, database, emails, telemetry, evm, wallet-keys
-application      -> crypto, database, emails, telemetry, protocol
+application      -> crypto, database, emails, evm, telemetry, protocol, utils, wallet-keys
 api              -> protocol
 crypto           -> protocol, utils
-database         -> protocol
+database         -> protocol, utils
 emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
@@ -110,6 +110,10 @@ Additional rules:
 - Wallet key provider clients and private key material stay inside
   `packages/wallet-keys`; application workflows receive only the
   provider-neutral `WalletKeys` service.
+- Application wallet workflows coordinate billing, key providers, chain
+  adapters, persistence, audit events, notifications, and email enqueueing.
+  Remote key/account creation happens before the final transaction; repeat the
+  locked billing check inside that transaction before persisting the resource.
 - Chain adapters such as `evm` own chain metadata, clients, account construction,
   execution, and chain-specific policy evaluation. They must not depend on
   `application` or `apps/server`.

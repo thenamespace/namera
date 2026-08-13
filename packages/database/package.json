@@ -43,10 +43,10 @@
     "@effect/sql-pg": "catalog:",
     "@effect/sql-pglite": "catalog:",
     "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",
-    "pg": "8.22.0",
-    "uuid": "14.0.1"
+    "pg": "8.22.0"
   },
   "devDependencies": {
     "@effect/platform-node": "catalog:",
