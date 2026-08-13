@@ -1,6 +1,50 @@
 import { Schema } from "effect";
 
-import { ListOrganizationMemberResponse } from "@namera-ai/protocol/dto";
+import {
+  GetOrganizationRoleResponse,
+  ListOrganizationMemberResponse,
+} from "@namera-ai/protocol/dto";
+
+export const demoInviteRoles = Schema.decodeUnknownSync(Schema.Array(GetOrganizationRoleResponse))([
+  {
+    id: "0198a9f6-1000-7000-8000-000000000032",
+    key: "member",
+    metadata: {
+      version: 1,
+      name: "Member",
+      description: "Can view the organization and its members.",
+    },
+    type: "system",
+    permissions: ["organization:read", "member:read", "role:read"],
+    systemRoleId: "0198a9f6-1000-7000-8000-000000000042",
+  },
+  {
+    id: "0198a9f6-1000-7000-8000-000000000033",
+    key: "admin",
+    metadata: {
+      version: 1,
+      name: "Admin",
+      description: "Can manage the organization, members, roles, and invitations.",
+    },
+    type: "system",
+    permissions: [
+      "organization:read",
+      "organization:update",
+      "member:read",
+      "member:update",
+      "member:remove",
+      "invitation:read",
+      "invitation:create",
+      "invitation:cancel",
+      "role:read",
+      "role:create",
+      "role:update",
+      "role:delete",
+      "billing:read",
+    ],
+    systemRoleId: "0198a9f6-1000-7000-8000-000000000043",
+  },
+]);
 
 export const demoMembers = Schema.decodeUnknownSync(ListOrganizationMemberResponse)([
   {

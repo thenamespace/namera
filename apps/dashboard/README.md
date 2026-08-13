@@ -48,7 +48,8 @@ the supported email preference topics; inbox UI is not implemented yet.
 - `/settings/workspace` contains the organization logo and name form backed by
   the organization update DTO.
 - `/settings/workspace/members` presents searchable organization members with
-  reusable displays and presentation-only row actions.
+  reusable displays, presentation-only row actions, and an invitation dialog
+  validated against the shared invitation DTO.
 
 Settings forms are currently presentation-only. They validate against protocol
 DTOs but do not call mutations until their interaction design is finalized.

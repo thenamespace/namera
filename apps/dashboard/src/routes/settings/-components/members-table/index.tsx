@@ -3,8 +3,7 @@ import { useMemo, useState } from "react";
 import { DateTime } from "effect";
 
 import type { GetOrganizationMemberResponse } from "@namera-ai/protocol/dto";
-import { Button, DataGrid, SearchField, type DataGridColumn } from "@namera-ai/ui";
-import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { DataGrid, SearchField, type DataGridColumn } from "@namera-ai/ui";
 
 import {
   DateDisplay,
@@ -14,6 +13,7 @@ import {
 } from "@/components/display";
 
 import { demoMembers } from "./data";
+import { InviteMemberDialog } from "./invite-member-dialog";
 import { MemberActions } from "./member-actions";
 
 const memberCollator = new Intl.Collator(undefined, {
@@ -111,10 +111,7 @@ export function MembersTable() {
             <SearchField.ClearButton aria-label="Clear member filter" />
           </SearchField.Group>
         </SearchField>
-        <Button className="self-start sm:self-auto" size="sm" type="button">
-          <HugeiconsIcon icon={Add01Icon} />
-          Invite
-        </Button>
+        <InviteMemberDialog />
       </div>
 
       <DataGrid
