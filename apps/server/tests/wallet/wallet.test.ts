@@ -69,16 +69,18 @@ layer(TestServerLayer)("wallet routes", (it) => {
       expect((yield* client.wallet.get({ params: { walletId: kernel.id } })).id).toBe(kernel.id);
 
       const repository = yield* Repository;
-      expect(
-        (yield* repository.audit.organization.findForOrganization(owner.actor.organization.id))
-          .filter((event) => event.event === "wallet.created")
-          .map((event) => event.resourceId),
-      ).toEqual(expect.arrayContaining([kernel.id, safe.id]));
-      expect(
-        (yield* repository.audit.organization.findForOrganization(
-          owner.actor.organization.id,
-        )).filter((event) => event.event === "wallet_key.created"),
-      ).toHaveLength(2);
+      const events = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      );
+      const walletEvents = events.filter((event) => event.event === "wallet.created");
+      const walletKeyEvents = events.filter((event) => event.event === "wallet_key.created");
+      expect(walletEvents.map((event) => event.resourceId)).toEqual(
+        expect.arrayContaining([kernel.id, safe.id]),
+      );
+      expect(walletKeyEvents).toHaveLength(2);
+      expect(walletEvents.map((event) => event.correlationId).toSorted()).toEqual(
+        walletKeyEvents.map((event) => event.correlationId).toSorted(),
+      );
       expect(
         (yield* client.notification.list({ query: {} })).items.filter(
           (item) => item.notification.type === "wallet.created",

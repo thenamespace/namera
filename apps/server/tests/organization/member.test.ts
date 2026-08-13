@@ -67,34 +67,6 @@ layer(TestServerLayer)("member routes", (it) => {
     }),
   );
 
-  it.effect("enforces one active owner at the database boundary", () =>
-    Effect.gen(function* () {
-      yield* resetTestState();
-      const client = yield* makeTestApiClient;
-      const owner = yield* signIn(client, testEmail("single-owner@example.com"));
-      const repository = yield* Repository;
-      const secondUser = yield* repository.auth.user.create({
-        email: testEmail("second-owner@example.com"),
-        metadata: { version: 1 },
-      });
-      const secondActor = yield* repository.auth.actor.insert({
-        organizationId: owner.actor.organization.id,
-        type: "user",
-      });
-
-      const error = yield* repository.auth.member
-        .insert({
-          actorId: secondActor.id,
-          userId: secondUser.id,
-          organizationId: owner.actor.organization.id,
-          organizationRoleId: owner.actor.role.id,
-        })
-        .pipe(Effect.flip);
-
-      expect(error).toMatchObject({ _tag: "DatabaseError" });
-    }),
-  );
-
   it.effect("updates a lower member role once and records the change", () =>
     Effect.gen(function* () {
       yield* resetTestState();

@@ -14,9 +14,6 @@ import { emailPolicy, emailRetryDelay } from "./data.js";
 import { EmailService } from "./layer.js";
 import type { EnqueueEmailProps } from "./types.js";
 
-const recordResult = (result: "sent" | "retry" | "failed" | "expired" | "invalid") =>
-  Metric.update(Metric.withAttributes(emailJobDeliveryResults, { result }), 1);
-
 export class EmailJobs extends Context.Service<
   EmailJobs,
   {
@@ -63,7 +60,7 @@ export class EmailJobs extends Context.Service<
           status,
           lastErrorCode,
         });
-        yield* recordResult(result);
+        yield* Metric.update(Metric.withAttributes(emailJobDeliveryResults, { result }), 1);
       });
 
       const enqueue = Effect.fn("EmailJobs.enqueue")(function* (input: EnqueueEmailProps) {
@@ -126,7 +123,10 @@ export class EmailJobs extends Context.Service<
             providerMessageId: delivery.success,
             sentAt: completedAt,
           });
-          yield* recordResult("sent");
+          yield* Metric.update(
+            Metric.withAttributes(emailJobDeliveryResults, { result: "sent" }),
+            1,
+          );
           yield* Effect.logInfo("email.job.sent", { type: job.type });
           return 1;
         }
@@ -154,7 +154,10 @@ export class EmailJobs extends Context.Service<
           availableAt: retryAt,
           lastErrorCode: delivery.failure.reason,
         });
-        yield* recordResult("retry");
+        yield* Metric.update(
+          Metric.withAttributes(emailJobDeliveryResults, { result: "retry" }),
+          1,
+        );
         yield* Effect.logWarning("email.job.retry", {
           type: job.type,
           reason: delivery.failure.reason,

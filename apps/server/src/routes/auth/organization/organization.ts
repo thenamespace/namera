@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { NameraApi } from "@namera-ai/api";
+import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceCurrentUser, toMemberResponse, toOrganizationResponse } from "#/helpers/index";
+import { enforceActor, toMemberResponse, toOrganizationResponse } from "#/helpers/index";
 
 export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization", (handlers) =>
   Effect.gen(function* () {
@@ -12,16 +12,18 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
     return handlers
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
           return toOrganizationResponse(
-            yield* app.organization.create(actor.user.id, actor.session.id, payload.metadata),
+            yield* app.organization.create(data.user.id, data.session.id, payload.metadata),
           );
         }),
       )
       .handle("list", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          return (yield* app.organization.list(actor.user.id)).map((membership) => ({
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          return (yield* app.organization.list(data.user.id)).map((membership) => ({
             organization: toOrganizationResponse(membership.organization),
             organizationMember: toMemberResponse(membership),
           }));
@@ -29,27 +31,34 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
       )
       .handle("setActive", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          yield* app.organization.setActive(
-            actor.user.id,
-            actor.session.id,
-            payload.organizationId,
-          );
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* app.organization.setActive(data.user.id, data.session.id, payload.organizationId);
         }),
       )
       .handle("getOrganization", ({ query }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["organization:read"]);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["organization:read"] },
+          });
           return toOrganizationResponse(
-            yield* app.organization.get(actor.user.id, query.organizationId),
+            yield* app.organization.get(data.user.id, query.organizationId),
           );
         }),
       )
       .handle("update", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["organization:update"]);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["organization:update"] },
+          });
           return toOrganizationResponse(
-            yield* app.organization.update(actor.actorId, actor.organization.id, payload.metadata),
+            yield* app.organization.update(data.actorId, data.organization.id, payload.metadata),
           );
         }),
       );

@@ -17,18 +17,6 @@ export const WalletImplementation = Schema.Union([
   }),
 ]);
 
-export const WalletCreationRequestedEventData = Schema.Struct({
-  event: Schema.Literal("wallet.creation_requested"),
-  resourceType: Schema.Null,
-  resourceId: Schema.Null,
-  data: Schema.Struct({
-    version: Schema.Literal(1),
-    namespace: Schema.Literal("eip155"),
-    protectionLevel: WalletKeyProtectionLevel,
-    account: WalletImplementation,
-  }),
-});
-
 export const WalletCreatedEventData = Schema.Struct({
   event: Schema.Literal("wallet.created"),
   resourceType: Schema.Literal("wallet"),
@@ -40,17 +28,6 @@ export const WalletCreatedEventData = Schema.Struct({
     address: EthereumAddress,
     protectionLevel: WalletKeyProtectionLevel,
     account: WalletImplementation,
-  }),
-});
-
-export const WalletCreationFailedEventData = Schema.Struct({
-  event: Schema.Literal("wallet.creation_failed"),
-  resourceType: Schema.Null,
-  resourceId: Schema.Null,
-  data: Schema.Struct({
-    version: Schema.Literal(1),
-    stage: Schema.Literals(["entitlement", "key", "account", "persistence"]),
-    code: Schema.String,
   }),
 });
 

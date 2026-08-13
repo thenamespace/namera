@@ -12,7 +12,6 @@ export class WalletCreationError extends Schema.TaggedError<WalletCreationError>
   "WalletCreationError",
   {
     code: Schema.Literals([
-      "UNSUPPORTED_CHAIN",
       "KEY_CREATION_FAILED",
       "ACCOUNT_CREATION_FAILED",
       "WALLET_PERSISTENCE_FAILED",

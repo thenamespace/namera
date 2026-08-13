@@ -53,6 +53,11 @@ Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`. The settings page renders
 the supported email preference topics; inbox UI is not implemented yet.
 
+Wallet list, detail, and creation atoms/hooks are available under
+`src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key
+family and refresh when the active organization changes. Wallet UI is not
+implemented yet.
+
 ## Settings routes
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data

@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { NameraApi } from "@namera-ai/api";
+import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceCurrentUser, toInvitationResponse } from "#/helpers/index";
+import { enforceActor, toInvitationResponse } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (handlers) =>
@@ -15,34 +15,46 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
     return handlers
       .handle("getInvitation", ({ query }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
           return toInvitationResponse(
-            yield* invitations.getInvitation(query.invitationId, actor.user.email),
+            yield* invitations.getInvitation(query.invitationId, data.user.email),
           );
         }),
       )
       .handle("listInvitations", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["invitation:read"]);
-          return (yield* invitations.listInvitations(actor.organization.id)).map(
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["invitation:read"] },
+          });
+          return (yield* invitations.listInvitations(data.organization.id)).map(
             toInvitationResponse,
           );
         }),
       )
       .handle("listUserInvitations", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          return (yield* invitations.listUserInvitations(actor.user.email)).map(
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          return (yield* invitations.listUserInvitations(data.user.email)).map(
             toInvitationResponse,
           );
         }),
       )
       .handle("inviteMember", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["invitation:create"]);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["invitation:create"] },
+          });
           yield* consumeRateLimit(
             "invitation.create.organization",
-            actor.organization.id,
+            data.organization.id,
             rateLimitPolicy.invitation.createByOrganization,
           );
           yield* consumeRateLimit(
@@ -53,42 +65,45 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
           return toInvitationResponse(
             yield* invitations.createInvitation({
               ...payload,
-              actorId: actor.actorId,
-              inviterId: actor.user.id,
-              organizationId: actor.organization.id,
-              inviterRole: actor.role,
+              actorId: data.actorId,
+              inviterId: data.user.id,
+              organizationId: data.organization.id,
+              inviterRole: data.role,
             }),
           );
         }),
       )
       .handle("acceptInvitation", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
           yield* invitations.acceptInvitation({
             invitationId: payload.invitationId,
-            email: actor.user.email,
-            userId: actor.user.id,
-            sessionId: actor.session.id,
+            email: data.user.email,
+            userId: data.user.id,
+            sessionId: data.session.id,
           });
         }),
       )
       .handle("rejectInvitation", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          yield* invitations.rejectInvitation(
-            payload.invitationId,
-            actor.user.email,
-            actor.user.id,
-          );
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* invitations.rejectInvitation(payload.invitationId, data.user.email, data.user.id);
         }),
       )
       .handle("cancelInvitation", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["invitation:cancel"]);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["invitation:cancel"] },
+          });
           yield* invitations.cancelInvitation(
             payload.invitationId,
-            actor.organization.id,
-            actor.actorId,
+            data.organization.id,
+            data.actorId,
           );
         }),
       );

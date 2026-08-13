@@ -17,6 +17,8 @@ evaluation will be added behind the same root `Evm` service.
 
 1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain
    IDs or provider slugs through operations.
+   Add its stable network key, presentation name, and CAIP-2 literal to the
+   protocol chain schemas in the same change.
 2. Keep Viem client factories as plain internal helpers. Create clients inside
    the operation using `EvmConfig`; do not expose their large generic types from
    the public service.

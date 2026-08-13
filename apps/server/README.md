@@ -65,8 +65,9 @@ trusted reverse proxy; otherwise clients can spoof the forwarded header.
 
 Authenticated handlers follow this order:
 
-1. Call `enforceCurrentUser(requiredPermissions)` and keep only the returned
-   actor data.
+1. Yield `CurrentActor`, then call `enforceActor` with the allowed actor kinds
+   and explicit per-actor permission requirements. Keep only the returned actor
+   data.
 2. Apply transport concerns required by that endpoint: rate limits, request
    metadata, cookies, cache headers, or response status.
 3. Call one operation on `Application` and map domain values to public DTOs.

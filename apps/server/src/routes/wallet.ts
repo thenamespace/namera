@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { NameraApi } from "@namera-ai/api";
+import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceCurrentUser, toWalletResponse } from "#/helpers/index";
+import { enforceActor, toWalletResponse } from "#/helpers/index";
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
@@ -13,11 +13,16 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
     return handlers
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["wallet:create"]);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:create"] },
+          });
           return toWalletResponse(
             yield* app.wallet.create({
-              organizationId: actor.organization.id,
-              actorId: actor.actorId,
+              organizationId: data.organization.id,
+              actorId: data.actorId,
               request: payload,
             }),
           );
@@ -25,14 +30,24 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
       )
       .handle("list", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["wallet:read"]);
-          return (yield* app.wallet.list(actor.organization.id)).map(toWalletResponse);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:read"] },
+          });
+          return (yield* app.wallet.list(data.organization.id)).map(toWalletResponse);
         }),
       )
       .handle("get", ({ params }) =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser(["wallet:read"]);
-          return toWalletResponse(yield* app.wallet.get(actor.organization.id, params.walletId));
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:read"] },
+          });
+          return toWalletResponse(yield* app.wallet.get(data.organization.id, params.walletId));
         }),
       );
   }),

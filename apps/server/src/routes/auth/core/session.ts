@@ -1,13 +1,13 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { NameraApi } from "@namera-ai/api";
+import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
 import {
   AuthCookieConfig,
   clearAuthCookie,
-  enforceCurrentUser,
+  enforceActor,
   toSessionResponse,
 } from "#/helpers/index";
 
@@ -16,24 +16,32 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
     const app = yield* Application.Application;
     const cookieConfig = yield* AuthCookieConfig;
     return handlers
-      .handle("currentUser", () => enforceCurrentUser())
+      .handle("currentUser", () =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          return yield* enforceActor({ actor, allowedActors: ["user"] });
+        }),
+      )
       .handle("listSessions", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          return (yield* app.session.list(actor.user.id)).map(toSessionResponse);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          return (yield* app.session.list(data.user.id)).map(toSessionResponse);
         }),
       )
       .handle("logout", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          yield* app.session.logout(actor.session.id, actor.user.id);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* app.session.logout(data.session.id, data.user.id);
           yield* clearAuthCookie(cookieConfig.secure);
         }),
       )
       .handle("revokeOtherSessions", () =>
         Effect.gen(function* () {
-          const actor = yield* enforceCurrentUser();
-          return yield* app.session.revokeOthers(actor.session.id, actor.user.id);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          return yield* app.session.revokeOthers(data.session.id, data.user.id);
         }),
       );
   }),

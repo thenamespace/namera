@@ -1,4 +1,4 @@
-import type { InvitationId, OrganizationId } from "@namera-ai/protocol";
+import type { InvitationId, OrganizationId, WalletId } from "@namera-ai/protocol";
 
 export const QueryKeys = {
   session: {
@@ -32,6 +32,12 @@ export const QueryKeys = {
     unreadCount: ["notification:unread-count"] as const,
     preferences: ["notification:preferences"] as const,
   },
+  wallet: {
+    all: ["wallet:all"] as const,
+    lists: ["wallet:lists"] as const,
+    details: ["wallet:details"] as const,
+    detail: (walletId: WalletId) => [`wallet:detail:${walletId}`] as const,
+  },
 } as const;
 
 export type QueryKey =
@@ -53,4 +59,8 @@ export type QueryKey =
   | (typeof QueryKeys.notification.all)[number]
   | (typeof QueryKeys.notification.lists)[number]
   | (typeof QueryKeys.notification.unreadCount)[number]
-  | (typeof QueryKeys.notification.preferences)[number];
+  | (typeof QueryKeys.notification.preferences)[number]
+  | (typeof QueryKeys.wallet.all)[number]
+  | (typeof QueryKeys.wallet.lists)[number]
+  | (typeof QueryKeys.wallet.details)[number]
+  | ReturnType<typeof QueryKeys.wallet.detail>[number];

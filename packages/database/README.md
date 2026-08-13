@@ -118,9 +118,10 @@ integration-test isolation.
   an Owner role. This prevents concurrent changes from bypassing application
   hierarchy checks and keeps the organization's single Owner outside generic
   member administration.
-- A database trigger locks the organization row and rejects a second active
-  Owner membership, preserving the invariant across concurrent inserts and
-  direct repository usage.
+- Organization creation establishes the single Owner. Generic member and
+  invitation workflows cannot assign, update, or remove that role. Ownership
+  transfer requires a dedicated future application workflow; persistence does
+  not independently enforce this business rule.
 
 ## Audit persistence
 

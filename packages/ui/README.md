@@ -37,6 +37,16 @@ import { cn } from "@namera-ai/ui/utils";
 import "@namera-ai/ui/styles.css";
 ```
 
+Render a protocol-typed chain icon through the shared icon entry point. The
+component forwards normal SVG props; supported chains without a committed asset
+render a neutral placeholder until their icon is added:
+
+```tsx
+import { ChainIcon } from "@namera-ai/ui/icons";
+
+<ChainIcon aria-label="Ethereum" chain="ethereum" namespace="eip155" className="size-5" />;
+```
+
 The icon picker uses the shared protocol value and can expose any non-empty set
 of supported tabs:
 
@@ -77,6 +87,9 @@ reusable presentation components and their local styling only.
 5. Export only supported entry points in `package.json` and `src/index.ts`.
    Because this package is source-only, consuming Tailwind builds must scan its
    source and import `@namera-ai/ui/styles.css` once.
+6. Chain icons are selected using protocol namespace and chain-name literals.
+   Add new assets to `src/icons/chain/` only for supported chains, wire them in
+   `src/icons/chain.tsx`, and keep provider-specific network names out of UI.
 
 ## Upstream documentation
 

@@ -56,10 +56,9 @@ export const makeWalletApplication = Effect.gen(function* () {
       implementation: input.request.implementation,
       protectionLevel: input.request.protectionLevel,
     });
-    const recordCreationResult = (result: string) => Metric.update(creationResults, result);
 
     yield* enforceWalletLimit(repository, input.organizationId, input.request.protectionLevel).pipe(
-      Effect.tapErrorTag("BillingError", () => recordCreationResult("limit_exceeded")),
+      Effect.tapErrorTag("BillingError", () => Metric.update(creationResults, "limit_exceeded")),
       Effect.catchTag("DatabaseError", Effect.die),
     );
 
@@ -71,7 +70,7 @@ export const makeWalletApplication = Effect.gen(function* () {
         protectionLevel: input.request.protectionLevel,
       })
       .pipe(
-        Effect.tapError(() => recordCreationResult("key_failed")),
+        Effect.tapError(() => Metric.update(creationResults, "key_failed")),
         Effect.mapError(
           () =>
             new WalletCreationError({
@@ -108,7 +107,7 @@ export const makeWalletApplication = Effect.gen(function* () {
               owner,
             })
             .pipe(
-              Effect.tapError(() => recordCreationResult("account_failed")),
+              Effect.tapError(() => Metric.update(creationResults, "account_failed")),
               Effect.mapError(
                 () =>
                   new WalletCreationError({
@@ -127,7 +126,7 @@ export const makeWalletApplication = Effect.gen(function* () {
               owner,
             })
             .pipe(
-              Effect.tapError(() => recordCreationResult("account_failed")),
+              Effect.tapError(() => Metric.update(creationResults, "account_failed")),
               Effect.mapError(
                 () =>
                   new WalletCreationError({
@@ -179,7 +178,7 @@ export const makeWalletApplication = Effect.gen(function* () {
                   implementationVersion: account.safeVersion,
                   entryPointVersion: account.entryPointVersion,
                 };
-          yield* audit.organization({
+          const walletKeyEvent = yield* audit.organization({
             organizationId: input.organizationId,
             actorId: input.actorId,
             event: "wallet_key.created",
@@ -190,21 +189,24 @@ export const makeWalletApplication = Effect.gen(function* () {
               protectionLevel: walletKey.protectionLevel,
             },
           });
-          const walletEvent = yield* audit.organization({
-            organizationId: input.organizationId,
-            actorId: input.actorId,
-            event: "wallet.created",
-            resourceType: "wallet",
-            resourceId: wallet.id,
-            data: {
-              version: 1,
-              walletKeyId: walletKey.id,
-              namespace: wallet.namespace,
-              address: account.address,
-              protectionLevel: walletKey.protectionLevel,
-              account: accountEvent,
+          const walletEvent = yield* audit.organization(
+            {
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              event: "wallet.created",
+              resourceType: "wallet",
+              resourceId: wallet.id,
+              data: {
+                version: 1,
+                walletKeyId: walletKey.id,
+                namespace: wallet.namespace,
+                address: account.address,
+                protectionLevel: walletKey.protectionLevel,
+                account: accountEvent,
+              },
             },
-          });
+            { correlationId: walletKeyEvent.correlationId },
+          );
 
           const organization = yield* repository.auth.organization.findById(input.organizationId);
           if (organization === undefined) {
@@ -257,8 +259,10 @@ export const makeWalletApplication = Effect.gen(function* () {
         }),
       )
       .pipe(
-        Effect.tapErrorTag("BillingError", () => recordCreationResult("limit_exceeded")),
-        Effect.tapErrorTag("DatabaseError", () => recordCreationResult("persistence_failed")),
+        Effect.tapErrorTag("BillingError", () => Metric.update(creationResults, "limit_exceeded")),
+        Effect.tapErrorTag("DatabaseError", () =>
+          Metric.update(creationResults, "persistence_failed"),
+        ),
         Effect.catchTag(
           "DatabaseError",
           () =>
@@ -269,7 +273,7 @@ export const makeWalletApplication = Effect.gen(function* () {
         ),
       );
 
-    yield* recordCreationResult("success");
+    yield* Metric.update(creationResults, "success");
     yield* Effect.logInfo("wallet.created", {
       namespace: input.request.namespace,
       implementation: input.request.implementation,

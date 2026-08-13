@@ -3,7 +3,6 @@ import { Schema, Struct } from "effect";
 import { ActorId, OrganizationId, WalletId, WalletKeyId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName, TimestampFields } from "#/model/common";
 
-export const ChainFamily = Schema.Literals(["evm", "solana"]);
 export const WalletStatus = Schema.Literals(["active", "frozen", "archived"]);
 export const WalletMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -21,6 +20,5 @@ export const WalletCommon = Schema.Struct({
   createdByActorId: ActorId,
 }).mapFields(Struct.assign(TimestampFields));
 
-export type ChainFamily = typeof ChainFamily.Type;
 export type WalletStatus = typeof WalletStatus.Type;
 export type WalletMetadata = typeof WalletMetadata.Type;
