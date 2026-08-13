@@ -26,7 +26,9 @@ After migrations complete, the server starts the scoped email worker. It polls
 the durable outbox, uses leases safe for multiple instances, and stops with the
 server scope. HTTP requests only enqueue email work.
 
-Authenticated responses use `Cache-Control: no-store`. If authorization finds
+Authenticated responses use `Cache-Control: no-store`. Authentication cookies
+use `Secure` outside development and omit it only when `NODE_ENV=development`.
+If authorization finds
 an invalid session or a session whose active membership no longer exists, it
 also expires the stale `auth-token` cookie so the browser can recover cleanly.
 
@@ -80,11 +82,12 @@ Copy `.env.example` to `apps/server/.env` for local development. Server-owned
 values have defaults; composed package configuration remains required unless its
 own README documents a default.
 
-| Variable             | Default                 | Purpose                         |
-| -------------------- | ----------------------- | ------------------------------- |
-| `SERVER_HOST`        | `0.0.0.0`               | HTTP listen host.               |
-| `SERVER_PORT`        | `8080`                  | HTTP listen port.               |
-| `SERVER_CORS_ORIGIN` | `http://localhost:3000` | Allowed credentialed UI origin. |
+| Variable             | Default                 | Purpose                                         |
+| -------------------- | ----------------------- | ----------------------------------------------- |
+| `NODE_ENV`           | `development`           | Runtime environment and cookie security policy. |
+| `SERVER_HOST`        | `0.0.0.0`               | HTTP listen host.                               |
+| `SERVER_PORT`        | `8080`                  | HTTP listen port.                               |
+| `SERVER_CORS_ORIGIN` | `http://localhost:3000` | Allowed credentialed UI origin.                 |
 
 The composition root also loads:
 

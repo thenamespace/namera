@@ -1,22 +1,41 @@
+import { Config, Context, Effect, Layer } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { AuthTokenSecurity } from "@namera-ai/api";
 import { authPolicy } from "@namera-ai/application";
 
-const options = {
+export class AuthCookieConfig extends Context.Service<
+  AuthCookieConfig,
+  { readonly secure: boolean }
+>()("@namera-ai/server/AuthCookieConfig") {
+  static readonly layer = Layer.effect(
+    AuthCookieConfig,
+    Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
+      AuthCookieConfig.of({ secure: environment !== "development" }),
+    ),
+  );
+
+  static readonly developmentLayer = Layer.succeed(
+    AuthCookieConfig,
+    AuthCookieConfig.of({ secure: false }),
+  );
+}
+
+const cookieOptions = (secure: boolean) => ({
   path: authPolicy.cookie.path,
   httpOnly: authPolicy.cookie.httpOnly,
-  secure: authPolicy.cookie.secure,
+  secure,
   sameSite: authPolicy.cookie.sameSite,
-} as const;
+});
 
-export const setAuthCookie = (token: string) =>
+export const setAuthCookie = (token: string, secure: boolean) =>
   HttpApiBuilder.securitySetCookie(AuthTokenSecurity, token, {
-    ...options,
+    ...cookieOptions(secure),
     maxAge: authPolicy.session.timeToLive,
   });
 
-export const clearAuthCookie = HttpApiBuilder.securitySetCookie(AuthTokenSecurity, "", {
-  ...options,
-  maxAge: 0,
-});
+export const clearAuthCookie = (secure: boolean) =>
+  HttpApiBuilder.securitySetCookie(AuthTokenSecurity, "", {
+    ...cookieOptions(secure),
+    maxAge: 0,
+  });

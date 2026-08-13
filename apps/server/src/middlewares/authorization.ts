@@ -7,7 +7,7 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
 
-import { clearAuthCookie } from "#/helpers/auth-cookie";
+import { AuthCookieConfig, clearAuthCookie } from "#/helpers/auth-cookie";
 import {
   toMemberResponse,
   toOrganizationResponse,
@@ -21,6 +21,7 @@ export const AuthorizationLive = Layer.effect(
   Effect.gen(function* () {
     const crypto = yield* CryptoService;
     const repository = yield* Repository;
+    const cookieConfig = yield* AuthCookieConfig;
 
     return Authorization.of({
       authToken: Effect.fn("Authorization.authToken")(function* (httpEffect, { credential }) {
@@ -37,7 +38,7 @@ export const AuthorizationLive = Layer.effect(
           .pipe(Effect.orDie);
 
         if (session === undefined || session.activeOrganizationId === null) {
-          yield* clearAuthCookie;
+          yield* clearAuthCookie(cookieConfig.secure);
           return yield* new HttpApiError.Unauthorized();
         }
 
@@ -46,7 +47,7 @@ export const AuthorizationLive = Layer.effect(
           .pipe(Effect.orDie);
 
         if (membership === undefined) {
-          yield* clearAuthCookie;
+          yield* clearAuthCookie(cookieConfig.secure);
           return yield* new HttpApiError.Unauthorized();
         }
 

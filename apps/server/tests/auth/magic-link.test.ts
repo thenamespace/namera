@@ -94,7 +94,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         httpOnly: true,
         path: "/",
         sameSite: "lax",
-        secure: true,
+        secure: false,
       });
       expect(signedIn.actor.user.email).toBe(email);
       expect(signedIn.actor.user.emailVerified).toBe(true);

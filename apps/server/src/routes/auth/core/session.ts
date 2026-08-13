@@ -4,11 +4,17 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { clearAuthCookie, enforceCurrentUser, toSessionResponse } from "#/helpers/index";
+import {
+  AuthCookieConfig,
+  clearAuthCookie,
+  enforceCurrentUser,
+  toSessionResponse,
+} from "#/helpers/index";
 
 export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const cookieConfig = yield* AuthCookieConfig;
     return handlers
       .handle("currentUser", () => enforceCurrentUser())
       .handle("listSessions", () =>
@@ -21,7 +27,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* enforceCurrentUser();
           yield* app.session.logout(actor.session.id, actor.user.id);
-          yield* clearAuthCookie;
+          yield* clearAuthCookie(cookieConfig.secure);
         }),
       )
       .handle("revokeOtherSessions", () =>

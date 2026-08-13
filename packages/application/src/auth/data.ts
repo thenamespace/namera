@@ -17,7 +17,6 @@ export interface AuthPolicy {
     readonly name: string;
     readonly path: "/";
     readonly httpOnly: true;
-    readonly secure: true;
     readonly sameSite: "lax";
   };
   readonly returnTo: {
@@ -50,7 +49,6 @@ export const authPolicy = {
     name: "auth-token",
     path: "/",
     httpOnly: true,
-    secure: true,
     sameSite: "lax",
   },
   returnTo: {

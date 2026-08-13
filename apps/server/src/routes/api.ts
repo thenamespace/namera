@@ -3,6 +3,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { NameraApi } from "@namera-ai/api";
 
+import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { ApplicationLive, ServicesLive } from "#/layers/services";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import {
@@ -29,6 +30,7 @@ const ApiHandlers = Layer.mergeAll(
   Layer.provide(AuthorizationLive),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
+  Layer.provide(AuthCookieConfig.layer),
 );
 
 export const ApiRoutes = HttpApiBuilder.layer(NameraApi, {

@@ -7,6 +7,7 @@ import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
 
+import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
 import {
@@ -47,7 +48,10 @@ const TestApplicationLayer = Application.layer.pipe(
   Layer.provide(TestConfigLayer),
 );
 
-const TestAuthorizationLayer = AuthorizationLive.pipe(Layer.provide(TestServicesLayer));
+const TestAuthorizationLayer = AuthorizationLive.pipe(
+  Layer.provide(TestServicesLayer),
+  Layer.provide(AuthCookieConfig.developmentLayer),
+);
 
 const TestHandlersLayer = Layer.mergeAll(
   HealthRoutes,
@@ -62,6 +66,7 @@ const TestHandlersLayer = Layer.mergeAll(
   Layer.provide(TestAuthorizationLayer),
   Layer.provide(TestApplicationLayer),
   Layer.provide(TestServicesLayer),
+  Layer.provide(AuthCookieConfig.developmentLayer),
   HttpRouter.provideRequest(RateLimiterLive),
 );
 
