@@ -11,7 +11,7 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
-  API reference, and authenticated notification inbox.
+  API reference, authenticated billing read, and notification inbox.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.

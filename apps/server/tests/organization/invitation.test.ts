@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 
 import { Repository } from "@namera-ai/database";
 
@@ -189,6 +189,82 @@ layer(TestServerLayer)("invitation routes", (it) => {
         _tag: "InvitationError",
         code: "INVITATION_NOT_FOUND",
       });
+    }),
+  );
+
+  it.effect("reserves member capacity for pending invitations", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("capacity-owner@example.com"));
+
+      const invitations = yield* Effect.forEach([1, 2, 3, 4], (index) =>
+        inviteMember(
+          client,
+          testEmail(`capacity-${index}@example.com`),
+          owner.actor.organization.id,
+        ),
+      );
+      const billing = yield* client.billing.get();
+      expect(billing.usage).toMatchObject({ members: 1, pendingInvitations: 4 });
+
+      const error = yield* inviteMember(
+        client,
+        testEmail("capacity-full@example.com"),
+        owner.actor.organization.id,
+      ).pipe(Effect.flip);
+      expect(error).toMatchObject({
+        _tag: "BillingError",
+        code: "LIMIT_EXCEEDED",
+        limit: "members",
+      });
+
+      const firstInvitation = invitations[0];
+      if (!firstInvitation) return yield* Effect.die("Expected a pending invitation");
+      yield* client.invitation.cancelInvitation({
+        payload: { invitationId: firstInvitation.invitation.id },
+      });
+      yield* inviteMember(
+        client,
+        testEmail("capacity-released@example.com"),
+        owner.actor.organization.id,
+      );
+      expect((yield* client.billing.get()).usage.pendingInvitations).toBe(4);
+    }),
+  );
+
+  it.effect("serializes concurrent invitations at the member limit", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("capacity-race-owner@example.com"));
+      yield* Effect.forEach([1, 2, 3], (index) =>
+        inviteMember(
+          client,
+          testEmail(`capacity-race-${index}@example.com`),
+          owner.actor.organization.id,
+        ),
+      );
+
+      const results = yield* Effect.all(
+        [
+          inviteMember(
+            client,
+            testEmail("capacity-race-a@example.com"),
+            owner.actor.organization.id,
+          ).pipe(Effect.result),
+          inviteMember(
+            client,
+            testEmail("capacity-race-b@example.com"),
+            owner.actor.organization.id,
+          ).pipe(Effect.result),
+        ],
+        { concurrency: "unbounded" },
+      );
+
+      expect(results.filter(Result.isSuccess)).toHaveLength(1);
+      expect(results.filter(Result.isFailure)).toHaveLength(1);
+      expect((yield* client.billing.get()).usage.pendingInvitations).toBe(4);
     }),
   );
 });

@@ -171,3 +171,24 @@ state and preferences:
 Resolve organization recipients in the application workflow and persist them
 when the notification is created. Do not recalculate historical inbox visibility
 from the user's current memberships.
+
+## Billing persistence
+
+The `billing` schema keeps plan state separate from organization identity:
+
+- `account` is a one-to-one organization billing record and may later link to a
+  provider customer.
+- `subscription` preserves plan/version history and permits only one trialing,
+  active, or past-due row per organization.
+- `provider_event` is an idempotent provider-webhook inbox keyed by provider and
+  provider event ID.
+
+Free subscriptions need neither provider identifiers nor artificial billing
+periods. Plan limits live in the application catalog documented in
+`packages/application/BILLING.md`; database rows store only the selected key and
+version.
+
+The billing repository aggregate exposes account creation/lookup/locking,
+current-subscription lookup, and a usage read model. Quota-sensitive application
+transactions lock `billing.account` before reading usage so concurrent writes for
+one organization are serialized without globally locking other organizations.

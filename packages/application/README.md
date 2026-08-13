@@ -16,7 +16,9 @@ and adapts HTTP requests to application methods.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
+- `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
+- `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
 Future feature folders should add a focused operation builder to the aggregate
@@ -67,6 +69,12 @@ const program = Effect.gen(function* () {
 ```
 
 `Application.layer` is the only application layer provided by the server.
+
+Organization creation initializes an active free billing subscription in its
+existing transaction. Quota-sensitive workflows lock the organization billing
+account, resolve the stored plan/version through `billingPlans`, check current
+usage, and create the resource before that transaction commits. Pending
+invitations reserve member capacity. See `BILLING.md` for the exact semantics.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

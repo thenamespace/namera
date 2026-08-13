@@ -47,5 +47,9 @@ export const WalletKeyInsert = createInsertSchema(
 );
 
 export type WalletKey = typeof WalletKey.Type;
+export type WalletKeyAlgorithm = typeof WalletKeyAlgorithm.Type;
+export type WalletKeyProtectionLevel = typeof WalletKeyProtectionLevel.Type;
+export type WalletKeyProvider = typeof WalletKeyProvider.Type;
+export type WalletKeyStatus = typeof WalletKeyStatus.Type;
 export type WalletKeyUpdate = typeof WalletKeyUpdate.Type;
 export type WalletKeyInsert = typeof WalletKeyInsert.Type;

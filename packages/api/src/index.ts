@@ -1,6 +1,7 @@
 import { HttpApi, OpenApi } from "effect/unstable/httpapi";
 
 import {
+  BillingGroup,
   HealthGroup,
   InvitationGroup,
   MagicLinkGroup,
@@ -15,6 +16,7 @@ export * from "./middlewares/index.js";
 
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
+    BillingGroup,
     HealthGroup,
     InvitationGroup,
     MagicLinkGroup,

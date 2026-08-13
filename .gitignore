@@ -194,3 +194,5 @@ research
 
 # Local feature progress
 /progress/
+pricing.md
+script/calculate-margin.ts

@@ -11,6 +11,9 @@ import { systemRoles } from "#/migrations/data";
 import {
   account,
   actor,
+  billingAccount,
+  billingProviderEvent,
+  billingSubscription,
   emailJob,
   invitation,
   notification,
@@ -67,6 +70,9 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(notificationPreference);
           yield* database.delete(notification);
           yield* database.delete(emailJob);
+          yield* database.delete(billingProviderEvent);
+          yield* database.delete(billingSubscription);
+          yield* database.delete(billingAccount);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
           yield* database.delete(wallet);

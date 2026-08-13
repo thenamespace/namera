@@ -35,6 +35,10 @@ export const EmailJobId = createBrandedId("EmailJobId");
 export const NotificationId = createBrandedId("NotificationId");
 export const NotificationPreferenceId = createBrandedId("NotificationPreferenceId");
 
+// Billing Tables
+export const BillingSubscriptionId = createBrandedId("BillingSubscriptionId");
+export const BillingProviderEventId = createBrandedId("BillingProviderEventId");
+
 export type UserId = typeof UserId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
@@ -52,3 +56,5 @@ export type OrganizationEventId = typeof OrganizationEventId.Type;
 export type EmailJobId = typeof EmailJobId.Type;
 export type NotificationId = typeof NotificationId.Type;
 export type NotificationPreferenceId = typeof NotificationPreferenceId.Type;
+export type BillingSubscriptionId = typeof BillingSubscriptionId.Type;
+export type BillingProviderEventId = typeof BillingProviderEventId.Type;

@@ -38,7 +38,6 @@ export const toSessionResponse = (session: Session): GetSessionResponse => ({
 
 export const toOrganizationResponse = (organization: Organization): GetOrganizationResponse => ({
   id: organization.id,
-  plan: organization.plan,
   metadata: organization.metadata,
 });
 

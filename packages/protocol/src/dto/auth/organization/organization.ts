@@ -9,7 +9,7 @@ export const GetOrganizationRequest = Schema.Struct({
   organizationId: OrganizationId,
 }).annotate({ identifier: "GetOrganizationRequest" });
 export const GetOrganizationResponse = Organization.mapFields(
-  Struct.pick(["id", "plan", "metadata"]),
+  Struct.pick(["id", "metadata"]),
 ).annotate({ identifier: "OrganizationResponse", description: "Organization details" });
 
 export const CreateOrganizationRequest = OrganizationInsert.mapFields(

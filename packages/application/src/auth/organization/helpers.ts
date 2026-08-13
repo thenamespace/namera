@@ -9,6 +9,7 @@ import {
 } from "@namera-ai/protocol";
 
 import type { AuditService } from "#/audit/layer";
+import { initializeOrganizationBilling } from "#/billing/index";
 
 export const createUserOrganizationMember = Effect.fn("createUserOrganizationMember")(function* (
   repository: RepositoryService,
@@ -61,6 +62,8 @@ export const createOrganizationWithOwner = Effect.fn("createOrganizationWithOwne
     createdById: userId,
     metadata: { version: 1, name },
   });
+
+  yield* initializeOrganizationBilling(repository, organization.id);
 
   const roles = yield* Effect.forEach(availableRoles, (role) =>
     repository.auth.role.insert({

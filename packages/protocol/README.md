@@ -49,6 +49,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   category/topic pairs and currently allow only the email channel; in-app
   delivery is mandatory. Keep legacy audit payload versions decodable when the
   preference taxonomy changes.
+- Billing models are provider-neutral and organization-scoped. Persist the
+  code-owned plan key and plan version on subscription history; do not put plan
+  state back on the organization model.
 
 ## Adding a contract
 

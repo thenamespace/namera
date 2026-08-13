@@ -19,6 +19,7 @@ import {
   SessionRoutes,
   UserRoutes,
 } from "#/routes/auth/index";
+import { BillingRoutes } from "#/routes/billing";
 import { HealthRoutes } from "#/routes/health";
 
 import { TestAuthToken, TestAuthorizationClientLayer } from "./auth.js";
@@ -54,6 +55,7 @@ const TestAuthorizationLayer = AuthorizationLive.pipe(
 );
 
 const TestHandlersLayer = Layer.mergeAll(
+  BillingRoutes,
   HealthRoutes,
   InvitationRoutes,
   MagicLinkRoutes,

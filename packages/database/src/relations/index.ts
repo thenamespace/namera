@@ -3,6 +3,9 @@ import { defineRelations } from "drizzle-orm";
 import {
   account,
   actor,
+  billingAccount,
+  billingProviderEvent,
+  billingSubscription,
   emailJob,
   invitation,
   notification,
@@ -25,6 +28,9 @@ export const relations = defineRelations(
   {
     account,
     actor,
+    billingAccount,
+    billingProviderEvent,
+    billingSubscription,
     emailJob,
     invitation,
     notification,
@@ -171,6 +177,37 @@ export const relations = defineRelations(
       notificationPreferences: r.many.notificationPreference({
         from: r.organization.id,
         to: r.notificationPreference.organizationId,
+      }),
+      billingAccount: r.one.billingAccount({
+        from: r.organization.id,
+        to: r.billingAccount.organizationId,
+      }),
+      billingSubscriptions: r.many.billingSubscription({
+        from: r.organization.id,
+        to: r.billingSubscription.organizationId,
+      }),
+    },
+    billingAccount: {
+      organization: r.one.organization({
+        from: r.billingAccount.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      subscriptions: r.many.billingSubscription({
+        from: r.billingAccount.organizationId,
+        to: r.billingSubscription.organizationId,
+      }),
+    },
+    billingSubscription: {
+      account: r.one.billingAccount({
+        from: r.billingSubscription.organizationId,
+        to: r.billingAccount.organizationId,
+        optional: false,
+      }),
+      organization: r.one.organization({
+        from: r.billingSubscription.organizationId,
+        to: r.organization.id,
+        optional: false,
       }),
     },
     systemRole: {

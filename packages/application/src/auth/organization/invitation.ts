@@ -6,6 +6,7 @@ import {
   InvitationConflictError,
   InvitationNotFoundError,
   InvitationRecipientMismatchError,
+  type BillingError,
   OrganizationNotFoundError,
   OrganizationPermissionError,
   type ActorId,
@@ -28,6 +29,7 @@ import {
   canAssignOrganizationRole,
   type OrganizationRoleAuthority,
 } from "#/auth/organization/permissions";
+import { enforceMemberLimit, lockOrganizationBilling } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 
 export interface InvitationView {
@@ -53,7 +55,7 @@ export interface InvitationApplication {
     organizationId: OrganizationId;
     organizationRoleId: OrganizationRoleId;
     inviterRole: OrganizationRoleAuthority;
-  }) => Effect.Effect<InvitationView, InvitationError | OrganizationError>;
+  }) => Effect.Effect<InvitationView, BillingError | InvitationError | OrganizationError>;
   readonly acceptInvitation: (input: {
     invitationId: InvitationId;
     email: Email;
@@ -151,6 +153,15 @@ export const makeInvitationApplication = Effect.gen(function* () {
 
       const invitation = yield* transaction.run(
         Effect.gen(function* () {
+          yield* lockOrganizationBilling(repository, input.organizationId);
+          const concurrent = (yield* repository.auth.invitation.findPendingForOrgId(
+            input.organizationId,
+            now,
+          )).find((item) => item.invitation.email === input.email);
+          if (concurrent) {
+            return { invitation: concurrent, created: false } as const;
+          }
+          yield* enforceMemberLimit(repository, input.organizationId);
           yield* repository.auth.invitation.expirePendingForEmail(
             input.organizationId,
             input.email,
@@ -164,14 +175,14 @@ export const makeInvitationApplication = Effect.gen(function* () {
             expiresAt: DateTime.addDuration(now, config.invitation.timeToLive),
           });
           if (created === undefined) {
-            const concurrent = (yield* repository.auth.invitation.findPendingForOrgId(
+            const conflict = (yield* repository.auth.invitation.findPendingForOrgId(
               input.organizationId,
               now,
             )).find((item) => item.invitation.email === input.email);
-            if (concurrent === undefined) {
+            if (conflict === undefined) {
               return yield* Effect.die("Invitation conflict did not resolve to a pending row");
             }
-            return { invitation: concurrent, created: false } as const;
+            return { invitation: conflict, created: false } as const;
           }
           const createdEvent = yield* audit.organization({
             organizationId: input.organizationId,

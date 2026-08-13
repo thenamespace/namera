@@ -12,6 +12,11 @@ import {
   UserRepository,
   VerificationRepository,
 } from "#/repositories/auth/index";
+import {
+  BillingAccountRepository,
+  BillingSubscriptionRepository,
+  BillingUsageRepository,
+} from "#/repositories/billing/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
 import {
   NotificationPreferenceRepository,
@@ -32,6 +37,11 @@ export interface RepositoryService {
     session: SessionRepository["Service"];
     user: UserRepository["Service"];
     verification: VerificationRepository["Service"];
+  };
+  billing: {
+    account: BillingAccountRepository["Service"];
+    subscription: BillingSubscriptionRepository["Service"];
+    usage: BillingUsageRepository["Service"];
   };
   jobs: {
     email: EmailJobRepository["Service"];
@@ -61,6 +71,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const emailJob = yield* EmailJobRepository;
       const notification = yield* NotificationRepository;
       const notificationPreference = yield* NotificationPreferenceRepository;
+      const billingAccount = yield* BillingAccountRepository;
+      const billingSubscription = yield* BillingSubscriptionRepository;
+      const billingUsage = yield* BillingUsageRepository;
 
       return Repository.of({
         audit: {
@@ -76,6 +89,11 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           session,
           user,
           verification,
+        },
+        billing: {
+          account: billingAccount,
+          subscription: billingSubscription,
+          usage: billingUsage,
         },
         jobs: {
           email: emailJob,
@@ -102,6 +120,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         EmailJobRepository.layer,
         NotificationRepository.layer,
         NotificationPreferenceRepository.layer,
+        BillingAccountRepository.layer,
+        BillingSubscriptionRepository.layer,
+        BillingUsageRepository.layer,
       ),
     ),
   );

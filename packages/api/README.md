@@ -8,6 +8,7 @@ metadata. It does not start a server or implement backend workflows.
 
 - `src/index.ts` — complete `NameraApi` definition and OpenAPI metadata.
 - `src/routes/health.ts` — health endpoint group.
+- `src/routes/billing.ts` — read-only active-organization billing and entitlements.
 - `src/routes/auth/core/` — core authentication endpoints such as magic links,
   sessions, and users.
 - `src/routes/auth/organization/` — organization, membership, and invitation

@@ -1,6 +1,6 @@
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
-import { InvitationErrors, OrganizationErrors } from "@namera-ai/protocol";
+import { BillingErrors, InvitationErrors, OrganizationErrors } from "@namera-ai/protocol";
 import {
   AcceptInvitationRequest,
   AcceptInvitationResponse,
@@ -36,7 +36,7 @@ export class InvitationGroup extends HttpApiGroup.make("invitation")
     }).annotate(OpenApi.Summary, "List invitations received by the current user"),
     HttpApiEndpoint.post("inviteMember", "/invite-member", {
       payload: InviteMemberRequest,
-      error: [...InvitationErrors, ...OrganizationErrors, ...CommonErrors],
+      error: [...BillingErrors, ...InvitationErrors, ...OrganizationErrors, ...CommonErrors],
       success: InviteMemberResponse,
     }).annotate(OpenApi.Summary, "Invite a member to the active organization"),
     HttpApiEndpoint.post("acceptInvitation", "/accept-invitation", {

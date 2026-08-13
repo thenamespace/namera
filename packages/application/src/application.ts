@@ -20,9 +20,11 @@ import {
   makeOrganizationApplication,
   type OrganizationApplication,
 } from "#/auth/organization/organization";
+import { makeBillingApplication, type BillingApplication } from "#/billing/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 
 export interface ApplicationService {
+  readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
   readonly notification: NotificationApplication;
   readonly organization: OrganizationApplication & {
@@ -47,8 +49,10 @@ export class Application extends Context.Service<Application, ApplicationService
       const invitation = yield* makeInvitationApplication;
       const member = yield* makeMemberApplication;
       const notification = yield* makeNotificationApplication;
+      const billing = yield* makeBillingApplication;
 
       return Application.of({
+        billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },
         notification,
         organization: { ...organization, invitation, member },

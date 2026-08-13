@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
+    "billing:margin": "node script/calculate-margin.ts",
     "check": "oxfmt --check . && turbo run lint typecheck typecheck:test build",
     "dev": "turbo run dev",
     "dev:services:down": "docker compose down",
@@ -27,6 +28,7 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
     "effect": "catalog:",
     "klarity": "catalog:",
     "lefthook": "catalog:",

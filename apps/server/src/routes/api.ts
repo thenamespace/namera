@@ -15,9 +15,11 @@ import {
   SessionRoutes,
   UserRoutes,
 } from "#/routes/auth/index";
+import { BillingRoutes } from "#/routes/billing";
 import { HealthRoutes } from "#/routes/health";
 
 const ApiHandlers = Layer.mergeAll(
+  BillingRoutes,
   HealthRoutes,
   InvitationRoutes,
   MagicLinkRoutes,
