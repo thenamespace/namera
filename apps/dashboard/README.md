@@ -9,6 +9,11 @@ Workspace package imports continue to use their package names.
 ## Structure
 
 - `src/routes/` — file-based TanStack Router routes.
+- `src/routes/_authenticated/` — pathless protected layout and all authenticated
+  routes. Its loader prefetches the current actor into the shared atom registry,
+  exposes that actor as route loader data, and redirects a missing actor to
+  `/auth`. The frontend current-user atom recovers any API or transport failure
+  to `null`.
 - `src/routes/**/-components/` — UI used by one route or route group. Keep a
   single-file component directly in this directory. Give it a folder with an
   `index.tsx` entry only after it is split across multiple files.
@@ -77,6 +82,11 @@ the control remains in the right column and both columns stay top-aligned.
    `-components/` directory. Shared components remain in `src/components/`.
 5. Treat frontend guards as navigation UX only; the server remains authoritative
    for authentication and permissions.
+
+All authenticated pages belong beneath the pathless `_authenticated` route.
+Do not repeat current-user prefetching in child loaders; read the parent loader
+data when the route needs the actor directly, or use `useCurrentUser` to consume
+the same cached atom result in React components.
 
 ## UI conventions
 

@@ -1,11 +1,8 @@
-import type { PropsWithChildren } from "react";
-
-import { Outlet, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 
 import { Toast } from "@namera-ai/ui";
 
 import "@/styles.css";
-import { AppSidebar, SettingsSidebar } from "@/components";
 import type { RouterContext } from "@/router-context";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -13,19 +10,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootComponent() {
-  const { pathname } = useLocation();
-
-  const Sidebar = (() => {
-    if (pathname.startsWith("/auth")) return ({ children }: PropsWithChildren) => <>{children}</>;
-    if (pathname.startsWith("/settings")) return SettingsSidebar;
-    return AppSidebar;
-  })();
-
   return (
     <div className="bg-[#010102] text-foreground min-h-screen font-inter">
-      <Sidebar>
-        <Outlet />
-      </Sidebar>
+      <Outlet />
       <Toast.Provider placement="bottom end" />
     </div>
   );

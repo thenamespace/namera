@@ -3,13 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
-import { NotificationPreferencesForm } from "./-components/notification-preferences-form";
+import { ProfileForm } from "./-components/profile-form";
 
-export const Route = createFileRoute("/settings/notifications")({
-  component: NotificationsPage,
+export const Route = createFileRoute("/_authenticated/settings/profile")({
+  component: ProfilePage,
 });
 
-function NotificationsPage() {
+function ProfilePage() {
   return (
     <DashboardPage>
       <DashboardPage.Header className="md:hidden">
@@ -18,13 +18,10 @@ function NotificationsPage() {
       <DashboardPage.Content className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 md:py-16">
         <HeadingGroup className="mb-8">
           <HeadingGroup.Title level={1} size="lg">
-            Notifications
+            Profile
           </HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Choose which important account and organization updates you receive by email.
-          </HeadingGroup.Description>
         </HeadingGroup>
-        <NotificationPreferencesForm />
+        <ProfileForm />
       </DashboardPage.Content>
     </DashboardPage>
   );

@@ -2,6 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { DashboardPage } from "@/components/page";
 
-export const Route = createFileRoute("/mcp")({
+export const Route = createFileRoute("/_authenticated/session-keys")({
   component: DashboardPage,
 });
