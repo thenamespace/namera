@@ -35,8 +35,11 @@ Workspace package imports continue to use their package names.
 - `/auth` contains the magic-link request UI.
 - `/auth/verify` contains the browser-session confirmation UI.
 
-The routes are currently presentation-only. API behavior is added through atoms
-and hooks after the interaction design is settled.
+The request flow uses one React Hook Form instance across its steps, validates
+with the protocol request DTO, and advances only after the request mutation
+succeeds. The verification route validates its URL credentials with the
+protocol schema, creates the cookie-backed session through the verification
+mutation, and replaces the browser location with the returned relative path.
 
 Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`. The settings page renders

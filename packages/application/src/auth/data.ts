@@ -54,8 +54,18 @@ export const authPolicy = {
     sameSite: "lax",
   },
   returnTo: {
-    defaultPath: "/dashboard",
-    allowedPrefixes: ["/dashboard"],
+    defaultPath: "/",
+    allowedPrefixes: [
+      "/",
+      "/accounts",
+      "/activity",
+      "/assets",
+      "/identity",
+      "/mcp",
+      "/session-keys",
+      "/settings",
+      "/templates",
+    ],
   },
   invitation: {
     timeToLive: Duration.days(7),

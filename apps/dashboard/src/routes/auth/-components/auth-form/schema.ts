@@ -1,12 +1,8 @@
 import { Schema } from "effect";
 
-import { Email } from "@namera-ai/protocol";
+import { RequestMagicLinkRequest } from "@namera-ai/protocol/dto";
 
-export const EmailFormSchema = Schema.Struct({
-  email: Email,
-});
+export const EmailFormValidator = Schema.toStandardSchemaV1(RequestMagicLinkRequest);
 
-export const EmailFormValidator = Schema.toStandardSchemaV1(EmailFormSchema);
-
-export type EmailFormInput = typeof EmailFormSchema.Encoded;
-export type EmailFormOutput = typeof EmailFormSchema.Type;
+export type EmailFormInput = typeof RequestMagicLinkRequest.Encoded;
+export type EmailFormOutput = typeof RequestMagicLinkRequest.Type;

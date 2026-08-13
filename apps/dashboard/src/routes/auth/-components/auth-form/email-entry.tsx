@@ -1,20 +1,18 @@
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Button, FieldError, Form, Input, Label, TextField, Typography } from "@namera-ai/ui";
-import { useController, useForm } from "react-hook-form";
+import { useController, useFormContext } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { EmailFormValidator, type EmailFormInput, type EmailFormOutput } from "./schema";
+import type { EmailFormInput, EmailFormOutput } from "./schema";
 
 type EmailEntryProps = {
+  errorMessage?: string | undefined;
+  isPending: boolean;
   onBack: () => void;
-  onContinue: (email: EmailFormOutput["email"]) => void;
+  onContinue: (email: EmailFormOutput["email"]) => Promise<void>;
 };
 
-export function EmailEntry({ onBack, onContinue }: EmailEntryProps) {
-  const { control, handleSubmit } = useForm<EmailFormInput, unknown, EmailFormOutput>({
-    defaultValues: { email: "" },
-    resolver: standardSchemaResolver(EmailFormValidator),
-  });
+export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: EmailEntryProps) {
+  const { control, handleSubmit } = useFormContext<EmailFormInput, unknown, EmailFormOutput>();
   const { field, fieldState } = useController({ control, name: "email" });
   const submit = useEventCallback((values: EmailFormOutput) => onContinue(values.email));
   const handleFormSubmit = handleSubmit(submit);
@@ -46,10 +44,15 @@ export function EmailEntry({ onBack, onContinue }: EmailEntryProps) {
         <FieldError>{fieldState.error?.message}</FieldError>
       </TextField>
 
-      <Button fullWidth type="submit">
-        Continue with email
+      <Button fullWidth isDisabled={isPending} type="submit">
+        {isPending ? "Sending link..." : "Continue with email"}
       </Button>
-      <Button fullWidth onPress={onBack} type="button" variant="ghost">
+      {errorMessage ? (
+        <Typography.Paragraph className="text-danger text-center" role="alert" size="sm">
+          {errorMessage}
+        </Typography.Paragraph>
+      ) : null}
+      <Button fullWidth isDisabled={isPending} onPress={onBack} type="button" variant="ghost">
         Back to login
       </Button>
     </Form>

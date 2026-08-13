@@ -89,7 +89,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const email = testEmail("token@example.com");
       const signedIn = yield* signIn(client, email);
 
-      expect(signedIn.verification).toEqual({ returnTo: "/dashboard" });
+      expect(signedIn.verification).toEqual({ returnTo: "/" });
       expect(signedIn.cookie.options).toMatchObject({
         httpOnly: true,
         path: "/",
@@ -119,7 +119,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         responseMode: "decoded-and-response",
       });
 
-      expect(result.body.returnTo).toBe("/dashboard");
+      expect(result.body.returnTo).toBe("/");
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.cookies.cookies["auth-token"]?.value).toBeTruthy();
     }),
@@ -165,9 +165,9 @@ layer(TestServerLayer)("magic-link routes", (it) => {
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
-      const allowed = Schema.decodeSync(MagicLinkReturnTo)("/dashboard/wallets");
+      const allowed = Schema.decodeSync(MagicLinkReturnTo)("/settings/profile");
       const denied = Schema.decodeSync(MagicLinkReturnTo)("/admin");
-      const traversal = Schema.decodeSync(MagicLinkReturnTo)("/dashboard/../admin");
+      const traversal = Schema.decodeSync(MagicLinkReturnTo)("/settings/../admin");
 
       const allowedLink = yield* requestMagicLink(
         client,
@@ -187,7 +187,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const deniedResult = yield* client.magicLink.verify({
         payload: { type: "token", id: deniedLink.id, token: deniedLink.token },
       });
-      expect(deniedResult.body.returnTo).toBe("/dashboard");
+      expect(deniedResult.body.returnTo).toBe("/");
 
       const traversalLink = yield* requestMagicLink(
         client,
@@ -201,7 +201,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
           token: traversalLink.token,
         },
       });
-      expect(traversalResult.body.returnTo).toBe("/dashboard");
+      expect(traversalResult.body.returnTo).toBe("/");
     }),
   );
 

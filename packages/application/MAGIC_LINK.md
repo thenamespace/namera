@@ -40,7 +40,7 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "returnTo": "/dashboard"
+  "returnTo": "/"
 }
 ```
 
