@@ -15,10 +15,12 @@ export class AuthCookieConfig extends Context.Service<
     ),
   );
 
-  static readonly developmentLayer = Layer.succeed(
+  static readonly devLayer = Layer.succeed(
     AuthCookieConfig,
     AuthCookieConfig.of({ secure: false }),
   );
+
+  static readonly testLayer = AuthCookieConfig.devLayer;
 }
 
 const cookieOptions = (secure: boolean) => ({

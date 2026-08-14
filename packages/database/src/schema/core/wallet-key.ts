@@ -18,7 +18,6 @@ export const walletKey = coreSchema.table(
     provider: text("provider").notNull().$type<WalletKey["provider"]>(),
     algorithm: text("algorithm").notNull().$type<WalletKey["algorithm"]>(),
     protectionLevel: text("protection_level").notNull().$type<WalletKey["protectionLevel"]>(),
-    keyVersionName: text("key_version_name").notNull(),
     publicKeyHex: text("public_key_hex").notNull().$type<WalletKey["publicKeyHex"]>(),
     status: text("status").notNull().default("active").$type<WalletKey["status"]>(),
     data: jsonb("data").notNull().$type<WalletKey["data"]>(),
@@ -26,7 +25,6 @@ export const walletKey = coreSchema.table(
   },
   (table) => [
     unique("wallet_key_id_organization_unique").on(table.id, table.organizationId),
-    unique("wallet_key_provider_version_name_unique").on(table.provider, table.keyVersionName),
     index("wallet_key_organization_status_idx").on(table.organizationId, table.status),
   ],
 );

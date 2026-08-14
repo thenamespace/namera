@@ -85,7 +85,7 @@ must not call it.
 5. Add delivery and retry tests through `EmailJobs.processOnce`.
 
 Do not add an untyped generic payload, JSX, generic HTML sending, or business
-decisions here. `developmentLayer` logs template variables for explicit local
+decisions here. `EmailService.devLayer` logs template variables for explicit local
 debugging and must not be used in shared or production environments.
 
 `EmailService.testLayer` captures messages in `TestEmails` without contacting

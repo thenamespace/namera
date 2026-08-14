@@ -94,5 +94,5 @@ export class TestDatabase extends Context.Service<
       }),
     ),
     Layer.effectDiscard(migrateDatabase),
-  ).pipe(Layer.provideMerge(Database.pgliteLayer));
+  ).pipe(Layer.provideMerge(Database.testLayer));
 }

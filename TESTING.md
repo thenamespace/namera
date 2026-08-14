@@ -12,8 +12,9 @@ small number of faithful test layers over mocks for every internal function.
 - HTTP feature tests belong in `apps/server/tests`. They use the real API
   contract, route handlers, authorization, application workflows, repositories,
   transactions, and database schema.
-- Provider packages own their test implementations. Consumers compose those
-  layers; they do not recreate provider fakes in every test suite.
+- Provider packages own their test implementations and focused lifecycle or
+  protocol-adapter tests. Consumers compose those layers; they do not recreate
+  provider fakes in every test suite.
 - Browser interaction tests belong in `apps/dashboard` when UI behavior is
   implemented.
 
@@ -150,6 +151,7 @@ persistence outcome that is not exposed by the API.
 pnpm --filter @namera-ai/server test
 pnpm --filter @namera-ai/server test:watch
 pnpm --filter @namera-ai/server typecheck:test
+pnpm --filter @namera-ai/wallet-keys test
 pnpm test
 pnpm typecheck:test
 ```

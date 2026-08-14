@@ -10,6 +10,7 @@ evaluation will be added behind the same root `Evm` service.
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
 - `src/clients/` — internal plain Viem public, bundler, and paymaster factories.
 - `src/accounts/` — smart-account and wallet-key owner construction.
+- `src/signatures/` — provider signature conversion for EVM validators.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -31,6 +32,12 @@ evaluation will be added behind the same root `Evm` service.
 5. Put EVM-specific transaction normalization, simulation, execution, and policy
    evaluation here. The application package selects the wallet/grants and
    coordinates persistence; the server only adapts HTTP.
+
+Provider ECDSA signatures are DER encoded. Use
+`derSignatureToEvmSignature` to produce the validator representation:
+P-256 validators receive fixed-width `r || s`, while secp256k1 validators
+receive `r || s || v` after recovery parity is matched against the stored public
+key. The secp256k1 variant requires the exact digest that the provider signed.
 
 ## Environment
 

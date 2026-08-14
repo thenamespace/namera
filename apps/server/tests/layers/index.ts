@@ -54,7 +54,7 @@ const TestApplicationLayer = Application.layer.pipe(
 
 const TestAuthorizationLayer = AuthorizationLive.pipe(
   Layer.provide(TestServicesLayer),
-  Layer.provide(AuthCookieConfig.developmentLayer),
+  Layer.provide(AuthCookieConfig.testLayer),
 );
 
 const TestHandlersLayer = Layer.mergeAll(
@@ -72,7 +72,7 @@ const TestHandlersLayer = Layer.mergeAll(
   Layer.provide(TestAuthorizationLayer),
   Layer.provide(TestApplicationLayer),
   Layer.provide(TestServicesLayer),
-  Layer.provide(AuthCookieConfig.developmentLayer),
+  Layer.provide(AuthCookieConfig.testLayer),
   HttpRouter.provideRequest(RateLimiterLive),
 );
 

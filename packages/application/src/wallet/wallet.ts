@@ -85,12 +85,12 @@ export const makeWalletApplication = Effect.gen(function* () {
       publicKey: createdKey.publicKeyHex,
       origin: authConfig.dashboardPublicOrigin.origin,
       rpId: authConfig.dashboardPublicOrigin.hostname,
+      validatorType: "webauthn_p256",
       sign: (payload) =>
         Effect.runPromise(
-          walletKeys.sign({
-            keyVersionName: createdKey.keyVersionName,
-            algorithm: createdKey.algorithm,
-            payload,
+          walletKeys.signMessage({
+            ...createdKey,
+            message: payload,
           }),
         ),
     });
@@ -152,7 +152,6 @@ export const makeWalletApplication = Effect.gen(function* () {
             provider: createdKey.provider,
             algorithm: createdKey.algorithm,
             protectionLevel: createdKey.protectionLevel,
-            keyVersionName: createdKey.keyVersionName,
             publicKeyHex: createdKey.publicKeyHex,
             status: "active",
             data: createdKey.data,

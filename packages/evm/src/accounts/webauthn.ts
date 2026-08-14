@@ -1,17 +1,19 @@
 import * as Base64 from "ox/Base64";
 import * as Hex from "ox/Hex";
-import * as Signature from "ox/Signature";
 import * as Authentication from "ox/webauthn/Authentication";
 import * as WebAuthnP256 from "ox/WebAuthnP256";
 import { hashMessage, hashTypedData } from "viem";
 import type { Hex as ViemHex } from "viem";
 import type { WebAuthnAccount, WebAuthnSignReturnType } from "viem/account-abstraction";
 
+import { derSignatureToEvmSignature } from "../signatures/der.js";
+
 export interface CreateWalletKeyWebAuthnAccountOptions {
   readonly id: string;
   readonly publicKey: ViemHex;
   readonly origin: string;
   readonly rpId: string;
+  readonly validatorType: "webauthn_p256";
   readonly sign: (payload: Uint8Array) => Promise<Uint8Array>;
 }
 
@@ -25,7 +27,10 @@ export const createWalletKeyWebAuthnAccount = (
       rpId: options.rpId,
     });
     const derSignature = await options.sign(Hex.toBytes(payload));
-    const signature = Signature.fromDerBytes(derSignature);
+    const signature = derSignatureToEvmSignature({
+      validatorType: options.validatorType,
+      derSignature,
+    });
     const rawResponse = {
       authenticatorData: Base64.fromHex(metadata.authenticatorData, { pad: false, url: true }),
       clientDataJSON: Base64.fromString(metadata.clientDataJSON, { pad: false, url: true }),
@@ -42,11 +47,11 @@ export const createWalletKeyWebAuthnAccount = (
         rawId: options.id,
         response: rawResponse,
       },
-      signature: Signature.toHex(signature),
+      signature,
     });
 
     return {
-      signature: Signature.toHex(signature),
+      signature,
       webauthn: metadata,
       raw: response.raw,
     };

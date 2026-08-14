@@ -33,17 +33,24 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "test:watch": "NODE_OPTIONS=--conditions=namera-source vitest",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@aws-crypto/crc32c": "5.2.0",
     "@google-cloud/kms": "5.7.0",
     "@namera-ai/protocol": "workspace:*",
+    "@noble/curves": "1.9.1",
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

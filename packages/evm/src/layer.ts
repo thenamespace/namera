@@ -52,6 +52,8 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
     }),
   );
 
+  static readonly devLayer = Evm.layer;
+
   static readonly testLayer = Layer.succeed(
     Evm,
     Evm.of({

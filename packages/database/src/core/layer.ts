@@ -33,7 +33,9 @@ export class Database extends Context.Service<Database, DatabaseService>()(
 ) {
   static readonly layer = Layer.effect(Database, makeDatabase).pipe(Layer.provide(PgLive));
 
-  static readonly pgliteLayer = Layer.effect(
+  static readonly devLayer = Database.layer;
+
+  static readonly testLayer = Layer.effect(
     Database,
     PgliteDrizzle.makeWithDefaults({ relations }),
   ).pipe(Layer.provide(PgliteClient.layer()));

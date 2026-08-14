@@ -1,9 +1,80 @@
-import { createPublicKey } from "node:crypto";
+import { createPrivateKey, createPublicKey, generateKeyPair } from "node:crypto";
 
 import { Effect, Schema } from "effect";
 
 import { Hex, WalletKeyError } from "@namera-ai/protocol";
-import type { WalletKey } from "@namera-ai/protocol/model";
+import type { CreateWalletKeyInput, WalletKey } from "@namera-ai/protocol/model";
+import { p256 } from "@noble/curves/p256";
+import { secp256k1 } from "@noble/curves/secp256k1";
+
+export const generateLocalKeyPair = Effect.fn("WalletKeys.generateLocalKeyPair")(
+  (algorithm: CreateWalletKeyInput["algorithm"]) =>
+    Effect.tryPromise({
+      try: () =>
+        new Promise<{ readonly privateKey: string; readonly publicKey: string }>(
+          (resolve, reject) => {
+            const onGenerated = (error: Error | null, publicKey: string, privateKey: string) => {
+              if (error !== null) {
+                reject(error);
+                return;
+              }
+
+              resolve({ publicKey, privateKey });
+            };
+
+            if (algorithm === "ed25519") {
+              generateKeyPair(
+                "ed25519",
+                {
+                  publicKeyEncoding: { type: "spki", format: "pem" },
+                  privateKeyEncoding: { type: "pkcs8", format: "pem" },
+                },
+                onGenerated,
+              );
+              return;
+            }
+
+            generateKeyPair(
+              "ec",
+              {
+                namedCurve: algorithm === "p256" ? "prime256v1" : "secp256k1",
+                publicKeyEncoding: { type: "spki", format: "pem" },
+                privateKeyEncoding: { type: "pkcs8", format: "pem" },
+              },
+              onGenerated,
+            );
+          },
+        ),
+      catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+    }),
+);
+
+export const signLocalHash = Effect.fn("WalletKeys.signLocalHash")(function* (
+  privateKeyPem: string,
+  algorithm: "p256" | "secp256k1",
+  hash: Uint8Array,
+) {
+  const privateKey = yield* Effect.try({
+    try: () => createPrivateKey(privateKeyPem).export({ format: "jwk" }),
+    catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+  });
+
+  if (privateKey.d === undefined) {
+    return yield* new WalletKeyError({
+      operation: "sign",
+      cause: new Error("Private key material is missing"),
+    });
+  }
+
+  const privateKeyBytes = Buffer.from(privateKey.d, "base64url");
+  return yield* Effect.try({
+    try: () =>
+      (algorithm === "p256" ? p256 : secp256k1)
+        .sign(hash, privateKeyBytes, { lowS: true, extraEntropy: true, prehash: false })
+        .toDERRawBytes(),
+    catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+  });
+});
 
 export const publicKeyHexFromPem = Effect.fn("WalletKeys.publicKeyHexFromPem")(function* (
   pem: string,

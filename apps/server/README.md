@@ -107,10 +107,11 @@ service's variables.
 Only one exact CORS origin is allowed because credentialed requests must not use
 a wildcard origin.
 
-`WALLET_KEYS_PROVIDER` defaults to `local`. When it is `gcp-kms`, also set
-`GCP_PROJECT_ID`, `GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with
-Application Default Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may
-point to a credential file. The configured key ring must already exist.
+Development uses `WalletKeys.devLayer` with local key files. Other environments
+use `WalletKeys.layer` with Google Cloud KMS, so set `GCP_PROJECT_ID`,
+`GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with Application Default
+Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may point to a credential
+file. The configured key ring must already exist.
 
 ## Commands
 
