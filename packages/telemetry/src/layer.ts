@@ -1,4 +1,4 @@
-import { Effect, Layer, Redacted } from "effect";
+import { Effect, Layer } from "effect";
 import { FetchHttpClient } from "effect/unstable/http";
 import {
   OtlpLogger,
@@ -7,10 +7,11 @@ import {
   OtlpTracer,
 } from "effect/unstable/observability";
 
-import { AxiomConfig, TelemetryConfig } from "#/config";
 import { telemetryData } from "#/data";
+import { resolveTelemetryExport } from "#/export";
 
-const makeExporters = (options: {
+export const makeTelemetryLayer = (options: {
+  serviceName: string;
   environment: string;
   serviceVersion: string;
   tracesUrl: string;
@@ -21,7 +22,7 @@ const makeExporters = (options: {
   metricsHeaders?: Readonly<Record<string, string>>;
 }) => {
   const resource = {
-    serviceName: telemetryData.serviceName,
+    serviceName: options.serviceName,
     serviceVersion: options.serviceVersion,
     attributes: {
       "deployment.environment.name": options.environment,
@@ -57,39 +58,18 @@ const makeExporters = (options: {
 
 export const TelemetryLive = Layer.unwrap(
   Effect.gen(function* () {
-    const config = yield* TelemetryConfig;
+    const destination = yield* resolveTelemetryExport();
 
-    if (config.environment !== "production") {
-      return makeExporters({
-        environment: config.environment,
-        serviceVersion: config.serviceVersion,
-        tracesUrl: `${config.localOtlpEndpoint}/v1/traces`,
-        logsUrl: `${config.localOtlpEndpoint}/v1/logs`,
-        metricsUrl: `${config.localOtlpEndpoint}/v1/metrics`,
-      });
-    }
-
-    const axiom = yield* AxiomConfig;
-    const authorization = `Bearer ${Redacted.value(axiom.apiToken)}`;
-
-    return makeExporters({
-      environment: config.environment,
-      serviceVersion: config.serviceVersion,
-      tracesUrl: `${axiom.baseUrl}/v1/traces`,
-      logsUrl: `${axiom.baseUrl}/v1/logs`,
-      metricsUrl: `${axiom.baseUrl}/v1/metrics`,
-      tracesHeaders: {
-        authorization,
-        "x-axiom-dataset": axiom.tracesDataset,
-      },
-      logsHeaders: {
-        authorization,
-        "x-axiom-dataset": axiom.logsDataset,
-      },
-      metricsHeaders: {
-        authorization,
-        "x-axiom-metrics-dataset": axiom.metricsDataset,
-      },
+    return makeTelemetryLayer({
+      serviceName: telemetryData.serviceNames.server,
+      environment: destination.environment,
+      serviceVersion: destination.serviceVersion,
+      tracesUrl: destination.traces.url,
+      logsUrl: destination.logs.url,
+      metricsUrl: destination.metrics.url,
+      tracesHeaders: destination.traces.headers,
+      logsHeaders: destination.logs.headers,
+      metricsHeaders: destination.metrics.headers,
     });
   }),
 );

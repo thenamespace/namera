@@ -12,7 +12,8 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 
 - `src/config.ts` — common telemetry and production Axiom configuration.
 - `src/data.ts` — code-owned service identity and exporter timing.
-- `src/layer.ts` — environment-selected OTLP exporter layer.
+- `src/export.ts` — environment-selected OTLP destinations and provider headers.
+- `src/layer.ts` — reusable OTLP exporter layer and the server live layer.
 - `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
@@ -37,7 +38,13 @@ session IDs, user IDs, URLs, or arbitrary error messages.
 - Prefer counters, timers, and preregistered frequency values. Labels and
   frequency words must have bounded cardinality.
 - Keep exporter URLs, tokens, dataset selection, and environment switching in
-  `TelemetryLive`; feature packages must remain vendor-neutral.
+  this package; feature packages must remain vendor-neutral.
+
+Browser code uses `makeTelemetryLayer` with the dashboard service identity and
+the server-owned `/t/traces/v1`, `/t/logs/v1`, and `/t/metrics/v1` endpoints.
+The browser never receives Axiom credentials or the local collector address.
+The server resolves those upstream destinations with `resolveTelemetryExport`
+and attaches provider authorization only while proxying.
 
 ## Environment
 

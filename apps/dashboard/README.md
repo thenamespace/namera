@@ -24,6 +24,7 @@ Workspace package imports continue to use their package names.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.
+- `src/telemetry.ts` — browser OTLP layer and the shared Effect Atom runtime.
 - `src/env.ts` — required browser environment decoded synchronously with Effect Config.
 - `src/router.tsx` — router construction.
 - `src/router-context.ts` — services shared by route loaders and the rendered application.
@@ -225,9 +226,14 @@ read-only presentation.
 
 ## Environment
 
-| Variable       | Description             |
-| -------------- | ----------------------- |
-| `VITE_API_URL` | Namera API base origin. |
+| Variable                         | Required | Description                          |
+| -------------------------------- | -------- | ------------------------------------ |
+| `VITE_API_URL`                   | Yes      | Namera API and telemetry proxy base. |
+| `VITE_TELEMETRY_SERVICE_VERSION` | No       | Browser telemetry service version.   |
+
+The browser Effect runtime exports protobuf OTLP traces, logs, and metrics to
+the server-owned `/t/traces/v1`, `/t/logs/v1`, and `/t/metrics/v1` proxies.
+Browser code never receives the LGTM or Axiom destination credentials.
 
 ## Commands
 

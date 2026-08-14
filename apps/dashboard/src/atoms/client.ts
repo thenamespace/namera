@@ -5,6 +5,7 @@ import { AtomHttpApi } from "effect/unstable/reactivity";
 import { NameraApi } from "@namera-ai/api";
 
 import { env } from "@/env";
+import { dashboardRuntime } from "@/telemetry";
 
 export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
   "@namera-ai/dashboard/NameraClient",
@@ -12,6 +13,7 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
     api: NameraApi,
     baseUrl: env.backendUrl,
     httpClient: FetchHttpClient.layer,
+    runtime: dashboardRuntime,
     transformClient: (client) =>
       HttpClient.transformResponse(client, (response) =>
         Effect.provideService(response, FetchHttpClient.RequestInit, {

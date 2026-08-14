@@ -9,6 +9,8 @@
         "POSTHOG_API_HOST",
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",
+        "VITE_API_URL",
+        "VITE_TELEMETRY_SERVICE_VERSION",
         "VERCEL_ENV",
         "VERCEL_GIT_COMMIT_SHA"
       ],

@@ -11,7 +11,13 @@ import { ServerConfig } from "#/config";
 import { EmailWorkerLive, ServicesLive } from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
-import { ApiReferenceRoutes, ApiRoutes, RootRoutes, RpcRoutes } from "#/routes/index";
+import {
+  ApiReferenceRoutes,
+  ApiRoutes,
+  RootRoutes,
+  RpcRoutes,
+  TelemetryRoutes,
+} from "#/routes/index";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
@@ -30,7 +36,7 @@ const Routes = Layer.mergeAll(
   ApiRoutes,
   CorsMiddleware,
   RootRoutes,
-  RpcRoutes.pipe(
+  Layer.merge(RpcRoutes, TelemetryRoutes).pipe(
     HttpRouter.provideRequest(
       Layer.mergeAll(ServicesLive, NodeHttpClient.layerUndici, RateLimiterLive),
     ),
@@ -42,7 +48,14 @@ export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
   middleware: (httpEffect) => HttpMiddleware.tracer(RateLimitMiddleware(httpEffect)),
 }).pipe(
-  Layer.provide(HttpMiddleware.layerTracerDisabledForUrls(["/reference"])),
+  Layer.provide(
+    HttpMiddleware.layerTracerDisabledForUrls([
+      "/reference",
+      "/t/traces/v1",
+      "/t/logs/v1",
+      "/t/metrics/v1",
+    ]),
+  ),
   Layer.provide(RateLimiterLive),
   Layer.provide(TelemetryLive),
   Layer.provide(NodeServerLive),

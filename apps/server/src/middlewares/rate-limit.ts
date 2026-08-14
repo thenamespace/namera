@@ -7,7 +7,10 @@ export const RateLimitMiddleware = HttpMiddleware.make((httpEffect) =>
   Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
     const pathname = request.url.split("?")[0] ?? request.url;
-    if (request.method === "POST" && /^\/rpc\/eip155\/[^/]+$/.test(pathname)) {
+    if (
+      request.method === "POST" &&
+      (/^\/rpc\/eip155\/[^/]+$/.test(pathname) || /^\/t\/(traces|logs|metrics)\/v1$/.test(pathname))
+    ) {
       return yield* httpEffect;
     }
 

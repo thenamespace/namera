@@ -12,7 +12,7 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
   API reference, authenticated billing and wallet routes, notification inbox,
-  and the EIP-155 JSON-RPC proxy.
+  the EIP-155 JSON-RPC proxy, and browser OTLP proxies.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
@@ -34,7 +34,15 @@ an invalid session or a session whose active membership no longer exists, it
 also expires the stale `auth-token` cookie so the browser can recover cleanly.
 
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
-is enabled globally except for the Scalar reference route.
+is enabled globally except for the Scalar reference route and telemetry proxy
+routes.
+
+The dashboard sends protobuf OTLP to `POST /t/traces/v1`, `/t/logs/v1`, and
+`/t/metrics/v1`. The server forwards each signal to local LGTM in development
+or its configured Axiom dataset in production, so provider credentials remain
+server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
+2 MiB, apply a 10-second upstream timeout, disable caching, and use a dedicated
+600 requests-per-minute per-IP limit.
 
 ## Rate limiting
 
@@ -58,6 +66,9 @@ client IP. RPC traffic bypasses the lower global API limit and is validated
 against the supported EVM chain registry before the body is forwarded to
 Alchemy. The proxy preserves the upstream status and response body, applies a
 30-second timeout, and never exposes the configured Alchemy API key.
+
+Browser telemetry routes also bypass the lower global API limit because their
+dedicated policy accounts for exporter batching traffic.
 
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally

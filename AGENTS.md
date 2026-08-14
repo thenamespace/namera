@@ -89,7 +89,7 @@ database         -> protocol, utils
 emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
-apps/dashboard   -> api, protocol, ui
+apps/dashboard   -> api, protocol, telemetry, ui
 ui               -> protocol, Namespace UIKit
 ```
 
@@ -103,6 +103,8 @@ Additional rules:
   or server runtime code.
 - `telemetry` contains vendor export layers and shared metric definitions. It
   must not depend on application or transport packages.
+- `apps/dashboard` sends browser OTLP only through the server telemetry proxy;
+  provider endpoints and ingestion credentials must never enter the frontend.
 - `protocol` must not depend on infrastructure or application packages.
 - `utils` must not depend on project Effect services. Reuse it before creating
   duplicate low-level helpers.
