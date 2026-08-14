@@ -58,6 +58,7 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
                     size="md"
                     // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
                     supportedTypes={["image"]}
+                    triggerClassName="justify-self-end"
                     value={field.value ?? defaultImage}
                   />
                 </Field>

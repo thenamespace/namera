@@ -71,6 +71,7 @@ export function CreateWorkspaceForm() {
                     setValue={field.onChange}
                     size="md"
                     supportedTypes={supportedLogoTypes}
+                    triggerClassName="justify-self-end"
                     value={field.value ?? defaultLogo}
                   />
                 </Field>

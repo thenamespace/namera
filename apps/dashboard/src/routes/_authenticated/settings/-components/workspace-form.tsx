@@ -79,10 +79,15 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
                       setValue={field.onChange}
                       size="md"
                       supportedTypes={supportedLogoTypes}
+                      triggerClassName="justify-self-end"
                       value={field.value ?? defaultLogo}
                     />
                   ) : (
-                    <IconPreview size="md" value={field.value ?? defaultLogo} />
+                    <IconPreview
+                      className="justify-self-end"
+                      size="md"
+                      value={field.value ?? defaultLogo}
+                    />
                   )}
                 </Field>
               </DashboardCardRow>

@@ -22,6 +22,7 @@ import {
   Typography,
   toast,
 } from "@namera-ai/ui";
+import { KernelIcon, SafeWalletIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 
 import {
@@ -34,8 +35,8 @@ import { useCreateWallet } from "@/hooks/wallet";
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "💳" };
 const implementationOptions = [
-  { id: "kernel", name: "Kernel" },
-  { id: "safe", name: "Safe" },
+  { id: "kernel", name: "Kernel", icon: KernelIcon },
+  { id: "safe", name: "Safe", icon: SafeWalletIcon },
 ] as const;
 const defaultValues: CreateWalletRequestType = {
   namespace: "eip155",
@@ -81,6 +82,7 @@ export function CreateAccountForm() {
                     setValue={field.onChange}
                     size="md"
                     supportedTypes={supportedLogoTypes}
+                    triggerClassName="justify-self-end"
                     value={field.value ?? defaultLogo}
                   />
                 </Field>
@@ -121,40 +123,55 @@ export function CreateAccountForm() {
           <Controller
             control={form.control}
             name="implementation"
-            render={({ field, fieldState }) => (
-              <DashboardCardRow className="sm:items-start">
-                <Field className="contents" data-invalid={fieldState.invalid}>
-                  <div className="grid min-w-0 gap-1">
-                    <FieldLabel id="account-implementation-label">Implementation</FieldLabel>
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </div>
-                  <Select
-                    aria-labelledby="account-implementation-label"
-                    fullWidth
-                    isInvalid={fieldState.invalid}
-                    isRequired
-                    name={field.name}
-                    onSelectionChange={field.onChange}
-                    selectedKey={field.value}
-                    variant="secondary"
-                  >
-                    <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox items={implementationOptions}>
-                        {(item) => (
-                          <ListBox.Item id={item.id} textValue={item.name}>
-                            {item.name}
-                          </ListBox.Item>
-                        )}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                </Field>
-              </DashboardCardRow>
-            )}
+            render={({ field, fieldState }) => {
+              const selectedImplementation =
+                implementationOptions.find((option) => option.id === field.value) ??
+                implementationOptions[0];
+              const SelectedImplementationIcon = selectedImplementation.icon;
+
+              return (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel id="account-implementation-label">Implementation</FieldLabel>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </div>
+                    <Select
+                      aria-labelledby="account-implementation-label"
+                      fullWidth
+                      isInvalid={fieldState.invalid}
+                      isRequired
+                      name={field.name}
+                      onSelectionChange={field.onChange}
+                      selectedKey={field.value}
+                      variant="secondary"
+                    >
+                      <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                        <Select.Value>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <SelectedImplementationIcon className="size-5 shrink-0" />
+                            <span className="truncate">{selectedImplementation.name}</span>
+                          </span>
+                        </Select.Value>
+                        <Select.Indicator />
+                      </Select.Trigger>
+                      <Select.Popover>
+                        <ListBox items={implementationOptions}>
+                          {(item) => (
+                            <ListBox.Item id={item.id} textValue={item.name}>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <item.icon className="size-5 shrink-0" />
+                                <span className="truncate">{item.name}</span>
+                              </span>
+                            </ListBox.Item>
+                          )}
+                        </ListBox>
+                      </Select.Popover>
+                    </Select>
+                  </Field>
+                </DashboardCardRow>
+              );
+            }}
           />
         </DashboardCardContent>
       </DashboardCardRoot>
