@@ -57,8 +57,9 @@ const columns: DataGridColumn<WalletResponse>[] = [
     header: "Name",
     id: "name",
     isRowHeader: true,
-    minWidth: 200,
+    minWidth: 140,
     pinned: "start",
+    width: "20%",
     sortFn: (left, right) => accountCollator.compare(left.metadata.name, right.metadata.name),
   },
   {
@@ -67,7 +68,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <WalletStatusDisplay status={account.status} />,
     header: "Status",
     id: "status",
-    minWidth: 120,
+    minWidth: 90,
+    width: "11%",
     sortFn: (left, right) => accountCollator.compare(left.status, right.status),
   },
   {
@@ -76,7 +78,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <NamespaceDisplay namespace={account.namespace} />,
     header: "Namespace",
     id: "namespace",
-    minWidth: 140,
+    minWidth: 100,
+    width: "12%",
     sortFn: (left, right) => accountCollator.compare(left.namespace, right.namespace),
   },
   {
@@ -85,7 +88,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <EvmAddressDisplay address={account.address} />,
     header: "Address",
     id: "address",
-    minWidth: 180,
+    minWidth: 140,
+    width: "18%",
     sortFn: (left, right) => accountCollator.compare(left.address, right.address),
   },
   {
@@ -94,7 +98,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <WalletImplementationDisplay implementation={account.implementation} />,
     header: "Implementation",
     id: "implementation",
-    minWidth: 160,
+    minWidth: 120,
+    width: "15%",
     sortFn: (left, right) => accountCollator.compare(left.implementation, right.implementation),
   },
   {
@@ -103,7 +108,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <WalletProtectionDisplay protectionLevel={account.protectionLevel} />,
     header: "Protection",
     id: "protectionLevel",
-    minWidth: 130,
+    minWidth: 100,
+    width: "12%",
     sortFn: (left, right) => accountCollator.compare(left.protectionLevel, right.protectionLevel),
   },
   {
@@ -112,7 +118,8 @@ const columns: DataGridColumn<WalletResponse>[] = [
     cell: (account) => <DateDisplay label="Created" value={account.createdAt} />,
     header: "Created",
     id: "createdAt",
-    minWidth: 140,
+    minWidth: 105,
+    width: "11%",
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
   },

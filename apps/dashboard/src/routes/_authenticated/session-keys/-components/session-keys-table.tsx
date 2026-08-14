@@ -49,8 +49,9 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     header: "Name",
     id: "name",
     isRowHeader: true,
-    minWidth: 210,
+    minWidth: 150,
     pinned: "start",
+    width: "21%",
     sortFn: (left, right) => sessionKeyCollator.compare(left.metadata.name, right.metadata.name),
   },
   {
@@ -59,7 +60,8 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     cell: (sessionKey) => <SessionKeyStatusDisplay status={sessionKey.status} />,
     header: "Status",
     id: "status",
-    minWidth: 120,
+    minWidth: 90,
+    width: "12%",
     sortFn: (left, right) => sessionKeyCollator.compare(left.status, right.status),
   },
   {
@@ -70,7 +72,8 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     ),
     header: "Account",
     id: "account",
-    minWidth: 200,
+    minWidth: 140,
+    width: "19%",
     sortFn: (left, right) =>
       sessionKeyCollator.compare(left.wallet.metadata.name, right.wallet.metadata.name),
   },
@@ -85,7 +88,8 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     ),
     header: "Created by",
     id: "creator",
-    minWidth: 180,
+    minWidth: 140,
+    width: "19%",
     sortFn: (left, right) =>
       sessionKeyCollator.compare(
         left.creator.user.metadata.name ?? left.creator.user.email,
@@ -98,7 +102,8 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     cell: (sessionKey) => <NamespaceDisplay namespace={sessionKey.namespace} />,
     header: "Namespace",
     id: "namespace",
-    minWidth: 140,
+    minWidth: 100,
+    width: "14%",
     sortFn: (left, right) => sessionKeyCollator.compare(left.namespace, right.namespace),
   },
   {
@@ -107,7 +112,8 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     cell: (sessionKey) => <DateDisplay label="Created" value={sessionKey.createdAt} />,
     header: "Created",
     id: "createdAt",
-    minWidth: 140,
+    minWidth: 105,
+    width: "14%",
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
   },
