@@ -40,8 +40,8 @@ import "@namera-ai/ui/styles.css";
 ```
 
 Render a protocol-typed chain icon through the shared icon entry point. The
-component forwards normal SVG props; supported chains without a committed asset
-render a neutral placeholder until their icon is added:
+component forwards normal SVG props and resolves every supported chain to its
+committed logo component:
 
 ```tsx
 import { ChainIcon } from "@namera-ai/ui/icons";
@@ -90,8 +90,9 @@ reusable presentation components and their local styling only.
    Because this package is source-only, consuming Tailwind builds must scan its
    source and import `@namera-ai/ui/styles.css` once.
 6. Chain icons are selected using protocol namespace and chain-name literals.
-   Add new assets to `src/icons/chain/` only for supported chains, wire them in
+   Add new assets as typed TSX components in `src/icons/chain/`, wire them in
    `src/icons/chain.tsx`, and keep provider-specific network names out of UI.
+   Do not retain raw SVG files after conversion.
 
 ## Upstream documentation
 
