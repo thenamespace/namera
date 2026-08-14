@@ -1,4 +1,10 @@
-import type { InvitationId, OrganizationId, WalletId } from "@namera-ai/protocol";
+import type {
+  ApiKeyId,
+  InvitationId,
+  OrganizationId,
+  SessionKeyId,
+  WalletId,
+} from "@namera-ai/protocol";
 
 export const QueryKeys = {
   session: {
@@ -38,6 +44,21 @@ export const QueryKeys = {
     details: ["wallet:details"] as const,
     detail: (walletId: WalletId) => [`wallet:detail:${walletId}`] as const,
   },
+  sessionKey: {
+    all: ["session-key:all"] as const,
+    lists: ["session-key:lists"] as const,
+    organizationLists: ["session-key:organization-lists"] as const,
+    walletLists: ["session-key:wallet-lists"] as const,
+    walletList: (walletId: WalletId) => [`session-key:wallet-list:${walletId}`] as const,
+    details: ["session-key:details"] as const,
+    detail: (sessionKeyId: SessionKeyId) => [`session-key:detail:${sessionKeyId}`] as const,
+  },
+  apiKey: {
+    all: ["api-key:all"] as const,
+    lists: ["api-key:lists"] as const,
+    details: ["api-key:details"] as const,
+    detail: (apiKeyId: ApiKeyId) => [`api-key:detail:${apiKeyId}`] as const,
+  },
 } as const;
 
 export type QueryKey =
@@ -63,4 +84,15 @@ export type QueryKey =
   | (typeof QueryKeys.wallet.all)[number]
   | (typeof QueryKeys.wallet.lists)[number]
   | (typeof QueryKeys.wallet.details)[number]
-  | ReturnType<typeof QueryKeys.wallet.detail>[number];
+  | ReturnType<typeof QueryKeys.wallet.detail>[number]
+  | (typeof QueryKeys.sessionKey.all)[number]
+  | (typeof QueryKeys.sessionKey.lists)[number]
+  | (typeof QueryKeys.sessionKey.organizationLists)[number]
+  | (typeof QueryKeys.sessionKey.walletLists)[number]
+  | ReturnType<typeof QueryKeys.sessionKey.walletList>[number]
+  | (typeof QueryKeys.sessionKey.details)[number]
+  | ReturnType<typeof QueryKeys.sessionKey.detail>[number]
+  | (typeof QueryKeys.apiKey.all)[number]
+  | (typeof QueryKeys.apiKey.lists)[number]
+  | (typeof QueryKeys.apiKey.details)[number]
+  | ReturnType<typeof QueryKeys.apiKey.detail>[number];

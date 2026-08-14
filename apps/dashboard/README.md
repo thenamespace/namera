@@ -67,6 +67,13 @@ authoritative permission boundary. EVM address displays resolve mainnet ENS name
 and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
 
+Session-key create, detail, organization-list, and wallet-list atoms/hooks live
+under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
+and list atoms/hooks live under `src/atoms/api-key` and `src/hooks/api-key`.
+Both features refresh with the active organization; session-key creation also
+invalidates the list for its wallet, while API-key creation invalidates the
+organization API-key list.
+
 ## Settings routes
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data
