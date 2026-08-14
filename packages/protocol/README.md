@@ -12,6 +12,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 - `src/dto/` — public API request and response schemas.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.
+- `src/policy/` — provider-neutral policy handler contracts.
 - `src/index.ts` — common values and errors.
 
 ## Public imports

@@ -1,0 +1,48 @@
+import { type Effect, type Schema } from "effect";
+
+export abstract class PolicyHandler<
+  Policy extends { readonly type: string; readonly version: number },
+  Context,
+  Decision,
+  State = never,
+  Reservation = never,
+  Result = never,
+  Error = never,
+  Requirements = never,
+> {
+  abstract readonly type: Policy["type"];
+  abstract readonly policySchema: Schema.Schema<Policy>;
+  abstract readonly stateSchema?: Schema.Schema<State>;
+  abstract readonly reservationSchema?: Schema.Schema<Reservation>;
+
+  abstract readonly evaluate: (
+    policy: Policy,
+    context: Context,
+  ) => Effect.Effect<Decision, Error, Requirements>;
+
+  abstract readonly reserve?: (
+    policy: Policy,
+    context: Context,
+    states: ReadonlyMap<string, State>,
+  ) => Effect.Effect<
+    {
+      readonly states: ReadonlyMap<string, State>;
+      readonly reservations: ReadonlyMap<string, Reservation>;
+    },
+    Error,
+    Requirements
+  >;
+
+  abstract readonly settle?: (
+    policy: Policy,
+    states: ReadonlyMap<string, State>,
+    reservations: ReadonlyMap<string, Reservation>,
+    result: Result,
+  ) => Effect.Effect<ReadonlyMap<string, State>, Error, Requirements>;
+
+  abstract readonly release?: (
+    policy: Policy,
+    states: ReadonlyMap<string, State>,
+    reservations: ReadonlyMap<string, Reservation>,
+  ) => Effect.Effect<ReadonlyMap<string, State>, Error, Requirements>;
+}
