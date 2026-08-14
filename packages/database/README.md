@@ -198,6 +198,14 @@ partial unique index permits only one active grant for an actor/session-key
 pair. Composite foreign keys prevent wallets, actors, session keys, and grants
 from being linked across organizations.
 
+`core.session_key_policy_state` stores versioned, handler-owned JSON state for
+one policy instance and state key. `core.session_key_policy_reservation` holds
+bounded in-flight changes so concurrent executions cannot consume the same
+allowance. Reservations are correlated by execution ID and move through
+reserved, submitted, settled, or released states. Policy handlers own decoding
+the JSON payloads; the database owns tenant isolation, uniqueness, and expiry
+lookup indexes.
+
 ## Billing persistence
 
 The `billing` schema keeps plan state separate from organization identity:

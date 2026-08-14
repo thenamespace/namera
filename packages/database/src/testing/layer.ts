@@ -26,6 +26,8 @@ import {
   session,
   sessionKey,
   sessionKeyGrant,
+  sessionKeyPolicyReservation,
+  sessionKeyPolicyState,
   systemRole,
   user,
   userEvent,
@@ -77,6 +79,8 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(billingAccount);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
+          yield* database.delete(sessionKeyPolicyReservation);
+          yield* database.delete(sessionKeyPolicyState);
           yield* database.delete(sessionKeyGrant);
           yield* database.delete(sessionKey);
           yield* database.delete(wallet);

@@ -1,7 +1,9 @@
 import { type Effect, type Schema } from "effect";
 
+import type { PolicyId } from "#/common/index";
+
 export abstract class PolicyHandler<
-  Policy extends { readonly type: string; readonly version: number },
+  Policy extends { readonly id: PolicyId; readonly type: string; readonly version: number },
   Context,
   Decision,
   State = never,

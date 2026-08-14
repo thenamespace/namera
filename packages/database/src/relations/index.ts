@@ -18,6 +18,8 @@ import {
   session,
   sessionKey,
   sessionKeyGrant,
+  sessionKeyPolicyReservation,
+  sessionKeyPolicyState,
   systemRole,
   user,
   userEvent,
@@ -45,6 +47,8 @@ export const relations = defineRelations(
     session,
     sessionKey,
     sessionKeyGrant,
+    sessionKeyPolicyReservation,
+    sessionKeyPolicyState,
     systemRole,
     user,
     userEvent,
@@ -197,6 +201,14 @@ export const relations = defineRelations(
       sessionKeyGrants: r.many.sessionKeyGrant({
         from: r.organization.id,
         to: r.sessionKeyGrant.organizationId,
+      }),
+      sessionKeyPolicyStates: r.many.sessionKeyPolicyState({
+        from: r.organization.id,
+        to: r.sessionKeyPolicyState.organizationId,
+      }),
+      sessionKeyPolicyReservations: r.many.sessionKeyPolicyReservation({
+        from: r.organization.id,
+        to: r.sessionKeyPolicyReservation.organizationId,
       }),
       auditEvents: r.many.organizationEvent({
         from: r.organization.id,
@@ -373,6 +385,17 @@ export const relations = defineRelations(
         from: [r.sessionKey.id, r.sessionKey.organizationId],
         to: [r.sessionKeyGrant.sessionKeyId, r.sessionKeyGrant.organizationId],
       }),
+      policyStates: r.many.sessionKeyPolicyState({
+        from: [r.sessionKey.id, r.sessionKey.organizationId],
+        to: [r.sessionKeyPolicyState.sessionKeyId, r.sessionKeyPolicyState.organizationId],
+      }),
+      policyReservations: r.many.sessionKeyPolicyReservation({
+        from: [r.sessionKey.id, r.sessionKey.organizationId],
+        to: [
+          r.sessionKeyPolicyReservation.sessionKeyId,
+          r.sessionKeyPolicyReservation.organizationId,
+        ],
+      }),
     },
     sessionKeyGrant: {
       organization: r.one.organization({
@@ -398,6 +421,33 @@ export const relations = defineRelations(
       revokedBy: r.one.actor({
         from: [r.sessionKeyGrant.revokedByActorId, r.sessionKeyGrant.organizationId],
         to: [r.actor.id, r.actor.organizationId],
+      }),
+    },
+    sessionKeyPolicyState: {
+      organization: r.one.organization({
+        from: r.sessionKeyPolicyState.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      sessionKey: r.one.sessionKey({
+        from: [r.sessionKeyPolicyState.sessionKeyId, r.sessionKeyPolicyState.organizationId],
+        to: [r.sessionKey.id, r.sessionKey.organizationId],
+        optional: false,
+      }),
+    },
+    sessionKeyPolicyReservation: {
+      organization: r.one.organization({
+        from: r.sessionKeyPolicyReservation.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      sessionKey: r.one.sessionKey({
+        from: [
+          r.sessionKeyPolicyReservation.sessionKeyId,
+          r.sessionKeyPolicyReservation.organizationId,
+        ],
+        to: [r.sessionKey.id, r.sessionKey.organizationId],
+        optional: false,
       }),
     },
     userEvent: {

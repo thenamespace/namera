@@ -59,8 +59,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   provider metadata through public wallet DTOs.
 - Session keys belong to one wallet and carry an immutable `policies` array.
   Until namespace-specific policy members are defined, the policy schema allows
-  only an empty array. Grants are organization-scoped actor-to-session-key
-  records and preserve revoked history.
+  only an empty array. Each future policy instance has a stable `PolicyId` so
+  its handler can address typed state and in-flight reservations. Grants are
+  organization-scoped actor-to-session-key records and preserve revoked
+  history.
 - EVM chain contracts distinguish the stable supported-network key, the chain
   name used for presentation/icons, and the exact supported CAIP-2 chain ID.
   Provider-specific RPC slugs do not belong in protocol.
