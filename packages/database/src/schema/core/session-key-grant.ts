@@ -1,6 +1,6 @@
 import type { ActorId, OrganizationId, SessionKeyGrantId, SessionKeyId } from "@namera-ai/protocol";
 import { sql } from "drizzle-orm";
-import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { foreignKey, index, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId } from "#/schema/common";
 
@@ -25,6 +25,7 @@ export const sessionKeyGrant = coreSchema.table(
     createdAt: createTimestampField("created_at").defaultNow().notNull(),
   },
   (table) => [
+    unique("session_key_grant_id_organization_unique").on(table.id, table.organizationId),
     foreignKey({
       name: "session_key_grant_actor_organization_fk",
       columns: [table.actorId, table.organizationId],

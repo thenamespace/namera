@@ -15,6 +15,7 @@ import {
   billingProviderEvent,
   billingSubscription,
   emailJob,
+  execution,
   invitation,
   notification,
   notificationPreference,
@@ -79,6 +80,7 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(billingAccount);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
+          yield* database.delete(execution);
           yield* database.delete(sessionKeyPolicyReservation);
           yield* database.delete(sessionKeyPolicyState);
           yield* database.delete(sessionKeyGrant);

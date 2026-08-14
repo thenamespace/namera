@@ -19,6 +19,7 @@ export const sessionKey = coreSchema.table(
       .references(() => organization.id, { onDelete: "restrict" }),
     walletId: text("wallet_id").notNull().$type<WalletId>(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
+    namespace: text("namespace").notNull().$type<SessionKey["namespace"]>(),
     metadata: jsonb("metadata").notNull().$type<SessionKey["metadata"]>(),
     policies: jsonb("policies").notNull().$type<SessionKey["policies"]>(),
     policyHash: text("policy_hash").notNull(),

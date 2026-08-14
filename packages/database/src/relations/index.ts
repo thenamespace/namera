@@ -7,6 +7,7 @@ import {
   billingProviderEvent,
   billingSubscription,
   emailJob,
+  execution,
   invitation,
   notification,
   notificationPreference,
@@ -36,6 +37,7 @@ export const relations = defineRelations(
     billingProviderEvent,
     billingSubscription,
     emailJob,
+    execution,
     invitation,
     notification,
     notificationPreference,
@@ -209,6 +211,10 @@ export const relations = defineRelations(
       sessionKeyPolicyReservations: r.many.sessionKeyPolicyReservation({
         from: r.organization.id,
         to: r.sessionKeyPolicyReservation.organizationId,
+      }),
+      executions: r.many.execution({
+        from: r.organization.id,
+        to: r.execution.organizationId,
       }),
       auditEvents: r.many.organizationEvent({
         from: r.organization.id,
@@ -421,6 +427,22 @@ export const relations = defineRelations(
       revokedBy: r.one.actor({
         from: [r.sessionKeyGrant.revokedByActorId, r.sessionKeyGrant.organizationId],
         to: [r.actor.id, r.actor.organizationId],
+      }),
+      executions: r.many.execution({
+        from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+        to: [r.execution.sessionKeyGrantId, r.execution.organizationId],
+      }),
+    },
+    execution: {
+      organization: r.one.organization({
+        from: r.execution.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      sessionKeyGrant: r.one.sessionKeyGrant({
+        from: [r.execution.sessionKeyGrantId, r.execution.organizationId],
+        to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+        optional: false,
       }),
     },
     sessionKeyPolicyState: {

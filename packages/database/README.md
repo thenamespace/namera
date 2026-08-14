@@ -190,13 +190,14 @@ persisting both records in one transaction.
 
 ## Session-key persistence
 
-`core.session_key` belongs to one wallet and stores immutable metadata, the
-typed `policies` array, and its policy hash. Revocation is a lifecycle change;
-policies are not updated in place. `core.session_key_grant` links an actor to a
-session key within the same organization and retains revoked grant history. A
-partial unique index permits only one active grant for an actor/session-key
-pair. Composite foreign keys prevent wallets, actors, session keys, and grants
-from being linked across organizations.
+`core.session_key` belongs to one wallet and stores its namespace, immutable
+metadata, namespace-specific typed `policies` array, and policy hash. Revocation
+is a lifecycle change; policies are not updated in place.
+`core.session_key_grant` links an actor to a session key within the same
+organization and retains revoked grant history. A partial unique index permits
+only one active grant for an actor/session-key pair. Composite foreign keys
+prevent wallets, actors, session keys, grants, and executions from being linked
+across organizations.
 
 `core.session_key_policy_state` stores versioned, handler-owned JSON state for
 one policy instance and state key. `core.session_key_policy_reservation` holds
@@ -205,6 +206,14 @@ allowance. Reservations are correlated by execution ID and move through
 reserved, submitted, settled, or released states. Policy handlers own decoding
 the JSON payloads; the database owns tenant isolation, uniqueness, and expiry
 lookup indexes.
+
+`core.execution` is an append-only record of a successful onchain execution.
+It references the exact session-key grant used for authorization and stores a
+namespace discriminator with typed namespace-specific JSON data. EVM execution
+data contains the normalized calls, chain ID, UserOperation hash, and transaction
+hash. Policy, simulation, signing, and submission failures do not create
+execution rows. Reservation execution IDs therefore remain correlation values
+and intentionally do not reference this table.
 
 ## Billing persistence
 

@@ -58,12 +58,17 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   namespace as its own response member, then discriminate implementation data
   within that namespace. Never expose wallet-key provider identifiers or
   provider metadata through public wallet DTOs.
-- Session keys belong to one wallet and carry an immutable `policies` array.
+- Session keys belong to one wallet, are discriminated by chain namespace, and
+  carry an immutable namespace-specific `policies` array.
   Until namespace-specific policy members are defined, the policy schema allows
   only an empty array. Each future policy instance has a stable `PolicyId` so
   its handler can address typed state and in-flight reservations. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
+- Executions are append-only successful onchain records discriminated by
+  namespace. Namespace-specific JSON data contains the normalized calls and
+  network identifiers; rejected or failed pre-submission attempts are not
+  execution records.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, and optional call-simulation
   results. Keep Viem clients, provider errors, signatures, and raw provider
