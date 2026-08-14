@@ -23,16 +23,29 @@ export const ApiKeyResponse = Schema.Struct({
   description: "An organization API key with its creator and without its secret credential",
 });
 
+export const ApiKeyDurationDays = Schema.Int.check(
+  Schema.isBetween(
+    {
+      minimum: 1,
+      maximum: 365,
+    },
+    { message: "API key duration must be between 1 and 365 days" },
+  ),
+).annotate({
+  identifier: "ApiKeyDurationDays",
+  description: "Required API key lifetime in days, capped at one year",
+});
+
 export const CreateApiKeyRequest = Schema.Struct({
   metadata: ApiKeyMetadata,
-  expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  durationDays: ApiKeyDurationDays,
   sessionKeyIds: Schema.Array(SessionKeyId).check(
     Schema.isMinLength(1, { message: "At least one session key grant is required" }),
     Schema.isMaxLength(100, { message: "At most 100 session key grants are allowed" }),
   ),
 }).annotate({
   identifier: "CreateApiKeyRequest",
-  description: "Create an API-key actor with initial session-key grants",
+  description: "Create a time-limited API-key actor with initial session-key grants",
 });
 
 export const CreateApiKeyResponse = Schema.Struct({

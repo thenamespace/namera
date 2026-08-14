@@ -103,7 +103,7 @@ export class ApiKeyNotFoundError extends Schema.TaggedError<ApiKeyNotFoundError>
 export class ApiKeyCreationError extends Schema.TaggedError<ApiKeyCreationError>()(
   "ApiKeyCreationError",
   {
-    code: Schema.Literals(["EXPIRY_IN_PAST", "SESSION_KEY_NOT_ACTIVE"]),
+    code: Schema.Literal("SESSION_KEY_NOT_ACTIVE"),
   },
   { httpApiStatus: 409 },
 ) {}

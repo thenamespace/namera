@@ -1,4 +1,4 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Duration, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -100,16 +100,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
       readonly request: CreateApiKeyRequest;
     }) {
       const now = yield* DateTime.now;
-      if (
-        input.request.expiresAt !== null &&
-        DateTime.toEpochMillis(input.request.expiresAt) <= DateTime.toEpochMillis(now)
-      ) {
-        yield* Metric.update(
-          Metric.withAttributes(apiKeyCreationResults, { result: "expiry_in_past" }),
-          1,
-        );
-        return yield* new ApiKeyCreationError({ code: "EXPIRY_IN_PAST" });
-      }
+      const expiresAt = DateTime.addDuration(now, Duration.days(input.request.durationDays));
 
       const sessionKeyIds = [...new Set(input.request.sessionKeyIds)];
       const sessionKeys = yield* Effect.forEach(sessionKeyIds, (sessionKeyId) =>
@@ -146,7 +137,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
             metadata: input.request.metadata,
             keyHash,
             keyStart: key.slice(0, authPolicy.apiKey.visiblePrefixLength),
-            expiresAt: input.request.expiresAt,
+            expiresAt,
           });
           yield* repository.core.sessionKeyGrant.insertMany(
             sessionKeys.map((sessionKey) => ({

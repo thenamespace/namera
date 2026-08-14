@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { fromDate, getLocalTimeZone, now } from "@internationalized/date";
 import {
   CreateApiKeyRequest,
   type CreateApiKeyResponse,
@@ -13,9 +12,6 @@ import {
 import {
   Alert,
   Button,
-  Calendar,
-  DateField,
-  DatePicker,
   Field,
   FieldError,
   FieldGroup,
@@ -38,14 +34,19 @@ import { useSessionKeys } from "@/hooks/session-key";
 type CreateApiKeyInput = typeof CreateApiKeyRequest.Encoded;
 type CreateApiKeyOutput = typeof CreateApiKeyRequest.Type;
 
-const timeZone = getLocalTimeZone();
+const durationOptions = [
+  { id: "7", name: "7 days" },
+  { id: "30", name: "30 days" },
+  { id: "90", name: "90 days" },
+] as const;
+
 const defaultValues: CreateApiKeyInput = {
   metadata: {
     version: 1,
     name: "",
     logo: { type: "emoji", value: "🔐" },
   },
-  expiresAt: null,
+  durationDays: 30,
   sessionKeyIds: [],
 };
 
@@ -228,62 +229,37 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
 
                     <Controller
                       control={form.control}
-                      name="expiresAt"
+                      name="durationDays"
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                           <div className="grid gap-1">
-                            <FieldLabel>Valid until</FieldLabel>
+                            <FieldLabel id="api-key-duration-label">Duration</FieldLabel>
                             {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
                           </div>
-                          <DatePicker
-                            className="w-full"
-                            granularity="minute"
+                          <Select
+                            aria-labelledby="api-key-duration-label"
+                            fullWidth
                             isInvalid={fieldState.invalid}
-                            minValue={now(timeZone)}
+                            isRequired
                             name={field.name}
-                            value={field.value ? fromDate(field.value, timeZone) : null}
-                            onBlur={field.onBlur}
-                            onChange={(date) => field.onChange(date?.toDate() ?? null)}
+                            selectedKey={String(field.value)}
+                            variant="secondary"
+                            onSelectionChange={(value) => field.onChange(Number(value))}
                           >
-                            <DateField.Group fullWidth variant="secondary">
-                              <DateField.Input>
-                                {(segment) => <DateField.Segment segment={segment} />}
-                              </DateField.Input>
-                              <DateField.Suffix>
-                                <DatePicker.Trigger>
-                                  <DatePicker.TriggerIndicator />
-                                </DatePicker.Trigger>
-                              </DateField.Suffix>
-                            </DateField.Group>
-                            <DatePicker.Popover>
-                              <Calendar aria-label="Choose API key expiration">
-                                <Calendar.Header>
-                                  <Calendar.YearPickerTrigger>
-                                    <Calendar.YearPickerTriggerHeading />
-                                    <Calendar.YearPickerTriggerIndicator />
-                                  </Calendar.YearPickerTrigger>
-                                  <Calendar.NavButton slot="previous" />
-                                  <Calendar.NavButton slot="next" />
-                                </Calendar.Header>
-                                <Calendar.Grid>
-                                  <Calendar.GridHeader>
-                                    {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                                  </Calendar.GridHeader>
-                                  <Calendar.GridBody>
-                                    {(date) => <Calendar.Cell date={date} />}
-                                  </Calendar.GridBody>
-                                </Calendar.Grid>
-                                <Calendar.YearPickerGrid>
-                                  <Calendar.YearPickerGridBody>
-                                    {({ year }) => <Calendar.YearPickerCell year={year} />}
-                                  </Calendar.YearPickerGridBody>
-                                </Calendar.YearPickerGrid>
-                              </Calendar>
-                            </DatePicker.Popover>
-                          </DatePicker>
-                          <Typography className="text-xs" color="muted">
-                            Optional. Leave empty for a key without a fixed expiration.
-                          </Typography>
+                            <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                              <Select.Value />
+                              <Select.Indicator />
+                            </Select.Trigger>
+                            <Select.Popover>
+                              <ListBox items={durationOptions}>
+                                {(option) => (
+                                  <ListBox.Item id={option.id} textValue={option.name}>
+                                    {option.name}
+                                  </ListBox.Item>
+                                )}
+                              </ListBox>
+                            </Select.Popover>
+                          </Select>
                         </Field>
                       )}
                     />

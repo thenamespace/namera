@@ -92,8 +92,9 @@ organization API-key list.
   list.
 - `/settings/workspace/api-keys` presents organization API keys with creator,
   grant count, status, expiration, and creation details. Its creation dialog
-  validates the shared API-key DTO, grants one or more active session keys, and
-  exposes the raw credential exactly once after creation.
+  validates the shared API-key DTO, grants one or more active session keys,
+  requires a 7-, 30-, or 90-day duration, and exposes the raw credential exactly
+  once after creation.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use

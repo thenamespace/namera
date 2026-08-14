@@ -57,12 +57,12 @@ layer(TestServerLayer)("API-key routes", (it) => {
       const owner = yield* signIn(client, testEmail("api-key-owner@example.com"));
       const firstSessionKey = yield* createSessionKey(client, "Treasury agent");
       const secondSessionKey = yield* createSessionKey(client, "Operations agent");
-      const expiresAt = DateTime.addDuration(yield* DateTime.now, Duration.days(30));
+      const now = yield* DateTime.now;
 
       const created = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Production agent"),
-          expiresAt,
+          durationDays: 30,
           sessionKeyIds: [firstSessionKey.id, secondSessionKey.id],
         },
       });
@@ -71,10 +71,14 @@ layer(TestServerLayer)("API-key routes", (it) => {
       expect(created.apiKey).toMatchObject({
         organizationId: owner.actor.organization.id,
         metadata: metadata("Production agent"),
-        expiresAt,
         revokedAt: null,
         lastUsedAt: null,
       });
+      const apiKeyExpiresAt = created.apiKey.expiresAt;
+      if (apiKeyExpiresAt === null) return yield* Effect.die("Created API key did not expire");
+      expect(DateTime.toEpochMillis(apiKeyExpiresAt) - DateTime.toEpochMillis(now)).toBe(
+        Duration.toMillis(Duration.days(30)),
+      );
       expect(created.apiKey.sessionKeys.map(({ id }) => id)).toEqual([
         firstSessionKey.id,
         secondSessionKey.id,
@@ -158,7 +162,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
       const created = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Shared reader"),
-          expiresAt: null,
+          durationDays: 30,
           sessionKeyIds: [sessionKey.id],
         },
       });
@@ -180,7 +184,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
           .create({
             payload: {
               metadata: metadata("Forbidden"),
-              expiresAt: null,
+              durationDays: 30,
               sessionKeyIds: [sessionKey.id],
             },
           })
@@ -193,24 +197,12 @@ layer(TestServerLayer)("API-key routes", (it) => {
           .create({
             payload: {
               metadata: metadata("Missing grant"),
-              expiresAt: null,
+              durationDays: 30,
               sessionKeyIds: [missingSessionKeyId],
             },
           })
           .pipe(Effect.flip),
       ).toMatchObject({ _tag: "SessionKeyError", code: "SESSION_KEY_NOT_FOUND" });
-      expect(
-        yield* client.apiKey
-          .create({
-            payload: {
-              metadata: metadata("Expired"),
-              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.minutes(-1)),
-              sessionKeyIds: [sessionKey.id],
-            },
-          })
-          .pipe(Effect.flip),
-      ).toMatchObject({ _tag: "ApiKeyCreationError", code: "EXPIRY_IN_PAST" });
-
       yield* signIn(client, testEmail("api-key-other@example.com"));
       expect(yield* client.apiKey.list()).toEqual([]);
       expect(
@@ -240,7 +232,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
       const created = yield* client.apiKey.create({
         payload: {
           metadata: metadata("No email"),
-          expiresAt: null,
+          durationDays: 30,
           sessionKeyIds: [sessionKey.id],
         },
       });
@@ -270,7 +262,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
         yield* client.apiKey.create({
           payload: {
             metadata: metadata(`Agent ${index}`),
-            expiresAt: null,
+            durationDays: 7,
             sessionKeyIds: [sessionKey.id],
           },
         });
@@ -280,7 +272,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
           .create({
             payload: {
               metadata: metadata("Rate limited"),
-              expiresAt: null,
+              durationDays: 7,
               sessionKeyIds: [sessionKey.id],
             },
           })
