@@ -15,7 +15,7 @@ export type DatabaseExecutor = Pick<
   "delete" | "insert" | "query" | "select" | "update"
 >;
 
-export const transactionOrDatabase = Effect.fn("transactionOrDatabase")(function* (
+export const transactionOrDatabase = Effect.fnUntraced(function* (
   database: DatabaseService,
 ): Effect.fn.Return<DatabaseExecutor> {
   const tx = yield* Effect.serviceOption(TransactionClient);

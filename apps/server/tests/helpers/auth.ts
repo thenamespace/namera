@@ -13,7 +13,7 @@ import {
 import { TestEmails } from "../layers/index.js";
 import { useAuthCookie, type TestApiClient } from "./api.js";
 
-export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
+export const requestMagicLink = Effect.fn("server.requestMagicLink")(function* (
   client: TestApiClient,
   email: Email,
   returnTo?: MagicLinkReturnTo,
@@ -58,7 +58,7 @@ export const requestMagicLink = Effect.fn("requestMagicLink")(function* (
   };
 });
 
-export const enqueueMagicLink = Effect.fn("enqueueMagicLink")(function* (
+export const enqueueMagicLink = Effect.fn("server.enqueueMagicLink")(function* (
   client: TestApiClient,
   email: Email,
   returnTo?: MagicLinkReturnTo,
@@ -90,7 +90,7 @@ export const enqueueMagicLink = Effect.fn("enqueueMagicLink")(function* (
   };
 });
 
-export const signIn = Effect.fn("signIn")(function* (client: TestApiClient, email: Email) {
+export const signIn = Effect.fn("server.signIn")(function* (client: TestApiClient, email: Email) {
   const magicLink = yield* requestMagicLink(client, email);
   const [verification, response] = yield* client.magicLink.verify({
     payload: {
@@ -106,7 +106,7 @@ export const signIn = Effect.fn("signIn")(function* (client: TestApiClient, emai
   return { actor, cookie, verification: verification.body };
 });
 
-export const createSession = Effect.fn("createSession")(function* (
+export const createSession = Effect.fn("server.createSession")(function* (
   actor: UserActorData,
   token = `test-session-${crypto.randomUUID()}`,
 ) {

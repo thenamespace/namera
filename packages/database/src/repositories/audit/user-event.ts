@@ -5,7 +5,7 @@ import type { DatabaseError, UserId } from "@namera-ai/protocol";
 import { UserEvent, UserEventInsert } from "@namera-ai/protocol/model";
 import { desc, eq } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { userEvent } from "#/schema/index";
 
@@ -27,7 +27,7 @@ export class UserEventRepository extends Context.Service<
       const database = yield* Database;
 
       return UserEventRepository.of({
-        insert: Effect.fn("UserEventRepository.insert")(function* (data) {
+        insert: Effect.fn("database.userEventRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(UserEventInsert)(data);
           const rows = yield* db
@@ -36,8 +36,11 @@ export class UserEventRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(UserEvent)(rows[0]! as any);
-        }, mapToDatabaseError),
-        findForUser: Effect.fn("UserEventRepository.findForUser")(function* (userId, limit = 100) {
+        }, mapRepositoryError),
+        findForUser: Effect.fn("database.userEventRepository.findForUser")(function* (
+          userId,
+          limit = 100,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .select()
@@ -47,7 +50,7 @@ export class UserEventRepository extends Context.Service<
             .limit(limit);
 
           return Schema.decodeSync(Schema.Array(UserEvent))(rows as any);
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

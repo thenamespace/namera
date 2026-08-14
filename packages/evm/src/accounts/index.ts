@@ -19,7 +19,7 @@ export type CreateAccountResult<Props extends CreateAccountProps> = Props extend
     : never;
 
 export const makeCreateAccount = (config: EvmConfigValues) =>
-  Effect.fn("Evm.createAccount")(function* <const Props extends CreateAccountProps>(props: Props) {
+  Effect.fn("evm.createAccount")(function* <const Props extends CreateAccountProps>(props: Props) {
     if (props.implementation === "kernel") {
       return (yield* createKernelAccount(props, config)) as CreateAccountResult<Props>;
     }

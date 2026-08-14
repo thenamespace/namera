@@ -61,7 +61,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
   const audit = yield* Audit;
   const transaction = yield* TransactionService;
 
-  const create = Effect.fn("Application.organization.create")(
+  const create = Effect.fn("application.organization.create")(
     function* (userId: UserId, sessionId: SessionId, metadata: OrganizationMetadata) {
       const now = yield* DateTime.now;
       const organization = yield* transaction.run(
@@ -103,14 +103,14 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const list = Effect.fn("Application.organization.list")(
+  const list = Effect.fn("application.organization.list")(
     function* (userId: UserId) {
       return yield* repository.auth.member.findMembershipsForUser(userId);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const get = Effect.fn("Application.organization.get")(
+  const get = Effect.fn("application.organization.get")(
     function* (userId: UserId, organizationId: OrganizationId) {
       const membership = yield* repository.auth.member.findActiveMembership(userId, organizationId);
       if (!membership) {
@@ -121,7 +121,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const setActive = Effect.fn("Application.organization.setActive")(
+  const setActive = Effect.fn("application.organization.setActive")(
     function* (userId: UserId, sessionId: SessionId, organizationId: OrganizationId) {
       const result = yield* transaction.run(
         Effect.gen(function* () {
@@ -156,7 +156,7 @@ export const makeOrganizationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const update = Effect.fn("Application.organization.update")(
+  const update = Effect.fn("application.organization.update")(
     function* (actorId: ActorId, organizationId: OrganizationId, metadata: OrganizationMetadata) {
       const result = yield* transaction.run(
         Effect.gen(function* () {

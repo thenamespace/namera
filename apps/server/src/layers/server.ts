@@ -5,11 +5,11 @@ import { Effect, Layer } from "effect";
 import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
 
 import { DatabaseMigration } from "@namera-ai/database";
-import { TelemetryLive } from "@namera-ai/telemetry";
+import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
 import { EmailWorkerLive, ServicesLive } from "#/layers/services";
-import { CorsMiddleware, RateLimitMiddleware } from "#/middlewares/index";
+import { CorsMiddleware, RateLimitMiddleware, TelemetryMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
 import {
   ApiReferenceRoutes,
@@ -46,15 +46,21 @@ const Routes = Layer.mergeAll(
 
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
-  middleware: (httpEffect) => HttpMiddleware.tracer(RateLimitMiddleware(httpEffect)),
+  middleware: (httpEffect) => TelemetryMiddleware(RateLimitMiddleware(httpEffect)),
 }).pipe(
   Layer.provide(
     HttpMiddleware.layerTracerDisabledForUrls([
       "/reference",
+      "/auth/session/me",
       "/t/traces/v1",
       "/t/logs/v1",
       "/t/metrics/v1",
     ]),
+  ),
+  Layer.provide(
+    Layer.succeed(HttpMiddleware.SpanNameGenerator)(
+      (request) => `http.server ${request.method} ${httpRouteTemplate(request.url)}`,
+    ),
   ),
   Layer.provide(RateLimiterLive),
   Layer.provide(TelemetryLive),

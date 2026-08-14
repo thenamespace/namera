@@ -13,7 +13,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { and, count, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { notification, notificationRecipient } from "#/schema/index";
 
@@ -78,7 +78,7 @@ export class NotificationRepository extends Context.Service<
       const database = yield* Database;
 
       return NotificationRepository.of({
-        create: Effect.fn("NotificationRepository.create")(function* (data) {
+        create: Effect.fn("database.notificationRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(NotificationInsert)(data);
           const rows = yield* db
@@ -100,8 +100,8 @@ export class NotificationRepository extends Context.Service<
             notification: Schema.decodeSync(Notification)(existing! as any),
             inserted: false,
           };
-        }, mapToDatabaseError),
-        addRecipient: Effect.fn("NotificationRepository.addRecipient")(function* (data) {
+        }, mapRepositoryError),
+        addRecipient: Effect.fn("database.notificationRepository.addRecipient")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(NotificationRecipientInsert)(data);
           const rows = yield* db
@@ -128,8 +128,8 @@ export class NotificationRepository extends Context.Service<
             recipient: Schema.decodeSync(NotificationRecipient)(existing!),
             inserted: false,
           };
-        }, mapToDatabaseError),
-        listForUser: Effect.fn("NotificationRepository.listForUser")(function* (input) {
+        }, mapRepositoryError),
+        listForUser: Effect.fn("database.notificationRepository.listForUser")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const now = encodeDate(input.now);
           const cursor =
@@ -175,8 +175,8 @@ export class NotificationRepository extends Context.Service<
             notification: Schema.decodeSync(Notification)(row.notification as any),
             recipient: Schema.decodeSync(NotificationRecipient)(row.recipient),
           }));
-        }, mapToDatabaseError),
-        countUnread: Effect.fn("NotificationRepository.countUnread")(function* (input) {
+        }, mapRepositoryError),
+        countUnread: Effect.fn("database.notificationRepository.countUnread")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .select({ value: count() })
@@ -194,8 +194,8 @@ export class NotificationRepository extends Context.Service<
               ),
             );
           return rows[0]?.value ?? 0;
-        }, mapToDatabaseError),
-        markRead: Effect.fn("NotificationRepository.markRead")(function* (input) {
+        }, mapRepositoryError),
+        markRead: Effect.fn("database.notificationRepository.markRead")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(notificationRecipient)
@@ -208,8 +208,8 @@ export class NotificationRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(NotificationRecipient)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        markAllRead: Effect.fn("NotificationRepository.markAllRead")(function* (input) {
+        }, mapRepositoryError),
+        markAllRead: Effect.fn("database.notificationRepository.markAllRead")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(notificationRecipient)
@@ -223,8 +223,8 @@ export class NotificationRepository extends Context.Service<
             )
             .returning({ notificationId: notificationRecipient.notificationId });
           return rows.length;
-        }, mapToDatabaseError),
-        archive: Effect.fn("NotificationRepository.archive")(function* (input) {
+        }, mapRepositoryError),
+        archive: Effect.fn("database.notificationRepository.archive")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(notificationRecipient)
@@ -237,8 +237,10 @@ export class NotificationRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(NotificationRecipient)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        expireByResource: Effect.fn("NotificationRepository.expireByResource")(function* (input) {
+        }, mapRepositoryError),
+        expireByResource: Effect.fn("database.notificationRepository.expireByResource")(function* (
+          input,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(notification)
@@ -248,7 +250,7 @@ export class NotificationRepository extends Context.Service<
             )
             .returning({ id: notification.id });
           return rows.length;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

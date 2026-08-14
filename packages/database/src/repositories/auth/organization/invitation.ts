@@ -13,7 +13,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { and, eq, gt, lte } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/common";
 import { invitation } from "#/schema/index";
@@ -103,7 +103,7 @@ export class OrganizationInvitationRepository extends Context.Service<
         const database = yield* Database;
 
         return OrganizationInvitationRepository.of({
-          insert: Effect.fn("insertOrganizationInvitation")(function* (data) {
+          insert: Effect.fn("database.insertOrganizationInvitation")(function* (data) {
             const db = yield* transactionOrDatabase(database);
             const parsed = Schema.encodeSync(InvitationInsert)(data);
             const res = yield* db
@@ -113,8 +113,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               .returning();
 
             return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
-          }, mapToDatabaseError),
-          findById: Effect.fn("findOrganizationInvitationById")(function* (id, orgId) {
+          }, mapRepositoryError),
+          findById: Effect.fn("database.findOrganizationInvitationById")(function* (id, orgId) {
             const db = yield* transactionOrDatabase(database);
 
             const res = yield* db.query.invitation.findFirst({
@@ -145,8 +145,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               organizationRole: decodeJoinedOrganizationRole(organizationRole),
               inviter: Schema.decodeSync(User)(inviter),
             };
-          }, mapToDatabaseError),
-          findPendingForOrgId: Effect.fn("findPendingInvitationsForOrgId")(function* (
+          }, mapRepositoryError),
+          findPendingForOrgId: Effect.fn("database.findPendingInvitationsForOrgId")(function* (
             organizationId,
             now,
           ) {
@@ -180,8 +180,11 @@ export class OrganizationInvitationRepository extends Context.Service<
                 inviter: Schema.decodeSync(User)(inviter),
               };
             });
-          }, mapToDatabaseError),
-          findPendingForEmail: Effect.fn("findPendingInvitationsForEmail")(function* (email, now) {
+          }, mapRepositoryError),
+          findPendingForEmail: Effect.fn("database.findPendingInvitationsForEmail")(function* (
+            email,
+            now,
+          ) {
             const db = yield* transactionOrDatabase(database);
             const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
 
@@ -212,8 +215,8 @@ export class OrganizationInvitationRepository extends Context.Service<
                 inviter: Schema.decodeSync(User)(inviter),
               };
             });
-          }, mapToDatabaseError),
-          findByIdForEmail: Effect.fn("findInvitationByIdForEmail")(function* (id, email) {
+          }, mapRepositoryError),
+          findByIdForEmail: Effect.fn("database.findInvitationByIdForEmail")(function* (id, email) {
             const db = yield* transactionOrDatabase(database);
 
             const res = yield* db.query.invitation.findFirst({
@@ -244,8 +247,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               organizationRole: decodeJoinedOrganizationRole(organizationRole),
               inviter: Schema.decodeSync(User)(inviter),
             };
-          }, mapToDatabaseError),
-          existsById: Effect.fn("organizationInvitationExistsById")(function* (id) {
+          }, mapRepositoryError),
+          existsById: Effect.fn("database.organizationInvitationExistsById")(function* (id) {
             const db = yield* transactionOrDatabase(database);
             const res = yield* db
               .select({ id: invitation.id })
@@ -254,8 +257,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               .limit(1);
 
             return res.length > 0;
-          }, mapToDatabaseError),
-          acceptPending: Effect.fn("acceptPendingOrganizationInvitation")(function* (
+          }, mapRepositoryError),
+          acceptPending: Effect.fn("database.acceptPendingOrganizationInvitation")(function* (
             invitationId,
             email,
             now,
@@ -277,8 +280,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               .returning();
 
             return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
-          }, mapToDatabaseError),
-          rejectPending: Effect.fn("rejectPendingOrganizationInvitation")(function* (
+          }, mapRepositoryError),
+          rejectPending: Effect.fn("database.rejectPendingOrganizationInvitation")(function* (
             invitationId,
             email,
             now,
@@ -300,8 +303,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               .returning();
 
             return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
-          }, mapToDatabaseError),
-          cancelPending: Effect.fn("cancelPendingOrganizationInvitation")(function* (
+          }, mapRepositoryError),
+          cancelPending: Effect.fn("database.cancelPendingOrganizationInvitation")(function* (
             invitationId,
             organizationId,
           ) {
@@ -320,8 +323,8 @@ export class OrganizationInvitationRepository extends Context.Service<
               .returning();
 
             return res[0] ? Schema.decodeSync(Invitation)(res[0]) : undefined;
-          }, mapToDatabaseError),
-          expirePendingForEmail: Effect.fn("expirePendingOrganizationInvitationsForEmail")(
+          }, mapRepositoryError),
+          expirePendingForEmail: Effect.fn("database.expirePendingOrganizationInvitationsForEmail")(
             function* (organizationId, email, now) {
               const db = yield* transactionOrDatabase(database);
               const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
@@ -341,7 +344,7 @@ export class OrganizationInvitationRepository extends Context.Service<
 
               return Schema.decodeSync(Schema.Array(Invitation))(res);
             },
-            mapToDatabaseError,
+            mapRepositoryError,
           ),
         });
       }),

@@ -34,7 +34,7 @@ const isAllowedActor = <AllowedActor extends SupportedActorType>(
 ): actor is ActorOfType<AllowedActor> =>
   allowedActors.some((allowedActor) => allowedActor === actor.type);
 
-const enforceActorEffect = Effect.fn("enforceActor")(function* (
+const enforceActorEffect = Effect.fn("server.enforceActor")(function* (
   props: AnyEnforceActorProps,
 ): Effect.fn.Return<ActorData<SupportedActorType>, HttpApiError.Forbidden> {
   const { actor, allowedActors, requiredPermissions } = props;

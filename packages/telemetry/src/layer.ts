@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, type Duration } from "effect";
 import { FetchHttpClient } from "effect/unstable/http";
 import {
   OtlpLogger,
@@ -17,6 +17,7 @@ export const makeTelemetryLayer = (options: {
   tracesUrl: string;
   logsUrl: string;
   metricsUrl: string;
+  exportInterval?: Duration.Input;
   tracesHeaders?: Readonly<Record<string, string>>;
   logsHeaders?: Readonly<Record<string, string>>;
   metricsHeaders?: Readonly<Record<string, string>>;
@@ -34,7 +35,7 @@ export const makeTelemetryLayer = (options: {
       url: options.tracesUrl,
       headers: options.tracesHeaders,
       resource,
-      exportInterval: telemetryData.exportInterval,
+      exportInterval: options.exportInterval ?? telemetryData.exportInterval,
       shutdownTimeout: telemetryData.shutdownTimeout,
     }),
     OtlpLogger.layer({
@@ -49,7 +50,7 @@ export const makeTelemetryLayer = (options: {
       url: options.metricsUrl,
       headers: options.metricsHeaders,
       resource,
-      exportInterval: telemetryData.exportInterval,
+      exportInterval: options.exportInterval ?? telemetryData.exportInterval,
       shutdownTimeout: telemetryData.shutdownTimeout,
       temporality: "cumulative",
     }),

@@ -5,7 +5,7 @@ import type { DatabaseError, Email, UserId } from "@namera-ai/protocol";
 import { User, UserInsert, type UserMetadata, UserUpdate } from "@namera-ai/protocol/model";
 import { eq } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { user } from "#/schema/index";
 
@@ -32,7 +32,9 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
     Effect.gen(function* () {
       const database = yield* Database;
 
-      const findByEmail = Effect.fn("UserRepository.findByEmail")(function* (email: Email) {
+      const findByEmail = Effect.fn("database.userRepository.findByEmail")(function* (
+        email: Email,
+      ) {
         const db = yield* transactionOrDatabase(database);
         const row = yield* db.query.user.findFirst({
           where: {
@@ -41,10 +43,10 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
         });
 
         return row ? Schema.decodeSync(User)(row) : undefined;
-      }, mapToDatabaseError);
+      }, mapRepositoryError);
 
       return UserRepository.of({
-        findById: Effect.fn("UserRepository.findById")(function* (userId) {
+        findById: Effect.fn("database.userRepository.findById")(function* (userId) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.user.findFirst({
             where: {
@@ -53,9 +55,9 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
           });
 
           return row ? Schema.decodeSync(User)(row) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
         findByEmail,
-        create: Effect.fn("UserRepository.create")(function* (data) {
+        create: Effect.fn("database.userRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(UserInsert)(data);
           const rows = yield* db
@@ -64,8 +66,10 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
             .returning();
 
           return Schema.decodeSync(User)(rows[0]!);
-        }, mapToDatabaseError),
-        findOrCreateByEmail: Effect.fn("UserRepository.findOrCreateByEmail")(function* (data) {
+        }, mapRepositoryError),
+        findOrCreateByEmail: Effect.fn("database.userRepository.findOrCreateByEmail")(function* (
+          data,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(UserInsert)(data);
           const rows = yield* db
@@ -85,25 +89,28 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
                 : Effect.die("User disappeared after resolving the unique email conflict"),
             ),
           );
-        }, mapToDatabaseError),
-        markEmailVerifiedAndLogin: Effect.fn("UserRepository.markEmailVerifiedAndLogin")(function* (
-          userId,
-          loggedInAt,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const encodedLoggedInAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(loggedInAt);
-          const rows = yield* db
-            .update(user)
-            .set({
-              emailVerified: true,
-              lastLoginAt: encodedLoggedInAt,
-            })
-            .where(eq(user.id, userId))
-            .returning();
+        }, mapRepositoryError),
+        markEmailVerifiedAndLogin: Effect.fn("database.userRepository.markEmailVerifiedAndLogin")(
+          function* (userId, loggedInAt) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedLoggedInAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(loggedInAt);
+            const rows = yield* db
+              .update(user)
+              .set({
+                emailVerified: true,
+                lastLoginAt: encodedLoggedInAt,
+              })
+              .where(eq(user.id, userId))
+              .returning();
 
-          return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        updateMetadata: Effect.fn("UserRepository.updateMetadata")(function* (userId, metadata) {
+            return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        updateMetadata: Effect.fn("database.userRepository.updateMetadata")(function* (
+          userId,
+          metadata,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(UserUpdate)({ metadata });
           const rows = yield* db
@@ -113,7 +120,7 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
             .returning();
 
           return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

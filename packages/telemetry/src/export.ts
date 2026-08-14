@@ -2,7 +2,7 @@ import { Effect, Redacted } from "effect";
 
 import { AxiomConfig, TelemetryConfig } from "#/config";
 
-export const resolveTelemetryExport = Effect.fn("Telemetry.resolveExport")(function* () {
+export const resolveTelemetryExport = Effect.fnUntraced(function* () {
   const config = yield* TelemetryConfig;
 
   if (config.environment !== "production") {

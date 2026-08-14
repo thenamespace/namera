@@ -26,7 +26,7 @@ export type CreateKernelAccountProps = {
   readonly owner: WebAuthnAccount | LocalAccount;
 };
 
-export const createKernelAccount = Effect.fn("Evm.createKernelAccount")(function* (
+export const createKernelAccount = Effect.fn("evm.createKernelAccount")(function* (
   props: CreateKernelAccountProps,
   config: EvmConfigValues,
 ) {

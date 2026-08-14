@@ -11,7 +11,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { eq } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { organization } from "#/schema/index";
 
@@ -37,7 +37,7 @@ export class OrganizationRepository extends Context.Service<
       const database = yield* Database;
 
       return OrganizationRepository.of({
-        insert: Effect.fn("insertOrganization")(function* (data) {
+        insert: Effect.fn("database.insertOrganization")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationInsert)(data);
           const res = yield* db
@@ -46,8 +46,8 @@ export class OrganizationRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(Organization)(res[0]!);
-        }, mapToDatabaseError),
-        findById: Effect.fn("findOrganizationById")(function* (id) {
+        }, mapRepositoryError),
+        findById: Effect.fn("database.findOrganizationById")(function* (id) {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.organization.findFirst({
@@ -57,8 +57,8 @@ export class OrganizationRepository extends Context.Service<
           });
 
           return res ? Schema.decodeSync(Organization)(res) : undefined;
-        }, mapToDatabaseError),
-        findOrgsCreatedByUserId: Effect.fn("findOrgsCreatedByUserId")(function* (userId) {
+        }, mapRepositoryError),
+        findOrgsCreatedByUserId: Effect.fn("database.findOrgsCreatedByUserId")(function* (userId) {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.organization.findMany({
@@ -68,8 +68,8 @@ export class OrganizationRepository extends Context.Service<
           });
 
           return [...Schema.decodeSync(Schema.Array(Organization))(res)];
-        }, mapToDatabaseError),
-        update: Effect.fn("updateOrganization")(function* (orgId, metadata) {
+        }, mapRepositoryError),
+        update: Effect.fn("database.updateOrganization")(function* (orgId, metadata) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationUpdate)({ metadata });
           const res = yield* db
@@ -79,7 +79,7 @@ export class OrganizationRepository extends Context.Service<
             .returning();
 
           return res[0] ? Schema.decodeSync(Organization)(res[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

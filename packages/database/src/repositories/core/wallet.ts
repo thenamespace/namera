@@ -11,7 +11,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { desc, eq } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { wallet, walletKey } from "#/schema/index";
 
@@ -48,7 +48,7 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
       const database = yield* Database;
 
       return WalletRepository.of({
-        insert: Effect.fn("WalletRepository.insert")(function* (data) {
+        insert: Effect.fn("database.walletRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(WalletInsert)(data);
           const rows = yield* db
@@ -56,8 +56,8 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
             .values(encoded as any)
             .returning();
           return Schema.decodeSync(Wallet)(rows[0]! as any);
-        }, mapToDatabaseError),
-        findById: Effect.fn("WalletRepository.findById")(function* (id, organizationId) {
+        }, mapRepositoryError),
+        findById: Effect.fn("database.walletRepository.findById")(function* (id, organizationId) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.wallet.findFirst({
             where: {
@@ -69,8 +69,8 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
           if (row === undefined) return undefined;
           const { walletKey: key, ...walletRow } = row;
           return decodeWalletView({ wallet: walletRow, walletKey: key });
-        }, mapToDatabaseError),
-        findForOrganization: Effect.fn("WalletRepository.findForOrganization")(function* (
+        }, mapRepositoryError),
+        findForOrganization: Effect.fn("database.walletRepository.findForOrganization")(function* (
           organizationId,
         ) {
           const db = yield* transactionOrDatabase(database);
@@ -81,7 +81,7 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
             .where(eq(wallet.organizationId, organizationId))
             .orderBy(desc(wallet.createdAt), desc(wallet.id));
           return rows.map(decodeWalletView);
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

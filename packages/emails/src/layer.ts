@@ -67,7 +67,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
       const resend = new Resend(Redacted.value(config.apiKey));
       const configuredReplyTo = Option.getOrUndefined(config.replyTo);
 
-      const send = Effect.fn("EmailService.send")(function* (input: SendEmailProps) {
+      const send = Effect.fn("emails.provider.send")(function* (input: SendEmailProps) {
         const template = emailTemplates[input.type];
         const response = yield* Effect.tryPromise({
           try: () =>
@@ -128,11 +128,10 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
   static readonly devLayer = Layer.succeed(
     EmailService,
     EmailService.of({
-      send: Effect.fn("EmailService.development.send")(function* (input) {
-        yield* Effect.logInfo("email.development.sent", {
-          type: input.type,
-          variables: input.variables,
-        });
+      send: Effect.fn("emails.provider.development.send")(function* (input) {
+        yield* Effect.logInfo("email.development.sent").pipe(
+          Effect.annotateLogs({ type: input.type, variables: input.variables }),
+        );
 
         return developmentEmailProviderId;
       }),
@@ -145,7 +144,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
       const emails = yield* TestEmails;
 
       return EmailService.of({
-        send: Effect.fn("EmailService.test.send")(function* (input) {
+        send: Effect.fn("emails.provider.test.send")(function* (input) {
           const shouldFail = yield* emails.takeFailure;
           if (shouldFail) {
             return yield* new EmailError({

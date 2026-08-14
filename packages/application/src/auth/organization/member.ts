@@ -60,21 +60,21 @@ export const makeMemberApplication = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
-  const listMembers = Effect.fn("Application.organization.member.listMembers")(
+  const listMembers = Effect.fn("application.organization.member.listMembers")(
     function* (organizationId: OrganizationId) {
       return yield* repository.auth.member.findOrganizationMembersForOrg(organizationId);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listRoles = Effect.fn("Application.organization.member.listRoles")(
+  const listRoles = Effect.fn("application.organization.member.listRoles")(
     function* (organizationId: OrganizationId) {
       return yield* repository.auth.role.findOrganizationRolesForOrgId(organizationId);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listAssignableRoles = Effect.fn("Application.organization.member.listAssignableRoles")(
+  const listAssignableRoles = Effect.fn("application.organization.member.listAssignableRoles")(
     function* (organizationId: OrganizationId, actorRole: OrganizationRoleAuthority) {
       const roles = yield* repository.auth.role.findOrganizationRolesForOrgId(organizationId);
       return roles.filter((role) => canAssignOrganizationRole(actorRole, role));
@@ -82,7 +82,7 @@ export const makeMemberApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const updateRole = Effect.fn("Application.organization.member.updateRole")(
+  const updateRole = Effect.fn("application.organization.member.updateRole")(
     function* (input: {
       actorId: ActorId;
       actorRole: OrganizationRoleAuthority;
@@ -161,7 +161,7 @@ export const makeMemberApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const remove = Effect.fn("Application.organization.member.remove")(
+  const remove = Effect.fn("application.organization.member.remove")(
     function* (input: {
       actorId: ActorId;
       actorRole: OrganizationRoleAuthority;

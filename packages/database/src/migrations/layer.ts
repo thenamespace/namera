@@ -17,7 +17,7 @@ import { systemRoles } from "./data.js";
 const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
 const migrationLock = "namera_database_migrations";
 
-export const runDatabaseMigrations = Effect.fn("runDatabaseMigrations")(function* () {
+export const runDatabaseMigrations = Effect.fn("database.runDatabaseMigrations")(function* () {
   const config = yield* DatabaseConfig;
   const pool = yield* Effect.acquireRelease(
     Effect.sync(

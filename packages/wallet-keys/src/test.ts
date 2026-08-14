@@ -5,7 +5,7 @@ import { Hex } from "@namera-ai/protocol";
 import type { WalletKeysService } from "./service.js";
 
 export const makeTestWalletKeys = (): WalletKeysService => ({
-  create: Effect.fn("WalletKeys.test.create")((input) =>
+  create: Effect.fn("wallet-keys.test.create")((input) =>
     Effect.succeed({
       provider: "local",
       algorithm: input.algorithm,
@@ -16,16 +16,16 @@ export const makeTestWalletKeys = (): WalletKeysService => ({
       data: { version: 1, fileName: `${input.id}.json` },
     } as const),
   ),
-  signMessage: Effect.fn("WalletKeys.test.signMessage")((input) =>
+  signMessage: Effect.fn("wallet-keys.test.signMessage")((input) =>
     Effect.succeed(
       input.algorithm === "ed25519"
         ? new Uint8Array(64)
         : new Uint8Array([48, 6, 2, 1, 1, 2, 1, 1]),
     ),
   ),
-  signHash: Effect.fn("WalletKeys.test.signHash")(() =>
+  signHash: Effect.fn("wallet-keys.test.signHash")(() =>
     Effect.succeed(new Uint8Array([48, 6, 2, 1, 1, 2, 1, 1])),
   ),
-  disable: Effect.fn("WalletKeys.test.disable")(() => Effect.succeed(undefined)),
-  destroy: Effect.fn("WalletKeys.test.destroy")(() => Effect.succeed(undefined)),
+  disable: Effect.fn("wallet-keys.test.disable")(() => Effect.succeed(undefined)),
+  destroy: Effect.fn("wallet-keys.test.destroy")(() => Effect.succeed(undefined)),
 });

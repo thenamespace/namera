@@ -20,7 +20,7 @@ export const resolveBillingPlan = (subscription: BillingSubscription) => {
   return plan;
 };
 
-export const lockOrganizationBilling = Effect.fn("lockOrganizationBilling")(function* (
+export const lockOrganizationBilling = Effect.fn("application.lockOrganizationBilling")(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
 ) {
@@ -30,7 +30,7 @@ export const lockOrganizationBilling = Effect.fn("lockOrganizationBilling")(func
   }
 });
 
-export const loadOrganizationBilling = Effect.fn("loadOrganizationBilling")(function* (
+export const loadOrganizationBilling = Effect.fnUntraced(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
 ) {
@@ -46,7 +46,7 @@ export const loadOrganizationBilling = Effect.fn("loadOrganizationBilling")(func
   return { subscription, limits: plan.limits, usage };
 });
 
-export const enforceMemberLimit = Effect.fn("enforceMemberLimit")(function* (
+export const enforceMemberLimit = Effect.fn("application.enforceMemberLimit")(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
 ) {
@@ -59,7 +59,7 @@ export const enforceMemberLimit = Effect.fn("enforceMemberLimit")(function* (
   }
 });
 
-export const enforceWalletLimit = Effect.fn("enforceWalletLimit")(function* (
+export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
   protectionLevel: WalletKeyProtectionLevel,

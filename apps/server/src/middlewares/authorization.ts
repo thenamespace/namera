@@ -24,7 +24,10 @@ export const AuthorizationLive = Layer.effect(
     const cookieConfig = yield* AuthCookieConfig;
 
     return Authorization.of({
-      authToken: Effect.fn("Authorization.authToken")(function* (httpEffect, { credential }) {
+      authToken: Effect.fn("server.authorization.authToken")(function* (
+        httpEffect,
+        { credential },
+      ) {
         yield* HttpEffect.appendPreResponseHandler((_request, response) =>
           Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
         );

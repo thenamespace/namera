@@ -13,7 +13,7 @@ export interface BillingApplication {
 export const makeBillingApplication = Effect.gen(function* () {
   const repository = yield* Repository;
 
-  const get = Effect.fn("Application.billing.get")(
+  const get = Effect.fn("application.billing.get")(
     function* (organizationId: OrganizationId) {
       const { subscription, limits, usage } = yield* loadOrganizationBilling(
         repository,

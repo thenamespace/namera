@@ -62,7 +62,7 @@ export const clientIdentifier = Effect.map(HttpServerRequest.HttpServerRequest, 
   Option.getOrElse(request.remoteAddress, () => "unknown"),
 );
 
-export const consumeRateLimit = Effect.fn("consumeRateLimit")(function* (
+export const consumeRateLimit = Effect.fnUntraced(function* (
   scope: string,
   identifier: string,
   policy: {

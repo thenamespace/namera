@@ -108,7 +108,7 @@ const makeTelemetryRoute = ({ path, signal }: (typeof routes)[number]) =>
             contentType: upstream.success.contentType,
             headers: { "cache-control": "no-store" },
           });
-    }),
+    }).pipe(Effect.withTracerEnabled(false)),
   );
 
 export const TelemetryRoutes = Layer.mergeAll(

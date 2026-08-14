@@ -44,7 +44,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
 
-  const verify = Effect.fn("Application.magicLink.verify")(
+  const verify = Effect.fn("application.magicLink.verify")(
     function* (input: VerifyMagicLinkRequest, context: VerifyMagicLinkContext) {
       const now = yield* DateTime.now;
       const verification =
@@ -184,7 +184,9 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
       );
 
       yield* Metric.update(magicLinkVerificationResults, "success");
-      yield* Effect.logInfo("magic_link.verified", { method: input.type });
+      yield* Effect.logInfo("magic_link.verified").pipe(
+        Effect.annotateLogs({ method: input.type }),
+      );
       return {
         sessionToken,
         returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,

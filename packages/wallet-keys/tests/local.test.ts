@@ -41,7 +41,7 @@ const withLocalWalletKeys = <A, E>(
     (directory) => Effect.promise(() => rm(directory, { recursive: true, force: true })),
   );
 
-const createLocalKey = Effect.fn("WalletKeys.test.createLocalKey")(function* (
+const createLocalKey = Effect.fn("wallet-keys.test.createLocalKey")(function* (
   input: CreateWalletKeyInput,
 ) {
   const walletKeys = yield* WalletKeys;
@@ -52,7 +52,7 @@ const createLocalKey = Effect.fn("WalletKeys.test.createLocalKey")(function* (
   return key;
 });
 
-const readPrivateKey = Effect.fn("WalletKeys.test.readPrivateKey")(function* (
+const readPrivateKey = Effect.fn("wallet-keys.test.readPrivateKey")(function* (
   directory: string,
   fileName: string,
 ) {

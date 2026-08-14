@@ -22,7 +22,7 @@ export interface NotificationInboxApplication {
 export const makeNotificationInboxApplication = Effect.gen(function* () {
   const repository = yield* Repository;
 
-  const list = Effect.fn("Application.notification.list")(
+  const list = Effect.fn("application.notification.list")(
     function* (input: { readonly userId: UserId; readonly cursor?: NotificationId }) {
       const rows = yield* repository.notification.inbox.listForUser({
         ...input,
@@ -39,7 +39,7 @@ export const makeNotificationInboxApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const unreadCount = Effect.fn("Application.notification.unreadCount")(
+  const unreadCount = Effect.fn("application.notification.unreadCount")(
     function* (userId: UserId) {
       return yield* repository.notification.inbox.countUnread({
         userId,
@@ -49,7 +49,7 @@ export const makeNotificationInboxApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const markRead = Effect.fn("Application.notification.markRead")(
+  const markRead = Effect.fn("application.notification.markRead")(
     function* (notificationId: NotificationId, userId: UserId) {
       yield* repository.notification.inbox.markRead({
         notificationId,
@@ -60,7 +60,7 @@ export const makeNotificationInboxApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const markAllRead = Effect.fn("Application.notification.markAllRead")(
+  const markAllRead = Effect.fn("application.notification.markAllRead")(
     function* (userId: UserId) {
       return yield* repository.notification.inbox.markAllRead({
         userId,
@@ -70,7 +70,7 @@ export const makeNotificationInboxApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const archive = Effect.fn("Application.notification.archive")(
+  const archive = Effect.fn("application.notification.archive")(
     function* (notificationId: NotificationId, userId: UserId) {
       yield* repository.notification.inbox.archive({
         notificationId,

@@ -9,7 +9,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { verification } from "#/schema/index";
 
@@ -51,7 +51,7 @@ export class VerificationRepository extends Context.Service<
       const database = yield* Database;
 
       return VerificationRepository.of({
-        create: Effect.fn("VerificationRepository.create")(function* (data) {
+        create: Effect.fn("database.verificationRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(VerificationInsert)(data);
           const rows = yield* db
@@ -61,8 +61,8 @@ export class VerificationRepository extends Context.Service<
             .returning();
 
           return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        findById: Effect.fn("VerificationRepository.findById")(function* (verificationId) {
+        }, mapRepositoryError),
+        findById: Effect.fn("database.verificationRepository.findById")(function* (verificationId) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.verification.findFirst({
             where: {
@@ -71,32 +71,31 @@ export class VerificationRepository extends Context.Service<
           });
 
           return row ? Schema.decodeSync(Verification)(row) : undefined;
-        }, mapToDatabaseError),
-        findPendingByIdentifier: Effect.fn("VerificationRepository.findPendingByIdentifier")(
-          function* ({ purpose, identifier, now, maxAttempts }) {
-            const db = yield* transactionOrDatabase(database);
-            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-            const rows = yield* db
-              .select()
-              .from(verification)
-              .where(
-                and(
-                  eq(verification.purpose, purpose),
-                  eq(verification.identifier, identifier),
-                  isNull(verification.consumedAt),
-                  isNull(verification.revokedAt),
-                  gt(verification.expiresAt, encodedNow),
-                  lt(verification.attempts, maxAttempts),
-                ),
-              )
-              .orderBy(desc(verification.createdAt))
-              .limit(1);
+        }, mapRepositoryError),
+        findPendingByIdentifier: Effect.fn(
+          "database.verificationRepository.findPendingByIdentifier",
+        )(function* ({ purpose, identifier, now, maxAttempts }) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+          const rows = yield* db
+            .select()
+            .from(verification)
+            .where(
+              and(
+                eq(verification.purpose, purpose),
+                eq(verification.identifier, identifier),
+                isNull(verification.consumedAt),
+                isNull(verification.revokedAt),
+                gt(verification.expiresAt, encodedNow),
+                lt(verification.attempts, maxAttempts),
+              ),
+            )
+            .orderBy(desc(verification.createdAt))
+            .limit(1);
 
-            return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
-          },
-          mapToDatabaseError,
-        ),
-        revokePending: Effect.fn("VerificationRepository.revokePending")(function* ({
+          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+        }, mapRepositoryError),
+        revokePending: Effect.fn("database.verificationRepository.revokePending")(function* ({
           purpose,
           identifier,
           revokedAt,
@@ -117,31 +116,30 @@ export class VerificationRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(Schema.Array(Verification))(rows);
-        }, mapToDatabaseError),
-        incrementAttempts: Effect.fn("VerificationRepository.incrementAttempts")(function* ({
-          verificationId,
-          now,
-          maxAttempts,
-        }) {
-          const db = yield* transactionOrDatabase(database);
-          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-          const rows = yield* db
-            .update(verification)
-            .set({ attempts: sql`${verification.attempts} + 1` })
-            .where(
-              and(
-                eq(verification.id, verificationId),
-                isNull(verification.consumedAt),
-                isNull(verification.revokedAt),
-                gt(verification.expiresAt, encodedNow),
-                lt(verification.attempts, maxAttempts),
-              ),
-            )
-            .returning();
+        }, mapRepositoryError),
+        incrementAttempts: Effect.fn("database.verificationRepository.incrementAttempts")(
+          function* ({ verificationId, now, maxAttempts }) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const rows = yield* db
+              .update(verification)
+              .set({ attempts: sql`${verification.attempts} + 1` })
+              .where(
+                and(
+                  eq(verification.id, verificationId),
+                  isNull(verification.consumedAt),
+                  isNull(verification.revokedAt),
+                  gt(verification.expiresAt, encodedNow),
+                  lt(verification.attempts, maxAttempts),
+                ),
+              )
+              .returning();
 
-          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        consume: Effect.fn("VerificationRepository.consume")(function* ({
+            return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        consume: Effect.fn("database.verificationRepository.consume")(function* ({
           verificationId,
           consumedAt,
           maxAttempts,
@@ -163,7 +161,7 @@ export class VerificationRepository extends Context.Service<
             .returning();
 
           return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

@@ -32,7 +32,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const pimlicoApiKey = encodeURIComponent(Redacted.value(config.pimlicoApiKey));
       const createAccount = makeCreateAccount(config);
 
-      const getRpcUrl = Effect.fn("Evm.getRpcUrl")(function* (chainId: number, type: EvmRpcType) {
+      const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, type: EvmRpcType) {
         const data = getChainDataByChainId(chainId);
         if (data === undefined) {
           return yield* new UnsupportedChainError({
@@ -57,7 +57,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
   static readonly testLayer = Layer.succeed(
     Evm,
     Evm.of({
-      createAccount: Effect.fn("Evm.test.createAccount")(
+      createAccount: Effect.fn("evm.test.createAccount")(
         <const Props extends CreateAccountProps>(props: Props) => {
           if (props.implementation === "kernel") {
             return Effect.succeed({
@@ -86,7 +86,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
           } as CreateAccountResult<Props>);
         },
       ),
-      getRpcUrl: Effect.fn("Evm.test.getRpcUrl")(function* (chainId, type) {
+      getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
         if (getChainDataByChainId(chainId) === undefined) {
           return yield* new UnsupportedChainError({
             namespace: "eip155",

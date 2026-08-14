@@ -42,6 +42,12 @@ Repository methods call `transactionOrDatabase`. Outside a transaction they use
 the normal database; inside `TransactionService.run` they automatically use the
 same typed Drizzle transaction client.
 
+Repository methods are also the default database tracing boundary. Their mapped
+database effects suppress child tracing so Drizzle and Effect SQL do not add a
+`drizzle.operation` and `sql.execute` span for every statement. Keep repository
+operation names meaningful; enable query-level tracing only temporarily when
+investigating a specific database problem.
+
 ```ts
 const createUserAndSession = Effect.gen(function* () {
   const repositories = yield* Repository;

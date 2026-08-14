@@ -8,7 +8,7 @@ import {
   type WalletKey as WalletKeyModel,
 } from "@namera-ai/protocol/model";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { walletKey } from "#/schema/index";
 
@@ -30,7 +30,7 @@ export class WalletKeyRepository extends Context.Service<
       const database = yield* Database;
 
       return WalletKeyRepository.of({
-        insert: Effect.fn("WalletKeyRepository.insert")(function* (data) {
+        insert: Effect.fn("database.walletKeyRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(WalletKeyInsert)(data);
           const rows = yield* db
@@ -38,8 +38,11 @@ export class WalletKeyRepository extends Context.Service<
             .values(encoded as any)
             .returning();
           return Schema.decodeSync(WalletKey)(rows[0]!);
-        }, mapToDatabaseError),
-        findById: Effect.fn("WalletKeyRepository.findById")(function* (id, organizationId) {
+        }, mapRepositoryError),
+        findById: Effect.fn("database.walletKeyRepository.findById")(function* (
+          id,
+          organizationId,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.walletKey.findFirst({
             where: {
@@ -48,7 +51,7 @@ export class WalletKeyRepository extends Context.Service<
             },
           });
           return row === undefined ? undefined : Schema.decodeSync(WalletKey)(row);
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

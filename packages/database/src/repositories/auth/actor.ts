@@ -4,7 +4,7 @@ import { Context, Effect, Layer, Schema } from "effect";
 import type { DatabaseError } from "@namera-ai/protocol";
 import { Actor, ActorInsert } from "@namera-ai/protocol/model";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { actor } from "#/schema/index";
 
@@ -21,7 +21,7 @@ export class ActorRepository extends Context.Service<ActorRepository, ActorRepos
       const database = yield* Database;
 
       return ActorRepository.of({
-        insert: Effect.fn("ActorRepository.insert")(function* (data) {
+        insert: Effect.fn("database.actorRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(ActorInsert)(data);
           const rows = yield* db
@@ -30,7 +30,7 @@ export class ActorRepository extends Context.Service<ActorRepository, ActorRepos
             .returning();
 
           return Schema.decodeSync(Actor)(rows[0]!);
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

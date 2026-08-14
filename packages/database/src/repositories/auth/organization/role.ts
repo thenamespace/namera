@@ -10,7 +10,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { and, eq, isNull } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import {
   decodeJoinedOrganizationRole,
@@ -45,7 +45,7 @@ export class OrganizationRoleRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
 
-      const decodeRole = Effect.fn("decodeOrganizationRole")(function* (
+      const decodeRole = Effect.fn("database.decodeOrganizationRole")(function* (
         roleRow: OrganizationRoleRow,
       ) {
         if (roleRow.systemRoleId === null) {
@@ -63,7 +63,7 @@ export class OrganizationRoleRepository extends Context.Service<
       });
 
       return OrganizationRoleRepository.of({
-        insert: Effect.fn("insertOrganizationRole")(function* (data) {
+        insert: Effect.fn("database.insertOrganizationRole")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationRoleInsert)(data);
           const values =
@@ -88,8 +88,8 @@ export class OrganizationRoleRepository extends Context.Service<
             .returning();
 
           return yield* decodeRole(res[0]!);
-        }, mapToDatabaseError),
-        findById: Effect.fn("findOrganizationRoleById")(function* (
+        }, mapRepositoryError),
+        findById: Effect.fn("database.findOrganizationRoleById")(function* (
           organizationId,
           organizationRoleId,
         ) {
@@ -105,31 +105,32 @@ export class OrganizationRoleRepository extends Context.Service<
           });
 
           return res ? decodeJoinedOrganizationRole(res) : undefined;
-        }, mapToDatabaseError),
-        findOrganizationRolesForOrgId: Effect.fn("findOrganizationRolesForOrgId")(function* (
-          orgId,
-        ) {
-          const db = yield* transactionOrDatabase(database);
+        }, mapRepositoryError),
+        findOrganizationRolesForOrgId: Effect.fn("database.findOrganizationRolesForOrgId")(
+          function* (orgId) {
+            const db = yield* transactionOrDatabase(database);
 
-          const res = yield* db.query.organizationRole.findMany({
-            where: {
-              organizationId: { eq: orgId },
-            },
-            with: {
-              systemRole: true,
-            },
-          });
+            const res = yield* db.query.organizationRole.findMany({
+              where: {
+                organizationId: { eq: orgId },
+              },
+              with: {
+                systemRole: true,
+              },
+            });
 
-          return res.map(decodeJoinedOrganizationRole);
-        }, mapToDatabaseError),
-        findSystemRoles: Effect.fn("findSystemRoles")(function* () {
+            return res.map(decodeJoinedOrganizationRole);
+          },
+          mapRepositoryError,
+        ),
+        findSystemRoles: Effect.fn("database.findSystemRoles")(function* () {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.systemRole.findMany();
 
           return [...Schema.decodeSync(Schema.Array(SystemRole))(res as any)];
-        }, mapToDatabaseError),
-        updateCustom: Effect.fn("updateCustomOrganizationRole")(function* (
+        }, mapRepositoryError),
+        updateCustom: Effect.fn("database.updateCustomOrganizationRole")(function* (
           organizationId,
           organizationRoleId,
           data,
@@ -149,7 +150,7 @@ export class OrganizationRoleRepository extends Context.Service<
             .returning();
 
           return res[0] ? yield* decodeRole(res[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

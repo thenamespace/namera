@@ -24,7 +24,7 @@ evaluation will be added behind the same root `Evm` service.
    the operation using `EvmConfig`; do not expose their large generic types from
    the public service.
 3. Add account implementations under `accounts` and route them through the
-   discriminated `Evm.createAccount` input so the implementation-specific result
+   discriminated `evm.createAccount` input so the implementation-specific result
    remains inferred.
 4. Convert provider, account, and signing failures into protocol errors at the
    adapter boundary. Keep key creation and persistence in application workflows,

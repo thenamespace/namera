@@ -34,8 +34,9 @@ an invalid session or a session whose active membership no longer exists, it
 also expires the stale `auth-token` cookie so the browser can recover cleanly.
 
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
-is enabled globally except for the Scalar reference route and telemetry proxy
-routes.
+uses one stable route-normalized span per request. It excludes the Scalar
+reference, routine current-session probe, and telemetry proxy routes. Bounded
+request count and duration metrics exclude telemetry proxy traffic.
 
 The dashboard sends protobuf OTLP to `POST /t/traces/v1`, `/t/logs/v1`, and
 `/t/metrics/v1`. The server forwards each signal to local LGTM in development

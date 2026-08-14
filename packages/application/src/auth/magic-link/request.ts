@@ -23,7 +23,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
-  const request = Effect.fn("Application.magicLink.request")(
+  const request = Effect.fn("application.magicLink.request")(
     function* (input: RequestMagicLinkRequest) {
       yield* Metric.update(magicLinkRequests, 1);
       const now = yield* DateTime.now;

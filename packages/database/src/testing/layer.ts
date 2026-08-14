@@ -42,7 +42,7 @@ const encodedSystemRoles = Schema.encodeSync(Schema.Array(SystemRoleInsert))(sys
   }),
 );
 
-const seedSystemRoles = Effect.fn("TestDatabase.seedSystemRoles")(function* (
+const seedSystemRoles = Effect.fn("database.testDatabase.seedSystemRoles")(function* (
   database: DatabaseService,
 ) {
   yield* database.insert(systemRole).values(encodedSystemRoles);
@@ -65,7 +65,7 @@ export class TestDatabase extends Context.Service<
       Effect.gen(function* () {
         const database = yield* Database;
 
-        const reset = Effect.fn("TestDatabase.reset")(function* () {
+        const reset = Effect.fn("database.testDatabase.reset")(function* () {
           yield* database.delete(notificationRecipient);
           yield* database.delete(notificationPreference);
           yield* database.delete(notification);

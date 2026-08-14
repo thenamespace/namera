@@ -63,33 +63,33 @@ export class CryptoService extends Context.Service<
         ),
       ]);
 
-      const randomToken = Effect.fn("CryptoService.randomToken")(function* (byteLength = 32) {
+      const randomToken = Effect.fnUntraced(function* (byteLength = 32) {
         const bytes = yield* platformCrypto.randomBytes(byteLength).pipe(Effect.orDie);
         return Base64.fromUint8Array(bytes, true);
       });
 
-      const randomCode = Effect.fn("CryptoService.randomCode")(function* (digits = 8) {
+      const randomCode = Effect.fnUntraced(function* (digits = 8) {
         const values = yield* Effect.all(
           Array.from({ length: digits }, () => platformCrypto.randomIntBetween(0, 9)),
         );
         return values.join("");
       });
 
-      const hash = Effect.fn("CryptoService.hash")(function* (input: CryptoInput) {
+      const hash = Effect.fnUntraced(function* (input: CryptoInput) {
         const digest = yield* platformCrypto
           .digest("SHA-256", domainSeparatedValue(input))
           .pipe(Effect.orDie);
         return Base64.fromUint8Array(digest, true);
       });
 
-      const hmac = Effect.fn("CryptoService.hmac")(function* (input: CryptoInput) {
+      const hmac = Effect.fnUntraced(function* (input: CryptoInput) {
         const signature = yield* Effect.promise(() =>
           webCrypto.subtle.sign("HMAC", hmacKey, domainSeparatedValue(input)),
         );
         return Base64.fromUint8Array(new Uint8Array(signature), true);
       });
 
-      const verifyHmac = Effect.fn("CryptoService.verifyHmac")(function* (
+      const verifyHmac = Effect.fnUntraced(function* (
         input: CryptoInput & { readonly expected: string },
       ) {
         return yield* Effect.promise(() =>
@@ -102,7 +102,7 @@ export class CryptoService extends Context.Service<
         );
       });
 
-      const encrypt = Effect.fn("CryptoService.encrypt")(function* (input: CryptoInput) {
+      const encrypt = Effect.fnUntraced(function* (input: CryptoInput) {
         const iv = webCrypto.getRandomValues(new Uint8Array(12));
         const ciphertext = yield* Effect.promise(() =>
           webCrypto.subtle.encrypt(
@@ -120,7 +120,7 @@ export class CryptoService extends Context.Service<
         return `${encryptionVersion}.${Base64.fromUint8Array(iv, true)}.${Base64.fromUint8Array(new Uint8Array(ciphertext), true)}`;
       });
 
-      const decrypt = Effect.fn("CryptoService.decrypt")(function* (input: CryptoInput) {
+      const decrypt = Effect.fnUntraced(function* (input: CryptoInput) {
         const parts = input.value.split(".");
         const [version, encodedIv, encodedCiphertext] = parts;
         if (

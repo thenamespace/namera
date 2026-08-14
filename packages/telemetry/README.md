@@ -13,6 +13,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/config.ts` — common telemetry and production Axiom configuration.
 - `src/data.ts` — code-owned service identity and exporter timing.
 - `src/export.ts` — environment-selected OTLP destinations and provider headers.
+- `src/http.ts` — bounded HTTP route templates and status-class helpers.
 - `src/layer.ts` — reusable OTLP exporter layer and the server live layer.
 - `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
@@ -28,8 +29,11 @@ session IDs, user IDs, URLs, or arbitrary error messages.
 
 ## Adding telemetry
 
-- Wrap named Effect operations with spans through `Effect.fn`; add span
-  attributes only when they are safe and useful.
+Read the root [`TELEMETRY.md`](../../TELEMETRY.md) before changing
+instrumentation.
+
+- Wrap workflow and dependency boundaries with spans through `Effect.fn`. Use
+  `Effect.fnUntraced` for small helpers already explained by their parent span.
 - Log concise decisions and state transitions where they occur. Do not log the
   same payload at every layer or log secrets and unbounded objects.
 - Add shared metrics under `src/metrics/<feature>.ts`, export them through the
@@ -45,6 +49,11 @@ the server-owned `/t/traces/v1`, `/t/logs/v1`, and `/t/metrics/v1` endpoints.
 The browser never receives Axiom credentials or the local collector address.
 The server resolves those upstream destinations with `resolveTelemetryExport`
 and attaches provider authorization only while proxying.
+
+The server emits one route-normalized span plus bounded request count and
+duration metrics for each non-telemetry request. Browser exporters use a
+one-second interval to reduce loss during navigation. OTLP proxy operations and
+routine current-session probes are intentionally untraced.
 
 ## Environment
 

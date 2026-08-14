@@ -7,49 +7,50 @@ import type { CreateWalletKeyInput, WalletKey } from "@namera-ai/protocol/model"
 import { p256 } from "@noble/curves/p256";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-export const generateLocalKeyPair = Effect.fn("WalletKeys.generateLocalKeyPair")(
-  (algorithm: CreateWalletKeyInput["algorithm"]) =>
-    Effect.tryPromise({
-      try: () =>
-        new Promise<{ readonly privateKey: string; readonly publicKey: string }>(
-          (resolve, reject) => {
-            const onGenerated = (error: Error | null, publicKey: string, privateKey: string) => {
-              if (error !== null) {
-                reject(error);
-                return;
-              }
-
-              resolve({ publicKey, privateKey });
-            };
-
-            if (algorithm === "ed25519") {
-              generateKeyPair(
-                "ed25519",
-                {
-                  publicKeyEncoding: { type: "spki", format: "pem" },
-                  privateKeyEncoding: { type: "pkcs8", format: "pem" },
-                },
-                onGenerated,
-              );
+export const generateLocalKeyPair = Effect.fnUntraced(function* (
+  algorithm: CreateWalletKeyInput["algorithm"],
+) {
+  return yield* Effect.tryPromise({
+    try: () =>
+      new Promise<{ readonly privateKey: string; readonly publicKey: string }>(
+        (resolve, reject) => {
+          const onGenerated = (error: Error | null, publicKey: string, privateKey: string) => {
+            if (error !== null) {
+              reject(error);
               return;
             }
 
+            resolve({ publicKey, privateKey });
+          };
+
+          if (algorithm === "ed25519") {
             generateKeyPair(
-              "ec",
+              "ed25519",
               {
-                namedCurve: algorithm === "p256" ? "prime256v1" : "secp256k1",
                 publicKeyEncoding: { type: "spki", format: "pem" },
                 privateKeyEncoding: { type: "pkcs8", format: "pem" },
               },
               onGenerated,
             );
-          },
-        ),
-      catch: (cause) => new WalletKeyError({ operation: "create", cause }),
-    }),
-);
+            return;
+          }
 
-export const signLocalHash = Effect.fn("WalletKeys.signLocalHash")(function* (
+          generateKeyPair(
+            "ec",
+            {
+              namedCurve: algorithm === "p256" ? "prime256v1" : "secp256k1",
+              publicKeyEncoding: { type: "spki", format: "pem" },
+              privateKeyEncoding: { type: "pkcs8", format: "pem" },
+            },
+            onGenerated,
+          );
+        },
+      ),
+    catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+  });
+});
+
+export const signLocalHash = Effect.fnUntraced(function* (
   privateKeyPem: string,
   algorithm: "p256" | "secp256k1",
   hash: Uint8Array,
@@ -76,7 +77,7 @@ export const signLocalHash = Effect.fn("WalletKeys.signLocalHash")(function* (
   });
 });
 
-export const publicKeyHexFromPem = Effect.fn("WalletKeys.publicKeyHexFromPem")(function* (
+export const publicKeyHexFromPem = Effect.fnUntraced(function* (
   pem: string,
   algorithm: WalletKey["algorithm"],
 ) {

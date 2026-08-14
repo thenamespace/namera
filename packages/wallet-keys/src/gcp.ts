@@ -39,7 +39,7 @@ export const makeGcpWalletKeys: Effect.Effect<
   );
   const keyRingName = client.keyRingPath(config.projectId, config.location, config.keyRing);
 
-  const create = Effect.fn("WalletKeys.gcp.create")(function* (input: CreateWalletKeyInput) {
+  const create = Effect.fn("wallet-keys.gcp.create")(function* (input: CreateWalletKeyInput) {
     const providerAlgorithm = providerAlgorithms[input.algorithm];
     const [key] = yield* Effect.tryPromise({
       try: () =>
@@ -102,7 +102,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     } as const;
   });
 
-  const validateSigningInput = Effect.fn("WalletKeys.gcp.validateSigningInput")(function* (
+  const validateSigningInput = Effect.fnUntraced(function* (
     input: SignWalletKeyMessageInput | SignWalletKeyHashInput,
   ) {
     if (input.provider !== "gcp-kms") {
@@ -122,7 +122,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     return input.data;
   });
 
-  const validateSignature = Effect.fn("WalletKeys.gcp.validateSignature")(function* (
+  const validateSignature = Effect.fnUntraced(function* (
     response: protos.google.cloud.kms.v1.IAsymmetricSignResponse,
     keyVersionName: string,
     integrityVerified: boolean | null | undefined,
@@ -156,10 +156,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     return signature;
   });
 
-  const signDigest = Effect.fn("WalletKeys.gcp.signDigest")(function* (
-    keyVersionName: string,
-    hash: Uint8Array,
-  ) {
+  const signDigest = Effect.fnUntraced(function* (keyVersionName: string, hash: Uint8Array) {
     const [response] = yield* Effect.tryPromise({
       try: () =>
         client.asymmetricSign({
@@ -173,7 +170,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     return yield* validateSignature(response, keyVersionName, response.verifiedDigestCrc32c);
   });
 
-  const signMessage = Effect.fn("WalletKeys.gcp.signMessage")(function* (
+  const signMessage = Effect.fn("wallet-keys.gcp.signMessage")(function* (
     input: SignWalletKeyMessageInput,
   ) {
     const data = yield* validateSigningInput(input);
@@ -197,12 +194,12 @@ export const makeGcpWalletKeys: Effect.Effect<
     return yield* validateSignature(response, data.keyVersionName, response.verifiedDataCrc32c);
   });
 
-  const signHash = Effect.fn("WalletKeys.gcp.signHash")(function* (input: SignWalletKeyHashInput) {
+  const signHash = Effect.fn("wallet-keys.gcp.signHash")(function* (input: SignWalletKeyHashInput) {
     const data = yield* validateSigningInput(input);
     return yield* signDigest(data.keyVersionName, input.hash);
   });
 
-  const disable = Effect.fn("WalletKeys.gcp.disable")(function* (input: DisableWalletKeyInput) {
+  const disable = Effect.fn("wallet-keys.gcp.disable")(function* (input: DisableWalletKeyInput) {
     if (input.provider !== "gcp-kms") {
       return yield* new WalletKeyError({
         operation: "disable",
@@ -220,7 +217,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     });
   });
 
-  const destroy = Effect.fn("WalletKeys.gcp.destroy")(function* (input: DestroyWalletKeyInput) {
+  const destroy = Effect.fn("wallet-keys.gcp.destroy")(function* (input: DestroyWalletKeyInput) {
     if (input.provider !== "gcp-kms") {
       return yield* new WalletKeyError({
         operation: "destroy",

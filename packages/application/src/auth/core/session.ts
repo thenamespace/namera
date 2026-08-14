@@ -18,11 +18,11 @@ export const makeSessionApplication = Effect.gen(function* () {
   const audit = yield* Audit;
   const transaction = yield* TransactionService;
 
-  const list = Effect.fn("Application.session.list")(function* (userId: UserId) {
+  const list = Effect.fn("application.session.list")(function* (userId: UserId) {
     return yield* repository.auth.session.findActiveForUser(userId, yield* DateTime.now);
   }, Effect.orDie);
 
-  const logout = Effect.fn("Application.session.logout")(function* (
+  const logout = Effect.fn("application.session.logout")(function* (
     sessionId: SessionId,
     userId: UserId,
   ) {
@@ -46,11 +46,11 @@ export const makeSessionApplication = Effect.gen(function* () {
     );
     if (revoked) {
       yield* Metric.update(sessionLifecycleEvents, "revoked");
-      yield* Effect.logInfo("session.revoked", { scope: "current" });
+      yield* Effect.logInfo("session.revoked").pipe(Effect.annotateLogs({ scope: "current" }));
     }
   }, Effect.orDie);
 
-  const revokeOthers = Effect.fn("Application.session.revokeOthers")(function* (
+  const revokeOthers = Effect.fn("application.session.revokeOthers")(function* (
     sessionId: SessionId,
     userId: UserId,
   ) {
@@ -74,7 +74,7 @@ export const makeSessionApplication = Effect.gen(function* () {
     );
     if (count > 0) {
       yield* Metric.update(sessionLifecycleEvents, "others_revoked");
-      yield* Effect.logInfo("session.revoked", { scope: "other", count });
+      yield* Effect.logInfo("session.revoked").pipe(Effect.annotateLogs({ scope: "other", count }));
     }
     return count;
   }, Effect.orDie);

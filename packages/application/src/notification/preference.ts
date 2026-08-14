@@ -30,14 +30,14 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
 
-  const listPreferences = Effect.fn("Application.notification.listPreferences")(
+  const listPreferences = Effect.fn("application.notification.listPreferences")(
     function* (userId: UserId) {
       return yield* repository.notification.preference.listForUser(userId);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const updatePreference = Effect.fn("Application.notification.updatePreference")(
+  const updatePreference = Effect.fn("application.notification.updatePreference")(
     function* (input: NotificationPreferenceApplicationScope & { readonly enabled: boolean }) {
       const target: NotificationPreferenceTarget = input;
       const result = yield* transaction.run(
@@ -67,19 +67,21 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
           Metric.withAttributes(notificationPreferenceChanges, { action: "updated" }),
           1,
         );
-        yield* Effect.logInfo("notification.preference_updated", {
-          category: input.category,
-          topic: input.topic,
-          channel: input.channel,
-          scope: input.organizationId === null ? "global" : "organization",
-        });
+        yield* Effect.logInfo("notification.preference_updated").pipe(
+          Effect.annotateLogs({
+            category: input.category,
+            topic: input.topic,
+            channel: input.channel,
+            scope: input.organizationId === null ? "global" : "organization",
+          }),
+        );
       }
       return result.preference;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const resetPreference = Effect.fn("Application.notification.resetPreference")(
+  const resetPreference = Effect.fn("application.notification.resetPreference")(
     function* (input: NotificationPreferenceApplicationScope) {
       const target: NotificationPreferenceTarget = input;
       const removed = yield* transaction.run(
@@ -106,12 +108,14 @@ export const makeNotificationPreferenceApplication = Effect.gen(function* () {
           Metric.withAttributes(notificationPreferenceChanges, { action: "reset" }),
           1,
         );
-        yield* Effect.logInfo("notification.preference_reset", {
-          category: input.category,
-          topic: input.topic,
-          channel: input.channel,
-          scope: input.organizationId === null ? "global" : "organization",
-        });
+        yield* Effect.logInfo("notification.preference_reset").pipe(
+          Effect.annotateLogs({
+            category: input.category,
+            topic: input.topic,
+            channel: input.channel,
+            scope: input.organizationId === null ? "global" : "organization",
+          }),
+        );
       }
     },
     Effect.catchTag("DatabaseError", Effect.die),

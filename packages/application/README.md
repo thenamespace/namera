@@ -32,7 +32,7 @@ that the aggregate can consume.
    the existing `Application` aggregate; do not create a parallel application
    service for each entity.
 2. Yield repositories and capability services once in the feature builder. Define
-   the public operation with `Effect.fn("Application.feature.operation")`.
+   the public operation with `Effect.fn("application.feature.operation")`.
 3. Enforce business invariants here, but leave HTTP actor permissions, cookies,
    headers, and status codes in `apps/server`.
 4. Wrap dependent writes in `TransactionService.run`. Repository calls inside

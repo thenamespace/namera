@@ -40,7 +40,7 @@ export class Audit extends Context.Service<Audit, AuditService>()("@namera-ai/ap
       const crypto = yield* CryptoService;
       const repository = yield* Repository;
 
-      const fields = Effect.fn("Audit.fields")(function* (options?: AuditOptions) {
+      const fields = Effect.fnUntraced(function* (options?: AuditOptions) {
         const span = yield* Effect.option(Effect.currentSpan);
         return {
           source: options?.source ?? ("api" as const),
@@ -51,13 +51,13 @@ export class Audit extends Context.Service<Audit, AuditService>()("@namera-ai/ap
       });
 
       return Audit.of({
-        user: Effect.fn("Audit.user")(function* (input, options) {
+        user: Effect.fn("application.audit.user")(function* (input, options) {
           return yield* repository.audit.user.insert({
             ...input,
             ...(yield* fields(options)),
           } as UserEventInsert);
         }),
-        organization: Effect.fn("Audit.organization")(function* (input, options) {
+        organization: Effect.fn("application.audit.organization")(function* (input, options) {
           return yield* repository.audit.organization.insert({
             ...input,
             ...(yield* fields(options)),

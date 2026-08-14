@@ -8,7 +8,7 @@ import type { TestApiClient } from "./api.js";
 import { signIn } from "./auth.js";
 import { organizationMetadata } from "./fixtures.js";
 
-export const createOrganization = Effect.fn("createOrganization")(function* (
+export const createOrganization = Effect.fn("server.createOrganization")(function* (
   client: TestApiClient,
   name: string,
 ) {
@@ -17,7 +17,7 @@ export const createOrganization = Effect.fn("createOrganization")(function* (
   });
 });
 
-export const findOrganizationRole = Effect.fn("findOrganizationRole")(function* (
+export const findOrganizationRole = Effect.fn("server.findOrganizationRole")(function* (
   organizationId: OrganizationId,
   key: "owner" | "admin" | "member",
 ) {
@@ -30,7 +30,7 @@ export const findOrganizationRole = Effect.fn("findOrganizationRole")(function* 
   return role;
 });
 
-export const inviteMember = Effect.fn("inviteMember")(function* (
+export const inviteMember = Effect.fn("server.inviteMember")(function* (
   client: TestApiClient,
   email: Email,
   organizationId: OrganizationId,
@@ -45,7 +45,7 @@ export const inviteMember = Effect.fn("inviteMember")(function* (
   });
 });
 
-export const createMember = Effect.fn("createMember")(function* (
+export const createMember = Effect.fn("server.createMember")(function* (
   client: TestApiClient,
   email: Email,
   role: "admin" | "member" = "member",

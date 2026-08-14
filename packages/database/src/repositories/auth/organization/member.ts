@@ -18,7 +18,7 @@ import {
 } from "@namera-ai/protocol/model";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { decodeJoinedOrganizationRole } from "#/repositories/auth/organization/common";
 import {
@@ -95,7 +95,7 @@ export class OrganizationMemberRepository extends Context.Service<
       const database = yield* Database;
 
       return OrganizationMemberRepository.of({
-        insert: Effect.fn("insertOrganizationMember")(function* (data) {
+        insert: Effect.fn("database.insertOrganizationMember")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationMemberInsert)(data);
           const res = yield* db
@@ -104,38 +104,39 @@ export class OrganizationMemberRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(OrganizationMember)(res[0]!);
-        }, mapToDatabaseError),
-        findOrganizationMembersForOrg: Effect.fn("findOrganizationMembersForOrg")(function* (
-          orgId,
-        ) {
-          const db = yield* transactionOrDatabase(database);
+        }, mapRepositoryError),
+        findOrganizationMembersForOrg: Effect.fn("database.findOrganizationMembersForOrg")(
+          function* (orgId) {
+            const db = yield* transactionOrDatabase(database);
 
-          const res = yield* db.query.organizationMember.findMany({
-            where: {
-              organizationId: { eq: orgId },
-              removedAt: { isNull: true },
-            },
-            with: {
-              organizationRole: {
-                with: {
-                  systemRole: true,
-                },
+            const res = yield* db.query.organizationMember.findMany({
+              where: {
+                organizationId: { eq: orgId },
+                removedAt: { isNull: true },
               },
-              user: true,
-            },
-          });
+              with: {
+                organizationRole: {
+                  with: {
+                    systemRole: true,
+                  },
+                },
+                user: true,
+              },
+            });
 
-          return res.map((row) => {
-            const { organizationRole, user, ...organizationMemberRow } = row;
+            return res.map((row) => {
+              const { organizationRole, user, ...organizationMemberRow } = row;
 
-            return {
-              organizationMember: Schema.decodeSync(OrganizationMember)(organizationMemberRow),
-              organizationRole: decodeJoinedOrganizationRole(organizationRole),
-              user: Schema.decodeSync(User)(user),
-            };
-          });
-        }, mapToDatabaseError),
-        findActiveById: Effect.fn("findActiveOrganizationMemberById")(function* (
+              return {
+                organizationMember: Schema.decodeSync(OrganizationMember)(organizationMemberRow),
+                organizationRole: decodeJoinedOrganizationRole(organizationRole),
+                user: Schema.decodeSync(User)(user),
+              };
+            });
+          },
+          mapRepositoryError,
+        ),
+        findActiveById: Effect.fn("database.findActiveOrganizationMemberById")(function* (
           id,
           organizationId,
         ) {
@@ -163,8 +164,8 @@ export class OrganizationMemberRepository extends Context.Service<
             organizationRole: decodeJoinedOrganizationRole(organizationRole),
             user: Schema.decodeSync(User)(user),
           };
-        }, mapToDatabaseError),
-        findMembershipsForUser: Effect.fn("findMembershipsForUser")(function* (userId) {
+        }, mapRepositoryError),
+        findMembershipsForUser: Effect.fn("database.findMembershipsForUser")(function* (userId) {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.organizationMember.findMany({
@@ -193,8 +194,8 @@ export class OrganizationMemberRepository extends Context.Service<
               user: Schema.decodeSync(User)(user),
             };
           });
-        }, mapToDatabaseError),
-        findActiveMembership: Effect.fn("findActiveMembership")(function* (userId, orgId) {
+        }, mapRepositoryError),
+        findActiveMembership: Effect.fn("database.findActiveMembership")(function* (userId, orgId) {
           const db = yield* transactionOrDatabase(database);
 
           const res = yield* db.query.organizationMember.findFirst({
@@ -226,8 +227,8 @@ export class OrganizationMemberRepository extends Context.Service<
             organizationRole: decodeJoinedOrganizationRole(organizationRole),
             user: Schema.decodeSync(User)(user),
           };
-        }, mapToDatabaseError),
-        assignRole: Effect.fn("assignOrganizationMemberRole")(function* (
+        }, mapRepositoryError),
+        assignRole: Effect.fn("database.assignOrganizationMemberRole")(function* (
           id,
           organizationId,
           expectedOrganizationRoleId,
@@ -265,8 +266,8 @@ export class OrganizationMemberRepository extends Context.Service<
             .returning();
 
           return res[0] ? Schema.decodeSync(OrganizationMember)(res[0]) : undefined;
-        }, mapToDatabaseError),
-        remove: Effect.fn("removeOrganizationMember")(function* (
+        }, mapRepositoryError),
+        remove: Effect.fn("database.removeOrganizationMember")(function* (
           id,
           organizationId,
           expectedOrganizationRoleId,
@@ -296,7 +297,7 @@ export class OrganizationMemberRepository extends Context.Service<
             .returning();
 
           return res[0] ? Schema.decodeSync(OrganizationMember)(res[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

@@ -23,7 +23,7 @@ export type CreateSafeAccountProps = {
   readonly owner: WebAuthnAccount | LocalAccount;
 };
 
-export const createSafeAccount = Effect.fn("Evm.createSafeAccount")(function* (
+export const createSafeAccount = Effect.fn("evm.createSafeAccount")(function* (
   props: CreateSafeAccountProps,
   config: EvmConfigValues,
 ) {

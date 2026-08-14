@@ -23,7 +23,7 @@ export const makeCreateNotification = Effect.gen(function* () {
   const emailJobs = yield* EmailJobs;
   const repository = yield* Repository;
 
-  return Effect.fn("Application.notification.create")(function* (input: CreateNotificationInput) {
+  return Effect.fn("application.notification.create")(function* (input: CreateNotificationInput) {
     const { recipients, ...notificationInput } = input;
     const created = yield* repository.notification.inbox.create(notificationInput);
     const policy = notificationPolicy[input.type];

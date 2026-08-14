@@ -36,6 +36,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   packages.
 
 Read the relevant package README before changing that package.
+Read [`TELEMETRY.md`](TELEMETRY.md) before adding or changing traces, logs,
+metrics, or browser OTLP behavior.
 
 ## Progress tracking
 

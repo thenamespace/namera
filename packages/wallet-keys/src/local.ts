@@ -35,7 +35,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     catch: (cause) => new WalletKeyError({ operation: "create", cause }),
   });
 
-  const create = Effect.fn("WalletKeys.local.create")(function* (input: CreateWalletKeyInput) {
+  const create = Effect.fn("wallet-keys.local.create")(function* (input: CreateWalletKeyInput) {
     const keyPair = yield* generateLocalKeyPair(input.algorithm);
     const fileName = `${input.id}.json`;
 
@@ -65,10 +65,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     } as const;
   });
 
-  const readKey = Effect.fn("WalletKeys.local.readKey")(function* (
-    fileName: string,
-    operation: "sign" | "disable",
-  ) {
+  const readKey = Effect.fnUntraced(function* (fileName: string, operation: "sign" | "disable") {
     const encodedKey = yield* Effect.tryPromise({
       try: () => readFile(join(config.directory, fileName), "utf8"),
       catch: (cause) => new WalletKeyError({ operation, cause }),
@@ -78,7 +75,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     );
   });
 
-  const validateSigningKey = Effect.fn("WalletKeys.local.validateSigningKey")(function* (
+  const validateSigningKey = Effect.fnUntraced(function* (
     input: SignWalletKeyMessageInput | SignWalletKeyHashInput,
   ) {
     if (input.provider !== "local") {
@@ -107,7 +104,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     return key;
   });
 
-  const signMessage = Effect.fn("WalletKeys.local.signMessage")(function* (
+  const signMessage = Effect.fn("wallet-keys.local.signMessage")(function* (
     input: SignWalletKeyMessageInput,
   ) {
     const key = yield* validateSigningKey(input);
@@ -126,7 +123,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     });
   });
 
-  const signHash = Effect.fn("WalletKeys.local.signHash")(function* (
+  const signHash = Effect.fn("wallet-keys.local.signHash")(function* (
     input: SignWalletKeyHashInput,
   ) {
     const key = yield* validateSigningKey(input);
@@ -140,7 +137,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     return yield* signLocalHash(key.privateKeyPem, key.algorithm, input.hash);
   });
 
-  const disable = Effect.fn("WalletKeys.local.disable")(function* (input: DisableWalletKeyInput) {
+  const disable = Effect.fn("wallet-keys.local.disable")(function* (input: DisableWalletKeyInput) {
     if (input.provider !== "local") {
       return yield* new WalletKeyError({
         operation: "disable",
@@ -161,7 +158,7 @@ export const makeLocalWalletKeys: Effect.Effect<
     });
   });
 
-  const destroy = Effect.fn("WalletKeys.local.destroy")(function* (input: DestroyWalletKeyInput) {
+  const destroy = Effect.fn("wallet-keys.local.destroy")(function* (input: DestroyWalletKeyInput) {
     if (input.provider !== "local") {
       return yield* new WalletKeyError({
         operation: "destroy",

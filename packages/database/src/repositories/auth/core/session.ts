@@ -5,7 +5,7 @@ import type { DatabaseError, OrganizationId, SessionId, UserId } from "@namera-a
 import { Session, SessionInsert } from "@namera-ai/protocol/model";
 import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { organizationMember, session } from "#/schema/index";
 
@@ -60,7 +60,7 @@ export class SessionRepository extends Context.Service<
       const database = yield* Database;
 
       return SessionRepository.of({
-        create: Effect.fn("SessionRepository.create")(function* (data) {
+        create: Effect.fn("database.sessionRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(SessionInsert)(data);
           const rows = yield* db
@@ -69,28 +69,28 @@ export class SessionRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(Session)(rows[0]!);
-        }, mapToDatabaseError),
-        findActiveByTokenHash: Effect.fn("SessionRepository.findActiveByTokenHash")(function* (
-          tokenHash,
-          now,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-          const rows = yield* db
-            .select()
-            .from(session)
-            .where(
-              and(
-                eq(session.tokenHash, tokenHash),
-                isNull(session.revokedAt),
-                gt(session.expiresAt, encodedNow),
-              ),
-            )
-            .limit(1);
+        }, mapRepositoryError),
+        findActiveByTokenHash: Effect.fn("database.sessionRepository.findActiveByTokenHash")(
+          function* (tokenHash, now) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const rows = yield* db
+              .select()
+              .from(session)
+              .where(
+                and(
+                  eq(session.tokenHash, tokenHash),
+                  isNull(session.revokedAt),
+                  gt(session.expiresAt, encodedNow),
+                ),
+              )
+              .limit(1);
 
-          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        findActiveById: Effect.fn("SessionRepository.findActiveById")(function* (
+            return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        findActiveById: Effect.fn("database.sessionRepository.findActiveById")(function* (
           sessionId,
           userId,
           now,
@@ -109,8 +109,8 @@ export class SessionRepository extends Context.Service<
             )
             .limit(1);
           return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        findActiveForUser: Effect.fn("SessionRepository.findActiveForUser")(function* (
+        }, mapRepositoryError),
+        findActiveForUser: Effect.fn("database.sessionRepository.findActiveForUser")(function* (
           userId,
           now,
         ) {
@@ -128,8 +128,12 @@ export class SessionRepository extends Context.Service<
             );
 
           return Schema.decodeSync(Schema.Array(Session))(rows);
-        }, mapToDatabaseError),
-        revoke: Effect.fn("SessionRepository.revoke")(function* (sessionId, userId, revokedAt) {
+        }, mapRepositoryError),
+        revoke: Effect.fn("database.sessionRepository.revoke")(function* (
+          sessionId,
+          userId,
+          revokedAt,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
           const rows = yield* db
@@ -141,8 +145,8 @@ export class SessionRepository extends Context.Service<
             .returning();
 
           return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        revokeOthers: Effect.fn("SessionRepository.revokeOthers")(function* (
+        }, mapRepositoryError),
+        revokeOthers: Effect.fn("database.sessionRepository.revokeOthers")(function* (
           userId,
           currentSessionId,
           revokedAt,
@@ -163,39 +167,37 @@ export class SessionRepository extends Context.Service<
             .returning({ id: session.id });
 
           return rows.length;
-        }, mapToDatabaseError),
-        setActiveOrganization: Effect.fn("SessionRepository.setActiveOrganization")(function* (
-          sessionId,
-          userId,
-          organizationId,
-          now,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-          const rows = yield* db
-            .update(session)
-            .set({ activeOrganizationId: organizationId })
-            .where(
-              and(
-                eq(session.id, sessionId),
-                eq(session.userId, userId),
-                isNull(session.revokedAt),
-                gt(session.expiresAt, encodedNow),
-                sql`EXISTS (
+        }, mapRepositoryError),
+        setActiveOrganization: Effect.fn("database.sessionRepository.setActiveOrganization")(
+          function* (sessionId, userId, organizationId, now) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const rows = yield* db
+              .update(session)
+              .set({ activeOrganizationId: organizationId })
+              .where(
+                and(
+                  eq(session.id, sessionId),
+                  eq(session.userId, userId),
+                  isNull(session.revokedAt),
+                  gt(session.expiresAt, encodedNow),
+                  sql`EXISTS (
                   SELECT 1
                   FROM ${organizationMember}
                   WHERE ${organizationMember.userId} = ${userId}
                     AND ${organizationMember.organizationId} = ${organizationId}
                     AND ${organizationMember.removedAt} IS NULL
                 )`,
-              ),
-            )
-            .returning();
+                ),
+              )
+              .returning();
 
-          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
-        }, mapToDatabaseError),
+            return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
         clearActiveOrganizationForUser: Effect.fn(
-          "SessionRepository.clearActiveOrganizationForUser",
+          "database.sessionRepository.clearActiveOrganizationForUser",
         )(function* (userId, organizationId) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
@@ -207,20 +209,20 @@ export class SessionRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(Schema.Array(Session))(rows);
-        }, mapToDatabaseError),
-        clearActiveOrganization: Effect.fn("SessionRepository.clearActiveOrganization")(function* (
-          sessionId,
-          userId,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const rows = yield* db
-            .update(session)
-            .set({ activeOrganizationId: null })
-            .where(and(eq(session.id, sessionId), eq(session.userId, userId)))
-            .returning();
+        }, mapRepositoryError),
+        clearActiveOrganization: Effect.fn("database.sessionRepository.clearActiveOrganization")(
+          function* (sessionId, userId) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(session)
+              .set({ activeOrganizationId: null })
+              .where(and(eq(session.id, sessionId), eq(session.userId, userId)))
+              .returning();
 
-          return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
-        }, mapToDatabaseError),
+            return rows[0] ? Schema.decodeSync(Session)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
       });
     }),
   );

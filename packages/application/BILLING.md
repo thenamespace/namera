@@ -46,7 +46,7 @@ provider integrations may populate those fields later.
 ## Entitlements
 
 Every organization-creation transaction inserts its billing account and active
-free subscription. `Application.billing.get` resolves the stored plan/version
+free subscription. `application.billing.get` resolves the stored plan/version
 against `billingPlans` and returns limits with current organization usage.
 
 Active members and unexpired pending invitations both consume member capacity.

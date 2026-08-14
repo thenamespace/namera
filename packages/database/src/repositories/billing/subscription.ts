@@ -5,7 +5,7 @@ import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
 import { BillingSubscription, BillingSubscriptionInsert } from "@namera-ai/protocol/model";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { billingSubscription } from "#/schema/index";
 
@@ -28,7 +28,7 @@ export class BillingSubscriptionRepository extends Context.Service<
       const database = yield* Database;
 
       return BillingSubscriptionRepository.of({
-        insert: Effect.fn("BillingSubscriptionRepository.insert")(function* (data) {
+        insert: Effect.fn("database.billingSubscriptionRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(BillingSubscriptionInsert)(data);
           const rows = yield* db
@@ -36,8 +36,8 @@ export class BillingSubscriptionRepository extends Context.Service<
             .values(encoded as any)
             .returning();
           return Schema.decodeSync(BillingSubscription)(rows[0]!);
-        }, mapToDatabaseError),
-        findCurrent: Effect.fn("BillingSubscriptionRepository.findCurrent")(function* (
+        }, mapRepositoryError),
+        findCurrent: Effect.fn("database.billingSubscriptionRepository.findCurrent")(function* (
           organizationId,
         ) {
           const db = yield* transactionOrDatabase(database);
@@ -53,7 +53,7 @@ export class BillingSubscriptionRepository extends Context.Service<
             .orderBy(desc(billingSubscription.createdAt))
             .limit(1);
           return rows[0] ? Schema.decodeSync(BillingSubscription)(rows[0]) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

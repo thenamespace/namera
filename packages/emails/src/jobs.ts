@@ -28,9 +28,7 @@ export class EmailJobs extends Context.Service<
       const email = yield* EmailService;
       const repository = yield* Repository;
 
-      const decodePayload = Effect.fn("EmailJobs.decodePayload")(function* (
-        encryptedPayload: string | null,
-      ) {
+      const decodePayload = Effect.fnUntraced(function* (encryptedPayload: string | null) {
         if (encryptedPayload === null) {
           return yield* Effect.fail("INVALID_PAYLOAD" as const);
         }
@@ -47,7 +45,7 @@ export class EmailJobs extends Context.Service<
         );
       });
 
-      const markTerminal = Effect.fn("EmailJobs.markTerminal")(function* (
+      const markTerminal = Effect.fnUntraced(function* (
         job: EmailJob,
         leaseToken: string,
         status: "failed" | "expired",
@@ -63,7 +61,7 @@ export class EmailJobs extends Context.Service<
         yield* Metric.update(Metric.withAttributes(emailJobDeliveryResults, { result }), 1);
       });
 
-      const enqueue = Effect.fn("EmailJobs.enqueue")(function* (input: EnqueueEmailProps) {
+      const enqueue = Effect.fn("emails.jobs.enqueue")(function* (input: EnqueueEmailProps) {
         const availableAt = input.availableAt ?? (yield* DateTime.now);
         const encodedPayload = Schema.encodeSync(EmailJobPayload)(input);
         const encryptedPayload = yield* crypto.encrypt({
@@ -83,30 +81,16 @@ export class EmailJobs extends Context.Service<
         return job;
       });
 
-      const processOnce = Effect.fn("EmailJobs.processOnce")(function* () {
-        const now = yield* DateTime.now;
-        const expired = yield* repository.jobs.email.expire(now);
-        if (expired > 0) {
-          yield* Metric.update(
-            Metric.withAttributes(emailJobDeliveryResults, { result: "expired" }),
-            expired,
-          );
-        }
-
-        const leaseToken = yield* crypto.randomToken(18);
-        const job = yield* repository.jobs.email.claim({
-          now,
-          leaseToken,
-          leaseExpiresAt: DateTime.addDuration(now, emailPolicy.leaseDuration),
-        });
-        if (job === undefined) {
-          return 0;
-        }
-
+      const deliver = Effect.fn("emails.jobs.deliver")(function* (
+        job: EmailJob,
+        leaseToken: string,
+      ) {
         const decoded = yield* Effect.result(decodePayload(job.encryptedPayload));
         if (Result.isFailure(decoded)) {
           yield* markTerminal(job, leaseToken, "failed", decoded.failure, "invalid");
-          yield* Effect.logWarning("email.job.invalid", { reason: decoded.failure });
+          yield* Effect.logWarning("email.job.invalid").pipe(
+            Effect.annotateLogs({ reason: decoded.failure }),
+          );
           return 1;
         }
 
@@ -127,7 +111,7 @@ export class EmailJobs extends Context.Service<
             Metric.withAttributes(emailJobDeliveryResults, { result: "sent" }),
             1,
           );
-          yield* Effect.logInfo("email.job.sent", { type: job.type });
+          yield* Effect.logInfo("email.job.sent").pipe(Effect.annotateLogs({ type: job.type }));
           return 1;
         }
 
@@ -141,10 +125,9 @@ export class EmailJobs extends Context.Service<
           DateTime.toEpochMillis(retryAt) >= DateTime.toEpochMillis(job.expiresAt)
         ) {
           yield* markTerminal(job, leaseToken, "failed", delivery.failure.reason, "failed");
-          yield* Effect.logWarning("email.job.failed", {
-            type: job.type,
-            reason: delivery.failure.reason,
-          });
+          yield* Effect.logWarning("email.job.failed").pipe(
+            Effect.annotateLogs({ type: job.type, reason: delivery.failure.reason }),
+          );
           return 1;
         }
 
@@ -158,12 +141,37 @@ export class EmailJobs extends Context.Service<
           Metric.withAttributes(emailJobDeliveryResults, { result: "retry" }),
           1,
         );
-        yield* Effect.logWarning("email.job.retry", {
-          type: job.type,
-          reason: delivery.failure.reason,
-          attempt: job.attempts,
-        });
+        yield* Effect.logWarning("email.job.retry").pipe(
+          Effect.annotateLogs({
+            type: job.type,
+            reason: delivery.failure.reason,
+            attempt: job.attempts,
+          }),
+        );
         return 1;
+      });
+
+      const processOnce = Effect.fnUntraced(function* () {
+        const now = yield* DateTime.now;
+        const expired = yield* repository.jobs.email.expire(now);
+        if (expired > 0) {
+          yield* Metric.update(
+            Metric.withAttributes(emailJobDeliveryResults, { result: "expired" }),
+            expired,
+          );
+        }
+
+        const leaseToken = yield* crypto.randomToken(18);
+        const job = yield* repository.jobs.email.claim({
+          now,
+          leaseToken,
+          leaseExpiresAt: DateTime.addDuration(now, emailPolicy.leaseDuration),
+        });
+        if (job === undefined) {
+          return 0;
+        }
+
+        return yield* deliver(job, leaseToken).pipe(Effect.annotateSpans({ email_type: job.type }));
       });
 
       return EmailJobs.of({ enqueue, processOnce: processOnce() });

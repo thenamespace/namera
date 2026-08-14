@@ -82,7 +82,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
 
-  const getInvitation = Effect.fn("Application.organization.invitation.getInvitation")(
+  const getInvitation = Effect.fn("application.organization.invitation.getInvitation")(
     function* (invitationId: InvitationId, email: Email) {
       const invitation = yield* repository.auth.invitation.findByIdForEmail(invitationId, email);
       if (!invitation) {
@@ -98,7 +98,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listInvitations = Effect.fn("Application.organization.invitation.listInvitations")(
+  const listInvitations = Effect.fn("application.organization.invitation.listInvitations")(
     function* (organizationId: OrganizationId) {
       return yield* repository.auth.invitation.findPendingForOrgId(
         organizationId,
@@ -108,14 +108,14 @@ export const makeInvitationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const listUserInvitations = Effect.fn("Application.organization.invitation.listUserInvitations")(
+  const listUserInvitations = Effect.fn("application.organization.invitation.listUserInvitations")(
     function* (email: Email) {
       return yield* repository.auth.invitation.findPendingForEmail(email, yield* DateTime.now);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const createInvitation = Effect.fn("Application.organization.invitation.createInvitation")(
+  const createInvitation = Effect.fn("application.organization.invitation.createInvitation")(
     function* (input: {
       email: Email;
       actorId: ActorId;
@@ -242,7 +242,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const acceptInvitation = Effect.fn("Application.organization.invitation.acceptInvitation")(
+  const acceptInvitation = Effect.fn("application.organization.invitation.acceptInvitation")(
     function* (input: {
       invitationId: InvitationId;
       email: Email;
@@ -326,7 +326,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const rejectInvitation = Effect.fn("Application.organization.invitation.rejectInvitation")(
+  const rejectInvitation = Effect.fn("application.organization.invitation.rejectInvitation")(
     function* (invitationId: InvitationId, email: Email, userId: UserId) {
       const now = yield* DateTime.now;
       const rejected = yield* transaction.run(
@@ -365,7 +365,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  const cancelInvitation = Effect.fn("Application.organization.invitation.cancelInvitation")(
+  const cancelInvitation = Effect.fn("application.organization.invitation.cancelInvitation")(
     function* (invitationId: InvitationId, organizationId: OrganizationId, actorId: ActorId) {
       const now = yield* DateTime.now;
       const canceled = yield* transaction.run(

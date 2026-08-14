@@ -5,7 +5,7 @@ import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
 import { OrganizationEvent, OrganizationEventInsert } from "@namera-ai/protocol/model";
 import { desc, eq } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { organizationEvent } from "#/schema/index";
 
@@ -29,7 +29,7 @@ export class OrganizationEventRepository extends Context.Service<
       const database = yield* Database;
 
       return OrganizationEventRepository.of({
-        insert: Effect.fn("OrganizationEventRepository.insert")(function* (data) {
+        insert: Effect.fn("database.organizationEventRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationEventInsert)(data);
           const rows = yield* db
@@ -38,8 +38,8 @@ export class OrganizationEventRepository extends Context.Service<
             .returning();
 
           return Schema.decodeSync(OrganizationEvent)(rows[0]! as any);
-        }, mapToDatabaseError),
-        findForOrganization: Effect.fn("OrganizationEventRepository.findForOrganization")(
+        }, mapRepositoryError),
+        findForOrganization: Effect.fn("database.organizationEventRepository.findForOrganization")(
           function* (organizationId, limit = 100) {
             const db = yield* transactionOrDatabase(database);
             const rows = yield* db
@@ -51,7 +51,7 @@ export class OrganizationEventRepository extends Context.Service<
 
             return Schema.decodeSync(Schema.Array(OrganizationEvent))(rows as any);
           },
-          mapToDatabaseError,
+          mapRepositoryError,
         ),
       });
     }),

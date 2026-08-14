@@ -20,7 +20,7 @@ export const makeUserApplication = Effect.gen(function* () {
   const audit = yield* Audit;
   const transaction = yield* TransactionService;
 
-  const update = Effect.fn("Application.user.update")(function* (
+  const update = Effect.fn("application.user.update")(function* (
     userId: UserId,
     sessionId: SessionId,
     metadata: UserMetadata,

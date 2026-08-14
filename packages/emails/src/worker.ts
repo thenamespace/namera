@@ -10,7 +10,12 @@ export const EmailWorkerLayer = Layer.effectDiscard(
     yield* Effect.gen(function* () {
       while (true) {
         const processed = yield* jobs.processOnce.pipe(
-          Effect.catch((error) => Effect.logError("email.worker.failed", error).pipe(Effect.as(0))),
+          Effect.catch((error) =>
+            Effect.logError("email.worker.failed").pipe(
+              Effect.annotateLogs({ error }),
+              Effect.as(0),
+            ),
+          ),
         );
         if (processed === 0) {
           yield* Effect.sleep(emailPolicy.workerPollInterval);

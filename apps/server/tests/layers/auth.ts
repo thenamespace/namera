@@ -27,7 +27,7 @@ export class TestAuthToken extends Context.Service<
 
 export const TestAuthorizationClientLayer = HttpApiMiddleware.layerClient(
   Authorization,
-  Effect.fn("Authorization.testClient")(function* ({ next, request }) {
+  Effect.fn("server.authorization.testClient")(function* ({ next, request }) {
     const authToken = yield* TestAuthToken;
     const token = yield* authToken.get;
 

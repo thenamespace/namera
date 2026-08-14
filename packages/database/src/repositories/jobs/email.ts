@@ -5,7 +5,7 @@ import type { DatabaseError, EmailJobId } from "@namera-ai/protocol";
 import { EmailJob, EmailJobInsert, type EmailJobErrorCode } from "@namera-ai/protocol/model";
 import { and, asc, eq, gt, inArray, lte, or, sql } from "drizzle-orm";
 
-import { Database, mapToDatabaseError } from "#/core/index";
+import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { emailJob } from "#/schema/index";
 
@@ -58,7 +58,7 @@ export class EmailJobRepository extends Context.Service<
       const database = yield* Database;
 
       return EmailJobRepository.of({
-        enqueue: Effect.fn("EmailJobRepository.enqueue")(function* (data) {
+        enqueue: Effect.fn("database.emailJobRepository.enqueue")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(EmailJobInsert)(data);
           const inserted = yield* db
@@ -74,23 +74,24 @@ export class EmailJobRepository extends Context.Service<
             where: { idempotencyKey: { eq: data.idempotencyKey } },
           });
           return { job: Schema.decodeSync(EmailJob)(existing!), inserted: false };
-        }, mapToDatabaseError),
-        findById: Effect.fn("EmailJobRepository.findById")(function* (id) {
+        }, mapRepositoryError),
+        findById: Effect.fn("database.emailJobRepository.findById")(function* (id) {
           const db = yield* transactionOrDatabase(database);
           const row = yield* db.query.emailJob.findFirst({ where: { id: { eq: id } } });
           return row ? Schema.decodeSync(EmailJob)(row) : undefined;
-        }, mapToDatabaseError),
-        findByIdempotencyKey: Effect.fn("EmailJobRepository.findByIdempotencyKey")(function* (
-          idempotencyKey,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const row = yield* db.query.emailJob.findFirst({
-            where: { idempotencyKey: { eq: idempotencyKey } },
-          });
-          return row ? Schema.decodeSync(EmailJob)(row) : undefined;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
+        findByIdempotencyKey: Effect.fn("database.emailJobRepository.findByIdempotencyKey")(
+          function* (idempotencyKey) {
+            const db = yield* transactionOrDatabase(database);
+            const row = yield* db.query.emailJob.findFirst({
+              where: { idempotencyKey: { eq: idempotencyKey } },
+            });
+            return row ? Schema.decodeSync(EmailJob)(row) : undefined;
+          },
+          mapRepositoryError,
+        ),
         cancelPendingByIdempotencyKey: Effect.fn(
-          "EmailJobRepository.cancelPendingByIdempotencyKey",
+          "database.emailJobRepository.cancelPendingByIdempotencyKey",
         )(function* (idempotencyKey) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
@@ -104,8 +105,8 @@ export class EmailJobRepository extends Context.Service<
             .where(and(eq(emailJob.idempotencyKey, idempotencyKey), eq(emailJob.status, "pending")))
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        claim: Effect.fn("EmailJobRepository.claim")(function* ({
+        }, mapRepositoryError),
+        claim: Effect.fn("database.emailJobRepository.claim")(function* ({
           now,
           leaseToken,
           leaseExpiresAt,
@@ -138,8 +139,8 @@ export class EmailJobRepository extends Context.Service<
             .where(inArray(emailJob.id, candidate))
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        markSent: Effect.fn("EmailJobRepository.markSent")(function* ({
+        }, mapRepositoryError),
+        markSent: Effect.fn("database.emailJobRepository.markSent")(function* ({
           id,
           leaseToken,
           providerMessageId,
@@ -166,8 +167,8 @@ export class EmailJobRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        reschedule: Effect.fn("EmailJobRepository.reschedule")(function* ({
+        }, mapRepositoryError),
+        reschedule: Effect.fn("database.emailJobRepository.reschedule")(function* ({
           id,
           leaseToken,
           availableAt,
@@ -192,8 +193,8 @@ export class EmailJobRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        markTerminal: Effect.fn("EmailJobRepository.markTerminal")(function* ({
+        }, mapRepositoryError),
+        markTerminal: Effect.fn("database.emailJobRepository.markTerminal")(function* ({
           id,
           leaseToken,
           status,
@@ -218,8 +219,8 @@ export class EmailJobRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
-        }, mapToDatabaseError),
-        expire: Effect.fn("EmailJobRepository.expire")(function* (now) {
+        }, mapRepositoryError),
+        expire: Effect.fn("database.emailJobRepository.expire")(function* (now) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(emailJob)
@@ -243,7 +244,7 @@ export class EmailJobRepository extends Context.Service<
             )
             .returning({ id: emailJob.id });
           return rows.length;
-        }, mapToDatabaseError),
+        }, mapRepositoryError),
       });
     }),
   );

@@ -3,6 +3,7 @@ export const telemetryData = {
     dashboard: "namera-dashboard",
     server: "namera-server",
   },
+  browserExportInterval: "1 second",
   exportInterval: "10 seconds",
   logExportInterval: "1 second",
   proxyBodyLimit: 2 * 1024 * 1024,

@@ -11,7 +11,7 @@ export type TestApiClient = HttpApiClient.ForApi<typeof NameraApi>;
 
 export const makeTestApiClient = handledApi(NameraApi);
 
-export const resetTestState = Effect.fn("resetTestState")(function* () {
+export const resetTestState = Effect.fn("server.resetTestState")(function* () {
   const database = yield* TestDatabase;
   const emails = yield* TestEmails;
   const authToken = yield* TestAuthToken;
@@ -21,12 +21,12 @@ export const resetTestState = Effect.fn("resetTestState")(function* () {
   yield* authToken.clear;
 });
 
-export const setAuthToken = Effect.fn("setAuthToken")(function* (token?: string) {
+export const setAuthToken = Effect.fn("server.setAuthToken")(function* (token?: string) {
   const authToken = yield* TestAuthToken;
   yield* token === undefined ? authToken.clear : authToken.set(token);
 });
 
-export const useAuthCookie = Effect.fn("useAuthCookie")(function* (
+export const useAuthCookie = Effect.fn("server.useAuthCookie")(function* (
   response: HttpClientResponse.HttpClientResponse,
 ) {
   const cookie = response.cookies.cookies["auth-token"];

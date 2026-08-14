@@ -39,3 +39,6 @@ export const mapToDatabaseError = <A, E, R>(effect: Effect.Effect<A, E, R>) => {
 
   return Effect.catchIf(effect, isMappedError, (error) => Effect.fail(toDatabaseError(error)));
 };
+
+export const mapRepositoryError = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  mapToDatabaseError(effect).pipe(Effect.withTracerEnabled(false));
