@@ -192,6 +192,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
       }),
     [accountData, normalizedQuery, status],
   );
+  const sortedAccounts = useMemo(() => {
+    const sortFn = columns.find((item) => item.id === sort.column)?.sortFn;
+    if (!sortFn) return filteredAccounts;
+    const direction = sort.direction === "descending" ? -1 : 1;
+    return filteredAccounts.toSorted((left, right) => sortFn(left, right) * direction);
+  }, [filteredAccounts, sort]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set<string>(columnIds) : visibleColumns;
     return columns.filter((column) => column.id === "actions" || visible.has(column.id));
@@ -325,7 +331,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         aria-label="Organization accounts"
         columns={displayedColumns}
         contentClassName="min-w-[1120px]"
-        data={filteredAccounts}
+        data={sortedAccounts}
         getRowId={getAccountId}
         renderEmptyState={renderEmptyState}
         sortDescriptor={sort}
