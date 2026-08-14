@@ -90,6 +90,10 @@ organization API-key list.
   queries fetch role and invitation data only when the current actor has the
   corresponding read permission, so read-only members can still view the member
   list.
+- `/settings/workspace/api-keys` presents organization API keys with creator,
+  grant count, status, expiration, and creation details. Its creation dialog
+  validates the shared API-key DTO, grants one or more active session keys, and
+  exposes the raw credential exactly once after creation.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use

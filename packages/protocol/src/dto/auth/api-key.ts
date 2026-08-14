@@ -4,6 +4,7 @@ import { ActorId, ApiKeyId, OrganizationId, SessionKeyId } from "#/common/index"
 import { ApiKeyMetadata, TimestampFields } from "#/model/index";
 
 import { SessionKeySummaryResponse } from "../session-key/index.js";
+import { GetOrganizationMemberResponse } from "./organization/member.js";
 
 export const ApiKeyResponse = Schema.Struct({
   id: ApiKeyId,
@@ -15,10 +16,11 @@ export const ApiKeyResponse = Schema.Struct({
   lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   sessionKeys: Schema.Array(SessionKeySummaryResponse),
+  creator: GetOrganizationMemberResponse,
   ...TimestampFields,
 }).annotate({
   identifier: "ApiKeyResponse",
-  description: "An organization API key without its secret credential",
+  description: "An organization API key with its creator and without its secret credential",
 });
 
 export const CreateApiKeyRequest = Schema.Struct({

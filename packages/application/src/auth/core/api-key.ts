@@ -11,7 +11,13 @@ import {
   type OrganizationId,
 } from "@namera-ai/protocol";
 import type { CreateApiKeyRequest } from "@namera-ai/protocol/dto";
-import type { ApiKey, SessionKey } from "@namera-ai/protocol/model";
+import type {
+  ApiKey,
+  OrganizationMember,
+  OrganizationRole,
+  SessionKey,
+  User,
+} from "@namera-ai/protocol/model";
 import { apiKeyCreationDuration, apiKeyCreationResults } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
@@ -23,6 +29,11 @@ import { authPolicy } from "../data.js";
 export interface ApiKeyView {
   readonly apiKey: ApiKey;
   readonly sessionKeys: ReadonlyArray<SessionKey>;
+  readonly creator: {
+    readonly organizationMember: OrganizationMember;
+    readonly organizationRole: OrganizationRole;
+    readonly user: User;
+  };
 }
 
 export interface ApiKeyApplication {
@@ -48,15 +59,38 @@ export const makeApiKeyApplication = Effect.gen(function* () {
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
 
-  const loadView = Effect.fnUntraced(function* (apiKey: ApiKey) {
-    const grants = yield* repository.core.sessionKeyGrant.findActiveForActor(
-      apiKey.organizationId,
-      apiKey.actorId,
+  const loadViews = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    apiKeys: ReadonlyArray<ApiKey>,
+  ) {
+    if (apiKeys.length === 0) return [];
+
+    const [grants, creators] = yield* Effect.all([
+      repository.core.sessionKeyGrant.findActiveForActors(
+        organizationId,
+        apiKeys.map(({ actorId }) => actorId),
+      ),
+      repository.auth.member.findByActorIds(organizationId, [
+        ...new Set(apiKeys.map(({ createdByActorId }) => createdByActorId)),
+      ]),
+    ]);
+    const creatorByActorId = new Map(
+      creators.map((creator) => [creator.organizationMember.actorId, creator]),
     );
-    return {
-      apiKey,
-      sessionKeys: grants.map(({ sessionKey }) => sessionKey),
-    } satisfies ApiKeyView;
+
+    const views: Array<ApiKeyView> = [];
+    for (const apiKey of apiKeys) {
+      const creator = creatorByActorId.get(apiKey.createdByActorId);
+      if (creator === undefined) return yield* Effect.die("API-key creator relation is missing");
+      views.push({
+        apiKey,
+        creator,
+        sessionKeys: grants
+          .filter(({ grant }) => grant.actorId === apiKey.actorId)
+          .map(({ sessionKey }) => sessionKey),
+      });
+    }
+    return views;
   });
 
   const create = Effect.fn("application.apiKey.create")(
@@ -176,10 +210,9 @@ export const makeApiKeyApplication = Effect.gen(function* () {
       yield* Effect.logInfo("api_key.created").pipe(
         Effect.annotateLogs({ session_key_count: sessionKeys.length }),
       );
-      return {
-        apiKey: { apiKey: created, sessionKeys },
-        key,
-      };
+      const [apiKey] = yield* loadViews(input.organizationId, [created]);
+      if (apiKey === undefined) return yield* Effect.die("Created API key could not be loaded");
+      return { apiKey: { ...apiKey, sessionKeys }, key };
     },
     Effect.trackDuration(apiKeyCreationDuration),
     Effect.tapErrorTag("SessionKeyError", () =>
@@ -203,7 +236,9 @@ export const makeApiKeyApplication = Effect.gen(function* () {
       if (apiKey === undefined) {
         return yield* new ApiKeyNotFoundError({ code: "API_KEY_NOT_FOUND" });
       }
-      return yield* loadView(apiKey);
+      const [view] = yield* loadViews(organizationId, [apiKey]);
+      if (view === undefined) return yield* Effect.die("API-key view could not be loaded");
+      return view;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -211,19 +246,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
   const list = Effect.fn("application.apiKey.list")(
     function* (organizationId: OrganizationId) {
       const apiKeys = yield* repository.auth.apiKey.findForOrganization(organizationId);
-      const grants = yield* repository.core.sessionKeyGrant.findActiveForActors(
-        organizationId,
-        apiKeys.map(({ actorId }) => actorId),
-      );
-      return apiKeys.map(
-        (apiKey) =>
-          ({
-            apiKey,
-            sessionKeys: grants
-              .filter(({ grant }) => grant.actorId === apiKey.actorId)
-              .map(({ sessionKey }) => sessionKey),
-          }) satisfies ApiKeyView,
-      );
+      return yield* loadViews(organizationId, apiKeys);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

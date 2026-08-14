@@ -149,6 +149,7 @@ export const toApiKeyResponse = (input: ApiKeyView): ApiKeyResponse => ({
   createdAt: input.apiKey.createdAt,
   updatedAt: input.apiKey.updatedAt,
   sessionKeys: input.sessionKeys.map(toSessionKeySummaryResponse),
+  creator: toMemberResponse(input.creator),
 });
 
 export const toSessionKeySummaryResponse = (sessionKey: SessionKey): SessionKeySummaryResponse => ({

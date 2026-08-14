@@ -1,4 +1,4 @@
-import { CreditCardIcon, UserMultiple02Icon, WorkIcon } from "@namera-ai/ui/icons";
+import { ApiIcon, CreditCardIcon, UserMultiple02Icon, WorkIcon } from "@namera-ai/ui/icons";
 
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
@@ -25,6 +25,16 @@ export const workspaceGroupItems: SidebarGroupItemsProps = {
       href: "/settings/workspace/members",
       tooltip: {
         text: "Members",
+      },
+    },
+    {
+      id: "api-keys",
+      icon: ApiIcon,
+      label: "API keys",
+      textValue: "API keys",
+      href: "/settings/workspace/api-keys",
+      tooltip: {
+        text: "API keys",
       },
     },
     {

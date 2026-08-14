@@ -79,12 +79,17 @@ layer(TestServerLayer)("API-key routes", (it) => {
         firstSessionKey.id,
         secondSessionKey.id,
       ]);
-      expect(
-        (yield* client.apiKey.get({ params: { apiKeyId: created.apiKey.id } })).sessionKeys.map(
-          ({ id }) => id,
-        ),
-      ).toEqual(expect.arrayContaining([firstSessionKey.id, secondSessionKey.id]));
-      expect((yield* client.apiKey.list()).map(({ id }) => id)).toEqual([created.apiKey.id]);
+      expect(created.apiKey.creator.user.email).toBe(owner.actor.user.email);
+      const fetched = yield* client.apiKey.get({ params: { apiKeyId: created.apiKey.id } });
+      expect(fetched.sessionKeys.map(({ id }) => id)).toEqual(
+        expect.arrayContaining([firstSessionKey.id, secondSessionKey.id]),
+      );
+      expect(fetched.creator.organizationMember.id).toBe(
+        created.apiKey.creator.organizationMember.id,
+      );
+      const listed = yield* client.apiKey.list();
+      expect(listed.map(({ id }) => id)).toEqual([created.apiKey.id]);
+      expect(listed[0]?.creator.user.email).toBe(owner.actor.user.email);
 
       const repository = yield* Repository;
       const stored = yield* repository.auth.apiKey.findById(

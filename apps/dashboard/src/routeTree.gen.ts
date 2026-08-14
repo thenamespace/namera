@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
 import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authenticated/workspace/new'
 import { Route as AuthenticatedSettingsWorkspaceIndexRouteImport } from './routes/_authenticated/settings/workspace/index'
+import { Route as AuthenticatedSettingsWorkspaceApiKeysRouteImport } from './routes/_authenticated/settings/workspace/api-keys'
 import { Route as AuthenticatedSettingsWorkspaceBillingsRouteImport } from './routes/_authenticated/settings/workspace/billings'
 import { Route as AuthenticatedSettingsWorkspaceMembersRouteImport } from './routes/_authenticated/settings/workspace/members'
 
@@ -141,6 +142,12 @@ const AuthenticatedSettingsWorkspaceIndexRoute =
     path: '/settings/workspace/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsWorkspaceApiKeysRoute =
+  AuthenticatedSettingsWorkspaceApiKeysRouteImport.update({
+    id: '/settings/workspace/api-keys',
+    path: '/settings/workspace/api-keys',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsWorkspaceBillingsRoute =
   AuthenticatedSettingsWorkspaceBillingsRouteImport.update({
     id: '/settings/workspace/billings',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -195,6 +203,7 @@ export interface FileRoutesByTo {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
+  '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -220,6 +229,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/_authenticated/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/_authenticated/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/_authenticated/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/_authenticated/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts/'
     | '/session-keys/'
+    | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
     | '/settings/workspace/'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts'
     | '/session-keys'
+    | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
     | '/settings/workspace'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
     | '/_authenticated/session-keys/'
+    | '/_authenticated/settings/workspace/api-keys'
     | '/_authenticated/settings/workspace/billings'
     | '/_authenticated/settings/workspace/members'
     | '/_authenticated/settings/workspace/'
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWorkspaceIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/workspace/api-keys': {
+      id: '/_authenticated/settings/workspace/api-keys'
+      path: '/settings/workspace/api-keys'
+      fullPath: '/settings/workspace/api-keys'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceApiKeysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/workspace/billings': {
       id: '/_authenticated/settings/workspace/billings'
       path: '/settings/workspace/billings'
@@ -476,6 +496,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkspaceNewRoute: typeof AuthenticatedWorkspaceNewRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
   AuthenticatedSessionKeysIndexRoute: typeof AuthenticatedSessionKeysIndexRoute
+  AuthenticatedSettingsWorkspaceApiKeysRoute: typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   AuthenticatedSettingsWorkspaceBillingsRoute: typeof AuthenticatedSettingsWorkspaceBillingsRoute
   AuthenticatedSettingsWorkspaceMembersRoute: typeof AuthenticatedSettingsWorkspaceMembersRoute
   AuthenticatedSettingsWorkspaceIndexRoute: typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -499,6 +520,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkspaceNewRoute: AuthenticatedWorkspaceNewRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
   AuthenticatedSessionKeysIndexRoute: AuthenticatedSessionKeysIndexRoute,
+  AuthenticatedSettingsWorkspaceApiKeysRoute:
+    AuthenticatedSettingsWorkspaceApiKeysRoute,
   AuthenticatedSettingsWorkspaceBillingsRoute:
     AuthenticatedSettingsWorkspaceBillingsRoute,
   AuthenticatedSettingsWorkspaceMembersRoute:
