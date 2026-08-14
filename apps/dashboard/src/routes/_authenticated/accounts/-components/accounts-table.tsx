@@ -25,8 +25,8 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import {
-  AddressDisplay,
   DateDisplay,
+  EvmAddressDisplay,
   MetadataDisplay,
   NamespaceDisplay,
   WalletImplementationDisplay,
@@ -85,7 +85,7 @@ const columns: DataGridColumn<WalletResponse>[] = [
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <AddressDisplay address={account.address} />,
+    cell: (account) => <EvmAddressDisplay address={account.address} />,
     header: "Address",
     id: "address",
     minWidth: 180,

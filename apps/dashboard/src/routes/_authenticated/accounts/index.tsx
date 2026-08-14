@@ -40,13 +40,15 @@ function AccountsPage() {
     <DashboardPage>
       <DashboardPage.Header>
         <DashboardPage.Title>
-          <HeadingGroup.Title level={1}>Accounts</HeadingGroup.Title>
+          <HeadingGroup.Title level={1} weight="normal" className="text-base">
+            Accounts
+          </HeadingGroup.Title>
         </DashboardPage.Title>
         <DashboardPage.Side>
           {canCreate ? (
             <Link
               aria-label="Create account"
-              className={cn(buttonVariants({ isIconOnly: true, size: "sm" }))}
+              className={cn(buttonVariants({ isIconOnly: true, size: "sm", variant: "tertiary" }))}
               to="/accounts/new"
             >
               <HugeiconsIcon icon={Add01Icon} />

@@ -20,9 +20,11 @@ import {
   ListBox,
   Select,
   Typography,
+  cn,
+  inputVariants,
   toast,
 } from "@namera-ai/ui";
-import { KernelIcon, SafeWalletIcon } from "@namera-ai/ui/icons";
+import { ChainIcon, KernelIcon, SafeWalletIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 
 import {
@@ -107,6 +109,7 @@ export function CreateAccountForm() {
                       aria-invalid={fieldState.invalid}
                       autoComplete="off"
                       fullWidth
+                      variant="secondary"
                       placeholder="Enter account name"
                     />
                   </Field>
@@ -117,7 +120,15 @@ export function CreateAccountForm() {
 
           <DashboardCardRow>
             <Typography className="text-sm!">Namespace</Typography>
-            <Typography className="text-sm!">EVM</Typography>
+            <div
+              className={cn(
+                inputVariants({ variant: "secondary" }),
+                "flex flex-row items-center gap-2",
+              )}
+            >
+              <ChainIcon namespace="eip155" chain="ethereum" />
+              EVM
+            </div>
           </DashboardCardRow>
 
           <Controller

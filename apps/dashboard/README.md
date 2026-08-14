@@ -23,6 +23,7 @@ Workspace package imports continue to use their package names.
   email addresses, dates, roles, and future table cells.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
+- `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.
 - `src/env.ts` — required browser environment decoded synchronously with Effect Config.
 - `src/router.tsx` — router construction.
 - `src/router-context.ts` — services shared by route loaders and the rendered application.
@@ -61,7 +62,9 @@ filterable, resizable DataGrid with configurable visible columns. `/accounts/new
 creates a software-protected EVM smart account using the shared wallet DTO while
 presenting wallet terminology as "account" in the UI. The route and the Accounts
 header action derive visibility from `wallet:create`; the server remains the
-authoritative permission boundary.
+authoritative permission boundary. EVM address displays resolve mainnet ENS names
+and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
+copy the full address while retaining it in an accessible tooltip.
 
 ## Settings routes
 

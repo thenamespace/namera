@@ -35,11 +35,11 @@ function CreateAccountPage() {
       <DashboardPage.Header className="md:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-xl px-4 py-8 sm:px-6 md:py-16">
+      <DashboardPage.Content className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-16">
         {canCreate ? (
           <>
             <HeadingGroup className="mb-6">
-              <HeadingGroup.Title level={1} size="lg">
+              <HeadingGroup.Title level={1} size="md">
                 Create an account
               </HeadingGroup.Title>
               <HeadingGroup.Description>

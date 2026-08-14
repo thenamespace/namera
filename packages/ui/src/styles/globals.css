@@ -82,6 +82,14 @@
     @apply rounded-lg;
   }
 
+  .select__popover {
+    @apply rounded-lg;
+  }
+
+  .list-box-item {
+    @apply rounded-md;
+  }
+
   .toast {
     @apply rounded-lg border-1;
   }

@@ -13,7 +13,12 @@ type WalletStatusDisplayProps = {
 
 export function WalletStatusDisplay({ status }: WalletStatusDisplayProps) {
   return (
-    <Chip color={statusColor[status]} size="sm" variant="soft">
+    <Chip
+      color={statusColor[status]}
+      size="sm"
+      variant="soft"
+      className="flex flex-row items-center gap-1 px-2"
+    >
       <span aria-hidden className="size-2 rounded-full bg-current" />
       <Chip.Label className="font-normal capitalize">{status}</Chip.Label>
     </Chip>
