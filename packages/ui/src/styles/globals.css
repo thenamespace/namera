@@ -86,6 +86,10 @@
     @apply rounded-lg;
   }
 
+  .tooltip {
+    @apply rounded-lg border-1 shadow-lg;
+  }
+
   .list-box-item {
     @apply rounded-md;
   }
