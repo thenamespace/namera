@@ -11,7 +11,7 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
-  API reference, authenticated billing, wallet and session-key routes,
+  API reference, authenticated billing, wallet, session-key, and API-key routes,
   notification inbox, the EIP-155 JSON-RPC proxy, and browser OTLP proxies.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
@@ -61,6 +61,9 @@ Never include the identifier in logs or metric attributes.
 Invitation creation currently has separate organization and normalized-recipient
 limits in addition to the global limit. Magic-link request and verification use
 their own IP/email policies.
+
+API-key creation is limited to 20 attempts per active organization per hour.
+Read operations use only the global limit.
 
 `POST /rpc/eip155/:chainId` is limited separately to 600 requests per minute per
 client IP. RPC traffic bypasses the lower global API limit and is validated

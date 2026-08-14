@@ -11,6 +11,7 @@ and adapts HTTP requests to application methods.
 - `src/application.ts` — the single aggregate `Application` service and live layer.
 - `src/audit/` — internal typed audit-event writer used by application workflows.
 - `src/auth/core/` — focused user and session operations.
+- `src/auth/core/api-key.ts` — API-key creation and grant-aware reads.
 - `src/auth/magic-link/` — request and verification workflows.
 - `src/auth/organization/` — organization, member, invitation, and setup operations.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
@@ -90,6 +91,12 @@ persisting versioned policy instances. Policy hashes are purpose-separated and
 canonical across object-key and policy-array ordering while excluding generated
 policy IDs. The session key, audit event, inbox recipients, and durable email
 jobs share one transaction.
+
+API-key creation validates all requested active session keys in the organization,
+generates and hashes the credential, then atomically creates the API-key actor,
+credential row, grants, audit event, inbox recipients, and durable email jobs.
+The raw credential is returned only from creation; get and list return safe key
+details with their currently authorized session keys.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

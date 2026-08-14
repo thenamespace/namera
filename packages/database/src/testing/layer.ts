@@ -10,6 +10,7 @@ import { Database, type DatabaseService } from "#/core/layer";
 import { systemRoles } from "#/migrations/data";
 import {
   account,
+  apiKey,
   actor,
   billingAccount,
   billingProviderEvent,
@@ -89,6 +90,7 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(walletKey);
           yield* database.delete(invitation);
           yield* database.delete(organizationMember);
+          yield* database.delete(apiKey);
           yield* database.delete(actor);
           yield* database.delete(organizationRole);
           yield* database.delete(session);

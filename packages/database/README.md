@@ -168,6 +168,11 @@ creator, and optional revoker in the same organization. API-key authorization
 continues through `core.session_key_grant`; permissions, quotas, and request
 counters do not belong on the credential row.
 
+`ApiKeyRepository` stores and reads organization-scoped credential records.
+`SessionKeyGrantRepository` inserts grants in one batch and returns active grants
+joined to their session keys for one actor. Credential generation, hashing,
+grant validation, audit, and notifications remain application concerns.
+
 ## Notification persistence
 
 The `notification` schema separates immutable occurrences from per-user inbox

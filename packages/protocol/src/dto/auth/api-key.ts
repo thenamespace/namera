@@ -3,6 +3,8 @@ import { Schema } from "effect";
 import { ActorId, ApiKeyId, OrganizationId, SessionKeyId } from "#/common/index";
 import { ApiKeyMetadata, TimestampFields } from "#/model/index";
 
+import { SessionKeyResponse } from "../session-key/index.js";
+
 export const ApiKeyResponse = Schema.Struct({
   id: ApiKeyId,
   organizationId: OrganizationId,
@@ -12,6 +14,7 @@ export const ApiKeyResponse = Schema.Struct({
   expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  sessionKeys: Schema.Array(SessionKeyResponse),
   ...TimestampFields,
 }).annotate({
   identifier: "ApiKeyResponse",
@@ -23,6 +26,7 @@ export const CreateApiKeyRequest = Schema.Struct({
   expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   sessionKeyIds: Schema.Array(SessionKeyId).check(
     Schema.isMinLength(1, { message: "At least one session key grant is required" }),
+    Schema.isMaxLength(100, { message: "At most 100 session key grants are allowed" }),
   ),
 }).annotate({
   identifier: "CreateApiKeyRequest",

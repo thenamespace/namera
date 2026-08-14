@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 import {
+  ApiKeyId,
   Email,
   InvitationId,
   OrganizationId,
@@ -32,3 +33,5 @@ export const missingWalletId = Schema.decodeSync(WalletId)("01900000-0000-7000-8
 export const missingSessionKeyId = Schema.decodeSync(SessionKeyId)(
   "01900000-0000-7000-8000-000000000005",
 );
+
+export const missingApiKeyId = Schema.decodeSync(ApiKeyId)("01900000-0000-7000-8000-000000000006");

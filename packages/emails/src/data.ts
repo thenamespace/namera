@@ -18,6 +18,9 @@ export const emailTemplates = {
   "session-key-created": {
     id: "session-key-created", // TODO: Update
   },
+  "api-key-created": {
+    id: "api-key-created", // TODO: Update
+  },
 } as const satisfies Record<EmailJobType, { readonly id: string }>;
 
 export const emailPolicy = {

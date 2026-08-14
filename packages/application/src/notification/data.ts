@@ -29,6 +29,11 @@ export const notificationPolicy = {
     emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(7),
   },
+  "api_key.created": {
+    target: { category: "organization", topic: "api-keys" },
+    emailDefaultEnabled: true,
+    emailTimeToLive: Duration.days(7),
+  },
 } as const satisfies Readonly<Record<NotificationType, NotificationPolicy>>;
 
 export const notificationPageSize = 30;

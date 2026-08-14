@@ -16,6 +16,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/http.ts` — bounded HTTP route templates and status-class helpers.
 - `src/layer.ts` — reusable OTLP exporter layer and the server live layer.
 - `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
+- `src/metrics/api-key.ts` — API-key creation outcomes and duration.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.

@@ -23,8 +23,8 @@ claims and delivers them outside the request lifecycle.
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
 Replace the TODO magic-link, new-sign-in, organization-invitation,
-wallet-created, and session-key-created hosted template IDs in `src/data.ts`
-before production delivery. Invitation variables include the effective role
+wallet-created, session-key-created, and api-key-created hosted template IDs in
+`src/data.ts` before production delivery. Invitation variables include the effective role
 name; new-sign-in variables include the captured IP address and user agent when
 available.
 Provider requests time out after ten seconds; this editable policy also lives in

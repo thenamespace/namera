@@ -9,6 +9,7 @@ export const EmailJobType = Schema.Literals([
   "organization-invitation",
   "wallet-created",
   "session-key-created",
+  "api-key-created",
 ]);
 
 export const EmailRecipient = Schema.Union([
@@ -66,6 +67,12 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
   expiresAt: NonEmptyString,
 });
 
+export const ApiKeyCreatedEmailVariables = Schema.Struct({
+  apiKeyName: NonEmptyString,
+  organizationName: NonEmptyString,
+  sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
+});
+
 export const EmailJobPayload = Schema.Union([
   Schema.Struct({
     type: Schema.Literal("magic-link"),
@@ -87,6 +94,10 @@ export const EmailJobPayload = Schema.Union([
     type: Schema.Literal("session-key-created"),
     variables: SessionKeyCreatedEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
+    type: Schema.Literal("api-key-created"),
+    variables: ApiKeyCreatedEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
 ]);
 
 export type EmailJobType = typeof EmailJobType.Type;
@@ -97,4 +108,5 @@ export type NewSignInEmailVariables = typeof NewSignInEmailVariables.Type;
 export type OrganizationInvitationEmailVariables = typeof OrganizationInvitationEmailVariables.Type;
 export type WalletCreatedEmailVariables = typeof WalletCreatedEmailVariables.Type;
 export type SessionKeyCreatedEmailVariables = typeof SessionKeyCreatedEmailVariables.Type;
+export type ApiKeyCreatedEmailVariables = typeof ApiKeyCreatedEmailVariables.Type;
 export type EmailJobPayload = typeof EmailJobPayload.Type;

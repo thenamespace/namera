@@ -40,6 +40,13 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  apiKey: {
+    createByOrganization: {
+      limit: 20,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
+  },
   rpc: {
     byIp: {
       limit: 600,

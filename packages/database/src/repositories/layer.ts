@@ -4,6 +4,7 @@ import type { Database } from "#/core/index";
 import { OrganizationEventRepository, UserEventRepository } from "#/repositories/audit/index";
 import {
   ActorRepository,
+  ApiKeyRepository,
   OrganizationInvitationRepository,
   OrganizationMemberRepository,
   OrganizationRepository,
@@ -19,6 +20,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   SessionKeyRepository,
+  SessionKeyGrantRepository,
   WalletKeyRepository,
   WalletRepository,
 } from "#/repositories/core/index";
@@ -35,6 +37,7 @@ export interface RepositoryService {
   };
   auth: {
     actor: ActorRepository["Service"];
+    apiKey: ApiKeyRepository["Service"];
     invitation: OrganizationInvitationRepository["Service"];
     member: OrganizationMemberRepository["Service"];
     organization: OrganizationRepository["Service"];
@@ -50,6 +53,7 @@ export interface RepositoryService {
   };
   core: {
     sessionKey: SessionKeyRepository["Service"];
+    sessionKeyGrant: SessionKeyGrantRepository["Service"];
     wallet: WalletRepository["Service"];
     walletKey: WalletKeyRepository["Service"];
   };
@@ -69,6 +73,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const apiKey = yield* ApiKeyRepository;
       const invitation = yield* OrganizationInvitationRepository;
       const member = yield* OrganizationMemberRepository;
       const organization = yield* OrganizationRepository;
@@ -87,6 +92,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const wallet = yield* WalletRepository;
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
+      const sessionKeyGrant = yield* SessionKeyGrantRepository;
 
       return Repository.of({
         audit: {
@@ -95,6 +101,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         auth: {
           actor,
+          apiKey,
           invitation,
           organization,
           member,
@@ -110,6 +117,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         core: {
           sessionKey,
+          sessionKeyGrant,
           wallet,
           walletKey,
         },
@@ -126,6 +134,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        ApiKeyRepository.layer,
         OrganizationInvitationRepository.layer,
         OrganizationMemberRepository.layer,
         OrganizationRepository.layer,
@@ -142,6 +151,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         BillingSubscriptionRepository.layer,
         BillingUsageRepository.layer,
         SessionKeyRepository.layer,
+        SessionKeyGrantRepository.layer,
         WalletRepository.layer,
         WalletKeyRepository.layer,
       ),

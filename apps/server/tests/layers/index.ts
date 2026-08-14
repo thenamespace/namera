@@ -12,6 +12,7 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
+import { ApiKeyRoutes } from "#/routes/api-key";
 import {
   InvitationRoutes,
   MagicLinkRoutes,
@@ -59,6 +60,7 @@ const TestAuthorizationLayer = AuthorizationLive.pipe(
 );
 
 const TestHandlersLayer = Layer.mergeAll(
+  ApiKeyRoutes,
   BillingRoutes,
   HealthRoutes,
   SessionKeyRoutes,

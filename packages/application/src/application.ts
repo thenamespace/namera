@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
 import { Audit } from "#/audit/layer";
+import { makeApiKeyApplication, type ApiKeyApplication } from "#/auth/core/api-key";
 import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
 import { makeUserApplication, type UserApplication } from "#/auth/core/user";
 import {
@@ -26,6 +27,7 @@ import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
+  readonly apiKey: ApiKeyApplication;
   readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
   readonly notification: NotificationApplication;
@@ -46,6 +48,7 @@ export class Application extends Context.Service<Application, ApplicationService
     Application,
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
+      const apiKey = yield* makeApiKeyApplication;
       const user = yield* makeUserApplication;
       const magicLinkRequest = yield* makeRequestMagicLinkApplication;
       const magicLinkVerify = yield* makeVerifyMagicLinkApplication;
@@ -58,6 +61,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const sessionKey = yield* makeSessionKeyApplication;
 
       return Application.of({
+        apiKey,
         billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },
         notification,

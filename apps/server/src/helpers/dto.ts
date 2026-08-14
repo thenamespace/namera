@@ -1,6 +1,8 @@
+import type { ApiKeyView } from "@namera-ai/application";
 import type { NotificationInboxItem, WalletView } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
+  ApiKeyResponse,
   GetOrganizationMemberResponse,
   GetOrganizationResponse,
   GetOrganizationRoleResponse,
@@ -125,8 +127,28 @@ export const toNotificationResponse = (input: NotificationInboxItem): Notificati
         readAt: input.recipient.readAt,
         receivedAt: input.recipient.receivedAt,
       };
+    case "api_key.created":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
   }
 };
+
+export const toApiKeyResponse = (input: ApiKeyView): ApiKeyResponse => ({
+  id: input.apiKey.id,
+  organizationId: input.apiKey.organizationId,
+  actorId: input.apiKey.actorId,
+  metadata: input.apiKey.metadata,
+  keyStart: input.apiKey.keyStart,
+  expiresAt: input.apiKey.expiresAt,
+  lastUsedAt: input.apiKey.lastUsedAt,
+  revokedAt: input.apiKey.revokedAt,
+  createdAt: input.apiKey.createdAt,
+  updatedAt: input.apiKey.updatedAt,
+  sessionKeys: input.sessionKeys.map(toSessionKeyResponse),
+});
 
 export const toSessionKeyResponse = (sessionKey: SessionKey): SessionKeyResponse => ({
   id: sessionKey.id,

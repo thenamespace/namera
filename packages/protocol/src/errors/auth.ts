@@ -91,3 +91,23 @@ export const InvitationErrors = [
 ] as const;
 export const InvitationError = Schema.Union(InvitationErrors);
 export type InvitationError = typeof InvitationError.Type;
+
+export class ApiKeyNotFoundError extends Schema.TaggedError<ApiKeyNotFoundError>()(
+  "ApiKeyError",
+  {
+    code: Schema.Literal("API_KEY_NOT_FOUND"),
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export class ApiKeyCreationError extends Schema.TaggedError<ApiKeyCreationError>()(
+  "ApiKeyCreationError",
+  {
+    code: Schema.Literals(["EXPIRY_IN_PAST", "SESSION_KEY_NOT_ACTIVE"]),
+  },
+  { httpApiStatus: 409 },
+) {}
+
+export const ApiKeyErrors = [ApiKeyNotFoundError, ApiKeyCreationError] as const;
+export const ApiKeyError = Schema.Union(ApiKeyErrors);
+export type ApiKeyError = typeof ApiKeyError.Type;

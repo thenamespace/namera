@@ -8,3 +8,4 @@ export * from "./rpc.js";
 export * from "./session-key.js";
 export * from "./telemetry.js";
 export * from "./wallet.js";
+export * from "./api-key.js";

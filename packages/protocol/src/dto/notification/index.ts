@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import { NotificationId, OrganizationId } from "#/common/index";
 import {
+  ApiKeyCreatedNotification,
   InvitationReceivedNotification,
   NewSignInNotification,
   NotificationPreference,
@@ -31,6 +32,10 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: SessionKeyCreatedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: ApiKeyCreatedNotification,
     ...NotificationRecipientState,
   }),
 ]).annotate({ identifier: "NotificationResponse" });

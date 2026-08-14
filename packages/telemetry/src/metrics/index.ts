@@ -1,4 +1,5 @@
 export * from "./auth.js";
+export * from "./api-key.js";
 export * from "./common.js";
 export * from "./email.js";
 export * from "./magic-link.js";

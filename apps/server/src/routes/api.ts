@@ -6,6 +6,7 @@ import { NameraApi } from "@namera-ai/api";
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { ApplicationLive, ServicesLive } from "#/layers/services";
 import { AuthorizationLive } from "#/middlewares/authorization";
+import { ApiKeyRoutes } from "#/routes/api-key";
 import {
   InvitationRoutes,
   MagicLinkRoutes,
@@ -21,6 +22,7 @@ import { SessionKeyRoutes } from "#/routes/session-key";
 import { WalletRoutes } from "#/routes/wallet";
 
 const ApiHandlers = Layer.mergeAll(
+  ApiKeyRoutes,
   BillingRoutes,
   HealthRoutes,
   SessionKeyRoutes,
