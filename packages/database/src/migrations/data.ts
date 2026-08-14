@@ -29,6 +29,12 @@ const sessionKeyPermissions = [
   "session-key:create",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
+const apiKeyPermissions = [
+  "api-key:read",
+  "api-key:create",
+  "api-key:revoke",
+] as const satisfies ReadonlyArray<MemberPermission>;
+
 export const systemRoles = [
   {
     key: "owner",
@@ -55,6 +61,7 @@ export const systemRoles = [
       "billing:read",
       ...walletPermissions,
       ...sessionKeyPermissions,
+      ...apiKeyPermissions,
     ],
   },
   {
@@ -70,6 +77,7 @@ export const systemRoles = [
       "role:read",
       "wallet:read",
       "session-key:read",
+      "api-key:read",
     ],
   },
 ] as const satisfies ReadonlyArray<SystemRoleInsert>;

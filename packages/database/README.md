@@ -159,6 +159,15 @@ active records. Credential replacement and conflict-safe creation ensure that
 only one pending magic-link credential per normalized email can be consumed,
 including under concurrent requests.
 
+## API-key persistence
+
+`auth.api_key` is the credential record for an organization-scoped
+`auth.actor` with type `api-key`. It stores only a hash and safe starting
+characters, never the raw key. Composite foreign keys keep the API-key actor,
+creator, and optional revoker in the same organization. API-key authorization
+continues through `core.session_key_grant`; permissions, quotas, and request
+counters do not belong on the credential row.
+
 ## Notification persistence
 
 The `notification` schema separates immutable occurrences from per-user inbox

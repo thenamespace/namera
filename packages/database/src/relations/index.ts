@@ -2,6 +2,7 @@ import { defineRelations } from "drizzle-orm";
 
 import {
   account,
+  apiKey,
   actor,
   billingAccount,
   billingProviderEvent,
@@ -32,6 +33,7 @@ import {
 export const relations = defineRelations(
   {
     account,
+    apiKey,
     actor,
     billingAccount,
     billingProviderEvent,
@@ -68,7 +70,18 @@ export const relations = defineRelations(
       organizationMember: r.one.organizationMember({
         from: r.actor.id,
         to: r.organizationMember.actorId,
-        optional: false,
+      }),
+      apiKey: r.one.apiKey({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.apiKey.actorId, r.apiKey.organizationId],
+      }),
+      createdApiKeys: r.many.apiKey({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.apiKey.createdByActorId, r.apiKey.organizationId],
+      }),
+      revokedApiKeys: r.many.apiKey({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.apiKey.revokedByActorId, r.apiKey.organizationId],
       }),
       createdWallets: r.many.wallet({
         from: [r.actor.id, r.actor.organizationId],
@@ -157,6 +170,27 @@ export const relations = defineRelations(
         optional: false,
       }),
     },
+    apiKey: {
+      organization: r.one.organization({
+        from: r.apiKey.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      actor: r.one.actor({
+        from: [r.apiKey.actorId, r.apiKey.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      creator: r.one.actor({
+        from: [r.apiKey.createdByActorId, r.apiKey.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      revoker: r.one.actor({
+        from: [r.apiKey.revokedByActorId, r.apiKey.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+      }),
+    },
     organization: {
       // Each organization has one creating user.
       creator: r.one.user({
@@ -182,6 +216,10 @@ export const relations = defineRelations(
       actors: r.many.actor({
         from: r.organization.id,
         to: r.actor.organizationId,
+      }),
+      apiKeys: r.many.apiKey({
+        from: r.organization.id,
+        to: r.apiKey.organizationId,
       }),
       // One organization can have many invitations.
       invitations: r.many.invitation({

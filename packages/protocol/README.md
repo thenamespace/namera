@@ -58,6 +58,11 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   namespace as its own response member, then discriminate implementation data
   within that namespace. Never expose wallet-key provider identifiers or
   provider metadata through public wallet DTOs.
+- API keys are organization-owned authentication subtypes of `Actor`. Their
+  persistence model contains the credential hash, while create/get/list DTOs
+  expose only safe key identification data and return the raw credential only
+  from creation. Session-key grants remain attached to `ActorId`; do not copy
+  grant permissions into API-key metadata.
 - Session keys belong to one wallet, are discriminated by chain namespace, and
   carry an immutable namespace-specific `policies` array.
   Each policy instance has a stable `PolicyId` so its handler can address typed

@@ -29,6 +29,9 @@ export const MemberPermission = Schema.Literals([
   "wallet:create",
   "session-key:read",
   "session-key:create",
+  "api-key:read",
+  "api-key:create",
+  "api-key:revoke",
 ]);
 
 export const OrganizationRoleMetadata = Schema.Struct({
