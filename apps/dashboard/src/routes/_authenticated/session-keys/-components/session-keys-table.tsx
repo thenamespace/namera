@@ -12,16 +12,13 @@ import {
   Dropdown,
   SearchField,
   Typography,
-  toast,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
 import {
-  Copy01Icon,
   HugeiconsIcon,
   LayoutThreeColumnIcon,
-  MoreVerticalIcon,
   SlidersHorizontalIcon,
   Sorting01Icon,
 } from "@namera-ai/ui/icons";
@@ -40,53 +37,7 @@ const sessionKeyCollator = new Intl.Collator(undefined, {
   sensitivity: "base",
 });
 
-const columnIds = [
-  "name",
-  "status",
-  "account",
-  "creator",
-  "namespace",
-  "policies",
-  "createdAt",
-] as const;
-
-function SessionKeyActions({
-  sessionKeyId,
-  walletId,
-}: {
-  sessionKeyId: SessionKeyResponse["id"];
-  walletId: SessionKeyResponse["walletId"];
-}) {
-  const handleAction = useEventCallback((key: string | number) => {
-    const value = key === "copy-account-id" ? walletId : sessionKeyId;
-    const label = key === "copy-account-id" ? "Account" : "Session key";
-
-    void navigator.clipboard.writeText(value).then(
-      () => toast.success(`${label} ID copied`),
-      () => toast.danger(`Couldn’t copy ${label.toLowerCase()} ID`),
-    );
-  });
-
-  return (
-    <Dropdown>
-      <Button isIconOnly aria-label="Session key actions" size="sm" variant="tertiary">
-        <HugeiconsIcon icon={MoreVerticalIcon} />
-      </Button>
-      <Dropdown.Popover className="min-w-48">
-        <Dropdown.Menu onAction={handleAction}>
-          <Dropdown.Item id="copy-session-key-id" textValue="Copy session key ID">
-            <HugeiconsIcon icon={Copy01Icon} />
-            Copy session key ID
-          </Dropdown.Item>
-          <Dropdown.Item id="copy-account-id" textValue="Copy account ID">
-            <HugeiconsIcon icon={Copy01Icon} />
-            Copy account ID
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
-  );
-}
+const columnIds = ["name", "status", "account", "creator", "namespace", "createdAt"] as const;
 
 const columns: DataGridColumn<SessionKeyResponse>[] = [
   {
@@ -153,19 +104,6 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (sessionKey) => (
-      <Typography className="text-sm!" color="muted">
-        {sessionKey.policies.length} {sessionKey.policies.length === 1 ? "policy" : "policies"}
-      </Typography>
-    ),
-    header: "Policies",
-    id: "policies",
-    minWidth: 120,
-    sortFn: (left, right) => left.policies.length - right.policies.length,
-  },
-  {
-    allowsResizing: true,
-    allowsSorting: true,
     cell: (sessionKey) => <DateDisplay label="Created" value={sessionKey.createdAt} />,
     header: "Created",
     id: "createdAt",
@@ -173,20 +111,10 @@ const columns: DataGridColumn<SessionKeyResponse>[] = [
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
   },
-  {
-    align: "end",
-    cell: (sessionKey) => (
-      <SessionKeyActions sessionKeyId={sessionKey.id} walletId={sessionKey.walletId} />
-    ),
-    header: "",
-    id: "actions",
-    pinned: "end",
-    width: 48,
-  },
 ];
 
 const sortableColumns = columns.filter((column) => column.allowsSorting);
-const configurableColumns = columns.filter((column) => column.id !== "actions");
+const configurableColumns = columns;
 const sessionKeyStatuses = ["all", "active", "revoked"] as const;
 const getSessionKeyId = (sessionKey: SessionKeyResponse) => sessionKey.id;
 
@@ -229,7 +157,7 @@ export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) 
   }, [filteredSessionKeys, sort]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set<string>(columnIds) : visibleColumns;
-    return columns.filter((column) => column.id === "actions" || visible.has(column.id));
+    return columns.filter((column) => visible.has(column.id));
   }, [visibleColumns]);
   const hasFilters = normalizedQuery.length > 0 || status !== "all";
   const statusSelection = useMemo(() => new Set([status]), [status]);
@@ -355,7 +283,6 @@ export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) 
         allowsColumnResize
         aria-label="Organization session keys"
         columns={displayedColumns}
-        contentClassName="min-w-[1120px]"
         data={sortedSessionKeys}
         getRowId={getSessionKeyId}
         renderEmptyState={renderEmptyState}

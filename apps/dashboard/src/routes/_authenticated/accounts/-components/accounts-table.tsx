@@ -9,16 +9,13 @@ import {
   Dropdown,
   SearchField,
   Typography,
-  toast,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
 import {
-  Copy01Icon,
   HugeiconsIcon,
   LayoutThreeColumnIcon,
-  MoreVerticalIcon,
   SlidersHorizontalIcon,
   Sorting01Icon,
 } from "@namera-ai/ui/icons";
@@ -119,47 +116,11 @@ const columns: DataGridColumn<WalletResponse>[] = [
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
   },
-  {
-    align: "end",
-    cell: (account) => <AccountActions accountId={account.id} />,
-    header: "",
-    id: "actions",
-    pinned: "end",
-    width: 48,
-  },
 ];
 
 const sortableColumns = columns.filter((column) => column.allowsSorting);
-const configurableColumns = columns.filter((column) => column.id !== "actions");
+const configurableColumns = columns;
 const walletStatuses = ["all", "active", "frozen", "archived"] as const;
-
-function AccountActions({ accountId }: { accountId: WalletResponse["id"] }) {
-  const copyId = useEventCallback(() => {
-    void navigator.clipboard.writeText(accountId).then(
-      () => toast.success("Account ID copied"),
-      () => toast.danger("Couldn’t copy account ID"),
-    );
-  });
-  const handleAction = useEventCallback((key: string | number) => {
-    if (key === "copy-id") copyId();
-  });
-
-  return (
-    <Dropdown>
-      <Button isIconOnly aria-label="Account actions" size="sm" variant="tertiary">
-        <HugeiconsIcon icon={MoreVerticalIcon} />
-      </Button>
-      <Dropdown.Popover className="min-w-44">
-        <Dropdown.Menu onAction={handleAction}>
-          <Dropdown.Item id="copy-id" textValue="Copy account ID">
-            <HugeiconsIcon icon={Copy01Icon} />
-            Copy account ID
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
-  );
-}
 
 const getAccountId = (account: WalletResponse) => account.id;
 
@@ -200,7 +161,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   }, [filteredAccounts, sort]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set<string>(columnIds) : visibleColumns;
-    return columns.filter((column) => column.id === "actions" || visible.has(column.id));
+    return columns.filter((column) => visible.has(column.id));
   }, [visibleColumns]);
   const hasFilters = normalizedQuery.length > 0 || status !== "all";
   const statusSelection = useMemo(() => new Set([status]), [status]);
@@ -330,7 +291,6 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         allowsColumnResize
         aria-label="Organization accounts"
         columns={displayedColumns}
-        contentClassName="min-w-[1120px]"
         data={sortedAccounts}
         getRowId={getAccountId}
         renderEmptyState={renderEmptyState}
