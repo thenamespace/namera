@@ -24,6 +24,8 @@ import {
   organizationMember,
   organizationRole,
   session,
+  sessionKey,
+  sessionKeyGrant,
   systemRole,
   user,
   userEvent,
@@ -75,6 +77,8 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(billingAccount);
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
+          yield* database.delete(sessionKeyGrant);
+          yield* database.delete(sessionKey);
           yield* database.delete(wallet);
           yield* database.delete(walletKey);
           yield* database.delete(invitation);

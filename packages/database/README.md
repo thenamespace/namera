@@ -188,6 +188,16 @@ transaction-aware inserts. Provider calls and account construction do not
 belong in repositories; `application` coordinates those capabilities before
 persisting both records in one transaction.
 
+## Session-key persistence
+
+`core.session_key` belongs to one wallet and stores immutable metadata, the
+typed `policies` array, and its policy hash. Revocation is a lifecycle change;
+policies are not updated in place. `core.session_key_grant` links an actor to a
+session key within the same organization and retains revoked grant history. A
+partial unique index permits only one active grant for an actor/session-key
+pair. Composite foreign keys prevent wallets, actors, session keys, and grants
+from being linked across organizations.
+
 ## Billing persistence
 
 The `billing` schema keeps plan state separate from organization identity:

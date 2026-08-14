@@ -1,6 +1,6 @@
 import type { ActorId, OrganizationId, WalletId, WalletKeyId } from "@namera-ai/protocol";
 import type { Wallet, WalletEncoded } from "@namera-ai/protocol/model";
-import { foreignKey, index, jsonb, text } from "drizzle-orm/pg-core";
+import { foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
 
 import { generateUniqueId, timestamps } from "#/schema/common";
 
@@ -26,6 +26,7 @@ export const wallet = coreSchema.table(
     ...timestamps,
   },
   (table) => [
+    unique("wallet_id_organization_unique").on(table.id, table.organizationId),
     foreignKey({
       name: "wallet_key_organization_fk",
       columns: [table.walletKeyId, table.organizationId],

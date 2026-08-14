@@ -23,6 +23,8 @@ export const SystemRoleId = createBrandedId("SystemRoleId");
 // Core Tables
 export const WalletKeyId = createBrandedId("WalletKeyId");
 export const WalletId = createBrandedId("WalletId");
+export const SessionKeyId = createBrandedId("SessionKeyId");
+export const SessionKeyGrantId = createBrandedId("SessionKeyGrantId");
 
 // Audit Tables
 export const UserEventId = createBrandedId("UserEventId");
@@ -51,6 +53,8 @@ export type InvitationId = typeof InvitationId.Type;
 export type SystemRoleId = typeof SystemRoleId.Type;
 export type WalletKeyId = typeof WalletKeyId.Type;
 export type WalletId = typeof WalletId.Type;
+export type SessionKeyId = typeof SessionKeyId.Type;
+export type SessionKeyGrantId = typeof SessionKeyGrantId.Type;
 export type UserEventId = typeof UserEventId.Type;
 export type OrganizationEventId = typeof OrganizationEventId.Type;
 export type EmailJobId = typeof EmailJobId.Type;

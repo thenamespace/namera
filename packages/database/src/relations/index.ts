@@ -16,6 +16,8 @@ import {
   organizationMember,
   organizationRole,
   session,
+  sessionKey,
+  sessionKeyGrant,
   systemRole,
   user,
   userEvent,
@@ -41,6 +43,8 @@ export const relations = defineRelations(
     organizationMember,
     organizationRole,
     session,
+    sessionKey,
+    sessionKeyGrant,
     systemRole,
     user,
     userEvent,
@@ -63,6 +67,26 @@ export const relations = defineRelations(
       createdWallets: r.many.wallet({
         from: [r.actor.id, r.actor.organizationId],
         to: [r.wallet.createdByActorId, r.wallet.organizationId],
+      }),
+      createdSessionKeys: r.many.sessionKey({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.sessionKey.createdByActorId, r.sessionKey.organizationId],
+      }),
+      revokedSessionKeys: r.many.sessionKey({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.sessionKey.revokedByActorId, r.sessionKey.organizationId],
+      }),
+      sessionKeyGrants: r.many.sessionKeyGrant({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.sessionKeyGrant.actorId, r.sessionKeyGrant.organizationId],
+      }),
+      grantedSessionKeyGrants: r.many.sessionKeyGrant({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.sessionKeyGrant.grantedByActorId, r.sessionKeyGrant.organizationId],
+      }),
+      revokedSessionKeyGrants: r.many.sessionKeyGrant({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.sessionKeyGrant.revokedByActorId, r.sessionKeyGrant.organizationId],
       }),
       auditEvents: r.many.organizationEvent({
         from: [r.actor.id, r.actor.organizationId],
@@ -165,6 +189,14 @@ export const relations = defineRelations(
       wallets: r.many.wallet({
         from: r.organization.id,
         to: r.wallet.organizationId,
+      }),
+      sessionKeys: r.many.sessionKey({
+        from: r.organization.id,
+        to: r.sessionKey.organizationId,
+      }),
+      sessionKeyGrants: r.many.sessionKeyGrant({
+        from: r.organization.id,
+        to: r.sessionKeyGrant.organizationId,
       }),
       auditEvents: r.many.organizationEvent({
         from: r.organization.id,
@@ -311,6 +343,61 @@ export const relations = defineRelations(
         from: [r.wallet.createdByActorId, r.wallet.organizationId],
         to: [r.actor.id, r.actor.organizationId],
         optional: false,
+      }),
+      sessionKeys: r.many.sessionKey({
+        from: [r.wallet.id, r.wallet.organizationId],
+        to: [r.sessionKey.walletId, r.sessionKey.organizationId],
+      }),
+    },
+    sessionKey: {
+      organization: r.one.organization({
+        from: r.sessionKey.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      wallet: r.one.wallet({
+        from: [r.sessionKey.walletId, r.sessionKey.organizationId],
+        to: [r.wallet.id, r.wallet.organizationId],
+        optional: false,
+      }),
+      creator: r.one.actor({
+        from: [r.sessionKey.createdByActorId, r.sessionKey.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      revoker: r.one.actor({
+        from: [r.sessionKey.revokedByActorId, r.sessionKey.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+      }),
+      grants: r.many.sessionKeyGrant({
+        from: [r.sessionKey.id, r.sessionKey.organizationId],
+        to: [r.sessionKeyGrant.sessionKeyId, r.sessionKeyGrant.organizationId],
+      }),
+    },
+    sessionKeyGrant: {
+      organization: r.one.organization({
+        from: r.sessionKeyGrant.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      actor: r.one.actor({
+        from: [r.sessionKeyGrant.actorId, r.sessionKeyGrant.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      sessionKey: r.one.sessionKey({
+        from: [r.sessionKeyGrant.sessionKeyId, r.sessionKeyGrant.organizationId],
+        to: [r.sessionKey.id, r.sessionKey.organizationId],
+        optional: false,
+      }),
+      grantedBy: r.one.actor({
+        from: [r.sessionKeyGrant.grantedByActorId, r.sessionKeyGrant.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      revokedBy: r.one.actor({
+        from: [r.sessionKeyGrant.revokedByActorId, r.sessionKeyGrant.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
       }),
     },
     userEvent: {
