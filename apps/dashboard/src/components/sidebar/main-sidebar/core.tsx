@@ -1,4 +1,4 @@
-import { Activity02Icon, DiscoverCircleIcon, Key01Icon, ShieldUserIcon } from "@namera-ai/ui/icons";
+import { Activity02Icon, Key01Icon, ShieldUserIcon } from "@namera-ai/ui/icons";
 
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
@@ -26,17 +26,6 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       tooltip: {
         hotKey: "S",
         text: "session keys",
-      },
-    },
-    {
-      id: "templates",
-      icon: DiscoverCircleIcon,
-      label: "Templates",
-      textValue: "Templates",
-      href: "/templates",
-      tooltip: {
-        hotKey: "T",
-        text: "templates",
       },
     },
     {

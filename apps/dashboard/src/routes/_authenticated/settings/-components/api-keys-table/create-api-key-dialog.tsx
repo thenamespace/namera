@@ -10,7 +10,6 @@ import {
   type ListSessionKeysForOrganizationResponse,
 } from "@namera-ai/protocol/dto";
 import {
-  Alert,
   Button,
   Field,
   FieldError,
@@ -23,7 +22,7 @@ import {
   Typography,
   toast,
 } from "@namera-ai/ui";
-import { Add01Icon, CheckmarkCircle02Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Add01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
@@ -78,18 +77,25 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
   });
   const handleSubmit = form.handleSubmit(async (payload) => {
     try {
-      setCreated(await createApiKey.mutateAsync({ payload }));
+      const key = await createApiKey.mutateAsync({ payload });
+      setCreated(key);
+      await navigator.clipboard.writeText(key.key);
+      toast.success("API Key copied to clipboard", {
+        description: "You can now use this key to access Namera SDK",
+      });
     } catch {
-      toast.danger("Couldn’t create the API key.");
+      toast.danger("Couldn't create the API key.");
     }
   });
   const copyKey = useEventCallback(async () => {
     if (created === null) return;
     try {
       await navigator.clipboard.writeText(created.key);
-      toast.success("API key copied");
+      toast.success("API Key copied to clipboard", {
+        description: "You can now use this key to access Namera SDK",
+      });
     } catch {
-      toast.danger("Couldn’t copy the API key.");
+      toast.danger("Couldn't copy the API key.");
     }
   });
 
@@ -111,33 +117,23 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
             {created ? (
               <>
                 <Modal.Body className="grid gap-5">
-                  <Alert status="success">
-                    <Alert.Indicator>
-                      <HugeiconsIcon icon={CheckmarkCircle02Icon} />
-                    </Alert.Indicator>
-                    <Alert.Content className="min-w-0">
-                      <Alert.Title>Copy this key now</Alert.Title>
-                      <Alert.Description className="grid gap-3">
-                        <span>
-                          This is the only time the complete API key will be shown. It cannot be
-                          recovered after you close this dialog.
-                        </span>
-                        <span className="bg-success-soft text-success-soft-foreground flex min-w-0 items-center gap-2 rounded-lg px-3 py-2">
-                          <code className="min-w-0 flex-1 truncate text-xs">{created.key}</code>
-                          <Button
-                            aria-label="Copy API key"
-                            isIconOnly
-                            size="sm"
-                            type="button"
-                            variant="ghost"
-                            onPress={copyKey}
-                          >
-                            <HugeiconsIcon icon={Copy01Icon} />
-                          </Button>
-                        </span>
-                      </Alert.Description>
-                    </Alert.Content>
-                  </Alert>
+                  <span>
+                    The API Key can now be used to access Namera SDK. You will not be able to see
+                    this key again once you close this dialog.
+                  </span>
+                  <span className="bg-success-soft text-success-soft-foreground flex min-w-0 items-center gap-2 rounded-lg px-3 py-2">
+                    <code className="min-w-0 flex-1 truncate text-xs">{created.key}</code>
+                    <Button
+                      aria-label="Copy API key"
+                      isIconOnly
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                      onPress={copyKey}
+                    >
+                      <HugeiconsIcon icon={Copy01Icon} />
+                    </Button>
+                  </span>
                 </Modal.Body>
                 <Modal.Footer>
                   <Button fullWidth type="button" onPress={() => handleOpenChange(false)}>
@@ -208,15 +204,10 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                                     id={sessionKey.id}
                                     textValue={sessionKey.metadata.name}
                                   >
-                                    <div className="grid min-w-0 gap-1">
-                                      <MetadataDisplay
-                                        fallbackName="Unnamed session key"
-                                        metadata={sessionKey.metadata}
-                                      />
-                                      <Typography className="truncate text-xs" color="muted">
-                                        {sessionKey.wallet.metadata.name}
-                                      </Typography>
-                                    </div>
+                                    <MetadataDisplay
+                                      fallbackName="Unnamed session key"
+                                      metadata={sessionKey.metadata}
+                                    />
                                     <ListBox.ItemIndicator />
                                   </ListBox.Item>
                                 )}

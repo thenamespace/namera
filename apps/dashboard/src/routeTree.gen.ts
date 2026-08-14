@@ -16,7 +16,6 @@ import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedIdentityRouteImport } from './routes/_authenticated/identity'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
-import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
@@ -65,11 +64,6 @@ const AuthenticatedIdentityRoute = AuthenticatedIdentityRouteImport.update({
 const AuthenticatedMcpRoute = AuthenticatedMcpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -168,7 +162,6 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
@@ -190,7 +183,6 @@ export interface FileRoutesByTo {
   '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
@@ -216,7 +208,6 @@ export interface FileRoutesById {
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/identity': typeof AuthenticatedIdentityRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
-  '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
@@ -243,7 +234,6 @@ export interface FileRouteTypes {
     | '/assets'
     | '/identity'
     | '/mcp'
-    | '/templates'
     | '/auth/verify'
     | '/auth/'
     | '/accounts/new'
@@ -265,7 +255,6 @@ export interface FileRouteTypes {
     | '/assets'
     | '/identity'
     | '/mcp'
-    | '/templates'
     | '/auth/verify'
     | '/'
     | '/auth'
@@ -290,7 +279,6 @@ export interface FileRouteTypes {
     | '/_authenticated/assets'
     | '/_authenticated/identity'
     | '/_authenticated/mcp'
-    | '/_authenticated/templates'
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
@@ -363,13 +351,6 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof AuthenticatedMcpRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/templates': {
-      id: '/_authenticated/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/auth/': {
@@ -485,7 +466,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedIdentityRoute: typeof AuthenticatedIdentityRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
-  AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
@@ -507,7 +487,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedIdentityRoute: AuthenticatedIdentityRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
-  AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountsNewRoute: AuthenticatedAccountsNewRoute,
   AuthenticatedInvitationsInvitationIdRoute:
