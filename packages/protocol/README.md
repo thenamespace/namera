@@ -12,7 +12,8 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 - `src/dto/` — public API request and response schemas.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.
-- `src/policy/` — provider-neutral policy handler contracts.
+- `src/policy/` — provider-neutral policy handler contracts and normalized
+  namespace-specific evaluation contexts.
 - `src/index.ts` — common values and errors.
 
 ## Public imports
@@ -63,6 +64,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   its handler can address typed state and in-flight reservations. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
+- EVM policy handlers receive `EvmIntentContext`, which separates normalized
+  calls, the prepared UserOperation gas envelope, and optional call-simulation
+  results. Keep Viem clients, provider errors, signatures, and raw provider
+  responses outside this contract.
 - EVM chain contracts distinguish the stable supported-network key, the chain
   name used for presentation/icons, and the exact supported CAIP-2 chain ID.
   Provider-specific RPC slugs do not belong in protocol.
