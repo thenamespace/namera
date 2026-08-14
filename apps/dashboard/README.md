@@ -55,7 +55,9 @@ the supported email preference topics; inbox UI is not implemented yet.
 
 Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key
-family and refresh when the active organization changes. `/accounts/new`
+family and refresh when the active organization changes. `/accounts` prefetches
+the active organization's wallets and presents them through a sortable,
+filterable, resizable DataGrid with configurable visible columns. `/accounts/new`
 creates a software-protected EVM smart account using the shared wallet DTO while
 presenting wallet terminology as "account" in the UI. The route and the Accounts
 header action derive visibility from `wallet:create`; the server remains the

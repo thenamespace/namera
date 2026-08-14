@@ -5,9 +5,12 @@ import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery } from "@/atoms/prefetch";
+import { walletsAtom } from "@/atoms/wallet";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
+
+import { AccountsTable } from "./-components/accounts-table";
 
 const walletCreatePermission = ["wallet:create"] as const;
 
@@ -20,7 +23,10 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
     );
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
+    const accounts = await prefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
+
     return {
+      accounts,
       canCreate: hasPermissions(currentUser.role.permissions, walletCreatePermission),
     };
   },
@@ -28,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 });
 
 function AccountsPage() {
-  const { canCreate } = Route.useLoaderData();
+  const { accounts, canCreate } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -48,7 +54,9 @@ function AccountsPage() {
           ) : null}
         </DashboardPage.Side>
       </DashboardPage.Header>
-      <DashboardPage.Content />
+      <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
+        <AccountsTable initialAccounts={accounts} />
+      </DashboardPage.Content>
     </DashboardPage>
   );
 }
