@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useNavigate } from "@tanstack/react-router";
 
 import { Schema } from "effect";
@@ -10,17 +11,21 @@ import {
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Button,
+  Field,
   FieldError,
-  Form,
+  FieldGroup,
+  FieldLabel,
   IconPicker,
   Input,
-  Label,
-  Typography,
   toast,
 } from "@namera-ai/ui";
-import { useController, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
-import { DashboardCard } from "@/components/dashboard-card";
+import {
+  DashboardCardContent,
+  DashboardCardRoot,
+  DashboardCardRow,
+} from "@/components/dashboard-card";
 import { useCreateOrganization } from "@/hooks/auth";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -40,9 +45,6 @@ export function CreateWorkspaceForm() {
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateOrganizationRequest)),
   });
-  const logo = useController({ control: form.control, name: "metadata.logo" });
-  const name = useController({ control: form.control, name: "metadata.name" });
-
   const handleSubmit = form.handleSubmit(async (payload) => {
     try {
       await createOrganization.mutateAsync({ payload });
@@ -54,44 +56,63 @@ export function CreateWorkspaceForm() {
   });
 
   return (
-    <Form onSubmit={handleSubmit} validationBehavior="aria">
-      <DashboardCard>
-        <DashboardCard.Content>
-          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
-            <Typography className="text-sm!">Workspace logo</Typography>
-            <IconPicker
-              aria-label="Choose workspace logo"
-              setValue={logo.field.onChange}
-              size="md"
-              supportedTypes={supportedLogoTypes}
-              value={logo.field.value ?? defaultLogo}
-            />
-          </DashboardCard.Row>
+    <form id="create-workspace-form" noValidate onSubmit={handleSubmit}>
+      <DashboardCardRoot>
+        <DashboardCardContent>
+          <Controller
+            control={form.control}
+            name="metadata.logo"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <FieldLabel>Workspace logo</FieldLabel>
+                  <IconPicker
+                    aria-label="Choose workspace logo"
+                    setValue={field.onChange}
+                    size="md"
+                    supportedTypes={supportedLogoTypes}
+                    value={field.value ?? defaultLogo}
+                  />
+                </Field>
+              </DashboardCardRow>
+            )}
+          />
 
-          <DashboardCard.Field
-            isInvalid={name.fieldState.invalid}
-            isRequired
-            name={name.field.name}
-            onChange={name.field.onChange}
-            value={name.field.value}
-          >
-            <DashboardCard.FieldLabel>
-              <Label>Workspace name</Label>
-              <FieldError>{name.fieldState.error?.message}</FieldError>
-            </DashboardCard.FieldLabel>
-            <Input
-              autoComplete="organization"
-              fullWidth
-              onBlur={name.field.onBlur}
-              placeholder="Enter workspace name"
-              ref={name.field.ref}
+          <FieldGroup className="contents">
+            <Controller
+              control={form.control}
+              name="metadata.name"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="create-workspace-name">Workspace name</FieldLabel>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </div>
+                    <Input
+                      {...field}
+                      id="create-workspace-name"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="organization"
+                      fullWidth
+                      placeholder="Enter workspace name"
+                    />
+                  </Field>
+                </DashboardCardRow>
+              )}
             />
-          </DashboardCard.Field>
-        </DashboardCard.Content>
-      </DashboardCard>
-      <Button isDisabled={createOrganization.isPending} type="submit" fullWidth className="mt-4">
+          </FieldGroup>
+        </DashboardCardContent>
+      </DashboardCardRoot>
+      <Button
+        className="mt-4"
+        form="create-workspace-form"
+        fullWidth
+        isDisabled={createOrganization.isPending}
+        type="submit"
+      >
         {createOrganization.isPending ? "Creating…" : "Create workspace"}
       </Button>
-    </Form>
+    </form>
   );
 }

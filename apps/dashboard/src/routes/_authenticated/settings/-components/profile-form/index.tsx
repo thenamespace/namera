@@ -1,13 +1,26 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { UpdateUserRequest, type GetUserResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { FieldError, Form, IconPicker, Input, Label, Typography } from "@namera-ai/ui";
-import { useController, useForm } from "react-hook-form";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  IconPicker,
+  Input,
+  Typography,
+} from "@namera-ai/ui";
+import { Controller, useForm } from "react-hook-form";
 
 import { EmailDisplay } from "@/components";
-import { DashboardCard } from "@/components/dashboard-card";
+import {
+  DashboardCardContent,
+  DashboardCardRoot,
+  DashboardCardRow,
+} from "@/components/dashboard-card";
 import { useUpdateUser } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
 
@@ -19,8 +32,6 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
     defaultValues: { metadata: user.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
   });
-  const image = useController({ control: form.control, name: "metadata.image" });
-  const name = useController({ control: form.control, name: "metadata.name" });
   useAutoSave({
     form,
     onSave: async (payload) => {
@@ -31,50 +42,63 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
   const handleSubmit = form.handleSubmit((payload) => updateUser.mutateAsync({ payload }));
 
   return (
-    <Form onSubmit={handleSubmit} validationBehavior="aria">
-      <DashboardCard>
-        <DashboardCard.Content>
-          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
-            <Typography className="text-sm!">Profile picture</Typography>
-            <IconPicker
-              aria-label="Choose profile picture"
-              setValue={image.field.onChange}
-              size="md"
-              // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
-              supportedTypes={["image"]}
-              value={image.field.value ?? defaultImage}
-            />
-          </DashboardCard.Row>
+    <form id="profile-form" noValidate onSubmit={handleSubmit}>
+      <DashboardCardRoot>
+        <DashboardCardContent>
+          <Controller
+            control={form.control}
+            name="metadata.image"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <FieldLabel>Profile picture</FieldLabel>
+                  <IconPicker
+                    aria-label="Choose profile picture"
+                    setValue={field.onChange}
+                    size="md"
+                    // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+                    supportedTypes={["image"]}
+                    value={field.value ?? defaultImage}
+                  />
+                </Field>
+              </DashboardCardRow>
+            )}
+          />
 
-          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
+          <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
             <Typography className="text-sm!">Email</Typography>
             <Typography className="text-sm" color="muted" truncate>
               <EmailDisplay email={user.email} />
             </Typography>
-          </DashboardCard.Row>
+          </DashboardCardRow>
 
-          <DashboardCard.Field
-            isInvalid={name.fieldState.invalid}
-            isRequired
-            name={name.field.name}
-            onChange={name.field.onChange}
-            value={name.field.value ?? ""}
-          >
-            <DashboardCard.FieldLabel>
-              <Label>Full name</Label>
-              <FieldError>{name.fieldState.error?.message}</FieldError>
-            </DashboardCard.FieldLabel>
-            <Input
-              autoComplete="name"
-              fullWidth
-              onBlur={name.field.onBlur}
-              placeholder="Enter your full name"
-              ref={name.field.ref}
-              variant="secondary"
+          <FieldGroup className="contents">
+            <Controller
+              control={form.control}
+              name="metadata.name"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="profile-name">Full name</FieldLabel>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </div>
+                    <Input
+                      {...field}
+                      id="profile-name"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="name"
+                      fullWidth
+                      placeholder="Enter your full name"
+                      variant="secondary"
+                    />
+                  </Field>
+                </DashboardCardRow>
+              )}
             />
-          </DashboardCard.Field>
-        </DashboardCard.Content>
-      </DashboardCard>
-    </Form>
+          </FieldGroup>
+        </DashboardCardContent>
+      </DashboardCardRoot>
+    </form>
   );
 }

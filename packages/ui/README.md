@@ -8,6 +8,8 @@ does not have a build output or build script.
 
 - `src/index.ts` — package entry point for intentionally shared exports.
 - `src/components/*.tsx` — direct proxies for UIKit component subpaths.
+- `src/components/field.tsx` — shared `Field`, `FieldGroup`, `FieldLabel`, and
+  resolver-friendly `FieldError` form composition primitives.
 - `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
 - `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.

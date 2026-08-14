@@ -1,5 +1,14 @@
-import { Button, FieldError, Form, Input, Label, TextField, Typography } from "@namera-ai/ui";
-import { useController, useFormContext } from "react-hook-form";
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import {
+  Button,
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  Input,
+  Typography,
+} from "@namera-ai/ui";
+import { Controller, useFormContext } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import type { EmailFormInput, EmailFormOutput } from "./schema";
@@ -13,39 +22,48 @@ type EmailEntryProps = {
 
 export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: EmailEntryProps) {
   const { control, handleSubmit } = useFormContext<EmailFormInput, unknown, EmailFormOutput>();
-  const { field, fieldState } = useController({ control, name: "email" });
   const submit = useEventCallback((values: EmailFormOutput) => onContinue(values));
   const handleFormSubmit = handleSubmit(submit);
 
   return (
-    <Form className="grid gap-4" onSubmit={handleFormSubmit} validationBehavior="aria">
+    <form
+      className="grid gap-4"
+      id="magic-link-request-form"
+      noValidate
+      onSubmit={handleFormSubmit}
+    >
       <Typography.Heading className="mb-3 text-center text-balance text-xl" level={1}>
         What's your email address?
       </Typography.Heading>
 
-      <TextField
-        isInvalid={fieldState.invalid}
-        isRequired
-        fullWidth
-        name={field.name}
-        onChange={field.onChange}
-        type="email"
-        variant="secondary"
-        value={field.value}
-      >
-        <Label className="sr-only">Email address</Label>
-        <Input
-          autoComplete="email"
-          inputMode="email"
-          onBlur={field.onBlur}
-          placeholder="richard@piedpiper.com"
-          ref={field.ref}
-          spellCheck={false}
+      <FieldGroup>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel className="sr-only" htmlFor="magic-link-email">
+                Email address
+              </FieldLabel>
+              <Input
+                {...field}
+                id="magic-link-email"
+                aria-invalid={fieldState.invalid}
+                autoComplete="email"
+                fullWidth
+                inputMode="email"
+                placeholder="richard@piedpiper.com"
+                spellCheck={false}
+                type="email"
+                variant="secondary"
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
         />
-        <FieldError>{fieldState.error?.message}</FieldError>
-      </TextField>
+      </FieldGroup>
 
-      <Button fullWidth isDisabled={isPending} type="submit">
+      <Button form="magic-link-request-form" fullWidth isDisabled={isPending} type="submit">
         {isPending ? "Sending link..." : "Continue with email"}
       </Button>
       {errorMessage ? (
@@ -56,6 +74,6 @@ export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: Emai
       <Button fullWidth isDisabled={isPending} onPress={onBack} type="button" variant="ghost">
         Back to login
       </Button>
-    </Form>
+    </form>
   );
 }

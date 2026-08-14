@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useNavigate } from "@tanstack/react-router";
 
 import { Schema } from "effect";
@@ -10,19 +11,24 @@ import {
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Button,
+  Field,
   FieldError,
-  Form,
+  FieldGroup,
+  FieldLabel,
   IconPicker,
   Input,
-  Label,
   ListBox,
   Select,
   Typography,
   toast,
 } from "@namera-ai/ui";
-import { useController, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
-import { DashboardCard } from "@/components/dashboard-card";
+import {
+  DashboardCardContent,
+  DashboardCardRoot,
+  DashboardCardRow,
+} from "@/components/dashboard-card";
 import { useCreateWallet } from "@/hooks/wallet";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -49,10 +55,6 @@ export function CreateAccountForm() {
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateWalletRequest)),
   });
-  const logo = useController({ control: form.control, name: "metadata.logo" });
-  const name = useController({ control: form.control, name: "metadata.name" });
-  const implementation = useController({ control: form.control, name: "implementation" });
-
   const handleSubmit = form.handleSubmit(async (payload) => {
     try {
       await createWallet.mutateAsync({ payload });
@@ -64,85 +66,108 @@ export function CreateAccountForm() {
   });
 
   return (
-    <Form onSubmit={handleSubmit} validationBehavior="aria">
-      <DashboardCard>
-        <DashboardCard.Content>
-          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
-            <Typography className="text-sm!">Account logo</Typography>
-            <IconPicker
-              aria-label="Choose account logo"
-              setValue={logo.field.onChange}
-              size="md"
-              supportedTypes={supportedLogoTypes}
-              value={logo.field.value ?? defaultLogo}
-            />
-          </DashboardCard.Row>
+    <form id="create-account-form" noValidate onSubmit={handleSubmit}>
+      <DashboardCardRoot>
+        <DashboardCardContent>
+          <Controller
+            control={form.control}
+            name="metadata.logo"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <FieldLabel>Account logo</FieldLabel>
+                  <IconPicker
+                    aria-label="Choose account logo"
+                    setValue={field.onChange}
+                    size="md"
+                    supportedTypes={supportedLogoTypes}
+                    value={field.value ?? defaultLogo}
+                  />
+                </Field>
+              </DashboardCardRow>
+            )}
+          />
 
-          <DashboardCard.Field
-            isInvalid={name.fieldState.invalid}
-            isRequired
-            name={name.field.name}
-            onChange={name.field.onChange}
-            value={name.field.value}
-          >
-            <DashboardCard.FieldLabel>
-              <Label>Account name</Label>
-              <FieldError>{name.fieldState.error?.message}</FieldError>
-            </DashboardCard.FieldLabel>
-            <Input
-              autoComplete="off"
-              fullWidth
-              onBlur={name.field.onBlur}
-              placeholder="Enter account name"
-              ref={name.field.ref}
+          <FieldGroup className="contents">
+            <Controller
+              control={form.control}
+              name="metadata.name"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="create-account-name">Account name</FieldLabel>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </div>
+                    <Input
+                      {...field}
+                      id="create-account-name"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                      fullWidth
+                      placeholder="Enter account name"
+                    />
+                  </Field>
+                </DashboardCardRow>
+              )}
             />
-          </DashboardCard.Field>
+          </FieldGroup>
 
-          <DashboardCard.Row>
+          <DashboardCardRow>
             <Typography className="text-sm!">Namespace</Typography>
             <Typography className="text-sm!">EVM</Typography>
-          </DashboardCard.Row>
+          </DashboardCardRow>
 
-          <DashboardCard.Row className="sm:items-start">
-            <DashboardCard.FieldLabel>
-              <Label id="account-implementation-label">Implementation</Label>
-              {implementation.fieldState.error?.message ? (
-                <Typography className="text-danger text-xs" role="alert">
-                  {implementation.fieldState.error.message}
-                </Typography>
-              ) : null}
-            </DashboardCard.FieldLabel>
-            <Select
-              aria-labelledby="account-implementation-label"
-              fullWidth
-              isInvalid={implementation.fieldState.invalid}
-              isRequired
-              name={implementation.field.name}
-              onSelectionChange={implementation.field.onChange}
-              selectedKey={implementation.field.value}
-              variant="secondary"
-            >
-              <Select.Trigger onBlur={implementation.field.onBlur} ref={implementation.field.ref}>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox items={implementationOptions}>
-                  {(item) => (
-                    <ListBox.Item id={item.id} textValue={item.name}>
-                      {item.name}
-                    </ListBox.Item>
-                  )}
-                </ListBox>
-              </Select.Popover>
-            </Select>
-          </DashboardCard.Row>
-        </DashboardCard.Content>
-      </DashboardCard>
+          <Controller
+            control={form.control}
+            name="implementation"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="sm:items-start">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <div className="grid min-w-0 gap-1">
+                    <FieldLabel id="account-implementation-label">Implementation</FieldLabel>
+                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                  </div>
+                  <Select
+                    aria-labelledby="account-implementation-label"
+                    fullWidth
+                    isInvalid={fieldState.invalid}
+                    isRequired
+                    name={field.name}
+                    onSelectionChange={field.onChange}
+                    selectedKey={field.value}
+                    variant="secondary"
+                  >
+                    <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox items={implementationOptions}>
+                        {(item) => (
+                          <ListBox.Item id={item.id} textValue={item.name}>
+                            {item.name}
+                          </ListBox.Item>
+                        )}
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
+                </Field>
+              </DashboardCardRow>
+            )}
+          />
+        </DashboardCardContent>
+      </DashboardCardRoot>
 
-      <Button className="mt-4" fullWidth isDisabled={createWallet.isPending} type="submit">
+      <Button
+        className="mt-4"
+        form="create-account-form"
+        fullWidth
+        isDisabled={createWallet.isPending}
+        type="submit"
+      >
         {createWallet.isPending ? "Creating…" : "Create account"}
       </Button>
-    </Form>
+    </form>
   );
 }

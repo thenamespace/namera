@@ -8,10 +8,10 @@ import {
   UpdateNotificationPreferenceRequest,
   type ListNotificationPreferencesResponse,
 } from "@namera-ai/protocol/dto";
-import { Form, toast } from "@namera-ai/ui";
+import { FieldGroup, toast } from "@namera-ai/ui";
 import { useForm } from "react-hook-form";
 
-import { DashboardCard } from "@/components/dashboard-card";
+import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
 import { HeadingGroup } from "@/components/heading-group";
 import { useUpdateNotificationPreference } from "@/hooks/notification";
 import { useAutoSave } from "@/hooks/use-auto-save";
@@ -114,38 +114,40 @@ export function NotificationPreferencesForm({
   let preferenceIndex = 0;
 
   return (
-    <Form
-      className="space-y-8"
+    <form
+      id="notification-preferences-form"
+      noValidate
       onSubmit={form.handleSubmit(async (payload) => {
         await save();
         return payload;
       })}
-      validationBehavior="aria"
     >
-      {notificationPreferenceSections.map((section) => (
-        <section key={section.heading}>
-          <HeadingGroup className="mb-4">
-            <HeadingGroup.Title>{section.heading}</HeadingGroup.Title>
-          </HeadingGroup>
-          <DashboardCard>
-            <DashboardCard.Content>
-              {section.preferences.map((preference) => {
-                const index = preferenceIndex++;
+      <FieldGroup className="gap-8">
+        {notificationPreferenceSections.map((section) => (
+          <section key={section.heading}>
+            <HeadingGroup className="mb-4">
+              <HeadingGroup.Title>{section.heading}</HeadingGroup.Title>
+            </HeadingGroup>
+            <DashboardCardRoot>
+              <DashboardCardContent>
+                {section.preferences.map((preference) => {
+                  const index = preferenceIndex++;
 
-                return (
-                  <NotificationPreferenceToggle
-                    control={form.control}
-                    description={preference.description}
-                    index={index}
-                    key={`${preference.defaultValues.category}:${preference.defaultValues.topic}`}
-                    label={preference.label}
-                  />
-                );
-              })}
-            </DashboardCard.Content>
-          </DashboardCard>
-        </section>
-      ))}
-    </Form>
+                  return (
+                    <NotificationPreferenceToggle
+                      control={form.control}
+                      description={preference.description}
+                      index={index}
+                      key={`${preference.defaultValues.category}:${preference.defaultValues.topic}`}
+                      label={preference.label}
+                    />
+                  );
+                })}
+              </DashboardCardContent>
+            </DashboardCardRoot>
+          </section>
+        ))}
+      </FieldGroup>
+    </form>
   );
 }

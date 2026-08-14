@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useEffect } from "react";
 
 import { Schema } from "effect";
@@ -5,10 +6,23 @@ import { Schema } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { UpdateOrganizationRequest, type GetOrganizationResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { FieldError, Form, IconPicker, IconPreview, Input, Label, Typography } from "@namera-ai/ui";
-import { useController, useForm } from "react-hook-form";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  IconPicker,
+  IconPreview,
+  Input,
+  Typography,
+} from "@namera-ai/ui";
+import { Controller, useForm } from "react-hook-form";
 
-import { DashboardCard } from "@/components/dashboard-card";
+import {
+  DashboardCardContent,
+  DashboardCardRoot,
+  DashboardCardRow,
+} from "@/components/dashboard-card";
 import { ReadOnlyInput } from "@/components/read-only-input";
 import { useUpdateOrganization } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
@@ -27,9 +41,6 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
     defaultValues: { metadata: organization.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateOrganizationRequest)),
   });
-  const logo = useController({ control: form.control, name: "metadata.logo" });
-  const name = useController({ control: form.control, name: "metadata.name" });
-
   const { resetBaseline } = useAutoSave({
     enabled: canUpdate,
     form,
@@ -46,58 +57,72 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
   }, [form, organization, resetBaseline]);
 
   return (
-    <Form
+    <form
+      id="workspace-settings-form"
+      noValidate
       onSubmit={form.handleSubmit((payload) =>
         canUpdate ? updateOrganization.mutateAsync({ payload }) : Promise.resolve(),
       )}
-      validationBehavior="aria"
     >
-      <DashboardCard>
-        <DashboardCard.Content>
-          <DashboardCard.Row className="grid-cols-[minmax(0,1fr)_auto]">
-            <Typography className="text-sm!">Logo</Typography>
-            {canUpdate ? (
-              <IconPicker
-                aria-label="Choose workspace logo"
-                setValue={logo.field.onChange}
-                size="md"
-                supportedTypes={supportedLogoTypes}
-                value={logo.field.value ?? defaultLogo}
-              />
-            ) : (
-              <IconPreview size="md" value={logo.field.value ?? defaultLogo} />
+      <DashboardCardRoot>
+        <DashboardCardContent>
+          <Controller
+            control={form.control}
+            name="metadata.logo"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <FieldLabel>Logo</FieldLabel>
+                  {canUpdate ? (
+                    <IconPicker
+                      aria-label="Choose workspace logo"
+                      setValue={field.onChange}
+                      size="md"
+                      supportedTypes={supportedLogoTypes}
+                      value={field.value ?? defaultLogo}
+                    />
+                  ) : (
+                    <IconPreview size="md" value={field.value ?? defaultLogo} />
+                  )}
+                </Field>
+              </DashboardCardRow>
             )}
-          </DashboardCard.Row>
+          />
 
           {canUpdate ? (
-            <DashboardCard.Field
-              isInvalid={name.fieldState.invalid}
-              isRequired
-              name={name.field.name}
-              onChange={name.field.onChange}
-              value={name.field.value}
-            >
-              <DashboardCard.FieldLabel>
-                <Label>Workspace name</Label>
-                <FieldError>{name.fieldState.error?.message}</FieldError>
-              </DashboardCard.FieldLabel>
-              <Input
-                autoComplete="organization"
-                fullWidth
-                onBlur={name.field.onBlur}
-                placeholder="Enter workspace name"
-                ref={name.field.ref}
-                variant="secondary"
+            <FieldGroup className="contents">
+              <Controller
+                control={form.control}
+                name="metadata.name"
+                render={({ field, fieldState }) => (
+                  <DashboardCardRow className="sm:items-start">
+                    <Field className="contents" data-invalid={fieldState.invalid}>
+                      <div className="grid min-w-0 gap-1">
+                        <FieldLabel htmlFor="workspace-name">Workspace name</FieldLabel>
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </div>
+                      <Input
+                        {...field}
+                        id="workspace-name"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="organization"
+                        fullWidth
+                        placeholder="Enter workspace name"
+                        variant="secondary"
+                      />
+                    </Field>
+                  </DashboardCardRow>
+                )}
               />
-            </DashboardCard.Field>
+            </FieldGroup>
           ) : (
-            <DashboardCard.Row>
+            <DashboardCardRow>
               <Typography className="text-sm!">Workspace name</Typography>
-              <ReadOnlyInput>{name.field.value}</ReadOnlyInput>
-            </DashboardCard.Row>
+              <ReadOnlyInput>{organization.metadata.name}</ReadOnlyInput>
+            </DashboardCardRow>
           )}
-        </DashboardCard.Content>
-      </DashboardCard>
-    </Form>
+        </DashboardCardContent>
+      </DashboardCardRoot>
+    </form>
   );
 }

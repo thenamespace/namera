@@ -122,10 +122,10 @@ The remaining main and settings sidebar destinations render an empty
 `DashboardPage` placeholder until their feature UI is implemented.
 
 Shared page and section composition should use `DashboardPage`,
-`HeadingGroup.Title`/`Description`, and `DashboardCard` rows/fields so route
-layouts retain the same hierarchy without duplicating structural styles.
-Use `DashboardCard.FieldLabel` to group a field label with its validation error;
-the control remains in the right column and both columns stay top-aligned.
+`HeadingGroup.Title`/`Description`, and the individual `DashboardCardRoot`,
+`DashboardCardContent`, and `DashboardCardRow` components so route layouts retain
+the same hierarchy without duplicating structural styles. Form semantics belong
+to the shared `Field` components rather than the dashboard card.
 
 ## Adding frontend behavior
 
@@ -165,8 +165,15 @@ that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.
 - Use React Hook Form with the existing protocol DTO schema when the form maps
   to an API operation. Create an adjacent Effect schema only for presentation-only
   forms without a shared contract. Adapt Effect v4 schemas through
-  `Schema.toStandardSchemaV1` and `@hookform/resolvers/standard-schema`, and
-  connect controlled UIKit fields with `useController`.
+  `Schema.toStandardSchemaV1` and `@hookform/resolvers/standard-schema`.
+- Use a native `<form id="..." noValidate>` with `form.handleSubmit`. Group its
+  controls with `FieldGroup`, and render every registered control through React
+  Hook Form's `Controller` using individual `Field`, `FieldLabel`, `Input` or
+  another UIKit control, and conditional `FieldError` components. Pass
+  `data-invalid` to `Field` and `aria-invalid` to native inputs. Spread `field`
+  onto native inputs; map `selectedKey`/`onSelectionChange`,
+  `isSelected`/`onChange`, or `value`/`setValue` explicitly for non-native UIKit
+  controls. Give submit buttons `type="submit"` and the matching `form` ID.
 - Keep route files small: declare the TanStack route and render a component from
   the nearest `-components/` directory. Do not create one-file component folders.
 - Use Motion for restrained state transitions and microinteractions. Respect

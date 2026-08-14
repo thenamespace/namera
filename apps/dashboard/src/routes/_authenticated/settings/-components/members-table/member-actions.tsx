@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useState, type Key } from "react";
 
 import { Schema } from "effect";
@@ -11,8 +12,10 @@ import {
 import {
   Button,
   Dropdown,
+  Field,
   FieldError,
-  Form,
+  FieldGroup,
+  FieldLabel,
   Label,
   ListBox,
   Modal,
@@ -21,7 +24,7 @@ import {
   toast,
 } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
-import { useController, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { hasPermissions } from "@/components/permission";
@@ -52,7 +55,6 @@ export function MemberActions({ member, assignableRoles }: MemberActionsProps) {
       Schema.toStandardSchemaV1(UpdateOrganizationMemberRoleRequest),
     ),
   });
-  const role = useController({ control: form.control, name: "organizationRoleId" });
   const name = member.user.metadata.name ?? member.user.email;
   const canUpdate = hasPermissions(
     currentUser.data?.role.permissions ?? [],
@@ -131,45 +133,61 @@ export function MemberActions({ member, assignableRoles }: MemberActionsProps) {
         <Modal.Backdrop>
           <Modal.Container size="sm">
             <Modal.Dialog>
-              <Form onSubmit={handleRoleUpdate} validationBehavior="aria">
+              <form id="update-member-role-form" noValidate onSubmit={handleRoleUpdate}>
                 <Modal.CloseTrigger />
                 <Modal.Header>
                   <Modal.Heading>Update role</Modal.Heading>
                 </Modal.Header>
                 <Modal.Body className="grid gap-5">
                   <Typography color="muted">Choose a new role for {name}.</Typography>
-                  <Select
-                    fullWidth
-                    isInvalid={role.fieldState.invalid}
-                    isRequired
-                    name={role.field.name}
-                    onSelectionChange={role.field.onChange}
-                    selectedKey={role.field.value}
-                    variant="secondary"
-                  >
-                    <Label>Role</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox items={assignableRoles}>
-                        {(item) => (
-                          <ListBox.Item id={item.id} textValue={item.metadata.name}>
-                            {item.metadata.name}
-                          </ListBox.Item>
-                        )}
-                      </ListBox>
-                    </Select.Popover>
-                    <FieldError>{role.fieldState.error?.message}</FieldError>
-                  </Select>
+                  <FieldGroup>
+                    <Controller
+                      control={form.control}
+                      name="organizationRoleId"
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel id="update-member-role-label">Role</FieldLabel>
+                          <Select
+                            aria-labelledby="update-member-role-label"
+                            fullWidth
+                            isInvalid={fieldState.invalid}
+                            isRequired
+                            name={field.name}
+                            onSelectionChange={field.onChange}
+                            selectedKey={field.value}
+                            variant="secondary"
+                          >
+                            <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                              <Select.Value />
+                              <Select.Indicator />
+                            </Select.Trigger>
+                            <Select.Popover>
+                              <ListBox items={assignableRoles}>
+                                {(item) => (
+                                  <ListBox.Item id={item.id} textValue={item.metadata.name}>
+                                    {item.metadata.name}
+                                  </ListBox.Item>
+                                )}
+                              </ListBox>
+                            </Select.Popover>
+                          </Select>
+                          {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                        </Field>
+                      )}
+                    />
+                  </FieldGroup>
                 </Modal.Body>
                 <Modal.Footer>
-                  <Button fullWidth isDisabled={updateRole.isPending} type="submit">
+                  <Button
+                    form="update-member-role-form"
+                    fullWidth
+                    isDisabled={updateRole.isPending}
+                    type="submit"
+                  >
                     {updateRole.isPending ? "Updating…" : "Update role"}
                   </Button>
                 </Modal.Footer>
-              </Form>
+              </form>
             </Modal.Dialog>
           </Modal.Container>
         </Modal.Backdrop>

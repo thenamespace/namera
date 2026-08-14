@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useEffect, useState } from "react";
 
 import { Schema } from "effect";
@@ -7,19 +8,19 @@ import { InviteMemberRequest } from "@namera-ai/protocol/dto";
 import type { GetOrganizationRoleResponse } from "@namera-ai/protocol/dto";
 import {
   Button,
+  Field,
   FieldError,
-  Form,
+  FieldGroup,
+  FieldLabel,
   Input,
-  Label,
   ListBox,
   Modal,
   Select,
-  TextField,
   Typography,
   toast,
 } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
-import { useController, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { useAssignableOrganizationRoles, useInviteMember } from "@/hooks/auth";
@@ -44,14 +45,11 @@ export function InviteMemberDialog({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(InviteMemberRequest)),
   });
-  const email = useController({ control: form.control, name: "email" });
-  const role = useController({ control: form.control, name: "organizationRoleId" });
-
   useEffect(() => {
-    if (!role.field.value && inviteRoles[0]) {
+    if (!form.getValues("organizationRoleId") && inviteRoles[0]) {
       form.setValue("organizationRoleId", inviteRoles[0].id);
     }
-  }, [form, inviteRoles, role.field.value]);
+  }, [form, inviteRoles]);
 
   const handleOpenChange = useEventCallback((open: boolean) => {
     setIsOpen(open);
@@ -77,73 +75,90 @@ export function InviteMemberDialog({
       <Modal.Backdrop>
         <Modal.Container size="md">
           <Modal.Dialog>
-            <Form onSubmit={handleSubmit} validationBehavior="aria">
+            <form id="invite-member-form" noValidate onSubmit={handleSubmit}>
               <Modal.CloseTrigger />
               <Modal.Header>
                 <Modal.Heading>Invite member</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="grid gap-5">
                 <Typography color="muted">Send an invitation to join this organization.</Typography>
-                <TextField
-                  fullWidth
-                  isInvalid={email.fieldState.invalid}
-                  isRequired
-                  name={email.field.name}
-                  onChange={email.field.onChange}
-                  type="email"
-                  variant="secondary"
-                  value={email.field.value}
-                >
-                  <Label>Email address</Label>
-                  <Input
-                    autoComplete="email"
-                    inputMode="email"
-                    onBlur={email.field.onBlur}
-                    placeholder="name@company.com"
-                    ref={email.field.ref}
-                    spellCheck={false}
+                <FieldGroup>
+                  <Controller
+                    control={form.control}
+                    name="email"
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="invite-member-email">Email address</FieldLabel>
+                        <Input
+                          {...field}
+                          id="invite-member-email"
+                          aria-invalid={fieldState.invalid}
+                          autoComplete="email"
+                          fullWidth
+                          inputMode="email"
+                          placeholder="name@company.com"
+                          spellCheck={false}
+                          type="email"
+                          variant="secondary"
+                        />
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
                   />
-                  <FieldError>{email.fieldState.error?.message}</FieldError>
-                </TextField>
 
-                <Select
-                  fullWidth
-                  isDisabled={roles.isLoading || inviteMember.isPending}
-                  isInvalid={role.fieldState.invalid}
-                  isRequired
-                  variant="secondary"
-                  name={role.field.name}
-                  selectedKey={role.field.value}
-                  onSelectionChange={role.field.onChange}
-                >
-                  <Label>Role</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox items={inviteRoles}>
-                      {(item) => (
-                        <ListBox.Item id={item.id} textValue={item.metadata.name}>
-                          <div className="grid gap-0.5">
-                            <Typography>{item.metadata.name}</Typography>
-                            <Typography className="text-xs" color="muted">
-                              {item.metadata.description}
-                            </Typography>
-                          </div>
-                        </ListBox.Item>
-                      )}
-                    </ListBox>
-                  </Select.Popover>
-                  <FieldError>{role.fieldState.error?.message}</FieldError>
-                </Select>
+                  <Controller
+                    control={form.control}
+                    name="organizationRoleId"
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel id="invite-member-role-label">Role</FieldLabel>
+                        <Select
+                          aria-labelledby="invite-member-role-label"
+                          fullWidth
+                          isDisabled={roles.isLoading || inviteMember.isPending}
+                          isInvalid={fieldState.invalid}
+                          isRequired
+                          name={field.name}
+                          onSelectionChange={field.onChange}
+                          selectedKey={field.value}
+                          variant="secondary"
+                        >
+                          <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                            <Select.Value />
+                            <Select.Indicator />
+                          </Select.Trigger>
+                          <Select.Popover>
+                            <ListBox items={inviteRoles}>
+                              {(item) => (
+                                <ListBox.Item id={item.id} textValue={item.metadata.name}>
+                                  <div className="grid gap-0.5">
+                                    <Typography>{item.metadata.name}</Typography>
+                                    <Typography className="text-xs" color="muted">
+                                      {item.metadata.description}
+                                    </Typography>
+                                  </div>
+                                </ListBox.Item>
+                              )}
+                            </ListBox>
+                          </Select.Popover>
+                        </Select>
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
               </Modal.Body>
               <Modal.Footer>
-                <Button fullWidth isDisabled={inviteMember.isPending} type="submit">
+                <Button
+                  form="invite-member-form"
+                  fullWidth
+                  isDisabled={inviteMember.isPending}
+                  type="submit"
+                >
                   {inviteMember.isPending ? "Sending…" : "Send invite"}
                 </Button>
               </Modal.Footer>
-            </Form>
+            </form>
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>

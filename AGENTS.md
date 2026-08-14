@@ -188,9 +188,14 @@ follow its linked local documentation when relevant. Search
 - Use React Hook Form for frontend form state and submission. Define validation
   with an Effect `Schema` beside the form, convert it with
   `Schema.toStandardSchemaV1`, and pass it to `standardSchemaResolver` from
-  `@hookform/resolvers/standard-schema`. Use `useController` for controlled
-  UIKit fields and render resolver messages through UIKit field errors. Do not
-  duplicate the schema with manual parsing or validation.
+  `@hookform/resolvers/standard-schema`. Render fields with React Hook Form's
+  `Controller` and the individual `Field`, `FieldGroup`, `FieldLabel`,
+  `FieldError`, and control components from `@namera-ai/ui`. Use a native
+  `<form id="..." noValidate>` with `form.handleSubmit`, and associate submit
+  buttons through their `form` attribute. Spread `field` onto native inputs;
+  adapt selection and controlled-value props explicitly for UIKit controls such
+  as `Select`, `Switch`, and `IconPicker`. Do not duplicate the schema with
+  manual parsing or validation.
 - Keep route-only components beside their route or route group in a
   `-components/` directory and reserve `apps/dashboard/src/components` for UI
   shared by unrelated routes. Follow the structure already used in that area.
