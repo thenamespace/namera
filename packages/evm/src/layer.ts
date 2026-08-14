@@ -86,9 +86,16 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
           } as CreateAccountResult<Props>);
         },
       ),
-      getRpcUrl: Effect.fn("Evm.test.getRpcUrl")((chainId, type) =>
-        Effect.succeed(`https://example.test/${chainId}/${type}`),
-      ),
+      getRpcUrl: Effect.fn("Evm.test.getRpcUrl")(function* (chainId, type) {
+        if (getChainDataByChainId(chainId) === undefined) {
+          return yield* new UnsupportedChainError({
+            namespace: "eip155",
+            chainId: `eip155:${chainId}`,
+          });
+        }
+
+        return `https://example.test/${chainId}/${type}`;
+      }),
     }),
   );
 }

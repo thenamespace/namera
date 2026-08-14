@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-import { NodeHttpServer } from "@effect/platform-node";
+import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
 
@@ -8,10 +8,10 @@ import { DatabaseMigration } from "@namera-ai/database";
 import { TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
-import { EmailWorkerLive } from "#/layers/services";
+import { EmailWorkerLive, ServicesLive } from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
-import { ApiReferenceRoutes, ApiRoutes, RootRoutes } from "#/routes/index";
+import { ApiReferenceRoutes, ApiRoutes, RootRoutes, RpcRoutes } from "#/routes/index";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
@@ -30,6 +30,11 @@ const Routes = Layer.mergeAll(
   ApiRoutes,
   CorsMiddleware,
   RootRoutes,
+  RpcRoutes.pipe(
+    HttpRouter.provideRequest(
+      Layer.mergeAll(ServicesLive, NodeHttpClient.layerUndici, RateLimiterLive),
+    ),
+  ),
   EmailWorkerLive,
 );
 

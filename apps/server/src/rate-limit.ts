@@ -40,6 +40,13 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  rpc: {
+    byIp: {
+      limit: 600,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+  },
 } as const;
 
 export const RateLimiterLive = RateLimiter.layer.pipe(Layer.provide(RateLimiter.layerStoreMemory));

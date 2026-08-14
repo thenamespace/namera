@@ -11,7 +11,8 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
-  API reference, authenticated billing and wallet routes, and notification inbox.
+  API reference, authenticated billing and wallet routes, notification inbox,
+  and the EIP-155 JSON-RPC proxy.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
@@ -51,6 +52,12 @@ Never include the identifier in logs or metric attributes.
 Invitation creation currently has separate organization and normalized-recipient
 limits in addition to the global limit. Magic-link request and verification use
 their own IP/email policies.
+
+`POST /rpc/eip155/:chainId` is limited separately to 600 requests per minute per
+client IP. RPC traffic bypasses the lower global API limit and is validated
+against the supported EVM chain registry before the body is forwarded to
+Alchemy. The proxy preserves the upstream status and response body, applies a
+30-second timeout, and never exposes the configured Alchemy API key.
 
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally
