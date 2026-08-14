@@ -17,6 +17,7 @@
     "@effect/atom-react": "catalog:",
     "@fontsource-variable/inter": "catalog:",
     "@hookform/resolvers": "catalog:",
+    "@internationalized/date": "3.12.3",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/evm": "workspace:*",
     "@namera-ai/protocol": "workspace:*",

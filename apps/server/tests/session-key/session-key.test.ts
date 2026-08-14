@@ -65,6 +65,18 @@ layer(TestServerLayer)("session-key routes", (it) => {
         namespace: "eip155",
         status: "active",
         metadata: metadata("Agent window"),
+        wallet: {
+          id: wallet.id,
+          metadata: metadata("Treasury"),
+        },
+        creator: {
+          organizationMember: {
+            id: owner.actor.member.organizationMember.id,
+          },
+          user: {
+            id: owner.actor.user.id,
+          },
+        },
         policies: [
           { type: "evm.time-window", version: 1, startsAt: null },
           { type: "evm.time-window", version: 1 },

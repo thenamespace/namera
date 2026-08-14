@@ -1,7 +1,7 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
-import { Repository, TransactionService } from "@namera-ai/database";
+import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
 import {
   PolicyId,
   SessionKeyCreationError,
@@ -13,7 +13,13 @@ import {
   type WalletId,
 } from "@namera-ai/protocol";
 import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
-import type { EvmSessionKey, EvmSessionKeyPolicies } from "@namera-ai/protocol/model";
+import type {
+  EvmSessionKey,
+  EvmSessionKeyPolicies,
+  OrganizationMember,
+  OrganizationRole,
+  User,
+} from "@namera-ai/protocol/model";
 import { sessionKeyCreationDuration, sessionKeyCreationResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
 
@@ -23,23 +29,33 @@ import { notificationPolicy } from "#/notification/data";
 
 import { hashSessionKeyPolicies } from "./hash.js";
 
+export interface SessionKeyView {
+  readonly sessionKey: EvmSessionKey;
+  readonly wallet: WalletView;
+  readonly creator: {
+    readonly organizationMember: OrganizationMember;
+    readonly organizationRole: OrganizationRole;
+    readonly user: User;
+  };
+}
+
 export interface SessionKeyApplication {
   readonly create: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly request: CreateSessionKeyRequest;
-  }) => Effect.Effect<EvmSessionKey, WalletNotFoundError | SessionKeyCreationError>;
+  }) => Effect.Effect<SessionKeyView, WalletNotFoundError | SessionKeyCreationError>;
   readonly get: (
     organizationId: OrganizationId,
     sessionKeyId: SessionKeyId,
-  ) => Effect.Effect<EvmSessionKey, SessionKeyNotFoundError>;
+  ) => Effect.Effect<SessionKeyView, SessionKeyNotFoundError>;
   readonly listForWallet: (
     organizationId: OrganizationId,
     walletId: WalletId,
-  ) => Effect.Effect<ReadonlyArray<EvmSessionKey>, WalletNotFoundError>;
+  ) => Effect.Effect<ReadonlyArray<SessionKeyView>, WalletNotFoundError>;
   readonly listForOrganization: (
     organizationId: OrganizationId,
-  ) => Effect.Effect<ReadonlyArray<EvmSessionKey>>;
+  ) => Effect.Effect<ReadonlyArray<SessionKeyView>>;
 }
 
 export const makeSessionKeyApplication = Effect.gen(function* () {
@@ -48,6 +64,35 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
+
+  const loadViews = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    sessionKeys: ReadonlyArray<EvmSessionKey>,
+  ) {
+    if (sessionKeys.length === 0) return [];
+
+    const [wallets, creators] = yield* Effect.all([
+      repository.core.wallet.findForOrganization(organizationId),
+      repository.auth.member.findByActorIds(organizationId, [
+        ...new Set(sessionKeys.map((sessionKey) => sessionKey.createdByActorId)),
+      ]),
+    ]);
+    const walletById = new Map(wallets.map((wallet) => [wallet.wallet.id, wallet]));
+    const creatorByActorId = new Map(
+      creators.map((creator) => [creator.organizationMember.actorId, creator]),
+    );
+
+    const views: Array<SessionKeyView> = [];
+    for (const sessionKey of sessionKeys) {
+      const wallet = walletById.get(sessionKey.walletId);
+      const creator = creatorByActorId.get(sessionKey.createdByActorId);
+      if (wallet === undefined || creator === undefined) {
+        return yield* Effect.die("Session-key response relation is missing");
+      }
+      views.push({ sessionKey, wallet, creator });
+    }
+    return views;
+  });
 
   const create = Effect.fn("application.sessionKey.create")(
     function* (input: {
@@ -191,7 +236,9 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
       yield* Effect.logInfo("session_key.created").pipe(
         Effect.annotateLogs({ namespace: sessionKey.namespace, policy_count: policies.length }),
       );
-      return sessionKey;
+      const [view] = yield* loadViews(input.organizationId, [sessionKey]);
+      if (view === undefined) return yield* Effect.die("Created session key could not be loaded");
+      return view;
     },
     Effect.trackDuration(sessionKeyCreationDuration),
     Effect.catchTag("DatabaseError", Effect.die),
@@ -203,7 +250,9 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
       if (sessionKey === undefined) {
         return yield* new SessionKeyNotFoundError({ code: "SESSION_KEY_NOT_FOUND" });
       }
-      return sessionKey;
+      const [view] = yield* loadViews(organizationId, [sessionKey]);
+      if (view === undefined) return yield* Effect.die("Session key view could not be loaded");
+      return view;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -214,14 +263,16 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
       if (wallet === undefined) {
         return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
       }
-      return yield* repository.core.sessionKey.findForWallet(organizationId, walletId);
+      const sessionKeys = yield* repository.core.sessionKey.findForWallet(organizationId, walletId);
+      return yield* loadViews(organizationId, sessionKeys);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const listForOrganization = Effect.fn("application.sessionKey.listForOrganization")(
     function* (organizationId: OrganizationId) {
-      return yield* repository.core.sessionKey.findForOrganization(organizationId);
+      const sessionKeys = yield* repository.core.sessionKey.findForOrganization(organizationId);
+      return yield* loadViews(organizationId, sessionKeys);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

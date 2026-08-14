@@ -3,7 +3,7 @@ import type { ComponentProps, PropsWithChildren } from "react";
 import { cn, Sidebar } from "@namera-ai/ui";
 
 const DashboardPageRoot = ({ children }: PropsWithChildren) => {
-  return <Sidebar.Main className="bg-[#121213]">{children}</Sidebar.Main>;
+  return <Sidebar.Main className="bg-[#121213] rounded-lg">{children}</Sidebar.Main>;
 };
 
 const DashboardPageHeader = ({ children, className, ...props }: ComponentProps<"div">) => {

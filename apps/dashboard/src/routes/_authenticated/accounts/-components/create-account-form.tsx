@@ -72,27 +72,27 @@ export function CreateAccountForm() {
     <form id="create-account-form" noValidate onSubmit={handleSubmit}>
       <DashboardCardRoot>
         <DashboardCardContent>
-          <Controller
-            control={form.control}
-            name="metadata.logo"
-            render={({ field, fieldState }) => (
-              <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
-                <Field className="contents" data-invalid={fieldState.invalid}>
-                  <FieldLabel>Account logo</FieldLabel>
-                  <IconPicker
-                    aria-label="Choose account logo"
-                    setValue={field.onChange}
-                    size="md"
-                    supportedTypes={supportedLogoTypes}
-                    triggerClassName="justify-self-end"
-                    value={field.value ?? defaultLogo}
-                  />
-                </Field>
-              </DashboardCardRow>
-            )}
-          />
+          <FieldGroup className="divide-separator contents divide-y">
+            <Controller
+              control={form.control}
+              name="metadata.logo"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="grid-cols-[minmax(0,1fr)_auto]">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <FieldLabel>Account logo</FieldLabel>
+                    <IconPicker
+                      aria-label="Choose account logo"
+                      setValue={field.onChange}
+                      size="md"
+                      supportedTypes={supportedLogoTypes}
+                      triggerClassName="justify-self-end"
+                      value={field.value ?? defaultLogo}
+                    />
+                  </Field>
+                </DashboardCardRow>
+              )}
+            />
 
-          <FieldGroup className="contents">
             <Controller
               control={form.control}
               name="metadata.name"
@@ -116,74 +116,74 @@ export function CreateAccountForm() {
                 </DashboardCardRow>
               )}
             />
+
+            <DashboardCardRow>
+              <Typography className="text-sm!">Namespace</Typography>
+              <div
+                className={cn(
+                  inputVariants({ variant: "secondary" }),
+                  "flex flex-row items-center gap-2",
+                )}
+              >
+                <ChainIcon namespace="eip155" chain="ethereum" />
+                EVM
+              </div>
+            </DashboardCardRow>
+
+            <Controller
+              control={form.control}
+              name="implementation"
+              render={({ field, fieldState }) => {
+                const selectedImplementation =
+                  implementationOptions.find((option) => option.id === field.value) ??
+                  implementationOptions[0];
+                const SelectedImplementationIcon = selectedImplementation.icon;
+
+                return (
+                  <DashboardCardRow className="sm:items-start">
+                    <Field className="contents" data-invalid={fieldState.invalid}>
+                      <div className="grid min-w-0 gap-1">
+                        <FieldLabel id="account-implementation-label">Implementation</FieldLabel>
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </div>
+                      <Select
+                        aria-labelledby="account-implementation-label"
+                        fullWidth
+                        isInvalid={fieldState.invalid}
+                        isRequired
+                        name={field.name}
+                        onSelectionChange={field.onChange}
+                        selectedKey={field.value}
+                        variant="secondary"
+                      >
+                        <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
+                          <Select.Value>
+                            <span className="flex min-w-0 items-center gap-2">
+                              <SelectedImplementationIcon className="size-5 shrink-0" />
+                              <span className="truncate">{selectedImplementation.name}</span>
+                            </span>
+                          </Select.Value>
+                          <Select.Indicator />
+                        </Select.Trigger>
+                        <Select.Popover>
+                          <ListBox items={implementationOptions}>
+                            {(item) => (
+                              <ListBox.Item id={item.id} textValue={item.name}>
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <item.icon className="size-5 shrink-0" />
+                                  <span className="truncate">{item.name}</span>
+                                </span>
+                              </ListBox.Item>
+                            )}
+                          </ListBox>
+                        </Select.Popover>
+                      </Select>
+                    </Field>
+                  </DashboardCardRow>
+                );
+              }}
+            />
           </FieldGroup>
-
-          <DashboardCardRow>
-            <Typography className="text-sm!">Namespace</Typography>
-            <div
-              className={cn(
-                inputVariants({ variant: "secondary" }),
-                "flex flex-row items-center gap-2",
-              )}
-            >
-              <ChainIcon namespace="eip155" chain="ethereum" />
-              EVM
-            </div>
-          </DashboardCardRow>
-
-          <Controller
-            control={form.control}
-            name="implementation"
-            render={({ field, fieldState }) => {
-              const selectedImplementation =
-                implementationOptions.find((option) => option.id === field.value) ??
-                implementationOptions[0];
-              const SelectedImplementationIcon = selectedImplementation.icon;
-
-              return (
-                <DashboardCardRow className="sm:items-start">
-                  <Field className="contents" data-invalid={fieldState.invalid}>
-                    <div className="grid min-w-0 gap-1">
-                      <FieldLabel id="account-implementation-label">Implementation</FieldLabel>
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </div>
-                    <Select
-                      aria-labelledby="account-implementation-label"
-                      fullWidth
-                      isInvalid={fieldState.invalid}
-                      isRequired
-                      name={field.name}
-                      onSelectionChange={field.onChange}
-                      selectedKey={field.value}
-                      variant="secondary"
-                    >
-                      <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                        <Select.Value>
-                          <span className="flex min-w-0 items-center gap-2">
-                            <SelectedImplementationIcon className="size-5 shrink-0" />
-                            <span className="truncate">{selectedImplementation.name}</span>
-                          </span>
-                        </Select.Value>
-                        <Select.Indicator />
-                      </Select.Trigger>
-                      <Select.Popover>
-                        <ListBox items={implementationOptions}>
-                          {(item) => (
-                            <ListBox.Item id={item.id} textValue={item.name}>
-                              <span className="flex min-w-0 items-center gap-2">
-                                <item.icon className="size-5 shrink-0" />
-                                <span className="truncate">{item.name}</span>
-                              </span>
-                            </ListBox.Item>
-                          )}
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
-                  </Field>
-                </DashboardCardRow>
-              );
-            }}
-          />
         </DashboardCardContent>
       </DashboardCardRoot>
 

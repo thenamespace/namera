@@ -16,13 +16,14 @@ import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedIdentityRouteImport } from './routes/_authenticated/identity'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
-import { Route as AuthenticatedSessionKeysRouteImport } from './routes/_authenticated/session-keys'
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
 import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenticated/accounts/new'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
+import { Route as AuthenticatedSessionKeysIndexRouteImport } from './routes/_authenticated/session-keys/index'
+import { Route as AuthenticatedSessionKeysNewRouteImport } from './routes/_authenticated/session-keys/new'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
@@ -65,12 +66,6 @@ const AuthenticatedMcpRoute = AuthenticatedMcpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSessionKeysRoute =
-  AuthenticatedSessionKeysRouteImport.update({
-    id: '/session-keys',
-    path: '/session-keys',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -102,6 +97,18 @@ const AuthenticatedInvitationsInvitationIdRoute =
   AuthenticatedInvitationsInvitationIdRouteImport.update({
     id: '/invitations/$invitationId',
     path: '/invitations/$invitationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSessionKeysIndexRoute =
+  AuthenticatedSessionKeysIndexRouteImport.update({
+    id: '/session-keys/',
+    path: '/session-keys/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSessionKeysNewRoute =
+  AuthenticatedSessionKeysNewRouteImport.update({
+    id: '/session-keys/new',
+    path: '/session-keys/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsNotificationsRoute =
@@ -154,17 +161,18 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/session-keys': typeof AuthenticatedSessionKeysRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -174,18 +182,19 @@ export interface FileRoutesByTo {
   '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/session-keys': typeof AuthenticatedSessionKeysRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
+  '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -198,18 +207,19 @@ export interface FileRoutesById {
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/identity': typeof AuthenticatedIdentityRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
-  '/_authenticated/session-keys': typeof AuthenticatedSessionKeysRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/_authenticated/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/_authenticated/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/_authenticated/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/_authenticated/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -223,17 +233,18 @@ export interface FileRouteTypes {
     | '/assets'
     | '/identity'
     | '/mcp'
-    | '/session-keys'
     | '/templates'
     | '/auth/verify'
     | '/auth/'
     | '/accounts/new'
     | '/invitations/$invitationId'
+    | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
     | '/workspace/new'
     | '/accounts/'
+    | '/session-keys/'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
     | '/settings/workspace/'
@@ -243,18 +254,19 @@ export interface FileRouteTypes {
     | '/assets'
     | '/identity'
     | '/mcp'
-    | '/session-keys'
     | '/templates'
     | '/auth/verify'
     | '/'
     | '/auth'
     | '/accounts/new'
     | '/invitations/$invitationId'
+    | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
     | '/workspace/new'
     | '/accounts'
+    | '/session-keys'
     | '/settings/workspace/billings'
     | '/settings/workspace/members'
     | '/settings/workspace'
@@ -266,18 +278,19 @@ export interface FileRouteTypes {
     | '/_authenticated/assets'
     | '/_authenticated/identity'
     | '/_authenticated/mcp'
-    | '/_authenticated/session-keys'
     | '/_authenticated/templates'
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
     | '/_authenticated/accounts/new'
     | '/_authenticated/invitations/$invitationId'
+    | '/_authenticated/session-keys/new'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/security'
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
+    | '/_authenticated/session-keys/'
     | '/_authenticated/settings/workspace/billings'
     | '/_authenticated/settings/workspace/members'
     | '/_authenticated/settings/workspace/'
@@ -339,13 +352,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMcpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/session-keys': {
-      id: '/_authenticated/session-keys'
-      path: '/session-keys'
-      fullPath: '/session-keys'
-      preLoaderRoute: typeof AuthenticatedSessionKeysRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/templates': {
       id: '/_authenticated/templates'
       path: '/templates'
@@ -386,6 +392,20 @@ declare module '@tanstack/react-router' {
       path: '/invitations/$invitationId'
       fullPath: '/invitations/$invitationId'
       preLoaderRoute: typeof AuthenticatedInvitationsInvitationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/session-keys/': {
+      id: '/_authenticated/session-keys/'
+      path: '/session-keys'
+      fullPath: '/session-keys/'
+      preLoaderRoute: typeof AuthenticatedSessionKeysIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/session-keys/new': {
+      id: '/_authenticated/session-keys/new'
+      path: '/session-keys/new'
+      fullPath: '/session-keys/new'
+      preLoaderRoute: typeof AuthenticatedSessionKeysNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/notifications': {
@@ -445,16 +465,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedIdentityRoute: typeof AuthenticatedIdentityRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
-  AuthenticatedSessionKeysRoute: typeof AuthenticatedSessionKeysRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
+  AuthenticatedSessionKeysNewRoute: typeof AuthenticatedSessionKeysNewRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
   AuthenticatedWorkspaceNewRoute: typeof AuthenticatedWorkspaceNewRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
+  AuthenticatedSessionKeysIndexRoute: typeof AuthenticatedSessionKeysIndexRoute
   AuthenticatedSettingsWorkspaceBillingsRoute: typeof AuthenticatedSettingsWorkspaceBillingsRoute
   AuthenticatedSettingsWorkspaceMembersRoute: typeof AuthenticatedSettingsWorkspaceMembersRoute
   AuthenticatedSettingsWorkspaceIndexRoute: typeof AuthenticatedSettingsWorkspaceIndexRoute
@@ -465,18 +486,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedIdentityRoute: AuthenticatedIdentityRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
-  AuthenticatedSessionKeysRoute: AuthenticatedSessionKeysRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountsNewRoute: AuthenticatedAccountsNewRoute,
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
+  AuthenticatedSessionKeysNewRoute: AuthenticatedSessionKeysNewRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
   AuthenticatedWorkspaceNewRoute: AuthenticatedWorkspaceNewRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
+  AuthenticatedSessionKeysIndexRoute: AuthenticatedSessionKeysIndexRoute,
   AuthenticatedSettingsWorkspaceBillingsRoute:
     AuthenticatedSettingsWorkspaceBillingsRoute,
   AuthenticatedSettingsWorkspaceMembersRoute:

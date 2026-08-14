@@ -1,4 +1,4 @@
-import type { ApiKeyView } from "@namera-ai/application";
+import type { ApiKeyView, SessionKeyView } from "@namera-ai/application";
 import type { NotificationInboxItem, WalletView } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
@@ -10,6 +10,7 @@ import type {
   GetUserResponse,
   NotificationResponse,
   SessionKeyResponse,
+  SessionKeySummaryResponse,
   WalletResponse,
 } from "@namera-ai/protocol/dto";
 import type {
@@ -147,10 +148,10 @@ export const toApiKeyResponse = (input: ApiKeyView): ApiKeyResponse => ({
   revokedAt: input.apiKey.revokedAt,
   createdAt: input.apiKey.createdAt,
   updatedAt: input.apiKey.updatedAt,
-  sessionKeys: input.sessionKeys.map(toSessionKeyResponse),
+  sessionKeys: input.sessionKeys.map(toSessionKeySummaryResponse),
 });
 
-export const toSessionKeyResponse = (sessionKey: SessionKey): SessionKeyResponse => ({
+export const toSessionKeySummaryResponse = (sessionKey: SessionKey): SessionKeySummaryResponse => ({
   id: sessionKey.id,
   organizationId: sessionKey.organizationId,
   walletId: sessionKey.walletId,
@@ -161,6 +162,12 @@ export const toSessionKeyResponse = (sessionKey: SessionKey): SessionKeyResponse
   status: sessionKey.status,
   revokedAt: sessionKey.revokedAt,
   createdAt: sessionKey.createdAt,
+});
+
+export const toSessionKeyResponse = (input: SessionKeyView): SessionKeyResponse => ({
+  ...toSessionKeySummaryResponse(input.sessionKey),
+  wallet: toWalletResponse(input.wallet),
+  creator: toMemberResponse(input.creator),
 });
 
 export const toWalletResponse = (input: WalletView): WalletResponse => {

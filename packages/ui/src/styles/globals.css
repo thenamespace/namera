@@ -79,11 +79,11 @@
   }
 
   .modal__dialog {
-    @apply rounded-lg;
+    @apply rounded-xl;
   }
 
   .select__popover {
-    @apply rounded-lg;
+    @apply rounded-lg border-1 border-default;
   }
 
   .tooltip {

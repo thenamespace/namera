@@ -4,6 +4,9 @@ import { OrganizationId, SessionKeyId, WalletId } from "#/common/index";
 import { EvmSessionKeyPolicies, SessionKeyMetadata, SessionKeyStatus } from "#/model/index";
 import { CreateEvmTimeWindowPolicy } from "#/policy/index";
 
+import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
+import { WalletResponse } from "../wallet/index.js";
+
 export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
@@ -20,7 +23,7 @@ export const CreateSessionKeyRequest = Schema.Union([CreateEvmSessionKeyRequest]
   mode: "oneOf",
 }).annotate({ identifier: "CreateSessionKeyRequest" });
 
-export const EvmSessionKeyResponse = Schema.Struct({
+const EvmSessionKeyResponseFields = {
   id: SessionKeyId,
   organizationId: OrganizationId,
   walletId: WalletId,
@@ -31,9 +34,24 @@ export const EvmSessionKeyResponse = Schema.Struct({
   status: SessionKeyStatus,
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   createdAt: Schema.DateTimeUtcFromDate,
+};
+
+export const EvmSessionKeySummaryResponse = Schema.Struct(EvmSessionKeyResponseFields).annotate({
+  identifier: "EvmSessionKeySummaryResponse",
+  description: "An EVM session key without expanded related resources",
+});
+
+export const SessionKeySummaryResponse = Schema.Union([EvmSessionKeySummaryResponse], {
+  mode: "oneOf",
+}).annotate({ identifier: "SessionKeySummaryResponse" });
+
+export const EvmSessionKeyResponse = Schema.Struct({
+  ...EvmSessionKeyResponseFields,
+  wallet: WalletResponse,
+  creator: GetOrganizationMemberResponse,
 }).annotate({
   identifier: "EvmSessionKeyResponse",
-  description: "An EVM session key and its immutable policies",
+  description: "An EVM session key with its wallet and creating organization member",
 });
 
 export const SessionKeyResponse = Schema.Union([EvmSessionKeyResponse], {
@@ -66,6 +84,8 @@ export const ListSessionKeysForOrganizationResponse = Schema.Array(SessionKeyRes
 
 export type CreateEvmSessionKeyRequest = typeof CreateEvmSessionKeyRequest.Type;
 export type CreateSessionKeyRequest = typeof CreateSessionKeyRequest.Type;
+export type EvmSessionKeySummaryResponse = typeof EvmSessionKeySummaryResponse.Type;
+export type SessionKeySummaryResponse = typeof SessionKeySummaryResponse.Type;
 export type EvmSessionKeyResponse = typeof EvmSessionKeyResponse.Type;
 export type SessionKeyResponse = typeof SessionKeyResponse.Type;
 export type CreateSessionKeyResponse = typeof CreateSessionKeyResponse.Type;

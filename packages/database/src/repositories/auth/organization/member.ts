@@ -3,6 +3,7 @@ import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError } from "@namera-ai/protocol";
 import {
+  type ActorId,
   type OrganizationId,
   type OrganizationMemberId,
   type OrganizationRoleId,
@@ -16,7 +17,7 @@ import {
   OrganizationMemberUpdate,
   User,
 } from "@namera-ai/protocol/model";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -25,11 +26,23 @@ import {
   organizationMember,
   organizationRole as organizationRoleTable,
   systemRole as systemRoleTable,
+  user as userTable,
 } from "#/schema/index";
 
 export interface OrganizationMemberRepositoryService {
   insert: (data: OrganizationMemberInsert) => Effect.Effect<OrganizationMember, DatabaseError>;
   findOrganizationMembersForOrg: (orgId: OrganizationId) => Effect.Effect<
+    ReadonlyArray<{
+      organizationMember: OrganizationMember;
+      organizationRole: OrganizationRole;
+      user: User;
+    }>,
+    DatabaseError
+  >;
+  findByActorIds: (
+    organizationId: OrganizationId,
+    actorIds: ReadonlyArray<ActorId>,
+  ) => Effect.Effect<
     ReadonlyArray<{
       organizationMember: OrganizationMember;
       organizationRole: OrganizationRole;
@@ -136,6 +149,45 @@ export class OrganizationMemberRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        findByActorIds: Effect.fn("database.findOrganizationMembersByActorIds")(function* (
+          organizationId,
+          actorIds,
+        ) {
+          if (actorIds.length === 0) return [];
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({
+              organizationMember,
+              organizationRole: organizationRoleTable,
+              systemRole: systemRoleTable,
+              user: userTable,
+            })
+            .from(organizationMember)
+            .innerJoin(userTable, eq(organizationMember.userId, userTable.id))
+            .innerJoin(
+              organizationRoleTable,
+              and(
+                eq(organizationMember.organizationRoleId, organizationRoleTable.id),
+                eq(organizationMember.organizationId, organizationRoleTable.organizationId),
+              ),
+            )
+            .leftJoin(systemRoleTable, eq(organizationRoleTable.systemRoleId, systemRoleTable.id))
+            .where(
+              and(
+                eq(organizationMember.organizationId, organizationId),
+                inArray(organizationMember.actorId, actorIds),
+              ),
+            );
+
+          return rows.map((row) => ({
+            organizationMember: Schema.decodeSync(OrganizationMember)(row.organizationMember),
+            organizationRole: decodeJoinedOrganizationRole({
+              ...row.organizationRole,
+              systemRole: row.systemRole,
+            }),
+            user: Schema.decodeSync(User)(row.user),
+          }));
+        }, mapRepositoryError),
         findActiveById: Effect.fn("database.findActiveOrganizationMemberById")(function* (
           id,
           organizationId,

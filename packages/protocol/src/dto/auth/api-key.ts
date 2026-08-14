@@ -3,7 +3,7 @@ import { Schema } from "effect";
 import { ActorId, ApiKeyId, OrganizationId, SessionKeyId } from "#/common/index";
 import { ApiKeyMetadata, TimestampFields } from "#/model/index";
 
-import { SessionKeyResponse } from "../session-key/index.js";
+import { SessionKeySummaryResponse } from "../session-key/index.js";
 
 export const ApiKeyResponse = Schema.Struct({
   id: ApiKeyId,
@@ -14,7 +14,7 @@ export const ApiKeyResponse = Schema.Struct({
   expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
-  sessionKeys: Schema.Array(SessionKeyResponse),
+  sessionKeys: Schema.Array(SessionKeySummaryResponse),
   ...TimestampFields,
 }).annotate({
   identifier: "ApiKeyResponse",
