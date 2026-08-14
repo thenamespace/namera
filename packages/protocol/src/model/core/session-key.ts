@@ -3,6 +3,7 @@ import { Schema, Struct } from "effect";
 import { ActorId, OrganizationId, SessionKeyId, WalletId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
+import { EvmTimeWindowPolicy } from "#/policy/evm/index";
 
 export const SessionKeyStatus = Schema.Literals(["active", "revoked"]);
 
@@ -13,9 +14,10 @@ export const SessionKeyMetadata = Schema.Struct({
   description: Schema.optionalKey(MetadataDescription),
 });
 
-// Session keys cannot carry policies until namespace-specific policy schemas are defined.
-export const EvmSessionKeyPolicy = Schema.Never;
-export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy);
+export const EvmSessionKeyPolicy = Schema.Union([EvmTimeWindowPolicy]);
+export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy).check(
+  Schema.isMinLength(1, { message: "At least one policy is required" }),
+);
 
 export const SessionKeyPolicy = EvmSessionKeyPolicy;
 export const SessionKeyPolicies = EvmSessionKeyPolicies;
@@ -61,4 +63,5 @@ export type SessionKeyPolicy = typeof SessionKeyPolicy.Type;
 export type SessionKeyPolicies = typeof SessionKeyPolicies.Type;
 export type EvmSessionKey = typeof EvmSessionKey.Type;
 export type SessionKey = typeof SessionKey.Type;
+export type SessionKeyEncoded = typeof SessionKey.Encoded;
 export type SessionKeyInsert = typeof SessionKeyInsert.Type;

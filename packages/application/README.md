@@ -18,6 +18,7 @@ and adapts HTTP requests to application methods.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
+- `src/session-key/` — immutable session-key creation, canonical policy hashing, and reads.
 - `src/wallet/` — wallet creation and organization-scoped wallet reads.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
@@ -83,6 +84,12 @@ the key, wallet, audit events, notification recipients, and durable email jobs.
 Provider key deletion is intentionally not part of the current service, so a
 failed final transaction may leave an unreferenced provider key for later
 operational reconciliation.
+
+Session-key creation validates the organization wallet and its namespace before
+persisting versioned policy instances. Policy hashes are purpose-separated and
+canonical across object-key and policy-array ordering while excluding generated
+policy IDs. The session key, audit event, inbox recipients, and durable email
+jobs share one transaction.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

@@ -22,10 +22,11 @@ claims and delivers them outside the request lifecycle.
 | `EMAIL_FROM`     | Yes      | Default sender accepted by Resend.           |
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
-Replace the TODO magic-link, new-sign-in, organization-invitation, and
-wallet-created hosted template IDs in `src/data.ts` before production delivery. Invitation variables
-include the effective role name; new-sign-in variables include the captured IP
-address and user agent when available.
+Replace the TODO magic-link, new-sign-in, organization-invitation,
+wallet-created, and session-key-created hosted template IDs in `src/data.ts`
+before production delivery. Invitation variables include the effective role
+name; new-sign-in variables include the captured IP address and user agent when
+available.
 Provider requests time out after ten seconds; this editable policy also lives in
 `src/data.ts`. Durable payload encryption also requires the shared configuration
 documented by `@namera-ai/crypto`; the server composition root provides it.

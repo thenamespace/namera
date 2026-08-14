@@ -17,7 +17,11 @@ import {
   BillingSubscriptionRepository,
   BillingUsageRepository,
 } from "#/repositories/billing/index";
-import { WalletKeyRepository, WalletRepository } from "#/repositories/core/index";
+import {
+  SessionKeyRepository,
+  WalletKeyRepository,
+  WalletRepository,
+} from "#/repositories/core/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
 import {
   NotificationPreferenceRepository,
@@ -45,6 +49,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    sessionKey: SessionKeyRepository["Service"];
     wallet: WalletRepository["Service"];
     walletKey: WalletKeyRepository["Service"];
   };
@@ -81,6 +86,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const billingUsage = yield* BillingUsageRepository;
       const wallet = yield* WalletRepository;
       const walletKey = yield* WalletKeyRepository;
+      const sessionKey = yield* SessionKeyRepository;
 
       return Repository.of({
         audit: {
@@ -103,6 +109,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          sessionKey,
           wallet,
           walletKey,
         },
@@ -134,6 +141,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         BillingAccountRepository.layer,
         BillingSubscriptionRepository.layer,
         BillingUsageRepository.layer,
+        SessionKeyRepository.layer,
         WalletRepository.layer,
         WalletKeyRepository.layer,
       ),

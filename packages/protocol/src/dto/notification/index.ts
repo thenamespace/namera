@@ -6,6 +6,7 @@ import {
   NewSignInNotification,
   NotificationPreference,
   NotificationPreferenceChannel,
+  SessionKeyCreatedNotification,
   WalletCreatedNotification,
   withNotificationPreferenceTarget,
 } from "#/model/notification/index";
@@ -26,6 +27,10 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: WalletCreatedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: SessionKeyCreatedNotification,
     ...NotificationRecipientState,
   }),
 ]).annotate({ identifier: "NotificationResponse" });

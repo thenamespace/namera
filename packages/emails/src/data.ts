@@ -15,6 +15,9 @@ export const emailTemplates = {
   "wallet-created": {
     id: "wallet-created", // TODO: Update
   },
+  "session-key-created": {
+    id: "session-key-created", // TODO: Update
+  },
 } as const satisfies Record<EmailJobType, { readonly id: string }>;
 
 export const emailPolicy = {

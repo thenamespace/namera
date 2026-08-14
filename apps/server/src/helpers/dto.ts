@@ -7,6 +7,7 @@ import type {
   GetSessionResponse,
   GetUserResponse,
   NotificationResponse,
+  SessionKeyResponse,
   WalletResponse,
 } from "@namera-ai/protocol/dto";
 import type {
@@ -15,6 +16,7 @@ import type {
   OrganizationMember,
   OrganizationRole,
   Session,
+  SessionKey,
   User,
 } from "@namera-ai/protocol/model";
 
@@ -117,8 +119,27 @@ export const toNotificationResponse = (input: NotificationInboxItem): Notificati
         readAt: input.recipient.readAt,
         receivedAt: input.recipient.receivedAt,
       };
+    case "session_key.created":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
   }
 };
+
+export const toSessionKeyResponse = (sessionKey: SessionKey): SessionKeyResponse => ({
+  id: sessionKey.id,
+  organizationId: sessionKey.organizationId,
+  walletId: sessionKey.walletId,
+  namespace: sessionKey.namespace,
+  metadata: sessionKey.metadata,
+  policies: sessionKey.policies,
+  policyHash: sessionKey.policyHash,
+  status: sessionKey.status,
+  revokedAt: sessionKey.revokedAt,
+  createdAt: sessionKey.createdAt,
+});
 
 export const toWalletResponse = (input: WalletView): WalletResponse => {
   const common = {

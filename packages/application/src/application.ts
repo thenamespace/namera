@@ -22,6 +22,7 @@ import {
 } from "#/auth/organization/organization";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
+import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session-key/index";
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
@@ -33,6 +34,7 @@ export interface ApplicationService {
     readonly member: MemberApplication;
   };
   readonly session: SessionApplication;
+  readonly sessionKey: SessionKeyApplication;
   readonly user: UserApplication;
   readonly wallet: WalletApplication;
 }
@@ -53,6 +55,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const notification = yield* makeNotificationApplication;
       const billing = yield* makeBillingApplication;
       const wallet = yield* makeWalletApplication;
+      const sessionKey = yield* makeSessionKeyApplication;
 
       return Application.of({
         billing,
@@ -60,6 +63,7 @@ export class Application extends Context.Service<Application, ApplicationService
         notification,
         organization: { ...organization, invitation, member },
         session,
+        sessionKey,
         user,
         wallet,
       });

@@ -93,6 +93,17 @@ export const notificationPreferenceSections: ReadonlyArray<NotificationPreferenc
         label: "Organization invitations",
         description: "Receive email when you are invited to an organization.",
       },
+      {
+        defaultValues: {
+          organizationId: null,
+          category: "organization",
+          topic: "session-keys",
+          channel: "email",
+          enabled: true,
+        },
+        label: "Session keys",
+        description: "Receive email when a session key is created.",
+      },
     ],
   },
 ];

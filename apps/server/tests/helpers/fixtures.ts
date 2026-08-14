@@ -5,6 +5,7 @@ import {
   InvitationId,
   OrganizationId,
   OrganizationMemberId,
+  SessionKeyId,
   WalletId,
 } from "@namera-ai/protocol";
 
@@ -27,3 +28,7 @@ export const missingOrganizationMemberId = Schema.decodeSync(OrganizationMemberI
 );
 
 export const missingWalletId = Schema.decodeSync(WalletId)("01900000-0000-7000-8000-000000000004");
+
+export const missingSessionKeyId = Schema.decodeSync(SessionKeyId)(
+  "01900000-0000-7000-8000-000000000005",
+);

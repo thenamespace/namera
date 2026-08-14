@@ -24,6 +24,11 @@ const walletPermissions = [
   "wallet:create",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
+const sessionKeyPermissions = [
+  "session-key:read",
+  "session-key:create",
+] as const satisfies ReadonlyArray<MemberPermission>;
+
 export const systemRoles = [
   {
     key: "owner",
@@ -49,6 +54,7 @@ export const systemRoles = [
       ...rolePermissions,
       "billing:read",
       ...walletPermissions,
+      ...sessionKeyPermissions,
     ],
   },
   {
@@ -58,6 +64,12 @@ export const systemRoles = [
       name: "Member",
       description: "Organization member with read access",
     },
-    permissions: ["organization:read", "member:read", "role:read", "wallet:read"],
+    permissions: [
+      "organization:read",
+      "member:read",
+      "role:read",
+      "wallet:read",
+      "session-key:read",
+    ],
   },
 ] as const satisfies ReadonlyArray<SystemRoleInsert>;

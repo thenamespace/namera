@@ -60,9 +60,11 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   provider metadata through public wallet DTOs.
 - Session keys belong to one wallet, are discriminated by chain namespace, and
   carry an immutable namespace-specific `policies` array.
-  Until namespace-specific policy members are defined, the policy schema allows
-  only an empty array. Each future policy instance has a stable `PolicyId` so
-  its handler can address typed state and in-flight reservations. Grants are
+  Each policy instance has a stable `PolicyId` so its handler can address typed
+  state and in-flight reservations. EVM session keys currently require at least
+  one `evm.time-window` policy. Its dates encode as ISO strings because policies
+  are JSON wire and persistence values; SQL timestamp columns continue using
+  date-backed schemas. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
 - Executions are append-only successful onchain records discriminated by

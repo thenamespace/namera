@@ -1,0 +1,15 @@
+import { Schema } from "effect";
+
+import { SessionKeyId, WalletId } from "#/common/index";
+
+export const SessionKeyCreatedEventData = Schema.Struct({
+  event: Schema.Literal("session_key.created"),
+  resourceType: Schema.Literal("session-key"),
+  resourceId: SessionKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    walletId: WalletId,
+    namespace: Schema.Literal("eip155"),
+    policyTypes: Schema.Array(Schema.Literal("evm.time-window")),
+  }),
+});

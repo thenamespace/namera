@@ -1,5 +1,5 @@
 import type { ActorId, OrganizationId, SessionKeyId, WalletId } from "@namera-ai/protocol";
-import type { SessionKey } from "@namera-ai/protocol/model";
+import type { SessionKey, SessionKeyEncoded } from "@namera-ai/protocol/model";
 import { foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId } from "#/schema/common";
@@ -21,7 +21,7 @@ export const sessionKey = coreSchema.table(
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
     namespace: text("namespace").notNull().$type<SessionKey["namespace"]>(),
     metadata: jsonb("metadata").notNull().$type<SessionKey["metadata"]>(),
-    policies: jsonb("policies").notNull().$type<SessionKey["policies"]>(),
+    policies: jsonb("policies").notNull().$type<SessionKeyEncoded["policies"]>(),
     policyHash: text("policy_hash").notNull(),
     status: text("status").notNull().default("active").$type<SessionKey["status"]>(),
     revokedAt: createTimestampField("revoked_at"),

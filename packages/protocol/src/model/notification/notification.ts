@@ -7,6 +7,7 @@ import { createInsertSchema } from "#/model/helpers";
 import {
   InvitationReceivedNotificationPayload,
   NewSignInNotificationPayload,
+  SessionKeyCreatedNotificationPayload,
   WalletCreatedNotificationPayload,
 } from "./payload.js";
 
@@ -26,11 +27,13 @@ const notification = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct
 export const NewSignInNotification = notification(NewSignInNotificationPayload);
 export const InvitationReceivedNotification = notification(InvitationReceivedNotificationPayload);
 export const WalletCreatedNotification = notification(WalletCreatedNotificationPayload);
+export const SessionKeyCreatedNotification = notification(SessionKeyCreatedNotificationPayload);
 
 export const Notification = Schema.Union([
   NewSignInNotification,
   InvitationReceivedNotification,
   WalletCreatedNotification,
+  SessionKeyCreatedNotification,
 ]);
 
 export const NotificationInsert = createInsertSchema(

@@ -192,7 +192,8 @@ persisting both records in one transaction.
 
 `core.session_key` belongs to one wallet and stores its namespace, immutable
 metadata, namespace-specific typed `policies` array, and policy hash. Revocation
-is a lifecycle change; policies are not updated in place.
+is a lifecycle change; policies are not updated in place. Its repository exposes
+tenant-scoped insert, ID lookup, wallet listing, and organization listing.
 `core.session_key_grant` links an actor to a session key within the same
 organization and retains revoked grant history. A partial unique index permits
 only one active grant for an actor/session-key pair. Composite foreign keys

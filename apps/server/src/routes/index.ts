@@ -5,5 +5,6 @@ export * from "./health.js";
 export * from "./reference.js";
 export * from "./root.js";
 export * from "./rpc.js";
+export * from "./session-key.js";
 export * from "./telemetry.js";
 export * from "./wallet.js";

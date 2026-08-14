@@ -36,6 +36,7 @@ const staticHttpRoutes = new Set([
   "/health",
   "/openapi.json",
   "/reference",
+  "/session-keys",
   "/t/logs/v1",
   "/t/metrics/v1",
   "/t/traces/v1",
@@ -50,6 +51,12 @@ export const httpRouteTemplate = (url: string): string => {
   }
   if (/^\/wallets\/[^/]+$/.test(pathname)) {
     return "/wallets/:walletId";
+  }
+  if (/^\/session-keys\/wallets\/[^/]+$/.test(pathname)) {
+    return "/session-keys/wallets/:walletId";
+  }
+  if (/^\/session-keys\/[^/]+$/.test(pathname)) {
+    return "/session-keys/:sessionKeyId";
   }
   if (/^\/rpc\/eip155\/[^/]+$/.test(pathname)) {
     return "/rpc/eip155/:chainId";

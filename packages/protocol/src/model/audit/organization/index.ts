@@ -15,6 +15,7 @@ import {
   MemberRoleUpdatedEventData,
 } from "./member.js";
 import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
+import { SessionKeyCreatedEventData } from "./session-key.js";
 import { WalletCreatedEventData, WalletKeyCreatedEventData } from "./wallet.js";
 
 const organizationEvent = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct<Fields>) =>
@@ -31,6 +32,7 @@ export const MemberRoleUpdatedEvent = organizationEvent(MemberRoleUpdatedEventDa
 export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const WalletKeyCreatedEvent = organizationEvent(WalletKeyCreatedEventData);
+export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 
 export const OrganizationEvent = Schema.Union([
   OrganizationCreatedEvent,
@@ -44,6 +46,7 @@ export const OrganizationEvent = Schema.Union([
   MemberRemovedEvent,
   WalletCreatedEvent,
   WalletKeyCreatedEvent,
+  SessionKeyCreatedEvent,
 ]);
 
 export const OrganizationEventInsert = createInsertSchema(
@@ -68,4 +71,5 @@ export * from "./base.js";
 export * from "./invitation.js";
 export * from "./member.js";
 export * from "./organization.js";
+export * from "./session-key.js";
 export * from "./wallet.js";
