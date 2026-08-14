@@ -1,8 +1,8 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "9f01b88a-993d-466b-a827-1b8f8658de83",
-  "prevIds": ["8911d142-3635-423a-b8de-a418c6820d0f"],
+  "id": "79e5876a-abf5-4af0-b885-bd7d926fed1b",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "audit",

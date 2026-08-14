@@ -218,14 +218,12 @@ CREATE TABLE "core"."wallet_key" (
 	"provider" text NOT NULL,
 	"algorithm" text NOT NULL,
 	"protection_level" text NOT NULL,
-	"key_version_name" text NOT NULL,
 	"public_key_hex" text NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
 	"data" jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "wallet_key_id_organization_unique" UNIQUE("id","organization_id"),
-	CONSTRAINT "wallet_key_provider_version_name_unique" UNIQUE("provider","key_version_name")
+	CONSTRAINT "wallet_key_id_organization_unique" UNIQUE("id","organization_id")
 );
 --> statement-breakpoint
 CREATE TABLE "core"."wallet" (
