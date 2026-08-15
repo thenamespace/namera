@@ -87,7 +87,7 @@ export function OAuthConsentForm({
         <DashboardCardContent className="divide-y-0 p-6 sm:p-7">
           <div className="flex flex-col items-center text-center">
             <Avatar className="mb-4 size-12">
-              {request.client.logoUri === null || isDynamicClient ? null : (
+              {request.client.logoUri === null ? null : (
                 <Avatar.Image alt="" src={request.client.logoUri} />
               )}
               <Avatar.Fallback>
