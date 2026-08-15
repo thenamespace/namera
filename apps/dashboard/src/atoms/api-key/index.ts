@@ -25,3 +25,4 @@ export const apiKeyAtom = (apiKeyId: ApiKeyId) =>
   });
 
 export const createApiKeyMutation = NameraClient.mutation("apiKey", "create");
+export const revokeApiKeyMutation = NameraClient.mutation("apiKey", "revoke");

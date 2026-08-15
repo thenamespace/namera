@@ -34,6 +34,11 @@ export const notificationPolicy = {
     emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(7),
   },
+  "api_key.revoked": {
+    target: { category: "organization", topic: "api-keys" },
+    emailDefaultEnabled: true,
+    emailTimeToLive: Duration.days(7),
+  },
   "execution.confirmed": {
     target: { category: "organization", topic: "executions" },
     emailDefaultEnabled: true,

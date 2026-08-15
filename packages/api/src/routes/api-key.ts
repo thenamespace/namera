@@ -11,6 +11,8 @@ import {
   GetApiKeyRequest,
   GetApiKeyResponse,
   ListApiKeysResponse,
+  RevokeApiKeyRequest,
+  RevokeApiKeyResponse,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -32,6 +34,11 @@ export class ApiKeyGroup extends HttpApiGroup.make("apiKey")
       success: GetApiKeyResponse,
       error: [ApiKeyNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get an API key and its authorized session keys"),
+    HttpApiEndpoint.post("revoke", "/:apiKeyId/revoke", {
+      params: RevokeApiKeyRequest,
+      success: RevokeApiKeyResponse,
+      error: [ApiKeyNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Revoke an API key and all of its session-key grants"),
   )
   .annotate(OpenApi.Description, "Organization API keys and session-key grants")
   .middleware(Authorization)

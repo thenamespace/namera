@@ -1,5 +1,7 @@
 export { ApiKeyCreatedEmail } from "./emails/api-key-created.js";
 export type { ApiKeyCreatedEmailProps } from "./emails/api-key-created.js";
+export { ApiKeyRevokedEmail } from "./emails/api-key-revoked.js";
+export type { ApiKeyRevokedEmailProps } from "./emails/api-key-revoked.js";
 export { ExecutionConfirmedEmail } from "./emails/execution-confirmed.js";
 export type { ExecutionConfirmedEmailProps } from "./emails/execution-confirmed.js";
 export { MagicLinkEmail } from "./emails/magic-link.js";

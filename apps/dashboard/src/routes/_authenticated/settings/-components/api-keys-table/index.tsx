@@ -12,6 +12,7 @@ import { Chip, DataGrid, SearchField, Typography, type DataGridColumn } from "@n
 import { DateDisplay, MetadataDisplay } from "@/components/display";
 import { useApiKeys } from "@/hooks/api-key";
 
+import { ApiKeyActions } from "./api-key-actions";
 import { CreateApiKeyDialog } from "./create-api-key-dialog";
 
 const apiKeyCollator = new Intl.Collator(undefined, {
@@ -27,7 +28,7 @@ const getStatus = (apiKey: ApiKeyResponse) => {
   return "active" as const;
 };
 
-const columns: DataGridColumn<ApiKeyResponse>[] = [
+const createApiKeyColumns = (canRevoke: boolean): DataGridColumn<ApiKeyResponse>[] => [
   {
     allowsSorting: true,
     cell: (apiKey) => <MetadataDisplay fallbackName="Unnamed API key" metadata={apiKey.metadata} />,
@@ -112,6 +113,18 @@ const columns: DataGridColumn<ApiKeyResponse>[] = [
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
   },
+  ...(canRevoke
+    ? [
+        {
+          align: "end" as const,
+          cell: (apiKey: ApiKeyResponse) => <ApiKeyActions apiKey={apiKey} />,
+          header: "",
+          id: "actions",
+          pinned: "end" as const,
+          width: 48,
+        },
+      ]
+    : []),
 ];
 
 const getApiKeyId = (apiKey: ApiKeyResponse) => apiKey.id;
@@ -119,14 +132,21 @@ const renderEmptyState = () => "No API keys found.";
 
 type ApiKeysTableProps = {
   canCreate: boolean;
+  canRevoke: boolean;
   initialApiKeys: ListApiKeysResponse;
   initialSessionKeys: ListSessionKeysForOrganizationResponse;
 };
 
-export function ApiKeysTable({ canCreate, initialApiKeys, initialSessionKeys }: ApiKeysTableProps) {
+export function ApiKeysTable({
+  canCreate,
+  canRevoke,
+  initialApiKeys,
+  initialSessionKeys,
+}: ApiKeysTableProps) {
   const apiKeys = useApiKeys();
   const apiKeyData = apiKeys.data ?? initialApiKeys;
   const [query, setQuery] = useState("");
+  const columns = useMemo(() => createApiKeyColumns(canRevoke), [canRevoke]);
   const normalizedQuery = query.trim().toLowerCase();
   const visibleApiKeys = useMemo(
     () =>

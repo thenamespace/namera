@@ -49,6 +49,7 @@ pnpm --filter @namera-ai/email-templates email:assets
 - `wallet-created` — smart-account creation notification.
 - `session-key-created` — scoped session-key creation notification.
 - `api-key-created` — API-key creation and authorization summary.
+- `api-key-revoked` — API-key and session-key grant revocation summary.
 - `execution-confirmed` — confirmed onchain execution receipt.
 
 Update CDN and footer destinations in `packages/emails/src/templates/data.ts`.

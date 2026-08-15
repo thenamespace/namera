@@ -13,6 +13,7 @@ import { ApiKeysTable } from "../-components/api-keys-table";
 
 const apiKeyCreatePermission = ["api-key:create"] as const;
 const apiKeyReadPermission = ["api-key:read"] as const;
+const apiKeyRevokePermission = ["api-key:revoke"] as const;
 
 export const Route = createFileRoute("/_authenticated/settings/workspace/api-keys")({
   loader: async ({ abortController, context }) => {
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/api-key
 
     const canRead = hasPermissions(currentUser.role.permissions, apiKeyReadPermission);
     const canCreate = hasPermissions(currentUser.role.permissions, apiKeyCreatePermission);
+    const canRevoke = hasPermissions(currentUser.role.permissions, apiKeyRevokePermission);
     const [apiKeys, sessionKeys] = await Promise.all([
       canRead
         ? prefetchQuery(context.atomRegistry, apiKeysAtom, abortController.signal)
@@ -34,13 +36,13 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/api-key
         : Promise.resolve([]),
     ]);
 
-    return { apiKeys, canCreate, canRead, sessionKeys };
+    return { apiKeys, canCreate, canRead, canRevoke, sessionKeys };
   },
   component: ApiKeysPage,
 });
 
 function ApiKeysPage() {
-  const { apiKeys, canCreate, canRead, sessionKeys } = Route.useLoaderData();
+  const { apiKeys, canCreate, canRead, canRevoke, sessionKeys } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -59,6 +61,7 @@ function ApiKeysPage() {
         {canRead ? (
           <ApiKeysTable
             canCreate={canCreate}
+            canRevoke={canRevoke}
             initialApiKeys={apiKeys}
             initialSessionKeys={sessionKeys}
           />

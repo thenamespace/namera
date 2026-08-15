@@ -46,6 +46,11 @@ export const rateLimitPolicy = {
       window: Duration.hours(1),
       algorithm: "fixed-window",
     },
+    revokeByOrganization: {
+      limit: 60,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
   },
   execution: {
     byApiKey: {

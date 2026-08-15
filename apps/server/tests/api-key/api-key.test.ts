@@ -251,6 +251,130 @@ layer(TestServerLayer)("API-key routes", (it) => {
     }),
   );
 
+  it.effect("revokes an API key and every active grant exactly once", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("api-key-revoke@example.com"));
+      const firstSessionKey = yield* createSessionKey(client, "Treasury revoke key");
+      const secondSessionKey = yield* createSessionKey(client, "Operations revoke key");
+      const created = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Revocable agent"),
+          durationDays: 30,
+          sessionKeyIds: [firstSessionKey.id, secondSessionKey.id],
+        },
+      });
+
+      const revoked = yield* client.apiKey.revoke({
+        params: { apiKeyId: created.apiKey.id },
+      });
+      expect(revoked.revokedAt).not.toBeNull();
+      expect(revoked.sessionKeys).toEqual([]);
+
+      const repository = yield* Repository;
+      expect(
+        yield* repository.core.sessionKeyGrant.findActiveForActor(
+          owner.actor.organization.id,
+          created.apiKey.actorId,
+        ),
+      ).toEqual([]);
+      const crypto = yield* CryptoService;
+      expect(
+        yield* repository.auth.apiKey.authenticate(
+          yield* crypto.hash({
+            purpose: cryptoPurpose.apiKey,
+            value: created.key,
+          }),
+          yield* DateTime.now,
+        ),
+      ).toBeUndefined();
+
+      const events = (yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      )).filter(
+        ({ event, resourceId }) => event === "api_key.revoked" && resourceId === created.apiKey.id,
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0]?.data).toMatchObject({
+        version: 1,
+        sessionKeyIds: expect.arrayContaining([firstSessionKey.id, secondSessionKey.id]),
+      });
+      expect(
+        (yield* client.notification.list({ query: {} })).items.some(
+          ({ notification }) =>
+            notification.type === "api_key.revoked" &&
+            notification.resourceId === created.apiKey.id,
+        ),
+      ).toBe(true);
+      expect(
+        yield* repository.jobs.email.findByIdempotencyKey(
+          `notification:api_key.revoked:${created.apiKey.id}:${owner.actor.user.id}:email`,
+        ),
+      ).toMatchObject({ type: "api-key-revoked", status: "pending" });
+
+      const emailJobs = yield* EmailJobs;
+      const emails = yield* TestEmails;
+      let delivered = (yield* emails.sent).findLast((email) => email.type === "api-key-revoked");
+      for (let attempt = 0; delivered === undefined && attempt < 10; attempt += 1) {
+        yield* emailJobs.processOnce;
+        delivered = (yield* emails.sent).findLast((email) => email.type === "api-key-revoked");
+      }
+      expect(delivered?.variables).toMatchObject({
+        apiKeyName: "Revocable agent",
+        organizationName: owner.actor.organization.metadata.name,
+        sessionKeyCount: 2,
+      });
+
+      const repeated = yield* client.apiKey.revoke({
+        params: { apiKeyId: created.apiKey.id },
+      });
+      expect(repeated.revokedAt).toEqual(revoked.revokedAt);
+      expect(
+        (yield* repository.audit.organization.findForOrganization(
+          owner.actor.organization.id,
+        )).filter(
+          ({ event, resourceId }) =>
+            event === "api_key.revoked" && resourceId === created.apiKey.id,
+        ),
+      ).toHaveLength(1);
+    }),
+  );
+
+  it.effect("enforces API-key revocation permission and organization scope", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("api-key-revoke-permission-owner@example.com"));
+      const member = yield* createMember(
+        client,
+        testEmail("api-key-revoke-permission-member@example.com"),
+      );
+      yield* setAuthToken(member.ownerToken);
+      const sessionKey = yield* createSessionKey(client, "Protected revoke key");
+      const created = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Protected agent"),
+          durationDays: 30,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+
+      yield* setAuthToken(member.memberToken);
+      expect(
+        yield* client.apiKey.revoke({ params: { apiKeyId: created.apiKey.id } }).pipe(Effect.flip),
+      ).toMatchObject({ _tag: "Forbidden" });
+
+      yield* signIn(client, testEmail("api-key-revoke-other-organization@example.com"));
+      expect(
+        yield* client.apiKey.revoke({ params: { apiKeyId: created.apiKey.id } }).pipe(Effect.flip),
+      ).toMatchObject({ _tag: "ApiKeyError", code: "API_KEY_NOT_FOUND" });
+      expect(
+        yield* client.apiKey.revoke({ params: { apiKeyId: missingApiKeyId } }).pipe(Effect.flip),
+      ).toMatchObject({ _tag: "ApiKeyError", code: "API_KEY_NOT_FOUND" });
+    }),
+  );
+
   it.effect("rate limits repeated API-key creation for one organization", () =>
     Effect.gen(function* () {
       yield* resetTestState();

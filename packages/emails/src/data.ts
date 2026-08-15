@@ -21,6 +21,9 @@ export const emailTemplates = {
   "api-key-created": {
     subject: "Your Namera API key is ready",
   },
+  "api-key-revoked": {
+    subject: "API key revoked",
+  },
   "execution-confirmed": {
     subject: "Transaction confirmed",
   },

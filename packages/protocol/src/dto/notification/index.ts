@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import { NotificationId, OrganizationId } from "#/common/index";
 import {
   ApiKeyCreatedNotification,
+  ApiKeyRevokedNotification,
   ExecutionConfirmedNotification,
   InvitationReceivedNotification,
   NewSignInNotification,
@@ -37,6 +38,10 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: ApiKeyCreatedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: ApiKeyRevokedNotification,
     ...NotificationRecipientState,
   }),
   Schema.Struct({

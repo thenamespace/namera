@@ -134,6 +134,12 @@ export const toNotificationResponse = (input: NotificationInboxItem): Notificati
         readAt: input.recipient.readAt,
         receivedAt: input.recipient.receivedAt,
       };
+    case "api_key.revoked":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
     case "execution.confirmed":
       return {
         notification: input.notification,

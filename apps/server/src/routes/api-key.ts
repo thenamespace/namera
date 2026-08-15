@@ -57,6 +57,28 @@ export const ApiKeyRoutes = HttpApiBuilder.group(NameraApi, "apiKey", (handlers)
           });
           return toApiKeyResponse(yield* app.apiKey.get(data.organization.id, params.apiKeyId));
         }),
+      )
+      .handle("revoke", ({ params }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["api-key:revoke"] },
+          });
+          yield* consumeRateLimit(
+            "api_key.revoke.organization",
+            data.organization.id,
+            rateLimitPolicy.apiKey.revokeByOrganization,
+          );
+          return toApiKeyResponse(
+            yield* app.apiKey.revoke({
+              organizationId: data.organization.id,
+              actorId: data.actorId,
+              apiKeyId: params.apiKeyId,
+            }),
+          );
+        }),
       );
   }),
 );

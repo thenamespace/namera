@@ -12,7 +12,8 @@ HTTP requests to application methods.
 - `src/application.ts` — the single aggregate `Application` service and live layer.
 - `src/audit/` — internal typed audit-event writer used by application workflows.
 - `src/auth/core/` — focused user and session operations.
-- `src/auth/core/api-key.ts` — API-key creation and grant-aware reads.
+- `src/auth/core/api-key.ts` — API-key creation, grant-aware reads, and atomic
+  credential/grant revocation.
 - `src/auth/magic-link/` — request and verification workflows.
 - `src/auth/organization/` — organization, member, invitation, and setup operations.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.

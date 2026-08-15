@@ -75,7 +75,8 @@ limits in addition to the global limit. Magic-link request and verification use
 their own IP/email policies.
 
 API-key creation is limited to 20 attempts per active organization per hour.
-Read operations use only the global limit.
+Revocation is limited to 60 attempts per active organization per hour. Read
+operations use only the global limit.
 
 Smart-account signatures are limited to 120 requests per API key per minute.
 

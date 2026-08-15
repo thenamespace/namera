@@ -66,9 +66,22 @@ export const ListApiKeysResponse = Schema.Array(ApiKeyResponse).annotate({
   identifier: "ListApiKeysResponse",
 });
 
+export const RevokeApiKeyRequest = Schema.Struct({
+  apiKeyId: ApiKeyId,
+}).annotate({
+  identifier: "RevokeApiKeyRequest",
+  description: "Revoke an API key and all of its active session-key grants",
+});
+
+export const RevokeApiKeyResponse = ApiKeyResponse.annotate({
+  identifier: "RevokeApiKeyResponse",
+});
+
 export type ApiKeyResponse = typeof ApiKeyResponse.Type;
 export type CreateApiKeyRequest = typeof CreateApiKeyRequest.Type;
 export type CreateApiKeyResponse = typeof CreateApiKeyResponse.Type;
 export type GetApiKeyRequest = typeof GetApiKeyRequest.Type;
 export type GetApiKeyResponse = typeof GetApiKeyResponse.Type;
 export type ListApiKeysResponse = typeof ListApiKeysResponse.Type;
+export type RevokeApiKeyRequest = typeof RevokeApiKeyRequest.Type;
+export type RevokeApiKeyResponse = typeof RevokeApiKeyResponse.Type;

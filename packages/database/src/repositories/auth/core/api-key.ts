@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-non-null-assertion
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { ApiKeyId, DatabaseError, OrganizationId } from "@namera-ai/protocol";
+import type { ActorId, ApiKeyId, DatabaseError, OrganizationId } from "@namera-ai/protocol";
 import { ApiKey, ApiKeyInsert, type ApiKey as ApiKeyModel } from "@namera-ai/protocol/model";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
 
@@ -21,6 +21,12 @@ export interface ApiKeyRepositoryService {
   readonly authenticate: (
     keyHash: string,
     now: DateTime.Utc,
+  ) => Effect.Effect<ApiKeyModel | undefined, DatabaseError>;
+  readonly revoke: (
+    id: ApiKeyId,
+    organizationId: OrganizationId,
+    revokedByActorId: ActorId,
+    revokedAt: DateTime.Utc,
   ) => Effect.Effect<ApiKeyModel | undefined, DatabaseError>;
 }
 
@@ -73,6 +79,27 @@ export class ApiKeyRepository extends Context.Service<ApiKeyRepository, ApiKeyRe
                 eq(apiKey.keyHash, keyHash),
                 isNull(apiKey.revokedAt),
                 gt(apiKey.expiresAt, encodedNow),
+              ),
+            )
+            .returning();
+          return rows[0] === undefined ? undefined : Schema.decodeSync(ApiKey)(rows[0] as any);
+        }, mapRepositoryError),
+        revoke: Effect.fn("database.apiKeyRepository.revoke")(function* (
+          id,
+          organizationId,
+          revokedByActorId,
+          revokedAt,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
+            .update(apiKey)
+            .set({ revokedAt: encodedRevokedAt, revokedByActorId })
+            .where(
+              and(
+                eq(apiKey.id, id),
+                eq(apiKey.organizationId, organizationId),
+                isNull(apiKey.revokedAt),
               ),
             )
             .returning();

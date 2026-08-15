@@ -69,7 +69,8 @@ copy the full address while retaining it in an accessible tooltip.
 
 Session-key create, detail, organization-list, and wallet-list atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
-and list atoms/hooks live under `src/atoms/api-key` and `src/hooks/api-key`.
+list, and revoke atoms/hooks live under `src/atoms/api-key` and
+`src/hooks/api-key`.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
@@ -94,7 +95,9 @@ organization API-key list.
   grant count, status, expiration, and creation details. Its creation dialog
   validates the shared API-key DTO, grants one or more active session keys,
   requires a 7-, 30-, or 90-day duration, and exposes the raw credential exactly
-  once after creation.
+  once after creation. Actors with `api-key:revoke` can revoke an active key from
+  its row action after confirming that all of its session-key grants will also
+  be revoked.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use

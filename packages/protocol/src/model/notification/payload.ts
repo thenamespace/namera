@@ -16,6 +16,7 @@ const InvitationReceivedNotificationType = Schema.Literal("organization.invitati
 const WalletCreatedNotificationType = Schema.Literal("wallet.created");
 const SessionKeyCreatedNotificationType = Schema.Literal("session_key.created");
 const ApiKeyCreatedNotificationType = Schema.Literal("api_key.created");
+const ApiKeyRevokedNotificationType = Schema.Literal("api_key.revoked");
 const ExecutionConfirmedNotificationType = Schema.Literal("execution.confirmed");
 
 export const NotificationType = Schema.Union([
@@ -24,6 +25,7 @@ export const NotificationType = Schema.Union([
   WalletCreatedNotificationType,
   SessionKeyCreatedNotificationType,
   ApiKeyCreatedNotificationType,
+  ApiKeyRevokedNotificationType,
   ExecutionConfirmedNotificationType,
 ]);
 
@@ -83,6 +85,16 @@ export const ApiKeyCreatedNotificationPayload = Schema.Struct({
   }),
 });
 
+export const ApiKeyRevokedNotificationPayload = Schema.Struct({
+  type: ApiKeyRevokedNotificationType,
+  resourceType: Schema.Literal("api-key"),
+  resourceId: ApiKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  }),
+});
+
 export const ExecutionConfirmedNotificationPayload = Schema.Struct({
   type: ExecutionConfirmedNotificationType,
   resourceType: Schema.Literal("execution"),
@@ -101,6 +113,7 @@ export const NotificationPayload = Schema.Union([
   WalletCreatedNotificationPayload,
   SessionKeyCreatedNotificationPayload,
   ApiKeyCreatedNotificationPayload,
+  ApiKeyRevokedNotificationPayload,
   ExecutionConfirmedNotificationPayload,
 ]);
 

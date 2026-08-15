@@ -2,7 +2,7 @@ import { Schema, Struct } from "effect";
 
 import { createInsertSchema } from "#/model/helpers";
 
-import { ApiKeyCreatedEventData } from "./api-key.js";
+import { ApiKeyCreatedEventData, ApiKeyRevokedEventData } from "./api-key.js";
 import { OrganizationEventCommon } from "./base.js";
 import {
   ExecutionConfirmedEventData,
@@ -41,6 +41,7 @@ export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const WalletKeyCreatedEvent = organizationEvent(WalletKeyCreatedEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
+export const ApiKeyRevokedEvent = organizationEvent(ApiKeyRevokedEventData);
 export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
 export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
 export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
@@ -60,6 +61,7 @@ export const OrganizationEvent = Schema.Union([
   WalletKeyCreatedEvent,
   SessionKeyCreatedEvent,
   ApiKeyCreatedEvent,
+  ApiKeyRevokedEvent,
   ExecutionSubmittedEvent,
   ExecutionConfirmedEvent,
   ExecutionFailedEvent,

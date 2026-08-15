@@ -18,7 +18,12 @@ import type {
   SessionKey,
   User,
 } from "@namera-ai/protocol/model";
-import { apiKeyCreationDuration, apiKeyCreationResults } from "@namera-ai/telemetry";
+import {
+  apiKeyCreationDuration,
+  apiKeyCreationResults,
+  apiKeyRevocationDuration,
+  apiKeyRevocationResults,
+} from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { makeCreateNotification } from "#/notification/create";
@@ -50,6 +55,11 @@ export interface ApiKeyApplication {
     apiKeyId: ApiKeyId,
   ) => Effect.Effect<ApiKeyView, ApiKeyNotFoundError>;
   readonly list: (organizationId: OrganizationId) => Effect.Effect<ReadonlyArray<ApiKeyView>>;
+  readonly revoke: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly apiKeyId: ApiKeyId;
+  }) => Effect.Effect<ApiKeyView, ApiKeyNotFoundError>;
 }
 
 export const makeApiKeyApplication = Effect.gen(function* () {
@@ -242,5 +252,114 @@ export const makeApiKeyApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { create, get, list } satisfies ApiKeyApplication;
+  const revoke = Effect.fn("application.apiKey.revoke")(
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId: ActorId;
+      readonly apiKeyId: ApiKeyId;
+    }) {
+      const now = yield* DateTime.now;
+      const result = yield* transaction.run(
+        Effect.gen(function* () {
+          const revoked = yield* repository.auth.apiKey.revoke(
+            input.apiKeyId,
+            input.organizationId,
+            input.actorId,
+            now,
+          );
+          if (revoked === undefined) {
+            const existing = yield* repository.auth.apiKey.findById(
+              input.apiKeyId,
+              input.organizationId,
+            );
+            if (existing === undefined) {
+              return yield* new ApiKeyNotFoundError({ code: "API_KEY_NOT_FOUND" });
+            }
+            return { apiKey: existing, result: "already_revoked" as const };
+          }
+
+          const revokedGrants = yield* repository.core.sessionKeyGrant.revokeActiveForActor(
+            input.organizationId,
+            revoked.actorId,
+            input.actorId,
+            now,
+          );
+          const event = yield* audit.organization({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            event: "api_key.revoked",
+            resourceType: "api-key",
+            resourceId: revoked.id,
+            data: {
+              version: 1,
+              sessionKeyIds: revokedGrants.map(({ sessionKeyId }) => sessionKeyId),
+            },
+          });
+          const organization = yield* repository.auth.organization.findById(input.organizationId);
+          if (organization === undefined) {
+            return yield* Effect.die("API-key organization disappeared during revocation");
+          }
+          const members = yield* repository.auth.member.findOrganizationMembersForOrg(
+            input.organizationId,
+          );
+          yield* createNotification({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            type: "api_key.revoked",
+            resourceType: "api-key",
+            resourceId: revoked.id,
+            data: { version: 1, sessionKeyCount: revokedGrants.length },
+            idempotencyKey: `notification:api_key.revoked:${revoked.id}`,
+            correlationId: event.correlationId,
+            expiresAt: null,
+            recipients: members
+              .filter(({ organizationRole }) =>
+                organizationRole.permissions.includes("api-key:read"),
+              )
+              .map(({ user }) => ({
+                userId: user.id,
+                email: {
+                  type: "api-key-revoked" as const,
+                  to: user.email,
+                  expiresAt: DateTime.addDuration(
+                    now,
+                    notificationPolicy["api_key.revoked"].emailTimeToLive,
+                  ),
+                  variables: {
+                    apiKeyName: revoked.metadata.name,
+                    organizationName: organization.metadata.name,
+                    sessionKeyCount: revokedGrants.length,
+                  },
+                },
+              })),
+          });
+          return { apiKey: revoked, result: "success" as const };
+        }),
+      );
+
+      yield* Metric.update(
+        Metric.withAttributes(apiKeyRevocationResults, { result: result.result }),
+        1,
+      );
+      if (result.result === "success") {
+        yield* Effect.logInfo("api_key.revoked");
+      }
+      const [view] = yield* loadViews(input.organizationId, [result.apiKey]);
+      if (view === undefined) return yield* Effect.die("Revoked API key could not be loaded");
+      return view;
+    },
+    Effect.trackDuration(apiKeyRevocationDuration),
+    Effect.tapErrorTag("ApiKeyError", () =>
+      Metric.update(Metric.withAttributes(apiKeyRevocationResults, { result: "not_found" }), 1),
+    ),
+    Effect.tapErrorTag("DatabaseError", () =>
+      Metric.update(
+        Metric.withAttributes(apiKeyRevocationResults, { result: "persistence_failed" }),
+        1,
+      ),
+    ),
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  return { create, get, list, revoke } satisfies ApiKeyApplication;
 });

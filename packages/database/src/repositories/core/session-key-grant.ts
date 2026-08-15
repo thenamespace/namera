@@ -1,5 +1,5 @@
 // oxlint-disable typescript/no-explicit-any
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type {
   ActorId,
@@ -42,6 +42,12 @@ export interface SessionKeyGrantRepositoryService {
     organizationId: OrganizationId,
     actorIds: ReadonlyArray<ActorId>,
   ) => Effect.Effect<ReadonlyArray<SessionKeyGrantView>, DatabaseError>;
+  readonly revokeActiveForActor: (
+    organizationId: OrganizationId,
+    actorId: ActorId,
+    revokedByActorId: ActorId,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyGrantModel>, DatabaseError>;
 }
 
 export class SessionKeyGrantRepository extends Context.Service<
@@ -126,6 +132,25 @@ export class SessionKeyGrantRepository extends Context.Service<
               };
         }, mapRepositoryError),
         findActiveForActors,
+        revokeActiveForActor: Effect.fn("database.sessionKeyGrantRepository.revokeActiveForActor")(
+          function* (organizationId, actorId, revokedByActorId, revokedAt) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+            const rows = yield* db
+              .update(sessionKeyGrant)
+              .set({ revokedAt: encodedRevokedAt, revokedByActorId })
+              .where(
+                and(
+                  eq(sessionKeyGrant.organizationId, organizationId),
+                  eq(sessionKeyGrant.actorId, actorId),
+                  isNull(sessionKeyGrant.revokedAt),
+                ),
+              )
+              .returning();
+            return rows.map((row) => Schema.decodeSync(SessionKeyGrant)(row as any));
+          },
+          mapRepositoryError,
+        ),
       });
     }),
   );
