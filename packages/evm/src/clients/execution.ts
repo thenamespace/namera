@@ -8,7 +8,7 @@ import type { BundlerClient, PaymasterClient } from "viem/account-abstraction";
 import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 
-type ExecutionClients = {
+export type ExecutionClients = {
   readonly publicClient: PublicClient;
   readonly bundlerClient: BundlerClient;
   readonly paymasterClient: PaymasterClient;

@@ -28,3 +28,4 @@ export const makeCreateAccount = (config: EvmConfigValues) =>
   });
 
 export * from "./webauthn.js";
+export type { ReconstructEvmAccountInput } from "./types.js";

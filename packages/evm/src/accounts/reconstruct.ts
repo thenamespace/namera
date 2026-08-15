@@ -1,23 +1,25 @@
 import { Effect } from "effect";
 
 import { EvmExecutionError } from "@namera-ai/protocol";
-import type { KernelWalletData, SafeWalletData } from "@namera-ai/protocol/model";
+import type {
+  ToKernelSmartAccountReturnType,
+  ToSafeSmartAccountReturnType,
+} from "permissionless/accounts";
 import { isAddressEqual } from "viem";
-import type { LocalAccount, PublicClient } from "viem";
-import type { SmartAccount, WebAuthnAccount } from "viem/account-abstraction";
+import type { PublicClient } from "viem";
 
 import { makeKernelSmartAccount } from "./kernel.js";
 import { makeSafeSmartAccount } from "./safe.js";
+import type { ReconstructEvmAccountInput } from "./types.js";
 
-export type ReconstructEvmAccountInput = {
-  readonly wallet: KernelWalletData | SafeWalletData;
-  readonly owner: WebAuthnAccount | LocalAccount;
-};
+type EvmSmartAccount =
+  | ToKernelSmartAccountReturnType<"0.7", false>
+  | ToSafeSmartAccountReturnType<"0.7">;
 
 export const reconstructEvmAccount: (
   input: ReconstructEvmAccountInput,
   publicClient: PublicClient,
-) => Effect.Effect<SmartAccount, EvmExecutionError> = Effect.fn("evm.accounts.reconstruct")(
+) => Effect.Effect<EvmSmartAccount, EvmExecutionError> = Effect.fn("evm.accounts.reconstruct")(
   function* (input, publicClient) {
     const account = yield* Effect.tryPromise({
       try: () =>

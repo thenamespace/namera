@@ -12,6 +12,8 @@ evaluation will be added behind the same root `Evm` service.
   these are deliberately absent from the package root exports.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
+- `src/execution/` — EVM execution preparation and future sign, submit, and
+  receipt operations exposed through `evm.execution`.
 - `src/signatures/` — provider signature conversion for EVM validators.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
@@ -63,6 +65,11 @@ const program = Effect.gen(function* () {
 `getRpcUrl` supports `public`, `bundler`, and `paymaster` endpoints. Full Viem
 clients are created inside wallet and execution operations without exposing
 their generic types to package consumers.
+
+`evm.execution.prepare` reconstructs the stored smart account, prepares a
+stub-signed EntryPoint 0.7 UserOperation through Pimlico, and returns its
+normalized gas, paymaster, block, call, and account context. Policy evaluation
+and final signing occur after preparation.
 
 `Evm.testLayer` supplies deterministic Kernel and Safe account results for
 server boundary tests while preserving the public discriminated result shapes.
