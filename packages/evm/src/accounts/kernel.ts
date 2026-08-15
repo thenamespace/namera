@@ -8,7 +8,7 @@ import {
 } from "@namera-ai/protocol";
 import type { KernelWalletData } from "@namera-ai/protocol/model";
 import { toKernelSmartAccount } from "permissionless/accounts";
-import type { Address, LocalAccount } from "viem";
+import type { Address, LocalAccount, PublicClient } from "viem";
 import { entryPoint07Address, type WebAuthnAccount } from "viem/account-abstraction";
 
 import { getChainDataByChainId } from "../chains/helpers.js";
@@ -26,6 +26,26 @@ export type CreateKernelAccountProps = {
   readonly owner: WebAuthnAccount | LocalAccount;
 };
 
+type MakeKernelSmartAccountProps = Omit<CreateKernelAccountProps, "chainId">;
+
+export const makeKernelSmartAccount = (
+  props: MakeKernelSmartAccountProps,
+  publicClient: PublicClient,
+) =>
+  toKernelSmartAccount({
+    client: publicClient,
+    entryPoint: {
+      address: entryPoint07Address,
+      version: props.entryPointVersion,
+    },
+    index: props.accountIndex,
+    owners: [props.owner],
+    version: props.kernelVersion,
+    ...(props.owner.type === "webAuthn" && {
+      validatorAddress: kernelPasskeyValidatorV003Address,
+    }),
+  });
+
 export const createKernelAccount = Effect.fn("evm.createKernelAccount")(function* (
   props: CreateKernelAccountProps,
   config: EvmConfigValues,
@@ -40,20 +60,7 @@ export const createKernelAccount = Effect.fn("evm.createKernelAccount")(function
 
   const publicClient = createPublicClient(chain, Redacted.value(config.alchemyApiKey));
   const client = yield* Effect.tryPromise({
-    try: () =>
-      toKernelSmartAccount({
-        client: publicClient,
-        entryPoint: {
-          address: entryPoint07Address,
-          version: props.entryPointVersion,
-        },
-        index: props.accountIndex,
-        owners: [props.owner],
-        version: props.kernelVersion,
-        ...(props.owner.type === "webAuthn" && {
-          validatorAddress: kernelPasskeyValidatorV003Address,
-        }),
-      }),
+    try: () => makeKernelSmartAccount(props, publicClient),
     catch: (cause) => new EvmAccountCreationError({ implementation: "kernel", cause }),
   });
 

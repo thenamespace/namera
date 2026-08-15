@@ -8,7 +8,7 @@ import {
 } from "@namera-ai/protocol";
 import type { SafeWalletData } from "@namera-ai/protocol/model";
 import { toSafeSmartAccount } from "permissionless/accounts";
-import type { LocalAccount } from "viem";
+import type { LocalAccount, PublicClient } from "viem";
 import { entryPoint07Address, type WebAuthnAccount } from "viem/account-abstraction";
 
 import { getChainDataByChainId } from "../chains/helpers.js";
@@ -22,6 +22,23 @@ export type CreateSafeAccountProps = {
   readonly saltNonce: bigint;
   readonly owner: WebAuthnAccount | LocalAccount;
 };
+
+type MakeSafeSmartAccountProps = Omit<CreateSafeAccountProps, "chainId">;
+
+export const makeSafeSmartAccount = (
+  props: MakeSafeSmartAccountProps,
+  publicClient: PublicClient,
+) =>
+  toSafeSmartAccount({
+    client: publicClient,
+    entryPoint: {
+      address: entryPoint07Address,
+      version: props.entryPointVersion,
+    },
+    saltNonce: props.saltNonce,
+    owners: [props.owner],
+    version: props.safeVersion,
+  });
 
 export const createSafeAccount = Effect.fn("evm.createSafeAccount")(function* (
   props: CreateSafeAccountProps,
@@ -37,17 +54,7 @@ export const createSafeAccount = Effect.fn("evm.createSafeAccount")(function* (
 
   const publicClient = createPublicClient(chain, Redacted.value(config.alchemyApiKey));
   const client = yield* Effect.tryPromise({
-    try: () =>
-      toSafeSmartAccount({
-        client: publicClient,
-        entryPoint: {
-          address: entryPoint07Address,
-          version: props.entryPointVersion,
-        },
-        saltNonce: props.saltNonce,
-        owners: [props.owner],
-        version: props.safeVersion,
-      }),
+    try: () => makeSafeSmartAccount(props, publicClient),
     catch: (cause) => new EvmAccountCreationError({ implementation: "safe", cause }),
   });
 

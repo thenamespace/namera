@@ -8,8 +8,10 @@ evaluation will be added behind the same root `Evm` service.
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
-- `src/clients/` — internal plain Viem public, bundler, and paymaster factories.
-- `src/accounts/` — smart-account and wallet-key owner construction.
+- `src/clients/` — internal cached Viem public, bundler, and paymaster clients;
+  these are deliberately absent from the package root exports.
+- `src/accounts/` — shared smart-account creation, reconstruction, and
+  wallet-key owner construction.
 - `src/signatures/` — provider signature conversion for EVM validators.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.

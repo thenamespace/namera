@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
-import { Bytes32, EthereumAddress, Hex, SupportedEvmChainId } from "#/evm/index";
+import { SupportedEvmChainId } from "#/evm/chains";
+import { Bytes32, EthereumAddress, Hex } from "#/evm/primitives";
 
 const NonNegativeEvmQuantity = Schema.BigInt.check(Schema.isGreaterThanOrEqualToBigInt(0n));
 
