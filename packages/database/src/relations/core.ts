@@ -1,0 +1,229 @@
+import { defineRelationsPart } from "drizzle-orm";
+
+import * as schema from "#/schema/index";
+
+export const coreRelations = defineRelationsPart(schema, (r) => ({
+  walletKey: {
+    // Each wallet key belongs to one organization.
+    organization: r.one.organization({
+      from: r.walletKey.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // One wallet key can control many wallets in the same organization.
+    wallets: r.many.wallet({
+      from: [r.walletKey.id, r.walletKey.organizationId],
+      to: [r.wallet.walletKeyId, r.wallet.organizationId],
+    }),
+  },
+  wallet: {
+    // Each wallet belongs to one organization.
+    organization: r.one.organization({
+      from: r.wallet.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each wallet is controlled by one wallet key.
+    walletKey: r.one.walletKey({
+      from: [r.wallet.walletKeyId, r.wallet.organizationId],
+      to: [r.walletKey.id, r.walletKey.organizationId],
+      optional: false,
+    }),
+    // Each wallet records its creating actor.
+    creator: r.one.actor({
+      from: [r.wallet.createdByActorId, r.wallet.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    // One wallet can own many session keys.
+    sessionKeys: r.many.sessionKey({
+      from: [r.wallet.id, r.wallet.organizationId],
+      to: [r.sessionKey.walletId, r.sessionKey.organizationId],
+    }),
+  },
+  sessionKey: {
+    // Each session key belongs to one organization.
+    organization: r.one.organization({
+      from: r.sessionKey.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each session key belongs to one wallet.
+    wallet: r.one.wallet({
+      from: [r.sessionKey.walletId, r.sessionKey.organizationId],
+      to: [r.wallet.id, r.wallet.organizationId],
+      optional: false,
+    }),
+    // Each session key records its creating actor.
+    creator: r.one.actor({
+      from: [r.sessionKey.createdByActorId, r.sessionKey.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    // A revoked session key can record its revoking actor.
+    revoker: r.one.actor({
+      from: [r.sessionKey.revokedByActorId, r.sessionKey.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+    }),
+    // One session key can be assigned through many grants.
+    grants: r.many.sessionKeyGrant({
+      from: [r.sessionKey.id, r.sessionKey.organizationId],
+      to: [r.sessionKeyGrant.sessionKeyId, r.sessionKeyGrant.organizationId],
+    }),
+    // One session key can own many policy-state records.
+    policyStates: r.many.sessionKeyPolicyState({
+      from: [r.sessionKey.id, r.sessionKey.organizationId],
+      to: [r.sessionKeyPolicyState.sessionKeyId, r.sessionKeyPolicyState.organizationId],
+    }),
+    // One session key can own many policy reservations.
+    policyReservations: r.many.sessionKeyPolicyReservation({
+      from: [r.sessionKey.id, r.sessionKey.organizationId],
+      to: [
+        r.sessionKeyPolicyReservation.sessionKeyId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+    }),
+  },
+  sessionKeyGrant: {
+    // Each grant belongs to one organization.
+    organization: r.one.organization({
+      from: r.sessionKeyGrant.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each grant authorizes one actor.
+    actor: r.one.actor({
+      from: [r.sessionKeyGrant.actorId, r.sessionKeyGrant.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    // Each grant references one session key.
+    sessionKey: r.one.sessionKey({
+      from: [r.sessionKeyGrant.sessionKeyId, r.sessionKeyGrant.organizationId],
+      to: [r.sessionKey.id, r.sessionKey.organizationId],
+      optional: false,
+    }),
+    // Each grant records its issuing actor.
+    grantedBy: r.one.actor({
+      from: [r.sessionKeyGrant.grantedByActorId, r.sessionKeyGrant.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    // A revoked grant can record its revoking actor.
+    revokedBy: r.one.actor({
+      from: [r.sessionKeyGrant.revokedByActorId, r.sessionKeyGrant.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+    }),
+    // One grant can authorize many confirmed executions.
+    executions: r.many.execution({
+      from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      to: [r.execution.sessionKeyGrantId, r.execution.organizationId],
+    }),
+    // One grant can authorize many execution submissions.
+    executionSubmissions: r.many.executionSubmission({
+      from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      to: [r.executionSubmission.sessionKeyGrantId, r.executionSubmission.organizationId],
+    }),
+  },
+  executionSubmission: {
+    // Each execution submission belongs to one organization.
+    organization: r.one.organization({
+      from: r.executionSubmission.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each execution submission records its requesting actor.
+    actor: r.one.actor({
+      from: [r.executionSubmission.actorId, r.executionSubmission.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    // Each execution submission uses one session-key grant.
+    sessionKeyGrant: r.one.sessionKeyGrant({
+      from: [r.executionSubmission.sessionKeyGrantId, r.executionSubmission.organizationId],
+      to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      optional: false,
+    }),
+    // A confirmed execution submission can have one execution record.
+    execution: r.one.execution({
+      from: r.executionSubmission.id,
+      to: r.execution.executionSubmissionId,
+    }),
+    // One execution submission can own many policy reservations.
+    policyReservations: r.many.sessionKeyPolicyReservation({
+      from: [r.executionSubmission.id, r.executionSubmission.organizationId],
+      to: [
+        r.sessionKeyPolicyReservation.executionSubmissionId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+    }),
+  },
+  execution: {
+    // Each confirmed execution belongs to one organization.
+    organization: r.one.organization({
+      from: r.execution.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each confirmed execution used one session-key grant.
+    sessionKeyGrant: r.one.sessionKeyGrant({
+      from: [r.execution.sessionKeyGrantId, r.execution.organizationId],
+      to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      optional: false,
+    }),
+    // Each confirmed execution completes one matching submission.
+    executionSubmission: r.one.executionSubmission({
+      from: [
+        r.execution.executionSubmissionId,
+        r.execution.sessionKeyGrantId,
+        r.execution.organizationId,
+      ],
+      to: [
+        r.executionSubmission.id,
+        r.executionSubmission.sessionKeyGrantId,
+        r.executionSubmission.organizationId,
+      ],
+      optional: false,
+    }),
+  },
+  sessionKeyPolicyState: {
+    // Each policy-state record belongs to one organization.
+    organization: r.one.organization({
+      from: r.sessionKeyPolicyState.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each policy-state record belongs to one session key.
+    sessionKey: r.one.sessionKey({
+      from: [r.sessionKeyPolicyState.sessionKeyId, r.sessionKeyPolicyState.organizationId],
+      to: [r.sessionKey.id, r.sessionKey.organizationId],
+      optional: false,
+    }),
+  },
+  sessionKeyPolicyReservation: {
+    // Each policy reservation belongs to one organization.
+    organization: r.one.organization({
+      from: r.sessionKeyPolicyReservation.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Each policy reservation belongs to one session key.
+    sessionKey: r.one.sessionKey({
+      from: [
+        r.sessionKeyPolicyReservation.sessionKeyId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+      to: [r.sessionKey.id, r.sessionKey.organizationId],
+      optional: false,
+    }),
+    // Each policy reservation belongs to one execution submission.
+    executionSubmission: r.one.executionSubmission({
+      from: [
+        r.sessionKeyPolicyReservation.executionSubmissionId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+      to: [r.executionSubmission.id, r.executionSubmission.organizationId],
+      optional: false,
+    }),
+  },
+}));

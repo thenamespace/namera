@@ -95,6 +95,14 @@ Change tables and protocol models together. Business workflows belong in
 Repositories perform persistence only. Cross-repository decisions, audit
 selection, provider calls, logs, and metrics belong in `application`.
 
+Relations use Drizzle's `defineRelationsPart` API and are split by schema
+domain under `src/relations`. The barrel spreads the empty schema-wide inference
+part first, followed by non-overlapping auth, OAuth, audit, billing, core, jobs,
+and notification parts. Define each source table in exactly one part; relations
+may still target tables from any schema. Add a short comment above every
+relation explaining its domain meaning, especially when the foreign-key shape
+is not obvious.
+
 Execution reconciliation claims `prepared` and `submitted` rows in bounded
 batches using `FOR UPDATE SKIP LOCKED`. A shared token leases the claimed batch;
 all terminal transitions verify both submission identity and lease ownership.
