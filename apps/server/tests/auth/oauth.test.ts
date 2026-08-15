@@ -185,8 +185,40 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
         ),
       );
       expect(token.status).toBe(200);
-      expect(yield* token.json).toMatchObject({ token_type: "Bearer" });
+      const tokenBody = yield* token.json;
+      expect(tokenBody).toMatchObject({ token_type: "Bearer" });
       expect(token.headers["cache-control"]).toBe("no-store");
+      if (
+        typeof tokenBody !== "object" ||
+        tokenBody === null ||
+        !("refresh_token" in tokenBody) ||
+        typeof tokenBody.refresh_token !== "string"
+      ) {
+        return yield* Effect.die("Expected refresh token");
+      }
+      const missingResource = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyUrlParams({
+            grant_type: "refresh_token",
+            refresh_token: tokenBody.refresh_token,
+            client_id: registration.client_id,
+          }),
+        ),
+      );
+      expect(missingResource.status).toBe(400);
+      expect(yield* missingResource.json).toMatchObject({ error: "invalid_target" });
+      const refreshed = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyUrlParams({
+            grant_type: "refresh_token",
+            refresh_token: tokenBody.refresh_token,
+            client_id: registration.client_id,
+            resource,
+          }),
+        ),
+      );
+      expect(refreshed.status).toBe(200);
+      expect(yield* refreshed.json).toMatchObject({ token_type: "Bearer" });
     }),
   );
 
@@ -217,6 +249,156 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       );
       expect(unsupported.status).toBe(400);
       expect(yield* unsupported.json).toMatchObject({ error: "invalid_client_metadata" });
+
+      const customScheme = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/register").pipe(
+          HttpClientRequest.bodyJsonUnsafe({
+            redirect_uris: ["namera-mcp:/callback"],
+            token_endpoint_auth_method: "none",
+            application_type: "native",
+          }),
+        ),
+      );
+      expect(customScheme.status).toBe(400);
+      expect(yield* customScheme.json).toMatchObject({ error: "invalid_redirect_uri" });
+
+      const loopback = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/register").pipe(
+          HttpClientRequest.bodyJsonUnsafe({
+            redirect_uris: ["http://127.0.0.1:49152/callback"],
+            token_endpoint_auth_method: "none",
+            application_type: "native",
+          }),
+        ),
+      );
+      expect(loopback.status).toBe(201);
+    }),
+  );
+
+  it.effect("redirects authorization errors only after validating the client callback", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      yield* registerClient();
+      const protocolClient = yield* makeOAuthProtocolClient();
+      const crypto = yield* CryptoService;
+      const challenge = yield* crypto.sha256(verifier);
+
+      const invalidScope = yield* protocolClient.execute(
+        HttpClientRequest.get("http://api.test/oauth/authorize").pipe(
+          HttpClientRequest.setUrlParams({
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            response_type: "code",
+            code_challenge: challenge,
+            code_challenge_method: "S256",
+            resource,
+            scope: "mcp:unknown",
+            state: "redirect-state",
+          }),
+        ),
+      );
+      expect(invalidScope.status).toBe(302);
+      const callback = new URL(invalidScope.headers.location ?? "");
+      expect(callback.origin + callback.pathname).toBe(redirectUri);
+      expect(callback.searchParams.get("error")).toBe("invalid_scope");
+      expect(callback.searchParams.get("state")).toBe("redirect-state");
+
+      const invalidRedirect = yield* protocolClient.execute(
+        HttpClientRequest.get("http://api.test/oauth/authorize").pipe(
+          HttpClientRequest.setUrlParams({
+            client_id: clientId,
+            redirect_uri: "https://attacker.example/callback",
+            response_type: "code",
+            code_challenge: challenge,
+            code_challenge_method: "S256",
+            resource,
+            scope: "mcp:read",
+            state: "must-not-leak",
+          }),
+        ),
+      );
+      expect(invalidRedirect.status).toBe(400);
+      expect(invalidRedirect.headers.location).toBeUndefined();
+      expect(yield* invalidRedirect.json).toMatchObject({ error: "invalid_request" });
+    }),
+  );
+
+  it.effect("rejects malformed PKCE challenges and repeated authorization parameters", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      yield* registerClient();
+      const protocolClient = yield* makeOAuthProtocolClient();
+
+      const invalidChallenge = yield* protocolClient.execute(
+        HttpClientRequest.get("http://api.test/oauth/authorize").pipe(
+          HttpClientRequest.setUrlParams({
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            response_type: "code",
+            code_challenge: "*".repeat(43),
+            code_challenge_method: "S256",
+            resource,
+            scope: "mcp:read",
+            state: "pkce-state",
+          }),
+        ),
+      );
+      expect(invalidChallenge.status).toBe(302);
+      expect(new URL(invalidChallenge.headers.location ?? "").searchParams.get("error")).toBe(
+        "invalid_request",
+      );
+
+      const duplicate = yield* protocolClient.get(
+        `http://api.test/oauth/authorize?client_id=${encodeURIComponent(clientId)}&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`,
+      );
+      expect(duplicate.status).toBe(400);
+      expect(duplicate.headers.location).toBeUndefined();
+      expect(yield* duplicate.json).toMatchObject({ error: "invalid_request" });
+    }),
+  );
+
+  it.effect("requires form media types and unique token and revocation parameters", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const protocolClient = yield* makeOAuthProtocolClient();
+
+      const tokenJson = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyJsonUnsafe({ grant_type: "authorization_code" }),
+        ),
+      );
+      expect(tokenJson.status).toBe(400);
+      expect(yield* tokenJson.json).toMatchObject({ error: "invalid_request" });
+
+      const duplicateToken = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyText(
+            "grant_type=authorization_code&grant_type=refresh_token",
+            "application/x-www-form-urlencoded",
+          ),
+        ),
+      );
+      expect(duplicateToken.status).toBe(400);
+      expect(yield* duplicateToken.json).toMatchObject({ error: "invalid_request" });
+
+      const revokeJson = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/revoke").pipe(
+          HttpClientRequest.bodyJsonUnsafe({ token: "not-a-token" }),
+        ),
+      );
+      expect(revokeJson.status).toBe(400);
+      expect(yield* revokeJson.json).toMatchObject({ error: "invalid_request" });
+
+      const duplicateRevoke = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/revoke").pipe(
+          HttpClientRequest.bodyText(
+            "token=first&token=second",
+            "application/x-www-form-urlencoded",
+          ),
+        ),
+      );
+      expect(duplicateRevoke.status).toBe(400);
+      expect(yield* duplicateRevoke.json).toMatchObject({ error: "invalid_request" });
     }),
   );
 
@@ -393,6 +575,17 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       const code = new URL(approved.redirectUrl).searchParams.get("code");
       if (code === null) return yield* Effect.die("Expected authorization code");
       const app = yield* Application;
+      expect(
+        yield* app.oauth.token
+          .exchangeAuthorizationCode({
+            code,
+            clientId,
+            redirectUri,
+            codeVerifier: "a".repeat(42),
+            resource,
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_REQUEST" });
       const issued = yield* app.oauth.token.exchangeAuthorizationCode({
         code,
         clientId,
@@ -415,15 +608,25 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_GRANT" });
       const issuedRefreshToken = issued.refreshToken;
       if (issuedRefreshToken === undefined) return yield* Effect.die("Expected refresh token");
+      expect(
+        yield* app.oauth.token
+          .refresh({
+            refreshToken: issuedRefreshToken,
+            clientId,
+            resource: "http://api.test/another-resource",
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_TARGET" });
       const rotated = yield* app.oauth.token.refresh({
         refreshToken: issuedRefreshToken,
         clientId,
+        resource,
       });
       expect(rotated.refreshToken).toBeTruthy();
       expect(rotated.refreshToken).not.toBe(issued.refreshToken);
       expect(
         yield* app.oauth.token
-          .refresh({ refreshToken: issuedRefreshToken, clientId })
+          .refresh({ refreshToken: issuedRefreshToken, clientId, resource })
           .pipe(Effect.flip),
       ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_GRANT" });
     }),

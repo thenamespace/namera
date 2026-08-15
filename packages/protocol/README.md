@@ -71,8 +71,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   represented only by hashes. OAuth models live under `model/auth/oauth` and
   keep PKCE, resource indicators, scopes, token families, and lifecycle state
   explicit without exposing credentials through public DTOs. RFC 7591 dynamic
-  registration accepts only public clients and exact, safe redirect URIs; it
-  never issues a client secret.
+  registration accepts only public clients and exact HTTPS or loopback HTTP
+  redirect URIs; it never issues a client secret. PKCE schemas enforce the
+  complete verifier grammar and the exact base64url-encoded `S256` challenge
+  shape.
 - Session keys belong to one wallet, are discriminated by chain namespace, and
   carry an immutable namespace-specific `policies` array.
   Each policy instance has a stable `PolicyId` so its handler can address typed

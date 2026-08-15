@@ -3,7 +3,7 @@ import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { OAuthTokenError, OAuthTokenFamilyId } from "@namera-ai/protocol";
-import type { OAuthScope, OAuthToken } from "@namera-ai/protocol/model";
+import { OAuthPkceCodeVerifier, type OAuthScope, type OAuthToken } from "@namera-ai/protocol/model";
 import { oauthTokenDuration, oauthTokenResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
 
@@ -95,6 +95,9 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       ) {
         return yield* new OAuthTokenError({ code: "INVALID_CLIENT" });
       }
+      if (!Schema.is(OAuthPkceCodeVerifier)(input.codeVerifier)) {
+        return yield* new OAuthTokenError({ code: "INVALID_REQUEST" });
+      }
       const now = yield* DateTime.now;
       const codeHash = yield* crypto.hash({
         purpose: cryptoPurpose.oauthAuthorizationCode,
@@ -140,6 +143,7 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
     function* (input: {
       readonly refreshToken: string;
       readonly clientId: string;
+      readonly resource: string;
       readonly scopes?: ReadonlyArray<string>;
     }) {
       const client = yield* repository.auth.oauth.client.findByClientId(input.clientId);
@@ -163,6 +167,9 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       ) {
         return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
       }
+      if (existing.resource !== input.resource) {
+        return yield* new OAuthTokenError({ code: "INVALID_TARGET" });
+      }
       if (existing.consumedAt !== null || existing.revokedAt !== null) {
         yield* repository.auth.oauth.token.revokeAuthorization(existing.authorizationId, now);
         yield* Metric.update(Metric.withAttributes(oauthTokenResults, { result: "reuse" }), 1);
@@ -183,13 +190,13 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
             consumed.authorizationId,
             now,
           );
-          if (authorization === undefined) {
+          if (authorization === undefined || authorization.resource !== input.resource) {
             return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
           }
           return yield* issue({
             authorizationId: authorization.id,
             clientId: client.id,
-            resource: consumed.resource,
+            resource: input.resource,
             scopes,
             now,
             refreshFamilyId: consumed.familyId,

@@ -3,7 +3,7 @@ import { Schema } from "effect";
 import { McpAuthorizationId, OAuthAuthorizationCodeId, OAuthClientId } from "#/common/index";
 import { createInsertSchema } from "#/model/helpers";
 
-import { OAuthScopes } from "./common.js";
+import { OAuthPkceCodeChallenge, OAuthScopes } from "./common.js";
 
 export const OAuthAuthorizationCode = Schema.Struct({
   id: OAuthAuthorizationCodeId,
@@ -11,7 +11,7 @@ export const OAuthAuthorizationCode = Schema.Struct({
   clientId: OAuthClientId,
   codeHash: Schema.NonEmptyString,
   redirectUri: Schema.NonEmptyString,
-  codeChallenge: Schema.NonEmptyString,
+  codeChallenge: OAuthPkceCodeChallenge,
   codeChallengeMethod: Schema.Literal("S256"),
   resource: Schema.NonEmptyString,
   scopes: OAuthScopes,

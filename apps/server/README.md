@@ -98,8 +98,13 @@ OAuth authorization and token endpoints use dedicated per-IP token-bucket
 limits of 60 requests per minute. RFC 7591 public-client registration is
 advertised at `/oauth/register` and limited to 20 requests per IP per hour.
 Dynamically registered clients receive no secret and may use only exact HTTPS,
-loopback HTTP, or native-app redirect URIs. Client ID Metadata Document
-resolution remains deferred.
+or loopback HTTP redirect URIs. OAuth protocol endpoints reject repeated
+parameters and unexpected request media types. Authorization errors redirect
+only after the registered callback is validated; invalid clients and callbacks
+receive a local error response. PKCE uses the complete `S256` verifier and
+challenge grammar, and refresh tokens remain bound to the canonical MCP
+resource. Client ID Metadata Document resolution remains deferred until a newer
+Effect MCP adapter makes it part of the selected compatibility target.
 Authorization codes and tokens are opaque and stored only as hashes. Consent
 approval and authorization revocation create organization audit events and
 in-app notifications, but never email jobs.

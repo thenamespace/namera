@@ -4,7 +4,7 @@ import { OAuthAuthorizationRequestId, OAuthClientId, OrganizationId, UserId } fr
 import { TimestampFields } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 
-import { OAuthScopes } from "./common.js";
+import { OAuthPkceCodeChallenge, OAuthScopes } from "./common.js";
 
 export const OAuthAuthorizationRequestStatus = Schema.Literals([
   "pending",
@@ -20,7 +20,7 @@ export const OAuthAuthorizationRequest = Schema.Struct({
   organizationId: Schema.NullOr(OrganizationId),
   redirectUri: Schema.NonEmptyString,
   responseType: Schema.Literal("code"),
-  codeChallenge: Schema.NonEmptyString,
+  codeChallenge: OAuthPkceCodeChallenge,
   codeChallengeMethod: Schema.Literal("S256"),
   resource: Schema.NonEmptyString,
   requestedScopes: OAuthScopes,

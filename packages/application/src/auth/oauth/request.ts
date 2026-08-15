@@ -1,11 +1,11 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository } from "@namera-ai/database";
 import {
   OAuthAuthorizationRequestError,
   type OAuthAuthorizationRequestId,
 } from "@namera-ai/protocol";
-import type { OAuthScope } from "@namera-ai/protocol/model";
+import { OAuthPkceCodeChallenge, type OAuthScope } from "@namera-ai/protocol/model";
 import { oauthAuthorizationRequestResults } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
@@ -41,7 +41,10 @@ export const makeOAuthRequestApplication = Effect.gen(function* () {
       if (input.responseType !== "code" || !client.responseTypes.includes("code")) {
         return yield* new OAuthAuthorizationRequestError({ code: "UNSUPPORTED_RESPONSE_TYPE" });
       }
-      if (input.codeChallengeMethod !== "S256" || input.codeChallenge.length < 43) {
+      if (
+        input.codeChallengeMethod !== "S256" ||
+        !Schema.is(OAuthPkceCodeChallenge)(input.codeChallenge)
+      ) {
         return yield* new OAuthAuthorizationRequestError({ code: "INVALID_REQUEST" });
       }
 

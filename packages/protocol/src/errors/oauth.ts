@@ -30,6 +30,7 @@ export class OAuthTokenError extends Schema.TaggedError<OAuthTokenError>()("OAut
     "INVALID_GRANT",
     "INVALID_REQUEST",
     "INVALID_SCOPE",
+    "INVALID_TARGET",
     "UNSUPPORTED_GRANT_TYPE",
   ]),
 }) {}

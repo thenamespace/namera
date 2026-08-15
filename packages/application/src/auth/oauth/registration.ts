@@ -18,17 +18,13 @@ import { AuthConfig } from "#/auth/config";
 const isLoopbackHost = (hostname: string) =>
   hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 
-const isValidRedirectUri = (value: string, applicationType: "native" | "web") => {
+const isValidRedirectUri = (value: string) => {
   try {
     const url = new URL(value);
     if (url.hash !== "" || url.username !== "" || url.password !== "") return false;
     if (url.protocol === "https:") return true;
     if (url.protocol === "http:") return isLoopbackHost(url.hostname);
-    return (
-      applicationType === "native" &&
-      value.startsWith(`${url.protocol}/`) &&
-      !["data:", "file:", "javascript:"].includes(url.protocol)
-    );
+    return false;
   } catch {
     return false;
   }
@@ -59,7 +55,7 @@ export const makeOAuthRegistrationApplication = Effect.gen(function* () {
       const redirectUris = [...new Set(input.redirect_uris)];
       if (
         redirectUris.length !== input.redirect_uris.length ||
-        redirectUris.some((uri) => !isValidRedirectUri(uri, applicationType))
+        redirectUris.some((uri) => !isValidRedirectUri(uri))
       ) {
         return yield* new OAuthClientRegistrationError({ code: "INVALID_REDIRECT_URI" });
       }

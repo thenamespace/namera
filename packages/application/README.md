@@ -112,8 +112,9 @@ session keys.
 OAuth authorization accepts active public clients created through pre-registration
 or RFC 7591 dynamic registration, exact redirect URIs, PKCE `S256`, and the
 canonical `/mcp` resource. Dynamic registration issues an opaque public client
-ID without a secret and accepts only HTTPS, loopback HTTP, or native-app redirect
-URIs. Approval
+ID without a secret and accepts only HTTPS or loopback HTTP redirect URIs.
+Authorization-code challenges and verifiers use the strict RFC 7636 grammar,
+and refresh rotation requires the token's original MCP resource. Approval
 atomically creates an `mcp` actor, its selected session-key grants, a hashed
 one-time authorization code, an organization audit event, and in-app
 notification recipients. Revocation atomically invalidates the authorization,

@@ -30,7 +30,16 @@ Bearer-token authentication and the Effect Streamable HTTP transport are mounted
 at `/mcp` using Effect's available `2025-06-18` protocol adapter. The initial
 read-only tool lists the active session-key grants delegated to the current MCP
 authorization. Dynamic registration is advertised as a compatibility fallback
-for MCP hosts such as Codex CLI. Client ID Metadata Documents remain deferred.
+for MCP hosts such as Codex CLI. Authorization errors redirect only after the
+client callback has been validated; PKCE uses strict RFC 7636 syntax; repeated
+OAuth parameters and incorrect endpoint media types are rejected; refresh
+tokens are resource-bound; and dynamic redirect URIs are limited to HTTPS or
+loopback HTTP.
+
+The OAuth authorization slice is complete for Effect's MCP `2025-06-18`
+compatibility target. Client ID Metadata Documents and later MCP authorization
+revisions are intentionally deferred until Effect exposes a corresponding
+protocol adapter.
 
 Here, “MCP 2.1 authorization” means MCP authorization built on OAuth 2.1; MCP
 itself uses date-based protocol revisions rather than a `2.1` version number.
@@ -86,34 +95,20 @@ authenticate credential
 OAuth scopes should remain coarse transport capabilities. Session-key grants
 and policies remain the fine-grained wallet authorization model.
 
-## Current specification and Effect compatibility
+## Selected specification and Effect compatibility
 
-As of 15 August 2026, the current MCP revision is `2026-07-28`. Its Streamable
-HTTP transport uses one POST per JSON-RPC request, has no standalone GET stream,
-and has no protocol-level session. Every POST carries protocol metadata and the
-required mirrored HTTP headers.
+The repository uses Effect `4.0.0-beta.105`. Its built-in MCP module is
+available from `effect/unstable/ai`, and its protocol adapter is
+`McpProtocol.v2025_06_18`. Namera therefore deliberately targets MCP
+`2025-06-18` for both transport interoperability and the OAuth authorization
+surface. Do not claim support for a later MCP revision until Effect exposes and
+the repository adopts its adapter.
 
-The repository currently uses Effect `4.0.0-beta.105`. Its built-in MCP module
-is available from `effect/unstable/ai`, but its only protocol adapter is
-`McpProtocol.v2025_06_18`. Its `McpServer.layerHttp` implementation therefore
-uses the older stateful transport with `Mcp-Session-Id`.
-
-Do not claim that the current Effect adapter implements MCP `2026-07-28`.
-Choose one explicit compatibility target when implementation starts:
-
-1. Preferred: upgrade Effect when it exposes a `2026-07-28` adapter, then use
-   that adapter directly.
-2. Practical interim: ship Effect's `2025-06-18` adapter and test it against the
-   actual MCP hosts Namera supports. Modern clients are required to implement
-   backward-compatibility negotiation, but interoperability must still be
-   verified.
-3. If current-revision support is required before Effect adds it, wrap the
-   official MCP TypeScript SDK transport at the HTTP edge while keeping OAuth,
-   actors, grants, tools, and application workflows in Effect. Do not implement
-   the new wire protocol by hand.
-
-The OAuth design below is independent of the MCP transport revision, so it can
-be implemented first without creating a migration problem.
+When Effect adds a newer adapter, upgrade the transport and re-audit discovery,
+client registration, authorization metadata, security requirements, and host
+interoperability as one compatibility slice. Keep OAuth actors, grants, consent,
+tokens, and application workflows independent of the wire adapter so that
+upgrade does not require a persistence redesign.
 
 ## Required public endpoints
 
@@ -224,8 +219,8 @@ The current MCP specification gives this priority:
 
 Namera supports pre-registration and RFC 7591 dynamic registration now. Dynamic
 registration is anonymous, per-IP rate limited, creates only a public OAuth
-client, issues no secret, and requires exact HTTPS, loopback HTTP, or native-app
-redirect URIs. The consent UI treats this metadata as unverified and does not
+client, issues no secret, and requires exact HTTPS or loopback HTTP redirect
+URIs. The consent UI treats this metadata as unverified and does not
 load its remote logo.
 
 Client ID Metadata Documents remain a future enhancement. With metadata
@@ -801,13 +796,15 @@ all MCP authorizations approved through that membership when it is removed.
 
 - Use HTTPS for every production OAuth and MCP endpoint.
 - Require PKCE `S256`; reject `plain` and missing challenges.
+- Enforce the RFC 7636 verifier grammar and exact 43-character S256 challenge.
 - Exact-match registered redirect URIs. Do not allow wildcards.
 - Permit native loopback callbacks according to native-app rules; never treat
   arbitrary localhost metadata URLs as trusted.
-- Include `iss` in successful and error authorization responses and advertise
-  support in metadata.
+- Reject repeated OAuth parameters and unexpected endpoint media types.
+- Redirect authorization errors only after validating the registered callback;
+  return invalid-client and invalid-callback failures locally.
 - Require `resource=https://api.namera.ai/mcp` in authorization and token
-  requests. Bind every token to it and validate it on `/mcp`.
+  requests, including refresh. Bind every token to it and validate it on `/mcp`.
 - Store hashes of codes and tokens. Return raw credentials once.
 - Use constant-time credential comparison through the shared crypto service.
 - Rotate refresh tokens and revoke a family on reuse.
@@ -938,33 +935,19 @@ database layers.
 - policy reservation settles on success and releases on failure;
 - expected failures are safe MCP results and defects do not leak internals.
 
-## Implementation order
+## Completion boundary
 
-1. Add protocol identifiers, scopes, models, DTOs, and errors.
-2. Add the five OAuth tables, actor type, relations, migrations, and
-   repositories.
-3. Implement client resolution with SSRF protection.
-4. Implement discovery metadata and authorization-request creation.
-5. Add authenticated dashboard consent APIs and UI.
-6. Implement code exchange, opaque access tokens, refresh rotation, and
-   revocation.
-7. Add `McpPrincipal` middleware and `/mcp` with one read-only tool.
-8. Verify the chosen Effect/MCP revision against target clients.
-9. Add session-key listing and transaction execution tools.
-10. Add audit events, notifications, metrics, cleanup, and boundary tests as
-    each corresponding workflow is introduced.
-
-Do not start with transaction execution. First prove discovery, authorization,
-consent, token exchange, bearer validation, actor resolution, and a read-only
-tool end to end.
+The OAuth server, consent flow, actor/grant creation, bearer authentication, and
+one read-only MCP tool are complete for the `2025-06-18` compatibility target.
+Later MCP tools are product features rather than missing OAuth protocol work.
+Expired credential cleanup is operational maintenance. Client ID Metadata
+Documents and newer authorization behavior remain deferred until the matching
+Effect protocol adapter is available.
 
 ## Primary references
 
-- [MCP 2026-07-28 authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization)
-- [MCP authorization server discovery](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/authorization-server-discovery)
-- [MCP client registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)
-- [MCP authorization security considerations](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations)
-- [MCP 2026-07-28 Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)
+- [MCP 2025-06-18 authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
+- [MCP 2025-06-18 Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
 - [Effect MCP protocol adapters](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/McpProtocol.ts)
 - [Effect MCP server implementation](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/McpServer.ts)
 - [OAuth 2.1 draft referenced by MCP](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13)

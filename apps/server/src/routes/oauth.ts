@@ -21,6 +21,38 @@ const noStoreHeaders = {
 const first = (value: string | ReadonlyArray<string> | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
+const tokenParameterNames = new Set([
+  "grant_type",
+  "code",
+  "client_id",
+  "redirect_uri",
+  "code_verifier",
+  "refresh_token",
+  "resource",
+  "scope",
+  "client_secret",
+]);
+
+const revokeParameterNames = new Set(["token", "token_type_hint"]);
+
+const hasMediaType = (request: HttpServerRequest.HttpServerRequest, expected: string) =>
+  request.headers["content-type"]?.split(";", 1)[0]?.trim().toLowerCase() === expected;
+
+const readUniqueFormParameters = (
+  parameters: Iterable<readonly [string, string]>,
+  supportedNames: ReadonlySet<string>,
+) => {
+  const form: Record<string, string> = {};
+  const seen = new Set<string>();
+  for (const [name, value] of parameters) {
+    if (seen.has(name)) return undefined;
+    seen.add(name);
+    if (!supportedNames.has(name)) continue;
+    form[name] = value;
+  }
+  return form;
+};
+
 const oauthError = (error: string, description: string, status = 400) =>
   HttpServerResponse.jsonUnsafe(
     { error, error_description: description },
@@ -54,7 +86,7 @@ const register = HttpRouter.add("POST", "/oauth/register", (request) =>
     ).pipe(Effect.result);
     if (Result.isFailure(limited)) return rateLimited(limited.failure);
 
-    if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+    if (!hasMediaType(request, "application/json")) {
       yield* Metric.update(
         Metric.withAttributes(oauthClientRegistrationResults, { result: "invalid_request" }),
         1,
@@ -115,31 +147,41 @@ const authorize = HttpRouter.add("GET", "/oauth/authorize", () =>
     if (Result.isFailure(limited)) return rateLimited(limited.failure);
 
     const params = yield* HttpServerRequest.ParsedSearchParams;
+    if (Object.values(params).some((value) => Array.isArray(value))) {
+      return oauthError("invalid_request", "OAuth parameters must not be repeated");
+    }
     const app = yield* Application;
-    const result = yield* app.oauth.request
-      .start({
-        clientId: first(params.client_id) ?? "",
-        redirectUri: first(params.redirect_uri) ?? "",
-        responseType: first(params.response_type) ?? "",
-        codeChallenge: first(params.code_challenge) ?? "",
-        codeChallengeMethod: first(params.code_challenge_method) ?? "",
-        resource: first(params.resource) ?? "",
-        scopes: (first(params.scope) ?? "").split(/\s+/).filter(Boolean),
-        state: first(params.state) ?? null,
-      })
-      .pipe(Effect.result);
+    const input = {
+      clientId: first(params.client_id) ?? "",
+      redirectUri: first(params.redirect_uri) ?? "",
+      responseType: first(params.response_type) ?? "",
+      codeChallenge: first(params.code_challenge) ?? "",
+      codeChallengeMethod: first(params.code_challenge_method) ?? "",
+      resource: first(params.resource) ?? "",
+      scopes: (first(params.scope) ?? "").split(/\s+/).filter(Boolean),
+      state: first(params.state) ?? null,
+    };
+    const result = yield* app.oauth.request.start(input).pipe(Effect.result);
     if (Result.isFailure(result)) {
       const code = result.failure.code;
-      return oauthError(
+      const error =
         code === "INVALID_CLIENT"
           ? "invalid_client"
           : code === "INVALID_SCOPE"
             ? "invalid_scope"
-            : code === "UNSUPPORTED_RESPONSE_TYPE"
-              ? "unsupported_response_type"
-              : "invalid_request",
-        "The authorization request is invalid",
-      );
+            : code === "INVALID_RESOURCE"
+              ? "invalid_target"
+              : code === "UNSUPPORTED_RESPONSE_TYPE"
+                ? "unsupported_response_type"
+                : "invalid_request";
+      if (code === "INVALID_CLIENT" || code === "INVALID_REDIRECT_URI") {
+        return oauthError(error, "The authorization request is invalid");
+      }
+      const redirectUrl = new URL(input.redirectUri);
+      redirectUrl.searchParams.set("error", error);
+      redirectUrl.searchParams.set("error_description", "The authorization request is invalid");
+      if (input.state !== null) redirectUrl.searchParams.set("state", input.state);
+      return HttpServerResponse.redirect(redirectUrl.toString(), { headers: noStoreHeaders });
     }
     return HttpServerResponse.redirect(result.success.consentUrl, {
       headers: noStoreHeaders,
@@ -157,7 +199,16 @@ const token = HttpRouter.add("POST", "/oauth/token", (request) =>
     ).pipe(Effect.result);
     if (Result.isFailure(limited)) return rateLimited(limited.failure);
 
-    const form = Object.fromEntries((yield* request.urlParamsBody).params);
+    if (!hasMediaType(request, "application/x-www-form-urlencoded")) {
+      return oauthError("invalid_request", "A form-encoded token request is required");
+    }
+    const form = readUniqueFormParameters(
+      (yield* request.urlParamsBody).params,
+      tokenParameterNames,
+    );
+    if (form === undefined) {
+      return oauthError("invalid_request", "OAuth parameters must not be repeated");
+    }
     const app = yield* Application;
     const grantType = form.grant_type;
     const result =
@@ -176,6 +227,7 @@ const token = HttpRouter.add("POST", "/oauth/token", (request) =>
               .refresh({
                 refreshToken: form.refresh_token ?? "",
                 clientId: form.client_id ?? "",
+                resource: form.resource ?? "",
                 ...(form.scope === undefined
                   ? {}
                   : { scopes: form.scope.split(/\s+/).filter(Boolean) }),
@@ -197,7 +249,16 @@ const token = HttpRouter.add("POST", "/oauth/token", (request) =>
 
 const revoke = HttpRouter.add("POST", "/oauth/revoke", (request) =>
   Effect.gen(function* () {
-    const form = Object.fromEntries((yield* request.urlParamsBody).params);
+    if (!hasMediaType(request, "application/x-www-form-urlencoded")) {
+      return oauthError("invalid_request", "A form-encoded revocation request is required");
+    }
+    const form = readUniqueFormParameters(
+      (yield* request.urlParamsBody).params,
+      revokeParameterNames,
+    );
+    if (form === undefined) {
+      return oauthError("invalid_request", "OAuth parameters must not be repeated");
+    }
     if (form.token !== undefined) {
       yield* (yield* Application).oauth.token.revokeToken(form.token);
     }
