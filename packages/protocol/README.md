@@ -83,8 +83,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   exactly for submission or reconciliation.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, and optional call-simulation
-  results. Keep Viem clients, provider errors, signatures, and raw provider
-  responses outside this contract.
+  results. Policy evaluation returns a typed allowed decision or the first
+  policy ID and bounded denial code. Keep Viem clients, provider errors,
+  signatures, and raw provider responses outside this contract.
 - EVM chain contracts distinguish the stable supported-network key, the chain
   name used for presentation/icons, and the exact supported CAIP-2 chain ID.
   Provider-specific RPC slugs do not belong in protocol.

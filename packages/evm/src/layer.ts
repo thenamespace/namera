@@ -13,6 +13,8 @@ import { EvmConfig } from "./config.js";
 import { makeEvmExecutionService } from "./execution/service.js";
 import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
+import { makeEvmPolicyService } from "./policy/service.js";
+import type { EvmPolicyService } from "./policy/types.js";
 
 export type EvmRpcType = "public" | "bundler" | "paymaster";
 
@@ -25,6 +27,7 @@ export interface EvmService {
     type: EvmRpcType,
   ) => Effect.Effect<string, UnsupportedChainError>;
   readonly execution: EvmExecutionService;
+  readonly policy: EvmPolicyService;
 }
 
 export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm") {
@@ -36,6 +39,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const pimlicoApiKey = encodeURIComponent(Redacted.value(config.pimlicoApiKey));
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config);
+      const policy = makeEvmPolicyService();
 
       const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, type: EvmRpcType) {
         const data = getChainDataByChainId(chainId);
@@ -53,7 +57,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         return `https://api.pimlico.io/v2/${data.chain.id}/rpc?apikey=${pimlicoApiKey}`;
       });
 
-      return Evm.of({ createAccount, getRpcUrl, execution });
+      return Evm.of({ createAccount, getRpcUrl, execution, policy });
     }),
   );
 
@@ -102,6 +106,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         return `https://example.test/${chainId}/${type}`;
       }),
       execution: makeTestEvmExecutionService(),
+      policy: makeEvmPolicyService(),
     }),
   );
 }

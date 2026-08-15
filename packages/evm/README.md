@@ -14,6 +14,8 @@ evaluation will be added behind the same root `Evm` service.
   wallet-key owner construction.
 - `src/execution/` — EVM execution preparation and future sign, submit, and
   receipt operations exposed through `evm.execution`.
+- `src/policy/` — exhaustive EVM policy registry and handlers exposed through
+  `evm.policy`.
 - `src/signatures/` — provider signature conversion for EVM validators.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
@@ -70,6 +72,11 @@ their generic types to package consumers.
 stub-signed EntryPoint 0.7 UserOperation through Pimlico, and returns its
 normalized gas, paymaster, block, call, and account context. Policy evaluation
 and final signing occur after preparation.
+
+`evm.policy.evaluate` evaluates one complete decoded EVM policy set against the
+prepared intent context and returns the first denial or an allowed decision.
+The initial `evm.time-window` handler uses the prepared block timestamp with an
+inclusive start and exclusive expiration.
 
 `Evm.testLayer` supplies deterministic Kernel and Safe account results for
 server boundary tests while preserving the public discriminated result shapes.

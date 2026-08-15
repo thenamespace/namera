@@ -14,15 +14,15 @@ export abstract class PolicyHandler<
 > {
   abstract readonly type: Policy["type"];
   abstract readonly policySchema: Schema.Schema<Policy>;
-  abstract readonly stateSchema?: Schema.Schema<State>;
-  abstract readonly reservationSchema?: Schema.Schema<Reservation>;
+  readonly stateSchema?: Schema.Schema<State>;
+  readonly reservationSchema?: Schema.Schema<Reservation>;
 
   abstract readonly evaluate: (
     policy: Policy,
     context: Context,
   ) => Effect.Effect<Decision, Error, Requirements>;
 
-  abstract readonly reserve?: (
+  readonly reserve?: (
     policy: Policy,
     context: Context,
     states: ReadonlyMap<string, State>,
@@ -35,14 +35,14 @@ export abstract class PolicyHandler<
     Requirements
   >;
 
-  abstract readonly settle?: (
+  readonly settle?: (
     policy: Policy,
     states: ReadonlyMap<string, State>,
     reservations: ReadonlyMap<string, Reservation>,
     result: Result,
   ) => Effect.Effect<ReadonlyMap<string, State>, Error, Requirements>;
 
-  abstract readonly release?: (
+  readonly release?: (
     policy: Policy,
     states: ReadonlyMap<string, State>,
     reservations: ReadonlyMap<string, Reservation>,
