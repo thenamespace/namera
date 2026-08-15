@@ -59,7 +59,7 @@ function OAuthAuthorizePage() {
     <main className="bg-background flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-lg">
         {request === null ? (
-          <div className="text-center">
+          <div className="text-center flex flex-col items-center justify-center">
             <Typography.Heading className="text-xl" level={1} weight="medium">
               Authorization request unavailable
             </Typography.Heading>

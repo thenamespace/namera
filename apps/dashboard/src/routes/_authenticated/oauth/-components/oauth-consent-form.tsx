@@ -65,7 +65,6 @@ export function OAuthConsentForm({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(ApproveOAuthAuthorizationRequest)),
   });
   const isPending = approve.isPending || deny.isPending;
-  const isDynamicClient = request.client.registrationType === "dynamic";
   const handleSubmit = form.handleSubmit(async (payload) => {
     try {
       const response = await approve.mutateAsync({ payload });
@@ -99,14 +98,13 @@ export function OAuthConsentForm({
             <Typography.Heading className="text-balance text-xl" level={1} weight="medium">
               Authorize {request.client.clientName}
             </Typography.Heading>
-            <Typography.Paragraph className="mt-2 max-w-sm text-pretty" color="muted" size="sm">
+            <Typography.Paragraph
+              className="mt-2 max-w-sm text-pretty text-center"
+              color="muted"
+              size="sm"
+            >
               Choose the session keys this client may use. You can revoke this access later.
             </Typography.Paragraph>
-            {isDynamicClient ? (
-              <Typography.Paragraph className="mt-2" color="muted" size="xs">
-                Unverified client — confirm the client and redirect URI before authorizing.
-              </Typography.Paragraph>
-            ) : null}
             {request.client.clientUri === null ? null : (
               <Typography.Paragraph className="mt-2 truncate" color="muted" size="xs">
                 {request.client.clientUri}

@@ -12,7 +12,7 @@ function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
   const copyValue = useEventCallback(() => {
     void navigator.clipboard.writeText(value).then(
       () => toast.success(`${label} copied`),
-      () => toast.danger(`Couldn’t copy ${label.toLowerCase()}`),
+      () => toast.danger(`Couldn't copy ${label.toLowerCase()}`),
     );
   });
 
