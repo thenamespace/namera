@@ -25,6 +25,7 @@ import { makeBillingApplication, type BillingApplication } from "#/billing/index
 import { makeExecutionApplication, type ExecutionApplication } from "#/execution/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session-key/index";
+import { makeSignatureApplication, type SignatureApplication } from "#/signature/index";
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
@@ -39,6 +40,7 @@ export interface ApplicationService {
   };
   readonly session: SessionApplication;
   readonly sessionKey: SessionKeyApplication;
+  readonly signature: SignatureApplication;
   readonly user: UserApplication;
   readonly wallet: WalletApplication;
 }
@@ -62,6 +64,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const wallet = yield* makeWalletApplication;
       const sessionKey = yield* makeSessionKeyApplication;
       const execution = yield* makeExecutionApplication;
+      const signature = yield* makeSignatureApplication;
 
       return Application.of({
         apiKey,
@@ -72,6 +75,7 @@ export class Application extends Context.Service<Application, ApplicationService
         organization: { ...organization, invitation, member },
         session,
         sessionKey,
+        signature,
         user,
         wallet,
       });

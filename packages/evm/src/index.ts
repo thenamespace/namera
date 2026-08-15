@@ -13,6 +13,7 @@ export * from "./layer.js";
 export { TestEvmExecution, type EvmTestOptions } from "./test.js";
 export type {
   EvaluateEvmPoliciesInput,
+  EvaluateEvmSignaturePoliciesInput,
   EvmPolicyReservationInput,
   EvmPolicyReservationPlan,
   EvmPolicyService,
@@ -24,3 +25,4 @@ export type {
   SettleEvmPoliciesInput,
 } from "./policy/types.js";
 export * from "./signatures/index.js";
+export type { EvmSignatureService, SignEvm, SignEvmInput } from "./signing/types.js";

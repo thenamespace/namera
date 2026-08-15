@@ -7,6 +7,7 @@ export * from "./reference.js";
 export * from "./root.js";
 export * from "./rpc.js";
 export * from "./session-key.js";
+export * from "./signature.js";
 export * from "./telemetry.js";
 export * from "./wallet.js";
 export * from "./api-key.js";

@@ -8,5 +8,6 @@ export * from "./execution.js";
 export * from "./policy.js";
 export * from "./rate-limit.js";
 export * from "./session-key.js";
+export * from "./signature.js";
 export * from "./wallet.js";
 export * from "./wallet-key.js";

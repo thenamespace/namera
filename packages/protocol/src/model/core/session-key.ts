@@ -3,7 +3,11 @@ import { Schema, Struct } from "effect";
 import { ActorId, OrganizationId, SessionKeyId, WalletId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
-import { EvmNativeSpendLimitPolicy, EvmTimeWindowPolicy } from "#/policy/evm/index";
+import {
+  EvmNativeSpendLimitPolicy,
+  EvmSignaturePolicy,
+  EvmTimeWindowPolicy,
+} from "#/policy/evm/index";
 
 export const SessionKeyStatus = Schema.Literals(["active", "revoked"]);
 
@@ -14,7 +18,11 @@ export const SessionKeyMetadata = Schema.Struct({
   description: Schema.optionalKey(MetadataDescription),
 });
 
-export const EvmSessionKeyPolicy = Schema.Union([EvmTimeWindowPolicy, EvmNativeSpendLimitPolicy]);
+export const EvmSessionKeyPolicy = Schema.Union([
+  EvmTimeWindowPolicy,
+  EvmNativeSpendLimitPolicy,
+  EvmSignaturePolicy,
+]);
 export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy).check(
   Schema.isMinLength(1, { message: "At least one policy is required" }),
 );

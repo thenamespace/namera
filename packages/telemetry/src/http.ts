@@ -38,6 +38,7 @@ const staticHttpRoutes = new Set([
   "/openapi.json",
   "/reference",
   "/session-keys",
+  "/signatures",
   "/t/logs/v1",
   "/t/metrics/v1",
   "/t/traces/v1",

@@ -20,6 +20,7 @@ and adapts HTTP requests to application methods.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — immutable session-key creation, canonical policy hashing, and reads.
+- `src/signature/` — API-key grant selection and policy-gated smart-account signatures.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
 - `src/wallet/` — wallet creation and organization-scoped wallet reads.
@@ -112,6 +113,14 @@ batch with database leases and performs the same settle/release lifecycle.
 Submission status reads require the creating API-key actor identity. Confirmed
 execution detail and cursor-paginated organization history are separate reads
 used by organization members after transport authorization.
+
+Signature requests are synchronous and non-persisted. They require an active
+API-key grant to an active wallet session key with an explicit `evm.signature`
+policy, evaluate the signature-specific context and time window, reconstruct
+the account, and call `evm.sign`. Success records only a safe organization audit
+event and bounded metrics; messages, typed data, and returned signatures are
+never stored or logged. Signature workflows do not enqueue notifications or
+emails.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

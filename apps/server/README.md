@@ -34,6 +34,11 @@ Execution submission status is readable only by the API-key actor that created
 it. Confirmed execution detail and organization history require a user actor
 with `execution:read`.
 
+`POST /signatures` is available only to API-key actors. It applies a dedicated
+per-key rate limit and delegates grant and signature-policy enforcement to the
+application workflow. It has no idempotency header, background worker, or
+signature persistence.
+
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.
 If authorization finds
@@ -71,6 +76,8 @@ their own IP/email policies.
 
 API-key creation is limited to 20 attempts per active organization per hour.
 Read operations use only the global limit.
+
+Smart-account signatures are limited to 120 requests per API key per minute.
 
 `POST /rpc/eip155/:chainId` is limited separately to 600 requests per minute per
 client IP. RPC traffic bypasses the lower global API limit and is validated

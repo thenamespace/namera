@@ -12,6 +12,7 @@ import {
   OrganizationGroup,
   SessionKeyGroup,
   SessionGroup,
+  SignatureGroup,
   UserGroup,
   WalletGroup,
 } from "./routes/index.js";
@@ -31,6 +32,7 @@ export class NameraApi extends HttpApi.make("NameraAPI")
     OrganizationGroup,
     SessionKeyGroup,
     SessionGroup,
+    SignatureGroup,
     UserGroup,
     WalletGroup,
   )

@@ -13,21 +13,23 @@ import type { EvmSessionKeyPolicy } from "@namera-ai/protocol/model";
 import { EvmNativeSpendLimitPolicyHandler } from "./policies/native-spend-limit.js";
 import { EvmTimeWindowPolicyHandler } from "./policies/time-window.js";
 
+type EvmExecutionPolicy = Exclude<EvmSessionKeyPolicy, { readonly type: "evm.signature" }>;
+
 type EvmPolicyRegistry = {
-  readonly [Type in EvmSessionKeyPolicy["type"]]: PolicyHandler<
-    Extract<EvmSessionKeyPolicy, { readonly type: Type }>,
+  readonly [Type in EvmExecutionPolicy["type"]]: PolicyHandler<
+    Extract<EvmExecutionPolicy, { readonly type: Type }>,
     EvmIntentContext,
     EvmPolicyDecision,
-    Extract<EvmSessionKeyPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
+    Extract<EvmExecutionPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
       ? EvmNativeSpendLimitPolicyState
       : never,
-    Extract<EvmSessionKeyPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
+    Extract<EvmExecutionPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
       ? EvmNativeSpendLimitPolicyReservation
       : never,
-    Extract<EvmSessionKeyPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
+    Extract<EvmExecutionPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
       ? Extract<EvmExecutionReceipt, { readonly success: true }>
       : never,
-    Extract<EvmSessionKeyPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
+    Extract<EvmExecutionPolicy, { readonly type: Type }> extends EvmNativeSpendLimitPolicy
       ? EvmPolicyError
       : never
   >;

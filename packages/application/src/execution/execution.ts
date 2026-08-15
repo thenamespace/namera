@@ -11,8 +11,8 @@ import {
 } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
-import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { Evm, createWalletKeyWebAuthnAccount } from "@namera-ai/evm";
+import { Repository, TransactionService } from "@namera-ai/database";
+import { Evm } from "@namera-ai/evm";
 import {
   ExecutionError,
   type BillingError,
@@ -23,24 +23,18 @@ import {
 } from "@namera-ai/protocol";
 import { ExecuteRequest } from "@namera-ai/protocol/dto";
 import type { ApiKeyActorData, ExecuteResponse } from "@namera-ai/protocol/dto";
-import {
-  GcpWalletKeyData,
-  LocalWalletKeyData,
-  type EvmSessionKey,
-  type SessionKeyGrant,
-} from "@namera-ai/protocol/model";
+import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   executionDuration,
   executionPolicyDecisions,
   executionResults,
 } from "@namera-ai/telemetry";
-import { WalletKeys } from "@namera-ai/wallet-keys";
 
-import { AuthConfig } from "#/auth/config";
 import { enforceExecutionLimit, lockOrganizationBilling } from "#/billing/index";
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
 import { makeExecutionReadApplication, type ExecutionReadApplication } from "#/execution/read";
 import { makeExecutionReconciliation } from "#/execution/reconciliation";
+import { makeLoadEvmAccount } from "#/wallet/account";
 
 class ExistingSubmission extends Data.TaggedError("ExistingSubmission")<{
   readonly id: ExecutionSubmissionId;
@@ -63,42 +57,14 @@ export interface ExecutionApplication extends ExecutionReadApplication {
 }
 
 export const makeExecutionApplication = Effect.gen(function* () {
-  const authConfig = yield* AuthConfig;
   const crypto = yield* CryptoService;
   const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
-  const walletKeys = yield* WalletKeys;
+  const loadEvmAccount = yield* makeLoadEvmAccount;
   const lifecycle = yield* makeExecutionLifecycle;
   const reconciliation = yield* makeExecutionReconciliation;
   const read = yield* makeExecutionReadApplication;
-
-  const loadAccount = Effect.fnUntraced(function* (wallet: WalletView) {
-    if (wallet.wallet.status !== "active" || wallet.walletKey.status !== "active") {
-      return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-    }
-    const signer =
-      wallet.walletKey.provider === "local"
-        ? {
-            provider: "local" as const,
-            algorithm: wallet.walletKey.algorithm,
-            data: Schema.decodeUnknownSync(LocalWalletKeyData)(wallet.walletKey.data),
-          }
-        : {
-            provider: "gcp-kms" as const,
-            algorithm: wallet.walletKey.algorithm,
-            data: Schema.decodeUnknownSync(GcpWalletKeyData)(wallet.walletKey.data),
-          };
-    const owner = createWalletKeyWebAuthnAccount({
-      id: wallet.walletKey.id,
-      publicKey: wallet.walletKey.publicKeyHex,
-      origin: authConfig.dashboardPublicOrigin.origin,
-      rpId: authConfig.dashboardPublicOrigin.hostname,
-      validatorType: "webauthn_p256",
-      sign: (payload) => Effect.runPromise(walletKeys.signMessage({ ...signer, message: payload })),
-    });
-    return { wallet: wallet.wallet.data, owner } as const;
-  });
 
   const responseForExisting = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
@@ -168,7 +134,9 @@ export const makeExecutionApplication = Effect.gen(function* () {
       if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
       }
-      const account = yield* loadAccount(wallet);
+      const account = yield* loadEvmAccount(wallet).pipe(
+        Effect.mapError(() => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
+      );
       const prepared = yield* evm.execution
         .prepare({ chainId: input.request.chainId, account, calls: input.request.calls })
         .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));

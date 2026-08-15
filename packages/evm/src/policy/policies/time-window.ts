@@ -7,6 +7,23 @@ import {
   type EvmPolicyDecision,
 } from "@namera-ai/protocol";
 
+export const evaluateTimeWindow = (
+  policy: EvmTimeWindowPolicy,
+  timestamp: DateTime.Utc,
+): EvmPolicyDecision => {
+  const epochMilliseconds = DateTime.toEpochMillis(timestamp);
+
+  if (policy.startsAt !== null && epochMilliseconds < DateTime.toEpochMillis(policy.startsAt)) {
+    return { allowed: false, policyId: policy.id, code: "TIME_WINDOW_NOT_STARTED" };
+  }
+
+  if (epochMilliseconds >= DateTime.toEpochMillis(policy.expiresAt)) {
+    return { allowed: false, policyId: policy.id, code: "TIME_WINDOW_EXPIRED" };
+  }
+
+  return { allowed: true };
+};
+
 export class EvmTimeWindowPolicyHandler extends PolicyHandler<
   EvmTimeWindowPolicy,
   EvmIntentContext,
@@ -17,25 +34,7 @@ export class EvmTimeWindowPolicyHandler extends PolicyHandler<
 
   readonly evaluate = Effect.fn("evm.policy.time-window.evaluate")(
     (policy: EvmTimeWindowPolicy, context: EvmIntentContext): Effect.Effect<EvmPolicyDecision> => {
-      const timestamp = DateTime.toEpochMillis(context.block.timestamp);
-
-      if (policy.startsAt !== null && timestamp < DateTime.toEpochMillis(policy.startsAt)) {
-        return Effect.succeed({
-          allowed: false,
-          policyId: policy.id,
-          code: "TIME_WINDOW_NOT_STARTED",
-        } satisfies EvmPolicyDecision);
-      }
-
-      if (timestamp >= DateTime.toEpochMillis(policy.expiresAt)) {
-        return Effect.succeed({
-          allowed: false,
-          policyId: policy.id,
-          code: "TIME_WINDOW_EXPIRED",
-        } satisfies EvmPolicyDecision);
-      }
-
-      return Effect.succeed({ allowed: true } satisfies EvmPolicyDecision);
+      return Effect.succeed(evaluateTimeWindow(policy, context.block.timestamp));
     },
   );
 }

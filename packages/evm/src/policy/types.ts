@@ -5,6 +5,8 @@ import type {
   EvmIntentContext,
   EvmPolicyDecision,
   EvmPolicyError,
+  EvmSignatureContext,
+  EvmSignaturePolicyDecision,
   PolicyId,
 } from "@namera-ai/protocol";
 import type {
@@ -16,6 +18,11 @@ import type {
 export type EvaluateEvmPoliciesInput = {
   readonly policies: EvmSessionKeyPolicies;
   readonly context: EvmIntentContext;
+};
+
+export type EvaluateEvmSignaturePoliciesInput = {
+  readonly policies: EvmSessionKeyPolicies;
+  readonly context: EvmSignatureContext;
 };
 
 export type EvmPolicyStateInput = Pick<SessionKeyPolicyState, "policyId" | "stateKey" | "data">;
@@ -65,6 +72,9 @@ export interface EvmPolicyService {
   readonly evaluate: (
     input: EvaluateEvmPoliciesInput,
   ) => Effect.Effect<EvmPolicyDecision, EvmPolicyError>;
+  readonly evaluateSignature: (
+    input: EvaluateEvmSignaturePoliciesInput,
+  ) => Effect.Effect<EvmSignaturePolicyDecision, EvmPolicyError>;
   readonly reserve: (
     input: ReserveEvmPoliciesInput,
   ) => Effect.Effect<ReserveEvmPoliciesResult, EvmPolicyError>;

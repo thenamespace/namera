@@ -8,6 +8,8 @@ import type {
 } from "@namera-ai/protocol";
 import type { SessionKeyPolicyReservation, SessionKeyPolicyState } from "@namera-ai/protocol/model";
 
+import { EvmSignaturePolicyHandler } from "./policies/signature.js";
+import { evaluateTimeWindow } from "./policies/time-window.js";
 import { evmPolicyRegistry } from "./registry.js";
 import type {
   EvmPolicyReservationInput,
@@ -16,6 +18,8 @@ import type {
   EvmPolicyStateChange,
   EvmPolicyStateInput,
 } from "./types.js";
+
+const signaturePolicyHandler = new EvmSignaturePolicyHandler();
 
 const decodeStates = Effect.fn("evm.policy.native-spend-limit.decodeStates")(function* (
   policy: EvmNativeSpendLimitPolicy,
@@ -119,10 +123,29 @@ const encodeReservations = Effect.fn("evm.policy.native-spend-limit.encodeReserv
 export const makeEvmPolicyService = (): EvmPolicyService => ({
   evaluate: Effect.fn("evm.policy.evaluate")(function* (input) {
     for (const policy of input.policies) {
+      if (policy.type === "evm.signature") continue;
       const decision =
         policy.type === "evm.time-window"
           ? yield* evmPolicyRegistry["evm.time-window"].evaluate(policy, input.context)
           : yield* evmPolicyRegistry["evm.native-spend-limit"].evaluate(policy, input.context);
+      if (!decision.allowed) return decision;
+    }
+
+    return { allowed: true };
+  }),
+  evaluateSignature: Effect.fn("evm.policy.evaluateSignature")(function* (input) {
+    const signaturePolicies = input.policies.filter((policy) => policy.type === "evm.signature");
+    if (signaturePolicies.length === 0) {
+      return { allowed: false, code: "SIGNATURE_POLICY_REQUIRED" } as const;
+    }
+
+    for (const policy of input.policies) {
+      const decision =
+        policy.type === "evm.time-window"
+          ? evaluateTimeWindow(policy, input.context.timestamp)
+          : policy.type === "evm.signature"
+            ? yield* signaturePolicyHandler.evaluate(policy, input.context)
+            : ({ allowed: true } as const);
       if (!decision.allowed) return decision;
     }
 
@@ -133,6 +156,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
     const reservations: Array<EvmPolicyReservationPlan> = [];
 
     for (const policy of input.policies) {
+      if (policy.type === "evm.signature") continue;
       if (policy.type === "evm.time-window") {
         const decision = yield* evmPolicyRegistry["evm.time-window"].evaluate(
           policy,
@@ -163,7 +187,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
   settle: Effect.fn("evm.policy.settle")(function* (input) {
     const stateChanges: Array<EvmPolicyStateChange> = [];
     for (const policy of input.policies) {
-      if (policy.type === "evm.time-window") continue;
+      if (policy.type === "evm.time-window" || policy.type === "evm.signature") continue;
 
       const states = yield* decodeStates(policy, input.states);
       const reservations = yield* decodeReservations(policy, input.reservations);
@@ -180,7 +204,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
   release: Effect.fn("evm.policy.release")(function* (input) {
     const stateChanges: Array<EvmPolicyStateChange> = [];
     for (const policy of input.policies) {
-      if (policy.type === "evm.time-window") continue;
+      if (policy.type === "evm.time-window" || policy.type === "evm.signature") continue;
 
       const states = yield* decodeStates(policy, input.states);
       const reservations = yield* decodeReservations(policy, input.reservations);

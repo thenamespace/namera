@@ -89,6 +89,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   gas-estimation simulation result. Policy evaluation returns a typed allowed decision or the first
   policy ID and bounded denial code. Keep Viem clients, provider errors,
   signatures, and raw provider responses outside this contract.
+- Signature DTOs are namespace-discriminated and expose only EVM `message` and
+  EIP-712 `typed-data` operations. Raw digest signing is intentionally absent.
+  Signature authorization uses its own `EvmSignatureContext` and requires an
+  explicit `evm.signature` policy listing the allowed operation types.
 - EVM chain contracts distinguish the stable supported-network key, the chain
   name used for presentation/icons, and the exact supported CAIP-2 chain ID.
   Provider-specific RPC slugs do not belong in protocol.

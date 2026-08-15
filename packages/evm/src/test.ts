@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Ref, Schema } from "effect";
 
-import { EthereumAddress, UnsupportedChainError } from "@namera-ai/protocol";
+import { EthereumAddress, Hex, UnsupportedChainError } from "@namera-ai/protocol";
 
 import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
@@ -75,6 +75,7 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
     }),
     execution: makeTestEvmExecutionService(execution),
     policy: makeEvmPolicyService(),
+    sign: Effect.fn("evm.signature.test.sign")(() => Effect.succeed(Hex.make("0x1234"))),
     ...serviceOverrides,
   };
 };

@@ -19,6 +19,8 @@ evaluation behind one root `Evm` service.
 - `src/policy/` — exhaustive EVM policy registry and lifecycle service;
   individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
+- `src/signing/` — smart-account message and EIP-712 signing exposed as
+  `evm.sign`; raw digest signing is not supported.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -88,6 +90,12 @@ uses the prepared block timestamp with an inclusive start and exclusive
 expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
 CAIP-2 chain so concurrent executions cannot consume the same allowance. Each
 handler owns the schemas used to decode persisted state and reservations.
+
+`evm.sign` reconstructs the stored Kernel or Safe account on the requested
+supported chain and delegates either UTF-8 message signing or EIP-712 typed-data
+signing to the smart account. Callers provide the provider-neutral account
+reconstruction input; database access and grant selection remain in
+`application`.
 
 Preparation records the standardized `eth_estimateUserOperationGas` result in
 the policy context. This verifies EntryPoint validation and execution before

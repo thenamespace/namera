@@ -4,4 +4,5 @@ export * from "./billing/index.js";
 export * from "./execution/index.js";
 export * from "./notification/index.js";
 export * from "./session-key/index.js";
+export * from "./signature/index.js";
 export * from "./wallet/index.js";

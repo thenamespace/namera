@@ -20,6 +20,7 @@ metadata. It does not start a server or implement backend workflows.
   their authorized session keys.
 - `src/routes/execution.ts` — API-key execution, actor-owned submission status,
   and member-authorized confirmed execution history.
+- `src/routes/signature.ts` — API-key-only smart-account message and typed-data signing.
 - `src/middlewares/` — middleware contracts such as authorization context.
 - `src/common.ts` — errors shared by API groups.
 
