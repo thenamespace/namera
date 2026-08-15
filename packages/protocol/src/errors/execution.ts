@@ -40,3 +40,15 @@ export class ExecutionError extends Schema.TaggedError<ExecutionError>()(
 ) {}
 
 export type ExecutionErrorCode = typeof ExecutionErrorCode.Type;
+
+export class ExecutionSubmissionNotFoundError extends Schema.TaggedError<ExecutionSubmissionNotFoundError>()(
+  "ExecutionSubmissionNotFoundError",
+  { code: Schema.Literal("EXECUTION_SUBMISSION_NOT_FOUND") },
+  { httpApiStatus: 404 },
+) {}
+
+export class ExecutionNotFoundError extends Schema.TaggedError<ExecutionNotFoundError>()(
+  "ExecutionNotFoundError",
+  { code: Schema.Literal("EXECUTION_NOT_FOUND") },
+  { httpApiStatus: 404 },
+) {}

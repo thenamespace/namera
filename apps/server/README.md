@@ -30,6 +30,10 @@ scope. The execution worker claims bounded batches, checks receipts concurrently
 and settles, releases, or reschedules submissions left pending by HTTP requests.
 HTTP requests only enqueue email work and never wait for background delivery.
 
+Execution submission status is readable only by the API-key actor that created
+it. Confirmed execution detail and organization history require a user actor
+with `execution:read`.
+
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.
 If authorization finds

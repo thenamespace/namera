@@ -13,7 +13,7 @@ import {
   type Execution as ExecutionModel,
   type ExecutionInsert as ExecutionInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, lt, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -29,10 +29,11 @@ export interface ExecutionRepositoryService {
     executionSubmissionId: ExecutionSubmissionId,
     organizationId: OrganizationId,
   ) => Effect.Effect<ExecutionModel | undefined, DatabaseError>;
-  readonly findForOrganization: (
-    organizationId: OrganizationId,
-    limit?: number,
-  ) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
+  readonly findForOrganization: (input: {
+    readonly organizationId: OrganizationId;
+    readonly cursor?: ExecutionId;
+    readonly limit: number;
+  }) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
 }
 
 export class ExecutionRepository extends Context.Service<
@@ -84,14 +85,35 @@ export class ExecutionRepository extends Context.Service<
           return rows[0] ? Schema.decodeSync(Execution)(rows[0] as any) : undefined;
         }, mapRepositoryError),
         findForOrganization: Effect.fn("database.executionRepository.findForOrganization")(
-          function* (organizationId, limit = 100) {
+          function* (input) {
             const db = yield* transactionOrDatabase(database);
+            const cursor =
+              input.cursor === undefined
+                ? undefined
+                : yield* db.query.execution.findFirst({
+                    where: {
+                      id: { eq: input.cursor },
+                      organizationId: { eq: input.organizationId },
+                    },
+                  });
+            if (input.cursor !== undefined && cursor === undefined) return [];
+
             const rows = yield* db
               .select()
               .from(execution)
-              .where(eq(execution.organizationId, organizationId))
+              .where(
+                and(
+                  eq(execution.organizationId, input.organizationId),
+                  cursor === undefined
+                    ? undefined
+                    : or(
+                        lt(execution.createdAt, cursor.createdAt),
+                        and(eq(execution.createdAt, cursor.createdAt), lt(execution.id, cursor.id)),
+                      ),
+                ),
+              )
               .orderBy(desc(execution.createdAt), desc(execution.id))
-              .limit(limit);
+              .limit(Math.min(Math.max(Math.trunc(input.limit), 1), 100));
             return rows.map((row) => Schema.decodeSync(Execution)(row as any));
           },
           mapRepositoryError,

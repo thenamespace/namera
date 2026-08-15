@@ -243,8 +243,9 @@ transaction hash.
 `ExecutionSubmissionRepository` provides conflict-safe actor idempotency,
 conditional lifecycle transitions, and leased reconciliation claims.
 `ExecutionRepository` exposes append-only insertion and organization-scoped
-reads. Both use the transaction context so confirmation can atomically settle
-policy state and create the successful execution.
+reads using a stable `(created_at, id)` newest-first cursor. Both use the
+transaction context so confirmation can atomically settle policy state and
+create the successful execution.
 
 ## Billing persistence
 

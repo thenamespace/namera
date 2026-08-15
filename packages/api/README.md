@@ -18,6 +18,8 @@ metadata. It does not start a server or implement backend workflows.
 - `src/routes/session-key.ts` — create, get, and list organization session keys.
 - `src/routes/api-key.ts` — create, get, and list organization API keys with
   their authorized session keys.
+- `src/routes/execution.ts` — API-key execution, actor-owned submission status,
+  and member-authorized confirmed execution history.
 - `src/middlewares/` — middleware contracts such as authorization context.
 - `src/common.ts` — errors shared by API groups.
 

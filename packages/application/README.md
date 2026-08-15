@@ -21,7 +21,7 @@ and adapts HTTP requests to application methods.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — immutable session-key creation, canonical policy hashing, and reads.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
-  settlement/release, and lease-based background reconciliation.
+  settlement/release, lease-based background reconciliation, and scoped reads.
 - `src/wallet/` — wallet creation and organization-scoped wallet reads.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
@@ -108,6 +108,10 @@ settles policy state and creates the execution in the same transaction. A
 definitive failure releases policy state. Timeout or uncertain RPC outcomes
 return `submitted`; `Application.execution.reconcile` later claims a bounded
 batch with database leases and performs the same settle/release lifecycle.
+
+Submission status reads require the creating API-key actor identity. Confirmed
+execution detail and cursor-paginated organization history are separate reads
+used by organization members after transport authorization.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

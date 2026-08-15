@@ -1,7 +1,22 @@
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
-import { BillingErrors, ExecutionError } from "@namera-ai/protocol";
-import { ExecuteRequest, ExecuteRequestHeaders, ExecuteResponse } from "@namera-ai/protocol/dto";
+import {
+  BillingErrors,
+  ExecutionError,
+  ExecutionNotFoundError,
+  ExecutionSubmissionNotFoundError,
+} from "@namera-ai/protocol";
+import {
+  ExecuteRequest,
+  ExecuteRequestHeaders,
+  ExecuteResponse,
+  GetExecutionRequest,
+  GetExecutionResponse,
+  GetExecutionSubmissionRequest,
+  GetExecutionSubmissionResponse,
+  ListExecutionsRequest,
+  ListExecutionsResponse,
+} from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
 import { Authorization } from "#/middlewares/index";
@@ -14,6 +29,23 @@ export class ExecutionGroup extends HttpApiGroup.make("execution")
       success: ExecuteResponse,
       error: [ExecutionError, ...BillingErrors, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Execute an operation through an authorized session key"),
+  )
+  .add(
+    HttpApiEndpoint.get("getSubmission", "/submissions/:submissionId", {
+      params: GetExecutionSubmissionRequest,
+      success: GetExecutionSubmissionResponse,
+      error: [ExecutionSubmissionNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Get the status of an API key's execution submission"),
+    HttpApiEndpoint.get("get", "/:executionId", {
+      params: GetExecutionRequest,
+      success: GetExecutionResponse,
+      error: [ExecutionNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Get a confirmed execution"),
+    HttpApiEndpoint.get("list", "/", {
+      query: ListExecutionsRequest,
+      success: ListExecutionsResponse,
+      error: CommonErrors,
+    }).annotate(OpenApi.Summary, "List confirmed executions for the active organization"),
   )
   .annotate(OpenApi.Description, "Namespace-discriminated programmable wallet executions")
   .middleware(Authorization)

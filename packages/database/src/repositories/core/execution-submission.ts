@@ -35,6 +35,11 @@ export interface ExecutionSubmissionRepositoryService {
     id: ExecutionSubmissionId,
     organizationId: OrganizationId,
   ) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
+  readonly findByIdForActor: (
+    id: ExecutionSubmissionId,
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly findByActorAndIdempotencyKey: (
     organizationId: OrganizationId,
     actorId: ActorId,
@@ -153,6 +158,22 @@ export class ExecutionSubmissionRepository extends Context.Service<
               .limit(1)
               .for("update");
             return rows[0] ? Schema.decodeSync(ExecutionSubmission)(rows[0] as any) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        findByIdForActor: Effect.fn("database.executionSubmissionRepository.findByIdForActor")(
+          function* (id, organizationId, actorId) {
+            const db = yield* transactionOrDatabase(database);
+            const row = yield* db.query.executionSubmission.findFirst({
+              where: {
+                id: { eq: id },
+                organizationId: { eq: organizationId },
+                actorId: { eq: actorId },
+              },
+            });
+            return row === undefined
+              ? undefined
+              : Schema.decodeSync(ExecutionSubmission)(row as any);
           },
           mapRepositoryError,
         ),

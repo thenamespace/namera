@@ -44,7 +44,11 @@ export const execution = coreSchema.table(
       columns: [table.sessionKeyGrantId, table.organizationId],
       foreignColumns: [sessionKeyGrant.id, sessionKeyGrant.organizationId],
     }).onDelete("restrict"),
-    index("execution_organization_created_at_idx").on(table.organizationId, table.createdAt),
+    index("execution_organization_created_at_idx").on(
+      table.organizationId,
+      table.createdAt,
+      table.id,
+    ),
     index("execution_session_key_grant_created_at_idx").on(
       table.organizationId,
       table.sessionKeyGrantId,

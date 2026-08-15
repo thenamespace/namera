@@ -39,6 +39,7 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 import { AuthConfig } from "#/auth/config";
 import { enforceExecutionLimit, lockOrganizationBilling } from "#/billing/index";
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
+import { makeExecutionReadApplication, type ExecutionReadApplication } from "#/execution/read";
 import { makeExecutionReconciliation } from "#/execution/reconciliation";
 
 class ExistingSubmission extends Data.TaggedError("ExistingSubmission")<{
@@ -52,7 +53,7 @@ type GrantedSessionKey = {
 
 const encodeRequest = Schema.encodeSync(ExecuteRequest);
 
-export interface ExecutionApplication {
+export interface ExecutionApplication extends ExecutionReadApplication {
   readonly execute: (input: {
     readonly actor: ApiKeyActorData;
     readonly idempotencyKey: string;
@@ -70,6 +71,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
   const walletKeys = yield* WalletKeys;
   const lifecycle = yield* makeExecutionLifecycle;
   const reconciliation = yield* makeExecutionReconciliation;
+  const read = yield* makeExecutionReadApplication;
 
   const loadAccount = Effect.fnUntraced(function* (wallet: WalletView) {
     if (wallet.wallet.status !== "active" || wallet.walletKey.status !== "active") {
@@ -146,16 +148,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
       readonly idempotencyKey: string;
       readonly request: ExecuteRequest;
     }) {
-      yield* Effect.logInfo("execution.started").pipe(
-        Effect.annotateLogs({
-          namespace: input.request.namespace,
-          chain_id: input.request.chainId,
-          wallet_id: input.request.walletId,
-          api_key_id: input.actor.apiKey.id,
-          call_count: input.request.calls.length,
-          idempotency_key: input.idempotencyKey,
-        }),
-      );
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.executionRequest,
         value: JSON.stringify(encodeRequest(input.request)),
@@ -166,9 +158,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
         input.idempotencyKey,
       );
       if (prior !== undefined) {
-        yield* Effect.logInfo("execution.idempotency.replayed").pipe(
-          Effect.annotateLogs({ submission_id: prior.id, submission_status: prior.status }),
-        );
         return yield* responseForExisting(input.actor.organizationId, requestHash, prior.id);
       }
 
@@ -177,22 +166,12 @@ export const makeExecutionApplication = Effect.gen(function* () {
         input.actor.organizationId,
       );
       if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
-        yield* Effect.logError("execution.wallet.unavailable").pipe(
-          Effect.annotateLogs({ wallet_found: wallet !== undefined }),
-        );
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
       }
-      const account = yield* loadAccount(wallet).pipe(
-        Effect.tapError((error) =>
-          Effect.logError("execution.account.reconstruction_failed", error),
-        ),
-      );
+      const account = yield* loadAccount(wallet);
       const prepared = yield* evm.execution
         .prepare({ chainId: input.request.chainId, account, calls: input.request.calls })
-        .pipe(
-          Effect.tapError((error) => Effect.logError("execution.prepare.failed", error)),
-          Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })),
-        );
+        .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
 
       const candidates = input.actor.grants.filter(
         (item): item is GrantedSessionKey =>
@@ -201,7 +180,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
           item.sessionKey.status === "active",
       );
       if (candidates.length === 0) {
-        yield* Effect.logError("execution.grants.none_authorized");
         return yield* new ExecutionError({ code: "NO_AUTHORIZED_SESSION_KEY" });
       }
 
@@ -209,14 +187,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
       let submissionId: ExecutionSubmissionId | undefined;
       let lastPolicyCode: string | undefined;
       for (const candidate of candidates) {
-        const decision = yield* evm.policy
-          .evaluate({
-            policies: candidate.sessionKey.policies,
-            context: prepared.context,
-          })
-          .pipe(
-            Effect.tapError((error) => Effect.logError("execution.policy.evaluate_failed", error)),
-          );
+        const decision = yield* evm.policy.evaluate({
+          policies: candidate.sessionKey.policies,
+          context: prepared.context,
+        });
         yield* Metric.update(
           Metric.withAttributes(executionPolicyDecisions, {
             namespace: "eip155",
@@ -226,13 +200,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
         );
         if (!decision.allowed) {
           lastPolicyCode = decision.code;
-          yield* Effect.logWarning("execution.policy.denied").pipe(
-            Effect.annotateLogs({
-              session_key_id: candidate.sessionKey.id,
-              grant_id: candidate.grant.id,
-              policy_code: decision.code,
-            }),
-          );
           continue;
         }
 
@@ -300,13 +267,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
         if ("existing" in reserved) return reserved.existing;
         if (!reserved.decision.allowed) {
           lastPolicyCode = reserved.decision.code;
-          yield* Effect.logWarning("execution.policy.reserve_denied").pipe(
-            Effect.annotateLogs({
-              session_key_id: candidate.sessionKey.id,
-              grant_id: candidate.grant.id,
-              policy_code: reserved.decision.code,
-            }),
-          );
           continue;
         }
         selected = candidate;
@@ -315,14 +275,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
       }
 
       if (selected === undefined || submissionId === undefined) {
-        yield* Effect.logError("execution.policy.no_candidate_allowed").pipe(
-          Effect.annotateLogs({ policy_code: lastPolicyCode ?? "unknown" }),
-        );
         return yield* new ExecutionError({ code: "POLICY_DENIED", policyCode: lastPolicyCode });
       }
 
       const signed = yield* evm.execution.sign({ account, prepared }).pipe(
-        Effect.tapError((error) => Effect.logError("execution.sign.failed", error)),
         Effect.tapError(() =>
           lifecycle
             .release({
@@ -353,9 +309,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
         (!Predicate.isTagged(submitted.failure, "EvmExecutionError") ||
           submitted.failure.code !== "SUBMISSION_UNKNOWN")
       ) {
-        yield* Effect.logError("execution.submit.failed", submitted.failure).pipe(
-          Effect.annotateLogs({ submission_id: submissionId }),
-        );
         yield* lifecycle.release({
           organizationId: input.actor.organizationId,
           actorId: input.actor.actorId,
@@ -364,11 +317,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
           stage: "submit",
         });
         return yield* new ExecutionError({ code: "EXECUTION_FAILED" });
-      }
-      if (Result.isFailure(submitted)) {
-        yield* Effect.logWarning("execution.submit.unknown", submitted.failure).pipe(
-          Effect.annotateLogs({ submission_id: submissionId }),
-        );
       }
       yield* lifecycle.markSubmitted({
         submissionId,
@@ -383,18 +331,8 @@ export const makeExecutionApplication = Effect.gen(function* () {
           chainId: input.request.chainId,
           userOperationHash: signed.userOperationHash,
         })
-        .pipe(
-          Effect.tapError((error) =>
-            Effect.logError("execution.receipt.lookup_failed", error).pipe(
-              Effect.annotateLogs({ submission_id: submissionId }),
-            ),
-          ),
-          Effect.orElseSucceed(() => Option.none<EvmExecutionReceipt>()),
-        );
+        .pipe(Effect.orElseSucceed(() => Option.none<EvmExecutionReceipt>()));
       if (Option.isNone(receiptOption)) {
-        yield* Effect.logWarning("execution.receipt.pending").pipe(
-          Effect.annotateLogs({ submission_id: submissionId }),
-        );
         yield* Metric.update(
           Metric.withAttributes(executionResults, { namespace: "eip155", result: "submitted" }),
           1,
@@ -408,12 +346,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
       }
       const receipt = receiptOption.value;
       if (!receipt.success) {
-        yield* Effect.logError("execution.receipt.failed").pipe(
-          Effect.annotateLogs({
-            submission_id: submissionId,
-            failure_reason: receipt.reason ?? "unknown",
-          }),
-        );
         yield* lifecycle.release({
           organizationId: input.actor.organizationId,
           actorId: input.actor.actorId,
@@ -424,23 +356,15 @@ export const makeExecutionApplication = Effect.gen(function* () {
         return yield* new ExecutionError({ code: "EXECUTION_FAILED" });
       }
 
-      const execution = yield* lifecycle
-        .settle({
-          organizationId: input.actor.organizationId,
-          actorId: input.actor.actorId,
-          submissionId,
-          grant: selected.grant,
-          sessionKey: selected.sessionKey,
-          wallet,
-          receipt,
-        })
-        .pipe(
-          Effect.tapError((error) =>
-            Effect.logError("execution.settlement.failed", error).pipe(
-              Effect.annotateLogs({ submission_id: submissionId }),
-            ),
-          ),
-        );
+      const execution = yield* lifecycle.settle({
+        organizationId: input.actor.organizationId,
+        actorId: input.actor.actorId,
+        submissionId,
+        grant: selected.grant,
+        sessionKey: selected.sessionKey,
+        wallet,
+        receipt,
+      });
       if (execution === undefined) {
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
       }
@@ -448,14 +372,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
       yield* Metric.update(
         Metric.withAttributes(executionResults, { namespace: "eip155", result: "confirmed" }),
         1,
-      );
-      yield* Effect.logInfo("execution.settlement.completed").pipe(
-        Effect.annotateLogs({
-          namespace: "eip155",
-          chain_id: input.request.chainId,
-          submission_id: submissionId,
-          execution_id: execution.id,
-        }),
       );
       return {
         namespace: "eip155" as const,
@@ -470,5 +386,5 @@ export const makeExecutionApplication = Effect.gen(function* () {
     Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
   );
 
-  return { execute, reconcile: reconciliation.reconcile } satisfies ExecutionApplication;
+  return { execute, reconcile: reconciliation.reconcile, ...read } satisfies ExecutionApplication;
 });

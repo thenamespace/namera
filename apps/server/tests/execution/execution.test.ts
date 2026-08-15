@@ -348,6 +348,11 @@ layer(TestServerLayer)("execution routes", (it) => {
           owner.actor.organization.id,
         ),
       ).toBeUndefined();
+      expect(
+        yield* client.execution.getSubmission({
+          params: { submissionId: submitted.submissionId },
+        }),
+      ).toMatchObject({ status: "failed", submissionId: submitted.submissionId });
       const spendPolicy = sessionKey.policies.find(
         (policy) => policy.type === "evm.native-spend-limit",
       );
