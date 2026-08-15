@@ -2,6 +2,7 @@ import { DateTime, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
+import { formatEmailDate } from "@namera-ai/emails";
 import {
   InvalidMagicLinkError,
   MagicLinkAttemptsExceededError,
@@ -168,7 +169,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
                   type: "new-sign-in",
                   to: user.email,
                   variables: {
-                    signedInAt: DateTime.formatIso(now),
+                    signedInAt: formatEmailDate(now),
                     ipAddress: context.ipAddress ?? "Unknown",
                     userAgent: context.userAgent ?? "Unknown",
                   },

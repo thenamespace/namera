@@ -7,7 +7,6 @@ import { EmailDetail, EmailDetails } from "../components/details.js";
 import { FallbackLink } from "../components/fallback-link.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
-import { formatEmailDate } from "../helpers/date.js";
 import { NameraEmail } from "../provider.js";
 
 export type OrganizationInvitationEmailProps = OrganizationInvitationEmailVariables;
@@ -30,7 +29,7 @@ export const OrganizationInvitationEmail = ({
             <EmailDetail label="Organization" value={organizationName} />
             <EmailDetail label="Invited by" value={inviterName} />
             <EmailDetail label="Role" value={roleName} />
-            <EmailDetail label="Invitation expires" value={`${formatEmailDate(expiresAt)} UTC`} />
+            <EmailDetail label="Invitation expires" value={expiresAt} />
           </EmailDetails>
           <Section className="mt-7">
             <EmailButton href={invitationUrl}>Review invitation</EmailButton>
@@ -47,7 +46,7 @@ export const OrganizationInvitationEmail = ({
 };
 
 OrganizationInvitationEmail.PreviewProps = {
-  expiresAt: "2026-08-22T08:30:00.000Z",
+  expiresAt: "Aug 22, 2026, 8:30 AM UTC",
   invitationUrl: "https://example.com/?invitation=example-invitation-id",
   inviterName: "Alice Chen",
   organizationName: "Atlas Labs",

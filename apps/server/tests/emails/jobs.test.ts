@@ -63,7 +63,7 @@ layer(TestServerLayer)("email jobs", (it) => {
         variables: {
           magicLinkUrl: "http://dashboard.test/auth/verify",
           code: "12345678",
-          expiresInMinutes: 10,
+          expiresIn: "10 minutes",
         },
       };
 
@@ -230,7 +230,7 @@ layer(TestServerLayer)("email jobs", (it) => {
         variables: {
           magicLinkUrl: "http://dashboard.test/auth/verify",
           code: "12345678",
-          expiresInMinutes: 10,
+          expiresIn: "10 minutes",
         },
       });
 

@@ -10,9 +10,9 @@ export type WalletCreatedEmailProps = WalletCreatedEmailVariables;
 
 export const WalletCreatedEmail = ({
   address,
-  implementation,
+  implementationName,
   organizationName,
-  protectionLevel,
+  protectionLevelName,
   walletName,
 }: WalletCreatedEmailProps) => {
   return (
@@ -25,14 +25,8 @@ export const WalletCreatedEmail = ({
           <EmailDetails>
             <EmailDetail label="Account" value={walletName} />
             <EmailDetail label="Address" mono value={address} />
-            <EmailDetail
-              label="Implementation"
-              value={implementation === "kernel" ? "Kernel" : "Safe"}
-            />
-            <EmailDetail
-              label="Key protection"
-              value={protectionLevel === "hsm" ? "HSM" : "Software"}
-            />
+            <EmailDetail label="Implementation" value={implementationName} />
+            <EmailDetail label="Key protection" value={protectionLevelName} />
           </EmailDetails>
           <EmailNotice>
             Namera will enforce organization permissions and session-key policies before this
@@ -46,9 +40,9 @@ export const WalletCreatedEmail = ({
 
 WalletCreatedEmail.PreviewProps = {
   address: "0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
-  implementation: "kernel",
+  implementationName: "Kernel",
   organizationName: "Atlas Labs",
-  protectionLevel: "software",
+  protectionLevelName: "Software",
   walletName: "Treasury",
 } satisfies WalletCreatedEmailProps;
 

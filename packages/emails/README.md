@@ -8,6 +8,7 @@ claims and delivers them outside the request lifecycle.
 
 - `src/config.ts` — Effect configuration for Resend and sender defaults.
 - `src/data.ts` — template IDs and bounded delivery policies.
+- `src/format.ts` — deterministic presentation formatting for hosted-template variables.
 - `src/types.ts` — enqueue and provider-send input types.
 - `src/layer.ts` — internal provider adapter and live/development/test layers.
 - `src/jobs.ts` — public `EmailJobs` enqueue and single-job processing service.
@@ -81,9 +82,11 @@ must not call it.
 2. Add its stable type and variables to the `EmailJobPayload` discriminated
    union in `@namera-ai/protocol`.
 3. Add its Resend template ID to `src/data.ts`.
-4. Enqueue it from the owning application transaction with a stable business
+4. Format dates, durations, counts, labels, and shortened identifiers before
+   enqueueing; hosted templates must only render the supplied values.
+5. Enqueue it from the owning application transaction with a stable business
    idempotency key and meaningful expiry.
-5. Add delivery and retry tests through `EmailJobs.processOnce`.
+6. Add delivery and retry tests through `EmailJobs.processOnce`.
 
 Do not add an untyped generic payload, JSX, generic HTML sending, or business
 decisions here. `EmailService.devLayer` logs template variables for explicit local

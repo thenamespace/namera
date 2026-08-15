@@ -41,6 +41,9 @@ pnpm --filter @namera-ai/email-templates email:assets
 - Use semantic colors from `src/theme.ts` and provide both light and dark styles.
 - Keep transactional copy concise and always include a safe fallback when the
   primary action is a link.
+- Treat every prop as presentation-ready. Do not format dates, pluralize counts,
+  map identifiers to labels or asset URLs, or truncate values inside a hosted
+  template; application enqueueing must supply the final display strings.
 - Add realistic `PreviewProps` without real credentials or personal data.
 
 ## Templates

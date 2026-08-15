@@ -146,7 +146,7 @@ layer(TestServerLayer)("API-key routes", (it) => {
       expect(delivered?.variables).toMatchObject({
         apiKeyName: "Production agent",
         organizationName: owner.actor.organization.metadata.name,
-        sessionKeyCount: 2,
+        authorizedAccess: "2 session keys",
       });
     }),
   );

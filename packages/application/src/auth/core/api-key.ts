@@ -2,6 +2,7 @@ import { DateTime, Duration, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
+import { formatEmailCount } from "@namera-ai/emails";
 import {
   ApiKeyCreationError,
   ApiKeyNotFoundError,
@@ -188,7 +189,11 @@ export const makeApiKeyApplication = Effect.gen(function* () {
                   variables: {
                     apiKeyName: apiKey.metadata.name,
                     organizationName: organization.metadata.name,
-                    sessionKeyCount: sessionKeys.length,
+                    authorizedAccess: formatEmailCount(
+                      sessionKeys.length,
+                      "session key",
+                      "session keys",
+                    ),
                   },
                 },
               })),

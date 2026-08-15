@@ -12,15 +12,13 @@ import { NameraEmail } from "../provider.js";
 export type ExecutionConfirmedEmailProps = ExecutionConfirmedEmailVariables;
 
 export const ExecutionConfirmedEmail = ({
-  chainIcon,
+  chainIconUrl,
   chainName,
   organizationName,
-  transactionHash,
+  transactionHashDisplay,
   transactionUrl,
   walletName,
 }: ExecutionConfirmedEmailProps) => {
-  const displayTransactionHash = `${transactionHash.slice(0, 10)}…${transactionHash.slice(-8)}`;
-
   return (
     <NameraEmail preview={`An execution from ${walletName} was confirmed onchain.`}>
       <EmailLayout compactOnMobile>
@@ -38,7 +36,7 @@ export const ExecutionConfirmedEmail = ({
                     alt={chainName}
                     className="mr-2 inline-block align-middle"
                     height={20}
-                    src={emailAssets.chains[chainIcon]}
+                    src={chainIconUrl}
                     width={20}
                   />
                   <span className="align-middle">{chainName}</span>
@@ -50,7 +48,7 @@ export const ExecutionConfirmedEmail = ({
               mono
               value={
                 <Link className="text-email-accent underline" href={transactionUrl}>
-                  {displayTransactionHash}
+                  {transactionHashDisplay}
                 </Link>
               }
             />
@@ -68,9 +66,9 @@ export const ExecutionConfirmedEmail = ({
 ExecutionConfirmedEmail.PreviewProps = {
   chainId: "eip155:11155111",
   chainName: "Sepolia",
-  chainIcon: "ethereum",
+  chainIconUrl: emailAssets.chains.ethereum,
   organizationName: "Atlas Labs",
-  transactionHash: "0x5220eca56a1918b04ebd0a4ca0f460f0e72dbcf639e00f9f8b5f6b5cb5365f86",
+  transactionHashDisplay: "0x5220eca5…b5365f86",
   transactionUrl:
     "https://sepolia.etherscan.io/tx/0x5220eca56a1918b04ebd0a4ca0f460f0e72dbcf639e00f9f8b5f6b5cb5365f86",
   walletName: "Treasury",

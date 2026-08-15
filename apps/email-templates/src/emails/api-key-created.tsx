@@ -10,12 +10,9 @@ export type ApiKeyCreatedEmailProps = ApiKeyCreatedEmailVariables;
 
 export const ApiKeyCreatedEmail = ({
   apiKeyName,
+  authorizedAccess,
   organizationName,
-  sessionKeyCount,
 }: ApiKeyCreatedEmailProps) => {
-  const sessionKeyLabel =
-    sessionKeyCount === 1 ? "1 session key" : `${sessionKeyCount} session keys`;
-
   return (
     <NameraEmail preview={`${apiKeyName} was created in ${organizationName}.`}>
       <EmailLayout compactOnMobile>
@@ -25,7 +22,7 @@ export const ApiKeyCreatedEmail = ({
         >
           <EmailDetails>
             <EmailDetail label="API key" value={apiKeyName} />
-            <EmailDetail label="Authorized access" value={sessionKeyLabel} />
+            <EmailDetail label="Authorized access" value={authorizedAccess} />
           </EmailDetails>
           <EmailNotice>
             The API key secret is never sent by email. Revoke this key immediately if you do not
@@ -39,8 +36,8 @@ export const ApiKeyCreatedEmail = ({
 
 ApiKeyCreatedEmail.PreviewProps = {
   apiKeyName: "Production agent",
+  authorizedAccess: "3 session keys",
   organizationName: "Atlas Labs",
-  sessionKeyCount: 3,
 } satisfies ApiKeyCreatedEmailProps;
 
 export default ApiKeyCreatedEmail;

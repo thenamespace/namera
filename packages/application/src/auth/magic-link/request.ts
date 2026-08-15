@@ -2,7 +2,7 @@ import { DateTime, Duration, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
-import { EmailJobs } from "@namera-ai/emails";
+import { EmailJobs, formatEmailDurationMinutes } from "@namera-ai/emails";
 import type { RequestMagicLinkRequest, RequestMagicLinkResponse } from "@namera-ai/protocol/dto";
 import { magicLinkRequestDuration, magicLinkRequests } from "@namera-ai/telemetry";
 
@@ -80,6 +80,9 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
           magicLinkUrl.searchParams.set("id", verification.id);
           magicLinkUrl.searchParams.set("token", token);
 
+          const expiresInMinutes = Math.ceil(
+            Duration.toMillis(config.magicLink.timeToLive) / 60_000,
+          );
           yield* emailJobs.enqueue({
             type: "magic-link",
             to: input.email,
@@ -88,7 +91,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
             variables: {
               magicLinkUrl: magicLinkUrl.toString(),
               code,
-              expiresInMinutes: Math.ceil(Duration.toMillis(config.magicLink.timeToLive) / 60_000),
+              expiresIn: formatEmailDurationMinutes(expiresInMinutes),
             },
           });
           return true;

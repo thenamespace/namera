@@ -45,7 +45,8 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   provider secrets.
 - Email job payloads are closed discriminated unions decoded again by the
   worker after decryption. Add template variables to that union rather than
-  storing an untyped object.
+  storing an untyped object. Variables are presentation-ready values because
+  hosted Resend templates render them without application-side transforms.
 - Notification payloads are versioned discriminated unions. Add a concrete
   payload before persisting a new notification type. Preferences use typed
   category/topic pairs and currently allow only the email channel; in-app

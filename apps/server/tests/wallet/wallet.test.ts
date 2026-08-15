@@ -105,8 +105,8 @@ layer(TestServerLayer)("wallet routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         walletName: "Operations",
-        implementation: "safe",
-        protectionLevel: "software",
+        implementationName: "Safe",
+        protectionLevelName: "Software",
       });
     }),
   );

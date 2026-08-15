@@ -1,7 +1,7 @@
 import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import { EmailJobs } from "@namera-ai/emails";
+import { EmailJobs, formatEmailDate } from "@namera-ai/emails";
 import {
   InvitationConflictError,
   InvitationNotFoundError,
@@ -207,7 +207,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
               organizationName: view.organization.metadata.name,
               inviterName: view.inviter.metadata.name ?? view.inviter.email,
               roleName: view.organizationRole.metadata.name,
-              expiresAt: DateTime.formatIso(created.expiresAt),
+              expiresAt: formatEmailDate(created.expiresAt),
             },
             expiresAt: created.expiresAt,
           };

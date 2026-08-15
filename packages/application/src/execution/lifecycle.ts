@@ -1,6 +1,7 @@
 import { DateTime, Duration, Effect } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
+import { formatEmailTransactionHash, getEmailChainIconUrl } from "@namera-ai/emails";
 import { Evm, getChainDataByCaip2 } from "@namera-ai/evm";
 import type {
   ActorId,
@@ -330,8 +331,8 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
                   walletName: input.wallet.wallet.metadata.name,
                   chainId: submission.data.chainId,
                   chainName: chain.chain.name,
-                  chainIcon: chain.name,
-                  transactionHash: input.receipt.transactionHash,
+                  chainIconUrl: getEmailChainIconUrl(chain.name),
+                  transactionHashDisplay: formatEmailTransactionHash(input.receipt.transactionHash),
                   transactionUrl,
                 },
               },

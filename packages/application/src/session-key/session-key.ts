@@ -2,6 +2,7 @@ import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
+import { formatEmailDate } from "@namera-ai/emails";
 import {
   PolicyId,
   SessionKeyCreationError,
@@ -228,7 +229,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
                     sessionKeyName: created.metadata.name,
                     walletName: wallet.wallet.metadata.name,
                     organizationName: organization.metadata.name,
-                    expiresAt: DateTime.formatIso(effectiveExpiry),
+                    expiresAt: formatEmailDate(effectiveExpiry),
                   },
                 },
               })),

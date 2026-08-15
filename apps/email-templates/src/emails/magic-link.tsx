@@ -10,15 +10,15 @@ import { NameraEmail } from "../provider.js";
 
 export type MagicLinkEmailProps = MagicLinkEmailVariables;
 
-export const MagicLinkEmail = ({ code, expiresInMinutes, magicLinkUrl }: MagicLinkEmailProps) => {
+export const MagicLinkEmail = ({ code, expiresIn, magicLinkUrl }: MagicLinkEmailProps) => {
   return (
-    <NameraEmail preview={`Sign in to Namera. This link expires in ${expiresInMinutes} minutes.`}>
+    <NameraEmail preview={`Sign in to Namera. This link expires in ${expiresIn}.`}>
       <EmailLayout>
         <EmailContent
           description={
             <>
-              Use the secure link below to sign in. It expires in {expiresInMinutes} minutes and can
-              only be used once.
+              Use the secure link below to sign in. It expires in {expiresIn} and can only be used
+              once.
             </>
           }
           title="Sign in to Namera"
@@ -49,7 +49,7 @@ export const MagicLinkEmail = ({ code, expiresInMinutes, magicLinkUrl }: MagicLi
 
 MagicLinkEmail.PreviewProps = {
   code: "48291736",
-  expiresInMinutes: 10,
+  expiresIn: "10 minutes",
   magicLinkUrl: "https://example.com/?token=example-magic-link-token&code=48291736",
 } satisfies MagicLinkEmailProps;
 
