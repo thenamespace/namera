@@ -7,7 +7,7 @@ import { NameraBrand } from "./brand.js";
 export const EmailLayout = ({ children }: PropsWithChildren) => {
   return (
     <Section className="w-full bg-email-light-background dark:bg-email-dark-background">
-      <Container className="mx-auto w-full max-w-[560px] px-5 py-10">
+      <Container className="mx-auto w-full max-w-140 px-5 py-10">
         <Section className="mb-6 px-1">
           <NameraBrand />
         </Section>
@@ -20,7 +20,7 @@ export const EmailLayout = ({ children }: PropsWithChildren) => {
           <Text className="m-0 text-xs leading-5 text-email-light-muted dark:text-email-dark-muted">
             This is a transactional email from Namera.
             <br />
-            Never share a sign-in code with anyone.
+            Never share credentials or private keys with anyone.
           </Text>
           <Hr className="my-6 border-0 border-t border-solid border-email-light-border dark:border-email-dark-border" />
           <Text className="m-0 text-[11px] leading-4 text-email-light-muted dark:text-email-dark-muted">

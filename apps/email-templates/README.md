@@ -8,6 +8,7 @@ to the matching Resend templates used by `@namera-ai/emails`.
 
 - `src/emails/` — one template per email job type.
 - `src/components/` — email-safe, reusable presentation primitives.
+- `src/helpers/` — deterministic presentation helpers shared by templates.
 - `src/provider.tsx` — shared document, font, Tailwind, and color-scheme setup.
 - `src/theme.ts` — light and dark email color tokens.
 - `src/fonts.tsx` — hosted Inter font declarations with system fallbacks.
@@ -31,3 +32,13 @@ The preview is available at `http://localhost:4000`.
 - Keep transactional copy concise and always include a safe fallback when the
   primary action is a link.
 - Add realistic `PreviewProps` without real credentials or personal data.
+
+## Templates
+
+- `magic-link` — one-time sign-in link and fallback code.
+- `new-sign-in` — security alert with session details.
+- `organization-invitation` — organization invitation with a review action.
+- `wallet-created` — smart-account creation notification.
+- `session-key-created` — scoped session-key creation notification.
+- `api-key-created` — API-key creation and authorization summary.
+- `execution-confirmed` — confirmed onchain execution receipt.
