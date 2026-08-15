@@ -25,7 +25,7 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 - [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
   wallet-key creation and signing through local files or Google Cloud KMS.
 - [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
-  clients, smart-account construction, and future execution and policy logic.
+  clients, smart-account construction, execution, signing, and policy logic.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
   and shared low-cardinality metric definitions.
 - [`packages/ui`](packages/ui/README.md) — shared React components imported
@@ -34,6 +34,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   and business workflow composition.
 - [`packages/api`](packages/api/README.md) — public Effect `HttpApi` definition;
   no handlers or server runtime.
+- [`packages/sdk`](packages/sdk/README.md) — publishable TypeScript SDK scaffold;
+  its public Namera client is not implemented yet.
 - [`packages/template`](packages/template/README.md) — starter for new workspace
   packages.
 

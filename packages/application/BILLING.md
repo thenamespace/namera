@@ -53,12 +53,17 @@ Active members and unexpired pending invitations both consume member capacity.
 Invitation creation locks the billing-account row before checking usage, so
 concurrent requests cannot reserve more seats than the plan allows. Active
 software and HSM wallets consume their respective capacities independently.
-The wallet workflow must call `enforceWalletLimit` inside the same transaction
-that persists a wallet. The free plan has no overage: an operation past a limit
-must be rejected.
+Wallet creation performs an early capacity check before remote key creation and
+repeats `enforceWalletLimit` while holding the billing-account lock in the
+transaction that persists the wallet. Execution reservation uses the same lock
+and counts current-month active submissions plus confirmed executions so
+concurrent requests cannot exceed the included allowance. Definitively failed
+submissions release that derived capacity. The free plan has no overage: an
+operation past a limit is rejected.
 
 ## Deferred
 
-Stripe synchronization, paid-plan mutations, transaction metering, and dashboard
-UI remain deferred. Follow the repository root `STRIPE.md` for the planned
-catalog, subscription, metering, webhook, and rollout configuration.
+Stripe synchronization, paid-plan mutations, external usage-event delivery, and
+dashboard billing UI remain deferred. Follow the repository root `STRIPE.md`
+for the planned catalog, subscription, metering, webhook, and rollout
+configuration.

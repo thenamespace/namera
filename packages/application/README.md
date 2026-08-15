@@ -2,9 +2,10 @@
 
 The backend use-case layer and center of Namera's business logic. It composes
 repositories and provider services into raw operations such as magic-link sign
-in, session management, and future backend workflows. It is independent of HTTP
-and does not perform API authorization checks; `apps/server` owns those checks
-and adapts HTTP requests to application methods.
+in, organization management, wallet and session-key creation, API-key grants,
+policy-gated execution, and signing. It is independent of HTTP and does not
+perform API authorization checks; `apps/server` owns those checks and adapts
+HTTP requests to application methods.
 
 ## Structure
 

@@ -70,10 +70,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   state and in-flight reservations. The EVM model supports stateless
   `evm.time-window` and stateful `evm.native-spend-limit` policies. Time-window
   dates encode as ISO strings, while native amounts encode as decimal strings,
-  because policies are JSON wire and persistence values. The current public
-  create-session-key DTO remains limited to time windows until the application
-  orchestration for stateful reservations is wired. SQL timestamp columns
-  continue using date-backed schemas. Grants are
+  because policies are JSON wire and persistence values. The public creation
+  DTO supports time-window, native-spend-limit, and signature policies and
+  requires a time window. SQL timestamp columns continue using date-backed
+  schemas. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
 - Execution submissions are mutable operational records discriminated by
