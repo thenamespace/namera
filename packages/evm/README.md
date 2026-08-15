@@ -2,8 +2,8 @@
 
 EVM chain adapter infrastructure for Namera. It owns supported-chain metadata,
 provider RPC URLs, internal Viem client factories, wallet-key WebAuthn owners,
-and smart-account construction for Kernel and Safe. Execution and EVM policy
-evaluation will be added behind the same root `Evm` service.
+smart-account construction for Kernel and Safe, execution, and EVM policy
+evaluation behind one root `Evm` service.
 
 ## Structure
 
@@ -12,7 +12,7 @@ evaluation will be added behind the same root `Evm` service.
   these are deliberately absent from the package root exports.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
-- `src/execution/` — EVM execution preparation and future sign, submit, and
+- `src/execution/` — EVM preparation, signing, submission, and normalized
   receipt operations exposed through `evm.execution`.
 - `src/policy/` — exhaustive EVM policy registry and handlers exposed through
   `evm.policy`.
@@ -68,10 +68,14 @@ const program = Effect.gen(function* () {
 clients are created inside wallet and execution operations without exposing
 their generic types to package consumers.
 
-`evm.execution.prepare` reconstructs the stored smart account, prepares a
-stub-signed EntryPoint 0.7 UserOperation through Pimlico, and returns its
-normalized gas, paymaster, block, call, and account context. Policy evaluation
-and final signing occur after preparation.
+`evm.execution` owns the complete EntryPoint 0.7 adapter lifecycle. `prepare`
+reconstructs the stored smart account and returns a serializable stub-signed
+UserOperation plus its normalized intent context. `sign` reconstructs and
+verifies the account again, signs the exact prepared operation, and computes
+its deterministic hash. `submit` verifies that hash before and after sending
+the exact signed payload to Pimlico. `getReceipt` and `waitForReceipt` normalize
+confirmed receipts and return `Option.none` while a receipt is unavailable or a
+bounded wait expires.
 
 `evm.policy.evaluate` evaluates one complete decoded EVM policy set against the
 prepared intent context and returns the first denial or an allowed decision.

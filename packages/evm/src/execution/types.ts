@@ -1,9 +1,13 @@
-import type { Effect } from "effect";
+import type { Effect, Option } from "effect";
 
 import type {
   EvmExecutionError,
+  EvmExecutionReceipt,
   EvmPreparedExecution,
+  EvmSignedExecution,
+  EvmSubmittedExecution,
   UnsupportedChainError,
+  UserOperationHash,
 } from "@namera-ai/protocol";
 import type { EvmIntentCall, SupportedEvmChainId } from "@namera-ai/protocol";
 
@@ -15,8 +19,40 @@ export type PrepareEvmExecutionInput = {
   readonly calls: ReadonlyArray<EvmIntentCall>;
 };
 
+export type SignEvmExecutionInput = {
+  readonly account: ReconstructEvmAccountInput;
+  readonly prepared: EvmPreparedExecution;
+};
+
+export type SubmitEvmExecutionInput = {
+  readonly signed: EvmSignedExecution;
+};
+
+export type GetEvmExecutionReceiptInput = {
+  readonly chainId: SupportedEvmChainId;
+  readonly userOperationHash: UserOperationHash;
+};
+
+export type WaitForEvmExecutionReceiptInput = GetEvmExecutionReceiptInput & {
+  readonly timeoutMilliseconds?: number;
+};
+
+type EvmExecutionFailure = EvmExecutionError | UnsupportedChainError;
+
 export interface EvmExecutionService {
   readonly prepare: (
     input: PrepareEvmExecutionInput,
-  ) => Effect.Effect<EvmPreparedExecution, EvmExecutionError | UnsupportedChainError>;
+  ) => Effect.Effect<EvmPreparedExecution, EvmExecutionFailure>;
+  readonly sign: (
+    input: SignEvmExecutionInput,
+  ) => Effect.Effect<EvmSignedExecution, EvmExecutionFailure>;
+  readonly submit: (
+    input: SubmitEvmExecutionInput,
+  ) => Effect.Effect<EvmSubmittedExecution, EvmExecutionFailure>;
+  readonly getReceipt: (
+    input: GetEvmExecutionReceiptInput,
+  ) => Effect.Effect<Option.Option<EvmExecutionReceipt>, EvmExecutionFailure>;
+  readonly waitForReceipt: (
+    input: WaitForEvmExecutionReceiptInput,
+  ) => Effect.Effect<Option.Option<EvmExecutionReceipt>, EvmExecutionFailure>;
 }

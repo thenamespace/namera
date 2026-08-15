@@ -3,6 +3,7 @@ import { Effect, Schema } from "effect";
 import {
   EvmExecutionError,
   EvmPreparedExecution,
+  EvmSerializedUserOperation,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
 
@@ -11,6 +12,7 @@ import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
 import type { PrepareEvmExecutionInput } from "./types.js";
+import { normalizeEvmUserOperation } from "./user-operation.js";
 
 export const makePrepareEvmExecution = (getClients: (chain: ChainData) => ExecutionClients) =>
   Effect.fn("evm.execution.prepare")(function* (input: PrepareEvmExecutionInput) {
@@ -37,6 +39,13 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
     });
 
     const { userOperation, block } = prepared;
+    const normalizedUserOperation = yield* normalizeEvmUserOperation(userOperation);
+    const encodedUserOperation = yield* Schema.encodeEffect(EvmSerializedUserOperation)(
+      normalizedUserOperation,
+    ).pipe(
+      Effect.mapError((cause) => new EvmExecutionError({ code: "PREPARATION_FAILED", cause })),
+    );
+
     return yield* Schema.decodeUnknownEffect(EvmPreparedExecution)({
       version: 1,
       namespace: "eip155",
@@ -69,36 +78,7 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
         },
         simulation: null,
       },
-      userOperation: {
-        sender: userOperation.sender,
-        nonce: userOperation.nonce.toString(),
-        ...(userOperation.factory === undefined ? {} : { factory: userOperation.factory }),
-        ...(userOperation.factoryData === undefined
-          ? {}
-          : { factoryData: userOperation.factoryData }),
-        callData: userOperation.callData,
-        callGasLimit: userOperation.callGasLimit.toString(),
-        verificationGasLimit: userOperation.verificationGasLimit.toString(),
-        preVerificationGas: userOperation.preVerificationGas.toString(),
-        maxFeePerGas: userOperation.maxFeePerGas.toString(),
-        maxPriorityFeePerGas: userOperation.maxPriorityFeePerGas.toString(),
-        ...(userOperation.paymaster === undefined ? {} : { paymaster: userOperation.paymaster }),
-        ...(userOperation.paymasterVerificationGasLimit === undefined
-          ? {}
-          : {
-              paymasterVerificationGasLimit: userOperation.paymasterVerificationGasLimit.toString(),
-            }),
-        ...(userOperation.paymasterPostOpGasLimit === undefined
-          ? {}
-          : { paymasterPostOpGasLimit: userOperation.paymasterPostOpGasLimit.toString() }),
-        ...(userOperation.paymasterData === undefined
-          ? {}
-          : { paymasterData: userOperation.paymasterData }),
-        signature: userOperation.signature,
-        ...(userOperation.authorization === undefined
-          ? {}
-          : { authorization: userOperation.authorization }),
-      },
+      userOperation: encodedUserOperation,
     }).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "PREPARATION_FAILED", cause })),
     );
