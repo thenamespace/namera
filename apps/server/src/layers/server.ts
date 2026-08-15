@@ -8,7 +8,7 @@ import { DatabaseMigration } from "@namera-ai/database";
 import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
-import { EmailWorkerLive, ServicesLive } from "#/layers/services";
+import { EmailWorkerLive, ExecutionWorkerLive, ServicesLive } from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware, TelemetryMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
 import {
@@ -42,6 +42,7 @@ const Routes = Layer.mergeAll(
     ),
   ),
   EmailWorkerLive,
+  ExecutionWorkerLive,
 );
 
 export const ServerLive = HttpRouter.serve(Routes, {

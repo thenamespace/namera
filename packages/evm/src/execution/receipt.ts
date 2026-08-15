@@ -1,6 +1,11 @@
 import { Effect, Option, Schema } from "effect";
 
-import { EvmExecutionError, EvmExecutionReceipt, UnsupportedChainError } from "@namera-ai/protocol";
+import {
+  EvmExecutionError,
+  EvmExecutionReceipt,
+  EvmUserOperationStatus,
+  UnsupportedChainError,
+} from "@namera-ai/protocol";
 import type { UserOperationReceipt } from "viem/account-abstraction";
 import {
   UserOperationReceiptNotFoundError,
@@ -25,7 +30,7 @@ const normalizeReceipt = Effect.fn("evm.execution.normalizeReceipt")(function* (
     blockHash: receipt.receipt.blockHash,
     blockNumber: receipt.receipt.blockNumber.toString(),
     sender: receipt.sender,
-    nonce: receipt.nonce.toString(),
+    nonce: BigInt(receipt.nonce).toString(),
     entryPoint: receipt.entryPoint,
     paymaster: receipt.paymaster ?? null,
     actualGasCost: receipt.actualGasCost.toString(),
@@ -51,7 +56,7 @@ export const makeGetEvmExecutionReceipt = (getClients: (chain: ChainData) => Exe
       try: async () => {
         try {
           return Option.some(
-            await getClients(chain).bundlerClient.getUserOperationReceipt({
+            await getClients(chain).pimlicoClient.getUserOperationReceipt({
               hash: input.userOperationHash,
             }),
           );
@@ -76,6 +81,29 @@ export const makeGetEvmExecutionReceipt = (getClients: (chain: ChainData) => Exe
     return Option.some(normalized);
   });
 
+export const makeGetEvmUserOperationStatus = (getClients: (chain: ChainData) => ExecutionClients) =>
+  Effect.fn("evm.execution.getStatus")(function* (input: GetEvmExecutionReceiptInput) {
+    const chain = getChainDataByCaip2(input.chainId);
+    if (chain === undefined) {
+      return yield* new UnsupportedChainError({
+        namespace: "eip155",
+        chainId: input.chainId,
+      });
+    }
+
+    const status = yield* Effect.tryPromise({
+      try: () =>
+        getClients(chain).pimlicoClient.getUserOperationStatus({
+          hash: input.userOperationHash,
+        }),
+      catch: (cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause }),
+    });
+
+    return yield* Schema.decodeUnknownEffect(EvmUserOperationStatus)(status).pipe(
+      Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),
+    );
+  });
+
 export const makeWaitForEvmExecutionReceipt = (
   getClients: (chain: ChainData) => ExecutionClients,
 ) =>
@@ -92,7 +120,7 @@ export const makeWaitForEvmExecutionReceipt = (
       try: async () => {
         try {
           return Option.some(
-            await getClients(chain).bundlerClient.waitForUserOperationReceipt({
+            await getClients(chain).pimlicoClient.waitForUserOperationReceipt({
               hash: input.userOperationHash,
               timeout: Math.min(Math.max(input.timeoutMilliseconds ?? 30_000, 1), 120_000),
             }),

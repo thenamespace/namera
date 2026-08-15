@@ -84,6 +84,7 @@ const TestHandlersLayer = Layer.mergeAll(
 
 export const TestServerLayer = Layer.mergeAll(
   TestHandlersLayer,
+  TestApplicationLayer,
   TestAuthorizationLayer,
   RateLimiterLive,
   TestServicesLayer,

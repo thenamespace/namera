@@ -1,17 +1,21 @@
 import { Redacted } from "effect";
 
+import { createSmartAccountClient } from "permissionless";
+import type { SmartAccountClient } from "permissionless";
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+import type { PimlicoClient } from "permissionless/clients/pimlico";
 import { createPublicClient, http } from "viem";
 import type { PublicClient } from "viem";
-import { createBundlerClient, createPaymasterClient } from "viem/account-abstraction";
-import type { BundlerClient, PaymasterClient } from "viem/account-abstraction";
+import { entryPoint07Address } from "viem/account-abstraction";
+import type { SmartAccount } from "viem/account-abstraction";
 
 import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 
 export type ExecutionClients = {
   readonly publicClient: PublicClient;
-  readonly bundlerClient: BundlerClient;
-  readonly paymasterClient: PaymasterClient;
+  readonly pimlicoClient: PimlicoClient<"0.7">;
+  readonly createSmartAccountClient: (account: SmartAccount) => SmartAccountClient;
 };
 
 export const makeExecutionClients = (
@@ -20,27 +24,37 @@ export const makeExecutionClients = (
   const clients = new Map<number, ExecutionClients>();
 
   const create = (chain: ChainData): ExecutionClients => {
+    const pimlicoUrl = `https://api.pimlico.io/v2/${chain.chain.id}/rpc?apikey=${encodeURIComponent(Redacted.value(config.pimlicoApiKey))}`;
     const publicClient = createPublicClient({
       chain: chain.chain,
       transport: http(
         `https://${chain.alchemyChain}.g.alchemy.com/v2/${encodeURIComponent(Redacted.value(config.alchemyApiKey))}`,
       ),
     });
-    const paymasterClient = createPaymasterClient({
-      transport: http(
-        `https://api.pimlico.io/v2/${chain.chain.id}/rpc?apikey=${encodeURIComponent(Redacted.value(config.pimlicoApiKey))}`,
-      ),
-    });
-    const bundlerClient = createBundlerClient({
+    const pimlicoClient = createPimlicoClient({
       chain: chain.chain,
-      client: publicClient,
-      paymaster: paymasterClient,
-      transport: http(
-        `https://api.pimlico.io/v2/${chain.chain.id}/rpc?apikey=${encodeURIComponent(Redacted.value(config.pimlicoApiKey))}`,
-      ),
+      transport: http(pimlicoUrl),
+      entryPoint: {
+        address: entryPoint07Address,
+        version: "0.7",
+      },
     });
 
-    return { publicClient, bundlerClient, paymasterClient };
+    return {
+      publicClient,
+      pimlicoClient,
+      createSmartAccountClient: (account) =>
+        createSmartAccountClient({
+          account,
+          chain: chain.chain,
+          client: publicClient,
+          bundlerTransport: http(pimlicoUrl),
+          paymaster: pimlicoClient,
+          userOperation: {
+            estimateFeesPerGas: async () => (await pimlicoClient.getUserOperationGasPrice()).fast,
+          },
+        }),
+    };
   };
 
   return (chain: ChainData) => {

@@ -1,7 +1,10 @@
 import { expect, layer } from "@effect/vitest";
 import { DateTime, Duration, Effect } from "effect";
+import { TestClock } from "effect/testing";
 
+import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
+import { TestEvmExecution } from "@namera-ai/evm";
 
 import {
   makeTestApiClient,
@@ -179,6 +182,184 @@ layer(TestServerLayer)("execution routes", (it) => {
         _tag: "ExecutionError",
         code: "IDEMPOTENCY_CONFLICT",
       });
+    }),
+  );
+
+  it.effect("settles a submitted execution after the HTTP receipt wait times out", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const testExecution = yield* TestEvmExecution;
+      yield* testExecution.setReceiptMode("pending");
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("execution-worker@example.com"));
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Worker treasury"),
+        },
+      });
+      const sessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          metadata: metadata("Worker automation"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+            },
+            {
+              type: "evm.native-spend-limit",
+              version: 1,
+              limits: [{ chainId: "eip155:1", maxAmount: 10n }],
+            },
+          ],
+        },
+      });
+      const apiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Worker agent"),
+          durationDays: 7,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+      yield* setAuthToken();
+      yield* setApiKey(apiKey.key);
+      const submitted = yield* client.execution.execute({
+        headers: { "idempotency-key": "worker-execution" },
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          chainId: "eip155:1",
+          calls: [{ to: wallet.address, value: 4n, data: "0x" }],
+        },
+      });
+      expect(submitted.status).toBe("submitted");
+      const second = yield* client.execution.execute({
+        headers: { "idempotency-key": "worker-execution-2" },
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          chainId: "eip155:1",
+          calls: [{ to: wallet.address, value: 0n, data: "0x" }],
+        },
+      });
+      expect(second.status).toBe("submitted");
+
+      yield* TestClock.adjust(Duration.seconds(46));
+      const app = yield* Application;
+      expect(yield* app.execution.reconcile()).toBe(2);
+
+      const repository = yield* Repository;
+      expect(
+        yield* repository.core.executionSubmission.findById(
+          submitted.submissionId,
+          owner.actor.organization.id,
+        ),
+      ).toMatchObject({ status: "confirmed", leaseToken: null, leaseExpiresAt: null });
+      expect(
+        yield* repository.core.execution.findBySubmissionId(
+          submitted.submissionId,
+          owner.actor.organization.id,
+        ),
+      ).toBeDefined();
+      expect(
+        yield* repository.core.execution.findBySubmissionId(
+          second.submissionId,
+          owner.actor.organization.id,
+        ),
+      ).toBeDefined();
+      yield* testExecution.setReceiptMode("immediate");
+    }),
+  );
+
+  it.effect("releases policy reservations after a definitive receipt failure", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const testExecution = yield* TestEvmExecution;
+      yield* testExecution.setReceiptMode("pending");
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("execution-worker-failed@example.com"));
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Failed worker treasury"),
+        },
+      });
+      const sessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          metadata: metadata("Failed worker automation"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+            },
+            {
+              type: "evm.native-spend-limit",
+              version: 1,
+              limits: [{ chainId: "eip155:1", maxAmount: 10n }],
+            },
+          ],
+        },
+      });
+      const apiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Failed worker agent"),
+          durationDays: 7,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+      yield* setAuthToken();
+      yield* setApiKey(apiKey.key);
+      const submitted = yield* client.execution.execute({
+        headers: { "idempotency-key": "worker-failed-execution" },
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          chainId: "eip155:1",
+          calls: [{ to: wallet.address, value: 4n, data: "0x" }],
+        },
+      });
+      yield* TestClock.adjust(Duration.seconds(46));
+      yield* testExecution.setReceiptMode("failed");
+      const app = yield* Application;
+      expect(yield* app.execution.reconcile()).toBe(1);
+
+      const repository = yield* Repository;
+      expect(
+        yield* repository.core.executionSubmission.findById(
+          submitted.submissionId,
+          owner.actor.organization.id,
+        ),
+      ).toMatchObject({ status: "failed", leaseToken: null, leaseExpiresAt: null });
+      expect(
+        yield* repository.core.execution.findBySubmissionId(
+          submitted.submissionId,
+          owner.actor.organization.id,
+        ),
+      ).toBeUndefined();
+      const spendPolicy = sessionKey.policies.find(
+        (policy) => policy.type === "evm.native-spend-limit",
+      );
+      if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
+      expect(
+        yield* repository.core.sessionKeyPolicyState.findForPolicy(
+          owner.actor.organization.id,
+          sessionKey.id,
+          spendPolicy.id,
+        ),
+      ).toMatchObject([{ data: { version: 1, spent: "0", reserved: "0" } }]);
+      yield* testExecution.setReceiptMode("immediate");
     }),
   );
 });

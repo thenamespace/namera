@@ -95,6 +95,13 @@ Change tables and protocol models together. Business workflows belong in
 Repositories perform persistence only. Cross-repository decisions, audit
 selection, provider calls, logs, and metrics belong in `application`.
 
+Execution reconciliation claims `prepared` and `submitted` rows in bounded
+batches using `FOR UPDATE SKIP LOCKED`. A shared token leases the claimed batch;
+all terminal transitions verify both submission identity and lease ownership.
+Fresh `reserved` rows are never claimed, and synchronous execution schedules a
+grace period before a prepared or submitted row becomes eligible, preventing the
+worker from racing an active HTTP request.
+
 `DatabaseMigration.layer` applies pending Drizzle migrations and upserts the
 canonical owner, admin, and member roles. The server waits for this layer before
 opening its HTTP port. The upsert preserves system-role IDs while replacing

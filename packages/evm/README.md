@@ -8,8 +8,10 @@ evaluation behind one root `Evm` service.
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
-- `src/clients/` — internal cached Viem public, bundler, and paymaster clients;
-  these are deliberately absent from the package root exports.
+- `src/clients/` — internal cached Alchemy public and Pimlico-native clients;
+  these are deliberately absent from the package root exports. Account-scoped
+  smart clients use Pimlico sponsorship and Pimlico's fast UserOperation gas
+  price while preparing operations.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
@@ -75,7 +77,10 @@ verifies the account again, signs the exact prepared operation, and computes
 its deterministic hash. `submit` verifies that hash before and after sending
 the exact signed payload to Pimlico. `getReceipt` and `waitForReceipt` normalize
 confirmed receipts and return `Option.none` while a receipt is unavailable or a
-bounded wait expires.
+bounded wait expires. `getStatus` uses Pimlico's lifecycle status method so
+reconciliation can distinguish pending operations from definitive failure.
+Pimlico has no dedicated bulk receipt action, so background processing batches
+database claims and performs bounded concurrent lookups across their chains.
 
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and

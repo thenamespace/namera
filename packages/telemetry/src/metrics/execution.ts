@@ -13,3 +13,8 @@ export const executionPolicyDecisions = Metric.counter("namera.execution.policy.
   description: "Bounded policy decisions made while selecting a session key",
   incremental: true,
 });
+
+export const executionReconciliations = Metric.counter("namera.execution.reconciliations", {
+  description: "Background execution reconciliation outcomes",
+  incremental: true,
+});

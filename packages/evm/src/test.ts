@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Context, Effect, Layer, Ref, Schema } from "effect";
 
 import { EthereumAddress, UnsupportedChainError } from "@namera-ai/protocol";
 
@@ -12,6 +12,25 @@ import { makeEvmPolicyService } from "./policy/service.js";
 export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
   readonly execution?: Partial<EvmExecutionService>;
 };
+
+export class TestEvmExecution extends Context.Service<
+  TestEvmExecution,
+  {
+    readonly receiptMode: Effect.Effect<"failed" | "immediate" | "pending">;
+    readonly setReceiptMode: (mode: "failed" | "immediate" | "pending") => Effect.Effect<void>;
+  }
+>()("@namera-ai/evm/TestEvmExecution") {
+  static readonly layer = Layer.effect(
+    TestEvmExecution,
+    Effect.gen(function* () {
+      const receiptMode = yield* Ref.make<"failed" | "immediate" | "pending">("immediate");
+      return TestEvmExecution.of({
+        receiptMode: Ref.get(receiptMode),
+        setReceiptMode: (mode) => Ref.set(receiptMode, mode),
+      });
+    }),
+  );
+}
 
 export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => {
   const { execution, ...serviceOverrides } = options;

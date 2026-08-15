@@ -17,15 +17,18 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
 - `src/layers/` — runtime and dependency composition.
+- `src/workers/` — scoped background loops that invoke application-owned durable work.
 - `src/index.ts` — Node process entry point.
 
 Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
 `@namera-ai/database/DatabaseMigration`.
 
-After migrations complete, the server starts the scoped email worker. It polls
-the durable outbox, uses leases safe for multiple instances, and stops with the
-server scope. HTTP requests only enqueue email work.
+After migrations complete, the server starts scoped email and execution workers.
+Both use database leases safe for multiple instances and stop with the server
+scope. The execution worker claims bounded batches, checks receipts concurrently,
+and settles, releases, or reschedules submissions left pending by HTTP requests.
+HTTP requests only enqueue email work and never wait for background delivery.
 
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.

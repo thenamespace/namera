@@ -20,6 +20,8 @@ and adapts HTTP requests to application methods.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — immutable session-key creation, canonical policy hashing, and reads.
+- `src/execution/` — synchronous execution orchestration, transactional lifecycle
+  settlement/release, and lease-based background reconciliation.
 - `src/wallet/` — wallet creation and organization-scoped wallet reads.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
@@ -99,6 +101,13 @@ credential row, grants, audit event, inbox recipients, and durable email jobs.
 Durations are limited to one year. The raw credential is returned only from
 creation; get and list return safe key details with their currently authorized
 session keys.
+
+Execution requests reserve one granted session key, persist the exact signed
+UserOperation, submit it, and briefly wait for its receipt. A successful receipt
+settles policy state and creates the execution in the same transaction. A
+definitive failure releases policy state. Timeout or uncertain RPC outcomes
+return `submitted`; `Application.execution.reconcile` later claims a bounded
+batch with database leases and performs the same settle/release lifecycle.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

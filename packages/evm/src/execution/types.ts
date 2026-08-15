@@ -6,6 +6,7 @@ import type {
   EvmPreparedExecution,
   EvmSignedExecution,
   EvmSubmittedExecution,
+  EvmUserOperationStatus,
   UnsupportedChainError,
   UserOperationHash,
 } from "@namera-ai/protocol";
@@ -52,6 +53,9 @@ export interface EvmExecutionService {
   readonly getReceipt: (
     input: GetEvmExecutionReceiptInput,
   ) => Effect.Effect<Option.Option<EvmExecutionReceipt>, EvmExecutionFailure>;
+  readonly getStatus: (
+    input: GetEvmExecutionReceiptInput,
+  ) => Effect.Effect<EvmUserOperationStatus, EvmExecutionFailure>;
   readonly waitForReceipt: (
     input: WaitForEvmExecutionReceiptInput,
   ) => Effect.Effect<Option.Option<EvmExecutionReceipt>, EvmExecutionFailure>;

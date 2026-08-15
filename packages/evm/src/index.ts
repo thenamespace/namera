@@ -10,7 +10,7 @@ export type {
   WaitForEvmExecutionReceiptInput,
 } from "./execution/types.js";
 export * from "./layer.js";
-export type { EvmTestOptions } from "./test.js";
+export { TestEvmExecution, type EvmTestOptions } from "./test.js";
 export type {
   EvaluateEvmPoliciesInput,
   EvmPolicyReservationInput,

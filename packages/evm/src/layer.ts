@@ -1,7 +1,11 @@
-import { Context, Effect, Layer, Redacted } from "effect";
+import { Context, Effect, Layer, Option, Redacted } from "effect";
 
 import { UnsupportedChainError } from "@namera-ai/protocol";
-import type { EvmAccountCreationError } from "@namera-ai/protocol";
+import type {
+  EvmAccountCreationError,
+  EvmExecutionReceipt,
+  FailedEvmExecutionReceipt,
+} from "@namera-ai/protocol";
 
 import {
   type CreateAccountProps,
@@ -14,9 +18,15 @@ import { makeEvmExecutionService } from "./execution/service.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
-import { makeEvmTestService, type EvmTestOptions } from "./test.js";
+import { makeEvmTestService, TestEvmExecution, type EvmTestOptions } from "./test.js";
 
 export type EvmRpcType = "public" | "bundler" | "paymaster";
+
+const failTestReceipt = (receipt: EvmExecutionReceipt): FailedEvmExecutionReceipt => ({
+  ...receipt,
+  success: false,
+  reason: "Test failure",
+});
 
 export interface EvmService {
   readonly createAccount: <const Props extends CreateAccountProps>(
@@ -64,7 +74,47 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
   static readonly devLayer = Evm.layer;
 
   static readonly testLayerWith = (options: EvmTestOptions = {}) =>
-    Layer.succeed(Evm, Evm.of(makeEvmTestService(options)));
+    Layer.effect(
+      Evm,
+      Effect.gen(function* () {
+        const testExecution = yield* TestEvmExecution;
+        const service = makeEvmTestService(options);
+        return Evm.of({
+          ...service,
+          execution: {
+            ...service.execution,
+            getReceipt: Effect.fn("evm.execution.test.controlledGetReceipt")((input) =>
+              Effect.flatMap(testExecution.receiptMode, (mode) =>
+                service.execution
+                  .getReceipt(input)
+                  .pipe(
+                    Effect.map(
+                      Option.map((receipt) =>
+                        mode === "failed" ? failTestReceipt(receipt) : receipt,
+                      ),
+                    ),
+                  ),
+              ),
+            ),
+            waitForReceipt: Effect.fn("evm.execution.test.controlledWaitForReceipt")((input) =>
+              Effect.flatMap(testExecution.receiptMode, (mode) =>
+                mode === "pending"
+                  ? Effect.succeed(Option.none())
+                  : service.execution
+                      .waitForReceipt(input)
+                      .pipe(
+                        Effect.map(
+                          Option.map((receipt) =>
+                            mode === "failed" ? failTestReceipt(receipt) : receipt,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          },
+        });
+      }),
+    ).pipe(Layer.provideMerge(TestEvmExecution.layer));
 
   static readonly testLayer = Evm.testLayerWith();
 }

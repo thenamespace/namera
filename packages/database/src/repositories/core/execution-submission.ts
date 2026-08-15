@@ -45,6 +45,7 @@ export interface ExecutionSubmissionRepositoryService {
     readonly organizationId: OrganizationId;
     readonly data: ExecutionSubmissionModel["data"];
     readonly leaseToken?: string;
+    readonly nextReconcileAt: DateTime.Utc;
   }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly markSubmitted: (input: {
     readonly id: ExecutionSubmissionId;
@@ -69,7 +70,8 @@ export interface ExecutionSubmissionRepositoryService {
     readonly now: DateTime.Utc;
     readonly leaseToken: string;
     readonly leaseExpiresAt: DateTime.Utc;
-  }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
+    readonly limit: number;
+  }) => Effect.Effect<ReadonlyArray<ExecutionSubmissionModel>, DatabaseError>;
   readonly releaseLease: (input: {
     readonly id: ExecutionSubmissionId;
     readonly organizationId: OrganizationId;
@@ -172,12 +174,17 @@ export class ExecutionSubmissionRepository extends Context.Service<
           organizationId,
           data,
           leaseToken,
+          nextReconcileAt,
         }) {
           const db = yield* transactionOrDatabase(database);
           const encodedData = Schema.encodeSync(EvmExecutionSubmissionData)(data);
           const rows = yield* db
             .update(executionSubmission)
-            .set({ status: "prepared", data: encodedData as any })
+            .set({
+              status: "prepared",
+              data: encodedData as any,
+              leaseExpiresAt: encodeDate(nextReconcileAt),
+            })
             .where(
               and(
                 eq(executionSubmission.id, id),
@@ -273,15 +280,16 @@ export class ExecutionSubmissionRepository extends Context.Service<
         }, mapRepositoryError),
         claimForReconciliation: Effect.fn(
           "database.executionSubmissionRepository.claimForReconciliation",
-        )(function* ({ now, leaseToken, leaseExpiresAt }) {
+        )(function* ({ now, leaseToken, leaseExpiresAt, limit }) {
           const db = yield* transactionOrDatabase(database);
           const encodedNow = encodeDate(now);
+          const batchSize = Math.min(Math.max(Math.trunc(limit), 1), 100);
           const candidate = db
             .select({ id: executionSubmission.id })
             .from(executionSubmission)
             .where(
               and(
-                inArray(executionSubmission.status, ["reserved", "prepared", "submitted"]),
+                inArray(executionSubmission.status, ["prepared", "submitted"]),
                 or(
                   isNull(executionSubmission.leaseExpiresAt),
                   lte(executionSubmission.leaseExpiresAt, encodedNow),
@@ -289,7 +297,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
               ),
             )
             .orderBy(asc(executionSubmission.leaseExpiresAt), asc(executionSubmission.createdAt))
-            .limit(1)
+            .limit(batchSize)
             .for("update", { skipLocked: true });
           const rows = yield* db
             .update(executionSubmission)
@@ -299,7 +307,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
             })
             .where(inArray(executionSubmission.id, candidate))
             .returning();
-          return rows[0] ? Schema.decodeSync(ExecutionSubmission)(rows[0] as any) : undefined;
+          return rows.map((row) => Schema.decodeSync(ExecutionSubmission)(row as any));
         }, mapRepositoryError),
         releaseLease: Effect.fn("database.executionSubmissionRepository.releaseLease")(function* ({
           id,
@@ -319,7 +327,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
                 eq(executionSubmission.id, id),
                 eq(executionSubmission.organizationId, organizationId),
                 eq(executionSubmission.leaseToken, leaseToken),
-                inArray(executionSubmission.status, ["reserved", "prepared", "submitted"]),
+                inArray(executionSubmission.status, ["prepared", "submitted"]),
               ),
             )
             .returning();

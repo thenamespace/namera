@@ -1,7 +1,12 @@
 // oxlint-disable typescript/no-explicit-any
 import { Context, Effect, Layer, Schema } from "effect";
 
-import type { ActorId, DatabaseError, OrganizationId } from "@namera-ai/protocol";
+import type {
+  ActorId,
+  DatabaseError,
+  OrganizationId,
+  SessionKeyGrantId,
+} from "@namera-ai/protocol";
 import {
   SessionKey,
   SessionKeyGrant,
@@ -29,6 +34,10 @@ export interface SessionKeyGrantRepositoryService {
     organizationId: OrganizationId,
     actorId: ActorId,
   ) => Effect.Effect<ReadonlyArray<SessionKeyGrantView>, DatabaseError>;
+  readonly findByIdWithSessionKey: (
+    id: SessionKeyGrantId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<SessionKeyGrantView | undefined, DatabaseError>;
   readonly findActiveForActors: (
     organizationId: OrganizationId,
     actorIds: ReadonlyArray<ActorId>,
@@ -90,6 +99,32 @@ export class SessionKeyGrantRepository extends Context.Service<
             return yield* findActiveForActors(organizationId, [actorId]);
           },
         ),
+        findByIdWithSessionKey: Effect.fn(
+          "database.sessionKeyGrantRepository.findByIdWithSessionKey",
+        )(function* (id, organizationId) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ grant: sessionKeyGrant, sessionKey })
+            .from(sessionKeyGrant)
+            .innerJoin(
+              sessionKey,
+              and(
+                eq(sessionKey.id, sessionKeyGrant.sessionKeyId),
+                eq(sessionKey.organizationId, sessionKeyGrant.organizationId),
+              ),
+            )
+            .where(
+              and(eq(sessionKeyGrant.id, id), eq(sessionKeyGrant.organizationId, organizationId)),
+            )
+            .limit(1);
+          const row = rows[0];
+          return row === undefined
+            ? undefined
+            : {
+                grant: Schema.decodeSync(SessionKeyGrant)(row.grant as any),
+                sessionKey: Schema.decodeSync(SessionKey)(row.sessionKey as any),
+              };
+        }, mapRepositoryError),
         findActiveForActors,
       });
     }),

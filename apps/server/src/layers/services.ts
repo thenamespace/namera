@@ -8,6 +8,8 @@ import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Evm } from "@namera-ai/evm";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
+import { ExecutionWorkerLayer } from "#/workers/execution";
+
 const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
   Layer.provide(Database.layer),
 );
@@ -54,3 +56,14 @@ export const EmailWorkerLive = Layer.unwrap(
     return EmailWorkerLayer;
   }),
 ).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
+
+export const ExecutionWorkerLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* DatabaseMigration;
+    return ExecutionWorkerLayer;
+  }),
+).pipe(
+  Layer.provide(DatabaseMigration.layer),
+  Layer.provide(ApplicationLive),
+  Layer.provide(ServicesLive),
+);

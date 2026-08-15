@@ -119,6 +119,9 @@ export const makeTestEvmExecutionService = (
         }),
       ),
     ),
+    getStatus: Effect.fn("evm.execution.test.getStatus")(() =>
+      Effect.succeed({ status: "included", transactionHash: receipt.transactionHash }),
+    ),
     waitForReceipt: Effect.fn("evm.execution.test.waitForReceipt")((input) =>
       Effect.succeed(
         Option.some({

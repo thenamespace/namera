@@ -81,6 +81,22 @@ export const EvmSubmittedExecution = Schema.Struct({
   description: "An EVM UserOperation accepted or potentially accepted by a bundler",
 });
 
+export const EvmUserOperationStatus = Schema.Struct({
+  status: Schema.Literals([
+    "not_found",
+    "not_submitted",
+    "submitted",
+    "rejected",
+    "reverted",
+    "included",
+    "failed",
+  ]),
+  transactionHash: Schema.NullOr(TransactionHash),
+}).annotate({
+  identifier: "EvmUserOperationStatus",
+  description: "The current Pimlico lifecycle status for an EVM UserOperation",
+});
+
 const EvmExecutionReceiptCommon = {
   version: Schema.Literal(1),
   namespace: Schema.Literal("eip155"),
@@ -121,6 +137,7 @@ export type EvmSerializedUserOperation = typeof EvmSerializedUserOperation.Type;
 export type EvmPreparedExecution = typeof EvmPreparedExecution.Type;
 export type EvmSignedExecution = typeof EvmSignedExecution.Type;
 export type EvmSubmittedExecution = typeof EvmSubmittedExecution.Type;
+export type EvmUserOperationStatus = typeof EvmUserOperationStatus.Type;
 export type SuccessfulEvmExecutionReceipt = typeof SuccessfulEvmExecutionReceipt.Type;
 export type FailedEvmExecutionReceipt = typeof FailedEvmExecutionReceipt.Type;
 export type EvmExecutionReceipt = typeof EvmExecutionReceipt.Type;
