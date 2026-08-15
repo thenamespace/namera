@@ -72,6 +72,10 @@ The server runs the scoped worker after migrations complete. `processOnce` is
 public for deterministic tests and explicit worker runtimes; request handlers
 must not call it.
 
+Registered templates include session-key lifecycle delivery for creation and
+revocation. Revocation emails report the affected account and number of grants
+disabled without exposing policy or credential payloads.
+
 ## Adding an email
 
 1. Add its stable type and variables to the `EmailJobPayload` discriminated

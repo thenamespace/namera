@@ -10,6 +10,7 @@ export const EmailJobType = Schema.Literals([
   "organization-invitation",
   "wallet-created",
   "session-key-created",
+  "session-key-revoked",
   "api-key-created",
   "api-key-revoked",
   "execution-confirmed",
@@ -71,6 +72,13 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
   expiresAt: NonEmptyString,
 });
 
+export const SessionKeyRevokedEmailVariables = Schema.Struct({
+  sessionKeyName: NonEmptyString,
+  walletName: NonEmptyString,
+  organizationName: NonEmptyString,
+  revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+});
+
 export const ApiKeyCreatedEmailVariables = Schema.Struct({
   apiKeyName: NonEmptyString,
   organizationName: NonEmptyString,
@@ -115,6 +123,10 @@ export const EmailJobPayload = Schema.Union([
     variables: SessionKeyCreatedEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
   Schema.Struct({
+    type: Schema.Literal("session-key-revoked"),
+    variables: SessionKeyRevokedEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
     type: Schema.Literal("api-key-created"),
     variables: ApiKeyCreatedEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
@@ -136,6 +148,7 @@ export type NewSignInEmailVariables = typeof NewSignInEmailVariables.Type;
 export type OrganizationInvitationEmailVariables = typeof OrganizationInvitationEmailVariables.Type;
 export type WalletCreatedEmailVariables = typeof WalletCreatedEmailVariables.Type;
 export type SessionKeyCreatedEmailVariables = typeof SessionKeyCreatedEmailVariables.Type;
+export type SessionKeyRevokedEmailVariables = typeof SessionKeyRevokedEmailVariables.Type;
 export type ApiKeyCreatedEmailVariables = typeof ApiKeyCreatedEmailVariables.Type;
 export type ApiKeyRevokedEmailVariables = typeof ApiKeyRevokedEmailVariables.Type;
 export type ExecutionConfirmedEmailVariables = typeof ExecutionConfirmedEmailVariables.Type;

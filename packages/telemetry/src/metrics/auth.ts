@@ -7,5 +7,10 @@ export const userProfileUpdates = Metric.counter("namera.auth.user.profile_updat
 
 export const sessionLifecycleEvents = Metric.frequency("namera.auth.session.lifecycle", {
   description: "Successful session lifecycle events",
-  preregisteredWords: ["revoked", "others_revoked", "active_organization_changed"],
+  preregisteredWords: [
+    "revoked",
+    "selected_revoked",
+    "others_revoked",
+    "active_organization_changed",
+  ],
 });

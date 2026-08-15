@@ -89,6 +89,17 @@ export const GetWalletResponse = WalletResponse.annotate({
   identifier: "GetWalletResponse",
 });
 
+export const UpdateWalletRequest = Schema.Struct({
+  metadata: WalletMetadata,
+}).annotate({
+  identifier: "UpdateWalletRequest",
+  description: "Update wallet presentation metadata",
+});
+
+export const UpdateWalletResponse = WalletResponse.annotate({
+  identifier: "UpdateWalletResponse",
+});
+
 export const ListWalletsResponse = Schema.Array(WalletResponse).annotate({
   identifier: "ListWalletsResponse",
 });
@@ -100,4 +111,6 @@ export type WalletResponse = typeof WalletResponse.Type;
 export type CreateWalletResponse = typeof CreateWalletResponse.Type;
 export type GetWalletRequest = typeof GetWalletRequest.Type;
 export type GetWalletResponse = typeof GetWalletResponse.Type;
+export type UpdateWalletRequest = typeof UpdateWalletRequest.Type;
+export type UpdateWalletResponse = typeof UpdateWalletResponse.Type;
 export type ListWalletsResponse = typeof ListWalletsResponse.Type;

@@ -12,5 +12,7 @@ export { OrganizationInvitationEmail } from "./emails/organization-invitation.js
 export type { OrganizationInvitationEmailProps } from "./emails/organization-invitation.js";
 export { SessionKeyCreatedEmail } from "./emails/session-key-created.js";
 export type { SessionKeyCreatedEmailProps } from "./emails/session-key-created.js";
+export { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
+export type { SessionKeyRevokedEmailProps } from "./emails/session-key-revoked.js";
 export { WalletCreatedEmail } from "./emails/wallet-created.js";
 export type { WalletCreatedEmailProps } from "./emails/wallet-created.js";

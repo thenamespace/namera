@@ -9,6 +9,7 @@ import { MagicLinkEmail } from "./emails/magic-link.js";
 import { NewSignInEmail } from "./emails/new-sign-in.js";
 import { OrganizationInvitationEmail } from "./emails/organization-invitation.js";
 import { SessionKeyCreatedEmail } from "./emails/session-key-created.js";
+import { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
 import { WalletCreatedEmail } from "./emails/wallet-created.js";
 
 export const renderEmail = (input: SendEmailProps): ReactElement => {
@@ -23,6 +24,8 @@ export const renderEmail = (input: SendEmailProps): ReactElement => {
       return <WalletCreatedEmail {...input.variables} />;
     case "session-key-created":
       return <SessionKeyCreatedEmail {...input.variables} />;
+    case "session-key-revoked":
+      return <SessionKeyRevokedEmail {...input.variables} />;
     case "api-key-created":
       return <ApiKeyCreatedEmail {...input.variables} />;
     case "api-key-revoked":

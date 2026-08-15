@@ -21,9 +21,13 @@ import {
   MemberRoleUpdatedEventData,
 } from "./member.js";
 import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
-import { SessionKeyCreatedEventData } from "./session-key.js";
+import { SessionKeyCreatedEventData, SessionKeyRevokedEventData } from "./session-key.js";
 import { SignatureCreatedEventData } from "./signature.js";
-import { WalletCreatedEventData, WalletKeyCreatedEventData } from "./wallet.js";
+import {
+  WalletCreatedEventData,
+  WalletKeyCreatedEventData,
+  WalletUpdatedEventData,
+} from "./wallet.js";
 
 const organizationEvent = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct<Fields>) =>
   OrganizationEventCommon.mapFields(Struct.assign(fields.fields));
@@ -39,7 +43,9 @@ export const MemberRoleUpdatedEvent = organizationEvent(MemberRoleUpdatedEventDa
 export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const WalletKeyCreatedEvent = organizationEvent(WalletKeyCreatedEventData);
+export const WalletUpdatedEvent = organizationEvent(WalletUpdatedEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
+export const SessionKeyRevokedEvent = organizationEvent(SessionKeyRevokedEventData);
 export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
 export const ApiKeyRevokedEvent = organizationEvent(ApiKeyRevokedEventData);
 export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
@@ -59,7 +65,9 @@ export const OrganizationEvent = Schema.Union([
   MemberRemovedEvent,
   WalletCreatedEvent,
   WalletKeyCreatedEvent,
+  WalletUpdatedEvent,
   SessionKeyCreatedEvent,
+  SessionKeyRevokedEvent,
   ApiKeyCreatedEvent,
   ApiKeyRevokedEvent,
   ExecutionSubmittedEvent,

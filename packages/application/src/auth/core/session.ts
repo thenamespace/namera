@@ -10,6 +10,11 @@ import { Audit } from "#/audit/layer";
 export interface SessionApplication {
   readonly list: (userId: UserId) => Effect.Effect<ReadonlyArray<Session>>;
   readonly logout: (sessionId: SessionId, userId: UserId) => Effect.Effect<void>;
+  readonly revoke: (input: {
+    readonly sessionId: SessionId;
+    readonly currentSessionId: SessionId;
+    readonly userId: UserId;
+  }) => Effect.Effect<boolean>;
   readonly revokeOthers: (sessionId: SessionId, userId: UserId) => Effect.Effect<number>;
 }
 
@@ -79,5 +84,34 @@ export const makeSessionApplication = Effect.gen(function* () {
     return count;
   }, Effect.orDie);
 
-  return { list, logout, revokeOthers } satisfies SessionApplication;
+  const revoke = Effect.fn("application.session.revoke")(function* (input: {
+    readonly sessionId: SessionId;
+    readonly currentSessionId: SessionId;
+    readonly userId: UserId;
+  }) {
+    const revoked = yield* transaction.run(
+      Effect.gen(function* () {
+        const session = yield* repository.auth.session.revoke(
+          input.sessionId,
+          input.userId,
+          yield* DateTime.now,
+        );
+        if (session === undefined) return false;
+        yield* audit.user({
+          userId: input.userId,
+          sessionId: input.currentSessionId,
+          event: "session.revoked",
+          data: { version: 1, sessionId: input.sessionId },
+        });
+        return true;
+      }),
+    );
+    if (revoked) {
+      yield* Metric.update(sessionLifecycleEvents, "selected_revoked");
+      yield* Effect.logInfo("session.revoked").pipe(Effect.annotateLogs({ scope: "selected" }));
+    }
+    return revoked;
+  }, Effect.orDie);
+
+  return { list, logout, revoke, revokeOthers } satisfies SessionApplication;
 });

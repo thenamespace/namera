@@ -7,6 +7,8 @@ import {
   GetWalletRequest,
   GetWalletResponse,
   ListWalletsResponse,
+  UpdateWalletRequest,
+  UpdateWalletResponse,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -28,6 +30,12 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
       success: GetWalletResponse,
       error: [WalletNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get a wallet in the active organization"),
+    HttpApiEndpoint.post("update", "/:walletId/update", {
+      params: GetWalletRequest,
+      payload: UpdateWalletRequest,
+      success: UpdateWalletResponse,
+      error: [WalletNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Update wallet metadata"),
   )
   .annotate(OpenApi.Description, "Organization wallets and smart accounts")
   .middleware(Authorization)

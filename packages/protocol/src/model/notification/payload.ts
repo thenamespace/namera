@@ -15,6 +15,7 @@ const NewSignInNotificationType = Schema.Literal("auth.new-sign-in");
 const InvitationReceivedNotificationType = Schema.Literal("organization.invitation.received");
 const WalletCreatedNotificationType = Schema.Literal("wallet.created");
 const SessionKeyCreatedNotificationType = Schema.Literal("session_key.created");
+const SessionKeyRevokedNotificationType = Schema.Literal("session_key.revoked");
 const ApiKeyCreatedNotificationType = Schema.Literal("api_key.created");
 const ApiKeyRevokedNotificationType = Schema.Literal("api_key.revoked");
 const ExecutionConfirmedNotificationType = Schema.Literal("execution.confirmed");
@@ -24,6 +25,7 @@ export const NotificationType = Schema.Union([
   InvitationReceivedNotificationType,
   WalletCreatedNotificationType,
   SessionKeyCreatedNotificationType,
+  SessionKeyRevokedNotificationType,
   ApiKeyCreatedNotificationType,
   ApiKeyRevokedNotificationType,
   ExecutionConfirmedNotificationType,
@@ -75,6 +77,18 @@ export const SessionKeyCreatedNotificationPayload = Schema.Struct({
   }),
 });
 
+export const SessionKeyRevokedNotificationPayload = Schema.Struct({
+  type: SessionKeyRevokedNotificationType,
+  resourceType: Schema.Literal("session-key"),
+  resourceId: SessionKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    walletId: WalletId,
+    namespace: Schema.Literal("eip155"),
+    revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  }),
+});
+
 export const ApiKeyCreatedNotificationPayload = Schema.Struct({
   type: ApiKeyCreatedNotificationType,
   resourceType: Schema.Literal("api-key"),
@@ -112,6 +126,7 @@ export const NotificationPayload = Schema.Union([
   InvitationReceivedNotificationPayload,
   WalletCreatedNotificationPayload,
   SessionKeyCreatedNotificationPayload,
+  SessionKeyRevokedNotificationPayload,
   ApiKeyCreatedNotificationPayload,
   ApiKeyRevokedNotificationPayload,
   ExecutionConfirmedNotificationPayload,

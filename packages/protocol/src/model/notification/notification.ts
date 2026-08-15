@@ -11,6 +11,7 @@ import {
   InvitationReceivedNotificationPayload,
   NewSignInNotificationPayload,
   SessionKeyCreatedNotificationPayload,
+  SessionKeyRevokedNotificationPayload,
   WalletCreatedNotificationPayload,
 } from "./payload.js";
 
@@ -31,6 +32,7 @@ export const NewSignInNotification = notification(NewSignInNotificationPayload);
 export const InvitationReceivedNotification = notification(InvitationReceivedNotificationPayload);
 export const WalletCreatedNotification = notification(WalletCreatedNotificationPayload);
 export const SessionKeyCreatedNotification = notification(SessionKeyCreatedNotificationPayload);
+export const SessionKeyRevokedNotification = notification(SessionKeyRevokedNotificationPayload);
 export const ApiKeyCreatedNotification = notification(ApiKeyCreatedNotificationPayload);
 export const ApiKeyRevokedNotification = notification(ApiKeyRevokedNotificationPayload);
 export const ExecutionConfirmedNotification = notification(ExecutionConfirmedNotificationPayload);
@@ -40,6 +42,7 @@ export const Notification = Schema.Union([
   InvitationReceivedNotification,
   WalletCreatedNotification,
   SessionKeyCreatedNotification,
+  SessionKeyRevokedNotification,
   ApiKeyCreatedNotification,
   ApiKeyRevokedNotification,
   ExecutionConfirmedNotification,

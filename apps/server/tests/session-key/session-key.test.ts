@@ -245,4 +245,178 @@ layer(TestServerLayer)("session-key routes", (it) => {
       expect(yield* client.sessionKey.listForOrganization()).toEqual([]);
     }),
   );
+
+  it.effect("revokes a session key and every active grant exactly once", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("session-key-revoke@example.com"));
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Revocation wallet"),
+        },
+      });
+      const sessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          metadata: metadata("Revocable key"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+            },
+          ],
+        },
+      });
+      const firstApiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("First agent"),
+          durationDays: 30,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+      const secondApiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Second agent"),
+          durationDays: 30,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+
+      const revoked = yield* client.sessionKey.revoke({
+        params: { sessionKeyId: sessionKey.id },
+      });
+      expect(revoked).toMatchObject({
+        id: sessionKey.id,
+        status: "revoked",
+        revokedAt: expect.anything(),
+      });
+      expect(
+        yield* client.sessionKey.get({ params: { sessionKeyId: sessionKey.id } }),
+      ).toMatchObject({ status: "revoked" });
+
+      const repository = yield* Repository;
+      expect(
+        yield* repository.core.sessionKeyGrant.findActiveForActor(
+          owner.actor.organization.id,
+          firstApiKey.apiKey.actorId,
+        ),
+      ).toEqual([]);
+      expect(
+        yield* repository.core.sessionKeyGrant.findActiveForActor(
+          owner.actor.organization.id,
+          secondApiKey.apiKey.actorId,
+        ),
+      ).toEqual([]);
+      const events = (yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      )).filter(
+        ({ event, resourceId }) => event === "session_key.revoked" && resourceId === sessionKey.id,
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0]?.data).toMatchObject({ revokedGrantCount: 2 });
+      expect(
+        (yield* client.notification.list({ query: {} })).items.some(
+          ({ notification }) =>
+            notification.type === "session_key.revoked" &&
+            notification.resourceId === sessionKey.id &&
+            notification.data.revokedGrantCount === 2,
+        ),
+      ).toBe(true);
+      expect(
+        yield* repository.jobs.email.findByIdempotencyKey(
+          `notification:session_key.revoked:${sessionKey.id}:${owner.actor.user.id}:email`,
+        ),
+      ).toMatchObject({ type: "session-key-revoked", status: "pending" });
+
+      const emailJobs = yield* EmailJobs;
+      const emails = yield* TestEmails;
+      let delivered = (yield* emails.sent).findLast(
+        (email) => email.type === "session-key-revoked",
+      );
+      for (let attempt = 0; delivered === undefined && attempt < 10; attempt += 1) {
+        yield* emailJobs.processOnce;
+        delivered = (yield* emails.sent).findLast((email) => email.type === "session-key-revoked");
+      }
+      expect(delivered?.variables).toMatchObject({
+        sessionKeyName: "Revocable key",
+        walletName: "Revocation wallet",
+        revokedGrantCount: 2,
+      });
+
+      const repeated = yield* client.sessionKey.revoke({
+        params: { sessionKeyId: sessionKey.id },
+      });
+      expect(repeated.revokedAt).toEqual(revoked.revokedAt);
+      expect(
+        (yield* repository.audit.organization.findForOrganization(
+          owner.actor.organization.id,
+        )).filter(
+          ({ event, resourceId }) =>
+            event === "session_key.revoked" && resourceId === sessionKey.id,
+        ),
+      ).toHaveLength(1);
+    }),
+  );
+
+  it.effect("enforces session-key revocation permission and organization scope", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("session-key-revoke-owner@example.com"));
+      const member = yield* createMember(
+        client,
+        testEmail("session-key-revoke-member@example.com"),
+      );
+      yield* setAuthToken(member.ownerToken);
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Permission wallet"),
+        },
+      });
+      const sessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          metadata: metadata("Permission key"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+            },
+          ],
+        },
+      });
+
+      yield* setAuthToken(member.memberToken);
+      expect(
+        yield* client.sessionKey
+          .revoke({ params: { sessionKeyId: sessionKey.id } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "Forbidden" });
+
+      yield* signIn(client, testEmail("session-key-revoke-other@example.com"));
+      expect(
+        yield* client.sessionKey
+          .revoke({ params: { sessionKeyId: sessionKey.id } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "SessionKeyError", code: "SESSION_KEY_NOT_FOUND" });
+      expect(
+        yield* client.sessionKey
+          .revoke({ params: { sessionKeyId: missingSessionKeyId } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "SessionKeyError", code: "SESSION_KEY_NOT_FOUND" });
+    }),
+  );
 });

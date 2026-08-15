@@ -6,10 +6,11 @@ import {
   Wallet,
   WalletInsert,
   WalletKey,
+  type WalletMetadata,
   type Wallet as WalletModel,
   type WalletKey as WalletKeyModel,
 } from "@namera-ai/protocol/model";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -29,6 +30,11 @@ export interface WalletRepositoryService {
   readonly findForOrganization: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<WalletView>, DatabaseError>;
+  readonly updateMetadata: (
+    id: WalletId,
+    organizationId: OrganizationId,
+    metadata: WalletMetadata,
+  ) => Effect.Effect<WalletView | undefined, DatabaseError>;
 }
 
 const decodeWalletView = (row: {
@@ -81,6 +87,28 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
             .where(eq(wallet.organizationId, organizationId))
             .orderBy(desc(wallet.createdAt), desc(wallet.id));
           return rows.map(decodeWalletView);
+        }, mapRepositoryError),
+        updateMetadata: Effect.fn("database.walletRepository.updateMetadata")(function* (
+          id,
+          organizationId,
+          metadata,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(wallet)
+            .set({ metadata })
+            .where(and(eq(wallet.id, id), eq(wallet.organizationId, organizationId)))
+            .returning();
+          const updated = rows[0];
+          if (updated === undefined) return undefined;
+          const key = yield* db.query.walletKey.findFirst({
+            where: {
+              id: { eq: updated.walletKeyId },
+              organizationId: { eq: organizationId },
+            },
+          });
+          if (key === undefined) return yield* Effect.die("Updated wallet key relation is missing");
+          return decodeWalletView({ wallet: updated, walletKey: key });
         }, mapRepositoryError),
       });
     }),

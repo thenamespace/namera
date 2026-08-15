@@ -43,6 +43,20 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
           return yield* app.session.revokeOthers(data.session.id, data.user.id);
         }),
+      )
+      .handle("revokeSession", ({ params }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          const revoked = yield* app.session.revoke({
+            sessionId: params.sessionId,
+            currentSessionId: data.session.id,
+            userId: data.user.id,
+          });
+          if (revoked && params.sessionId === data.session.id) {
+            yield* clearAuthCookie(cookieConfig.secure);
+          }
+        }),
       );
   }),
 );

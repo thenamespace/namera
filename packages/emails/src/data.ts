@@ -18,6 +18,9 @@ export const emailTemplates = {
   "session-key-created": {
     subject: "Your Namera session key is ready",
   },
+  "session-key-revoked": {
+    subject: "Session key revoked",
+  },
   "api-key-created": {
     subject: "Your Namera API key is ready",
   },

@@ -14,8 +14,8 @@ metadata. It does not start a server or implement backend workflows.
 - `src/routes/auth/organization/` — organization, membership, and invitation
   endpoints.
 - `src/routes/auth/notification.ts` — authenticated inbox and preference endpoints.
-- `src/routes/wallet.ts` — create, list, and get organization wallets.
-- `src/routes/session-key.ts` — create, get, and list organization session keys.
+- `src/routes/wallet.ts` — create, list, get, and update organization wallet metadata.
+- `src/routes/session-key.ts` — create, get, list, and revoke organization session keys.
 - `src/routes/api-key.ts` — create, get, list, and revoke organization API keys
   with their authorized session keys.
 - `src/routes/execution.ts` — API-key execution, actor-owned submission status,

@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId } from "#/common/index";
+import { OrganizationId, SessionId } from "#/common/index";
 import { Session } from "#/model/index";
 
 export const GetSessionRequest = Schema.Void;
@@ -22,6 +22,11 @@ export const ListSessionsResponse = Schema.Array(GetSessionResponse).annotate({
   identifier: "ListSessionsResponse",
 });
 
+export const RevokeSessionRequest = Schema.Struct({
+  sessionId: SessionId,
+}).annotate({ identifier: "RevokeSessionRequest" });
+export const RevokeSessionResponse = Schema.Void;
+
 export const SetActiveOrganizationRequest = Schema.Struct({
   organizationId: OrganizationId,
 }).annotate({ identifier: "SetActiveOrganizationRequest" });
@@ -31,5 +36,7 @@ export type GetSessionRequest = typeof GetSessionRequest.Type;
 export type GetSessionResponse = typeof GetSessionResponse.Type;
 export type ListSessionsRequest = typeof ListSessionsRequest.Type;
 export type ListSessionsResponse = typeof ListSessionsResponse.Type;
+export type RevokeSessionRequest = typeof RevokeSessionRequest.Type;
+export type RevokeSessionResponse = typeof RevokeSessionResponse.Type;
 export type SetActiveOrganizationRequest = typeof SetActiveOrganizationRequest.Type;
 export type SetActiveOrganizationResponse = typeof SetActiveOrganizationResponse.Type;

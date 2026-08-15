@@ -10,6 +10,7 @@ import {
   NotificationPreference,
   NotificationPreferenceChannel,
   SessionKeyCreatedNotification,
+  SessionKeyRevokedNotification,
   WalletCreatedNotification,
   withNotificationPreferenceTarget,
 } from "#/model/notification/index";
@@ -34,6 +35,10 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: SessionKeyCreatedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: SessionKeyRevokedNotification,
     ...NotificationRecipientState,
   }),
   Schema.Struct({

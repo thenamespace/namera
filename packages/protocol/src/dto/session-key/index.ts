@@ -86,6 +86,14 @@ export const GetSessionKeyResponse = SessionKeyResponse.annotate({
   identifier: "GetSessionKeyResponse",
 });
 
+export const RevokeSessionKeyRequest = Schema.Struct({
+  sessionKeyId: SessionKeyId,
+}).annotate({ identifier: "RevokeSessionKeyRequest" });
+
+export const RevokeSessionKeyResponse = SessionKeyResponse.annotate({
+  identifier: "RevokeSessionKeyResponse",
+});
+
 export const ListSessionKeysForWalletRequest = Schema.Struct({
   walletId: WalletId,
 }).annotate({ identifier: "ListSessionKeysForWalletRequest" });
@@ -107,6 +115,8 @@ export type SessionKeyResponse = typeof SessionKeyResponse.Type;
 export type CreateSessionKeyResponse = typeof CreateSessionKeyResponse.Type;
 export type GetSessionKeyRequest = typeof GetSessionKeyRequest.Type;
 export type GetSessionKeyResponse = typeof GetSessionKeyResponse.Type;
+export type RevokeSessionKeyRequest = typeof RevokeSessionKeyRequest.Type;
+export type RevokeSessionKeyResponse = typeof RevokeSessionKeyResponse.Type;
 export type ListSessionKeysForWalletRequest = typeof ListSessionKeysForWalletRequest.Type;
 export type ListSessionKeysForWalletResponse = typeof ListSessionKeysForWalletResponse.Type;
 export type ListSessionKeysForOrganizationResponse =

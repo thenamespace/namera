@@ -8,3 +8,8 @@ export const walletCreationResults = Metric.counter("namera.wallet.creation.resu
 export const walletCreationDuration = Metric.timer("namera.wallet.creation.duration", {
   description: "Duration of wallet creation workflows",
 });
+
+export const walletMetadataUpdates = Metric.counter("namera.wallet.metadata_updates", {
+  description: "Successful wallet metadata updates",
+  incremental: true,
+});

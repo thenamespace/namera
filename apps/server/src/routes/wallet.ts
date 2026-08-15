@@ -49,6 +49,24 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           });
           return toWalletResponse(yield* app.wallet.get(data.organization.id, params.walletId));
         }),
+      )
+      .handle("update", ({ params, payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:update"] },
+          });
+          return toWalletResponse(
+            yield* app.wallet.update({
+              organizationId: data.organization.id,
+              actorId: data.actorId,
+              walletId: params.walletId,
+              request: payload,
+            }),
+          );
+        }),
       );
   }),
 );

@@ -5,6 +5,7 @@ import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
 import { enforceActor, toSessionKeyResponse } from "#/helpers/index";
+import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (handlers) =>
   Effect.gen(function* () {
@@ -64,6 +65,28 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
           });
           return toSessionKeyResponse(
             yield* app.sessionKey.get(data.organization.id, params.sessionKeyId),
+          );
+        }),
+      )
+      .handle("revoke", ({ params }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["session-key:revoke"] },
+          });
+          yield* consumeRateLimit(
+            "session_key.revoke.organization",
+            data.organization.id,
+            rateLimitPolicy.sessionKey.revokeByOrganization,
+          );
+          return toSessionKeyResponse(
+            yield* app.sessionKey.revoke({
+              organizationId: data.organization.id,
+              actorId: data.actorId,
+              sessionKeyId: params.sessionKeyId,
+            }),
           );
         }),
       );

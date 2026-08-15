@@ -48,6 +48,12 @@ export interface SessionKeyGrantRepositoryService {
     revokedByActorId: ActorId,
     revokedAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<SessionKeyGrantModel>, DatabaseError>;
+  readonly revokeActiveForSessionKey: (
+    organizationId: OrganizationId,
+    sessionKeyId: SessionKeyGrantModel["sessionKeyId"],
+    revokedByActorId: ActorId,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyGrantModel>, DatabaseError>;
 }
 
 export class SessionKeyGrantRepository extends Context.Service<
@@ -151,6 +157,24 @@ export class SessionKeyGrantRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        revokeActiveForSessionKey: Effect.fn(
+          "database.sessionKeyGrantRepository.revokeActiveForSessionKey",
+        )(function* (organizationId, sessionKeyId, revokedByActorId, revokedAt) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
+            .update(sessionKeyGrant)
+            .set({ revokedAt: encodedRevokedAt, revokedByActorId })
+            .where(
+              and(
+                eq(sessionKeyGrant.organizationId, organizationId),
+                eq(sessionKeyGrant.sessionKeyId, sessionKeyId),
+                isNull(sessionKeyGrant.revokedAt),
+              ),
+            )
+            .returning();
+          return rows.map((row) => Schema.decodeSync(SessionKeyGrant)(row as any));
+        }, mapRepositoryError),
       });
     }),
   );

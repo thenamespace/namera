@@ -1,7 +1,12 @@
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
-import { ListSessionsResponse, UserActorData } from "@namera-ai/protocol/dto";
+import {
+  ListSessionsResponse,
+  RevokeSessionRequest,
+  RevokeSessionResponse,
+  UserActorData,
+} from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
 import { Authorization } from "#/middlewares/index";
@@ -30,6 +35,13 @@ export class SessionGroup extends HttpApiGroup.make("session")
       success: Schema.Int,
       error: CommonErrors,
     }).annotate(OpenApi.Summary, "Revoke every other active session"),
+  )
+  .add(
+    HttpApiEndpoint.delete("revokeSession", "/sessions/:sessionId", {
+      params: RevokeSessionRequest,
+      success: RevokeSessionResponse,
+      error: CommonErrors,
+    }).annotate(OpenApi.Summary, "Revoke one user session"),
   )
   .annotate(OpenApi.Description, "Authenticated session management")
   .middleware(Authorization)

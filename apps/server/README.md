@@ -78,6 +78,9 @@ API-key creation is limited to 20 attempts per active organization per hour.
 Revocation is limited to 60 attempts per active organization per hour. Read
 operations use only the global limit.
 
+Session-key revocation is limited to 60 attempts per active organization per
+hour. It revokes the key and every active grant in one application transaction.
+
 Smart-account signatures are limited to 120 requests per API key per minute.
 
 `POST /rpc/eip155/:chainId` is limited separately to 600 requests per minute per

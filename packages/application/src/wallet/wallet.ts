@@ -1,4 +1,4 @@
-import { DateTime, Effect, Metric, Schema } from "effect";
+import { DateTime, Effect, Equal, Metric, Schema } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
 import { Evm, createWalletKeyWebAuthnAccount, getChainDataByChainId } from "@namera-ai/evm";
@@ -11,8 +11,12 @@ import {
   type OrganizationId,
   type WalletId,
 } from "@namera-ai/protocol";
-import type { CreateWalletRequest } from "@namera-ai/protocol/dto";
-import { walletCreationDuration, walletCreationResults } from "@namera-ai/telemetry";
+import type { CreateWalletRequest, UpdateWalletRequest } from "@namera-ai/protocol/dto";
+import {
+  walletCreationDuration,
+  walletCreationResults,
+  walletMetadataUpdates,
+} from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
@@ -35,6 +39,12 @@ export interface WalletApplication {
     organizationId: OrganizationId,
     walletId: WalletId,
   ) => Effect.Effect<WalletView, WalletNotFoundError>;
+  readonly update: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly walletId: WalletId;
+    readonly request: UpdateWalletRequest;
+  }) => Effect.Effect<WalletView, WalletNotFoundError>;
 }
 
 export const makeWalletApplication = Effect.gen(function* () {
@@ -328,5 +338,52 @@ export const makeWalletApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { create, list, get } satisfies WalletApplication;
+  const update = Effect.fn("application.wallet.update")(
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId: ActorId;
+      readonly walletId: WalletId;
+      readonly request: UpdateWalletRequest;
+    }) {
+      const result = yield* transaction.run(
+        Effect.gen(function* () {
+          const current = yield* repository.core.wallet.findById(
+            input.walletId,
+            input.organizationId,
+          );
+          if (current === undefined) {
+            return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
+          }
+          if (Equal.equals(current.wallet.metadata, input.request.metadata)) {
+            return { wallet: current, changed: false } as const;
+          }
+          const wallet = yield* repository.core.wallet.updateMetadata(
+            input.walletId,
+            input.organizationId,
+            input.request.metadata,
+          );
+          if (wallet === undefined) {
+            return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
+          }
+          yield* audit.organization({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            event: "wallet.updated",
+            resourceType: "wallet",
+            resourceId: wallet.wallet.id,
+            data: { version: 1, changedFields: ["metadata"] },
+          });
+          return { wallet, changed: true } as const;
+        }),
+      );
+      if (result.changed) {
+        yield* Metric.update(walletMetadataUpdates, 1);
+        yield* Effect.logInfo("wallet.updated");
+      }
+      return result.wallet;
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  return { create, list, get, update } satisfies WalletApplication;
 });

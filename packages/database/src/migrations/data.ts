@@ -22,11 +22,13 @@ const rolePermissions = [
 const walletPermissions = [
   "wallet:read",
   "wallet:create",
+  "wallet:update",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
 const sessionKeyPermissions = [
   "session-key:read",
   "session-key:create",
+  "session-key:revoke",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
 const apiKeyPermissions = [

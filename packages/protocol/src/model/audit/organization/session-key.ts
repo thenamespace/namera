@@ -15,3 +15,15 @@ export const SessionKeyCreatedEventData = Schema.Struct({
     ),
   }),
 });
+
+export const SessionKeyRevokedEventData = Schema.Struct({
+  event: Schema.Literal("session_key.revoked"),
+  resourceType: Schema.Literal("session-key"),
+  resourceId: SessionKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    walletId: WalletId,
+    namespace: Schema.Literal("eip155"),
+    revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  }),
+});

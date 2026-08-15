@@ -248,4 +248,94 @@ layer(TestServerLayer)("wallet routes", (it) => {
       });
     }),
   );
+
+  it.effect("updates only wallet metadata and audits actual changes", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("wallet-update@example.com"));
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Original account"),
+        },
+      });
+      const updatedMetadata = {
+        version: 1 as const,
+        name: "Treasury account",
+        description: "Primary organization treasury",
+      };
+
+      const updated = yield* client.wallet.update({
+        params: { walletId: wallet.id },
+        payload: { metadata: updatedMetadata },
+      });
+      expect(updated).toMatchObject({
+        id: wallet.id,
+        metadata: updatedMetadata,
+        address: wallet.address,
+        namespace: wallet.namespace,
+        implementation: wallet.implementation,
+        protectionLevel: wallet.protectionLevel,
+      });
+      yield* client.wallet.update({
+        params: { walletId: wallet.id },
+        payload: { metadata: updatedMetadata },
+      });
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      )).filter(({ event, resourceId }) => event === "wallet.updated" && resourceId === wallet.id);
+      expect(events).toHaveLength(1);
+      expect(events[0]?.data).toMatchObject({ version: 1, changedFields: ["metadata"] });
+    }),
+  );
+
+  it.effect("enforces wallet update permission and organization isolation", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("wallet-update-owner@example.com"));
+      const member = yield* createMember(client, testEmail("wallet-update-member@example.com"));
+      yield* setAuthToken(member.ownerToken);
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "safe",
+          protectionLevel: "software",
+          metadata: metadata("Owner account"),
+        },
+      });
+
+      yield* setAuthToken(member.memberToken);
+      expect(
+        yield* client.wallet
+          .update({
+            params: { walletId: wallet.id },
+            payload: { metadata: metadata("Forbidden update") },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "Forbidden" });
+
+      yield* signIn(client, testEmail("wallet-update-other@example.com"));
+      expect(
+        yield* client.wallet
+          .update({
+            params: { walletId: wallet.id },
+            payload: { metadata: metadata("Cross organization") },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "WalletError", code: "WALLET_NOT_FOUND" });
+      expect(
+        yield* client.wallet
+          .update({
+            params: { walletId: missingWalletId },
+            payload: { metadata: metadata("Missing") },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "WalletError", code: "WALLET_NOT_FOUND" });
+    }),
+  );
 });

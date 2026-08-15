@@ -76,6 +76,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   schemas. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
+- Wallet metadata updates replace only presentation metadata. Session-key
+  revocation is idempotent and returns the same expanded response contract as
+  create/get/list while preserving the immutable policy set.
 - Execution submissions are mutable operational records discriminated by
   namespace. They preserve actor/grant authorization, idempotency, lifecycle,
   and the namespace payload required for crash recovery. Executions reference

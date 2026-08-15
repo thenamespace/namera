@@ -48,6 +48,7 @@ pnpm --filter @namera-ai/email-templates email:assets
 - `organization-invitation` — organization invitation with a review action.
 - `wallet-created` — smart-account creation notification.
 - `session-key-created` — scoped session-key creation notification.
+- `session-key-revoked` — session-key and grant revocation summary.
 - `api-key-created` — API-key creation and authorization summary.
 - `api-key-revoked` — API-key and session-key grant revocation summary.
 - `execution-confirmed` — confirmed onchain execution receipt.

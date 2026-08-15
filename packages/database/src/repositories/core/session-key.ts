@@ -1,7 +1,13 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-non-null-assertion
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError, OrganizationId, SessionKeyId, WalletId } from "@namera-ai/protocol";
+import type {
+  ActorId,
+  DatabaseError,
+  OrganizationId,
+  SessionKeyId,
+  WalletId,
+} from "@namera-ai/protocol";
 import {
   SessionKey,
   SessionKeyInsert,
@@ -26,6 +32,12 @@ export interface SessionKeyRepositoryService {
   readonly findForOrganization: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<SessionKeyModel>, DatabaseError>;
+  readonly revoke: (
+    id: SessionKeyId,
+    organizationId: OrganizationId,
+    revokedByActorId: ActorId,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<SessionKeyModel | undefined, DatabaseError>;
 }
 
 export class SessionKeyRepository extends Context.Service<
@@ -86,6 +98,30 @@ export class SessionKeyRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        revoke: Effect.fn("database.sessionKeyRepository.revoke")(function* (
+          id,
+          organizationId,
+          revokedByActorId,
+          revokedAt,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(sessionKey)
+            .set({
+              status: "revoked",
+              revokedAt: Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt),
+              revokedByActorId,
+            })
+            .where(
+              and(
+                eq(sessionKey.id, id),
+                eq(sessionKey.organizationId, organizationId),
+                eq(sessionKey.status, "active"),
+              ),
+            )
+            .returning();
+          return rows[0] === undefined ? undefined : Schema.decodeSync(SessionKey)(rows[0] as any);
+        }, mapRepositoryError),
       });
     }),
   );

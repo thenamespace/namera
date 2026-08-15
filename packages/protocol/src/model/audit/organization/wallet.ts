@@ -31,6 +31,16 @@ export const WalletCreatedEventData = Schema.Struct({
   }),
 });
 
+export const WalletUpdatedEventData = Schema.Struct({
+  event: Schema.Literal("wallet.updated"),
+  resourceType: Schema.Literal("wallet"),
+  resourceId: WalletId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    changedFields: Schema.Array(Schema.Literal("metadata")),
+  }),
+});
+
 export const WalletKeyCreatedEventData = Schema.Struct({
   event: Schema.Literal("wallet_key.created"),
   resourceType: Schema.Literal("wallet-key"),

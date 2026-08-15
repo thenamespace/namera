@@ -13,6 +13,8 @@ import {
   ListSessionKeysForOrganizationResponse,
   ListSessionKeysForWalletRequest,
   ListSessionKeysForWalletResponse,
+  RevokeSessionKeyRequest,
+  RevokeSessionKeyResponse,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -39,6 +41,11 @@ export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
       success: GetSessionKeyResponse,
       error: [SessionKeyNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get a session key"),
+    HttpApiEndpoint.post("revoke", "/:sessionKeyId/revoke", {
+      params: RevokeSessionKeyRequest,
+      success: RevokeSessionKeyResponse,
+      error: [SessionKeyNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Revoke a session key and all of its active grants"),
   )
   .annotate(OpenApi.Description, "Immutable offchain session keys and policies")
   .middleware(Authorization)

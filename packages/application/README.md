@@ -92,7 +92,9 @@ failed final transaction may leave an unreferenced provider key for later
 operational reconciliation.
 
 Session-key creation validates the organization wallet and its namespace before
-persisting versioned policy instances. Policy hashes are purpose-separated and
+persisting versioned policy instances. Revocation atomically marks the immutable
+key revoked and revokes all active grants while preserving in-flight execution
+history. Policy hashes are purpose-separated and
 canonical across object-key and policy-array ordering while excluding generated
 policy IDs. The session key, audit event, inbox recipients, and durable email
 jobs share one transaction.
@@ -104,6 +106,10 @@ credential row, grants, audit event, inbox recipients, and durable email jobs.
 Durations are limited to one year. The raw credential is returned only from
 creation; get and list return safe key details with their currently authorized
 session keys.
+
+Wallet updates replace only metadata and leave the namespace, implementation,
+address, protection level, key material, and account data unchanged. No-op
+updates do not create duplicate audit events or metrics.
 
 Execution requests reserve one granted session key, persist the exact signed
 UserOperation, submit it, and briefly wait for its receipt. A successful receipt

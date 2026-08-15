@@ -117,4 +117,58 @@ layer(TestServerLayer)("session routes", (it) => {
       expect(response.cookies.cookies["auth-token"]?.value).toBe("");
     }),
   );
+
+  it.effect("revokes one selected session and records the acting session", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("selected-session@example.com"));
+      const second = yield* createSession(signedIn.actor);
+
+      yield* client.session.revokeSession({ params: { sessionId: second.session.id } });
+      expect((yield* client.session.listSessions()).map(({ id }) => id)).toEqual([
+        signedIn.actor.session.id,
+      ]);
+      yield* client.session.revokeSession({ params: { sessionId: second.session.id } });
+
+      const repository = yield* Repository;
+      const events = (yield* repository.audit.user.findForUser(signedIn.actor.user.id)).filter(
+        ({ event, data }) => event === "session.revoked" && data.sessionId === second.session.id,
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0]?.sessionId).toBe(signedIn.actor.session.id);
+
+      yield* setAuthToken(second.token);
+      expect(yield* client.session.currentUser().pipe(Effect.flip)).toMatchObject({
+        _tag: "Unauthorized",
+      });
+      yield* setAuthToken(signedIn.cookie.value);
+      expect((yield* client.session.currentUser()).session.id).toBe(signedIn.actor.session.id);
+    }),
+  );
+
+  it.effect(
+    "cannot revoke another user's session and clears the cookie for the current target",
+    () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const first = yield* signIn(client, testEmail("selected-session-first@example.com"));
+        const second = yield* signIn(client, testEmail("selected-session-second@example.com"));
+
+        yield* client.session.revokeSession({ params: { sessionId: first.actor.session.id } });
+        yield* setAuthToken(first.cookie.value);
+        expect((yield* client.session.currentUser()).user.id).toBe(first.actor.user.id);
+
+        yield* setAuthToken(second.cookie.value);
+        const [, response] = yield* client.session.revokeSession({
+          params: { sessionId: second.actor.session.id },
+          responseMode: "decoded-and-response",
+        });
+        expect(response.cookies.cookies["auth-token"]?.value).toBe("");
+        expect(yield* client.session.currentUser().pipe(Effect.flip)).toMatchObject({
+          _tag: "Unauthorized",
+        });
+      }),
+  );
 });

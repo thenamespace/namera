@@ -205,10 +205,10 @@ from the user's current memberships.
 
 `core.wallet_key` stores the public key and opaque provider reference while
 `core.wallet` stores the organization-owned address and namespace-specific
-account data. The repositories expose organization-scoped wallet reads and
-transaction-aware inserts. Provider calls and account construction do not
-belong in repositories; `application` coordinates those capabilities before
-persisting both records in one transaction.
+account data. The repositories expose organization-scoped wallet reads,
+transaction-aware inserts, and metadata-only updates. Provider calls and
+account construction do not belong in repositories; `application` coordinates
+those capabilities before persisting both records in one transaction.
 
 ## Session-key persistence
 
@@ -221,6 +221,11 @@ organization and retains revoked grant history. A partial unique index permits
 only one active grant for an actor/session-key pair. Composite foreign keys
 prevent wallets, actors, session keys, grants, and executions from being linked
 across organizations.
+
+Session-key revocation conditionally marks one active key revoked and revokes
+every active grant referencing it in the same application transaction. Existing
+submission and execution references remain intact for reconciliation and
+history.
 
 `core.session_key_policy_state` stores versioned, handler-owned JSON state for
 one policy instance and state key. `core.session_key_policy_reservation` holds
