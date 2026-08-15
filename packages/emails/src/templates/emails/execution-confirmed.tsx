@@ -24,7 +24,7 @@ export const ExecutionConfirmedEmail = ({
 
   return (
     <NameraEmail preview={`An execution from ${walletName} was confirmed onchain.`}>
-      <EmailLayout compactOnMobile>
+      <EmailLayout>
         <EmailContent
           description={`An execution from ${walletName} in ${organizationName} was confirmed onchain.`}
           title="Execution confirmed"

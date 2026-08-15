@@ -18,7 +18,7 @@ export const ApiKeyCreatedEmail = ({
 
   return (
     <NameraEmail preview={`${apiKeyName} was created in ${organizationName}.`}>
-      <EmailLayout compactOnMobile>
+      <EmailLayout>
         <EmailContent
           description={`A new API key was created in ${organizationName}.`}
           title="API key created"

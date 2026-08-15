@@ -17,7 +17,7 @@ export const SessionKeyCreatedEmail = ({
 }: SessionKeyCreatedEmailProps) => {
   return (
     <NameraEmail preview={`${sessionKeyName} was created for ${walletName}.`}>
-      <EmailLayout compactOnMobile>
+      <EmailLayout>
         <EmailContent
           description={`A new scoped session key was created in ${organizationName}.`}
           title="Session key created"

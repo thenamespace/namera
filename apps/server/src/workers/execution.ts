@@ -2,7 +2,7 @@ import { Duration, Effect, Layer } from "effect";
 
 import { Application } from "@namera-ai/application";
 
-const workerPollInterval = Duration.seconds(2);
+const workerPollInterval = Duration.seconds(5);
 
 export const ExecutionWorkerLayer = Layer.effectDiscard(
   Effect.gen(function* () {

@@ -5,24 +5,17 @@ import { Container, Hr, Section, Text } from "react-email";
 import { NameraBrand } from "./brand.js";
 import { EmailSocialLinks } from "./social-links.js";
 
-type EmailLayoutProps = PropsWithChildren<{
-  readonly compactOnMobile?: boolean;
-}>;
+type EmailLayoutProps = PropsWithChildren;
 
-export const EmailLayout = ({ children, compactOnMobile = false }: EmailLayoutProps) => {
-  const containerClassName = compactOnMobile ? "px-2 sm:px-5" : "px-5";
-  const contentClassName = compactOnMobile ? "px-5 py-7 sm:px-8 sm:py-9" : "px-8 py-9";
-
+export const EmailLayout = ({ children }: EmailLayoutProps) => {
   return (
     <Section className="w-full bg-email-light-background dark:bg-email-dark-background">
-      <Container className={`mx-auto w-full max-w-140 py-10 ${containerClassName}`}>
+      <Container className="mx-auto w-full max-w-140 px-5 py-10">
         <Section className="mb-6 px-1">
           <NameraBrand />
         </Section>
 
-        <Section
-          className={`rounded-2xl border border-solid border-email-light-border bg-email-light-surface dark:border-email-dark-border dark:bg-email-dark-surface ${contentClassName}`}
-        >
+        <Section className="rounded-2xl border border-solid border-email-light-border bg-email-light-surface px-8 py-9 dark:border-email-dark-border dark:bg-email-dark-surface">
           {children}
         </Section>
 
