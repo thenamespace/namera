@@ -52,9 +52,19 @@ export const makeOAuthRequestApplication = Effect.gen(function* () {
 
       const scopes = [...new Set(input.scopes)];
       const supportedScopes = new Set<OAuthScope>(["mcp:read", "mcp:execute", "offline_access"]);
+      const registeredScopeValue =
+        typeof client.metadata === "object" && client.metadata !== null
+          ? Reflect.get(client.metadata, "scope")
+          : undefined;
+      const registeredScope =
+        typeof registeredScopeValue === "string"
+          ? new Set(registeredScopeValue.split(/\s+/).filter(Boolean))
+          : undefined;
       if (
         scopes.length === 0 ||
-        scopes.some((scope) => !supportedScopes.has(scope as OAuthScope))
+        scopes.some((scope) => !supportedScopes.has(scope as OAuthScope)) ||
+        (registeredScope !== undefined && scopes.some((scope) => !registeredScope.has(scope))) ||
+        (scopes.includes("offline_access") && !client.grantTypes.includes("refresh_token"))
       ) {
         return yield* new OAuthAuthorizationRequestError({ code: "INVALID_SCOPE" });
       }

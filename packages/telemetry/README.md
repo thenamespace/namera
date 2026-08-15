@@ -21,6 +21,7 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.
 - `src/metrics/notification.ts` — occurrence, recipient, and preference metrics.
+- `src/metrics/oauth.ts` — dynamic registration, OAuth authorization/token, and MCP metrics.
 - `src/metrics/organization.ts` — organization and invitation workflow metrics.
 - `src/metrics/session-key.ts` — session-key creation and revocation outcomes and duration.
 - `src/metrics/signature.ts` — signature outcomes, duration, and policy decisions.

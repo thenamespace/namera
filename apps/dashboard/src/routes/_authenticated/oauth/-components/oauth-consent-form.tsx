@@ -63,6 +63,7 @@ export function OAuthConsentForm({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(ApproveOAuthAuthorizationRequest)),
   });
   const isPending = approve.isPending || deny.isPending;
+  const isDynamicClient = request.client.registrationType === "dynamic";
   const handleSubmit = form.handleSubmit(async (payload) => {
     try {
       const response = await approve.mutateAsync({ payload });
@@ -86,7 +87,7 @@ export function OAuthConsentForm({
         <DashboardCardContent className="divide-y-0 p-6 sm:p-7">
           <div className="flex flex-col items-center text-center">
             <Avatar className="mb-4 size-12">
-              {request.client.logoUri === null ? null : (
+              {request.client.logoUri === null || isDynamicClient ? null : (
                 <Avatar.Image alt="" src={request.client.logoUri} />
               )}
               <Avatar.Fallback>
@@ -99,6 +100,11 @@ export function OAuthConsentForm({
             <Typography.Paragraph className="mt-2 max-w-sm text-pretty" color="muted" size="sm">
               Choose the session keys this client may use. You can revoke this access later.
             </Typography.Paragraph>
+            {isDynamicClient ? (
+              <Typography.Paragraph className="mt-2" color="muted" size="xs">
+                Unverified client — confirm the client and redirect URI before authorizing.
+              </Typography.Paragraph>
+            ) : null}
             {request.client.clientUri === null ? null : (
               <Typography.Paragraph className="mt-2 truncate" color="muted" size="xs">
                 {request.client.clientUri}
@@ -107,6 +113,10 @@ export function OAuthConsentForm({
           </div>
 
           <div className="bg-surface-secondary mt-6 grid gap-3 rounded-lg px-4 py-3 text-sm">
+            <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
+              <span className="text-content-tertiary">Client ID</span>
+              <span className="min-w-0 break-all">{request.client.clientId}</span>
+            </div>
             <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
               <span className="text-content-tertiary">Access</span>
               <span className="min-w-0 break-words">{request.requestedScopes.join(", ")}</span>

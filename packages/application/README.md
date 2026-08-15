@@ -109,8 +109,11 @@ Durations are limited to one year. The raw credential is returned only from
 creation; get and list return safe key details with their currently authorized
 session keys.
 
-OAuth authorization accepts only active pre-registered public clients, exact
-redirect URIs, PKCE `S256`, and the canonical `/mcp` resource. Approval
+OAuth authorization accepts active public clients created through pre-registration
+or RFC 7591 dynamic registration, exact redirect URIs, PKCE `S256`, and the
+canonical `/mcp` resource. Dynamic registration issues an opaque public client
+ID without a secret and accepts only HTTPS, loopback HTTP, or native-app redirect
+URIs. Approval
 atomically creates an `mcp` actor, its selected session-key grants, a hashed
 one-time authorization code, an organization audit event, and in-app
 notification recipients. Revocation atomically invalidates the authorization,

@@ -19,6 +19,7 @@ export interface AuthPolicy {
     readonly visiblePrefixLength: number;
   };
   readonly oauth: {
+    readonly dynamicClientIdPrefix: "namera_mcp_";
     readonly authorizationRequestTimeToLive: Duration.Duration;
     readonly authorizationCodeTimeToLive: Duration.Duration;
     readonly accessTokenTimeToLive: Duration.Duration;
@@ -63,6 +64,7 @@ export const authPolicy = {
     visiblePrefixLength: 14,
   },
   oauth: {
+    dynamicClientIdPrefix: "namera_mcp_",
     authorizationRequestTimeToLive: Duration.minutes(10),
     authorizationCodeTimeToLive: Duration.minutes(5),
     accessTokenTimeToLive: Duration.minutes(15),

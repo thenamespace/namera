@@ -88,7 +88,11 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       readonly resource: string;
     }) {
       const client = yield* repository.auth.oauth.client.findByClientId(input.clientId);
-      if (client === undefined || client.status !== "active") {
+      if (
+        client === undefined ||
+        client.status !== "active" ||
+        !client.grantTypes.includes("authorization_code")
+      ) {
         return yield* new OAuthTokenError({ code: "INVALID_CLIENT" });
       }
       const now = yield* DateTime.now;
@@ -139,7 +143,11 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       readonly scopes?: ReadonlyArray<string>;
     }) {
       const client = yield* repository.auth.oauth.client.findByClientId(input.clientId);
-      if (client === undefined || client.status !== "active") {
+      if (
+        client === undefined ||
+        client.status !== "active" ||
+        !client.grantTypes.includes("refresh_token")
+      ) {
         return yield* new OAuthTokenError({ code: "INVALID_CLIENT" });
       }
       const now = yield* DateTime.now;

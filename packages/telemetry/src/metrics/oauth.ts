@@ -8,6 +8,19 @@ export const oauthAuthorizationRequestResults = Metric.counter(
   },
 );
 
+export const oauthClientRegistrationResults = Metric.counter(
+  "namera.oauth.client_registration.results",
+  {
+    description: "OAuth dynamic client registration outcomes",
+    incremental: true,
+  },
+);
+
+export const oauthClientRegistrationDuration = Metric.timer(
+  "namera.oauth.client_registration.duration",
+  { description: "Duration of OAuth dynamic client registration workflows" },
+);
+
 export const oauthConsentResults = Metric.counter("namera.oauth.consent.results", {
   description: "OAuth consent outcomes",
   incremental: true,

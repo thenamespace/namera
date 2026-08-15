@@ -1,5 +1,13 @@
 import { Schema } from "effect";
 
+export class OAuthClientRegistrationError extends Schema.TaggedError<OAuthClientRegistrationError>()(
+  "OAuthClientRegistrationError",
+  {
+    code: Schema.Literals(["INVALID_CLIENT_METADATA", "INVALID_REDIRECT_URI"]),
+  },
+  { httpApiStatus: 400 },
+) {}
+
 export class OAuthAuthorizationRequestError extends Schema.TaggedError<OAuthAuthorizationRequestError>()(
   "OAuthAuthorizationRequestError",
   {

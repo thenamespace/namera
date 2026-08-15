@@ -18,7 +18,8 @@ database, hostname, and Effect runtime.
 ## Implementation status
 
 The OAuth authorization-server slice is implemented. It includes RFC discovery
-metadata, pre-registered public clients, authorization-code + PKCE `S256`,
+metadata, pre-registered and RFC 7591 dynamically registered public clients,
+authorization-code + PKCE `S256`,
 rotating refresh tokens with reuse invalidation, token revocation, authenticated
 consent APIs, durable organization-scoped `mcp` actors and session-key grants,
 management reads/revocation, rate limits, bounded telemetry, organization audit
@@ -28,8 +29,8 @@ does not send email.
 Bearer-token authentication and the Effect Streamable HTTP transport are mounted
 at `/mcp` using Effect's available `2025-06-18` protocol adapter. The initial
 read-only tool lists the active session-key grants delegated to the current MCP
-authorization. Client ID Metadata Documents and dynamic registration remain
-deferred and discovery does not advertise those unsupported capabilities.
+authorization. Dynamic registration is advertised as a compatibility fallback
+for MCP hosts such as Codex CLI. Client ID Metadata Documents remain deferred.
 
 Here, “MCP 2.1 authorization” means MCP authorization built on OAuth 2.1; MCP
 itself uses date-based protocol revisions rather than a `2.1` version number.
@@ -176,6 +177,7 @@ GET /.well-known/oauth-authorization-server
   "authorization_endpoint": "https://api.namera.ai/oauth/authorize",
   "token_endpoint": "https://api.namera.ai/oauth/token",
   "revocation_endpoint": "https://api.namera.ai/oauth/revoke",
+  "registration_endpoint": "https://api.namera.ai/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code", "refresh_token"],
   "token_endpoint_auth_methods_supported": ["none"],
@@ -184,8 +186,8 @@ GET /.well-known/oauth-authorization-server
 }
 ```
 
-Add `registration_endpoint` only if Namera implements the deprecated dynamic
-client registration fallback.
+Namera advertises `registration_endpoint` because it implements the RFC 7591
+compatibility fallback at `/oauth/register`.
 
 ### OAuth protocol and management endpoints
 
@@ -193,7 +195,7 @@ client registration fallback.
 GET  /oauth/authorize
 POST /oauth/token
 POST /oauth/revoke
-POST /oauth/register   optional compatibility fallback
+POST /oauth/register
 ```
 
 OAuth token and registration endpoints use their standard media types rather
@@ -220,8 +222,14 @@ The current MCP specification gives this priority:
 2. OAuth Client ID Metadata Document;
 3. Dynamic Client Registration as a deprecated compatibility fallback.
 
-Namera should support pre-registration and Client ID Metadata Documents first.
-With metadata documents, `client_id` is an HTTPS URL with a path. Namera fetches
+Namera supports pre-registration and RFC 7591 dynamic registration now. Dynamic
+registration is anonymous, per-IP rate limited, creates only a public OAuth
+client, issues no secret, and requires exact HTTPS, loopback HTTP, or native-app
+redirect URIs. The consent UI treats this metadata as unverified and does not
+load its remote logo.
+
+Client ID Metadata Documents remain a future enhancement. With metadata
+documents, `client_id` is an HTTPS URL with a path. Namera fetches
 the document, verifies that its `client_id` exactly equals that URL, and exact-
 matches the requested redirect URI against `redirect_uris`.
 
@@ -295,7 +303,7 @@ the database; it must not be copied through login query parameters.
 The consent page obtains the request through the authenticated Namera API and
 shows:
 
-- verified client name and logo;
+- client name and registration trust status;
 - exact client and redirect hostnames;
 - requested coarse OAuth scopes;
 - active organization;

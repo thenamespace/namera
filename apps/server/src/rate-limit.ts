@@ -53,6 +53,11 @@ export const rateLimitPolicy = {
     },
   },
   oauth: {
+    registerByIp: {
+      limit: 20,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
     authorizeByIp: {
       limit: 60,
       window: Duration.minutes(1),

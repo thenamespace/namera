@@ -10,13 +10,72 @@ import {
 } from "#/common/index";
 import {
   McpAuthorizationStatus,
+  OAuthGrantType,
   OAuthClientRegistrationType,
+  OAuthResponseType,
+  OAuthTokenEndpointAuthMethod,
   OAuthScopes,
   TimestampFields,
 } from "#/model/index";
 
 import { SessionKeySummaryResponse } from "../session-key/index.js";
 import { GetOrganizationMemberResponse } from "./organization/member.js";
+
+const OAuthRegistrationUri = Schema.NonEmptyString.check(
+  Schema.isMaxLength(2048, { message: "OAuth registration URIs may not exceed 2048 characters" }),
+);
+
+export const OAuthDynamicClientRegistrationRequest = Schema.Struct({
+  redirect_uris: Schema.Array(OAuthRegistrationUri).check(
+    Schema.isMinLength(1, { message: "At least one redirect URI is required" }),
+    Schema.isMaxLength(10, { message: "At most 10 redirect URIs are allowed" }),
+  ),
+  token_endpoint_auth_method: Schema.optionalKey(OAuthTokenEndpointAuthMethod),
+  grant_types: Schema.optionalKey(
+    Schema.Array(OAuthGrantType).check(
+      Schema.isMinLength(1),
+      Schema.isMaxLength(2, { message: "At most two OAuth grant types are allowed" }),
+    ),
+  ),
+  response_types: Schema.optionalKey(
+    Schema.Array(OAuthResponseType).check(Schema.isMinLength(1), Schema.isMaxLength(1)),
+  ),
+  client_name: Schema.optionalKey(
+    Schema.NonEmptyString.check(
+      Schema.isMaxLength(128, { message: "OAuth client names may not exceed 128 characters" }),
+    ),
+  ),
+  client_uri: Schema.optionalKey(OAuthRegistrationUri),
+  logo_uri: Schema.optionalKey(OAuthRegistrationUri),
+  application_type: Schema.optionalKey(Schema.Literals(["native", "web"])),
+  scope: Schema.optionalKey(
+    Schema.NonEmptyString.check(
+      Schema.isMaxLength(512, {
+        message: "OAuth registration scopes may not exceed 512 characters",
+      }),
+    ),
+  ),
+}).annotate({
+  identifier: "OAuthDynamicClientRegistrationRequest",
+  description: "RFC 7591 metadata for registering a public OAuth client",
+});
+
+export const OAuthDynamicClientRegistrationResponse = Schema.Struct({
+  client_id: Schema.NonEmptyString,
+  client_id_issued_at: Schema.Int.check(Schema.isGreaterThan(0)),
+  redirect_uris: Schema.Array(OAuthRegistrationUri),
+  token_endpoint_auth_method: OAuthTokenEndpointAuthMethod,
+  grant_types: Schema.Array(OAuthGrantType),
+  response_types: Schema.Array(OAuthResponseType),
+  client_name: Schema.NonEmptyString,
+  client_uri: Schema.optionalKey(OAuthRegistrationUri),
+  logo_uri: Schema.optionalKey(OAuthRegistrationUri),
+  application_type: Schema.Literals(["native", "web"]),
+  scope: Schema.optionalKey(Schema.NonEmptyString),
+}).annotate({
+  identifier: "OAuthDynamicClientRegistrationResponse",
+  description: "RFC 7591 public OAuth client registration result",
+});
 
 export const OAuthClientResponse = Schema.Struct({
   id: OAuthClientId,
@@ -126,6 +185,10 @@ export const OAuthTokenResponse = Schema.Struct({
 });
 
 export type OAuthClientResponse = typeof OAuthClientResponse.Type;
+export type OAuthDynamicClientRegistrationRequest =
+  typeof OAuthDynamicClientRegistrationRequest.Type;
+export type OAuthDynamicClientRegistrationResponse =
+  typeof OAuthDynamicClientRegistrationResponse.Type;
 export type OAuthAuthorizationRequestResponse = typeof OAuthAuthorizationRequestResponse.Type;
 export type GetOAuthAuthorizationRequestRequest = typeof GetOAuthAuthorizationRequestRequest.Type;
 export type GetOAuthAuthorizationRequestResponse = typeof GetOAuthAuthorizationRequestResponse.Type;

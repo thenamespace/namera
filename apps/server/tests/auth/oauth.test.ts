@@ -6,6 +6,7 @@ import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { OAuthAuthorizationRequestId } from "@namera-ai/protocol";
+import { OAuthDynamicClientRegistrationResponse } from "@namera-ai/protocol/dto";
 
 import {
   makeTestApiClient,
@@ -91,7 +92,6 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       const client = yield* makeTestApiClient;
       const protocolClient = yield* makeOAuthProtocolClient();
       const owner = yield* signIn(client, testEmail("oauth-protocol@example.com"));
-      yield* registerClient();
       const sessionKey = yield* createSessionKey();
       const crypto = yield* CryptoService;
       const challenge = yield* crypto.sha256(verifier);
@@ -103,6 +103,7 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       expect(yield* metadata.json).toMatchObject({
         issuer: "http://api.test",
         authorization_endpoint: "http://api.test/oauth/authorize",
+        registration_endpoint: "http://api.test/oauth/register",
         token_endpoint: "http://api.test/oauth/token",
       });
       const protectedResource = yield* protocolClient.get(
@@ -113,10 +114,35 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
         authorization_servers: ["http://api.test"],
       });
 
+      const registrationResponse = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/register").pipe(
+          HttpClientRequest.bodyJsonUnsafe({
+            redirect_uris: [redirectUri],
+            token_endpoint_auth_method: "none",
+            grant_types: ["authorization_code", "refresh_token"],
+            response_types: ["code"],
+            client_name: "Codex CLI",
+            application_type: "native",
+          }),
+        ),
+      );
+      expect(registrationResponse.status).toBe(201);
+      expect(registrationResponse.headers["cache-control"]).toBe("no-store");
+      const registration = yield* Schema.decodeUnknownEffect(
+        OAuthDynamicClientRegistrationResponse,
+      )(yield* registrationResponse.json);
+      expect(registration).toMatchObject({
+        client_name: "Codex CLI",
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: "none",
+      });
+      expect(registration.client_id).toMatch(/^namera_mcp_/);
+      expect(registration.client_id_issued_at).toBeGreaterThan(0);
+
       const authorizationResponse = yield* protocolClient.execute(
         HttpClientRequest.get("http://api.test/oauth/authorize").pipe(
           HttpClientRequest.setUrlParams({
-            client_id: clientId,
+            client_id: registration.client_id,
             redirect_uri: redirectUri,
             response_type: "code",
             code_challenge: challenge,
@@ -135,6 +161,7 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       const pending = yield* client.oauth.getOAuthAuthorizationRequest({
         params: { requestId: Schema.decodeSync(OAuthAuthorizationRequestId)(requestId) },
       });
+      expect(pending.client.registrationType).toBe("dynamic");
       const approved = yield* client.oauth.approveOAuthAuthorizationRequest({
         payload: {
           requestId: pending.id,
@@ -150,7 +177,7 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
           HttpClientRequest.bodyUrlParams({
             grant_type: "authorization_code",
             code,
-            client_id: clientId,
+            client_id: registration.client_id,
             redirect_uri: redirectUri,
             code_verifier: verifier,
             resource,
@@ -160,6 +187,36 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       expect(token.status).toBe(200);
       expect(yield* token.json).toMatchObject({ token_type: "Bearer" });
       expect(token.headers["cache-control"]).toBe("no-store");
+    }),
+  );
+
+  it.effect("rejects unsafe dynamic client metadata", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const protocolClient = yield* makeOAuthProtocolClient();
+
+      const response = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/register").pipe(
+          HttpClientRequest.bodyJsonUnsafe({
+            redirect_uris: ["http://attacker.example/callback"],
+            token_endpoint_auth_method: "none",
+            client_name: "Unsafe client",
+          }),
+        ),
+      );
+      expect(response.status).toBe(400);
+      expect(yield* response.json).toMatchObject({ error: "invalid_redirect_uri" });
+
+      const unsupported = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/register").pipe(
+          HttpClientRequest.bodyJsonUnsafe({
+            redirect_uris: [redirectUri],
+            token_endpoint_auth_method: "client_secret_basic",
+          }),
+        ),
+      );
+      expect(unsupported.status).toBe(400);
+      expect(yield* unsupported.json).toMatchObject({ error: "invalid_client_metadata" });
     }),
   );
 

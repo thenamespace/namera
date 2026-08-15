@@ -1,8 +1,15 @@
-import { Effect, Layer, Predicate, Result } from "effect";
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { Effect, FileSystem, Layer, Metric, Predicate, Result } from "effect";
+import {
+  HttpIncomingMessage,
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from "effect/unstable/http";
 
 import { Application, AuthConfig } from "@namera-ai/application";
 import type { OAuthTokenResult } from "@namera-ai/application";
+import { OAuthDynamicClientRegistrationRequest } from "@namera-ai/protocol/dto";
+import { oauthClientRegistrationResults } from "@namera-ai/telemetry";
 
 import { clientIdentifier, consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
@@ -36,6 +43,66 @@ const tokenResponse = (result: OAuthTokenResult) =>
     },
     { headers: noStoreHeaders },
   );
+
+const register = HttpRouter.add("POST", "/oauth/register", (request) =>
+  Effect.gen(function* () {
+    const identifier = yield* clientIdentifier;
+    const limited = yield* consumeRateLimit(
+      "oauth.register.ip",
+      identifier,
+      rateLimitPolicy.oauth.registerByIp,
+    ).pipe(Effect.result);
+    if (Result.isFailure(limited)) return rateLimited(limited.failure);
+
+    if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+      yield* Metric.update(
+        Metric.withAttributes(oauthClientRegistrationResults, { result: "invalid_request" }),
+        1,
+      );
+      return oauthError("invalid_client_metadata", "A JSON registration request is required");
+    }
+
+    const decoded = yield* HttpIncomingMessage.schemaBodyJson(
+      OAuthDynamicClientRegistrationRequest,
+    )(request).pipe(
+      Effect.provideService(HttpIncomingMessage.MaxBodySize, FileSystem.KiB(32)),
+      Effect.result,
+    );
+    if (Result.isFailure(decoded)) {
+      yield* Metric.update(
+        Metric.withAttributes(oauthClientRegistrationResults, { result: "invalid_request" }),
+        1,
+      );
+      return oauthError("invalid_client_metadata", "The client metadata is invalid");
+    }
+
+    const registered = yield* (yield* Application).oauth.registration
+      .register(decoded.success)
+      .pipe(Effect.result);
+    if (Result.isFailure(registered)) {
+      const error = registered.failure;
+      yield* Metric.update(
+        Metric.withAttributes(oauthClientRegistrationResults, {
+          result:
+            error.code === "INVALID_REDIRECT_URI"
+              ? "invalid_redirect_uri"
+              : "invalid_client_metadata",
+        }),
+        1,
+      );
+      return oauthError(
+        error.code === "INVALID_REDIRECT_URI" ? "invalid_redirect_uri" : "invalid_client_metadata",
+        error.code === "INVALID_REDIRECT_URI"
+          ? "One or more redirect URIs are invalid"
+          : "The client metadata is invalid",
+      );
+    }
+    return HttpServerResponse.jsonUnsafe(registered.success, {
+      status: 201,
+      headers: noStoreHeaders,
+    });
+  }),
+);
 
 const authorize = HttpRouter.add("GET", "/oauth/authorize", () =>
   Effect.gen(function* () {
@@ -149,6 +216,7 @@ const authorizationServerMetadata = HttpRouter.add(
         {
           issuer,
           authorization_endpoint: `${issuer}/oauth/authorize`,
+          registration_endpoint: `${issuer}/oauth/register`,
           token_endpoint: `${issuer}/oauth/token`,
           revocation_endpoint: `${issuer}/oauth/revoke`,
           response_types_supported: ["code"],
@@ -180,6 +248,7 @@ const protectedResourceMetadata = (path: `/${string}`) =>
   );
 
 export const OAuthProtocolRoutes = Layer.mergeAll(
+  register,
   authorize,
   token,
   revoke,

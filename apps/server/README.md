@@ -95,8 +95,11 @@ Browser telemetry routes also bypass the lower global API limit because their
 dedicated policy accounts for exporter batching traffic.
 
 OAuth authorization and token endpoints use dedicated per-IP token-bucket
-limits of 60 requests per minute. OAuth clients are currently pre-registered;
-metadata-document resolution and dynamic registration are not advertised.
+limits of 60 requests per minute. RFC 7591 public-client registration is
+advertised at `/oauth/register` and limited to 20 requests per IP per hour.
+Dynamically registered clients receive no secret and may use only exact HTTPS,
+loopback HTTP, or native-app redirect URIs. Client ID Metadata Document
+resolution remains deferred.
 Authorization codes and tokens are opaque and stored only as hashes. Consent
 approval and authorization revocation create organization audit events and
 in-app notifications, but never email jobs.
