@@ -1,7 +1,7 @@
 import { DateTime, Duration, Effect } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { Evm } from "@namera-ai/evm";
+import { Evm, getChainDataByCaip2 } from "@namera-ai/evm";
 import type {
   ActorId,
   ExecutionSubmissionId,
@@ -288,6 +288,12 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         const organization = yield* repository.auth.organization.findById(input.organizationId);
         if (organization === undefined)
           return yield* Effect.die("Execution organization is missing");
+        const chain = getChainDataByCaip2(submission.data.chainId);
+        if (chain === undefined) return yield* Effect.die("Execution chain is missing");
+        const blockExplorerUrl = chain.chain.blockExplorers?.default.url;
+        if (blockExplorerUrl === undefined)
+          return yield* Effect.die("Execution chain block explorer is missing");
+        const transactionUrl = `${blockExplorerUrl.replace(/\/$/, "")}/tx/${input.receipt.transactionHash}`;
         const members = yield* repository.auth.member.findOrganizationMembersForOrg(
           input.organizationId,
         );
@@ -323,7 +329,10 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
                   organizationName: organization.metadata.name,
                   walletName: input.wallet.wallet.metadata.name,
                   chainId: submission.data.chainId,
+                  chainName: chain.chain.name,
+                  chainIcon: chain.name,
                   transactionHash: input.receipt.transactionHash,
+                  transactionUrl,
                 },
               },
             })),

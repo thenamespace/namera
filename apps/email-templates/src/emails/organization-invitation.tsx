@@ -21,7 +21,7 @@ export const OrganizationInvitationEmail = ({
 }: OrganizationInvitationEmailProps) => {
   return (
     <NameraEmail preview={`${inviterName} invited you to join ${organizationName} on Namera.`}>
-      <EmailLayout>
+      <EmailLayout compactOnMobile>
         <EmailContent
           description={`${inviterName} invited you to collaborate in ${organizationName}.`}
           title={`Join ${organizationName}`}

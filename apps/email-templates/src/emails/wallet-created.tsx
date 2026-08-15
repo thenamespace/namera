@@ -17,7 +17,7 @@ export const WalletCreatedEmail = ({
 }: WalletCreatedEmailProps) => {
   return (
     <NameraEmail preview={`${walletName} is ready in ${organizationName}.`}>
-      <EmailLayout>
+      <EmailLayout compactOnMobile>
         <EmailContent
           description={`A new smart account was created in ${organizationName}.`}
           title="Smart account created"

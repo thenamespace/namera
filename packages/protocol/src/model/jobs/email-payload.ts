@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
+import { EvmChainName } from "#/evm/chains";
 import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals([
@@ -78,7 +79,10 @@ export const ExecutionConfirmedEmailVariables = Schema.Struct({
   organizationName: NonEmptyString,
   walletName: NonEmptyString,
   chainId: NonEmptyString,
+  chainName: NonEmptyString,
+  chainIcon: EvmChainName,
   transactionHash: NonEmptyString,
+  transactionUrl: NonEmptyString,
 });
 
 export const EmailJobPayload = Schema.Union([

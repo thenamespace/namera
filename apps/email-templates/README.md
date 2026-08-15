@@ -27,7 +27,8 @@ The preview is available at `http://localhost:4000`.
 
 - Type template props from the corresponding protocol email variables.
 - Use React Email components and primitives from `src/components`; do not import
-  the browser UI package.
+  browser UI controls. The pure SVG `@namera-ai/ui/chain-icon` entry point is
+  intentionally supported for shared chain branding.
 - Use semantic colors from `src/theme.ts` and provide both light and dark styles.
 - Keep transactional copy concise and always include a safe fallback when the
   primary action is a link.
@@ -42,3 +43,5 @@ The preview is available at `http://localhost:4000`.
 - `session-key-created` — scoped session-key creation notification.
 - `api-key-created` — API-key creation and authorization summary.
 - `execution-confirmed` — confirmed onchain execution receipt.
+
+Update the placeholder footer destinations in `src/data.ts` before publishing.

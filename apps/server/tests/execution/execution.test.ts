@@ -4,6 +4,7 @@ import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
+import { EmailJobs } from "@namera-ai/emails";
 import { TestEvmExecution } from "@namera-ai/evm";
 
 import {
@@ -14,7 +15,7 @@ import {
   signIn,
   testEmail,
 } from "../helpers/index.js";
-import { TestServerLayer } from "../layers/index.js";
+import { TestEmails, TestServerLayer } from "../layers/index.js";
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 
@@ -116,6 +117,24 @@ layer(TestServerLayer)("execution routes", (it) => {
             owner.actor.organization.id,
           )).some(({ event }) => event === "execution.confirmed"),
         ).toBe(true);
+
+        const emailJobs = yield* EmailJobs;
+        const emails = yield* TestEmails;
+        let delivered = (yield* emails.sent).findLast(
+          (email) => email.type === "execution-confirmed",
+        );
+        for (let attempt = 0; delivered === undefined && attempt < 10; attempt += 1) {
+          yield* emailJobs.processOnce;
+          delivered = (yield* emails.sent).findLast(
+            (email) => email.type === "execution-confirmed",
+          );
+        }
+        expect(delivered?.variables).toMatchObject({
+          chainId: "eip155:1",
+          chainIcon: "ethereum",
+          chainName: "Ethereum",
+          transactionUrl: `https://etherscan.io/tx/${result.receipt.transactionHash}`,
+        });
       }),
   );
 

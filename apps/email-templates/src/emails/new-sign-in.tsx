@@ -12,7 +12,7 @@ export type NewSignInEmailProps = NewSignInEmailVariables;
 export const NewSignInEmail = ({ ipAddress, signedInAt, userAgent }: NewSignInEmailProps) => {
   return (
     <NameraEmail preview="A new sign-in to your Namera account was detected.">
-      <EmailLayout>
+      <EmailLayout compactOnMobile>
         <EmailContent
           description="A new session was created for your Namera account. Review the details below."
           title="New sign-in detected"

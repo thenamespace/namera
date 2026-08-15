@@ -94,7 +94,7 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
 apps/dashboard   -> api, protocol, telemetry, ui
-email-templates  -> protocol, React Email
+email-templates  -> protocol, ui (static icons only), React Email
 ui               -> protocol, Namespace UIKit
 ```
 
