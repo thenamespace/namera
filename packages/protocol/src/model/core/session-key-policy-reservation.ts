@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import {
-  ExecutionId,
+  ExecutionSubmissionId,
   OrganizationId,
   PolicyId,
   SessionKeyId,
@@ -22,7 +22,7 @@ export const SessionKeyPolicyReservation = Schema.Struct({
   organizationId: OrganizationId,
   sessionKeyId: SessionKeyId,
   policyId: PolicyId,
-  executionId: ExecutionId,
+  executionSubmissionId: ExecutionSubmissionId,
   stateKey: NonEmptyString,
   reservationVersion: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
   data: Schema.Json,
@@ -38,7 +38,7 @@ export const SessionKeyPolicyReservationInsert = createInsertSchema(
   "organizationId",
   "sessionKeyId",
   "policyId",
-  "executionId",
+  "executionSubmissionId",
   "stateKey",
   "reservationVersion",
   "data",

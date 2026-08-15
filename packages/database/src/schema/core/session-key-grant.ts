@@ -26,6 +26,11 @@ export const sessionKeyGrant = coreSchema.table(
   },
   (table) => [
     unique("session_key_grant_id_organization_unique").on(table.id, table.organizationId),
+    unique("session_key_grant_id_actor_organization_unique").on(
+      table.id,
+      table.actorId,
+      table.organizationId,
+    ),
     foreignKey({
       name: "session_key_grant_actor_organization_fk",
       columns: [table.actorId, table.organizationId],

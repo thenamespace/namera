@@ -1,5 +1,5 @@
 import type {
-  ExecutionId,
+  ExecutionSubmissionId,
   OrganizationId,
   PolicyId,
   SessionKeyId,
@@ -12,6 +12,7 @@ import { createTimestampField, generateUniqueId, timestamps } from "#/schema/com
 
 import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
+import { executionSubmission } from "./execution-submission.js";
 import { sessionKey } from "./session-key.js";
 
 export const sessionKeyPolicyReservation = coreSchema.table(
@@ -24,7 +25,7 @@ export const sessionKeyPolicyReservation = coreSchema.table(
       .references(() => organization.id, { onDelete: "restrict" }),
     sessionKeyId: text("session_key_id").notNull().$type<SessionKeyId>(),
     policyId: text("policy_id").notNull().$type<PolicyId>(),
-    executionId: text("execution_id").notNull().$type<ExecutionId>(),
+    executionSubmissionId: text("execution_submission_id").notNull().$type<ExecutionSubmissionId>(),
     stateKey: text("state_key").notNull(),
     reservationVersion: integer("reservation_version").notNull(),
     data: jsonb("data").notNull().$type<SessionKeyPolicyReservation["data"]>(),
@@ -39,9 +40,9 @@ export const sessionKeyPolicyReservation = coreSchema.table(
     ...timestamps,
   },
   (table) => [
-    unique("session_key_policy_reservation_execution_scope_unique").on(
+    unique("session_key_policy_reservation_submission_scope_unique").on(
       table.organizationId,
-      table.executionId,
+      table.executionSubmissionId,
       table.policyId,
       table.stateKey,
     ),
@@ -49,6 +50,11 @@ export const sessionKeyPolicyReservation = coreSchema.table(
       name: "session_key_policy_reservation_session_key_organization_fk",
       columns: [table.sessionKeyId, table.organizationId],
       foreignColumns: [sessionKey.id, sessionKey.organizationId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "session_key_policy_reservation_submission_organization_fk",
+      columns: [table.executionSubmissionId, table.organizationId],
+      foreignColumns: [executionSubmission.id, executionSubmission.organizationId],
     }).onDelete("restrict"),
     index("session_key_policy_reservation_session_status_idx").on(
       table.organizationId,

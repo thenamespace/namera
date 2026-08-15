@@ -31,6 +31,7 @@ const ExecutionSubmissionCommon = Schema.Struct({
   requestHash: NonEmptyString,
   policyHash: NonEmptyString,
   status: ExecutionSubmissionStatus,
+  leaseToken: Schema.NullOr(NonEmptyString),
   leaseExpiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   submittedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   confirmedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),

@@ -217,10 +217,12 @@ across organizations.
 `core.session_key_policy_state` stores versioned, handler-owned JSON state for
 one policy instance and state key. `core.session_key_policy_reservation` holds
 bounded in-flight changes so concurrent executions cannot consume the same
-allowance. Reservations are correlated by execution ID and move through
-reserved, submitted, settled, or released states. Policy handlers own decoding
-the JSON payloads; the database owns tenant isolation, uniqueness, and expiry
-lookup indexes.
+allowance. Reservations reference the execution submission that owns the
+in-flight work and move through reserved, submitted, settled, or released
+states. The policy-state repository supports transaction-scoped row locks and
+revision-checked updates; reservation transitions are conditional batch
+updates. Policy handlers own decoding the JSON payloads; the database owns
+tenant isolation, uniqueness, and expiry lookup indexes.
 
 `core.execution_submission` is mutable operational state for an actor's
 idempotent execution attempt. It references the exact session-key grant,
@@ -230,6 +232,12 @@ exactly one matching submission/grant/organization tuple and remains an
 append-only record created only for a successful onchain execution. EVM
 execution data contains normalized calls, chain ID, UserOperation hash, and
 transaction hash.
+
+`ExecutionSubmissionRepository` provides conflict-safe actor idempotency,
+conditional lifecycle transitions, and leased reconciliation claims.
+`ExecutionRepository` exposes append-only insertion and organization-scoped
+reads. Both use the transaction context so confirmation can atomically settle
+policy state and create the successful execution.
 
 ## Billing persistence
 

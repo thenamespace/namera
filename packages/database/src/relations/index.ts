@@ -505,6 +505,13 @@ export const relations = defineRelations(
         from: r.executionSubmission.id,
         to: r.execution.executionSubmissionId,
       }),
+      policyReservations: r.many.sessionKeyPolicyReservation({
+        from: [r.executionSubmission.id, r.executionSubmission.organizationId],
+        to: [
+          r.sessionKeyPolicyReservation.executionSubmissionId,
+          r.sessionKeyPolicyReservation.organizationId,
+        ],
+      }),
     },
     execution: {
       organization: r.one.organization({
@@ -555,6 +562,14 @@ export const relations = defineRelations(
           r.sessionKeyPolicyReservation.organizationId,
         ],
         to: [r.sessionKey.id, r.sessionKey.organizationId],
+        optional: false,
+      }),
+      executionSubmission: r.one.executionSubmission({
+        from: [
+          r.sessionKeyPolicyReservation.executionSubmissionId,
+          r.sessionKeyPolicyReservation.organizationId,
+        ],
+        to: [r.executionSubmission.id, r.executionSubmission.organizationId],
         optional: false,
       }),
     },

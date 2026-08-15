@@ -1,0 +1,2 @@
+ALTER TABLE "core"."session_key_grant" ADD CONSTRAINT "session_key_grant_id_actor_organization_unique" UNIQUE("id","actor_id","organization_id");--> statement-breakpoint
+ALTER TABLE "core"."execution_submission" DROP CONSTRAINT "execution_submission_grant_organization_fk", ADD CONSTRAINT "execution_submission_grant_organization_fk" FOREIGN KEY ("session_key_grant_id","actor_id","organization_id") REFERENCES "core"."session_key_grant"("id","actor_id","organization_id") ON DELETE RESTRICT;

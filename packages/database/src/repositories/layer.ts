@@ -19,8 +19,12 @@ import {
   BillingUsageRepository,
 } from "#/repositories/billing/index";
 import {
+  ExecutionRepository,
+  ExecutionSubmissionRepository,
   SessionKeyRepository,
   SessionKeyGrantRepository,
+  SessionKeyPolicyReservationRepository,
+  SessionKeyPolicyStateRepository,
   WalletKeyRepository,
   WalletRepository,
 } from "#/repositories/core/index";
@@ -52,8 +56,12 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    execution: ExecutionRepository["Service"];
+    executionSubmission: ExecutionSubmissionRepository["Service"];
     sessionKey: SessionKeyRepository["Service"];
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
+    sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
+    sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
     wallet: WalletRepository["Service"];
     walletKey: WalletKeyRepository["Service"];
   };
@@ -93,6 +101,10 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
+      const execution = yield* ExecutionRepository;
+      const executionSubmission = yield* ExecutionSubmissionRepository;
+      const sessionKeyPolicyReservation = yield* SessionKeyPolicyReservationRepository;
+      const sessionKeyPolicyState = yield* SessionKeyPolicyStateRepository;
 
       return Repository.of({
         audit: {
@@ -116,8 +128,12 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          execution,
+          executionSubmission,
           sessionKey,
           sessionKeyGrant,
+          sessionKeyPolicyReservation,
+          sessionKeyPolicyState,
           wallet,
           walletKey,
         },
@@ -152,6 +168,10 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         BillingUsageRepository.layer,
         SessionKeyRepository.layer,
         SessionKeyGrantRepository.layer,
+        ExecutionRepository.layer,
+        ExecutionSubmissionRepository.layer,
+        SessionKeyPolicyReservationRepository.layer,
+        SessionKeyPolicyStateRepository.layer,
         WalletRepository.layer,
         WalletKeyRepository.layer,
       ),

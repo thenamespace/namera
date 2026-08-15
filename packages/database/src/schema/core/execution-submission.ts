@@ -30,6 +30,7 @@ export const executionSubmission = coreSchema.table(
     policyHash: text("policy_hash").notNull(),
     status: text("status").notNull().default("reserved").$type<ExecutionSubmission["status"]>(),
     data: jsonb("data").notNull().$type<ExecutionSubmissionEncoded["data"]>(),
+    leaseToken: text("lease_token"),
     leaseExpiresAt: createTimestampField("lease_expires_at"),
     submittedAt: createTimestampField("submitted_at"),
     confirmedAt: createTimestampField("confirmed_at"),
@@ -37,6 +38,7 @@ export const executionSubmission = coreSchema.table(
     ...timestamps,
   },
   (table) => [
+    unique("execution_submission_id_organization_unique").on(table.id, table.organizationId),
     unique("execution_submission_id_grant_organization_unique").on(
       table.id,
       table.sessionKeyGrantId,
@@ -49,8 +51,8 @@ export const executionSubmission = coreSchema.table(
     }).onDelete("restrict"),
     foreignKey({
       name: "execution_submission_grant_organization_fk",
-      columns: [table.sessionKeyGrantId, table.organizationId],
-      foreignColumns: [sessionKeyGrant.id, sessionKeyGrant.organizationId],
+      columns: [table.sessionKeyGrantId, table.actorId, table.organizationId],
+      foreignColumns: [sessionKeyGrant.id, sessionKeyGrant.actorId, sessionKeyGrant.organizationId],
     }).onDelete("restrict"),
     uniqueIndex("execution_submission_actor_idempotency_uidx").on(
       table.organizationId,

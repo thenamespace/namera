@@ -83,8 +83,8 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(organizationEvent);
           yield* database.delete(userEvent);
           yield* database.delete(execution);
-          yield* database.delete(executionSubmission);
           yield* database.delete(sessionKeyPolicyReservation);
+          yield* database.delete(executionSubmission);
           yield* database.delete(sessionKeyPolicyState);
           yield* database.delete(sessionKeyGrant);
           yield* database.delete(sessionKey);
