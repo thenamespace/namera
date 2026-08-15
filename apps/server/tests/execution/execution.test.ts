@@ -131,7 +131,7 @@ layer(TestServerLayer)("execution routes", (it) => {
         }
         expect(delivered?.variables).toMatchObject({
           chainId: "eip155:1",
-          chainIconUrl: "https://cdn.namera.ai/email-assets/chains/ethereum.png",
+          chainIcon: "ethereum",
           chainName: "Ethereum",
           transactionUrl: `https://etherscan.io/tx/${result.receipt.transactionHash}`,
         });

@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
+import { EvmChainName } from "#/evm/chains";
 import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals([
@@ -36,7 +37,7 @@ const EmailPayloadFields = Schema.Struct({
 export const MagicLinkEmailVariables = Schema.Struct({
   magicLinkUrl: NonEmptyString,
   code: NonEmptyString,
-  expiresIn: NonEmptyString,
+  expiresInMinutes: Schema.Int.check(Schema.isGreaterThan(0)),
 });
 
 export const NewSignInEmailVariables = Schema.Struct({
@@ -56,10 +57,10 @@ export const OrganizationInvitationEmailVariables = Schema.Struct({
 export const WalletCreatedEmailVariables = Schema.Struct({
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
-  addressDisplay: NonEmptyString,
+  address: NonEmptyString,
   addressUrl: NonEmptyString,
-  implementationName: NonEmptyString,
-  protectionLevelName: NonEmptyString,
+  implementation: Schema.Literals(["kernel", "safe"]),
+  protectionLevel: Schema.Literals(["software", "hsm"]),
 });
 
 export const SessionKeyCreatedEmailVariables = Schema.Struct({
@@ -72,7 +73,7 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
 export const ApiKeyCreatedEmailVariables = Schema.Struct({
   apiKeyName: NonEmptyString,
   organizationName: NonEmptyString,
-  authorizedAccess: NonEmptyString,
+  sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
 });
 
 export const ExecutionConfirmedEmailVariables = Schema.Struct({
@@ -80,8 +81,8 @@ export const ExecutionConfirmedEmailVariables = Schema.Struct({
   walletName: NonEmptyString,
   chainId: NonEmptyString,
   chainName: NonEmptyString,
-  chainIconUrl: NonEmptyString,
-  transactionHashDisplay: NonEmptyString,
+  chainIcon: EvmChainName,
+  transactionHash: NonEmptyString,
   transactionUrl: NonEmptyString,
 });
 

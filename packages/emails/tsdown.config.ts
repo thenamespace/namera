@@ -15,6 +15,7 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
+    "templates/index": "src/templates/index.ts",
   },
   publint: "ci-only",
   unbundle: true,

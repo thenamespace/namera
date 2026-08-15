@@ -15,6 +15,10 @@
       "namera-source": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./templates": {
+      "namera-source": "./src/templates/index.ts",
+      "default": "./dist/templates/index.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -23,6 +27,7 @@
     },
     "exports": {
       ".": "./dist/index.js",
+      "./templates": "./dist/templates/index.js",
       "./package.json": "./package.json"
     }
   },
@@ -41,10 +46,15 @@
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "effect": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-email": "catalog:",
     "resend": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"

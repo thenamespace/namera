@@ -38,11 +38,11 @@
     "email:dev": "email dev -d ./src/emails -p 4000"
   },
   "dependencies": {
+    "@namera-ai/emails": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
-    "effect": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-email": "6.9.2"
+    "react-email": "catalog:"
   },
   "devDependencies": {
     "@namera-ai/ui": "workspace:*",

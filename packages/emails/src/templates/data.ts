@@ -48,18 +48,18 @@ export const emailAssets = {
 export const emailLinks = {
   website: {
     label: "Website",
-    href: "https://example.com/?source=namera-website", // TODO: Update
+    href: "https://namera.ai",
   },
   github: {
     label: "GitHub",
-    href: "https://example.com/?source=namera-github", // TODO: Update
+    href: "https://github.com/thenamespace/namera",
   },
   email: {
     label: "Email",
-    href: "mailto:hello@example.com", // TODO: Update
+    href: "mailto:hey@namera.ai",
   },
   linkedin: {
     label: "LinkedIn",
-    href: "https://example.com/?source=namera-linkedin", // TODO: Update
+    href: "https://www.linkedin.com/company/namera-ai",
   },
 } as const;

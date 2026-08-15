@@ -1,14 +1,15 @@
 # @namera-ai/emails
 
-Durable, typed email delivery through Resend hosted templates. Application
-workflows enqueue encrypted, provider-neutral payloads in PostgreSQL; the worker
-claims and delivers them outside the request lifecycle.
+Durable, typed email delivery through code-owned React Email templates and
+Resend. Application workflows enqueue encrypted, provider-neutral payloads in
+PostgreSQL; the worker claims and delivers them outside the request lifecycle.
 
 ## Structure
 
 - `src/config.ts` — Effect configuration for Resend and sender defaults.
-- `src/data.ts` — template IDs and bounded delivery policies.
-- `src/format.ts` — deterministic presentation formatting for hosted-template variables.
+- `src/data.ts` — default subjects and bounded delivery policies.
+- `src/templates/` — runtime React Email templates, components, theme, assets,
+  and helpers.
 - `src/types.ts` — enqueue and provider-send input types.
 - `src/layer.ts` — internal provider adapter and live/development/test layers.
 - `src/jobs.ts` — public `EmailJobs` enqueue and single-job processing service.
@@ -23,11 +24,6 @@ claims and delivers them outside the request lifecycle.
 | `EMAIL_FROM`     | Yes      | Default sender accepted by Resend.           |
 | `EMAIL_REPLY_TO` | No       | Default reply-to address.                    |
 
-Replace the TODO magic-link, new-sign-in, organization-invitation,
-wallet-created, session-key-created, and api-key-created hosted template IDs in
-`src/data.ts` before production delivery. Invitation variables include the effective role
-name; new-sign-in variables include the captured IP address and user agent when
-available.
 Provider requests time out after ten seconds; this editable policy also lives in
 `src/data.ts`. Durable payload encryption also requires the shared configuration
 documented by `@namera-ai/crypto`; the server composition root provides it.
@@ -78,19 +74,21 @@ must not call it.
 
 ## Adding an email
 
-1. Create the hosted template in Resend.
-2. Add its stable type and variables to the `EmailJobPayload` discriminated
+1. Add its stable type and variables to the `EmailJobPayload` discriminated
    union in `@namera-ai/protocol`.
-3. Add its Resend template ID to `src/data.ts`.
-4. Format dates, durations, counts, labels, and shortened identifiers before
-   enqueueing; hosted templates must only render the supplied values.
-5. Enqueue it from the owning application transaction with a stable business
+2. Add its code-owned React Email component and rendering case under
+   `src/templates/`, plus its default subject in `src/data.ts`.
+3. Keep payload values semantic and perform presentation-only formatting in the
+   React component. Construct action and explorer URLs in the owning application
+   workflow.
+4. Enqueue it from the owning application transaction with a stable business
    idempotency key and meaningful expiry.
-6. Add delivery and retry tests through `EmailJobs.processOnce`.
+5. Add delivery and retry tests through `EmailJobs.processOnce`.
 
-Do not add an untyped generic payload, JSX, generic HTML sending, or business
-decisions here. `EmailService.devLayer` logs template variables for explicit local
-debugging and must not be used in shared or production environments.
+Do not add an untyped generic payload, generic HTML sending, or business
+decisions to templates. `EmailService.devLayer` logs template variables for
+explicit local debugging and must not be used in shared or production
+environments.
 
 `EmailService.testLayer` captures messages in `TestEmails` without contacting
 Resend. It can fail the next bounded number of sends for retry tests. Integration

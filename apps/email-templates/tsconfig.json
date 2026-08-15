@@ -11,5 +11,5 @@
     "noEmit": true,
     "target": "ES2022"
   },
-  "include": ["src/**/*.ts", "src/fonts.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

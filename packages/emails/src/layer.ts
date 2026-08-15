@@ -8,6 +8,8 @@ import { EmailConfig } from "#/config";
 import { EmailProviderId, emailPolicy, emailTemplates } from "#/data";
 import { type SendEmailProps } from "#/types";
 
+import { renderEmail } from "./templates/render.js";
+
 const developmentEmailProviderId = Schema.decodeSync(EmailProviderId)("development");
 const testEmailProviderId = Schema.decodeSync(EmailProviderId)("test");
 
@@ -75,10 +77,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
               {
                 from: input.from ?? config.from,
                 to: toProviderRecipients(input.to),
-                template: {
-                  id: template.id,
-                  variables: input.variables,
-                },
+                react: renderEmail(input),
                 subject: input.subject ?? template.subject,
                 ...(input.replyTo === undefined
                   ? configuredReplyTo === undefined

@@ -10,8 +10,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   middleware, API handlers, authorization, and live layer composition.
 - [`apps/dashboard`](apps/dashboard/README.md) — Vite React dashboard using
   TanStack Router and the shared UI package.
-- [`apps/email-templates`](apps/email-templates/README.md) — React Email
-  templates and generated email-safe image assets published to Resend.
+- [`apps/email-templates`](apps/email-templates/README.md) — preview harness and
+  email-safe asset generator for package-owned React Email templates.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
@@ -94,7 +94,7 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
 apps/dashboard   -> api, protocol, telemetry, ui
-email-templates  -> protocol, ui (build-time asset generation only), React Email
+email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit
 ```
 
@@ -104,8 +104,8 @@ Additional rules:
 - `crypto`, `database`, `evm`, and `wallet-keys` may depend on `protocol`; they
   must not depend on `application` or `api`.
 - `emails` may depend on `crypto`, `database`, `telemetry`, and `protocol` to
-  own its durable encrypted outbox. It must not depend on `application`, `api`,
-  or server runtime code.
+  own its durable encrypted outbox and runtime React Email templates. It must
+  not depend on `application`, `api`, or server runtime code.
 - `telemetry` contains vendor export layers and shared metric definitions. It
   must not depend on application or transport packages.
 - `apps/dashboard` sends browser OTLP only through the server telemetry proxy;

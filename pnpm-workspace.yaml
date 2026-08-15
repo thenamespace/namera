@@ -48,6 +48,7 @@ catalog:
   "react": 19.2.8
   "react-dom": 19.2.8
   "react-hook-form": 7.85.0
+  "react-email": 6.9.2
   "tailwindcss": 4.3.3
   "turbo": 2.10.8
   "tsdown": "0.22.14"

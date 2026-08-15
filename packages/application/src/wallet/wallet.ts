@@ -1,7 +1,6 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { formatEmailEvmAddress } from "@namera-ai/emails";
 import { Evm, createWalletKeyWebAuthnAccount, getChainDataByChainId } from "@namera-ai/evm";
 import {
   WalletCreationError,
@@ -268,10 +267,10 @@ export const makeWalletApplication = Effect.gen(function* () {
                   variables: {
                     walletName: wallet.metadata.name,
                     organizationName: organization.metadata.name,
-                    addressDisplay: formatEmailEvmAddress(account.address),
+                    address: account.address,
                     addressUrl,
-                    implementationName: account.implementation === "kernel" ? "Kernel" : "Safe",
-                    protectionLevelName: walletKey.protectionLevel === "hsm" ? "HSM" : "Software",
+                    implementation: account.implementation,
+                    protectionLevel: walletKey.protectionLevel,
                   },
                 },
               })),
