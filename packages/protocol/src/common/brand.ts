@@ -13,6 +13,12 @@ export const AccountId = createBrandedId("AccountId");
 export const VerificationId = createBrandedId("VerificationId");
 export const ActorId = createBrandedId("ActorId");
 export const ApiKeyId = createBrandedId("ApiKeyId");
+export const OAuthClientId = createBrandedId("OAuthClientId");
+export const OAuthAuthorizationRequestId = createBrandedId("OAuthAuthorizationRequestId");
+export const McpAuthorizationId = createBrandedId("McpAuthorizationId");
+export const OAuthAuthorizationCodeId = createBrandedId("OAuthAuthorizationCodeId");
+export const OAuthTokenId = createBrandedId("OAuthTokenId");
+export const OAuthTokenFamilyId = createBrandedId("OAuthTokenFamilyId");
 
 // Auth Organization Tables
 export const OrganizationId = createBrandedId("OrganizationId");
@@ -53,6 +59,12 @@ export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;
 export type ActorId = typeof ActorId.Type;
 export type ApiKeyId = typeof ApiKeyId.Type;
+export type OAuthClientId = typeof OAuthClientId.Type;
+export type OAuthAuthorizationRequestId = typeof OAuthAuthorizationRequestId.Type;
+export type McpAuthorizationId = typeof McpAuthorizationId.Type;
+export type OAuthAuthorizationCodeId = typeof OAuthAuthorizationCodeId.Type;
+export type OAuthTokenId = typeof OAuthTokenId.Type;
+export type OAuthTokenFamilyId = typeof OAuthTokenFamilyId.Type;
 export type OrganizationId = typeof OrganizationId.Type;
 export type OrganizationMemberId = typeof OrganizationMemberId.Type;
 export type OrganizationRoleId = typeof OrganizationRoleId.Type;

@@ -1,0 +1,37 @@
+import { Schema } from "effect";
+
+import { McpAuthorizationId, OAuthAuthorizationCodeId, OAuthClientId } from "#/common/index";
+import { createInsertSchema } from "#/model/helpers";
+
+import { OAuthScopes } from "./common.js";
+
+export const OAuthAuthorizationCode = Schema.Struct({
+  id: OAuthAuthorizationCodeId,
+  authorizationId: McpAuthorizationId,
+  clientId: OAuthClientId,
+  codeHash: Schema.NonEmptyString,
+  redirectUri: Schema.NonEmptyString,
+  codeChallenge: Schema.NonEmptyString,
+  codeChallengeMethod: Schema.Literal("S256"),
+  resource: Schema.NonEmptyString,
+  scopes: OAuthScopes,
+  expiresAt: Schema.DateTimeUtcFromDate,
+  consumedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  createdAt: Schema.DateTimeUtcFromDate,
+});
+
+export const OAuthAuthorizationCodeInsert = createInsertSchema(
+  OAuthAuthorizationCode,
+  "authorizationId",
+  "clientId",
+  "codeHash",
+  "redirectUri",
+  "codeChallenge",
+  "codeChallengeMethod",
+  "resource",
+  "scopes",
+  "expiresAt",
+);
+
+export type OAuthAuthorizationCode = typeof OAuthAuthorizationCode.Type;
+export type OAuthAuthorizationCodeInsert = typeof OAuthAuthorizationCodeInsert.Type;

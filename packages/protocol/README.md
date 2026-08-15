@@ -64,6 +64,12 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   expose only safe key identification data and return the raw credential only
   from creation. Session-key grants remain attached to `ActorId`; do not copy
   grant permissions into API-key metadata.
+- OAuth clients are software identities, not Namera actors. An approved MCP
+  authorization creates an organization-scoped `mcp` actor; session-key access
+  continues through ordinary grants. Authorization codes and bearer tokens are
+  represented only by hashes. OAuth models live under `model/auth/oauth` and
+  keep PKCE, resource indicators, scopes, token families, and lifecycle state
+  explicit without exposing credentials through public DTOs.
 - Session keys belong to one wallet, are discriminated by chain namespace, and
   carry an immutable namespace-specific `policies` array.
   Each policy instance has a stable `PolicyId` so its handler can address typed

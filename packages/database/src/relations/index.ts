@@ -14,6 +14,11 @@ import {
   notification,
   notificationPreference,
   notificationRecipient,
+  mcpAuthorization,
+  oauthAuthorizationCode,
+  oauthAuthorizationRequest,
+  oauthClient,
+  oauthToken,
   organization,
   organizationEvent,
   organizationMember,
@@ -46,6 +51,11 @@ export const relations = defineRelations(
     notification,
     notificationPreference,
     notificationRecipient,
+    mcpAuthorization,
+    oauthAuthorizationCode,
+    oauthAuthorizationRequest,
+    oauthClient,
+    oauthToken,
     organization,
     organizationEvent,
     organizationMember,
@@ -121,6 +131,18 @@ export const relations = defineRelations(
         from: [r.actor.id, r.actor.organizationId],
         to: [r.notification.actorId, r.notification.organizationId],
       }),
+      mcpAuthorization: r.one.mcpAuthorization({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.mcpAuthorization.actorId, r.mcpAuthorization.organizationId],
+      }),
+      authorizedMcpAuthorizations: r.many.mcpAuthorization({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.mcpAuthorization.authorizedByActorId, r.mcpAuthorization.organizationId],
+      }),
+      revokedMcpAuthorizations: r.many.mcpAuthorization({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.mcpAuthorization.revokedByActorId, r.mcpAuthorization.organizationId],
+      }),
     },
     user: {
       // One user can have many active or historical sessions.
@@ -153,6 +175,10 @@ export const relations = defineRelations(
       notificationPreferences: r.many.notificationPreference({
         from: r.user.id,
         to: r.notificationPreference.userId,
+      }),
+      oauthAuthorizationRequests: r.many.oauthAuthorizationRequest({
+        from: r.user.id,
+        to: r.oauthAuthorizationRequest.userId,
       }),
     },
     session: {
@@ -284,6 +310,101 @@ export const relations = defineRelations(
         from: r.organization.id,
         to: r.billingSubscription.organizationId,
       }),
+      oauthAuthorizationRequests: r.many.oauthAuthorizationRequest({
+        from: r.organization.id,
+        to: r.oauthAuthorizationRequest.organizationId,
+      }),
+      mcpAuthorizations: r.many.mcpAuthorization({
+        from: r.organization.id,
+        to: r.mcpAuthorization.organizationId,
+      }),
+    },
+    oauthClient: {
+      authorizationRequests: r.many.oauthAuthorizationRequest({
+        from: r.oauthClient.id,
+        to: r.oauthAuthorizationRequest.clientId,
+      }),
+      authorizations: r.many.mcpAuthorization({
+        from: r.oauthClient.id,
+        to: r.mcpAuthorization.clientId,
+      }),
+      authorizationCodes: r.many.oauthAuthorizationCode({
+        from: r.oauthClient.id,
+        to: r.oauthAuthorizationCode.clientId,
+      }),
+      tokens: r.many.oauthToken({ from: r.oauthClient.id, to: r.oauthToken.clientId }),
+    },
+    oauthAuthorizationRequest: {
+      client: r.one.oauthClient({
+        from: r.oauthAuthorizationRequest.clientId,
+        to: r.oauthClient.id,
+        optional: false,
+      }),
+      user: r.one.user({ from: r.oauthAuthorizationRequest.userId, to: r.user.id }),
+      organization: r.one.organization({
+        from: r.oauthAuthorizationRequest.organizationId,
+        to: r.organization.id,
+      }),
+    },
+    mcpAuthorization: {
+      organization: r.one.organization({
+        from: r.mcpAuthorization.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      actor: r.one.actor({
+        from: [r.mcpAuthorization.actorId, r.mcpAuthorization.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      client: r.one.oauthClient({
+        from: r.mcpAuthorization.clientId,
+        to: r.oauthClient.id,
+        optional: false,
+      }),
+      authorizedBy: r.one.actor({
+        from: [r.mcpAuthorization.authorizedByActorId, r.mcpAuthorization.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      revokedBy: r.one.actor({
+        from: [r.mcpAuthorization.revokedByActorId, r.mcpAuthorization.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+      }),
+      authorizationCodes: r.many.oauthAuthorizationCode({
+        from: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+        to: [r.oauthAuthorizationCode.authorizationId, r.oauthAuthorizationCode.clientId],
+      }),
+      tokens: r.many.oauthToken({
+        from: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+        to: [r.oauthToken.authorizationId, r.oauthToken.clientId],
+      }),
+    },
+    oauthAuthorizationCode: {
+      authorization: r.one.mcpAuthorization({
+        from: [r.oauthAuthorizationCode.authorizationId, r.oauthAuthorizationCode.clientId],
+        to: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+        optional: false,
+      }),
+      client: r.one.oauthClient({
+        from: r.oauthAuthorizationCode.clientId,
+        to: r.oauthClient.id,
+        optional: false,
+      }),
+    },
+    oauthToken: {
+      authorization: r.one.mcpAuthorization({
+        from: [r.oauthToken.authorizationId, r.oauthToken.clientId],
+        to: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+        optional: false,
+      }),
+      client: r.one.oauthClient({
+        from: r.oauthToken.clientId,
+        to: r.oauthClient.id,
+        optional: false,
+      }),
+      parent: r.one.oauthToken({ from: r.oauthToken.parentId, to: r.oauthToken.id }),
+      children: r.many.oauthToken({ from: r.oauthToken.id, to: r.oauthToken.parentId }),
     },
     billingAccount: {
       organization: r.one.organization({

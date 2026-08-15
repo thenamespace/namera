@@ -22,6 +22,6 @@ export const actor = authSchema.table(
   (table) => [
     uniqueIndex("actor_id_organization_uidx").on(table.id, table.organizationId),
     index("actor_organization_type_idx").on(table.organizationId, table.type),
-    check("actor_type_check", sql`${table.type} IN ('user', 'api-key')`),
+    check("actor_type_check", sql`${table.type} IN ('user', 'api-key', 'mcp')`),
   ],
 );
