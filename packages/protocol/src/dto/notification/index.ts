@@ -6,6 +6,8 @@ import {
   ApiKeyRevokedNotification,
   ExecutionConfirmedNotification,
   InvitationReceivedNotification,
+  McpAuthorizationApprovedNotification,
+  McpAuthorizationRevokedNotification,
   NewSignInNotification,
   NotificationPreference,
   NotificationPreferenceChannel,
@@ -51,6 +53,14 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: ExecutionConfirmedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: McpAuthorizationApprovedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: McpAuthorizationRevokedNotification,
     ...NotificationRecipientState,
   }),
 ]).annotate({ identifier: "NotificationResponse" });

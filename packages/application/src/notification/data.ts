@@ -49,6 +49,16 @@ export const notificationPolicy = {
     emailDefaultEnabled: true,
     emailTimeToLive: Duration.days(7),
   },
+  "mcp_authorization.approved": {
+    target: { category: "organization", topic: "mcp-authorizations" },
+    emailDefaultEnabled: false,
+    emailTimeToLive: Duration.days(7),
+  },
+  "mcp_authorization.revoked": {
+    target: { category: "organization", topic: "mcp-authorizations" },
+    emailDefaultEnabled: false,
+    emailTimeToLive: Duration.days(7),
+  },
 } as const satisfies Readonly<Record<NotificationType, NotificationPolicy>>;
 
 export const notificationPageSize = 30;

@@ -27,6 +27,9 @@ export interface OAuthTokenRepositoryService {
     tokenHash: string,
     now: DateTime.Utc,
   ) => Effect.Effect<OAuthTokenModel | undefined, DatabaseError>;
+  readonly findByHash: (
+    tokenHash: string,
+  ) => Effect.Effect<OAuthTokenModel | undefined, DatabaseError>;
   readonly touchLastUsed: (
     id: OAuthTokenModel["id"],
     usedAt: DateTime.Utc,
@@ -39,6 +42,10 @@ export interface OAuthTokenRepositoryService {
     authorizationId: McpAuthorizationId,
     revokedAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<OAuthTokenModel>, DatabaseError>;
+  readonly revokeByHash: (
+    tokenHash: string,
+    revokedAt: DateTime.Utc,
+  ) => Effect.Effect<OAuthTokenModel | undefined, DatabaseError>;
   readonly revokeFamily: (
     familyId: OAuthTokenFamilyId,
     revokedAt: DateTime.Utc,
@@ -93,6 +100,15 @@ export class OAuthTokenRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        findByHash: Effect.fn("database.oauthTokenRepository.findByHash")(function* (tokenHash) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(oauthToken)
+            .where(eq(oauthToken.tokenHash, tokenHash))
+            .limit(1);
+          return rows[0] ? Schema.decodeSync(OAuthToken)(rows[0] as any) : undefined;
+        }, mapRepositoryError),
         touchLastUsed: Effect.fn("database.oauthTokenRepository.touchLastUsed")(function* (
           id,
           usedAt,
@@ -140,6 +156,19 @@ export class OAuthTokenRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        revokeByHash: Effect.fn("database.oauthTokenRepository.revokeByHash")(function* (
+          tokenHash,
+          revokedAt,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
+          const rows = yield* db
+            .update(oauthToken)
+            .set({ revokedAt: encodedRevokedAt })
+            .where(and(eq(oauthToken.tokenHash, tokenHash), isNull(oauthToken.revokedAt)))
+            .returning();
+          return rows[0] ? Schema.decodeSync(OAuthToken)(rows[0] as any) : undefined;
+        }, mapRepositoryError),
         revokeFamily: Effect.fn("database.oauthTokenRepository.revokeFamily")(function* (
           familyId,
           revokedAt,

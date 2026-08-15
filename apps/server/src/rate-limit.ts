@@ -52,6 +52,18 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  oauth: {
+    authorizeByIp: {
+      limit: 60,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+    tokenByIp: {
+      limit: 60,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+  },
   sessionKey: {
     revokeByOrganization: {
       limit: 60,

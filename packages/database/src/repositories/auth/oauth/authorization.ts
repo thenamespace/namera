@@ -26,6 +26,10 @@ export interface McpAuthorizationRepositoryService {
     id: McpAuthorizationId,
     now: DateTime.Utc,
   ) => Effect.Effect<McpAuthorizationModel | undefined, DatabaseError>;
+  readonly findById: (
+    id: McpAuthorizationId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<McpAuthorizationModel | undefined, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<McpAuthorizationModel>, DatabaseError>;
@@ -75,6 +79,20 @@ export class McpAuthorizationRepository extends Context.Service<
                 eq(mcpAuthorization.status, "active"),
                 or(isNull(mcpAuthorization.expiresAt), gt(mcpAuthorization.expiresAt, encodedNow)),
               ),
+            )
+            .limit(1);
+          return rows[0] ? Schema.decodeSync(McpAuthorization)(rows[0] as any) : undefined;
+        }, mapRepositoryError),
+        findById: Effect.fn("database.mcpAuthorizationRepository.findById")(function* (
+          id,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(mcpAuthorization)
+            .where(
+              and(eq(mcpAuthorization.id, id), eq(mcpAuthorization.organizationId, organizationId)),
             )
             .limit(1);
           return rows[0] ? Schema.decodeSync(McpAuthorization)(rows[0] as any) : undefined;

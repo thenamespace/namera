@@ -12,7 +12,8 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
   API reference, authenticated billing, wallet, session-key, and API-key routes,
-  notification inbox, the EIP-155 JSON-RPC proxy, and browser OTLP proxies.
+  notification inbox, OAuth discovery and protocol routes, the EIP-155 JSON-RPC
+  proxy, and browser OTLP proxies.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
@@ -91,6 +92,13 @@ Alchemy. The proxy preserves the upstream status and response body, applies a
 
 Browser telemetry routes also bypass the lower global API limit because their
 dedicated policy accounts for exporter batching traffic.
+
+OAuth authorization and token endpoints use dedicated per-IP token-bucket
+limits of 60 requests per minute. OAuth clients are currently pre-registered;
+metadata-document resolution and dynamic registration are not advertised.
+Authorization codes and tokens are opaque and stored only as hashes. Consent
+approval and authorization revocation create organization audit events and
+in-app notifications, but never email jobs.
 
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally

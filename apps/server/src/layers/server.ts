@@ -8,13 +8,19 @@ import { DatabaseMigration } from "@namera-ai/database";
 import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
-import { EmailWorkerLive, ExecutionWorkerLive, ServicesLive } from "#/layers/services";
+import {
+  ApplicationLive,
+  EmailWorkerLive,
+  ExecutionWorkerLive,
+  ServicesLive,
+} from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware, TelemetryMiddleware } from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
 import {
   ApiReferenceRoutes,
   ApiRoutes,
   RootRoutes,
+  OAuthProtocolRoutes,
   RpcRoutes,
   TelemetryRoutes,
 } from "#/routes/index";
@@ -39,6 +45,15 @@ const Routes = Layer.mergeAll(
   Layer.merge(RpcRoutes, TelemetryRoutes).pipe(
     HttpRouter.provideRequest(
       Layer.mergeAll(ServicesLive, NodeHttpClient.layerUndici, RateLimiterLive),
+    ),
+  ),
+  OAuthProtocolRoutes.pipe(
+    HttpRouter.provideRequest(
+      Layer.mergeAll(
+        ApplicationLive.pipe(Layer.provide(ServicesLive)),
+        ServicesLive,
+        RateLimiterLive,
+      ),
     ),
   ),
   EmailWorkerLive,

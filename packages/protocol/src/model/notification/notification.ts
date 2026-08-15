@@ -9,6 +9,8 @@ import {
   ApiKeyRevokedNotificationPayload,
   ExecutionConfirmedNotificationPayload,
   InvitationReceivedNotificationPayload,
+  McpAuthorizationApprovedNotificationPayload,
+  McpAuthorizationRevokedNotificationPayload,
   NewSignInNotificationPayload,
   SessionKeyCreatedNotificationPayload,
   SessionKeyRevokedNotificationPayload,
@@ -36,6 +38,12 @@ export const SessionKeyRevokedNotification = notification(SessionKeyRevokedNotif
 export const ApiKeyCreatedNotification = notification(ApiKeyCreatedNotificationPayload);
 export const ApiKeyRevokedNotification = notification(ApiKeyRevokedNotificationPayload);
 export const ExecutionConfirmedNotification = notification(ExecutionConfirmedNotificationPayload);
+export const McpAuthorizationApprovedNotification = notification(
+  McpAuthorizationApprovedNotificationPayload,
+);
+export const McpAuthorizationRevokedNotification = notification(
+  McpAuthorizationRevokedNotificationPayload,
+);
 
 export const Notification = Schema.Union([
   NewSignInNotification,
@@ -46,6 +54,8 @@ export const Notification = Schema.Union([
   ApiKeyCreatedNotification,
   ApiKeyRevokedNotification,
   ExecutionConfirmedNotification,
+  McpAuthorizationApprovedNotification,
+  McpAuthorizationRevokedNotification,
 ]);
 
 export const NotificationInsert = createInsertSchema(

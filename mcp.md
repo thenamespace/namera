@@ -15,6 +15,20 @@ application services can all run in the existing `apps/server` process. They
 should remain separate logical layers even though they share one deployment,
 database, hostname, and Effect runtime.
 
+## Implementation status
+
+The OAuth authorization-server slice is implemented. It includes RFC discovery
+metadata, pre-registered public clients, authorization-code + PKCE `S256`,
+rotating refresh tokens with reuse invalidation, token revocation, authenticated
+consent APIs, durable organization-scoped `mcp` actors and session-key grants,
+management reads/revocation, rate limits, bounded telemetry, organization audit
+events, in-app notifications, and server boundary tests. OAuth authorization
+does not send email.
+
+Client ID Metadata Documents, dynamic registration, bearer-token middleware,
+and the `/mcp` transport/tools remain intentionally deferred. Discovery does
+not advertise those unsupported capabilities.
+
 Here, “MCP 2.1 authorization” means MCP authorization built on OAuth 2.1; MCP
 itself uses date-based protocol revisions rather than a `2.1` version number.
 OAuth grants delegated access and does not replace Namera login. The existing
@@ -164,9 +178,7 @@ GET /.well-known/oauth-authorization-server
   "grant_types_supported": ["authorization_code", "refresh_token"],
   "token_endpoint_auth_methods_supported": ["none"],
   "code_challenge_methods_supported": ["S256"],
-  "scopes_supported": ["mcp:read", "mcp:execute", "offline_access"],
-  "authorization_response_iss_parameter_supported": true,
-  "client_id_metadata_document_supported": true
+  "scopes_supported": ["mcp:read", "mcp:execute", "offline_access"]
 }
 ```
 
@@ -188,10 +200,11 @@ than the normal Namera JSON API conventions. Keep them as focused raw
 
 ```text
 GET  /oauth/authorization-requests/:requestId
-POST /oauth/authorization-requests/:requestId/approve
-POST /oauth/authorization-requests/:requestId/deny
+POST /oauth/authorization-requests/approve
+POST /oauth/authorization-requests/deny
 GET  /oauth/authorizations
-POST /oauth/authorizations/:authorizationId/revoke
+GET  /oauth/authorizations/:authorizationId
+POST /oauth/authorizations/revoke
 ```
 
 The last two are Namera management APIs, not OAuth protocol endpoints. They

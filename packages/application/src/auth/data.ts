@@ -18,6 +18,13 @@ export interface AuthPolicy {
     readonly tokenBytes: number;
     readonly visiblePrefixLength: number;
   };
+  readonly oauth: {
+    readonly authorizationRequestTimeToLive: Duration.Duration;
+    readonly authorizationCodeTimeToLive: Duration.Duration;
+    readonly accessTokenTimeToLive: Duration.Duration;
+    readonly refreshTokenTimeToLive: Duration.Duration;
+    readonly tokenBytes: number;
+  };
   readonly cookie: {
     readonly name: string;
     readonly path: "/";
@@ -54,6 +61,13 @@ export const authPolicy = {
     prefix: "namera_",
     tokenBytes: 32,
     visiblePrefixLength: 14,
+  },
+  oauth: {
+    authorizationRequestTimeToLive: Duration.minutes(10),
+    authorizationCodeTimeToLive: Duration.minutes(5),
+    accessTokenTimeToLive: Duration.minutes(15),
+    refreshTokenTimeToLive: Duration.days(30),
+    tokenBytes: 32,
   },
   cookie: {
     name: "auth-token",

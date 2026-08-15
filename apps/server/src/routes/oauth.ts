@@ -1,0 +1,189 @@
+import { Effect, Layer, Predicate, Result } from "effect";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+
+import { Application, AuthConfig } from "@namera-ai/application";
+import type { OAuthTokenResult } from "@namera-ai/application";
+
+import { clientIdentifier, consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
+
+const noStoreHeaders = {
+  "cache-control": "no-store",
+  pragma: "no-cache",
+} as const;
+
+const first = (value: string | ReadonlyArray<string> | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+const oauthError = (error: string, description: string, status = 400) =>
+  HttpServerResponse.jsonUnsafe(
+    { error, error_description: description },
+    { status, headers: noStoreHeaders },
+  );
+
+const rateLimited = (failure: unknown) =>
+  Predicate.isTagged(failure, "RateLimitExceeded")
+    ? oauthError("temporarily_unavailable", "Too many requests", 429)
+    : HttpServerResponse.empty({ status: 500 });
+
+const tokenResponse = (result: OAuthTokenResult) =>
+  HttpServerResponse.jsonUnsafe(
+    {
+      token_type: "Bearer",
+      access_token: result.accessToken,
+      expires_in: result.expiresIn,
+      ...(result.refreshToken === undefined ? {} : { refresh_token: result.refreshToken }),
+      scope: result.scopes.join(" "),
+    },
+    { headers: noStoreHeaders },
+  );
+
+const authorize = HttpRouter.add("GET", "/oauth/authorize", () =>
+  Effect.gen(function* () {
+    const identifier = yield* clientIdentifier;
+    const limited = yield* consumeRateLimit(
+      "oauth.authorize.ip",
+      identifier,
+      rateLimitPolicy.oauth.authorizeByIp,
+    ).pipe(Effect.result);
+    if (Result.isFailure(limited)) return rateLimited(limited.failure);
+
+    const params = yield* HttpServerRequest.ParsedSearchParams;
+    const app = yield* Application;
+    const result = yield* app.oauth.request
+      .start({
+        clientId: first(params.client_id) ?? "",
+        redirectUri: first(params.redirect_uri) ?? "",
+        responseType: first(params.response_type) ?? "",
+        codeChallenge: first(params.code_challenge) ?? "",
+        codeChallengeMethod: first(params.code_challenge_method) ?? "",
+        resource: first(params.resource) ?? "",
+        scopes: (first(params.scope) ?? "").split(/\s+/).filter(Boolean),
+        state: first(params.state) ?? null,
+      })
+      .pipe(Effect.result);
+    if (Result.isFailure(result)) {
+      const code = result.failure.code;
+      return oauthError(
+        code === "INVALID_CLIENT"
+          ? "invalid_client"
+          : code === "INVALID_SCOPE"
+            ? "invalid_scope"
+            : code === "UNSUPPORTED_RESPONSE_TYPE"
+              ? "unsupported_response_type"
+              : "invalid_request",
+        "The authorization request is invalid",
+      );
+    }
+    return HttpServerResponse.redirect(result.success.consentUrl, {
+      headers: noStoreHeaders,
+    });
+  }),
+);
+
+const token = HttpRouter.add("POST", "/oauth/token", (request) =>
+  Effect.gen(function* () {
+    const identifier = yield* clientIdentifier;
+    const limited = yield* consumeRateLimit(
+      "oauth.token.ip",
+      identifier,
+      rateLimitPolicy.oauth.tokenByIp,
+    ).pipe(Effect.result);
+    if (Result.isFailure(limited)) return rateLimited(limited.failure);
+
+    const form = Object.fromEntries((yield* request.urlParamsBody).params);
+    const app = yield* Application;
+    const grantType = form.grant_type;
+    const result =
+      grantType === "authorization_code"
+        ? yield* app.oauth.token
+            .exchangeAuthorizationCode({
+              code: form.code ?? "",
+              clientId: form.client_id ?? "",
+              redirectUri: form.redirect_uri ?? "",
+              codeVerifier: form.code_verifier ?? "",
+              resource: form.resource ?? "",
+            })
+            .pipe(Effect.result)
+        : grantType === "refresh_token"
+          ? yield* app.oauth.token
+              .refresh({
+                refreshToken: form.refresh_token ?? "",
+                clientId: form.client_id ?? "",
+                ...(form.scope === undefined
+                  ? {}
+                  : { scopes: form.scope.split(/\s+/).filter(Boolean) }),
+              })
+              .pipe(Effect.result)
+          : undefined;
+    if (result === undefined) {
+      return oauthError("unsupported_grant_type", "The grant type is not supported");
+    }
+    if (Result.isFailure(result)) {
+      return oauthError(
+        result.failure.code.toLowerCase(),
+        "The token request could not be completed",
+      );
+    }
+    return tokenResponse(result.success);
+  }).pipe(Effect.catch(() => Effect.succeed(oauthError("invalid_request", "Malformed form body")))),
+);
+
+const revoke = HttpRouter.add("POST", "/oauth/revoke", (request) =>
+  Effect.gen(function* () {
+    const form = Object.fromEntries((yield* request.urlParamsBody).params);
+    if (form.token !== undefined) {
+      yield* (yield* Application).oauth.token.revokeToken(form.token);
+    }
+    return HttpServerResponse.empty({ headers: noStoreHeaders });
+  }).pipe(Effect.catch(() => Effect.succeed(oauthError("invalid_request", "Malformed form body")))),
+);
+
+const authorizationServerMetadata = HttpRouter.add(
+  "GET",
+  "/.well-known/oauth-authorization-server",
+  () =>
+    Effect.gen(function* () {
+      const config = yield* AuthConfig;
+      const issuer = config.apiPublicOrigin.toString().replace(/\/$/, "");
+      return HttpServerResponse.jsonUnsafe(
+        {
+          issuer,
+          authorization_endpoint: `${issuer}/oauth/authorize`,
+          token_endpoint: `${issuer}/oauth/token`,
+          revocation_endpoint: `${issuer}/oauth/revoke`,
+          response_types_supported: ["code"],
+          grant_types_supported: ["authorization_code", "refresh_token"],
+          code_challenge_methods_supported: ["S256"],
+          token_endpoint_auth_methods_supported: ["none"],
+          scopes_supported: ["mcp:read", "mcp:execute", "offline_access"],
+        },
+        { headers: { "cache-control": "public, max-age=300" } },
+      );
+    }),
+);
+
+const protectedResourceMetadata = (path: `/${string}`) =>
+  HttpRouter.add("GET", path, () =>
+    Effect.gen(function* () {
+      const config = yield* AuthConfig;
+      const issuer = config.apiPublicOrigin.toString().replace(/\/$/, "");
+      return HttpServerResponse.jsonUnsafe(
+        {
+          resource: `${issuer}/mcp`,
+          authorization_servers: [issuer],
+          bearer_methods_supported: ["header"],
+          scopes_supported: ["mcp:read", "mcp:execute"],
+        },
+        { headers: { "cache-control": "public, max-age=300" } },
+      );
+    }),
+  );
+
+export const OAuthProtocolRoutes = Layer.mergeAll(
+  authorize,
+  token,
+  revoke,
+  authorizationServerMetadata,
+  protectedResourceMetadata("/.well-known/oauth-protected-resource/mcp"),
+  protectedResourceMetadata("/.well-known/oauth-protected-resource"),
+);

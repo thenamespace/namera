@@ -14,6 +14,7 @@ export const AuthConfig = AuthEnvironmentConfig.pipe(
     cookie: authPolicy.cookie,
     returnTo: authPolicy.returnTo,
     invitation: authPolicy.invitation,
+    oauth: authPolicy.oauth,
     apiPublicOrigin,
     dashboardPublicOrigin,
   })),

@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-non-null-assertion
 import { Context, Effect, Layer, Schema } from "effect";
 
-import type { DatabaseError } from "@namera-ai/protocol";
+import type { DatabaseError, OAuthClientId } from "@namera-ai/protocol";
 import {
   OAuthClient,
   OAuthClientInsert,
@@ -14,6 +14,9 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { oauthClient } from "#/schema/index";
 
 export interface OAuthClientRepositoryService {
+  readonly insertPreRegistered: (
+    data: Omit<OAuthClientInsert, "registrationType">,
+  ) => Effect.Effect<OAuthClientModel | undefined, DatabaseError>;
   readonly upsertMetadataSnapshot: (
     data: Omit<OAuthClientInsert, "registrationType">,
   ) => Effect.Effect<OAuthClientModel | undefined, DatabaseError>;
@@ -22,6 +25,9 @@ export interface OAuthClientRepositoryService {
   ) => Effect.Effect<OAuthClientModel | undefined, DatabaseError>;
   readonly findByClientId: (
     clientId: string,
+  ) => Effect.Effect<OAuthClientModel | undefined, DatabaseError>;
+  readonly findById: (
+    id: OAuthClientId,
   ) => Effect.Effect<OAuthClientModel | undefined, DatabaseError>;
 }
 
@@ -35,6 +41,22 @@ export class OAuthClientRepository extends Context.Service<
       const database = yield* Database;
 
       return OAuthClientRepository.of({
+        insertPreRegistered: Effect.fn("database.oauthClientRepository.insertPreRegistered")(
+          function* (data) {
+            const db = yield* transactionOrDatabase(database);
+            const encoded = Schema.encodeSync(OAuthClientInsert)({
+              ...data,
+              registrationType: "pre-registered",
+            });
+            const rows = yield* db
+              .insert(oauthClient)
+              .values(encoded as any)
+              .onConflictDoNothing()
+              .returning();
+            return rows[0] ? Schema.decodeSync(OAuthClient)(rows[0] as any) : undefined;
+          },
+          mapRepositoryError,
+        ),
         upsertMetadataSnapshot: Effect.fn("database.oauthClientRepository.upsertMetadataSnapshot")(
           function* (data) {
             const db = yield* transactionOrDatabase(database);
@@ -88,6 +110,11 @@ export class OAuthClientRepository extends Context.Service<
             .from(oauthClient)
             .where(eq(oauthClient.clientId, clientId))
             .limit(1);
+          return rows[0] ? Schema.decodeSync(OAuthClient)(rows[0] as any) : undefined;
+        }, mapRepositoryError),
+        findById: Effect.fn("database.oauthClientRepository.findById")(function* (id) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db.select().from(oauthClient).where(eq(oauthClient.id, id)).limit(1);
           return rows[0] ? Schema.decodeSync(OAuthClient)(rows[0] as any) : undefined;
         }, mapRepositoryError),
       });

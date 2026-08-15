@@ -15,6 +15,8 @@ HTTP requests to application methods.
 - `src/auth/core/api-key.ts` — API-key creation, grant-aware reads, and atomic
   credential/grant revocation.
 - `src/auth/magic-link/` — request and verification workflows.
+- `src/auth/oauth/` — OAuth authorization requests, consent, durable MCP
+  authorization management, PKCE exchange, refresh rotation, and token revocation.
 - `src/auth/organization/` — organization, member, invitation, and setup operations.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
@@ -106,6 +108,14 @@ credential row, grants, audit event, inbox recipients, and durable email jobs.
 Durations are limited to one year. The raw credential is returned only from
 creation; get and list return safe key details with their currently authorized
 session keys.
+
+OAuth authorization accepts only active pre-registered public clients, exact
+redirect URIs, PKCE `S256`, and the canonical `/mcp` resource. Approval
+atomically creates an `mcp` actor, its selected session-key grants, a hashed
+one-time authorization code, an organization audit event, and in-app
+notification recipients. Revocation atomically invalidates the authorization,
+all active tokens, and all grants, with matching audit and in-app notification
+records. These workflows intentionally do not enqueue emails.
 
 Wallet updates replace only metadata and leave the namespace, implementation,
 address, protection level, key material, and account data unchanged. No-op

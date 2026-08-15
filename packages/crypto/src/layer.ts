@@ -25,6 +25,7 @@ export class CryptoService extends Context.Service<
     readonly randomToken: (byteLength?: number) => Effect.Effect<string>;
     readonly randomCode: (digits?: number) => Effect.Effect<string>;
     readonly hash: (input: CryptoInput) => Effect.Effect<string>;
+    readonly sha256: (value: string) => Effect.Effect<string>;
     readonly hmac: (input: CryptoInput) => Effect.Effect<string>;
     readonly verifyHmac: (
       input: CryptoInput & { readonly expected: string },
@@ -78,6 +79,13 @@ export class CryptoService extends Context.Service<
       const hash = Effect.fnUntraced(function* (input: CryptoInput) {
         const digest = yield* platformCrypto
           .digest("SHA-256", domainSeparatedValue(input))
+          .pipe(Effect.orDie);
+        return Base64.fromUint8Array(digest, true);
+      });
+
+      const sha256 = Effect.fnUntraced(function* (value: string) {
+        const digest = yield* platformCrypto
+          .digest("SHA-256", encodeText(value))
           .pipe(Effect.orDie);
         return Base64.fromUint8Array(digest, true);
       });
@@ -154,6 +162,7 @@ export class CryptoService extends Context.Service<
         randomToken,
         randomCode,
         hash,
+        sha256,
         hmac,
         verifyHmac,
         encrypt,

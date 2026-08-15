@@ -12,6 +12,7 @@ import {
   makeVerifyMagicLinkApplication,
   type VerifyMagicLinkApplication,
 } from "#/auth/magic-link/verify";
+import { makeOAuthApplication } from "#/auth/oauth/index";
 import {
   makeInvitationApplication,
   type InvitationApplication,
@@ -33,6 +34,7 @@ export interface ApplicationService {
   readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
   readonly notification: NotificationApplication;
+  readonly oauth: Effect.Success<typeof makeOAuthApplication>;
   readonly execution: ExecutionApplication;
   readonly organization: OrganizationApplication & {
     readonly invitation: InvitationApplication;
@@ -60,6 +62,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const invitation = yield* makeInvitationApplication;
       const member = yield* makeMemberApplication;
       const notification = yield* makeNotificationApplication;
+      const oauth = yield* makeOAuthApplication;
       const billing = yield* makeBillingApplication;
       const wallet = yield* makeWalletApplication;
       const sessionKey = yield* makeSessionKeyApplication;
@@ -71,6 +74,7 @@ export class Application extends Context.Service<Application, ApplicationService
         billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },
         notification,
+        oauth,
         execution,
         organization: { ...organization, invitation, member },
         session,

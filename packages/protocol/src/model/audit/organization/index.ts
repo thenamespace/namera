@@ -16,6 +16,10 @@ import {
   InvitationRejectedEventData,
 } from "./invitation.js";
 import {
+  McpAuthorizationApprovedEventData,
+  McpAuthorizationRevokedEventData,
+} from "./mcp-authorization.js";
+import {
   MemberCreatedEventData,
   MemberRemovedEventData,
   MemberRoleUpdatedEventData,
@@ -48,6 +52,8 @@ export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventDa
 export const SessionKeyRevokedEvent = organizationEvent(SessionKeyRevokedEventData);
 export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
 export const ApiKeyRevokedEvent = organizationEvent(ApiKeyRevokedEventData);
+export const McpAuthorizationApprovedEvent = organizationEvent(McpAuthorizationApprovedEventData);
+export const McpAuthorizationRevokedEvent = organizationEvent(McpAuthorizationRevokedEventData);
 export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
 export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
 export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
@@ -70,6 +76,8 @@ export const OrganizationEvent = Schema.Union([
   SessionKeyRevokedEvent,
   ApiKeyCreatedEvent,
   ApiKeyRevokedEvent,
+  McpAuthorizationApprovedEvent,
+  McpAuthorizationRevokedEvent,
   ExecutionSubmittedEvent,
   ExecutionConfirmedEvent,
   ExecutionFailedEvent,
@@ -99,6 +107,7 @@ export * from "./api-key.js";
 export * from "./execution.js";
 export * from "./invitation.js";
 export * from "./member.js";
+export * from "./mcp-authorization.js";
 export * from "./organization.js";
 export * from "./session-key.js";
 export * from "./signature.js";

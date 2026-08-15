@@ -1,4 +1,4 @@
-import type { ApiKeyView, SessionKeyView } from "@namera-ai/application";
+import type { ApiKeyView, McpAuthorizationView, SessionKeyView } from "@namera-ai/application";
 import type { NotificationInboxItem, WalletView } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
@@ -9,6 +9,7 @@ import type {
   GetSessionResponse,
   GetUserResponse,
   NotificationResponse,
+  McpAuthorizationResponse,
   SessionKeyResponse,
   SessionKeySummaryResponse,
   WalletResponse,
@@ -152,8 +153,46 @@ export const toNotificationResponse = (input: NotificationInboxItem): Notificati
         readAt: input.recipient.readAt,
         receivedAt: input.recipient.receivedAt,
       };
+    case "mcp_authorization.approved":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
+    case "mcp_authorization.revoked":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
   }
 };
+
+export const toMcpAuthorizationResponse = (
+  input: McpAuthorizationView,
+): McpAuthorizationResponse => ({
+  id: input.authorization.id,
+  organizationId: input.authorization.organizationId,
+  actorId: input.authorization.actorId,
+  client: {
+    id: input.client.id,
+    clientId: input.client.clientId,
+    registrationType: input.client.registrationType,
+    clientName: input.client.clientName,
+    clientUri: input.client.clientUri,
+    logoUri: input.client.logoUri,
+  },
+  authorizedBy: toMemberResponse(input.authorizedBy),
+  scopes: input.authorization.scopes,
+  resource: input.authorization.resource,
+  status: input.authorization.status,
+  expiresAt: input.authorization.expiresAt,
+  lastUsedAt: input.authorization.lastUsedAt,
+  revokedAt: input.authorization.revokedAt,
+  sessionKeys: input.sessionKeys.map(toSessionKeySummaryResponse),
+  createdAt: input.authorization.createdAt,
+  updatedAt: input.authorization.updatedAt,
+});
 
 export const toApiKeyResponse = (input: ApiKeyView): ApiKeyResponse => ({
   id: input.apiKey.id,
