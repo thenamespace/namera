@@ -52,7 +52,7 @@ export function ApiKeyActions({ apiKey }: ApiKeyActionsProps) {
 
       <AlertDialog>
         <AlertDialog.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
-          <AlertDialog.Container size="sm">
+          <AlertDialog.Container size="md">
             <AlertDialog.Dialog>
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
