@@ -79,7 +79,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
                   id: template.id,
                   variables: input.variables,
                 },
-                ...(input.subject === undefined ? {} : { subject: input.subject }),
+                subject: input.subject ?? template.subject,
                 ...(input.replyTo === undefined
                   ? configuredReplyTo === undefined
                     ? {}
