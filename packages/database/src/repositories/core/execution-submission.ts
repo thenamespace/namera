@@ -10,6 +10,7 @@ import type {
 import {
   ExecutionSubmission,
   ExecutionSubmissionInsert,
+  EvmExecutionSubmissionData,
   type ExecutionSubmission as ExecutionSubmissionModel,
   type ExecutionSubmissionInsert as ExecutionSubmissionInsertModel,
 } from "@namera-ai/protocol/model";
@@ -173,9 +174,10 @@ export class ExecutionSubmissionRepository extends Context.Service<
           leaseToken,
         }) {
           const db = yield* transactionOrDatabase(database);
+          const encodedData = Schema.encodeSync(EvmExecutionSubmissionData)(data);
           const rows = yield* db
             .update(executionSubmission)
-            .set({ status: "prepared", data: data as any })
+            .set({ status: "prepared", data: encodedData as any })
             .where(
               and(
                 eq(executionSubmission.id, id),

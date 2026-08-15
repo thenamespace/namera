@@ -9,6 +9,7 @@ type ActorOfType<Type extends ActorType> = Extract<CurrentActorResponse, { reado
 
 export type ActorPermissionRequirements = {
   readonly user: readonly MemberPermission[];
+  readonly "api-key": readonly never[];
 };
 
 type SupportedActorType = keyof ActorPermissionRequirements & ActorType;
@@ -51,6 +52,8 @@ const enforceActorEffect = Effect.fn("server.enforceActor")(function* (
 
       return actor.data;
     }
+    case "api-key":
+      return actor.data;
   }
 });
 

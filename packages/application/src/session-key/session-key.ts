@@ -104,8 +104,11 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
         namespace: input.request.namespace,
       });
       const now = yield* DateTime.now;
+      const timeWindows = input.request.policies.filter(
+        (policy) => policy.type === "evm.time-window",
+      );
       if (
-        input.request.policies.some(
+        timeWindows.some(
           (policy) => DateTime.toEpochMillis(policy.expiresAt) <= DateTime.toEpochMillis(now),
         )
       ) {
@@ -149,6 +152,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
       const policyHash = yield* hashSessionKeyPolicies(crypto, policies);
       const policyTypes = policies.map((policy) => policy.type);
       const effectiveExpiry = policies
+        .filter((policy) => policy.type === "evm.time-window")
         .map((policy) => policy.expiresAt)
         .reduce((earliest, expiresAt) =>
           DateTime.toEpochMillis(expiresAt) < DateTime.toEpochMillis(earliest)

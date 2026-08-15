@@ -24,6 +24,9 @@ export interface SessionKeyPolicyStateRepositoryService {
   readonly insertMany: (
     data: ReadonlyArray<SessionKeyPolicyStateInsertModel>,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyStateModel>, DatabaseError>;
+  readonly insertManyIfMissing: (
+    data: ReadonlyArray<SessionKeyPolicyStateInsertModel>,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyStateModel>, DatabaseError>;
   readonly findForPolicy: (
     organizationId: OrganizationId,
     sessionKeyId: SessionKeyId,
@@ -65,6 +68,28 @@ export class SessionKeyPolicyStateRepository extends Context.Service<
             const rows = yield* db
               .insert(sessionKeyPolicyState)
               .values(encoded as any)
+              .returning();
+            return rows.map((row) => Schema.decodeSync(SessionKeyPolicyState)(row as any));
+          }, mapRepositoryError),
+          insertManyIfMissing: Effect.fn(
+            "database.sessionKeyPolicyStateRepository.insertManyIfMissing",
+          )(function* (data) {
+            if (data.length === 0) return [];
+            const db = yield* transactionOrDatabase(database);
+            const encoded = data.map((item) =>
+              Schema.encodeSync(SessionKeyPolicyStateInsert)(item),
+            );
+            const rows = yield* db
+              .insert(sessionKeyPolicyState)
+              .values(encoded as any)
+              .onConflictDoNothing({
+                target: [
+                  sessionKeyPolicyState.organizationId,
+                  sessionKeyPolicyState.sessionKeyId,
+                  sessionKeyPolicyState.policyId,
+                  sessionKeyPolicyState.stateKey,
+                ],
+              })
               .returning();
             return rows.map((row) => Schema.decodeSync(SessionKeyPolicyState)(row as any));
           }, mapRepositoryError),

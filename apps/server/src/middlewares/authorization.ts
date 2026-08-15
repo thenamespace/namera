@@ -24,6 +24,40 @@ export const AuthorizationLive = Layer.effect(
     const cookieConfig = yield* AuthCookieConfig;
 
     return Authorization.of({
+      apiKey: Effect.fn("server.authorization.apiKey")(function* (httpEffect, { credential }) {
+        yield* HttpEffect.appendPreResponseHandler((_request, response) =>
+          Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
+        );
+        const keyHash = yield* crypto.hash({
+          purpose: cryptoPurpose.apiKey,
+          value: Redacted.value(credential),
+        });
+        const apiKey = yield* repository.auth.apiKey
+          .authenticate(keyHash, yield* DateTime.now)
+          .pipe(Effect.orDie);
+        if (apiKey === undefined) return yield* new HttpApiError.Unauthorized();
+
+        const grants = yield* repository.core.sessionKeyGrant
+          .findActiveForActor(apiKey.organizationId, apiKey.actorId)
+          .pipe(Effect.orDie);
+        const actor: CurrentActorResponse = {
+          type: "api-key",
+          data: {
+            actorId: apiKey.actorId,
+            organizationId: apiKey.organizationId,
+            apiKey: {
+              id: apiKey.id,
+              metadata: apiKey.metadata,
+              keyStart: apiKey.keyStart,
+              expiresAt: apiKey.expiresAt,
+              lastUsedAt: apiKey.lastUsedAt,
+              createdAt: apiKey.createdAt,
+            },
+            grants,
+          },
+        };
+        return yield* Effect.provideService(httpEffect, CurrentActor, actor);
+      }),
       authToken: Effect.fn("server.authorization.authToken")(function* (
         httpEffect,
         { credential },

@@ -79,4 +79,17 @@ export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(fu
   }
 });
 
+export const enforceExecutionLimit = Effect.fn("application.enforceExecutionLimit")(function* (
+  repository: RepositoryService,
+  organizationId: OrganizationId,
+) {
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  if (usage.executions >= limits.includedExecutions) {
+    return yield* new BillingLimitExceededError({
+      code: "LIMIT_EXCEEDED",
+      limit: "executions",
+    });
+  }
+});
+
 export type BillingLimits = BillingPlanLimits;

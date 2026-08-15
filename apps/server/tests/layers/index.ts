@@ -23,6 +23,7 @@ import {
   UserRoutes,
 } from "#/routes/auth/index";
 import { BillingRoutes } from "#/routes/billing";
+import { ExecutionRoutes } from "#/routes/execution";
 import { HealthRoutes } from "#/routes/health";
 import { SessionKeyRoutes } from "#/routes/session-key";
 import { WalletRoutes } from "#/routes/wallet";
@@ -63,6 +64,7 @@ const TestHandlersLayer = Layer.mergeAll(
   ApiKeyRoutes,
   BillingRoutes,
   HealthRoutes,
+  ExecutionRoutes,
   SessionKeyRoutes,
   InvitationRoutes,
   MagicLinkRoutes,

@@ -3,7 +3,9 @@ import { Schema } from "effect";
 import { SupportedEvmChainId } from "#/evm/chains";
 import { Bytes32, EthereumAddress, Hex } from "#/evm/primitives";
 
-const NonNegativeEvmQuantity = Schema.BigInt.check(Schema.isGreaterThanOrEqualToBigInt(0n));
+const NonNegativeEvmQuantity = Schema.BigIntFromString.check(
+  Schema.isGreaterThanOrEqualToBigInt(0n),
+);
 
 export const EvmIntentCall = Schema.Struct({
   to: EthereumAddress,

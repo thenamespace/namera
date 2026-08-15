@@ -5,4 +5,5 @@ export const cryptoPurpose = {
   apiKey: "auth.api-key",
   emailOutbox: "email.outbox.payload",
   sessionKeyPolicies: "session-key.policies",
+  executionRequest: "execution.request",
 } as const;

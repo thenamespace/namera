@@ -97,17 +97,21 @@ const EvmExecutionReceiptCommon = {
   actualGasUsed: EvmQuantity,
 };
 
+export const SuccessfulEvmExecutionReceipt = Schema.Struct({
+  ...EvmExecutionReceiptCommon,
+  success: Schema.Literal(true),
+  reason: Schema.Null,
+}).annotate({ identifier: "SuccessfulEvmExecutionReceipt" });
+
+export const FailedEvmExecutionReceipt = Schema.Struct({
+  ...EvmExecutionReceiptCommon,
+  success: Schema.Literal(false),
+  reason: Schema.NullOr(Schema.String),
+}).annotate({ identifier: "FailedEvmExecutionReceipt" });
+
 export const EvmExecutionReceipt = Schema.Union([
-  Schema.Struct({
-    ...EvmExecutionReceiptCommon,
-    success: Schema.Literal(true),
-    reason: Schema.Null,
-  }),
-  Schema.Struct({
-    ...EvmExecutionReceiptCommon,
-    success: Schema.Literal(false),
-    reason: Schema.NullOr(Schema.String),
-  }),
+  SuccessfulEvmExecutionReceipt,
+  FailedEvmExecutionReceipt,
 ]).annotate({
   identifier: "EvmExecutionReceipt",
   description: "A normalized ERC-4337 UserOperation receipt",
@@ -117,4 +121,6 @@ export type EvmSerializedUserOperation = typeof EvmSerializedUserOperation.Type;
 export type EvmPreparedExecution = typeof EvmPreparedExecution.Type;
 export type EvmSignedExecution = typeof EvmSignedExecution.Type;
 export type EvmSubmittedExecution = typeof EvmSubmittedExecution.Type;
+export type SuccessfulEvmExecutionReceipt = typeof SuccessfulEvmExecutionReceipt.Type;
+export type FailedEvmExecutionReceipt = typeof FailedEvmExecutionReceipt.Type;
 export type EvmExecutionReceipt = typeof EvmExecutionReceipt.Type;

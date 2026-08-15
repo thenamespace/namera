@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 import { OrganizationId, SessionKeyId, WalletId } from "#/common/index";
 import { EvmSessionKeyPolicies, SessionKeyMetadata, SessionKeyStatus } from "#/model/index";
-import { CreateEvmTimeWindowPolicy } from "#/policy/index";
+import { CreateEvmNativeSpendLimitPolicy, CreateEvmTimeWindowPolicy } from "#/policy/index";
 
 import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
 import { WalletResponse } from "../wallet/index.js";
@@ -11,9 +11,15 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,
-  policies: Schema.Array(Schema.Union([CreateEvmTimeWindowPolicy])).check(
-    Schema.isMinLength(1, { message: "At least one policy is required" }),
-  ),
+  policies: Schema.Array(Schema.Union([CreateEvmTimeWindowPolicy, CreateEvmNativeSpendLimitPolicy]))
+    .check(Schema.isMinLength(1, { message: "At least one policy is required" }))
+    .check(
+      Schema.makeFilter((policies) =>
+        policies.some((policy) => policy.type === "evm.time-window")
+          ? undefined
+          : { path: [], issue: "A time-window policy is required" },
+      ),
+    ),
 }).annotate({
   identifier: "CreateEvmSessionKeyRequest",
   description: "Create an EVM session key with immutable offchain policies",

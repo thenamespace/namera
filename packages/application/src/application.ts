@@ -22,6 +22,7 @@ import {
   type OrganizationApplication,
 } from "#/auth/organization/organization";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
+import { makeExecutionApplication, type ExecutionApplication } from "#/execution/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session-key/index";
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
@@ -31,6 +32,7 @@ export interface ApplicationService {
   readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
   readonly notification: NotificationApplication;
+  readonly execution: ExecutionApplication;
   readonly organization: OrganizationApplication & {
     readonly invitation: InvitationApplication;
     readonly member: MemberApplication;
@@ -59,12 +61,14 @@ export class Application extends Context.Service<Application, ApplicationService
       const billing = yield* makeBillingApplication;
       const wallet = yield* makeWalletApplication;
       const sessionKey = yield* makeSessionKeyApplication;
+      const execution = yield* makeExecutionApplication;
 
       return Application.of({
         apiKey,
         billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },
         notification,
+        execution,
         organization: { ...organization, invitation, member },
         session,
         sessionKey,

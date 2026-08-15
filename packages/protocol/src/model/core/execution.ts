@@ -6,7 +6,12 @@ import {
   OrganizationId,
   SessionKeyGrantId,
 } from "#/common/index";
-import { SupportedEvmChainId, TransactionHash, UserOperationHash } from "#/evm/index";
+import {
+  SuccessfulEvmExecutionReceipt,
+  SupportedEvmChainId,
+  TransactionHash,
+  UserOperationHash,
+} from "#/evm/index";
 import { createInsertSchema } from "#/model/helpers";
 import { EvmIntentCall } from "#/policy/evm/index";
 
@@ -16,6 +21,7 @@ export const EvmExecutionData = Schema.Struct({
   calls: Schema.Array(EvmIntentCall),
   userOperationHash: UserOperationHash,
   transactionHash: TransactionHash,
+  receipt: SuccessfulEvmExecutionReceipt,
 });
 
 const ExecutionCommon = Schema.Struct({

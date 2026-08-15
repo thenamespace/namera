@@ -21,6 +21,7 @@ export const OrganizationNotificationTopic = Schema.Literals([
   "wallets",
   "session-keys",
   "api-keys",
+  "executions",
 ]);
 export const BillingNotificationTopic = Schema.Literal("activity");
 
@@ -34,6 +35,7 @@ export const NotificationTopic = Schema.Literals([
   "wallets",
   "session-keys",
   "api-keys",
+  "executions",
 ]);
 
 const ProductNotificationTarget = Schema.Struct({

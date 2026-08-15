@@ -21,6 +21,9 @@ export const emailTemplates = {
   "api-key-created": {
     id: "api-key-created", // TODO: Update
   },
+  "execution-confirmed": {
+    id: "execution-confirmed", // TODO: Update
+  },
 } as const satisfies Record<EmailJobType, { readonly id: string }>;
 
 export const emailPolicy = {

@@ -21,3 +21,22 @@ export class EvmExecutionError extends Schema.TaggedError<EvmExecutionError>()(
 ) {}
 
 export type EvmExecutionErrorCode = typeof EvmExecutionErrorCode.Type;
+
+export const ExecutionErrorCode = Schema.Literals([
+  "NO_AUTHORIZED_SESSION_KEY",
+  "POLICY_DENIED",
+  "IDEMPOTENCY_CONFLICT",
+  "EXECUTION_FAILED",
+  "EXECUTION_UNAVAILABLE",
+]);
+
+export class ExecutionError extends Schema.TaggedError<ExecutionError>()(
+  "ExecutionError",
+  {
+    code: ExecutionErrorCode,
+    policyCode: Schema.optional(Schema.String),
+  },
+  { httpApiStatus: 409 },
+) {}
+
+export type ExecutionErrorCode = typeof ExecutionErrorCode.Type;

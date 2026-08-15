@@ -64,6 +64,7 @@ export class SessionKeyGrantRepository extends Context.Service<
               eq(sessionKeyGrant.organizationId, organizationId),
               inArray(sessionKeyGrant.actorId, actorIds),
               isNull(sessionKeyGrant.revokedAt),
+              eq(sessionKey.status, "active"),
             ),
           )
           .orderBy(desc(sessionKeyGrant.createdAt), desc(sessionKeyGrant.id));

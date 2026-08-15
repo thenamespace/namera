@@ -5,6 +5,11 @@ import { createInsertSchema } from "#/model/helpers";
 import { ApiKeyCreatedEventData } from "./api-key.js";
 import { OrganizationEventCommon } from "./base.js";
 import {
+  ExecutionConfirmedEventData,
+  ExecutionFailedEventData,
+  ExecutionSubmittedEventData,
+} from "./execution.js";
+import {
   InvitationAcceptedEventData,
   InvitationCanceledEventData,
   InvitationCreatedEventData,
@@ -35,6 +40,9 @@ export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const WalletKeyCreatedEvent = organizationEvent(WalletKeyCreatedEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
+export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
+export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
+export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
 
 export const OrganizationEvent = Schema.Union([
   OrganizationCreatedEvent,
@@ -50,6 +58,9 @@ export const OrganizationEvent = Schema.Union([
   WalletKeyCreatedEvent,
   SessionKeyCreatedEvent,
   ApiKeyCreatedEvent,
+  ExecutionSubmittedEvent,
+  ExecutionConfirmedEvent,
+  ExecutionFailedEvent,
 ]);
 
 export const OrganizationEventInsert = createInsertSchema(
@@ -72,6 +83,7 @@ export type OrganizationEventInsert = typeof OrganizationEventInsert.Type;
 
 export * from "./base.js";
 export * from "./api-key.js";
+export * from "./execution.js";
 export * from "./invitation.js";
 export * from "./member.js";
 export * from "./organization.js";

@@ -12,6 +12,11 @@ export const AuthTokenSecurity = HttpApiSecurity.apiKey({
   key: "auth-token",
 });
 
+export const ApiKeySecurity = HttpApiSecurity.apiKey({
+  in: "header",
+  key: "x-api-key",
+});
+
 export class Authorization extends HttpApiMiddleware.Service<
   Authorization,
   {
@@ -21,5 +26,6 @@ export class Authorization extends HttpApiMiddleware.Service<
   error: HttpApiError.UnauthorizedNoContent,
   security: {
     authToken: AuthTokenSecurity,
+    apiKey: ApiKeySecurity,
   },
 }) {}

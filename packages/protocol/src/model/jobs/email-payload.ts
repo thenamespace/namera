@@ -10,6 +10,7 @@ export const EmailJobType = Schema.Literals([
   "wallet-created",
   "session-key-created",
   "api-key-created",
+  "execution-confirmed",
 ]);
 
 export const EmailRecipient = Schema.Union([
@@ -73,6 +74,13 @@ export const ApiKeyCreatedEmailVariables = Schema.Struct({
   sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
 });
 
+export const ExecutionConfirmedEmailVariables = Schema.Struct({
+  organizationName: NonEmptyString,
+  walletName: NonEmptyString,
+  chainId: NonEmptyString,
+  transactionHash: NonEmptyString,
+});
+
 export const EmailJobPayload = Schema.Union([
   Schema.Struct({
     type: Schema.Literal("magic-link"),
@@ -98,6 +106,10 @@ export const EmailJobPayload = Schema.Union([
     type: Schema.Literal("api-key-created"),
     variables: ApiKeyCreatedEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
+    type: Schema.Literal("execution-confirmed"),
+    variables: ExecutionConfirmedEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
 ]);
 
 export type EmailJobType = typeof EmailJobType.Type;
@@ -109,4 +121,5 @@ export type OrganizationInvitationEmailVariables = typeof OrganizationInvitation
 export type WalletCreatedEmailVariables = typeof WalletCreatedEmailVariables.Type;
 export type SessionKeyCreatedEmailVariables = typeof SessionKeyCreatedEmailVariables.Type;
 export type ApiKeyCreatedEmailVariables = typeof ApiKeyCreatedEmailVariables.Type;
+export type ExecutionConfirmedEmailVariables = typeof ExecutionConfirmedEmailVariables.Type;
 export type EmailJobPayload = typeof EmailJobPayload.Type;

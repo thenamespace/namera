@@ -14,6 +14,7 @@ import { TimeWindowPolicyCard } from "./evm/time-window";
 import { PolicyDialog } from "./policy-dialog";
 
 type SessionKeyPolicyInput = CreateSessionKeyFormInput["policies"][number];
+type TimeWindowPolicyInput = Extract<SessionKeyPolicyInput, { readonly type: "evm.time-window" }>;
 type PolicyNamespace = "eip155";
 const emptyPolicies: ReadonlyArray<SessionKeyPolicyInput> = [];
 
@@ -81,15 +82,17 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
         </DashboardCardRoot>
       ) : (
         <div className="grid gap-3">
-          {policies.map((policy, index) => (
-            <TimeWindowPolicyCard
-              index={index}
-              key={policy.type}
-              policy={policy}
-              onChange={handleChange}
-              onRemove={handleRemove}
-            />
-          ))}
+          {policies.map((policy, index) =>
+            policy.type === "evm.time-window" ? (
+              <TimeWindowPolicyCard
+                index={index}
+                key={policy.type}
+                policy={policy as TimeWindowPolicyInput}
+                onChange={handleChange}
+                onRemove={handleRemove}
+              />
+            ) : null,
+          )}
         </div>
       )}
     </section>

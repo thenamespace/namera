@@ -6,6 +6,7 @@ import { createInsertSchema } from "#/model/helpers";
 
 import {
   ApiKeyCreatedNotificationPayload,
+  ExecutionConfirmedNotificationPayload,
   InvitationReceivedNotificationPayload,
   NewSignInNotificationPayload,
   SessionKeyCreatedNotificationPayload,
@@ -30,6 +31,7 @@ export const InvitationReceivedNotification = notification(InvitationReceivedNot
 export const WalletCreatedNotification = notification(WalletCreatedNotificationPayload);
 export const SessionKeyCreatedNotification = notification(SessionKeyCreatedNotificationPayload);
 export const ApiKeyCreatedNotification = notification(ApiKeyCreatedNotificationPayload);
+export const ExecutionConfirmedNotification = notification(ExecutionConfirmedNotificationPayload);
 
 export const Notification = Schema.Union([
   NewSignInNotification,
@@ -37,6 +39,7 @@ export const Notification = Schema.Union([
   WalletCreatedNotification,
   SessionKeyCreatedNotification,
   ApiKeyCreatedNotification,
+  ExecutionConfirmedNotification,
 ]);
 
 export const NotificationInsert = createInsertSchema(

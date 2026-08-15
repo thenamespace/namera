@@ -19,6 +19,12 @@ export const resetTestState = Effect.fn("server.resetTestState")(function* () {
   yield* database.reset;
   yield* emails.clear;
   yield* authToken.clear;
+  yield* authToken.clearApiKey;
+});
+
+export const setApiKey = Effect.fn("server.setApiKey")(function* (apiKey?: string) {
+  const authToken = yield* TestAuthToken;
+  yield* apiKey === undefined ? authToken.clearApiKey : authToken.setApiKey(apiKey);
 });
 
 export const setAuthToken = Effect.fn("server.setAuthToken")(function* (token?: string) {

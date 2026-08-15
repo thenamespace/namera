@@ -10,6 +10,7 @@ import { policyCatalog, policyDefinitions, type PolicyNamespace } from "./data";
 import { TimeWindowPolicyEditor } from "./evm/time-window";
 
 type SessionKeyPolicyInput = CreateSessionKeyFormInput["policies"][number];
+type AvailablePolicyType = keyof typeof policyDefinitions;
 
 const timeWindowFormId = "add-time-window-policy-form";
 
@@ -21,7 +22,7 @@ type PolicyDialogProps = {
 
 export function PolicyDialog({ existingPolicyTypes, namespace, onAdd }: PolicyDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState<SessionKeyPolicyInput["type"] | null>(null);
+  const [selectedPolicy, setSelectedPolicy] = useState<AvailablePolicyType | null>(null);
   const policies = namespace ? policyCatalog[namespace] : [];
   const selectedDefinition = selectedPolicy ? policyDefinitions[selectedPolicy] : null;
   const handleOpenChange = useEventCallback((open: boolean) => {

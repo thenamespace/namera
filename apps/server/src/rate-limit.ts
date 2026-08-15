@@ -47,6 +47,13 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  execution: {
+    byApiKey: {
+      limit: 120,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+  },
   rpc: {
     byIp: {
       limit: 600,

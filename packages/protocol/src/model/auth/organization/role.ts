@@ -32,6 +32,7 @@ export const MemberPermission = Schema.Literals([
   "api-key:read",
   "api-key:create",
   "api-key:revoke",
+  "execution:read",
 ]);
 
 export const OrganizationRoleMetadata = Schema.Struct({

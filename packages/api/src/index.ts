@@ -3,6 +3,7 @@ import { HttpApi, OpenApi } from "effect/unstable/httpapi";
 import {
   ApiKeyGroup,
   BillingGroup,
+  ExecutionGroup,
   HealthGroup,
   InvitationGroup,
   MagicLinkGroup,
@@ -21,6 +22,7 @@ export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     ApiKeyGroup,
     BillingGroup,
+    ExecutionGroup,
     HealthGroup,
     InvitationGroup,
     MagicLinkGroup,

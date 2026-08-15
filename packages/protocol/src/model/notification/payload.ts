@@ -1,7 +1,14 @@
 import { Schema } from "effect";
 
-import { ApiKeyId, InvitationId, SessionId, SessionKeyId, WalletId } from "#/common/index";
-import { EthereumAddress } from "#/evm/index";
+import {
+  ApiKeyId,
+  ExecutionId,
+  InvitationId,
+  SessionId,
+  SessionKeyId,
+  WalletId,
+} from "#/common/index";
+import { EthereumAddress, SupportedEvmChainId, TransactionHash } from "#/evm/index";
 import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
 
 const NewSignInNotificationType = Schema.Literal("auth.new-sign-in");
@@ -9,6 +16,7 @@ const InvitationReceivedNotificationType = Schema.Literal("organization.invitati
 const WalletCreatedNotificationType = Schema.Literal("wallet.created");
 const SessionKeyCreatedNotificationType = Schema.Literal("session_key.created");
 const ApiKeyCreatedNotificationType = Schema.Literal("api_key.created");
+const ExecutionConfirmedNotificationType = Schema.Literal("execution.confirmed");
 
 export const NotificationType = Schema.Union([
   NewSignInNotificationType,
@@ -16,6 +24,7 @@ export const NotificationType = Schema.Union([
   WalletCreatedNotificationType,
   SessionKeyCreatedNotificationType,
   ApiKeyCreatedNotificationType,
+  ExecutionConfirmedNotificationType,
 ]);
 
 export const NewSignInNotificationPayload = Schema.Struct({
@@ -72,12 +81,25 @@ export const ApiKeyCreatedNotificationPayload = Schema.Struct({
   }),
 });
 
+export const ExecutionConfirmedNotificationPayload = Schema.Struct({
+  type: ExecutionConfirmedNotificationType,
+  resourceType: Schema.Literal("execution"),
+  resourceId: ExecutionId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    namespace: Schema.Literal("eip155"),
+    chainId: SupportedEvmChainId,
+    transactionHash: TransactionHash,
+  }),
+});
+
 export const NotificationPayload = Schema.Union([
   NewSignInNotificationPayload,
   InvitationReceivedNotificationPayload,
   WalletCreatedNotificationPayload,
   SessionKeyCreatedNotificationPayload,
   ApiKeyCreatedNotificationPayload,
+  ExecutionConfirmedNotificationPayload,
 ]);
 
 export type NotificationPayload = typeof NotificationPayload.Type;

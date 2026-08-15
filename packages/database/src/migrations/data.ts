@@ -35,6 +35,8 @@ const apiKeyPermissions = [
   "api-key:revoke",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
+const executionPermissions = ["execution:read"] as const satisfies ReadonlyArray<MemberPermission>;
+
 export const systemRoles = [
   {
     key: "owner",
@@ -62,6 +64,7 @@ export const systemRoles = [
       ...walletPermissions,
       ...sessionKeyPermissions,
       ...apiKeyPermissions,
+      ...executionPermissions,
     ],
   },
   {
@@ -78,6 +81,7 @@ export const systemRoles = [
       "wallet:read",
       "session-key:read",
       "api-key:read",
+      ...executionPermissions,
     ],
   },
 ] as const satisfies ReadonlyArray<SystemRoleInsert>;
