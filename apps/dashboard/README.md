@@ -41,10 +41,9 @@ Workspace package imports continue to use their package names.
   user whose email does not match the invitation is logged out before being sent
   through the same sign-in flow.
 - `/oauth/authorize?requestId=...` is the sidebar-free MCP OAuth consent flow.
-  It preserves the full URL through sign-in, displays client identity and the
-  exact redirect URI, marks dynamically registered clients as unverified, and
-  requires an explicit active-session-key selection before approval. Remote
-  logos are not loaded for unverified dynamic clients.
+  It preserves the full URL through sign-in, displays supplied client identity,
+  presents scopes and compact copyable protocol details, and requires an explicit
+  active-session-key selection before approval.
 
 The shared auth layout prefetches the current user and redirects an already
 authenticated browser to `/`.

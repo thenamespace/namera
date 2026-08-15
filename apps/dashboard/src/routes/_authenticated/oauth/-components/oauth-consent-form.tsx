@@ -31,6 +31,8 @@ import {
   useDenyOAuthAuthorizationRequest,
 } from "@/hooks/auth";
 
+import { OAuthClientDetails } from "./oauth-client-details";
+
 type OAuthConsentFormProps = {
   canAuthorize: boolean;
   organizationId: OrganizationId;
@@ -112,20 +114,11 @@ export function OAuthConsentForm({
             )}
           </div>
 
-          <div className="bg-surface-secondary mt-6 grid gap-3 rounded-lg px-4 py-3 text-sm">
-            <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
-              <span className="text-content-tertiary">Client ID</span>
-              <span className="min-w-0 break-all">{request.client.clientId}</span>
-            </div>
-            <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
-              <span className="text-content-tertiary">Access</span>
-              <span className="min-w-0 break-words">{request.requestedScopes.join(", ")}</span>
-            </div>
-            <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
-              <span className="text-content-tertiary">Redirect URI</span>
-              <span className="min-w-0 break-all">{request.redirectUri}</span>
-            </div>
-          </div>
+          <OAuthClientDetails
+            clientId={request.client.clientId}
+            redirectUri={request.redirectUri}
+            scopes={request.requestedScopes}
+          />
 
           {canAuthorize ? (
             <FieldGroup className="mt-7">
