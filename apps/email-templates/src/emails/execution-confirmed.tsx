@@ -1,12 +1,12 @@
 // oxlint-disable react-perf/jsx-no-jsx-as-prop
 import type { ExecutionConfirmedEmailVariables } from "@namera-ai/protocol/model";
-import { ChainIcon } from "@namera-ai/ui/chain-icon";
-import { Link } from "react-email";
+import { Img, Link } from "react-email";
 
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
+import { emailAssets } from "../data.js";
 import { NameraEmail } from "../provider.js";
 
 export type ExecutionConfirmedEmailProps = ExecutionConfirmedEmailVariables;
@@ -34,12 +34,11 @@ export const ExecutionConfirmedEmail = ({
               label="Chain"
               value={
                 <>
-                  <ChainIcon
-                    aria-label={chainName}
-                    chain={chainIcon}
+                  <Img
+                    alt={chainName}
                     className="mr-2 inline-block align-middle"
                     height={20}
-                    namespace="eip155"
+                    src={emailAssets.chains[chainIcon]}
                     width={20}
                   />
                   <span className="align-middle">{chainName}</span>

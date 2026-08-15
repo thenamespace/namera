@@ -12,6 +12,8 @@ to the matching Resend templates used by `@namera-ai/emails`.
 - `src/provider.tsx` — shared document, font, Tailwind, and color-scheme setup.
 - `src/theme.ts` — light and dark email color tokens.
 - `src/fonts.tsx` — hosted Inter font declarations with system fallbacks.
+- `script/generate-assets.tsx` — renders email-safe PNGs from canonical SVG
+  sources into the gitignored root `assets/email-assets/` directory.
 
 ## Usage
 
@@ -23,12 +25,19 @@ pnpm --filter @namera-ai/email-templates email:dev
 
 The preview is available at `http://localhost:4000`.
 
+Generate the PNG assets before uploading them to the configured CDN:
+
+```sh
+pnpm --filter @namera-ai/email-templates email:assets
+```
+
 ## Template guidelines
 
 - Type template props from the corresponding protocol email variables.
-- Use React Email components and primitives from `src/components`; do not import
-  browser UI controls. The pure SVG `@namera-ai/ui/chain-icon` entry point is
-  intentionally supported for shared chain branding.
+- Use React Email components and primitives from `src/components`; do not embed
+  SVG because major email clients do not support it consistently. Generate PNGs
+  from the canonical UI icons, upload `assets/email-assets/` without changing
+  its paths, then update `emailAssetCdnBaseUrl` in `src/data.ts`.
 - Use semantic colors from `src/theme.ts` and provide both light and dark styles.
 - Keep transactional copy concise and always include a safe fallback when the
   primary action is a link.
@@ -44,4 +53,5 @@ The preview is available at `http://localhost:4000`.
 - `api-key-created` — API-key creation and authorization summary.
 - `execution-confirmed` — confirmed onchain execution receipt.
 
-Update the placeholder footer destinations in `src/data.ts` before publishing.
+Update the placeholder CDN base URL and footer destinations in `src/data.ts`
+before publishing.

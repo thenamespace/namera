@@ -28,6 +28,7 @@
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
+    "email:assets": "tsx --tsconfig ../../packages/ui/tsconfig.json script/generate-assets.tsx",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
     "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
     "lint": "oxlint . --no-error-on-unmatched-pattern",
@@ -38,19 +39,21 @@
   },
   "dependencies": {
     "@namera-ai/protocol": "workspace:*",
-    "@namera-ai/ui": "workspace:*",
     "effect": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-email": "6.9.2"
   },
   "devDependencies": {
+    "@namera-ai/ui": "workspace:*",
     "@react-email/ui": "6.9.2",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "klarity": "catalog:",
+    "sharp": "0.35.3",
     "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

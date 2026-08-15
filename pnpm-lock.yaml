@@ -309,9 +309,6 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@namera-ai/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
@@ -325,6 +322,9 @@ importers:
         specifier: 6.9.2
         version: 6.9.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
+      '@namera-ai/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@react-email/ui':
         specifier: 6.9.2
         version: 6.9.2(@babel/core@7.29.7)(@types/node@26.1.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -340,9 +340,15 @@ importers:
       klarity:
         specifier: 'catalog:'
         version: 0.2.0(@commitlint/cli@21.2.1(@types/node@26.1.2)(conventional-commits-parser@7.1.2)(typescript@6.0.3))(@commitlint/config-conventional@21.2.0)(lefthook@2.1.10)(oxfmt@0.62.0)(oxlint@1.76.0)(publint@0.3.23)(tsdown@0.22.14(@arethetypeswrong/core@0.18.5)(publint@0.3.23)(tsx@4.23.1)(typescript@6.0.3))(turbo@2.10.8)(typescript@6.0.3)(vitest@4.1.10(@types/node@26.1.2)(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)))
+      sharp:
+        specifier: 0.35.3
+        version: 0.35.3(@types/node@26.1.2)
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(@arethetypeswrong/core@0.18.5)(publint@0.3.23)(tsx@4.23.1)(typescript@6.0.3)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -7075,8 +7081,7 @@ snapshots:
     dependencies:
       react: 19.2.8
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.35.3':
     optionalDependencies:
@@ -11256,7 +11261,6 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.3
       '@img/sharp-win32-x64': 0.35.3
       '@types/node': 26.1.2
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
