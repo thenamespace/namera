@@ -1,7 +1,8 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { Evm, createWalletKeyWebAuthnAccount } from "@namera-ai/evm";
+import { formatEmailEvmAddress } from "@namera-ai/emails";
+import { Evm, createWalletKeyWebAuthnAccount, getChainDataByChainId } from "@namera-ai/evm";
 import {
   WalletCreationError,
   WalletKeyId,
@@ -150,6 +151,13 @@ export const makeWalletApplication = Effect.gen(function* () {
               ),
             );
 
+    const derivationChain = getChainDataByChainId(walletPolicy.eip155.derivationChainId);
+    const blockExplorerUrl = derivationChain?.chain.blockExplorers?.default.url;
+    if (blockExplorerUrl === undefined) {
+      return yield* Effect.die("Wallet derivation chain block explorer is missing");
+    }
+    const addressUrl = `${blockExplorerUrl.replace(/\/$/, "")}/address/${account.address}`;
+
     const result = yield* transaction
       .run(
         Effect.gen(function* () {
@@ -260,7 +268,8 @@ export const makeWalletApplication = Effect.gen(function* () {
                   variables: {
                     walletName: wallet.metadata.name,
                     organizationName: organization.metadata.name,
-                    address: account.address,
+                    addressDisplay: formatEmailEvmAddress(account.address),
+                    addressUrl,
                     implementationName: account.implementation === "kernel" ? "Kernel" : "Safe",
                     protectionLevelName: walletKey.protectionLevel === "hsm" ? "HSM" : "Software",
                   },

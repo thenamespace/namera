@@ -105,6 +105,8 @@ layer(TestServerLayer)("wallet routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         walletName: "Operations",
+        addressDisplay: "0x222222…222222",
+        addressUrl: "https://etherscan.io/address/0x2222222222222222222222222222222222222222",
         implementationName: "Safe",
         protectionLevelName: "Software",
       });

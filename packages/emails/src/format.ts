@@ -20,5 +20,8 @@ export const formatEmailCount = (count: number, singular: string, plural: string
 export const formatEmailTransactionHash = (hash: string) =>
   `${hash.slice(0, 10)}…${hash.slice(-8)}`;
 
+export const formatEmailEvmAddress = (address: string) =>
+  `${address.slice(0, 8)}…${address.slice(-6)}`;
+
 export const getEmailChainIconUrl = (chain: EvmChainName) =>
   `https://cdn.namera.ai/email-assets/chains/${chain}.png`;

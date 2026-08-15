@@ -56,7 +56,8 @@ export const OrganizationInvitationEmailVariables = Schema.Struct({
 export const WalletCreatedEmailVariables = Schema.Struct({
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
-  address: NonEmptyString,
+  addressDisplay: NonEmptyString,
+  addressUrl: NonEmptyString,
   implementationName: NonEmptyString,
   protectionLevelName: NonEmptyString,
 });
