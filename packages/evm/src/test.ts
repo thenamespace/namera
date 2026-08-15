@@ -1,0 +1,61 @@
+import { Effect, Schema } from "effect";
+
+import { EthereumAddress, UnsupportedChainError } from "@namera-ai/protocol";
+
+import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
+import { getChainDataByChainId } from "./chains/helpers.js";
+import { makeTestEvmExecutionService } from "./execution/test.js";
+import type { EvmExecutionService } from "./execution/types.js";
+import type { EvmService } from "./layer.js";
+import { makeEvmPolicyService } from "./policy/service.js";
+
+export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
+  readonly execution?: Partial<EvmExecutionService>;
+};
+
+export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => {
+  const { execution, ...serviceOverrides } = options;
+
+  return {
+    createAccount: Effect.fn("evm.test.createAccount")(
+      <const Props extends CreateAccountProps>(props: Props) => {
+        if (props.implementation === "kernel") {
+          return Effect.succeed({
+            version: 1,
+            implementation: "kernel",
+            kernelVersion: props.kernelVersion,
+            entryPointVersion: props.entryPointVersion,
+            validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
+            accountIndex: props.accountIndex,
+            address: Schema.decodeSync(EthereumAddress)(
+              "0x1111111111111111111111111111111111111111",
+            ),
+          } as CreateAccountResult<Props>);
+        }
+
+        return Effect.succeed({
+          version: 1,
+          implementation: "safe",
+          safeVersion: props.safeVersion,
+          entryPointVersion: props.entryPointVersion,
+          validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
+          saltNonce: props.saltNonce,
+          address: Schema.decodeSync(EthereumAddress)("0x2222222222222222222222222222222222222222"),
+        } as CreateAccountResult<Props>);
+      },
+    ),
+    getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
+      if (getChainDataByChainId(chainId) === undefined) {
+        return yield* new UnsupportedChainError({
+          namespace: "eip155",
+          chainId: `eip155:${chainId}`,
+        });
+      }
+
+      return `https://example.test/${chainId}/${type}`;
+    }),
+    execution: makeTestEvmExecutionService(execution),
+    policy: makeEvmPolicyService(),
+    ...serviceOverrides,
+  };
+};

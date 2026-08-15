@@ -11,7 +11,9 @@ import { entryPoint07Address } from "viem/account-abstraction";
 
 import type { EvmExecutionService } from "./types.js";
 
-export const makeTestEvmExecutionService = (): EvmExecutionService => {
+export const makeTestEvmExecutionService = (
+  overrides: Partial<EvmExecutionService> = {},
+): EvmExecutionService => {
   const entryPoint = EthereumAddress.make(entryPoint07Address);
   const userOperationHash = UserOperationHash.make(`0x${"1".repeat(64)}`);
   const receipt = {
@@ -64,7 +66,14 @@ export const makeTestEvmExecutionService = (): EvmExecutionService => {
             },
             paymaster: null,
           },
-          simulation: null,
+          simulation: {
+            source: "eth_estimateUserOperationGas",
+            callGasLimit: 0n,
+            verificationGasLimit: 0n,
+            preVerificationGas: 0n,
+            paymasterVerificationGasLimit: 0n,
+            paymasterPostOpGasLimit: 0n,
+          },
         },
         userOperation: {
           sender: input.account.wallet.address,
@@ -119,5 +128,6 @@ export const makeTestEvmExecutionService = (): EvmExecutionService => {
         }),
       ),
     ),
+    ...overrides,
   };
 };

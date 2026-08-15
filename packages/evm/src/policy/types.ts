@@ -1,13 +1,77 @@
 import type { Effect } from "effect";
 
-import type { EvmIntentContext, EvmPolicyDecision } from "@namera-ai/protocol";
-import type { EvmSessionKeyPolicies } from "@namera-ai/protocol/model";
+import type {
+  EvmExecutionReceipt,
+  EvmIntentContext,
+  EvmPolicyDecision,
+  EvmPolicyError,
+  PolicyId,
+} from "@namera-ai/protocol";
+import type {
+  EvmSessionKeyPolicies,
+  SessionKeyPolicyReservation,
+  SessionKeyPolicyState,
+} from "@namera-ai/protocol/model";
 
 export type EvaluateEvmPoliciesInput = {
   readonly policies: EvmSessionKeyPolicies;
   readonly context: EvmIntentContext;
 };
 
+export type EvmPolicyStateInput = Pick<SessionKeyPolicyState, "policyId" | "stateKey" | "data">;
+
+export type EvmPolicyReservationInput = Pick<
+  SessionKeyPolicyReservation,
+  "policyId" | "stateKey" | "data"
+>;
+
+export type EvmPolicyStateChange = {
+  readonly policyId: PolicyId;
+  readonly stateKey: string;
+  readonly stateVersion: number;
+  readonly data: SessionKeyPolicyState["data"];
+};
+
+export type EvmPolicyReservationPlan = {
+  readonly policyId: PolicyId;
+  readonly stateKey: string;
+  readonly reservationVersion: number;
+  readonly data: SessionKeyPolicyReservation["data"];
+};
+
+export type ReserveEvmPoliciesInput = EvaluateEvmPoliciesInput & {
+  readonly states: ReadonlyArray<EvmPolicyStateInput>;
+};
+
+export type ReserveEvmPoliciesResult = {
+  readonly decision: EvmPolicyDecision;
+  readonly stateChanges: ReadonlyArray<EvmPolicyStateChange>;
+  readonly reservations: ReadonlyArray<EvmPolicyReservationPlan>;
+};
+
+type CompleteEvmPolicyOperationInput = {
+  readonly policies: EvmSessionKeyPolicies;
+  readonly states: ReadonlyArray<EvmPolicyStateInput>;
+  readonly reservations: ReadonlyArray<EvmPolicyReservationInput>;
+};
+
+export type SettleEvmPoliciesInput = CompleteEvmPolicyOperationInput & {
+  readonly result: Extract<EvmExecutionReceipt, { readonly success: true }>;
+};
+
+export type ReleaseEvmPoliciesInput = CompleteEvmPolicyOperationInput;
+
 export interface EvmPolicyService {
-  readonly evaluate: (input: EvaluateEvmPoliciesInput) => Effect.Effect<EvmPolicyDecision>;
+  readonly evaluate: (
+    input: EvaluateEvmPoliciesInput,
+  ) => Effect.Effect<EvmPolicyDecision, EvmPolicyError>;
+  readonly reserve: (
+    input: ReserveEvmPoliciesInput,
+  ) => Effect.Effect<ReserveEvmPoliciesResult, EvmPolicyError>;
+  readonly settle: (
+    input: SettleEvmPoliciesInput,
+  ) => Effect.Effect<ReadonlyArray<EvmPolicyStateChange>, EvmPolicyError>;
+  readonly release: (
+    input: ReleaseEvmPoliciesInput,
+  ) => Effect.Effect<ReadonlyArray<EvmPolicyStateChange>, EvmPolicyError>;
 }

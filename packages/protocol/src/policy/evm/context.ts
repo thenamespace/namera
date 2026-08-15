@@ -33,29 +33,13 @@ export const EvmIntentUserOperation = Schema.Struct({
   paymaster: Schema.NullOr(EthereumAddress),
 });
 
-export const EvmIntentSimulationCall = Schema.Struct({
-  index: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  status: Schema.Literals(["success", "failure"]),
-  gasUsed: NonNegativeEvmQuantity,
-  data: Hex,
-});
-
-export const EvmIntentAssetChange = Schema.Struct({
-  token: Schema.Struct({
-    address: EthereumAddress,
-    decimals: Schema.NullOr(Schema.Int),
-    symbol: Schema.NullOr(Schema.String),
-  }),
-  value: Schema.Struct({
-    before: NonNegativeEvmQuantity,
-    after: NonNegativeEvmQuantity,
-    difference: Schema.BigInt,
-  }),
-});
-
 export const EvmIntentSimulation = Schema.Struct({
-  calls: Schema.Array(EvmIntentSimulationCall),
-  assetChanges: Schema.Array(EvmIntentAssetChange),
+  source: Schema.Literal("eth_estimateUserOperationGas"),
+  callGasLimit: NonNegativeEvmQuantity,
+  verificationGasLimit: NonNegativeEvmQuantity,
+  preVerificationGas: NonNegativeEvmQuantity,
+  paymasterVerificationGasLimit: NonNegativeEvmQuantity,
+  paymasterPostOpGasLimit: NonNegativeEvmQuantity,
 });
 
 export const EvmIntentContext = Schema.Struct({
@@ -66,7 +50,7 @@ export const EvmIntentContext = Schema.Struct({
   block: EvmIntentBlock,
   calls: Schema.Array(EvmIntentCall),
   userOperation: EvmIntentUserOperation,
-  simulation: Schema.NullOr(EvmIntentSimulation),
+  simulation: EvmIntentSimulation,
 }).annotate({
   identifier: "EvmIntentContext",
   description: "A normalized EVM execution intent evaluated by offchain policies",
@@ -76,7 +60,5 @@ export type EvmIntentCall = typeof EvmIntentCall.Type;
 export type EvmIntentBlock = typeof EvmIntentBlock.Type;
 export type EvmIntentGas = typeof EvmIntentGas.Type;
 export type EvmIntentUserOperation = typeof EvmIntentUserOperation.Type;
-export type EvmIntentSimulationCall = typeof EvmIntentSimulationCall.Type;
-export type EvmIntentAssetChange = typeof EvmIntentAssetChange.Type;
 export type EvmIntentSimulation = typeof EvmIntentSimulation.Type;
 export type EvmIntentContext = typeof EvmIntentContext.Type;

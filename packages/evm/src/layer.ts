@@ -1,6 +1,6 @@
-import { Context, Effect, Layer, Redacted, Schema } from "effect";
+import { Context, Effect, Layer, Redacted } from "effect";
 
-import { EthereumAddress, UnsupportedChainError } from "@namera-ai/protocol";
+import { UnsupportedChainError } from "@namera-ai/protocol";
 import type { EvmAccountCreationError } from "@namera-ai/protocol";
 
 import {
@@ -11,10 +11,10 @@ import {
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { EvmConfig } from "./config.js";
 import { makeEvmExecutionService } from "./execution/service.js";
-import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
+import { makeEvmTestService, type EvmTestOptions } from "./test.js";
 
 export type EvmRpcType = "public" | "bundler" | "paymaster";
 
@@ -63,50 +63,8 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
 
   static readonly devLayer = Evm.layer;
 
-  static readonly testLayer = Layer.succeed(
-    Evm,
-    Evm.of({
-      createAccount: Effect.fn("evm.test.createAccount")(
-        <const Props extends CreateAccountProps>(props: Props) => {
-          if (props.implementation === "kernel") {
-            return Effect.succeed({
-              version: 1,
-              implementation: "kernel",
-              kernelVersion: props.kernelVersion,
-              entryPointVersion: props.entryPointVersion,
-              validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
-              accountIndex: props.accountIndex,
-              address: Schema.decodeSync(EthereumAddress)(
-                "0x1111111111111111111111111111111111111111",
-              ),
-            } as CreateAccountResult<Props>);
-          }
+  static readonly testLayerWith = (options: EvmTestOptions = {}) =>
+    Layer.succeed(Evm, Evm.of(makeEvmTestService(options)));
 
-          return Effect.succeed({
-            version: 1,
-            implementation: "safe",
-            safeVersion: props.safeVersion,
-            entryPointVersion: props.entryPointVersion,
-            validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
-            saltNonce: props.saltNonce,
-            address: Schema.decodeSync(EthereumAddress)(
-              "0x2222222222222222222222222222222222222222",
-            ),
-          } as CreateAccountResult<Props>);
-        },
-      ),
-      getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
-        if (getChainDataByChainId(chainId) === undefined) {
-          return yield* new UnsupportedChainError({
-            namespace: "eip155",
-            chainId: `eip155:${chainId}`,
-          });
-        }
-
-        return `https://example.test/${chainId}/${type}`;
-      }),
-      execution: makeTestEvmExecutionService(),
-      policy: makeEvmPolicyService(),
-    }),
-  );
+  static readonly testLayer = Evm.testLayerWith();
 }

@@ -142,11 +142,12 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
         return yield* new SessionKeyCreationError({ code: "WALLET_NAMESPACE_MISMATCH" });
       }
 
-      const policies: EvmSessionKeyPolicies = input.request.policies.map((policy) => ({
+      const policies = input.request.policies.map((policy) => ({
         ...policy,
         id: Schema.decodeSync(PolicyId)(generateUniqueId()),
-      }));
+      })) satisfies EvmSessionKeyPolicies;
       const policyHash = yield* hashSessionKeyPolicies(crypto, policies);
+      const policyTypes = policies.map((policy) => policy.type);
       const effectiveExpiry = policies
         .map((policy) => policy.expiresAt)
         .reduce((earliest, expiresAt) =>
@@ -176,7 +177,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
               version: 1,
               walletId: created.walletId,
               namespace: created.namespace,
-              policyTypes: created.policies.map((policy) => policy.type),
+              policyTypes,
             },
           });
           const organization = yield* repository.auth.organization.findById(input.organizationId);
@@ -204,7 +205,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
               version: 1,
               walletId: created.walletId,
               namespace: created.namespace,
-              policyTypes: created.policies.map((policy) => policy.type),
+              policyTypes,
             },
             idempotencyKey: `notification:session_key.created:${created.id}`,
             correlationId: event.correlationId,

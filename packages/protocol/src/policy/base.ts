@@ -28,6 +28,7 @@ export abstract class PolicyHandler<
     states: ReadonlyMap<string, State>,
   ) => Effect.Effect<
     {
+      readonly decision: Decision;
       readonly states: ReadonlyMap<string, State>;
       readonly reservations: ReadonlyMap<string, Reservation>;
     },

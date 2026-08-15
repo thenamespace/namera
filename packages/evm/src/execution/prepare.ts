@@ -6,6 +6,7 @@ import {
   EvmSerializedUserOperation,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
+import { UserOperationExecutionError } from "viem/account-abstraction";
 
 import { reconstructEvmAccount } from "../accounts/reconstruct.js";
 import type { ChainData } from "../chains/data.js";
@@ -26,19 +27,29 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
 
     const clients = getClients(chain);
     const account = yield* reconstructEvmAccount(input.account, clients.publicClient);
-    const prepared = yield* Effect.tryPromise({
-      try: async () => {
-        const userOperation = await clients.bundlerClient.prepareUserOperation({
-          account,
-          calls: input.calls,
-        });
-        const block = await clients.publicClient.getBlock();
-        return { userOperation, block };
-      },
+    const userOperation = yield* Effect.tryPromise({
+      try: () => clients.bundlerClient.prepareUserOperation({ account, calls: input.calls }),
+      catch: (cause) =>
+        new EvmExecutionError({
+          code:
+            cause instanceof UserOperationExecutionError
+              ? "SIMULATION_FAILED"
+              : "PREPARATION_FAILED",
+          cause,
+        }),
+    });
+    const simulation = yield* Effect.tryPromise({
+      try: () =>
+        clients.bundlerClient.estimateUserOperationGas({
+          ...userOperation,
+          entryPointAddress: account.entryPoint.address,
+        }),
+      catch: (cause) => new EvmExecutionError({ code: "SIMULATION_FAILED", cause }),
+    });
+    const block = yield* Effect.tryPromise({
+      try: () => clients.publicClient.getBlock(),
       catch: (cause) => new EvmExecutionError({ code: "PREPARATION_FAILED", cause }),
     });
-
-    const { userOperation, block } = prepared;
     const normalizedUserOperation = yield* normalizeEvmUserOperation(userOperation);
     const encodedUserOperation = yield* Schema.encodeEffect(EvmSerializedUserOperation)(
       normalizedUserOperation,
@@ -76,7 +87,14 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
           },
           paymaster: userOperation.paymaster ?? null,
         },
-        simulation: null,
+        simulation: {
+          source: "eth_estimateUserOperationGas",
+          callGasLimit: simulation.callGasLimit,
+          verificationGasLimit: simulation.verificationGasLimit,
+          preVerificationGas: simulation.preVerificationGas,
+          paymasterVerificationGasLimit: simulation.paymasterVerificationGasLimit ?? 0n,
+          paymasterPostOpGasLimit: simulation.paymasterPostOpGasLimit ?? 0n,
+        },
       },
       userOperation: encodedUserOperation,
     }).pipe(

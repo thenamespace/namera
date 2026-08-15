@@ -14,8 +14,8 @@ evaluation behind one root `Evm` service.
   wallet-key owner construction.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
   receipt operations exposed through `evm.execution`.
-- `src/policy/` — exhaustive EVM policy registry and handlers exposed through
-  `evm.policy`.
+- `src/policy/` — exhaustive EVM policy registry and lifecycle service;
+  individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
@@ -77,10 +77,18 @@ the exact signed payload to Pimlico. `getReceipt` and `waitForReceipt` normalize
 confirmed receipts and return `Option.none` while a receipt is unavailable or a
 bounded wait expires.
 
-`evm.policy.evaluate` evaluates one complete decoded EVM policy set against the
-prepared intent context and returns the first denial or an allowed decision.
-The initial `evm.time-window` handler uses the prepared block timestamp with an
-inclusive start and exclusive expiration.
+`evm.policy` evaluates one complete decoded EVM policy set and owns its
+`reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
+uses the prepared block timestamp with an inclusive start and exclusive
+expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
+CAIP-2 chain so concurrent executions cannot consume the same allowance. Each
+handler owns the schemas used to decode persisted state and reservations.
 
-`Evm.testLayer` supplies deterministic Kernel and Safe account results for
-server boundary tests while preserving the public discriminated result shapes.
+Preparation records the standardized `eth_estimateUserOperationGas` result in
+the policy context. This verifies EntryPoint validation and execution before
+signing; the adapter does not claim provider-specific token balance changes.
+
+`Evm.testLayer` supplies a deterministic adapter for server boundary tests.
+Use `Evm.testLayerWith({ execution: { ... } })` to override only the behavior a
+test needs while retaining the real policy registry and the rest of the
+deterministic execution lifecycle.

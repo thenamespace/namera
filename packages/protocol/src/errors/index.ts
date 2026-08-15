@@ -5,6 +5,7 @@ export * from "./chain.js";
 export * from "./crypto.js";
 export * from "./email.js";
 export * from "./execution.js";
+export * from "./policy.js";
 export * from "./rate-limit.js";
 export * from "./session-key.js";
 export * from "./wallet.js";

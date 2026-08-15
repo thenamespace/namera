@@ -10,5 +10,17 @@ export type {
   WaitForEvmExecutionReceiptInput,
 } from "./execution/types.js";
 export * from "./layer.js";
-export type { EvaluateEvmPoliciesInput, EvmPolicyService } from "./policy/types.js";
+export type { EvmTestOptions } from "./test.js";
+export type {
+  EvaluateEvmPoliciesInput,
+  EvmPolicyReservationInput,
+  EvmPolicyReservationPlan,
+  EvmPolicyService,
+  EvmPolicyStateChange,
+  EvmPolicyStateInput,
+  ReleaseEvmPoliciesInput,
+  ReserveEvmPoliciesInput,
+  ReserveEvmPoliciesResult,
+  SettleEvmPoliciesInput,
+} from "./policy/types.js";
 export * from "./signatures/index.js";

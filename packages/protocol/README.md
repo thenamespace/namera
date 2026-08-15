@@ -66,10 +66,13 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Session keys belong to one wallet, are discriminated by chain namespace, and
   carry an immutable namespace-specific `policies` array.
   Each policy instance has a stable `PolicyId` so its handler can address typed
-  state and in-flight reservations. EVM session keys currently require at least
-  one `evm.time-window` policy. Its dates encode as ISO strings because policies
-  are JSON wire and persistence values; SQL timestamp columns continue using
-  date-backed schemas. Grants are
+  state and in-flight reservations. The EVM model supports stateless
+  `evm.time-window` and stateful `evm.native-spend-limit` policies. Time-window
+  dates encode as ISO strings, while native amounts encode as decimal strings,
+  because policies are JSON wire and persistence values. The current public
+  create-session-key DTO remains limited to time windows until the application
+  orchestration for stateful reservations is wired. SQL timestamp columns
+  continue using date-backed schemas. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
 - Execution submissions are mutable operational records discriminated by
@@ -82,8 +85,8 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   signed operations remain safe to store in JSONB and can be reconstructed
   exactly for submission or reconciliation.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
-  calls, the prepared UserOperation gas envelope, and optional call-simulation
-  results. Policy evaluation returns a typed allowed decision or the first
+  calls, the prepared UserOperation gas envelope, and the standardized bundler
+  gas-estimation simulation result. Policy evaluation returns a typed allowed decision or the first
   policy ID and bounded denial code. Keep Viem clients, provider errors,
   signatures, and raw provider responses outside this contract.
 - EVM chain contracts distinguish the stable supported-network key, the chain
