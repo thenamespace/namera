@@ -64,6 +64,13 @@ export const rateLimitPolicy = {
       algorithm: "token-bucket",
     },
   },
+  mcp: {
+    byAuthorization: {
+      limit: 240,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+  },
   sessionKey: {
     revokeByOrganization: {
       limit: 60,

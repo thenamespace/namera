@@ -1,13 +1,13 @@
 # MCP server and authorization design
 
-This document describes how to add an authorized Model Context Protocol server
-to the existing Namera HTTP server. It is an implementation plan, not a claim
-that the feature already exists.
+This document describes the authorized Model Context Protocol server integrated
+into the existing Namera HTTP server and records the remaining implementation
+work.
 
 ```text
 MCP resource:       https://api.namera.ai/mcp
 OAuth issuer:       https://api.namera.ai
-Dashboard consent:  https://dashboard.namera.ai/authorizations/:requestId
+Dashboard consent:  https://dashboard.namera.ai/oauth/authorize?requestId=...
 ```
 
 The MCP resource server, OAuth authorization server, API routes, workers, and
@@ -25,9 +25,11 @@ management reads/revocation, rate limits, bounded telemetry, organization audit
 events, in-app notifications, and server boundary tests. OAuth authorization
 does not send email.
 
-Client ID Metadata Documents, dynamic registration, bearer-token middleware,
-and the `/mcp` transport/tools remain intentionally deferred. Discovery does
-not advertise those unsupported capabilities.
+Bearer-token authentication and the Effect Streamable HTTP transport are mounted
+at `/mcp` using Effect's available `2025-06-18` protocol adapter. The initial
+read-only tool lists the active session-key grants delegated to the current MCP
+authorization. Client ID Metadata Documents and dynamic registration remain
+deferred and discovery does not advertise those unsupported capabilities.
 
 Here, “MCP 2.1 authorization” means MCP authorization built on OAuth 2.1; MCP
 itself uses date-based protocol revisions rather than a `2.1` version number.

@@ -10,6 +10,7 @@ database queries, HTTP handlers, provider SDKs, or application logic.
 - `src/model/` — persistence/domain models and insert/update schemas, including
   discriminated audit-event unions and provider-neutral durable jobs.
 - `src/dto/` — public API request and response schemas.
+- `src/dto/mcp.ts` — safe structured results returned by MCP tools.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
 - `src/errors/` — typed errors used across the project.
 - `src/policy/` — provider-neutral policy handler contracts and normalized

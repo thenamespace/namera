@@ -21,9 +21,11 @@ import {
   ApiRoutes,
   RootRoutes,
   OAuthProtocolRoutes,
+  McpRoutes,
   RpcRoutes,
   TelemetryRoutes,
 } from "#/routes/index";
+import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
@@ -56,13 +58,15 @@ const Routes = Layer.mergeAll(
       ),
     ),
   ),
+  McpRoutes.pipe(HttpRouter.provideRequest(Layer.mergeAll(ServicesLive, RateLimiterLive))),
   EmailWorkerLive,
   ExecutionWorkerLive,
 );
 
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
-  middleware: (httpEffect) => TelemetryMiddleware(RateLimitMiddleware(httpEffect)),
+  middleware: (httpEffect) =>
+    TelemetryMiddleware(RateLimitMiddleware(McpAuthorizationMiddleware(httpEffect))),
 }).pipe(
   Layer.provide(
     HttpMiddleware.layerTracerDisabledForUrls([
@@ -79,6 +83,7 @@ export const ServerLive = HttpRouter.serve(Routes, {
     ),
   ),
   Layer.provide(RateLimiterLive),
+  Layer.provide(ServicesLive),
   Layer.provide(TelemetryLive),
   Layer.provide(NodeServerLive),
 );

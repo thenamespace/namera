@@ -6,6 +6,7 @@ export * from "./execution.js";
 export * from "./reference.js";
 export * from "./root.js";
 export * from "./oauth.js";
+export * from "./mcp/index.js";
 export * from "./rpc.js";
 export * from "./session-key.js";
 export * from "./signature.js";
