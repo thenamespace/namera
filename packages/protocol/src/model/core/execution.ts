@@ -1,6 +1,11 @@
 import { Schema, Struct } from "effect";
 
-import { ExecutionId, OrganizationId, SessionKeyGrantId } from "#/common/index";
+import {
+  ExecutionId,
+  ExecutionSubmissionId,
+  OrganizationId,
+  SessionKeyGrantId,
+} from "#/common/index";
 import { SupportedEvmChainId, TransactionHash, UserOperationHash } from "#/evm/index";
 import { createInsertSchema } from "#/model/helpers";
 import { EvmIntentCall } from "#/policy/evm/index";
@@ -15,6 +20,7 @@ export const EvmExecutionData = Schema.Struct({
 
 const ExecutionCommon = Schema.Struct({
   id: ExecutionId,
+  executionSubmissionId: ExecutionSubmissionId,
   organizationId: OrganizationId,
   sessionKeyGrantId: SessionKeyGrantId,
   createdAt: Schema.DateTimeUtcFromDate,
@@ -31,6 +37,7 @@ export const Execution = Schema.Union([EvmExecution]);
 
 export const ExecutionInsert = createInsertSchema(
   Execution,
+  "executionSubmissionId",
   "organizationId",
   "sessionKeyGrantId",
   "namespace",

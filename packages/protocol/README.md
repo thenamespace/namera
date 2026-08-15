@@ -72,10 +72,11 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   date-backed schemas. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
-- Executions are append-only successful onchain records discriminated by
-  namespace. Namespace-specific JSON data contains the normalized calls and
-  network identifiers; rejected or failed pre-submission attempts are not
-  execution records.
+- Execution submissions are mutable operational records discriminated by
+  namespace. They preserve actor/grant authorization, idempotency, lifecycle,
+  and the namespace payload required for crash recovery. Executions reference
+  exactly one submission and remain append-only successful onchain records;
+  rejected or failed submissions are not execution records.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, and optional call-simulation
   results. Keep Viem clients, provider errors, signatures, and raw provider

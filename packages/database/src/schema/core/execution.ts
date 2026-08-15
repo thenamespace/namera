@@ -1,17 +1,24 @@
-import type { ExecutionId, OrganizationId, SessionKeyGrantId } from "@namera-ai/protocol";
+import type {
+  ExecutionId,
+  ExecutionSubmissionId,
+  OrganizationId,
+  SessionKeyGrantId,
+} from "@namera-ai/protocol";
 import type { Execution, ExecutionEncoded } from "@namera-ai/protocol/model";
-import { foreignKey, index, jsonb, text } from "drizzle-orm/pg-core";
+import { foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId } from "#/schema/common";
 
 import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
+import { executionSubmission } from "./execution-submission.js";
 import { sessionKeyGrant } from "./session-key-grant.js";
 
 export const execution = coreSchema.table(
   "execution",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<ExecutionId>(),
+    executionSubmissionId: text("execution_submission_id").notNull().$type<ExecutionSubmissionId>(),
     organizationId: text("organization_id")
       .notNull()
       .$type<OrganizationId>()
@@ -22,6 +29,16 @@ export const execution = coreSchema.table(
     createdAt: createTimestampField("created_at").defaultNow().notNull(),
   },
   (table) => [
+    unique("execution_submission_unique").on(table.executionSubmissionId),
+    foreignKey({
+      name: "execution_submission_match_fk",
+      columns: [table.executionSubmissionId, table.sessionKeyGrantId, table.organizationId],
+      foreignColumns: [
+        executionSubmission.id,
+        executionSubmission.sessionKeyGrantId,
+        executionSubmission.organizationId,
+      ],
+    }).onDelete("restrict"),
     foreignKey({
       name: "execution_session_key_grant_organization_fk",
       columns: [table.sessionKeyGrantId, table.organizationId],

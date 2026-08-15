@@ -222,13 +222,14 @@ reserved, submitted, settled, or released states. Policy handlers own decoding
 the JSON payloads; the database owns tenant isolation, uniqueness, and expiry
 lookup indexes.
 
-`core.execution` is an append-only record of a successful onchain execution.
-It references the exact session-key grant used for authorization and stores a
-namespace discriminator with typed namespace-specific JSON data. EVM execution
-data contains the normalized calls, chain ID, UserOperation hash, and transaction
-hash. Policy, simulation, signing, and submission failures do not create
-execution rows. Reservation execution IDs therefore remain correlation values
-and intentionally do not reference this table.
+`core.execution_submission` is mutable operational state for an actor's
+idempotent execution attempt. It references the exact session-key grant,
+preserves namespace-specific recovery data, and moves through reserved,
+prepared, submitted, confirmed, or failed states. `core.execution` references
+exactly one matching submission/grant/organization tuple and remains an
+append-only record created only for a successful onchain execution. EVM
+execution data contains normalized calls, chain ID, UserOperation hash, and
+transaction hash.
 
 ## Billing persistence
 

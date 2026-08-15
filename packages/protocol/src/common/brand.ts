@@ -29,6 +29,7 @@ export const SessionKeyGrantId = createBrandedId("SessionKeyGrantId");
 export const PolicyId = createBrandedId("PolicyId");
 export const SessionKeyPolicyStateId = createBrandedId("SessionKeyPolicyStateId");
 export const SessionKeyPolicyReservationId = createBrandedId("SessionKeyPolicyReservationId");
+export const ExecutionSubmissionId = createBrandedId("ExecutionSubmissionId");
 export const ExecutionId = createBrandedId("ExecutionId");
 
 // Audit Tables
@@ -64,6 +65,7 @@ export type SessionKeyGrantId = typeof SessionKeyGrantId.Type;
 export type PolicyId = typeof PolicyId.Type;
 export type SessionKeyPolicyStateId = typeof SessionKeyPolicyStateId.Type;
 export type SessionKeyPolicyReservationId = typeof SessionKeyPolicyReservationId.Type;
+export type ExecutionSubmissionId = typeof ExecutionSubmissionId.Type;
 export type ExecutionId = typeof ExecutionId.Type;
 export type UserEventId = typeof UserEventId.Type;
 export type OrganizationEventId = typeof OrganizationEventId.Type;

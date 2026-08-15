@@ -9,6 +9,7 @@ import {
   billingSubscription,
   emailJob,
   execution,
+  executionSubmission,
   invitation,
   notification,
   notificationPreference,
@@ -40,6 +41,7 @@ export const relations = defineRelations(
     billingSubscription,
     emailJob,
     execution,
+    executionSubmission,
     invitation,
     notification,
     notificationPreference,
@@ -98,6 +100,10 @@ export const relations = defineRelations(
       sessionKeyGrants: r.many.sessionKeyGrant({
         from: [r.actor.id, r.actor.organizationId],
         to: [r.sessionKeyGrant.actorId, r.sessionKeyGrant.organizationId],
+      }),
+      executionSubmissions: r.many.executionSubmission({
+        from: [r.actor.id, r.actor.organizationId],
+        to: [r.executionSubmission.actorId, r.executionSubmission.organizationId],
       }),
       grantedSessionKeyGrants: r.many.sessionKeyGrant({
         from: [r.actor.id, r.actor.organizationId],
@@ -253,6 +259,10 @@ export const relations = defineRelations(
       executions: r.many.execution({
         from: r.organization.id,
         to: r.execution.organizationId,
+      }),
+      executionSubmissions: r.many.executionSubmission({
+        from: r.organization.id,
+        to: r.executionSubmission.organizationId,
       }),
       auditEvents: r.many.organizationEvent({
         from: r.organization.id,
@@ -470,6 +480,31 @@ export const relations = defineRelations(
         from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
         to: [r.execution.sessionKeyGrantId, r.execution.organizationId],
       }),
+      executionSubmissions: r.many.executionSubmission({
+        from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+        to: [r.executionSubmission.sessionKeyGrantId, r.executionSubmission.organizationId],
+      }),
+    },
+    executionSubmission: {
+      organization: r.one.organization({
+        from: r.executionSubmission.organizationId,
+        to: r.organization.id,
+        optional: false,
+      }),
+      actor: r.one.actor({
+        from: [r.executionSubmission.actorId, r.executionSubmission.organizationId],
+        to: [r.actor.id, r.actor.organizationId],
+        optional: false,
+      }),
+      sessionKeyGrant: r.one.sessionKeyGrant({
+        from: [r.executionSubmission.sessionKeyGrantId, r.executionSubmission.organizationId],
+        to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+        optional: false,
+      }),
+      execution: r.one.execution({
+        from: r.executionSubmission.id,
+        to: r.execution.executionSubmissionId,
+      }),
     },
     execution: {
       organization: r.one.organization({
@@ -480,6 +515,19 @@ export const relations = defineRelations(
       sessionKeyGrant: r.one.sessionKeyGrant({
         from: [r.execution.sessionKeyGrantId, r.execution.organizationId],
         to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+        optional: false,
+      }),
+      executionSubmission: r.one.executionSubmission({
+        from: [
+          r.execution.executionSubmissionId,
+          r.execution.sessionKeyGrantId,
+          r.execution.organizationId,
+        ],
+        to: [
+          r.executionSubmission.id,
+          r.executionSubmission.sessionKeyGrantId,
+          r.executionSubmission.organizationId,
+        ],
         optional: false,
       }),
     },
