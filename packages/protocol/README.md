@@ -77,6 +77,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   and the namespace payload required for crash recovery. Executions reference
   exactly one submission and remain append-only successful onchain records;
   rejected or failed submissions are not execution records.
+- EVM execution contracts model the EntryPoint 0.7 UserOperation used by the
+  installed Viem adapter. Quantities decode to `bigint` and encode to strings so
+  signed operations remain safe to store in JSONB and can be reconstructed
+  exactly for submission or reconciliation.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, and optional call-simulation
   results. Keep Viem clients, provider errors, signatures, and raw provider

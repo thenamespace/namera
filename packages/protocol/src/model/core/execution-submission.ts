@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { ActorId, ExecutionSubmissionId, OrganizationId, SessionKeyGrantId } from "#/common/index";
-import { SupportedEvmChainId, UserOperationHash } from "#/evm/index";
+import { EvmSerializedUserOperation, SupportedEvmChainId, UserOperationHash } from "#/evm/index";
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import { EvmIntentCall } from "#/policy/evm/index";
@@ -18,7 +18,7 @@ export const EvmExecutionSubmissionData = Schema.Struct({
   version: Schema.Literal(1),
   chainId: SupportedEvmChainId,
   calls: Schema.Array(EvmIntentCall),
-  userOperation: Schema.NullOr(Schema.Json),
+  userOperation: Schema.NullOr(EvmSerializedUserOperation),
   userOperationHash: Schema.NullOr(UserOperationHash),
 });
 
