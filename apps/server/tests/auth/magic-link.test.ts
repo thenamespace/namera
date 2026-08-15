@@ -169,6 +169,9 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const invitation = Schema.decodeSync(MagicLinkReturnTo)(
         "/invitations/00000000-0000-4000-8000-000000000001",
       );
+      const oauth = Schema.decodeSync(MagicLinkReturnTo)(
+        "/oauth/authorize?requestId=00000000-0000-4000-8000-000000000001",
+      );
       const denied = Schema.decodeSync(MagicLinkReturnTo)("/admin");
       const traversal = Schema.decodeSync(MagicLinkReturnTo)("/settings/../admin");
 
@@ -195,6 +198,16 @@ layer(TestServerLayer)("magic-link routes", (it) => {
         },
       });
       expect(invitationResult.body.returnTo).toBe(invitation);
+
+      const oauthLink = yield* requestMagicLink(
+        client,
+        testEmail("oauth-return@example.com"),
+        oauth,
+      );
+      const oauthResult = yield* client.magicLink.verify({
+        payload: { type: "token", id: oauthLink.id, token: oauthLink.token },
+      });
+      expect(oauthResult.body.returnTo).toBe(oauth);
 
       const deniedLink = yield* requestMagicLink(
         client,

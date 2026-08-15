@@ -22,6 +22,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
 import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenticated/accounts/new'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
+import { Route as AuthenticatedOauthAuthorizeRouteImport } from './routes/_authenticated/oauth/authorize'
 import { Route as AuthenticatedSessionKeysIndexRouteImport } from './routes/_authenticated/session-keys/index'
 import { Route as AuthenticatedSessionKeysNewRouteImport } from './routes/_authenticated/session-keys/new'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
@@ -100,6 +101,12 @@ const AuthenticatedInvitationsInvitationIdRoute =
     path: '/invitations/$invitationId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOauthAuthorizeRoute =
+  AuthenticatedOauthAuthorizeRouteImport.update({
+    id: '/oauth/authorize',
+    path: '/oauth/authorize',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSessionKeysIndexRoute =
   AuthenticatedSessionKeysIndexRouteImport.update({
     id: '/session-keys/',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
+  '/_authenticated/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/_authenticated/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/accounts/new'
     | '/invitations/$invitationId'
+    | '/oauth/authorize'
     | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/accounts/new'
     | '/invitations/$invitationId'
+    | '/oauth/authorize'
     | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
@@ -296,6 +308,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/_authenticated/accounts/new'
     | '/_authenticated/invitations/$invitationId'
+    | '/_authenticated/oauth/authorize'
     | '/_authenticated/session-keys/new'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/profile'
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvitationsInvitationIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/oauth/authorize': {
+      id: '/_authenticated/oauth/authorize'
+      path: '/oauth/authorize'
+      fullPath: '/oauth/authorize'
+      preLoaderRoute: typeof AuthenticatedOauthAuthorizeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/session-keys/': {
       id: '/_authenticated/session-keys/'
       path: '/session-keys'
@@ -489,6 +509,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
+  AuthenticatedOauthAuthorizeRoute: typeof AuthenticatedOauthAuthorizeRoute
   AuthenticatedSessionKeysNewRoute: typeof AuthenticatedSessionKeysNewRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
@@ -512,6 +533,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsNewRoute: AuthenticatedAccountsNewRoute,
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
+  AuthenticatedOauthAuthorizeRoute: AuthenticatedOauthAuthorizeRoute,
   AuthenticatedSessionKeysNewRoute: AuthenticatedSessionKeysNewRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,

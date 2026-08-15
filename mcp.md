@@ -283,7 +283,7 @@ redirects anywhere. It creates a short-lived authorization-request row and
 redirects the browser to:
 
 ```text
-https://dashboard.namera.ai/authorizations/:requestId
+https://dashboard.namera.ai/oauth/authorize?requestId=...
 ```
 
 If the user is not signed in, the dashboard uses the existing magic-link flow
@@ -298,8 +298,8 @@ shows:
 - verified client name and logo;
 - exact client and redirect hostnames;
 - requested coarse OAuth scopes;
-- selected organization;
-- wallets and session keys being delegated;
+- active organization;
+- session keys being delegated;
 - authorization expiry, when configured;
 - an explicit approve or deny action.
 

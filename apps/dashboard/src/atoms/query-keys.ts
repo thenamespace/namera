@@ -2,6 +2,7 @@ import type {
   ApiKeyId,
   InvitationId,
   OrganizationId,
+  OAuthAuthorizationRequestId,
   SessionKeyId,
   WalletId,
 } from "@namera-ai/protocol";
@@ -59,6 +60,11 @@ export const QueryKeys = {
     details: ["api-key:details"] as const,
     detail: (apiKeyId: ApiKeyId) => [`api-key:detail:${apiKeyId}`] as const,
   },
+  oauth: {
+    authorizationRequests: ["oauth:authorization-requests"] as const,
+    authorizationRequest: (requestId: OAuthAuthorizationRequestId) =>
+      [`oauth:authorization-request:${requestId}`] as const,
+  },
 } as const;
 
 export type QueryKey =
@@ -95,4 +101,6 @@ export type QueryKey =
   | (typeof QueryKeys.apiKey.all)[number]
   | (typeof QueryKeys.apiKey.lists)[number]
   | (typeof QueryKeys.apiKey.details)[number]
-  | ReturnType<typeof QueryKeys.apiKey.detail>[number];
+  | ReturnType<typeof QueryKeys.apiKey.detail>[number]
+  | (typeof QueryKeys.oauth.authorizationRequests)[number]
+  | ReturnType<typeof QueryKeys.oauth.authorizationRequest>[number];

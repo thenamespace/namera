@@ -85,6 +85,7 @@ export const authPolicy = {
       "/identity",
       "/invitations",
       "/mcp",
+      "/oauth",
       "/session-keys",
       "/settings",
       "/templates",

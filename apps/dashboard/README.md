@@ -40,6 +40,9 @@ Workspace package imports continue to use their package names.
   review flow. Logged-out users return there after magic-link sign-in. A signed-in
   user whose email does not match the invitation is logged out before being sent
   through the same sign-in flow.
+- `/oauth/authorize?requestId=...` is the sidebar-free MCP OAuth consent flow.
+  It preserves the full URL through sign-in, displays verified client metadata,
+  and requires an explicit active-session-key selection before approval.
 
 The shared auth layout prefetches the current user and redirects an already
 authenticated browser to `/`.

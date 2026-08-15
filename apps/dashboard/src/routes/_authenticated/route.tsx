@@ -13,10 +13,15 @@ export const Route = createFileRoute("/_authenticated")({
     );
 
     if (currentUser === null) {
-      if (location.pathname.startsWith("/invitations/")) {
+      if (
+        location.pathname.startsWith("/invitations/") ||
+        location.pathname === "/oauth/authorize"
+      ) {
         throw redirect({
           to: "/auth",
-          search: { returnTo: location.pathname },
+          search: {
+            returnTo: location.pathname === "/oauth/authorize" ? location.href : location.pathname,
+          },
           replace: true,
         });
       }
@@ -30,7 +35,13 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { pathname } = useLocation();
-  if (pathname === "/workspace/new" || pathname.startsWith("/invitations/")) return <Outlet />;
+  if (
+    pathname === "/workspace/new" ||
+    pathname.startsWith("/invitations/") ||
+    pathname === "/oauth/authorize"
+  ) {
+    return <Outlet />;
+  }
 
   const Sidebar = pathname.startsWith("/settings") ? SettingsSidebar : AppSidebar;
 
