@@ -10,6 +10,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   middleware, API handlers, authorization, and live layer composition.
 - [`apps/dashboard`](apps/dashboard/README.md) — Vite React dashboard using
   TanStack Router and the shared UI package.
+- [`apps/email-templates`](apps/email-templates/README.md) — React Email
+  templates published to the Resend dashboard.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
@@ -92,6 +94,7 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
 apps/dashboard   -> api, protocol, telemetry, ui
+email-templates  -> protocol, React Email
 ui               -> protocol, Namespace UIKit
 ```
 

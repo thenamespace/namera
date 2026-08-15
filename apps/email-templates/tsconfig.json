@@ -1,0 +1,15 @@
+{
+  "extends": "klarity/tsconfig/app",
+  "compilerOptions": {
+    "customConditions": ["namera-source"],
+    "rootDir": "src",
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "target": "ES2022"
+  },
+  "include": ["src/**/*.ts", "src/fonts.tsx"]
+}
