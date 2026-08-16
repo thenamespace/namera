@@ -10,11 +10,13 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 ## Structure
 
 - `src/config.ts` — server host, port, and browser origin configuration.
-- `src/routes/` — grouped HTTP handler layers, root route, health route, Scalar
-  API reference, authenticated billing, wallet, session-key, and API-key routes,
-  notification inbox, OAuth discovery and protocol routes, the authenticated
-  Effect MCP transport and tools, the EIP-155 JSON-RPC proxy, and browser OTLP
-  proxies.
+- `src/routes/core/` — API assembly, root, health, and Scalar reference routes.
+- `src/routes/auth/` — user authentication, organizations, API keys,
+  notifications, and OAuth management/protocol routes.
+- `src/routes/wallet/` — wallet and session-key handlers.
+- `src/routes/execution/` — execution and signature handlers.
+- `src/routes/billing/`, `src/routes/mcp/`, and `src/routes/proxy/` — focused
+  billing, MCP, RPC, and telemetry transport boundaries.
 - `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
@@ -33,8 +35,9 @@ and settles, releases, or reschedules submissions left pending by HTTP requests.
 HTTP requests only enqueue email work and never wait for background delivery.
 
 Execution submission status is readable only by the API-key actor that created
-it. Confirmed execution detail and organization history require a user actor
-with `execution:read`.
+it. Confirmed execution detail and history use one route for user and API-key
+actors: users require `execution:read` and see the active organization, while
+API keys see only executions started by their own actor.
 
 `POST /signatures` is available only to API-key actors. It applies a dedicated
 per-key rate limit and delegates grant and signature-policy enforcement to the
@@ -133,6 +136,12 @@ Handlers must not query repositories for business data or coordinate workflows.
 Authorization and HTTP adaptation belong here; intrinsic business invariants and
 transactions belong in `application`. Keep one route file per API group and use
 the matching group/folder names from `@namera-ai/api`.
+
+For shared read routes, convert the enforced actor with `toActorReadScope`.
+User data intentionally omits `actorId` and therefore receives the
+permission-authorized organization view. Machine actors include `actorId`, so
+repositories restrict results through grants or actor ownership. Do not create a
+parallel API-key route for the same resource.
 
 ## Environment
 

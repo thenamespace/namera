@@ -73,6 +73,8 @@ export function enforceActor(
 }
 
 export const toActorReadScope = (data: ActorData<"user" | "api-key">): ActorReadScope =>
+  // Users may inspect their organization according to role permissions. Machine
+  // actors see only resources reachable through their own grants or ownership.
   "organization" in data
     ? { organizationId: data.organization.id }
     : { organizationId: data.organizationId, actorId: data.actorId };

@@ -243,6 +243,12 @@ transaction-aware inserts, and metadata-only updates. Provider calls and
 account construction do not belong in repositories; `application` coordinates
 those capabilities before persisting both records in one transaction.
 
+Actor-scoped wallet reads join active grants through active session keys and
+deduplicate wallets by ID. Session-key actor reads use the same active-grant
+boundary. Execution actor reads use the submission's creating actor. These
+queries are the machine-actor visibility boundary; do not load an organization
+wide result and filter it in application memory.
+
 ## Session-key persistence
 
 `core.session_key` belongs to one wallet and stores its namespace, immutable

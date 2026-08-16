@@ -64,6 +64,8 @@ export class NameraTransport {
   readonly #fetch: NameraFetch | undefined;
 
   constructor(config: NameraClientConfig) {
+    // The generated client is the single source of request paths, encoders,
+    // response decoders, and declared API errors used by the public SDK.
     const authorizationLayer = HttpApiMiddleware.layerClient(Authorization, ({ next, request }) =>
       next(HttpClientRequest.setHeader(request, "x-api-key", config.apiKey)),
     );

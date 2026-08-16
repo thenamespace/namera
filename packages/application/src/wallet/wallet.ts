@@ -71,6 +71,8 @@ export const makeWalletApplication = Effect.gen(function* () {
       protection_level: input.request.protectionLevel,
     });
 
+    // This check avoids a provider call for an already exhausted plan. The
+    // locked check in the persistence transaction remains authoritative.
     yield* enforceWalletLimit(repository, input.organizationId, input.request.protectionLevel).pipe(
       Effect.tapErrorTag("BillingError", () =>
         Metric.update(Metric.withAttributes(creationResults, { result: "limit_exceeded" }), 1),
@@ -191,6 +193,7 @@ export const makeWalletApplication = Effect.gen(function* () {
             status: "active",
             data: createdKey.data,
           });
+
           const wallet = yield* repository.core.wallet.insert({
             organizationId: input.organizationId,
             walletKeyId,
@@ -200,6 +203,7 @@ export const makeWalletApplication = Effect.gen(function* () {
             namespace: input.request.namespace,
             data: account,
           });
+
           const accountEvent =
             account.implementation === "kernel"
               ? {

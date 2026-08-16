@@ -176,6 +176,15 @@ follow its linked local documentation when relevant. Search
 - Preserve unrelated worktree changes.
 - Keep each feature file focused. Extend the existing aggregate service or
   barrel instead of creating a second competing entry point.
+- Group files by domain once a flat directory stops being quickly scannable.
+  Keep barrels at domain boundaries and preserve existing structure unless a
+  reorganization is explicitly requested.
+- Separate imports, setup, validation, external calls, transactions, and result
+  mapping with logical blank lines. Do not compress unrelated statements into
+  one visual block.
+- Comments explain non-obvious invariants, security decisions, transaction
+  boundaries, provider constraints, or deferred work. Do not narrate syntax or
+  add comments that merely restate the following line.
 
 ### Frontend UI
 
@@ -219,6 +228,13 @@ follow its linked local documentation when relevant. Search
   debouncing and stepped state instead of reimplementing generic hooks.
 - In `apps/dashboard`, prefetch protected data with the router-owned Effect atom
   registry so loaders and React hooks share the same cache.
+- Domain mutation hooks accept `onSuccess`, `onError`, and `onSettled` callbacks.
+  Components call `mutate` and handle feedback through those callbacks instead
+  of wrapping expected mutations in `try/catch`. Reserve `mutateAsync` for
+  orchestration that genuinely needs a promise, such as serialized auto-save.
+- Resolve mutation errors through the shared frontend feedback registry, then
+  render concise toasts with a short title and an optional one-line description.
+  Do not repeat generic error strings across components.
 
 ### Testing
 

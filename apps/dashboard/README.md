@@ -167,6 +167,32 @@ to the shared `Field` components rather than the dashboard card.
 5. Treat frontend guards as navigation UX only; the server remains authoritative
    for authentication and permissions.
 
+Mutation hooks accept TanStack-style lifecycle callbacks. Use `mutate` from UI
+events and forms so expected failures are handled once by the hook callbacks;
+do not add a `try/catch` to every submit handler. Use `mutateAsync` only when a
+workflow must await or serialize the operation, such as auto-save.
+
+```tsx
+const updateUser = useUpdateUser({
+  onSuccess: () => showSuccessToast({ title: "Profile saved" }),
+  onError: (error) =>
+    showErrorToast(error, {
+      title: "Couldn’t save profile",
+      description: "Review your details and try again.",
+    }),
+});
+
+const onSubmit = form.handleSubmit((payload) => {
+  updateUser.mutate({ payload });
+});
+```
+
+`src/lib/error-messages.ts` maps known API tags and codes to concise user-facing
+feedback. Add one registry entry when an error needs specific wording; use the
+operation fallback for errors that do not. `src/lib/toasts.ts` is the only toast
+presentation boundary. Titles state the outcome, while descriptions add one
+short useful detail only when needed.
+
 All authenticated pages belong beneath the pathless `_authenticated` route.
 Child loaders may prefetch `currentUserAtom` when they need the actor to derive
 another query; the shared registry reuses the parent loader result. Return the

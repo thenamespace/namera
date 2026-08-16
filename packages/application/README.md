@@ -23,11 +23,12 @@ HTTP requests to application methods.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
-- `src/session-key/` — immutable session-key creation, canonical policy hashing, and reads.
+- `src/session-key/` — immutable session-key creation, canonical policy hashing,
+  and organization- or actor-scoped reads.
 - `src/signature/` — API-key grant selection and policy-gated smart-account signatures.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
-- `src/wallet/` — wallet creation and organization-scoped wallet reads.
+- `src/wallet/` — wallet creation and organization- or actor-scoped wallet reads.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
@@ -132,9 +133,12 @@ definitive failure releases policy state. Timeout or uncertain RPC outcomes
 return `submitted`; `Application.execution.reconcile` later claims a bounded
 batch with database leases and performs the same settle/release lifecycle.
 
-Submission status reads require the creating API-key actor identity. Confirmed
-execution detail and cursor-paginated organization history are separate reads
-used by organization members after transport authorization.
+Submission status reads require the creating API-key actor identity. Wallet,
+session-key, and confirmed-execution reads accept an optional actor scope. An
+omitted actor ID returns the permission-authorized organization view for users;
+an actor ID returns only wallets and session keys reachable through active
+grants and executions started by that actor. Keep this distinction in one use
+case rather than duplicating machine-specific operations.
 
 Signature requests are synchronous and non-persisted. They require an active
 API-key grant to an active wallet session key with an explicit `evm.signature`

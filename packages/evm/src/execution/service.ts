@@ -11,6 +11,8 @@ import { makeSubmitEvmExecution } from "./submit.js";
 import type { EvmExecutionService } from "./types.js";
 
 export const makeEvmExecutionService = (config: EvmConfigValues): EvmExecutionService => {
+  // One service instance shares the cached public, Pimlico, and account clients
+  // across every phase while keeping their large Viem types package-internal.
   const clients = makeExecutionClients(config);
 
   return {
