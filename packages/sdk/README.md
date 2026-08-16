@@ -13,7 +13,7 @@ const namera = new NameraClient({
   apiKey: process.env.NAMERA_API_KEY!,
 });
 
-const wallets = await namera.getWallets();
+const wallets = await namera.wallets.list();
 
 if (!wallets.success) {
   console.error(wallets.error.message);
@@ -23,11 +23,26 @@ if (!wallets.success) {
 console.log(wallets.data);
 ```
 
-Every operation resolves to `NameraResult<A>`:
+Every operation resolves to `NameraResult<A, E>`:
 
 ```ts
-type NameraResult<A> =
-  { success: true; data: A; error: null } | { success: false; data: null; error: NameraSdkError };
+type NameraResult<A, E> =
+  | { success: true; data: A; error: null }
+  | { success: false; data: null; error: NameraSdkError<E> };
+```
+
+For declared API failures, `error.kind === "api"` preserves the endpoint's
+exact error union in `error.cause`. Narrow its `_tag` to get the corresponding
+typed `code` and fields without casting:
+
+```ts
+const wallet = await namera.wallets.get(walletId);
+
+if (!wallet.success && wallet.error.kind === "api") {
+  if (wallet.error.cause._tag === "WalletError") {
+    console.error(wallet.error.cause.code); // "WALLET_NOT_FOUND"
+  }
+}
 ```
 
 Use `baseUrl` for self-hosted or local servers. A Fetch-compatible runtime is
@@ -36,14 +51,14 @@ runtimes and tests.
 
 ## Supported API-key operations
 
-- `getWallets`, `getWallet`
-- `getSessionKeys`, `getSessionKeysForWallet`, `getSessionKey`
+- `wallets.list`, `wallets.get`
+- `sessionKeys.list`, `sessionKeys.listForWallet`, `sessionKeys.get`
 - `executions.execute`, `executions.getSubmission`, `executions.get`,
   `executions.list`
 - `sign`
 
-Grouped `wallets` and `sessionKeys` clients expose the same reads when a grouped
-call style is clearer.
+Resource operations are intentionally grouped. Only `sign` remains at the root
+because it is a cross-resource signing capability rather than a collection.
 
 ## Structure
 

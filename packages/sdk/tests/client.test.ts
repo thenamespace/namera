@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 import { ExecutionSubmissionId, WalletId } from "@namera-ai/protocol";
 import { EthereumAddress, UserOperationHash } from "@namera-ai/protocol/evm";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { NameraClient, type NameraFetch } from "../src/index.js";
 
@@ -31,7 +31,7 @@ describe("NameraClient", () => {
       fetch,
     });
 
-    const result = await client.getWallets();
+    const result = await client.wallets.list();
 
     expect(result).toEqual({ success: true, data: [], error: null });
     const [url, init] = fetch.mock.calls[0] ?? [];
@@ -96,7 +96,9 @@ describe("NameraClient", () => {
     );
     const apiClient = new NameraClient({ apiKey: "nk_test_secret", fetch: apiFetch });
 
-    expect(await apiClient.getWallet(walletId)).toMatchObject({
+    const result = await apiClient.wallets.get(walletId);
+
+    expect(result).toMatchObject({
       success: false,
       data: null,
       error: {
@@ -105,18 +107,25 @@ describe("NameraClient", () => {
         tag: "WalletError",
         code: "WALLET_NOT_FOUND",
         message: "The Namera API rejected the request.",
-        details: expect.objectContaining({
+        cause: expect.objectContaining({
           _tag: "WalletError",
           code: "WALLET_NOT_FOUND",
         }),
       },
     });
 
+    if (!result.success && result.error.kind === "api") {
+      // oxlint-disable-next-line no-underscore-dangle -- Effect tagged errors discriminate on `_tag`.
+      if (result.error.cause._tag === "WalletError") {
+        expectTypeOf(result.error.cause.code).toEqualTypeOf<"WALLET_NOT_FOUND">();
+      }
+    }
+
     const invalidClient = new NameraClient({
       apiKey: "nk_test_secret",
       fetch: vi.fn<NameraFetch>().mockResolvedValue(jsonResponse({ wallets: [] })),
     });
-    expect(await invalidClient.getWallets()).toMatchObject({
+    expect(await invalidClient.wallets.list()).toMatchObject({
       success: false,
       error: { kind: "contract", status: null },
     });

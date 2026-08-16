@@ -5,7 +5,14 @@ import { HttpApiClient, HttpApiMiddleware } from "effect/unstable/httpapi";
 
 import { Authorization, NameraApi } from "@namera-ai/api";
 
-import { failure, success, type NameraResult, type NameraSdkError } from "#/result";
+import {
+  failure,
+  success,
+  type NameraApiErrorCode,
+  type NameraApiErrorTag,
+  type NameraResult,
+  type NameraSdkError,
+} from "#/result";
 
 export type NameraClientConfig = {
   readonly apiKey: string;
@@ -15,6 +22,10 @@ export type NameraClientConfig = {
 
 export type NameraFetch = Context.Service.Shape<typeof FetchHttpClient.Fetch>;
 export type NameraApiClient = HttpApiClient.ForApi<typeof NameraApi>;
+export type NameraEndpointError<E> = Exclude<
+  E,
+  Schema.SchemaError | HttpClientError.HttpClientError
+>;
 
 const readField = (value: unknown, key: string): string | undefined => {
   if (!Predicate.isObject(value)) return undefined;
@@ -23,13 +34,13 @@ const readField = (value: unknown, key: string): string | undefined => {
   return typeof field === "string" && field.length > 0 ? field : undefined;
 };
 
-const toSdkError = (error: unknown): NameraSdkError => {
+const toSdkError = <E>(error: E): NameraSdkError<NameraEndpointError<E>> => {
   if (Schema.isSchemaError(error)) {
     return {
       kind: "contract",
       message: "The request or response did not match the Namera API contract.",
       status: null,
-      details: error,
+      cause: error,
     };
   }
 
@@ -38,10 +49,10 @@ const toSdkError = (error: unknown): NameraSdkError => {
     const isTransportError = error.reason instanceof HttpClientError.TransportError;
 
     return {
-      kind: isTransportError ? "network" : "api",
+      kind: isTransportError ? "network" : "unexpected",
       message: isTransportError ? "The Namera API could not be reached." : error.message,
       status,
-      details: error,
+      cause: error,
     };
   }
 
@@ -53,9 +64,9 @@ const toSdkError = (error: unknown): NameraSdkError => {
     kind: "api",
     message: message ?? "The Namera API rejected the request.",
     status: null,
-    ...(code === undefined ? {} : { code }),
-    ...(tag === undefined ? {} : { tag }),
-    details: error,
+    ...(code === undefined ? {} : { code: code as NameraApiErrorCode<NameraEndpointError<E>> }),
+    ...(tag === undefined ? {} : { tag: tag as NameraApiErrorTag<NameraEndpointError<E>> }),
+    cause: error as NameraEndpointError<E>,
   };
 };
 
@@ -78,21 +89,24 @@ export class NameraTransport {
     this.#fetch = config.fetch;
   }
 
-  request<A, E>(effect: Effect.Effect<A, E>): Promise<NameraResult<A>> {
+  request<A, E>(effect: Effect.Effect<A, E>): Promise<NameraResult<A, NameraEndpointError<E>>> {
+    // Effect failures remain fully typed until this boundary. Declared HttpApi
+    // errors are preserved as `cause`; only transport and decoding failures are
+    // normalized into SDK infrastructure errors.
     const handled = Effect.matchCause(effect, {
       onFailure: (cause) =>
-        failure(
+        failure<A, NameraEndpointError<E>>(
           Option.match(Cause.findErrorOption(cause), {
-            onNone: (): NameraSdkError => ({
+            onNone: (): NameraSdkError<NameraEndpointError<E>> => ({
               kind: "unexpected",
               message: "The SDK encountered an unexpected failure.",
               status: null,
-              details: Cause.squash(cause),
+              cause: Cause.squash(cause),
             }),
-            onSome: toSdkError,
+            onSome: (error) => toSdkError<E>(error),
           }),
         ),
-      onSuccess: success,
+      onSuccess: (value) => success<A, NameraEndpointError<E>>(value),
     });
 
     return Effect.runPromise(
