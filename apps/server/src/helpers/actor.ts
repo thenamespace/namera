@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { HttpApiError } from "effect/unstable/httpapi";
 
+import type { ActorId, OrganizationId } from "@namera-ai/protocol";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
 import type { MemberPermission } from "@namera-ai/protocol/model";
 
@@ -15,6 +16,11 @@ export type ActorPermissionRequirements = {
 type SupportedActorType = keyof ActorPermissionRequirements & ActorType;
 
 export type ActorData<AllowedActor extends SupportedActorType> = ActorOfType<AllowedActor>["data"];
+
+export type ActorReadScope = {
+  readonly organizationId: OrganizationId;
+  readonly actorId?: ActorId;
+};
 
 export type EnforceActorProps<AllowedActor extends SupportedActorType> = {
   actor: CurrentActorResponse;
@@ -65,3 +71,8 @@ export function enforceActor(
 ): Effect.Effect<ActorData<SupportedActorType>, HttpApiError.Forbidden> {
   return enforceActorEffect(props);
 }
+
+export const toActorReadScope = (data: ActorData<"user" | "api-key">): ActorReadScope =>
+  "organization" in data
+    ? { organizationId: data.organization.id }
+    : { organizationId: data.organizationId, actorId: data.actorId };

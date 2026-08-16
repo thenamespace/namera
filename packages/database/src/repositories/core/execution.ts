@@ -2,6 +2,7 @@
 import { Context, Effect, Layer, Schema } from "effect";
 
 import type {
+  ActorId,
   DatabaseError,
   ExecutionId,
   ExecutionSubmissionId,
@@ -17,7 +18,7 @@ import { and, desc, eq, lt, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { execution } from "#/schema/index";
+import { execution, executionSubmission } from "#/schema/index";
 
 export interface ExecutionRepositoryService {
   readonly insert: (data: ExecutionInsertModel) => Effect.Effect<ExecutionModel, DatabaseError>;
@@ -31,6 +32,17 @@ export interface ExecutionRepositoryService {
   ) => Effect.Effect<ExecutionModel | undefined, DatabaseError>;
   readonly findForOrganization: (input: {
     readonly organizationId: OrganizationId;
+    readonly cursor?: ExecutionId;
+    readonly limit: number;
+  }) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
+  readonly findByIdForActor: (
+    id: ExecutionId,
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<ExecutionModel | undefined, DatabaseError>;
+  readonly findForActor: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
     readonly cursor?: ExecutionId;
     readonly limit: number;
   }) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
@@ -118,6 +130,86 @@ export class ExecutionRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        findByIdForActor: Effect.fn("database.executionRepository.findByIdForActor")(function* (
+          id,
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ execution })
+            .from(execution)
+            .innerJoin(
+              executionSubmission,
+              and(
+                eq(executionSubmission.id, execution.executionSubmissionId),
+                eq(executionSubmission.organizationId, execution.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(execution.id, id),
+                eq(execution.organizationId, organizationId),
+                eq(executionSubmission.actorId, actorId),
+              ),
+            )
+            .limit(1);
+          return rows[0] === undefined
+            ? undefined
+            : Schema.decodeSync(Execution)(rows[0].execution as any);
+        }, mapRepositoryError),
+        findForActor: Effect.fn("database.executionRepository.findForActor")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const cursorRows =
+            input.cursor === undefined
+              ? []
+              : yield* db
+                  .select({ execution })
+                  .from(execution)
+                  .innerJoin(
+                    executionSubmission,
+                    and(
+                      eq(executionSubmission.id, execution.executionSubmissionId),
+                      eq(executionSubmission.organizationId, execution.organizationId),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(execution.id, input.cursor),
+                      eq(execution.organizationId, input.organizationId),
+                      eq(executionSubmission.actorId, input.actorId),
+                    ),
+                  )
+                  .limit(1);
+          const cursor = cursorRows[0]?.execution;
+          if (input.cursor !== undefined && cursor === undefined) return [];
+
+          const rows = yield* db
+            .select({ execution })
+            .from(execution)
+            .innerJoin(
+              executionSubmission,
+              and(
+                eq(executionSubmission.id, execution.executionSubmissionId),
+                eq(executionSubmission.organizationId, execution.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(execution.organizationId, input.organizationId),
+                eq(executionSubmission.actorId, input.actorId),
+                cursor === undefined
+                  ? undefined
+                  : or(
+                      lt(execution.createdAt, cursor.createdAt),
+                      and(eq(execution.createdAt, cursor.createdAt), lt(execution.id, cursor.id)),
+                    ),
+              ),
+            )
+            .orderBy(desc(execution.createdAt), desc(execution.id))
+            .limit(Math.min(Math.max(Math.trunc(input.limit), 1), 100));
+          return rows.map((row) => Schema.decodeSync(Execution)(row.execution as any));
+        }, mapRepositoryError),
       });
     }),
   );

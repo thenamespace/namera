@@ -10,6 +10,7 @@ import {
   missingSessionKeyId,
   missingWalletId,
   resetTestState,
+  setApiKey,
   setAuthToken,
   signIn,
   testEmail,
@@ -206,6 +207,94 @@ layer(TestServerLayer)("session-key routes", (it) => {
           .get({ params: { sessionKeyId: missingSessionKeyId } })
           .pipe(Effect.flip),
       ).toMatchObject({ _tag: "SessionKeyError", code: "SESSION_KEY_NOT_FOUND" });
+    }),
+  );
+
+  it.effect("scopes API-key reads to active session-key grants", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("session-key-api-reader@example.com"));
+      const expiresAt = DateTime.addDuration(yield* DateTime.now, Duration.days(1));
+      const grantedWallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Granted wallet"),
+        },
+      });
+      const hiddenWallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "safe",
+          protectionLevel: "software",
+          metadata: metadata("Hidden wallet"),
+        },
+      });
+      const grantedSessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: grantedWallet.id,
+          metadata: metadata("Granted key"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt,
+            },
+          ],
+        },
+      });
+      const hiddenSessionKey = yield* client.sessionKey.create({
+        payload: {
+          namespace: "eip155",
+          walletId: hiddenWallet.id,
+          metadata: metadata("Hidden key"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt,
+            },
+          ],
+        },
+      });
+      const apiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Scoped reader"),
+          durationDays: 7,
+          sessionKeyIds: [grantedSessionKey.id],
+        },
+      });
+
+      yield* setAuthToken();
+      yield* setApiKey(apiKey.key);
+
+      expect((yield* client.wallet.list()).map(({ id }) => id)).toEqual([grantedWallet.id]);
+      expect((yield* client.sessionKey.listForOrganization()).map(({ id }) => id)).toEqual([
+        grantedSessionKey.id,
+      ]);
+      expect(
+        (yield* client.sessionKey.listForWallet({ params: { walletId: grantedWallet.id } })).map(
+          ({ id }) => id,
+        ),
+      ).toEqual([grantedSessionKey.id]);
+      expect(
+        yield* client.wallet.get({ params: { walletId: hiddenWallet.id } }).pipe(Effect.flip),
+      ).toMatchObject({ _tag: "WalletError", code: "WALLET_NOT_FOUND" });
+      expect(
+        yield* client.sessionKey
+          .get({ params: { sessionKeyId: hiddenSessionKey.id } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "SessionKeyError", code: "SESSION_KEY_NOT_FOUND" });
+      expect(
+        yield* client.sessionKey
+          .listForWallet({ params: { walletId: hiddenWallet.id } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "WalletError", code: "WALLET_NOT_FOUND" });
     }),
   );
 

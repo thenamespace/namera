@@ -67,6 +67,13 @@ layer(TestServerLayer)("execution read routes", (it) => {
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("execution-list-owner@example.com"));
       const fixture = yield* createExecutionFixture(client, "list");
+      const otherApiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: { version: 1, name: "Other history reader" },
+          durationDays: 7,
+          sessionKeyIds: [fixture.sessionKey.id],
+        },
+      });
 
       yield* setAuthToken();
       yield* setApiKey(fixture.apiKey.key);
@@ -81,6 +88,23 @@ layer(TestServerLayer)("execution read routes", (it) => {
       expect(confirmed).toHaveLength(51);
       const firstExecution = confirmed[0];
       if (firstExecution === undefined) return yield* Effect.die("Expected an execution");
+
+      const actorPage = yield* client.execution.list({ query: {} });
+      expect(actorPage.items).toHaveLength(50);
+      expect(
+        (yield* client.execution.get({ params: { executionId: firstExecution.executionId } })).id,
+      ).toBe(firstExecution.executionId);
+
+      yield* setApiKey(otherApiKey.key);
+      expect(yield* client.execution.list({ query: {} })).toMatchObject({
+        items: [],
+        nextCursor: null,
+      });
+      expect(
+        yield* client.execution
+          .get({ params: { executionId: firstExecution.executionId } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "ExecutionNotFoundError", code: "EXECUTION_NOT_FOUND" });
 
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);

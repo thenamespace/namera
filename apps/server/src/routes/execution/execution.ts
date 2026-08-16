@@ -4,7 +4,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor } from "#/helpers/index";
+import { enforceActor, toActorReadScope } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (handlers) =>
@@ -47,10 +47,13 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["execution:read"] },
+            allowedActors: ["user", "api-key"],
+            requiredPermissions: { user: ["execution:read"], "api-key": [] },
           });
-          return yield* app.execution.get(data.organization.id, params.executionId);
+          return yield* app.execution.get({
+            ...toActorReadScope(data),
+            executionId: params.executionId,
+          });
         }),
       )
       .handle("list", ({ query }) =>
@@ -58,11 +61,11 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["execution:read"] },
+            allowedActors: ["user", "api-key"],
+            requiredPermissions: { user: ["execution:read"], "api-key": [] },
           });
           return yield* app.execution.list({
-            organizationId: data.organization.id,
+            ...toActorReadScope(data),
             ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
           });
         }),

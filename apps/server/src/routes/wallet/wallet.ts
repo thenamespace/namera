@@ -4,7 +4,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toWalletResponse } from "#/helpers/index";
+import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
@@ -33,10 +33,10 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["wallet:read"] },
+            allowedActors: ["user", "api-key"],
+            requiredPermissions: { user: ["wallet:read"], "api-key": [] },
           });
-          return (yield* app.wallet.list(data.organization.id)).map(toWalletResponse);
+          return (yield* app.wallet.list(toActorReadScope(data))).map(toWalletResponse);
         }),
       )
       .handle("get", ({ params }) =>
@@ -44,10 +44,12 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["wallet:read"] },
+            allowedActors: ["user", "api-key"],
+            requiredPermissions: { user: ["wallet:read"], "api-key": [] },
           });
-          return toWalletResponse(yield* app.wallet.get(data.organization.id, params.walletId));
+          return toWalletResponse(
+            yield* app.wallet.get({ ...toActorReadScope(data), walletId: params.walletId }),
+          );
         }),
       )
       .handle("update", ({ params, payload }) =>

@@ -34,11 +34,15 @@ export interface WalletApplication {
     readonly actorId: ActorId;
     readonly request: CreateWalletRequest;
   }) => Effect.Effect<WalletView, BillingError | WalletCreationError>;
-  readonly list: (organizationId: OrganizationId) => Effect.Effect<ReadonlyArray<WalletView>>;
-  readonly get: (
-    organizationId: OrganizationId,
-    walletId: WalletId,
-  ) => Effect.Effect<WalletView, WalletNotFoundError>;
+  readonly list: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+  }) => Effect.Effect<ReadonlyArray<WalletView>>;
+  readonly get: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+    readonly walletId: WalletId;
+  }) => Effect.Effect<WalletView, WalletNotFoundError>;
   readonly update: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -321,15 +325,27 @@ export const makeWalletApplication = Effect.gen(function* () {
   }, Effect.trackDuration(walletCreationDuration));
 
   const list = Effect.fn("application.wallet.list")(
-    function* (organizationId: OrganizationId) {
-      return yield* repository.core.wallet.findForOrganization(organizationId);
+    function* (input: { readonly organizationId: OrganizationId; readonly actorId?: ActorId }) {
+      return yield* input.actorId === undefined
+        ? repository.core.wallet.findForOrganization(input.organizationId)
+        : repository.core.wallet.findForActor(input.organizationId, input.actorId);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const get = Effect.fn("application.wallet.get")(
-    function* (organizationId: OrganizationId, walletId: WalletId) {
-      const wallet = yield* repository.core.wallet.findById(walletId, organizationId);
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId?: ActorId;
+      readonly walletId: WalletId;
+    }) {
+      const wallet = yield* input.actorId === undefined
+        ? repository.core.wallet.findById(input.walletId, input.organizationId)
+        : repository.core.wallet.findByIdForActor(
+            input.walletId,
+            input.organizationId,
+            input.actorId,
+          );
       if (wallet === undefined) {
         return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
       }

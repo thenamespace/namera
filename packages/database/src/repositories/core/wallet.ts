@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-non-null-assertion
 import { Context, Effect, Layer, Schema } from "effect";
 
-import type { DatabaseError, OrganizationId, WalletId } from "@namera-ai/protocol";
+import type { ActorId, DatabaseError, OrganizationId, WalletId } from "@namera-ai/protocol";
 import {
   Wallet,
   WalletInsert,
@@ -10,11 +10,11 @@ import {
   type Wallet as WalletModel,
   type WalletKey as WalletKeyModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { wallet, walletKey } from "#/schema/index";
+import { sessionKey, sessionKeyGrant, wallet, walletKey } from "#/schema/index";
 
 export interface WalletView {
   readonly wallet: WalletModel;
@@ -29,6 +29,15 @@ export interface WalletRepositoryService {
   ) => Effect.Effect<WalletView | undefined, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
+  ) => Effect.Effect<ReadonlyArray<WalletView>, DatabaseError>;
+  readonly findByIdForActor: (
+    id: WalletId,
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<WalletView | undefined, DatabaseError>;
+  readonly findForActor: (
+    organizationId: OrganizationId,
+    actorId: ActorId,
   ) => Effect.Effect<ReadonlyArray<WalletView>, DatabaseError>;
   readonly updateMetadata: (
     id: WalletId,
@@ -87,6 +96,84 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
             .where(eq(wallet.organizationId, organizationId))
             .orderBy(desc(wallet.createdAt), desc(wallet.id));
           return rows.map(decodeWalletView);
+        }, mapRepositoryError),
+        findByIdForActor: Effect.fn("database.walletRepository.findByIdForActor")(function* (
+          id,
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ wallet, walletKey })
+            .from(wallet)
+            .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+            .innerJoin(
+              sessionKey,
+              and(
+                eq(sessionKey.walletId, wallet.id),
+                eq(sessionKey.organizationId, wallet.organizationId),
+              ),
+            )
+            .innerJoin(
+              sessionKeyGrant,
+              and(
+                eq(sessionKeyGrant.sessionKeyId, sessionKey.id),
+                eq(sessionKeyGrant.organizationId, sessionKey.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(wallet.id, id),
+                eq(wallet.organizationId, organizationId),
+                eq(sessionKeyGrant.actorId, actorId),
+                isNull(sessionKeyGrant.revokedAt),
+                eq(sessionKey.status, "active"),
+              ),
+            )
+            .limit(1);
+          return rows[0] === undefined ? undefined : decodeWalletView(rows[0]);
+        }, mapRepositoryError),
+        findForActor: Effect.fn("database.walletRepository.findForActor")(function* (
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+
+          // A wallet is visible to a machine actor only through at least one live session-key grant.
+          const rows = yield* db
+            .select({ wallet, walletKey })
+            .from(wallet)
+            .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+            .innerJoin(
+              sessionKey,
+              and(
+                eq(sessionKey.walletId, wallet.id),
+                eq(sessionKey.organizationId, wallet.organizationId),
+              ),
+            )
+            .innerJoin(
+              sessionKeyGrant,
+              and(
+                eq(sessionKeyGrant.sessionKeyId, sessionKey.id),
+                eq(sessionKeyGrant.organizationId, sessionKey.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(wallet.organizationId, organizationId),
+                eq(sessionKeyGrant.actorId, actorId),
+                isNull(sessionKeyGrant.revokedAt),
+                eq(sessionKey.status, "active"),
+              ),
+            )
+            .orderBy(desc(wallet.createdAt), desc(wallet.id));
+          const uniqueWallets = new Map<WalletId, WalletView>();
+          for (const row of rows) {
+            if (!uniqueWallets.has(row.wallet.id)) {
+              uniqueWallets.set(row.wallet.id, decodeWalletView(row));
+            }
+          }
+          return [...uniqueWallets.values()];
         }, mapRepositoryError),
         updateMetadata: Effect.fn("database.walletRepository.updateMetadata")(function* (
           id,

@@ -50,17 +50,20 @@ export interface SessionKeyApplication {
     readonly actorId: ActorId;
     readonly request: CreateSessionKeyRequest;
   }) => Effect.Effect<SessionKeyView, WalletNotFoundError | SessionKeyCreationError>;
-  readonly get: (
-    organizationId: OrganizationId,
-    sessionKeyId: SessionKeyId,
-  ) => Effect.Effect<SessionKeyView, SessionKeyNotFoundError>;
-  readonly listForWallet: (
-    organizationId: OrganizationId,
-    walletId: WalletId,
-  ) => Effect.Effect<ReadonlyArray<SessionKeyView>, WalletNotFoundError>;
-  readonly listForOrganization: (
-    organizationId: OrganizationId,
-  ) => Effect.Effect<ReadonlyArray<SessionKeyView>>;
+  readonly get: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+    readonly sessionKeyId: SessionKeyId;
+  }) => Effect.Effect<SessionKeyView, SessionKeyNotFoundError>;
+  readonly listForWallet: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+    readonly walletId: WalletId;
+  }) => Effect.Effect<ReadonlyArray<SessionKeyView>, WalletNotFoundError>;
+  readonly listForOrganization: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+  }) => Effect.Effect<ReadonlyArray<SessionKeyView>>;
   readonly revoke: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -260,12 +263,22 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   );
 
   const get = Effect.fn("application.sessionKey.get")(
-    function* (organizationId: OrganizationId, sessionKeyId: SessionKeyId) {
-      const sessionKey = yield* repository.core.sessionKey.findById(sessionKeyId, organizationId);
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId?: ActorId;
+      readonly sessionKeyId: SessionKeyId;
+    }) {
+      const sessionKey = yield* input.actorId === undefined
+        ? repository.core.sessionKey.findById(input.sessionKeyId, input.organizationId)
+        : repository.core.sessionKey.findByIdForActor(
+            input.sessionKeyId,
+            input.organizationId,
+            input.actorId,
+          );
       if (sessionKey === undefined) {
         return yield* new SessionKeyNotFoundError({ code: "SESSION_KEY_NOT_FOUND" });
       }
-      const [view] = yield* loadViews(organizationId, [sessionKey]);
+      const [view] = yield* loadViews(input.organizationId, [sessionKey]);
       if (view === undefined) return yield* Effect.die("Session key view could not be loaded");
       return view;
     },
@@ -273,21 +286,39 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   );
 
   const listForWallet = Effect.fn("application.sessionKey.listForWallet")(
-    function* (organizationId: OrganizationId, walletId: WalletId) {
-      const wallet = yield* repository.core.wallet.findById(walletId, organizationId);
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId?: ActorId;
+      readonly walletId: WalletId;
+    }) {
+      const wallet = yield* input.actorId === undefined
+        ? repository.core.wallet.findById(input.walletId, input.organizationId)
+        : repository.core.wallet.findByIdForActor(
+            input.walletId,
+            input.organizationId,
+            input.actorId,
+          );
       if (wallet === undefined) {
         return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
       }
-      const sessionKeys = yield* repository.core.sessionKey.findForWallet(organizationId, walletId);
-      return yield* loadViews(organizationId, sessionKeys);
+      const sessionKeys = yield* input.actorId === undefined
+        ? repository.core.sessionKey.findForWallet(input.organizationId, input.walletId)
+        : repository.core.sessionKey.findForWalletAndActor(
+            input.organizationId,
+            input.walletId,
+            input.actorId,
+          );
+      return yield* loadViews(input.organizationId, sessionKeys);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const listForOrganization = Effect.fn("application.sessionKey.listForOrganization")(
-    function* (organizationId: OrganizationId) {
-      const sessionKeys = yield* repository.core.sessionKey.findForOrganization(organizationId);
-      return yield* loadViews(organizationId, sessionKeys);
+    function* (input: { readonly organizationId: OrganizationId; readonly actorId?: ActorId }) {
+      const sessionKeys = yield* input.actorId === undefined
+        ? repository.core.sessionKey.findForOrganization(input.organizationId)
+        : repository.core.sessionKey.findForActor(input.organizationId, input.actorId);
+      return yield* loadViews(input.organizationId, sessionKeys);
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

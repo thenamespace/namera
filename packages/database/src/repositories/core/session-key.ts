@@ -13,11 +13,11 @@ import {
   SessionKeyInsert,
   type SessionKey as SessionKeyModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { sessionKey } from "#/schema/index";
+import { sessionKey, sessionKeyGrant } from "#/schema/index";
 
 export interface SessionKeyRepositoryService {
   readonly insert: (data: SessionKeyInsert) => Effect.Effect<SessionKeyModel, DatabaseError>;
@@ -31,6 +31,20 @@ export interface SessionKeyRepositoryService {
   ) => Effect.Effect<ReadonlyArray<SessionKeyModel>, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyModel>, DatabaseError>;
+  readonly findByIdForActor: (
+    id: SessionKeyId,
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<SessionKeyModel | undefined, DatabaseError>;
+  readonly findForActor: (
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyModel>, DatabaseError>;
+  readonly findForWalletAndActor: (
+    organizationId: OrganizationId,
+    walletId: WalletId,
+    actorId: ActorId,
   ) => Effect.Effect<ReadonlyArray<SessionKeyModel>, DatabaseError>;
   readonly revoke: (
     id: SessionKeyId,
@@ -95,6 +109,89 @@ export class SessionKeyRepository extends Context.Service<
               .where(eq(sessionKey.organizationId, organizationId))
               .orderBy(desc(sessionKey.createdAt), desc(sessionKey.id));
             return rows.map((row) => Schema.decodeSync(SessionKey)(row as any));
+          },
+          mapRepositoryError,
+        ),
+        findByIdForActor: Effect.fn("database.sessionKeyRepository.findByIdForActor")(function* (
+          id,
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ sessionKey })
+            .from(sessionKey)
+            .innerJoin(
+              sessionKeyGrant,
+              and(
+                eq(sessionKeyGrant.sessionKeyId, sessionKey.id),
+                eq(sessionKeyGrant.organizationId, sessionKey.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(sessionKey.id, id),
+                eq(sessionKey.organizationId, organizationId),
+                eq(sessionKeyGrant.actorId, actorId),
+                isNull(sessionKeyGrant.revokedAt),
+                eq(sessionKey.status, "active"),
+              ),
+            )
+            .limit(1);
+          return rows[0] === undefined
+            ? undefined
+            : Schema.decodeSync(SessionKey)(rows[0].sessionKey as any);
+        }, mapRepositoryError),
+        findForActor: Effect.fn("database.sessionKeyRepository.findForActor")(function* (
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ sessionKey })
+            .from(sessionKey)
+            .innerJoin(
+              sessionKeyGrant,
+              and(
+                eq(sessionKeyGrant.sessionKeyId, sessionKey.id),
+                eq(sessionKeyGrant.organizationId, sessionKey.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(sessionKey.organizationId, organizationId),
+                eq(sessionKeyGrant.actorId, actorId),
+                isNull(sessionKeyGrant.revokedAt),
+                eq(sessionKey.status, "active"),
+              ),
+            )
+            .orderBy(desc(sessionKey.createdAt), desc(sessionKey.id));
+          return rows.map((row) => Schema.decodeSync(SessionKey)(row.sessionKey as any));
+        }, mapRepositoryError),
+        findForWalletAndActor: Effect.fn("database.sessionKeyRepository.findForWalletAndActor")(
+          function* (organizationId, walletId, actorId) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select({ sessionKey })
+              .from(sessionKey)
+              .innerJoin(
+                sessionKeyGrant,
+                and(
+                  eq(sessionKeyGrant.sessionKeyId, sessionKey.id),
+                  eq(sessionKeyGrant.organizationId, sessionKey.organizationId),
+                ),
+              )
+              .where(
+                and(
+                  eq(sessionKey.organizationId, organizationId),
+                  eq(sessionKey.walletId, walletId),
+                  eq(sessionKeyGrant.actorId, actorId),
+                  isNull(sessionKeyGrant.revokedAt),
+                  eq(sessionKey.status, "active"),
+                ),
+              )
+              .orderBy(desc(sessionKey.createdAt), desc(sessionKey.id));
+            return rows.map((row) => Schema.decodeSync(SessionKey)(row.sessionKey as any));
           },
           mapRepositoryError,
         ),

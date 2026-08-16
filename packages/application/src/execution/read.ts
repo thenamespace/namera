@@ -23,12 +23,14 @@ export interface ExecutionReadApplication {
     readonly actorId: ActorId;
     readonly submissionId: ExecutionSubmissionId;
   }) => Effect.Effect<GetExecutionSubmissionResponse, ExecutionSubmissionNotFoundError>;
-  readonly get: (
-    organizationId: OrganizationId,
-    executionId: ExecutionId,
-  ) => Effect.Effect<ExecutionResponse, ExecutionNotFoundError>;
+  readonly get: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+    readonly executionId: ExecutionId;
+  }) => Effect.Effect<ExecutionResponse, ExecutionNotFoundError>;
   readonly list: (input: {
     readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
     readonly cursor?: ExecutionId;
   }) => Effect.Effect<ListExecutionsResponse>;
 }
@@ -87,8 +89,18 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
   );
 
   const get = Effect.fn("application.execution.get")(
-    function* (organizationId: OrganizationId, executionId: ExecutionId) {
-      const execution = yield* repository.core.execution.findById(executionId, organizationId);
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId?: ActorId;
+      readonly executionId: ExecutionId;
+    }) {
+      const execution = yield* input.actorId === undefined
+        ? repository.core.execution.findById(input.executionId, input.organizationId)
+        : repository.core.execution.findByIdForActor(
+            input.executionId,
+            input.organizationId,
+            input.actorId,
+          );
       if (execution === undefined) {
         return yield* new ExecutionNotFoundError({ code: "EXECUTION_NOT_FOUND" });
       }
@@ -98,11 +110,23 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
   );
 
   const list = Effect.fn("application.execution.list")(
-    function* (input: { readonly organizationId: OrganizationId; readonly cursor?: ExecutionId }) {
-      const rows = yield* repository.core.execution.findForOrganization({
-        ...input,
-        limit: executionPageSize + 1,
-      });
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId?: ActorId;
+      readonly cursor?: ExecutionId;
+    }) {
+      const rows = yield* input.actorId === undefined
+        ? repository.core.execution.findForOrganization({
+            organizationId: input.organizationId,
+            ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+            limit: executionPageSize + 1,
+          })
+        : repository.core.execution.findForActor({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+            limit: executionPageSize + 1,
+          });
       const items = rows.slice(0, executionPageSize);
       return {
         items,
