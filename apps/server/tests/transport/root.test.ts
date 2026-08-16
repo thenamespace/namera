@@ -8,7 +8,7 @@ import {
   HttpServerResponse,
 } from "effect/unstable/http";
 
-import { RootRoutes } from "#/routes/root";
+import { RootRoutes } from "#/routes/core/root";
 
 layer(HttpServer.layerServices)("root route", (it) => {
   it.effect("returns the API identity", () =>

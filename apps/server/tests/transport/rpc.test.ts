@@ -13,7 +13,7 @@ import {
 import { Evm } from "@namera-ai/evm";
 
 import { RateLimiterLive } from "#/rate-limit";
-import { RpcRoutes } from "#/routes/rpc";
+import { RpcRoutes } from "#/routes/proxy/rpc";
 
 const UpstreamClientLayer = Layer.succeed(
   HttpClient.HttpClient,

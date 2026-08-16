@@ -12,9 +12,9 @@ import type { Application } from "@namera-ai/application";
 import type { CryptoService } from "@namera-ai/crypto";
 import type { Repository } from "@namera-ai/database";
 
+import { OAuthProtocolRoutes } from "#/routes/auth/oauth/protocol";
 import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 import { McpRoutes } from "#/routes/mcp/index";
-import { OAuthProtocolRoutes } from "#/routes/oauth";
 
 const protocolConfig = ConfigProvider.fromUnknown({
   AUTH_API_PUBLIC_ORIGIN: "http://api.test",

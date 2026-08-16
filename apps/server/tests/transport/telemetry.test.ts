@@ -11,7 +11,7 @@ import {
 } from "effect/unstable/http";
 
 import { RateLimiterLive } from "#/rate-limit";
-import { TelemetryRoutes } from "#/routes/telemetry";
+import { TelemetryRoutes } from "#/routes/proxy/telemetry";
 
 const LocalTelemetryConfig = ConfigProvider.layer(
   ConfigProvider.fromUnknown({
