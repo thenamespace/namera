@@ -33,14 +33,21 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "test:watch": "NODE_OPTIONS=--conditions=namera-source vitest",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@namera-ai/api": "workspace:*",
+    "@namera-ai/protocol": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

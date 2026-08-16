@@ -1,28 +1,67 @@
 # @namera-ai/sdk
 
-Publishable TypeScript SDK scaffold for Namera's public API. No supported client
-API is implemented yet; the current source export is only a placeholder and
-must not be treated as a stable contract.
+Browser- and Node-compatible client for the API-key-authenticated Namera API.
+The SDK uses the schema-derived `@namera-ai/api` HTTP client internally, but its
+public methods return ordinary promises and do not expose Effect programs.
 
-## Intended responsibility
+## Usage
 
-- Provide a typed client for API-key-authenticated execution, submission status,
-  execution reads, and policy-gated signatures.
-- Decode public protocol responses and typed API errors.
-- Provide small client-side conveniences such as confirmed-execution polling.
-- Keep business rules, policy evaluation, credential persistence, and provider
-  clients on the server.
+```ts
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+
+const wallets = await namera.getWallets();
+
+if (!wallets.success) {
+  console.error(wallets.error.message);
+  return;
+}
+
+console.log(wallets.data);
+```
+
+Every operation resolves to `NameraResult<A>`:
+
+```ts
+type NameraResult<A> =
+  { success: true; data: A; error: null } | { success: false; data: null; error: NameraSdkError };
+```
+
+Use `baseUrl` for self-hosted or local servers. A Fetch-compatible runtime is
+used automatically; `fetch` may be supplied explicitly for nonstandard
+runtimes and tests.
+
+## Supported API-key operations
+
+- `getWallets`, `getWallet`
+- `getSessionKeys`, `getSessionKeysForWallet`, `getSessionKey`
+- `executions.execute`, `executions.getSubmission`, `executions.get`,
+  `executions.list`
+- `sign`
+
+Grouped `wallets` and `sessionKeys` clients expose the same reads when a grouped
+call style is clearer.
 
 ## Structure
 
-- `src/index.ts` — future public entry point.
+- `src/client.ts` — public `NameraClient` facade.
+- `src/wallets.ts`, `src/session-keys.ts`, `src/executions.ts` — focused resource
+  clients.
+- `src/transport.ts` — internal generated HttpApi client and API-key middleware.
+- `src/result.ts` — promise result and SDK error contracts.
+- `src/index.ts` — intentional public exports.
+- `tests/` — transport-boundary contract tests using an injected Fetch function.
 - `package.json` — package metadata, scripts, source condition, and publish exports.
 - `tsconfig.json` — Node package TypeScript configuration.
 - `tsdown.config.ts` — unbundled ESM build and declaration output.
 
 ## Development
 
-Expose only intentional public APIs from `src/index.ts`. Use `protocol`
-contracts instead of duplicating request or response types. Preserve the
-`namera-source` condition for monorepo development and verify publish output
-with `pnpm --filter @namera-ai/sdk build` before making the package public.
+Add only operations supported by API-key actors. Call the generated
+`@namera-ai/api` client instead of hand-building paths or repeating schema
+encoding. Keep Effect inside the package boundary and convert each operation to
+`NameraResult` in the shared transport. Preserve the `namera-source` condition
+and run the package tests and build before publishing.
