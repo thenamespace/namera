@@ -17,7 +17,6 @@ import {
   FieldLabel,
   IconPicker,
   Input,
-  toast,
 } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
@@ -27,6 +26,7 @@ import {
   DashboardCardRow,
 } from "@/components/dashboard-card";
 import { useCreateOrganization } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🏢" };
@@ -39,20 +39,27 @@ const defaultValues: CreateOrganizationRequestType = {
 };
 
 export function CreateWorkspaceForm() {
-  const createOrganization = useCreateOrganization();
   const navigate = useNavigate();
+  const createOrganization = useCreateOrganization({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t create workspace",
+        description: "Review the workspace details and try again.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "Workspace created",
+        description: "You are now working in the new workspace.",
+      });
+      void navigate({ to: "/", replace: true });
+    },
+  });
   const form = useForm<CreateOrganizationRequestType>({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateOrganizationRequest)),
   });
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      await createOrganization.mutateAsync({ payload });
-      toast.success("Workspace created");
-      await navigate({ to: "/", replace: true });
-    } catch {
-      toast.danger("Couldn't create the workspace.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    createOrganization.mutate({ payload });
   });
 
   return (

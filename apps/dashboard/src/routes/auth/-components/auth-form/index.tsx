@@ -4,6 +4,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useEventCallback, useStep } from "usehooks-ts";
 
 import { useRequestMagicLink } from "@/hooks/auth";
+import { getErrorMessage } from "@/lib/error-messages";
 
 import { AuthShell } from "../auth-shell";
 import { EmailConfirmation } from "./email-confirmation";
@@ -23,15 +24,11 @@ export function AuthForm({ returnTo }: AuthFormProps) {
     resolver: standardSchemaResolver(EmailFormValidator),
   });
   const [step, { goToNextStep, goToPrevStep, reset: resetStep }] = useStep(totalSteps);
-  const requestMagicLink = useRequestMagicLink();
-
-  const continueWithEmail = useEventCallback(async (payload: EmailFormOutput) => {
-    try {
-      await requestMagicLink.mutateAsync({ payload });
-      goToNextStep();
-    } catch {
-      return;
-    }
+  const requestMagicLink = useRequestMagicLink({
+    onSuccess: () => goToNextStep(),
+  });
+  const continueWithEmail = useEventCallback((payload: EmailFormOutput) => {
+    requestMagicLink.mutate({ payload });
   });
 
   const backToOptions = useEventCallback(() => {
@@ -52,7 +49,10 @@ export function AuthForm({ returnTo }: AuthFormProps) {
       <EmailEntry
         errorMessage={
           requestMagicLink.isError
-            ? "Couldn't send the link. Wait a moment and try again."
+            ? getErrorMessage(requestMagicLink.error, {
+                title: "Couldn’t send the sign-in link",
+                description: "Wait a moment, then try again.",
+              }).description
             : undefined
         }
         isPending={requestMagicLink.isPending}

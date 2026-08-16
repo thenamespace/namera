@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { toast } from "@namera-ai/ui";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type EmailDisplayProps = {
   email: string;
@@ -9,8 +9,8 @@ type EmailDisplayProps = {
 export function EmailDisplay({ email }: EmailDisplayProps) {
   const copyEmail = useCallback(() => {
     void navigator.clipboard.writeText(email).then(
-      () => toast.success("Email copied"),
-      () => toast.danger("Couldn't copy email"),
+      () => showSuccessToast({ title: "Email copied" }),
+      () => showErrorToast(undefined, { title: "Couldn’t copy email" }),
     );
   }, [email]);
 

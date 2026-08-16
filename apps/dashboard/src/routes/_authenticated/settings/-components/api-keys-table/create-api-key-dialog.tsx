@@ -20,7 +20,6 @@ import {
   Modal,
   Select,
   Typography,
-  toast,
 } from "@namera-ai/ui";
 import { Add01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
@@ -29,6 +28,7 @@ import { useEventCallback } from "usehooks-ts";
 import { MetadataDisplay } from "@/components/display";
 import { useCreateApiKey } from "@/hooks/api-key";
 import { useSessionKeys } from "@/hooks/session-key";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type CreateApiKeyInput = typeof CreateApiKeyRequest.Encoded;
 type CreateApiKeyOutput = typeof CreateApiKeyRequest.Type;
@@ -54,10 +54,31 @@ type CreateApiKeyDialogProps = {
 };
 
 export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogProps) {
-  const createApiKey = useCreateApiKey();
   const sessionKeys = useSessionKeys();
   const [isOpen, setIsOpen] = useState(false);
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
+  const createApiKey = useCreateApiKey({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t create API key",
+        description: "Review its session-key access and try again.",
+      }),
+    onSuccess: (key) => {
+      setCreated(key);
+      void navigator.clipboard.writeText(key.key).then(
+        () =>
+          showSuccessToast({
+            title: "API key created and copied",
+            description: "Store it now. It won’t be shown again.",
+          }),
+        () =>
+          showSuccessToast({
+            title: "API key created",
+            description: "Copy and store it now. It won’t be shown again.",
+          }),
+      );
+    },
+  });
   const availableSessionKeys = useMemo(
     () => (sessionKeys.data ?? initialSessionKeys).filter(({ status }) => status === "active"),
     [initialSessionKeys, sessionKeys.data],
@@ -75,28 +96,24 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
       createApiKey.reset();
     }
   });
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      const key = await createApiKey.mutateAsync({ payload });
-      setCreated(key);
-      await navigator.clipboard.writeText(key.key);
-      toast.success("API Key copied to clipboard", {
-        description: "You can now use this key to access Namera SDK",
-      });
-    } catch {
-      toast.danger("Couldn't create the API key.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    createApiKey.mutate({ payload });
   });
-  const copyKey = useEventCallback(async () => {
+  const copyKey = useEventCallback(() => {
     if (created === null) return;
-    try {
-      await navigator.clipboard.writeText(created.key);
-      toast.success("API Key copied to clipboard", {
-        description: "You can now use this key to access Namera SDK",
-      });
-    } catch {
-      toast.danger("Couldn't copy the API key.");
-    }
+
+    void navigator.clipboard.writeText(created.key).then(
+      () =>
+        showSuccessToast({
+          title: "API key copied",
+          description: "Store it somewhere secure before closing this dialog.",
+        }),
+      () =>
+        showErrorToast(undefined, {
+          title: "Couldn’t copy API key",
+          description: "Copy it manually before closing this dialog.",
+        }),
+    );
   });
 
   return (

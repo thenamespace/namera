@@ -23,11 +23,19 @@ import {
 } from "@/components/dashboard-card";
 import { useUpdateUser } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const defaultImage: MetadataIcon = { type: "icon", value: "user", color: "#f7f8f8" };
 
 export function ProfileForm({ user }: { user: GetUserResponse }) {
-  const updateUser = useUpdateUser();
+  const updateUser = useUpdateUser({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t save profile",
+        description: "Your latest changes were not saved.",
+      }),
+    onSuccess: () => showSuccessToast({ title: "Profile saved" }),
+  });
   const form = useForm<UpdateUserRequest>({
     defaultValues: { metadata: user.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
@@ -39,7 +47,7 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
       return payload;
     },
   });
-  const handleSubmit = form.handleSubmit((payload) => updateUser.mutateAsync({ payload }));
+  const handleSubmit = form.handleSubmit((payload) => updateUser.mutate({ payload }));
 
   return (
     <form id="profile-form" noValidate onSubmit={handleSubmit}>

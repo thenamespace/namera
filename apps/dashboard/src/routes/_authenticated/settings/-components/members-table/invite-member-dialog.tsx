@@ -17,13 +17,13 @@ import {
   Modal,
   Select,
   Typography,
-  toast,
 } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { useAssignableOrganizationRoles, useInviteMember } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type InviteMemberInput = typeof InviteMemberRequest.Encoded;
 type InviteMemberOutput = typeof InviteMemberRequest.Type;
@@ -34,13 +34,26 @@ export function InviteMemberDialog({
   initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
 }) {
   const roles = useAssignableOrganizationRoles();
-  const inviteMember = useInviteMember();
   const inviteRoles = roles.data ?? initialRoles;
   const defaultValues: InviteMemberInput = {
     email: "",
     organizationRoleId: inviteRoles[0]?.id ?? "",
   };
   const [isOpen, setIsOpen] = useState(false);
+  const inviteMember = useInviteMember({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t send invitation",
+        description: "Check the email and role, then try again.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "Invitation sent",
+        description: "They’ll receive an email with the invitation details.",
+      });
+      setIsOpen(false);
+    },
+  });
   const form = useForm<InviteMemberInput, unknown, InviteMemberOutput>({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(InviteMemberRequest)),
@@ -55,14 +68,8 @@ export function InviteMemberDialog({
     setIsOpen(open);
     if (!open) form.reset(defaultValues);
   });
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      await inviteMember.mutateAsync({ payload });
-      toast.success("Invitation sent");
-      handleOpenChange(false);
-    } catch {
-      toast.danger("Couldn’t send the invitation.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    inviteMember.mutate({ payload });
   });
 
   return (

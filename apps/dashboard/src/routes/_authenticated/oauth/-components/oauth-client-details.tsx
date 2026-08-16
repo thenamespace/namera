@@ -1,6 +1,8 @@
-import { Button, Chip, Surface, Tooltip, toast } from "@namera-ai/ui";
+import { Button, Chip, Surface, Tooltip } from "@namera-ai/ui";
 import { Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
+
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type CopyableOAuthValueProps = {
   label: string;
@@ -11,8 +13,8 @@ function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
   const displayValue = value.length > 40 ? `${value.slice(0, 20)}…${value.slice(-12)}` : value;
   const copyValue = useEventCallback(() => {
     void navigator.clipboard.writeText(value).then(
-      () => toast.success(`${label} copied`),
-      () => toast.danger(`Couldn't copy ${label.toLowerCase()}`),
+      () => showSuccessToast({ title: `${label} copied` }),
+      () => showErrorToast(undefined, { title: `Couldn’t copy ${label.toLowerCase()}` }),
     );
   });
 

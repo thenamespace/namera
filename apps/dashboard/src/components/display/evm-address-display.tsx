@@ -1,10 +1,12 @@
 import type { KeyboardEvent } from "react";
 
 import type { EthereumAddress } from "@namera-ai/protocol/evm";
-import { Avatar, Tooltip, toast } from "@namera-ai/ui";
+import { Avatar, Tooltip } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 import { useEnsAvatar, useEnsName } from "wagmi";
 import { mainnet } from "wagmi/chains";
+
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type EvmAddressDisplayProps = {
   address: EthereumAddress;
@@ -27,8 +29,8 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
   const placeholderAvatar = `https://api.dicebear.com/10.x/glass/svg?seed=${address}&size=40`;
   const copyAddress = useEventCallback(() => {
     void navigator.clipboard.writeText(address).then(
-      () => toast.success("Address copied"),
-      () => toast.danger("Couldn’t copy address"),
+      () => showSuccessToast({ title: "Address copied" }),
+      () => showErrorToast(undefined, { title: "Couldn’t copy address" }),
     );
   });
   const handleKeyDown = useEventCallback((event: KeyboardEvent<HTMLDivElement>) => {

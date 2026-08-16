@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
@@ -11,6 +11,16 @@ type MutationArguments<Input> =
   {} extends MutationVariables<Input>
     ? [input?: MutationVariables<Input>]
     : [input: MutationVariables<Input>];
+
+export type MutationOptions<Variables, A, E> = {
+  readonly onError?: (error: E, variables: Variables) => void | Promise<void>;
+  readonly onSettled?: (
+    data: A | undefined,
+    error: E | null,
+    variables: Variables,
+  ) => void | Promise<void>;
+  readonly onSuccess?: (data: A, variables: Variables) => void | Promise<void>;
+};
 
 export const toQuery = <Args extends readonly unknown[], A, E>(
   getAtom: (...args: Args) => Atom.Atom<AsyncResult.AsyncResult<A, E>>,
@@ -63,9 +73,12 @@ export const toMutation = <
 ) => {
   const invalidates = options?.invalidates;
 
-  return function useMutation() {
+  return function useMutation(callbacks: MutationOptions<MutationVariables<Input>, A, E> = {}) {
     const [result, set] = useAtom(atom);
     const setAsync = useAtomSet(atom, { mode: "promise" });
+    const callbacksRef = useRef(callbacks);
+    callbacksRef.current = callbacks;
+
     const isIdle = AsyncResult.isInitial(result) && !result.waiting;
     const isPending = result.waiting;
     const isError = AsyncResult.isFailure(result) && !isPending;
@@ -80,15 +93,32 @@ export const toMutation = <
         reactivityKeys: typeof invalidates === "function" ? invalidates(input) : invalidates,
       } as Input;
     }, []);
-    const mutate = useCallback(
-      (...args: MutationArguments<Input>) =>
-        set(withInvalidation((args[0] ?? {}) as MutationVariables<Input>)),
-      [set, withInvalidation],
-    );
     const mutateAsync = useCallback(
-      (...args: MutationArguments<Input>) =>
-        setAsync(withInvalidation((args[0] ?? {}) as MutationVariables<Input>)),
+      async (...args: MutationArguments<Input>) => {
+        const variables = (args[0] ?? {}) as MutationVariables<Input>;
+        let data: A;
+
+        try {
+          data = await setAsync(withInvalidation(variables));
+        } catch (error) {
+          await callbacksRef.current.onError?.(error as E, variables);
+          await callbacksRef.current.onSettled?.(undefined, error as E, variables);
+
+          throw error;
+        }
+
+        await callbacksRef.current.onSuccess?.(data, variables);
+        await callbacksRef.current.onSettled?.(data, null, variables);
+
+        return data;
+      },
       [setAsync, withInvalidation],
+    );
+    const mutate = useCallback(
+      (...args: MutationArguments<Input>) => {
+        void mutateAsync(...args).catch(() => undefined);
+      },
+      [mutateAsync],
     );
     const reset = useCallback(() => set(Atom.Reset), [set]);
     const cancel = useCallback(() => set(Atom.Interrupt), [set]);

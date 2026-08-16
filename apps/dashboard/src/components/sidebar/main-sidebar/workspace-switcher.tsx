@@ -2,7 +2,7 @@ import type { Key } from "react";
 
 import { useNavigate } from "@tanstack/react-router";
 
-import { Button, Dropdown, IconPreview, Label, toast } from "@namera-ai/ui";
+import { Button, Dropdown, IconPreview, Label } from "@namera-ai/ui";
 import {
   ArrowDown01Icon,
   HugeiconsIcon,
@@ -17,15 +17,43 @@ import {
   useSwitchOrganization,
   useUserOrganizations,
 } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const defaultWorkspaceLogo = { type: "emoji", value: "🏢" } as const;
 
 export function WorkspaceSwitcher() {
+  const navigate = useNavigate();
   const currentUser = useCurrentUser();
   const organizations = useUserOrganizations();
-  const switchOrganization = useSwitchOrganization();
-  const logout = useLogout();
-  const navigate = useNavigate();
+  const switchOrganization = useSwitchOrganization({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t switch workspace",
+        description: "You are still in the current workspace.",
+      }),
+    onSuccess: (_, variables) => {
+      const selected = organizations.data?.find(
+        ({ organization }) => organization.id === variables.payload.organizationId,
+      );
+
+      showSuccessToast(
+        selected === undefined
+          ? { title: "Workspace switched" }
+          : {
+              title: "Workspace switched",
+              description: selected.organization.metadata.name,
+            },
+      );
+    },
+  });
+  const logout = useLogout({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t log out",
+        description: "Your session is still active.",
+      }),
+    onSuccess: () => void navigate({ to: "/auth", replace: true }),
+  });
   const activeOrganization = currentUser.data?.organization;
 
   const handleAction = useEventCallback(async (key: Key) => {
@@ -42,26 +70,16 @@ export function WorkspaceSwitcher() {
       return;
     }
     if (key === "logout") {
-      try {
-        await logout.mutateAsync();
-        await navigate({ to: "/auth", replace: true });
-      } catch {
-        toast.danger("Couldn’t log out.");
-      }
+      logout.mutate();
       return;
     }
 
     const selected = organizations.data?.find(({ organization }) => organization.id === key);
     if (!selected || selected.organization.id === activeOrganization?.id) return;
 
-    try {
-      await switchOrganization.mutateAsync({
-        payload: { organizationId: selected.organization.id },
-      });
-      toast.success(`Switched to ${selected.organization.metadata.name}`);
-    } catch {
-      toast.danger("Couldn’t switch organizations.");
-    }
+    switchOrganization.mutate({
+      payload: { organizationId: selected.organization.id },
+    });
   });
 
   return (

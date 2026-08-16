@@ -8,13 +8,14 @@ import {
   UpdateNotificationPreferenceRequest,
   type ListNotificationPreferencesResponse,
 } from "@namera-ai/protocol/dto";
-import { FieldGroup, toast } from "@namera-ai/ui";
+import { FieldGroup } from "@namera-ai/ui";
 import { useForm } from "react-hook-form";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
 import { HeadingGroup } from "@/components/heading-group";
 import { useUpdateNotificationPreference } from "@/hooks/notification";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { notificationPreferenceSections } from "./data";
 import { NotificationPreferenceToggle } from "./preference-toggle";
@@ -38,7 +39,13 @@ export function NotificationPreferencesForm({
   initialPreferences,
   organizationId: activeOrganizationId,
 }: NotificationPreferencesFormProps) {
-  const updatePreference = useUpdateNotificationPreference();
+  const updatePreference = useUpdateNotificationPreference({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t save preferences",
+        description: "Your latest notification changes were not saved.",
+      }),
+  });
   const defaultValues = useMemo<NotificationPreferencesFormInput>(
     () => ({
       preferences: notificationPreferenceSections.flatMap((section) =>
@@ -96,7 +103,7 @@ export function NotificationPreferencesForm({
       savedPreferencesRef.current = new Map(
         preferences.map((preference) => [preferenceKey(preference), preference.enabled]),
       );
-      toast.success("Preferences saved");
+      showSuccessToast({ title: "Preferences saved" });
     },
   });
 

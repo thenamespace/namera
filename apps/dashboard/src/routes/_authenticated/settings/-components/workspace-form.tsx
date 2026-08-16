@@ -26,6 +26,7 @@ import {
 import { ReadOnlyInput } from "@/components/read-only-input";
 import { useUpdateOrganization } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🏢" };
@@ -36,7 +37,14 @@ type WorkspaceFormProps = {
 };
 
 export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
-  const updateOrganization = useUpdateOrganization();
+  const updateOrganization = useUpdateOrganization({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t save workspace",
+        description: "Your latest changes were not saved.",
+      }),
+    onSuccess: () => showSuccessToast({ title: "Workspace saved" }),
+  });
   const form = useForm<UpdateOrganizationRequest>({
     defaultValues: { metadata: organization.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateOrganizationRequest)),
@@ -60,9 +68,9 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
     <form
       id="workspace-settings-form"
       noValidate
-      onSubmit={form.handleSubmit((payload) =>
-        canUpdate ? updateOrganization.mutateAsync({ payload }) : Promise.resolve(),
-      )}
+      onSubmit={form.handleSubmit((payload) => {
+        if (canUpdate) updateOrganization.mutate({ payload });
+      })}
     >
       <DashboardCardRoot>
         <DashboardCardContent>

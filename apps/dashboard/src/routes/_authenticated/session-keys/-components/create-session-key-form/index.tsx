@@ -5,10 +5,11 @@ import { Schema } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { CreateSessionKeyRequest, type ListWalletsResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { Button, toast } from "@namera-ai/ui";
+import { Button } from "@namera-ai/ui";
 import { useForm, type DefaultValues } from "react-hook-form";
 
 import { useCreateSessionKey } from "@/hooks/session-key";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
 import { PolicySection } from "./policies";
@@ -31,20 +32,27 @@ type CreateSessionKeyFormProps = {
 };
 
 export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
-  const createSessionKey = useCreateSessionKey();
   const navigate = useNavigate();
+  const createSessionKey = useCreateSessionKey({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t create session key",
+        description: "Review its details and policies, then try again.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "Session key created",
+        description: "The policy-scoped key is ready to grant.",
+      });
+      void navigate({ to: "/session-keys", replace: true });
+    },
+  });
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyRequest)),
   });
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      await createSessionKey.mutateAsync({ payload });
-      toast.success("Session key created");
-      await navigate({ to: "/session-keys", replace: true });
-    } catch {
-      toast.danger("Couldn't create the session key.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    createSessionKey.mutate({ payload });
   });
 
   return (

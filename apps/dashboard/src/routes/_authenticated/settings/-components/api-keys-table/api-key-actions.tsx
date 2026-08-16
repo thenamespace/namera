@@ -1,31 +1,39 @@
 import { useState, type Key } from "react";
 
 import type { ApiKeyResponse } from "@namera-ai/protocol/dto";
-import { AlertDialog, Button, Dropdown, Label, toast } from "@namera-ai/ui";
+import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import { useRevokeApiKey } from "@/hooks/api-key";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type ApiKeyActionsProps = {
   apiKey: ApiKeyResponse;
 };
 
 export function ApiKeyActions({ apiKey }: ApiKeyActionsProps) {
-  const revokeApiKey = useRevokeApiKey();
   const [isOpen, setIsOpen] = useState(false);
+  const revokeApiKey = useRevokeApiKey({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t revoke API key",
+        description: "The key is still active. Try again.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "API key revoked",
+        description: "Its session-key grants can no longer be used.",
+      });
+      setIsOpen(false);
+    },
+  });
 
   const handleAction = useEventCallback((key: Key) => {
     if (key === "revoke") setIsOpen(true);
   });
-  const handleRevoke = useEventCallback(async () => {
-    try {
-      await revokeApiKey.mutateAsync({ params: { apiKeyId: apiKey.id } });
-      toast.success("API key revoked");
-      setIsOpen(false);
-    } catch {
-      toast.danger("Couldn’t revoke the API key.");
-    }
+  const handleRevoke = useEventCallback(() => {
+    revokeApiKey.mutate({ params: { apiKeyId: apiKey.id } });
   });
 
   if (apiKey.revokedAt !== null) return null;

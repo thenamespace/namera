@@ -20,7 +20,6 @@ import {
   ListBox,
   Select,
   Typography,
-  toast,
 } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
@@ -30,6 +29,7 @@ import {
   useApproveOAuthAuthorizationRequest,
   useDenyOAuthAuthorizationRequest,
 } from "@/hooks/auth";
+import { showErrorToast } from "@/lib/toasts";
 
 import { OAuthClientDetails } from "./oauth-client-details";
 
@@ -49,8 +49,22 @@ export function OAuthConsentForm({
   request,
   sessionKeys,
 }: OAuthConsentFormProps) {
-  const approve = useApproveOAuthAuthorizationRequest();
-  const deny = useDenyOAuthAuthorizationRequest();
+  const approve = useApproveOAuthAuthorizationRequest({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t authorize client",
+        description: "Review the requested access and try again.",
+      }),
+    onSuccess: (response) => window.location.assign(response.redirectUrl),
+  });
+  const deny = useDenyOAuthAuthorizationRequest({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t deny request",
+        description: "Try again before closing this page.",
+      }),
+    onSuccess: (response) => window.location.assign(response.redirectUrl),
+  });
   const activeSessionKeys = useMemo(
     () => sessionKeys.filter(({ status }) => status === "active"),
     [sessionKeys],
@@ -65,21 +79,11 @@ export function OAuthConsentForm({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(ApproveOAuthAuthorizationRequest)),
   });
   const isPending = approve.isPending || deny.isPending;
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      const response = await approve.mutateAsync({ payload });
-      window.location.assign(response.redirectUrl);
-    } catch {
-      toast.danger("Couldn't authorize this client.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    approve.mutate({ payload });
   });
-  const handleDeny = async () => {
-    try {
-      const response = await deny.mutateAsync({ payload: { requestId: request.id } });
-      window.location.assign(response.redirectUrl);
-    } catch {
-      toast.danger("Couldn't deny this request.");
-    }
+  const handleDeny = () => {
+    deny.mutate({ payload: { requestId: request.id } });
   };
 
   return (

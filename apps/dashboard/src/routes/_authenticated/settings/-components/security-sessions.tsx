@@ -1,11 +1,12 @@
 import { useNavigate } from "@tanstack/react-router";
 
 import type { ListSessionsResponse } from "@namera-ai/protocol/dto";
-import { Button, Typography, toast } from "@namera-ai/ui";
+import { Button, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { useLogout, useRevokeOtherSessions, useSessions } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionCard } from "./session-card";
 
@@ -15,31 +16,37 @@ type SecuritySessionsProps = {
 };
 
 export function SecuritySessions({ currentSessionId, initialSessions }: SecuritySessionsProps) {
-  const logout = useLogout();
-  const revokeOthers = useRevokeOtherSessions();
-  const sessions = useSessions();
   const navigate = useNavigate();
+  const logout = useLogout({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t log out",
+        description: "This session is still active.",
+      }),
+    onSuccess: () => void navigate({ to: "/auth", replace: true }),
+  });
+  const revokeOthers = useRevokeOtherSessions({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t log out other sessions",
+        description: "Those sessions may still be active.",
+      }),
+    onSuccess: (count) =>
+      showSuccessToast({
+        title: count === 1 ? "Logged out 1 session" : `Logged out ${count} sessions`,
+        description: "Your current session remains active.",
+      }),
+  });
+  const sessions = useSessions();
   const sessionData = sessions.data ?? initialSessions;
   const otherSessionCount = sessionData.filter((session) => session.id !== currentSessionId).length;
 
-  const handleLogout = useEventCallback(async () => {
-    try {
-      await logout.mutateAsync();
-      await navigate({ to: "/auth", replace: true });
-    } catch {
-      toast.danger("Couldn’t log out this session.");
-    }
+  const handleLogout = useEventCallback(() => {
+    logout.mutate();
   });
 
-  const handleRevokeOthers = useEventCallback(async () => {
-    try {
-      const count = await revokeOthers.mutateAsync();
-      toast.success(
-        count === 1 ? "Logged out 1 other session" : `Logged out ${count} other sessions`,
-      );
-    } catch {
-      toast.danger("Couldn’t log out other sessions.");
-    }
+  const handleRevokeOthers = useEventCallback(() => {
+    revokeOthers.mutate();
   });
 
   return (

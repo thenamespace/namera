@@ -17,20 +17,17 @@ type VerifyFormProps = {
 };
 
 export function VerifyForm({ search }: VerifyFormProps) {
-  const verifyMagicLink = useVerifyMagicLink();
   const isValidLink = Schema.is(GetMagicLinkRequest)(search);
+  const verifyMagicLink = useVerifyMagicLink({
+    onSuccess: (response) => window.location.replace(response.body.returnTo),
+  });
 
-  const verify = useEventCallback(async () => {
+  const verify = useEventCallback(() => {
     if (!isValidLink) return;
 
-    try {
-      const response = await verifyMagicLink.mutateAsync({
-        payload: { type: "token", id: search.id, token: search.token },
-      });
-      window.location.replace(response.body.returnTo);
-    } catch {
-      return;
-    }
+    verifyMagicLink.mutate({
+      payload: { type: "token", id: search.id, token: search.token },
+    });
   });
 
   const errorMessage = !isValidLink

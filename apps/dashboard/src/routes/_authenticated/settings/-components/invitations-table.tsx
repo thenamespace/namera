@@ -3,26 +3,29 @@ import { useMemo } from "react";
 import { DateTime } from "effect";
 
 import type { GetInvitationResponse } from "@namera-ai/protocol/dto";
-import { Button, DataGrid, Typography, toast, type DataGridColumn } from "@namera-ai/ui";
+import { Button, DataGrid, Typography, type DataGridColumn } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
 import { DateDisplay, EmailDisplay, OrganizationRoleDisplay } from "@/components/display";
 import { useCancelInvitation, useOrganizationInvitations } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const invitationCollator = new Intl.Collator(undefined, { sensitivity: "base" });
 
 function CancelInvitationButton({ invitation }: { invitation: GetInvitationResponse }) {
-  const cancelInvitation = useCancelInvitation();
+  const cancelInvitation = useCancelInvitation({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t cancel invitation",
+        description: "The invitation is still active.",
+      }),
+    onSuccess: () => showSuccessToast({ title: "Invitation canceled" }),
+  });
 
-  const handleCancel = useEventCallback(async () => {
-    try {
-      await cancelInvitation.mutateAsync({
-        payload: { invitationId: invitation.invitation.id },
-      });
-      toast.success("Invitation cancelled");
-    } catch {
-      toast.danger("Couldn’t cancel the invitation.");
-    }
+  const handleCancel = useEventCallback(() => {
+    cancelInvitation.mutate({
+      payload: { invitationId: invitation.invitation.id },
+    });
   });
 
   return (

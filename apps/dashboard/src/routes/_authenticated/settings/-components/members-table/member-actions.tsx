@@ -21,7 +21,6 @@ import {
   Modal,
   Select,
   Typography,
-  toast,
 } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
@@ -29,6 +28,7 @@ import { useEventCallback } from "usehooks-ts";
 
 import { hasPermissions } from "@/components/permission";
 import { useCurrentUser, useRemoveMember, useUpdateMemberRole } from "@/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const memberUpdatePermission = ["member:update"] as const;
 const memberRemovePermission = ["member:remove"] as const;
@@ -43,8 +43,31 @@ type UpdateRoleOutput = typeof UpdateOrganizationMemberRoleRequest.Type;
 
 export function MemberActions({ member, assignableRoles }: MemberActionsProps) {
   const [dialog, setDialog] = useState<"role" | "remove" | null>(null);
-  const updateRole = useUpdateMemberRole();
-  const removeMember = useRemoveMember();
+  const updateRole = useUpdateMemberRole({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t update role",
+        description: "The member’s access has not changed.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({ title: "Member role updated" });
+      setDialog(null);
+    },
+  });
+  const removeMember = useRemoveMember({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t remove member",
+        description: "They still have access to this workspace.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "Member removed",
+        description: "Their workspace access has been revoked.",
+      });
+      setDialog(null);
+    },
+  });
   const currentUser = useCurrentUser();
   const form = useForm<UpdateRoleInput, unknown, UpdateRoleOutput>({
     defaultValues: {
@@ -70,26 +93,14 @@ export function MemberActions({ member, assignableRoles }: MemberActionsProps) {
     if (key === "remove-member") setDialog("remove");
   });
 
-  const handleRoleUpdate = form.handleSubmit(async (payload) => {
-    try {
-      await updateRole.mutateAsync({ payload });
-      toast.success("Member role updated");
-      setDialog(null);
-    } catch {
-      toast.danger("Couldn’t update the member role.");
-    }
+  const handleRoleUpdate = form.handleSubmit((payload) => {
+    updateRole.mutate({ payload });
   });
 
-  const handleRemove = useEventCallback(async () => {
-    try {
-      await removeMember.mutateAsync({
-        payload: { organizationMemberId: member.organizationMember.id },
-      });
-      toast.success("Member removed");
-      setDialog(null);
-    } catch {
-      toast.danger("Couldn’t remove the member.");
-    }
+  const handleRemove = useEventCallback(() => {
+    removeMember.mutate({
+      payload: { organizationMemberId: member.organizationMember.id },
+    });
   });
 
   const handleRoleModalChange = useEventCallback((open: boolean) => {

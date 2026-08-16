@@ -22,7 +22,6 @@ import {
   Typography,
   cn,
   inputVariants,
-  toast,
 } from "@namera-ai/ui";
 import { ChainIcon, KernelIcon, SafeWalletIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
@@ -33,6 +32,7 @@ import {
   DashboardCardRow,
 } from "@/components/dashboard-card";
 import { useCreateWallet } from "@/hooks/wallet";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "💳" };
@@ -52,20 +52,27 @@ const defaultValues: CreateWalletRequestType = {
 };
 
 export function CreateAccountForm() {
-  const createWallet = useCreateWallet();
   const navigate = useNavigate();
+  const createWallet = useCreateWallet({
+    onError: (error) =>
+      showErrorToast(error, {
+        title: "Couldn’t create account",
+        description: "Review the account details and try again.",
+      }),
+    onSuccess: () => {
+      showSuccessToast({
+        title: "Account created",
+        description: "Your smart account is ready to use.",
+      });
+      void navigate({ to: "/accounts", replace: true });
+    },
+  });
   const form = useForm<CreateWalletRequestType>({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateWalletRequest)),
   });
-  const handleSubmit = form.handleSubmit(async (payload) => {
-    try {
-      await createWallet.mutateAsync({ payload });
-      toast.success("Account created");
-      await navigate({ to: "/accounts", replace: true });
-    } catch {
-      toast.danger("Couldn't create the account.");
-    }
+  const handleSubmit = form.handleSubmit((payload) => {
+    createWallet.mutate({ payload });
   });
 
   return (

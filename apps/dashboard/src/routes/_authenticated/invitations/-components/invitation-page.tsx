@@ -59,8 +59,6 @@ const stateCopy: Record<
 
 export function InvitationPage({ initialInvitation }: InvitationPageProps) {
   const navigate = useNavigate();
-  const acceptInvitation = useAcceptInvitation();
-  const rejectInvitation = useRejectInvitation();
   const initialState =
     initialInvitation?.invitation.status === "pending" &&
     DateTime.toEpochMillis(initialInvitation.invitation.expiresAt) <= Date.now()
@@ -70,51 +68,51 @@ export function InvitationPage({ initialInvitation }: InvitationPageProps) {
     initialState ?? "not-found",
   );
   const [errorMessage, setErrorMessage] = useState<string>();
-  const isPending = acceptInvitation.isPending || rejectInvitation.isPending;
-
-  const accept = useEventCallback(async () => {
-    if (initialInvitation === null) return;
-    setErrorMessage(undefined);
-    try {
-      await acceptInvitation.mutateAsync({
-        payload: { invitationId: initialInvitation.invitation.id },
-      });
-      setState("accepted");
-    } catch (error) {
-      if (typeof error === "object" && error !== null && "code" in error) {
-        if (error.code === "ALREADY_A_MEMBER") {
-          setState("already-member");
-          return;
-        }
-        if (error.code === "INVITATION_NOT_FOUND") {
-          setState("unavailable");
-          return;
-        }
+  const acceptInvitation = useAcceptInvitation({
+    onError: (error) => {
+      if ("code" in error && error.code === "ALREADY_A_MEMBER") {
+        setState("already-member");
+        return;
       }
-      setErrorMessage("Could not accept the invitation. Try again.");
-    }
-  });
 
-  const reject = useEventCallback(async () => {
-    if (initialInvitation === null) return;
-    setErrorMessage(undefined);
-    try {
-      await rejectInvitation.mutateAsync({
-        payload: { invitationId: initialInvitation.invitation.id },
-      });
-      setState("rejected");
-    } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "INVITATION_NOT_FOUND"
-      ) {
+      if ("code" in error && error.code === "INVITATION_NOT_FOUND") {
         setState("unavailable");
         return;
       }
+
+      setErrorMessage("Could not accept the invitation. Try again.");
+    },
+    onSuccess: () => setState("accepted"),
+  });
+  const rejectInvitation = useRejectInvitation({
+    onError: (error) => {
+      if ("code" in error && error.code === "INVITATION_NOT_FOUND") {
+        setState("unavailable");
+        return;
+      }
+
       setErrorMessage("Could not decline the invitation. Try again.");
-    }
+    },
+    onSuccess: () => setState("rejected"),
+  });
+  const isPending = acceptInvitation.isPending || rejectInvitation.isPending;
+
+  const accept = useEventCallback(() => {
+    if (initialInvitation === null) return;
+
+    setErrorMessage(undefined);
+    acceptInvitation.mutate({
+      payload: { invitationId: initialInvitation.invitation.id },
+    });
+  });
+
+  const reject = useEventCallback(() => {
+    if (initialInvitation === null) return;
+
+    setErrorMessage(undefined);
+    rejectInvitation.mutate({
+      payload: { invitationId: initialInvitation.invitation.id },
+    });
   });
 
   const goHome = useEventCallback(() => navigate({ to: "/" }));

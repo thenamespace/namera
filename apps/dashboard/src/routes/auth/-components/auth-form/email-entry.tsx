@@ -17,7 +17,7 @@ type EmailEntryProps = {
   errorMessage?: string | undefined;
   isPending: boolean;
   onBack: () => void;
-  onContinue: (values: EmailFormOutput) => Promise<void>;
+  onContinue: (values: EmailFormOutput) => void;
 };
 
 export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: EmailEntryProps) {
