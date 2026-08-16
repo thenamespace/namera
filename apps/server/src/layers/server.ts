@@ -29,6 +29,8 @@ import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
+    // Never accept traffic against an older schema. Migrations and system-data
+    // reconciliation complete before the listening socket opens.
     yield* DatabaseMigration;
     const config = yield* ServerConfig;
 
@@ -63,6 +65,9 @@ const Routes = Layer.mergeAll(
   ExecutionWorkerLive,
 );
 
+// ServerLive is the transport composition root. Middleware order is intentional:
+// actor authentication runs inside rate limiting and telemetry so rejected and
+// accepted requests retain consistent operational context.
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
   middleware: (httpEffect) =>

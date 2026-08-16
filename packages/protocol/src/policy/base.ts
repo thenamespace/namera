@@ -2,6 +2,11 @@ import { type Effect, type Schema } from "effect";
 
 import type { PolicyId } from "#/common/index";
 
+// Policy handlers define a namespace adapter's complete policy lifecycle:
+// evaluate performs a read-only eligibility check; reserve atomically claims
+// state before submission; settle commits confirmed usage; release returns a
+// failed or abandoned submission's reservation. Stateless policies implement
+// only evaluate. Schemas keep JSONB data versioned and checked at the boundary.
 export abstract class PolicyHandler<
   Policy extends { readonly id: PolicyId; readonly type: string; readonly version: number },
   Context,

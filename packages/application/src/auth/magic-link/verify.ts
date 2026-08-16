@@ -106,6 +106,9 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
         purpose: cryptoPurpose.sessionToken,
         value: sessionToken,
       });
+      // Consuming the one-time verification and creating the session are one
+      // atomic transition. Concurrent clicks can never mint multiple sessions
+      // from the same link or code.
       yield* transaction.run(
         Effect.gen(function* () {
           const consumed = yield* repository.auth.verification.consume({

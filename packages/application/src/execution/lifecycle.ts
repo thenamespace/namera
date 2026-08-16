@@ -80,6 +80,9 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     return states.flat();
   });
 
+  // Release and settle lock the submission before touching policy state. This
+  // makes receipt reconciliation safe to retry and prevents the HTTP request
+  // and background worker from finalizing the same reservation twice.
   const release = Effect.fn("application.execution.release")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -197,6 +200,9 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     );
   });
 
+  // A confirmed execution, its policy settlement, audit row, billing usage,
+  // and notification records share this transaction. Partial confirmation is
+  // therefore never visible to subsequent authorization decisions.
   const settle = Effect.fn("application.execution.settle")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;

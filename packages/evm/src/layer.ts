@@ -44,6 +44,9 @@ export interface EvmService {
   readonly sign: SignEvm;
 }
 
+// Evm is the namespace adapter consumed by application workflows. It owns
+// chain clients, smart-account reconstruction, policies, signing, and execution
+// while persistence, billing, actors, and notifications remain in application.
 export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm") {
   static readonly layer = Layer.effect(
     Evm,

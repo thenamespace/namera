@@ -27,6 +27,8 @@ const providerAlgorithms = {
 const checksumValue = (value: { readonly value?: unknown } | null | undefined) =>
   value?.value === null || value?.value === undefined ? undefined : Number(value.value) >>> 0;
 
+// KMS request and response CRCs are checked explicitly because a successful RPC
+// alone does not prove the bytes received by either side were unchanged.
 export const makeGcpWalletKeys: Effect.Effect<
   WalletKeysService,
   Config.ConfigError | WalletKeyError,

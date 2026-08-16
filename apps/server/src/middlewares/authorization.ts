@@ -24,6 +24,8 @@ export const AuthorizationLive = Layer.effect(
     const cookieConfig = yield* AuthCookieConfig;
 
     return Authorization.of({
+      // Machine actors carry their active grants in CurrentActor so downstream
+      // routes can derive wallets and session keys without trusting client input.
       apiKey: Effect.fn("server.authorization.apiKey")(function* (httpEffect, { credential }) {
         yield* HttpEffect.appendPreResponseHandler((_request, response) =>
           Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
@@ -58,6 +60,9 @@ export const AuthorizationLive = Layer.effect(
         };
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
+      // A user session is valid only while its active organization membership
+      // remains active. Removing the member therefore invalidates authorization
+      // immediately without waiting for the session token to expire.
       authToken: Effect.fn("server.authorization.authToken")(function* (
         httpEffect,
         { credential },

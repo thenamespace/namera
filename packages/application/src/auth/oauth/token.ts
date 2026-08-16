@@ -170,6 +170,8 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       if (existing.resource !== input.resource) {
         return yield* new OAuthTokenError({ code: "INVALID_TARGET" });
       }
+      // Refresh tokens rotate once. Reuse indicates a copied token, so revoke
+      // the entire authorization instead of allowing two valid token branches.
       if (existing.consumedAt !== null || existing.revokedAt !== null) {
         yield* repository.auth.oauth.token.revokeAuthorization(existing.authorizationId, now);
         yield* Metric.update(Metric.withAttributes(oauthTokenResults, { result: "reuse" }), 1);

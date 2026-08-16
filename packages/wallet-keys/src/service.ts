@@ -24,6 +24,9 @@ export interface WalletKeysService {
   readonly destroy: (input: DestroyWalletKeyInput) => Effect.Effect<void, WalletKeyError>;
 }
 
+// Consumers persist only provider-neutral key metadata and call this service
+// for lifecycle operations. Private material never crosses this boundary: it
+// remains in local development storage or the configured Cloud KMS provider.
 export class WalletKeys extends Context.Service<WalletKeys, WalletKeysService>()(
   "@namera-ai/wallet-keys/WalletKeys",
 ) {

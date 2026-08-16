@@ -6,6 +6,9 @@ import { Database, type DatabaseService } from "#/core/layer";
 
 type TransactionClientService = Parameters<Parameters<DatabaseService["transaction"]>[0]>[0];
 
+// Repositories resolve this private context before falling back to Database.
+// This lets an entire Effect join the caller's transaction without leaking a
+// raw Drizzle transaction through repository or application APIs.
 class TransactionClient extends Context.Service<TransactionClient, TransactionClientService>()(
   "@namera-ai/database/TransactionClient",
 ) {}

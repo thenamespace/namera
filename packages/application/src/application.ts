@@ -47,6 +47,9 @@ export interface ApplicationService {
   readonly wallet: WalletApplication;
 }
 
+// Application is the backend's use-case facade. Focused builders keep each
+// domain maintainable while this aggregate gives server handlers one stable
+// service and ensures every workflow shares the same provided dependencies.
 export class Application extends Context.Service<Application, ApplicationService>()(
   "@namera-ai/application/Application",
 ) {

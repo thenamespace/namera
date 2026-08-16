@@ -84,6 +84,8 @@ export const McpAuthorizationMiddleware = HttpMiddleware.make((httpEffect) =>
       return unauthorized("invalid_token");
     }
 
+    // The token alone is insufficient: its authorization must still be active,
+    // belong to the same client, and target this exact protected resource.
     const authorization = yield* repository.auth.oauth.authorization
       .findActiveById(accessToken.authorizationId, now)
       .pipe(Effect.orDie);

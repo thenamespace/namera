@@ -33,6 +33,9 @@ export const makeCreateNotification = Effect.gen(function* () {
     }
 
     for (const recipient of recipients) {
+      // Organization preferences override the user's global preference. Missing
+      // rows fall back to the notification type's explicit email default, while
+      // in-app delivery is always recorded for the selected recipient.
       const emailPreference =
         (input.organizationId === null
           ? undefined

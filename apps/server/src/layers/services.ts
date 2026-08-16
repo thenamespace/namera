@@ -22,6 +22,9 @@ const EmailProviderLive = Layer.unwrap(
   ),
 );
 
+// Environment selection happens only at the server boundary. Domain packages
+// expose live/dev/test layers, but application code sees one stable service and
+// cannot branch on NODE_ENV itself.
 const EmailJobsLive = EmailJobs.layer.pipe(
   Layer.provide(PersistenceLive),
   Layer.provide(CryptoLive),
@@ -50,6 +53,8 @@ export const ServicesLive = Layer.mergeAll(
 
 export const ApplicationLive = Application.layer;
 
+// Workers wait for migrations independently because they are long-lived layers
+// and may begin polling before the HTTP listener is constructed.
 export const EmailWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
     yield* DatabaseMigration;

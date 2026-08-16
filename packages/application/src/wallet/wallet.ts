@@ -81,6 +81,9 @@ export const makeWalletApplication = Effect.gen(function* () {
     );
 
     const walletKeyId = Schema.decodeSync(WalletKeyId)(generateUniqueId());
+    // Remote key creation cannot participate in PostgreSQL transactions. Create
+    // it first, then repeat the locked billing check while persisting the wallet
+    // so concurrent requests cannot exceed the organization's entitlement.
     const createdKey = yield* walletKeys
       .create({
         id: walletKeyId,

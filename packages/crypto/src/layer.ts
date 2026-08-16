@@ -16,6 +16,9 @@ const encryptionVersion = "v1";
 
 const encodeText = (value: string) => textEncoder.encode(value);
 const decodeBase64Url = (value: string) => new Uint8Array(Base64.toUint8Array(value));
+
+// Length-prefixing the purpose creates an unambiguous domain boundary. A token
+// hashed for one protocol cannot be replayed as a credential for another.
 const domainSeparatedValue = ({ purpose, value }: CryptoInput) =>
   encodeText(`${purpose.length}:${purpose}${value}`);
 
@@ -112,6 +115,9 @@ export class CryptoService extends Context.Service<
 
       const encrypt = Effect.fnUntraced(function* (input: CryptoInput) {
         const iv = webCrypto.getRandomValues(new Uint8Array(12));
+
+        // The purpose is authenticated but not encrypted. Decryption therefore
+        // fails when a ciphertext is accidentally used by the wrong workflow.
         const ciphertext = yield* Effect.promise(() =>
           webCrypto.subtle.encrypt(
             {

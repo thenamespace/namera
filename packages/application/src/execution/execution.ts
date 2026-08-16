@@ -154,6 +154,9 @@ export const makeExecutionApplication = Effect.gen(function* () {
       let selected: GrantedSessionKey | undefined;
       let submissionId: ExecutionSubmissionId | undefined;
       let lastPolicyCode: string | undefined;
+      // One session key must authorize the complete call batch. Combining
+      // permissions from multiple grants would create authority that no user
+      // explicitly granted and would make stateful reservations ambiguous.
       for (const candidate of candidates) {
         const decision = yield* evm.policy.evaluate({
           policies: candidate.sessionKey.policies,

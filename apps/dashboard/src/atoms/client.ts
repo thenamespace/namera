@@ -7,6 +7,9 @@ import { NameraApi } from "@namera-ai/api";
 import { env } from "@/env";
 import { dashboardRuntime } from "@/telemetry";
 
+// One generated AtomHttpApi client backs loaders and hooks, so both paths share
+// the router-owned atom cache. Cookie credentials are installed once here
+// instead of being repeated by every query and mutation.
 export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
   "@namera-ai/dashboard/NameraClient",
   {

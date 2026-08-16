@@ -20,6 +20,9 @@ import {
 
 export * from "./middlewares/index.js";
 
+// This class is the transport contract shared by the server, OpenAPI output,
+// dashboard atoms, and public SDK. Handlers and business logic deliberately
+// live outside this package so every client is generated from the same schema.
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     ApiKeyGroup,

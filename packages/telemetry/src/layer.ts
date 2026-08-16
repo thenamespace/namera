@@ -10,6 +10,9 @@ import {
 import { telemetryData } from "#/data";
 import { resolveTelemetryExport } from "#/export";
 
+// All three signals share one resource identity so traces, logs, and metrics
+// correlate in either LGTM or Axiom. Vendor selection and secrets stay in the
+// composition layer; feature packages depend only on Effect telemetry APIs.
 export const makeTelemetryLayer = (options: {
   serviceName: string;
   environment: string;

@@ -59,6 +59,9 @@ export class TestEmails extends Context.Service<
   );
 }
 
+// EmailService is the provider boundary used by the durable email worker.
+// Application workflows enqueue EmailJobs transactionally and never call this
+// adapter directly, so provider latency cannot block the originating request.
 export class EmailService extends Context.Service<EmailService, EmailServiceValue>()(
   "@namera-ai/emails/EmailService",
 ) {
