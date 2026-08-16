@@ -1,11 +1,20 @@
 {
   "name": "@namera-ai/protocol",
   "version": "0.1.0",
+  "description": "Runtime schemas, DTOs, models, and typed errors for the Namera API.",
+  "keywords": [
+    "effect",
+    "namera",
+    "schemas",
+    "typescript",
+    "wallet"
+  ],
   "license": "Apache-2.0",
   "files": [
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "imports": {
     "#/*": "./src/*.ts"
   },
@@ -38,7 +47,8 @@
       "./evm": "./dist/evm.js",
       "./model": "./dist/model.js",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",

@@ -1,12 +1,20 @@
 {
   "name": "@namera-ai/api",
   "version": "0.1.0",
-  "private": true,
+  "description": "Schema-derived Effect HttpApi contract for Namera.",
+  "keywords": [
+    "effect",
+    "http-api",
+    "namera",
+    "typescript",
+    "wallet"
+  ],
   "license": "Apache-2.0",
   "files": [
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "imports": {
     "#/*": "./src/*.ts"
   },
@@ -24,7 +32,8 @@
     "exports": {
       ".": "./dist/index.js",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
