@@ -42,6 +42,21 @@ describe("NameraClient", () => {
     expect((init.headers as Record<string, string>)["x-api-key"]).toBe("nk_test_secret");
   });
 
+  it("supports OAuth bearer credentials and lazy token resolution", async () => {
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(jsonResponse([]));
+    const getAccessToken = vi.fn().mockResolvedValue("oauth_access_token");
+    const client = new NameraClient({ getAccessToken, fetch });
+
+    await client.wallets.list();
+
+    const [, init] = fetch.mock.calls[0] ?? [];
+    if (init === undefined) throw new Error("Expected a fetch request");
+    expect(getAccessToken).toHaveBeenCalledOnce();
+    expect((init.headers as Record<string, string>).authorization).toBe(
+      "Bearer oauth_access_token",
+    );
+  });
+
   it("encodes execution input and returns the typed submitted result", async () => {
     const fetch = vi.fn<NameraFetch>().mockResolvedValue(
       jsonResponse({
