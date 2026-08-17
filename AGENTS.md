@@ -36,8 +36,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   and business workflow composition.
 - [`packages/api`](packages/api/README.md) — public Effect `HttpApi` definition;
   no handlers or server runtime.
-- [`packages/sdk`](packages/sdk/README.md) — publishable TypeScript SDK scaffold;
-  its public Namera client is not implemented yet.
+- [`packages/sdk`](packages/sdk/README.md) — publishable typed client for API-key
+  and OAuth-bearer access to the public API.
 - [`packages/template`](packages/template/README.md) — starter for new workspace
   packages.
 
