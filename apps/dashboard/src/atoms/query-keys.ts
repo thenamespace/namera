@@ -3,6 +3,7 @@ import type {
   InvitationId,
   OrganizationId,
   OAuthAuthorizationRequestId,
+  OAuthDeviceAuthorizationId,
   SessionKeyId,
   WalletId,
 } from "@namera-ai/protocol";
@@ -64,6 +65,9 @@ export const QueryKeys = {
     authorizationRequests: ["oauth:authorization-requests"] as const,
     authorizationRequest: (requestId: OAuthAuthorizationRequestId) =>
       [`oauth:authorization-request:${requestId}`] as const,
+    deviceAuthorizations: ["oauth:device-authorizations"] as const,
+    deviceAuthorization: (authorizationId: OAuthDeviceAuthorizationId) =>
+      [`oauth:device-authorization:${authorizationId}`] as const,
   },
 } as const;
 
@@ -103,4 +107,6 @@ export type QueryKey =
   | (typeof QueryKeys.apiKey.details)[number]
   | ReturnType<typeof QueryKeys.apiKey.detail>[number]
   | (typeof QueryKeys.oauth.authorizationRequests)[number]
-  | ReturnType<typeof QueryKeys.oauth.authorizationRequest>[number];
+  | ReturnType<typeof QueryKeys.oauth.authorizationRequest>[number]
+  | (typeof QueryKeys.oauth.deviceAuthorizations)[number]
+  | ReturnType<typeof QueryKeys.oauth.deviceAuthorization>[number];

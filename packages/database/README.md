@@ -189,7 +189,7 @@ returns active grants joined to their session keys for one actor, and revokes al
 active grants for a revoked actor. Credential generation, hashing, grant
 validation, audit, and notifications remain application concerns.
 
-## OAuth and MCP authorization persistence
+## OAuth authorization persistence
 
 OAuth persistence lives under `auth/oauth` and separates protocol clients from
 Namera authorization identities:
@@ -199,9 +199,12 @@ Namera authorization identities:
   keys.
 - `oauth_authorization_request` is the short-lived PKCE consent state. Pending
   lookup and approval/denial are conditional on expiry and current status.
-- `mcp_authorization` is the durable organization consent and owns one `mcp`
-  actor. Tenant-scoped foreign keys bind the actor, authorizer, and revoker to
-  the same organization.
+- `oauth_authorization` is the durable organization consent for an `mcp` or
+  `cli` actor. Tenant-scoped foreign keys bind the actor, authorizer, and
+  revoker to the same organization.
+- `oauth_device_authorization` stores hashed RFC 8628 device credentials,
+  bounded polling state, the claimed user, and the authorization created by an
+  approved CLI request. Raw device and user codes are never persisted.
 - `oauth_authorization_code` stores only a code hash and is consumed atomically.
 - `oauth_token` stores only access/refresh token hashes. Refresh tokens carry a
   family and optional parent so reuse can revoke a family or the complete

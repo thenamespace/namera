@@ -1,6 +1,6 @@
 # @namera-ai/sdk
 
-Browser- and Node-compatible client for the API-key-authenticated Namera API.
+Browser- and Node-compatible client for API-key and OAuth-bearer access to the Namera API.
 The SDK uses the schema-derived `@namera-ai/api` HTTP client internally, but its
 public methods return ordinary promises and do not expose Effect programs.
 
@@ -21,6 +21,17 @@ if (!wallets.success) {
 }
 
 console.log(wallets.data);
+```
+
+Interactive clients may instead provide a bearer token or an asynchronous token
+supplier. The latter lets the caller refresh credentials without rebuilding the
+client:
+
+```ts
+const namera = new NameraClient({
+  baseUrl: "https://api.namera.ai",
+  getAccessToken: refreshAccessToken,
+});
 ```
 
 Every operation resolves to `NameraResult<A, E>`:

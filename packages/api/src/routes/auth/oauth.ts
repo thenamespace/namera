@@ -87,6 +87,6 @@ export class OAuthGroup extends HttpApiGroup.make("oauth")
       success: RevokeOAuthAuthorizationResponse,
     }).annotate(OpenApi.Summary, "Revoke a CLI authorization"),
   )
-  .annotate(OpenApi.Description, "OAuth consent and MCP authorization management")
+  .annotate(OpenApi.Description, "OAuth consent and delegated authorization management")
   .middleware(Authorization)
   .prefix("/oauth") {}

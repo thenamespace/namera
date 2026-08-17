@@ -75,18 +75,18 @@ export const authRelations = defineRelationsPart(schema, (r) => ({
       from: [r.actor.id, r.actor.organizationId],
       to: [r.notification.actorId, r.notification.organizationId],
     }),
-    // An MCP actor can own one MCP authorization.
+    // A delegated actor can own one OAuth authorization.
     oauthAuthorization: r.one.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
       to: [r.oauthAuthorization.actorId, r.oauthAuthorization.organizationId],
     }),
-    // One actor can approve many MCP authorizations.
-    authorizedMcpAuthorizations: r.many.oauthAuthorization({
+    // One user actor can approve many OAuth authorizations.
+    authorizedOAuthAuthorizations: r.many.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
       to: [r.oauthAuthorization.authorizedByActorId, r.oauthAuthorization.organizationId],
     }),
-    // One actor can revoke many MCP authorizations.
-    revokedMcpAuthorizations: r.many.oauthAuthorization({
+    // One user actor can revoke many OAuth authorizations.
+    revokedOAuthAuthorizations: r.many.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
       to: [r.oauthAuthorization.revokedByActorId, r.oauthAuthorization.organizationId],
     }),

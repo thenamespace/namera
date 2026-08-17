@@ -45,6 +45,8 @@ CREATE TABLE "auth"."oauth_device_authorization" (
 	CONSTRAINT "oauth_device_authorization_poll_interval_check" CHECK ("polling_interval_seconds" >= 5)
 );
 --> statement-breakpoint
+ALTER TABLE "auth"."oauth_authorization_code" DROP CONSTRAINT "oauth_authorization_code_authorization_client_fk";--> statement-breakpoint
+ALTER TABLE "auth"."oauth_token" DROP CONSTRAINT "oauth_token_authorization_client_fk";--> statement-breakpoint
 DROP TABLE "auth"."mcp_authorization";--> statement-breakpoint
 CREATE UNIQUE INDEX "oauth_authorization_actor_uidx" ON "auth"."oauth_authorization" ("actor_id");--> statement-breakpoint
 CREATE INDEX "oauth_authorization_organization_created_idx" ON "auth"."oauth_authorization" ("organization_id","created_at");--> statement-breakpoint
@@ -64,6 +66,6 @@ ALTER TABLE "auth"."oauth_device_authorization" ADD CONSTRAINT "oauth_device_aut
 ALTER TABLE "auth"."oauth_device_authorization" ADD CONSTRAINT "oauth_device_authorization_claimed_by_user_id_user_id_fkey" FOREIGN KEY ("claimed_by_user_id") REFERENCES "auth"."user"("id") ON DELETE RESTRICT;--> statement-breakpoint
 ALTER TABLE "auth"."oauth_device_authorization" ADD CONSTRAINT "oauth_device_authorization_organization_id_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "auth"."organization"("id") ON DELETE RESTRICT;--> statement-breakpoint
 ALTER TABLE "auth"."oauth_device_authorization" ADD CONSTRAINT "oauth_device_authorization_authorization_fk" FOREIGN KEY ("authorization_id","organization_id") REFERENCES "auth"."oauth_authorization"("id","organization_id") ON DELETE RESTRICT;--> statement-breakpoint
-ALTER TABLE "auth"."oauth_authorization_code" DROP CONSTRAINT "oauth_authorization_code_authorization_client_fk", ADD CONSTRAINT "oauth_authorization_code_authorization_client_fk" FOREIGN KEY ("authorization_id","client_id") REFERENCES "auth"."oauth_authorization"("id","client_id") ON DELETE RESTRICT;--> statement-breakpoint
-ALTER TABLE "auth"."oauth_token" DROP CONSTRAINT "oauth_token_authorization_client_fk", ADD CONSTRAINT "oauth_token_authorization_client_fk" FOREIGN KEY ("authorization_id","client_id") REFERENCES "auth"."oauth_authorization"("id","client_id") ON DELETE RESTRICT;--> statement-breakpoint
+ALTER TABLE "auth"."oauth_authorization_code" ADD CONSTRAINT "oauth_authorization_code_authorization_client_fk" FOREIGN KEY ("authorization_id","client_id") REFERENCES "auth"."oauth_authorization"("id","client_id") ON DELETE RESTRICT;--> statement-breakpoint
+ALTER TABLE "auth"."oauth_token" ADD CONSTRAINT "oauth_token_authorization_client_fk" FOREIGN KEY ("authorization_id","client_id") REFERENCES "auth"."oauth_authorization"("id","client_id") ON DELETE RESTRICT;--> statement-breakpoint
 ALTER TABLE "auth"."actor" DROP CONSTRAINT "actor_type_check", ADD CONSTRAINT "actor_type_check" CHECK ("type" IN ('user', 'api-key', 'mcp', 'cli'));

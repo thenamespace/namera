@@ -3,6 +3,7 @@ import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 
 import {
   ListSessionsResponse,
+  CurrentActorResponse,
   RevokeSessionRequest,
   RevokeSessionResponse,
   UserActorData,
@@ -12,6 +13,12 @@ import { CommonErrors } from "#/common";
 import { Authorization } from "#/middlewares/index";
 
 export class SessionGroup extends HttpApiGroup.make("session")
+  .add(
+    HttpApiEndpoint.get("currentActor", "/actor", {
+      success: CurrentActorResponse,
+      error: CommonErrors,
+    }).annotate(OpenApi.Summary, "Get the current user or delegated actor"),
+  )
   .add(
     HttpApiEndpoint.get("currentUser", "/me", {
       success: UserActorData,

@@ -396,20 +396,26 @@ export const makeOAuthDeviceApplication = (token: OAuthTokenApplication) =>
         if (request.authorizationId === null) {
           return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
         }
+        const authorizationId = request.authorizationId;
 
-        const consumed = yield* repository.auth.oauth.deviceAuthorization.consumeApproved({
-          id: request.id,
-          now,
-        });
-        if (consumed === undefined) return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
-
-        const result = yield* token.issueForAuthorization({
-          authorizationId: request.authorizationId,
-          clientId: client.id,
-          resource: request.resource,
-          scopes: request.requestedScopes,
-          now,
-        });
+        const result = yield* transaction.run(
+          Effect.gen(function* () {
+            const consumed = yield* repository.auth.oauth.deviceAuthorization.consumeApproved({
+              id: request.id,
+              now,
+            });
+            if (consumed === undefined) {
+              return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
+            }
+            return yield* token.issueForAuthorization({
+              authorizationId,
+              clientId: client.id,
+              resource: request.resource,
+              scopes: request.requestedScopes,
+              now,
+            });
+          }),
+        );
         yield* Metric.update(Metric.withAttributes(oauthDeviceTokenPolls, { result: "issued" }), 1);
         return result;
       },

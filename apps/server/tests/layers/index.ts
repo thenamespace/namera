@@ -47,13 +47,9 @@ const TestServicesLayer = Layer.mergeAll(EmailJobs.layer, Evm.testLayer, WalletK
   Layer.provideMerge(EmailService.testLayer),
   Layer.provideMerge(TestPersistenceLayer),
   Layer.provideMerge(TestCryptoLayer),
-  Layer.provide(TestConfigLayer),
 );
 
-const TestApplicationLayer = Application.layer.pipe(
-  Layer.provide(TestServicesLayer),
-  Layer.provide(TestConfigLayer),
-);
+const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
 
 const TestAuthorizationLayer = AuthorizationLive.pipe(
   Layer.provide(TestServicesLayer),
@@ -93,4 +89,4 @@ export const TestServerLayer = Layer.mergeAll(
   TestAuthTokenStateLayer,
   TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
   HttpServer.layerServices,
-);
+).pipe(Layer.provide(TestConfigLayer));

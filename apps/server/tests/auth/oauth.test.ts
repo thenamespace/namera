@@ -631,4 +631,104 @@ layer(TestServerLayer)("OAuth authorization routes", (it) => {
       ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_GRANT" });
     }),
   );
+
+  it.effect("authorizes a CLI through the device flow and issues delegated tokens", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("oauth-cli@example.com"));
+      const sessionKey = yield* createSessionKey();
+      const protocolClient = yield* makeOAuthProtocolClient();
+      const started = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/device/authorize").pipe(
+          HttpClientRequest.bodyUrlParams({
+            client_id: "namera-cli",
+            scope:
+              "wallet:read session-key:read execution:read execution:execute signature:create offline_access",
+            resource: "http://api.test",
+            device_name: "Developer Mac",
+            cli_version: "0.1.0",
+            platform: "darwin-arm64",
+          }),
+        ),
+      );
+      expect(started.status).toBe(200);
+
+      const startedBody = yield* started.json;
+      if (
+        typeof startedBody !== "object" ||
+        startedBody === null ||
+        !("device_code" in startedBody) ||
+        !("user_code" in startedBody) ||
+        typeof startedBody.device_code !== "string" ||
+        typeof startedBody.user_code !== "string"
+      ) {
+        return yield* Effect.die("Expected a device authorization response");
+      }
+
+      const pending = yield* client.oauth.getOAuthDeviceAuthorization({
+        query: { userCode: startedBody.user_code },
+      });
+      expect(pending).toMatchObject({
+        userCode: startedBody.user_code,
+        deviceName: "Developer Mac",
+        cliVersion: "0.1.0",
+        platform: "darwin-arm64",
+      });
+
+      expect(
+        yield* client.oauth.approveOAuthDeviceAuthorization({
+          payload: {
+            deviceAuthorizationId: pending.id,
+            organizationId: owner.actor.organization.id,
+            sessionKeyIds: [sessionKey.id],
+          },
+        }),
+      ).toEqual({ status: "approved" });
+
+      const issued = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyUrlParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            device_code: startedBody.device_code,
+            client_id: "namera-cli",
+            resource: "http://api.test",
+          }),
+        ),
+      );
+      expect(issued.status).toBe(200);
+      expect(yield* issued.json).toMatchObject({
+        token_type: "Bearer",
+        scope:
+          "wallet:read session-key:read execution:read execution:execute signature:create offline_access",
+      });
+
+      expect(yield* client.oauth.listCliAuthorizations()).toMatchObject([
+        {
+          type: "cli",
+          metadata: { type: "cli", deviceName: "Developer Mac" },
+          sessionKeys: [{ id: sessionKey.id }],
+        },
+      ]);
+      expect(
+        (yield* client.notification.list({ query: {} })).items.some(
+          ({ notification }) => notification.type === "cli_authorization.approved",
+        ),
+      ).toBe(true);
+
+      const secondExchange = yield* protocolClient.execute(
+        HttpClientRequest.post("http://api.test/oauth/token").pipe(
+          HttpClientRequest.bodyUrlParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            device_code: startedBody.device_code,
+            client_id: "namera-cli",
+            resource: "http://api.test",
+          }),
+        ),
+      );
+      expect(secondExchange.status).toBe(400);
+      expect(yield* secondExchange.json).toMatchObject({ error: "invalid_grant" });
+    }),
+  );
 });

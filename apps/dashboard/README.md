@@ -41,6 +41,9 @@ Workspace package imports continue to use their package names.
   user whose email does not match the invitation is logged out before being sent
   through the same sign-in flow.
 - `/oauth/authorize?requestId=...` is the sidebar-free MCP OAuth consent flow.
+- `/cli/authorize?user_code=...` is the sidebar-free CLI device consent flow.
+  It claims the short user code for the signed-in user and requires explicit
+  active session-key grants.
   It preserves the full URL through sign-in, displays supplied client identity,
   presents scopes and compact copyable protocol details, and requires an explicit
   active-session-key selection before approval.

@@ -1,0 +1,45 @@
+{
+  "name": "@namera-ai/cli",
+  "version": "0.1.0",
+  "description": "Command-line client for Namera programmable wallets.",
+  "license": "Apache-2.0",
+  "bin": {
+    "namera": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*.ts"
+  },
+  "scripts": {
+    "build": "tsdown --config tsdown.config.ts",
+    "dev": "tsx --conditions=namera-source src/index.ts",
+    "format": "oxfmt . --write --no-error-on-unmatched-pattern",
+    "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
+    "lint": "oxlint . --no-error-on-unmatched-pattern",
+    "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
+    "start": "node dist/index.js",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "typecheck": "tsc -p tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/sdk": "workspace:*",
+    "@napi-rs/keyring": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "klarity": "catalog:",
+    "tsdown": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.14.0"
+  }
+}

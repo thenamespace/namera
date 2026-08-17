@@ -65,10 +65,11 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   expose only safe key identification data and return the raw credential only
   from creation. Session-key grants remain attached to `ActorId`; do not copy
   grant permissions into API-key metadata.
-- OAuth clients are software identities, not Namera actors. An approved MCP
-  authorization creates an organization-scoped `mcp` actor; session-key access
-  continues through ordinary grants. Authorization codes and bearer tokens are
-  represented only by hashes. OAuth models live under `model/auth/oauth` and
+- OAuth clients are software identities, not Namera actors. An approved OAuth
+  authorization creates an organization-scoped `mcp` or `cli` actor;
+  session-key access continues through ordinary grants. Authorization codes,
+  device codes, and bearer tokens are represented only by hashes. OAuth models
+  live under `model/auth/oauth` and
   keep PKCE, resource indicators, scopes, token families, and lifecycle state
   explicit without exposing credentials through public DTOs. RFC 7591 dynamic
   registration accepts only public clients and exact HTTPS or loopback HTTP

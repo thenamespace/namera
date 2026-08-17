@@ -14,8 +14,9 @@ metadata. It does not start a server or implement backend workflows.
 - `src/routes/auth/organization/` — organization, membership, and invitation
   endpoints.
 - `src/routes/auth/notification.ts` — authenticated inbox and preference endpoints.
-- `src/routes/auth/oauth.ts` — authenticated consent and MCP authorization
-  management endpoints. OAuth wire endpoints remain raw server routes.
+- `src/routes/auth/oauth.ts` — authenticated browser/device consent and
+  MCP/CLI authorization management endpoints. OAuth wire endpoints remain raw
+  server routes.
 - `src/routes/wallet.ts` — create, list, get, and update organization wallet metadata.
 - `src/routes/session-key.ts` — create, get, list, and revoke organization session keys.
 - `src/routes/api-key.ts` — create, get, list, and revoke organization API keys

@@ -12,6 +12,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   TanStack Router and the shared UI package.
 - [`apps/email-templates`](apps/email-templates/README.md) — preview harness and
   email-safe asset generator for package-owned React Email templates.
+- [`apps/cli`](apps/cli/README.md) — Effect CLI using OAuth device authorization
+  and the public SDK for delegated wallet operations.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated

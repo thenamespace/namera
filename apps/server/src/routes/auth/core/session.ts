@@ -16,6 +16,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
     const app = yield* Application.Application;
     const cookieConfig = yield* AuthCookieConfig;
     return handlers
+      .handle("currentActor", () => CurrentActor.pipe(Effect.map((actor) => actor)))
       .handle("currentUser", () =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

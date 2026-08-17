@@ -22,3 +22,20 @@ export const denyOAuthAuthorizationRequestMutation = NameraClient.mutation(
   "oauth",
   "denyOAuthAuthorizationRequest",
 );
+
+export const oauthDeviceAuthorizationAtom = (userCode: string) =>
+  NameraClient.query("oauth", "getOAuthDeviceAuthorization", {
+    query: { userCode },
+    reactivityKeys: QueryKeys.oauth.deviceAuthorizations,
+    timeToLive: "10 seconds",
+  });
+
+export const approveOAuthDeviceAuthorizationMutation = NameraClient.mutation(
+  "oauth",
+  "approveOAuthDeviceAuthorization",
+);
+
+export const denyOAuthDeviceAuthorizationMutation = NameraClient.mutation(
+  "oauth",
+  "denyOAuthDeviceAuthorization",
+);

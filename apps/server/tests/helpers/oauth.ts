@@ -16,9 +16,11 @@ import { OAuthProtocolRoutes } from "#/routes/auth/oauth/protocol";
 import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 import { McpRoutes } from "#/routes/mcp/index";
 
-const protocolConfig = ConfigProvider.fromUnknown({
-  AUTH_API_PUBLIC_ORIGIN: "http://api.test",
-  AUTH_DASHBOARD_PUBLIC_ORIGIN: "http://dashboard.test",
+const protocolConfig = ConfigProvider.fromEnv({
+  env: {
+    AUTH_API_PUBLIC_ORIGIN: "http://api.test",
+    AUTH_DASHBOARD_PUBLIC_ORIGIN: "http://dashboard.test",
+  },
 });
 
 export const makeOAuthProtocolClient = Effect.fnUntraced(function* () {

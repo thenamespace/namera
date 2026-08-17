@@ -112,6 +112,12 @@ Authorization codes and tokens are opaque and stored only as hashes. Consent
 approval and authorization revocation create organization audit events and
 in-app notifications, but never email jobs.
 
+The same authorization server exposes the RFC 8628 device grant for the
+pre-registered `namera-cli` public client. Device approval creates a `cli` actor
+with explicit session-key grants. Generic API authorization accepts its bearer
+token only for the API-origin resource and enforces both OAuth scopes and
+grants; CLI authorization does not emit email.
+
 The authorized MCP transport is mounted at `/mcp`. Read tools require
 `mcp:read`; transaction execution and signing require `mcp:execute` in addition
 to the durable session-key grants selected during consent. The tool surface

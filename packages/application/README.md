@@ -15,8 +15,9 @@ HTTP requests to application methods.
 - `src/auth/core/api-key.ts` — API-key creation, grant-aware reads, and atomic
   credential/grant revocation.
 - `src/auth/magic-link/` — request and verification workflows.
-- `src/auth/oauth/` — OAuth authorization requests, consent, durable MCP
-  authorization management, PKCE exchange, refresh rotation, and token revocation.
+- `src/auth/oauth/` — OAuth authorization requests, browser and CLI device
+  consent, delegated authorization management, PKCE/device exchange, refresh
+  rotation, and token revocation.
 - `src/auth/organization/` — organization, member, invitation, and setup operations.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
@@ -115,12 +116,17 @@ or RFC 7591 dynamic registration, exact redirect URIs, PKCE `S256`, and the
 canonical `/mcp` resource. Dynamic registration issues an opaque public client
 ID without a secret and accepts only HTTPS or loopback HTTP redirect URIs.
 Authorization-code challenges and verifiers use the strict RFC 7636 grammar,
-and refresh rotation requires the token's original MCP resource. Approval
+and refresh rotation requires the token's original resource. Browser approval
 atomically creates an `mcp` actor, its selected session-key grants, a hashed
 one-time authorization code, an organization audit event, and in-app
 notification recipients. Revocation atomically invalidates the authorization,
 all active tokens, and all grants, with matching audit and in-app notification
 records. These workflows intentionally do not enqueue emails.
+
+The first-party CLI uses the RFC 8628 device grant. Approval creates a `cli`
+actor and selected session-key grants in the same transaction as its audit event
+and in-app notification. Token polling consumes an approved request once and
+reuses the existing access/refresh token lifecycle; it never sends email.
 
 Wallet updates replace only metadata and leave the namespace, implementation,
 address, protection level, key material, and account data unchanged. No-op

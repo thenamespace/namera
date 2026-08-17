@@ -76,7 +76,7 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
         const client = clientById.get(authorization.clientId);
         const authorizedBy = authorizerByActorId.get(authorization.authorizedByActorId);
         if (client === undefined || authorizedBy === undefined) {
-          return yield* Effect.die("MCP authorization relation is missing");
+          return yield* Effect.die("OAuth authorization relation is missing");
         }
         return {
           authorization,
@@ -289,7 +289,7 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
       }
       const [view] = yield* loadViews(organizationId, [authorization]);
       if (view === undefined)
-        return yield* Effect.die("MCP authorization view could not be loaded");
+        return yield* Effect.die("OAuth authorization view could not be loaded");
       return view;
     },
     Effect.catchTag("DatabaseError", Effect.die),
@@ -412,7 +412,9 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
       );
       yield* Effect.logInfo("oauth.authorization.revoked");
       const [view] = yield* loadViews(input.organizationId, [result]);
-      if (view === undefined) return yield* Effect.die("Revoked MCP authorization view is missing");
+      if (view === undefined) {
+        return yield* Effect.die("Revoked OAuth authorization view is missing");
+      }
       return view;
     },
     Effect.trackDuration(oauthAuthorizationRevocationDuration),
