@@ -91,6 +91,7 @@ export const McpAuthorizationMiddleware = HttpMiddleware.make((httpEffect) =>
       .pipe(Effect.orDie);
     if (
       authorization === undefined ||
+      authorization.type !== "mcp" ||
       authorization.clientId !== accessToken.clientId ||
       authorization.resource !== resource ||
       accessToken.resource !== resource

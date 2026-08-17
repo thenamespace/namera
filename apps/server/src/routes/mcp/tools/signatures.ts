@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
 import { Application } from "@namera-ai/application";
@@ -9,8 +9,8 @@ import { registerMcpTool, signingHints } from "./register.js";
 const Sign = Tool.make("sign", {
   description:
     "Sign an EVM message or EIP-712 typed data through one delegated session key with an explicit signature policy.",
-  parameters: SignRequest,
-  success: SignResponse,
+  parameters: Schema.Struct({ request: SignRequest }),
+  success: Schema.Struct({ signature: SignResponse }),
 });
 
 export const SignatureTools = Effect.gen(function* () {
@@ -21,6 +21,9 @@ export const SignatureTools = Effect.gen(function* () {
     requiredScope: "mcp:execute",
     hints: signingHints,
     errorMessage: "The payload could not be signed.",
-    handle: (request, principal) => app.signature.sign({ actor: principal, request }),
+    handle: ({ request }, principal) =>
+      app.signature
+        .sign({ actor: principal, request })
+        .pipe(Effect.map((signature) => ({ signature }))),
   });
 });

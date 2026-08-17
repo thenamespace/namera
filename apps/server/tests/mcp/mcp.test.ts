@@ -196,7 +196,8 @@ layer(TestServerLayer)("MCP route", (it) => {
           { token: accessToken, sessionId },
         ),
       );
-      expect(yield* tools.json).toMatchObject({
+      const toolsJson = yield* tools.json;
+      expect(toolsJson).toMatchObject({
         result: {
           tools: [
             { name: "list_wallets" },
@@ -213,6 +214,18 @@ layer(TestServerLayer)("MCP route", (it) => {
           ],
         },
       });
+      if (
+        !Predicate.isObject(toolsJson) ||
+        !Predicate.isObject(toolsJson.result) ||
+        !Array.isArray(toolsJson.result.tools)
+      ) {
+        return yield* Effect.die("Expected an MCP tool list");
+      }
+      for (const tool of toolsJson.result.tools) {
+        if (!Predicate.isObject(tool)) return yield* Effect.die("Expected an MCP tool");
+        expect(tool.inputSchema).toMatchObject({ type: "object" });
+        expect(tool.outputSchema).toMatchObject({ type: "object" });
+      }
 
       const called = yield* client.execute(
         mcpRequest(
@@ -245,7 +258,7 @@ layer(TestServerLayer)("MCP route", (it) => {
         ),
       );
       expect(yield* wallets.json).toMatchObject({
-        result: { structuredContent: [{ id: sessionKey.walletId }] },
+        result: { structuredContent: { wallets: [{ id: sessionKey.walletId }] } },
       });
 
       const sessionKeys = yield* client.execute(
@@ -260,7 +273,7 @@ layer(TestServerLayer)("MCP route", (it) => {
         ),
       );
       expect(yield* sessionKeys.json).toMatchObject({
-        result: { structuredContent: [{ id: sessionKey.id }] },
+        result: { structuredContent: { sessionKeys: [{ id: sessionKey.id }] } },
       });
 
       const deniedExecution = yield* client.execute(
@@ -337,11 +350,17 @@ layer(TestServerLayer)("MCP route", (it) => {
         return yield* Effect.die("Expected a structured execution result");
       }
       expect(executedJson.result.structuredContent).toMatchObject({
-        namespace: "eip155",
-        status: "confirmed",
+        execution: {
+          namespace: "eip155",
+          status: "confirmed",
+        },
       });
-      const submissionId = executedJson.result.structuredContent.submissionId;
-      const executionId = executedJson.result.structuredContent.executionId;
+      const executionResult = executedJson.result.structuredContent.execution;
+      if (!Predicate.isObject(executionResult)) {
+        return yield* Effect.die("Expected a structured execution value");
+      }
+      const submissionId = executionResult.submissionId;
+      const executionId = executionResult.executionId;
       if (typeof submissionId !== "string" || typeof executionId !== "string") {
         return yield* Effect.die("Expected execution identifiers");
       }
@@ -361,7 +380,11 @@ layer(TestServerLayer)("MCP route", (it) => {
         ),
       );
       expect(yield* submission.json).toMatchObject({
-        result: { structuredContent: { status: "confirmed", execution: { id: executionId } } },
+        result: {
+          structuredContent: {
+            submission: { status: "confirmed", execution: { id: executionId } },
+          },
+        },
       });
 
       const executions = yield* client.execute(
@@ -388,11 +411,13 @@ layer(TestServerLayer)("MCP route", (it) => {
             params: {
               name: "sign",
               arguments: {
-                namespace: "eip155",
-                type: "message",
-                walletId: wallet.id,
-                chainId: "eip155:1",
-                message: "Sign with Namera MCP",
+                request: {
+                  namespace: "eip155",
+                  type: "message",
+                  walletId: wallet.id,
+                  chainId: "eip155:1",
+                  message: "Sign with Namera MCP",
+                },
               },
             },
           },
@@ -402,9 +427,11 @@ layer(TestServerLayer)("MCP route", (it) => {
       expect(yield* signed.json).toMatchObject({
         result: {
           structuredContent: {
-            namespace: "eip155",
-            type: "message",
-            walletId: wallet.id,
+            signature: {
+              namespace: "eip155",
+              type: "message",
+              walletId: wallet.id,
+            },
           },
         },
       });

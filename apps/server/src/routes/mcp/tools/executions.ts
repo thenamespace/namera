@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
 import { Application } from "@namera-ai/application";
@@ -19,19 +19,19 @@ const ExecuteTransaction = Tool.make("execute_transaction", {
   description:
     "Execute a namespace-specific transaction through one delegated session key whose policies authorize the complete operation.",
   parameters: McpExecuteRequest,
-  success: ExecuteResponse,
+  success: Schema.Struct({ execution: ExecuteResponse }),
 });
 
 const GetExecutionSubmission = Tool.make("get_execution_submission", {
   description: "Get the current status of an execution submission created by this authorization.",
   parameters: GetExecutionSubmissionRequest,
-  success: GetExecutionSubmissionResponse,
+  success: Schema.Struct({ submission: GetExecutionSubmissionResponse }),
 });
 
 const GetExecution = Tool.make("get_execution", {
   description: "Get one confirmed execution created by this authorization.",
   parameters: GetExecutionRequest,
-  success: GetExecutionResponse,
+  success: Schema.Struct({ execution: GetExecutionResponse }),
 });
 
 const ListExecutions = Tool.make("list_executions", {
@@ -49,7 +49,9 @@ export const ExecutionTools = Effect.gen(function* () {
     hints: executionHints,
     errorMessage: "The transaction could not be executed.",
     handle: ({ idempotencyKey, request }, principal) =>
-      app.execution.execute({ actor: principal, idempotencyKey, request }),
+      app.execution
+        .execute({ actor: principal, idempotencyKey, request })
+        .pipe(Effect.map((execution) => ({ execution }))),
   });
 
   yield* registerMcpTool({
@@ -58,11 +60,13 @@ export const ExecutionTools = Effect.gen(function* () {
     hints: readOnlyHints,
     errorMessage: "The execution submission could not be found.",
     handle: ({ submissionId }, principal) =>
-      app.execution.getSubmission({
-        organizationId: principal.organizationId,
-        actorId: principal.actorId,
-        submissionId,
-      }),
+      app.execution
+        .getSubmission({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+          submissionId,
+        })
+        .pipe(Effect.map((submission) => ({ submission }))),
   });
 
   yield* registerMcpTool({
@@ -71,11 +75,13 @@ export const ExecutionTools = Effect.gen(function* () {
     hints: readOnlyHints,
     errorMessage: "The execution could not be found.",
     handle: ({ executionId }, principal) =>
-      app.execution.get({
-        organizationId: principal.organizationId,
-        actorId: principal.actorId,
-        executionId,
-      }),
+      app.execution
+        .get({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+          executionId,
+        })
+        .pipe(Effect.map((execution) => ({ execution }))),
   });
 
   yield* registerMcpTool({

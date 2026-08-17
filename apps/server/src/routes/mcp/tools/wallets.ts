@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
 import { Application } from "@namera-ai/application";
@@ -10,13 +10,13 @@ import { readOnlyHints, registerMcpTool } from "./register.js";
 
 const ListWallets = Tool.make("list_wallets", {
   description: "List wallets reachable through this authorization's active session-key grants.",
-  success: ListWalletsResponse,
+  success: Schema.Struct({ wallets: ListWalletsResponse }),
 });
 
 const GetWallet = Tool.make("get_wallet", {
   description: "Get one wallet reachable through this authorization by wallet ID.",
   parameters: GetWalletRequest,
-  success: GetWalletResponse,
+  success: Schema.Struct({ wallet: GetWalletResponse }),
 });
 
 export const WalletTools = Effect.gen(function* () {
@@ -33,7 +33,7 @@ export const WalletTools = Effect.gen(function* () {
           organizationId: principal.organizationId,
           actorId: principal.actorId,
         })
-        .pipe(Effect.map((items) => items.map(toWalletResponse))),
+        .pipe(Effect.map((items) => ({ wallets: items.map(toWalletResponse) }))),
   });
 
   yield* registerMcpTool({
@@ -48,6 +48,6 @@ export const WalletTools = Effect.gen(function* () {
           actorId: principal.actorId,
           walletId,
         })
-        .pipe(Effect.map(toWalletResponse)),
+        .pipe(Effect.map((wallet) => ({ wallet: toWalletResponse(wallet) }))),
   });
 });

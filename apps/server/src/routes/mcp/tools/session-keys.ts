@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
 import { Application } from "@namera-ai/application";
@@ -24,19 +24,19 @@ const ListSessionKeyGrants = Tool.make("list_session_key_grants", {
 const ListSessionKeys = Tool.make("list_session_keys", {
   description:
     "List the active session keys delegated to this authorization, including wallet and creator details.",
-  success: ListSessionKeysForOrganizationResponse,
+  success: Schema.Struct({ sessionKeys: ListSessionKeysForOrganizationResponse }),
 });
 
 const ListSessionKeysForWallet = Tool.make("list_session_keys_for_wallet", {
   description: "List delegated session keys for one wallet.",
   parameters: ListSessionKeysForWalletRequest,
-  success: ListSessionKeysForWalletResponse,
+  success: Schema.Struct({ sessionKeys: ListSessionKeysForWalletResponse }),
 });
 
 const GetSessionKey = Tool.make("get_session_key", {
   description: "Get one delegated session key by ID.",
   parameters: GetSessionKeyRequest,
-  success: GetSessionKeyResponse,
+  success: Schema.Struct({ sessionKey: GetSessionKeyResponse }),
 });
 
 export const SessionKeyTools = Effect.gen(function* () {
@@ -81,7 +81,7 @@ export const SessionKeyTools = Effect.gen(function* () {
           organizationId: principal.organizationId,
           actorId: principal.actorId,
         })
-        .pipe(Effect.map((items) => items.map(toSessionKeyResponse))),
+        .pipe(Effect.map((items) => ({ sessionKeys: items.map(toSessionKeyResponse) }))),
   });
 
   yield* registerMcpTool({
@@ -96,7 +96,7 @@ export const SessionKeyTools = Effect.gen(function* () {
           actorId: principal.actorId,
           walletId,
         })
-        .pipe(Effect.map((items) => items.map(toSessionKeyResponse))),
+        .pipe(Effect.map((items) => ({ sessionKeys: items.map(toSessionKeyResponse) }))),
   });
 
   yield* registerMcpTool({
@@ -111,6 +111,6 @@ export const SessionKeyTools = Effect.gen(function* () {
           actorId: principal.actorId,
           sessionKeyId,
         })
-        .pipe(Effect.map(toSessionKeyResponse)),
+        .pipe(Effect.map((sessionKey) => ({ sessionKey: toSessionKeyResponse(sessionKey) }))),
   });
 });

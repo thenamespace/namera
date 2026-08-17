@@ -13,6 +13,27 @@ type ToolHints = {
   readonly openWorld: boolean;
 };
 
+// MCP clients commonly require the root tool schema to be an object. Effect's
+// JSON Schema encoder emits annotated structs as a root `$ref`, so inline only
+// that root while retaining `$defs` for nested reusable schemas.
+const inlineRootReference = (schema: ReturnType<typeof Tool.getJsonSchema>) => {
+  const reference = Reflect.get(schema, "$ref");
+  const definitions = Reflect.get(schema, "$defs");
+  if (
+    typeof reference !== "string" ||
+    !reference.startsWith("#/$defs/") ||
+    typeof definitions !== "object" ||
+    definitions === null
+  ) {
+    return schema;
+  }
+
+  const definition = Reflect.get(definitions, reference.slice("#/$defs/".length));
+  return typeof definition === "object" && definition !== null
+    ? { ...definition, $defs: definitions }
+    : schema;
+};
+
 export const registerMcpTool = <T extends Tool.Any, E>(options: {
   readonly tool: T;
   readonly requiredScope: Extract<OAuthScope, "mcp:read" | "mcp:execute">;
@@ -30,8 +51,8 @@ export const registerMcpTool = <T extends Tool.Any, E>(options: {
       tool: new McpSchema.Tool({
         name: options.tool.name,
         description: options.tool.description,
-        inputSchema: Tool.getJsonSchema(options.tool),
-        outputSchema: Tool.getJsonSchemaFromSchema(options.tool.successSchema),
+        inputSchema: inlineRootReference(Tool.getJsonSchema(options.tool)),
+        outputSchema: inlineRootReference(Tool.getJsonSchemaFromSchema(options.tool.successSchema)),
         annotations: {
           readOnlyHint: options.hints.readOnly,
           destructiveHint: options.hints.destructive,

@@ -126,6 +126,10 @@ submission status, confirmed execution list/get, and message or typed-data
 signing. Tool inputs never accept an organization or actor identity; those are
 always derived from the bearer authorization.
 
+MCP tool inputs and structured outputs use root object schemas. The registration
+adapter inlines Effect's root `$ref` while retaining nested `$defs`, avoiding
+strict-client schema loading failures without weakening runtime decoding.
+
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally
 scaling the server, replace `RateLimiter.layerStoreMemory` with Effect's Redis
