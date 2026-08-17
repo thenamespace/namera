@@ -9,4 +9,6 @@ export const cryptoPurpose = {
   oauthAuthorizationCode: "auth.oauth.authorization-code",
   oauthAccessToken: "auth.oauth.access-token",
   oauthRefreshToken: "auth.oauth.refresh-token",
+  oauthDeviceCode: "auth.oauth.device-code",
+  oauthUserCode: "auth.oauth.user-code",
 } as const;

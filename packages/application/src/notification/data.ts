@@ -59,6 +59,16 @@ export const notificationPolicy = {
     emailDefaultEnabled: false,
     emailTimeToLive: Duration.days(7),
   },
+  "cli_authorization.approved": {
+    target: { category: "organization", topic: "cli-authorizations" },
+    emailDefaultEnabled: false,
+    emailTimeToLive: Duration.days(7),
+  },
+  "cli_authorization.revoked": {
+    target: { category: "organization", topic: "cli-authorizations" },
+    emailDefaultEnabled: false,
+    emailTimeToLive: Duration.days(7),
+  },
 } as const satisfies Readonly<Record<NotificationType, NotificationPolicy>>;
 
 export const notificationPageSize = 30;

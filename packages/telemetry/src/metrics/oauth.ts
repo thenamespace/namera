@@ -39,20 +39,40 @@ export const oauthTokenDuration = Metric.timer("namera.oauth.token.duration", {
   description: "Duration of OAuth token workflows",
 });
 
-export const mcpAuthorizationRevocationResults = Metric.counter(
-  "namera.mcp_authorization.revocation.results",
+export const oauthAuthorizationRevocationResults = Metric.counter(
+  "namera.oauth.authorization.revocation.results",
   {
-    description: "MCP authorization revocation outcomes",
+    description: "OAuth authorization revocation outcomes",
     incremental: true,
   },
 );
 
-export const mcpAuthorizationRevocationDuration = Metric.timer(
-  "namera.mcp_authorization.revocation.duration",
+export const oauthAuthorizationRevocationDuration = Metric.timer(
+  "namera.oauth.authorization.revocation.duration",
   {
-    description: "Duration of MCP authorization revocation workflows",
+    description: "Duration of OAuth authorization revocation workflows",
   },
 );
+
+export const oauthDeviceAuthorizationRequests = Metric.counter(
+  "namera.oauth.device_authorization.requests",
+  { description: "OAuth device authorization request outcomes", incremental: true },
+);
+
+export const oauthDeviceAuthorizationDecisions = Metric.counter(
+  "namera.oauth.device_authorization.decisions",
+  { description: "OAuth device authorization consent outcomes", incremental: true },
+);
+
+export const oauthDeviceTokenPolls = Metric.counter("namera.oauth.device_token.polls", {
+  description: "OAuth device token polling outcomes",
+  incremental: true,
+});
+
+export const cliAuthorizations = Metric.counter("namera.cli.authorizations", {
+  description: "CLI authorization lifecycle outcomes",
+  incremental: true,
+});
 
 export const mcpAuthenticationResults = Metric.counter("namera.mcp.authentication.results", {
   description: "MCP bearer authentication outcomes",

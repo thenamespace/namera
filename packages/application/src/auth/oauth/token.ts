@@ -226,5 +226,7 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { exchangeAuthorizationCode, refresh, revokeToken };
+  return { exchangeAuthorizationCode, issueForAuthorization: issue, refresh, revokeToken };
 });
+
+export type OAuthTokenApplication = Effect.Success<typeof makeOAuthTokenApplication>;

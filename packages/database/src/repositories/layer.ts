@@ -5,10 +5,11 @@ import { OrganizationEventRepository, UserEventRepository } from "#/repositories
 import {
   ActorRepository,
   ApiKeyRepository,
-  McpAuthorizationRepository,
+  OAuthAuthorizationRepository,
   OAuthAuthorizationCodeRepository,
   OAuthAuthorizationRequestRepository,
   OAuthClientRepository,
+  OAuthDeviceAuthorizationRepository,
   OAuthTokenRepository,
   OrganizationInvitationRepository,
   OrganizationMemberRepository,
@@ -48,10 +49,11 @@ export interface RepositoryService {
     actor: ActorRepository["Service"];
     apiKey: ApiKeyRepository["Service"];
     oauth: {
-      authorization: McpAuthorizationRepository["Service"];
+      authorization: OAuthAuthorizationRepository["Service"];
       authorizationCode: OAuthAuthorizationCodeRepository["Service"];
       authorizationRequest: OAuthAuthorizationRequestRepository["Service"];
       client: OAuthClientRepository["Service"];
+      deviceAuthorization: OAuthDeviceAuthorizationRepository["Service"];
       token: OAuthTokenRepository["Service"];
     };
     invitation: OrganizationInvitationRepository["Service"];
@@ -94,10 +96,11 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
       const apiKey = yield* ApiKeyRepository;
-      const oauthAuthorization = yield* McpAuthorizationRepository;
+      const oauthAuthorization = yield* OAuthAuthorizationRepository;
       const oauthAuthorizationCode = yield* OAuthAuthorizationCodeRepository;
       const oauthAuthorizationRequest = yield* OAuthAuthorizationRequestRepository;
       const oauthClient = yield* OAuthClientRepository;
+      const oauthDeviceAuthorization = yield* OAuthDeviceAuthorizationRepository;
       const oauthToken = yield* OAuthTokenRepository;
       const invitation = yield* OrganizationInvitationRepository;
       const member = yield* OrganizationMemberRepository;
@@ -136,6 +139,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
             authorizationCode: oauthAuthorizationCode,
             authorizationRequest: oauthAuthorizationRequest,
             client: oauthClient,
+            deviceAuthorization: oauthDeviceAuthorization,
             token: oauthToken,
           },
           invitation,
@@ -175,10 +179,11 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       Layer.mergeAll(
         ActorRepository.layer,
         ApiKeyRepository.layer,
-        McpAuthorizationRepository.layer,
+        OAuthAuthorizationRepository.layer,
         OAuthAuthorizationCodeRepository.layer,
         OAuthAuthorizationRequestRepository.layer,
         OAuthClientRepository.layer,
+        OAuthDeviceAuthorizationRepository.layer,
         OAuthTokenRepository.layer,
         OrganizationInvitationRepository.layer,
         OrganizationMemberRepository.layer,

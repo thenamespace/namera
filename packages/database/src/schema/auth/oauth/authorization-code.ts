@@ -1,5 +1,5 @@
 import type {
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OAuthAuthorizationCodeId,
   OAuthClientId,
 } from "@namera-ai/protocol";
@@ -10,14 +10,14 @@ import { check, foreignKey, index, jsonb, text, uniqueIndex } from "drizzle-orm/
 import { createTimestampField, generateUniqueId } from "#/schema/common";
 
 import { authSchema } from "../common.js";
-import { mcpAuthorization } from "./authorization.js";
+import { oauthAuthorization } from "./authorization.js";
 import { oauthClient } from "./client.js";
 
 export const oauthAuthorizationCode = authSchema.table(
   "oauth_authorization_code",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<OAuthAuthorizationCodeId>(),
-    authorizationId: text("authorization_id").notNull().$type<McpAuthorizationId>(),
+    authorizationId: text("authorization_id").notNull().$type<OAuthAuthorizationId>(),
     clientId: text("client_id")
       .notNull()
       .$type<OAuthClientId>()
@@ -37,7 +37,7 @@ export const oauthAuthorizationCode = authSchema.table(
     foreignKey({
       name: "oauth_authorization_code_authorization_client_fk",
       columns: [table.authorizationId, table.clientId],
-      foreignColumns: [mcpAuthorization.id, mcpAuthorization.clientId],
+      foreignColumns: [oauthAuthorization.id, oauthAuthorization.clientId],
     }).onDelete("restrict"),
     index("oauth_authorization_code_authorization_created_idx").on(
       table.authorizationId,

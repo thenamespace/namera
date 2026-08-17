@@ -22,10 +22,11 @@ import {
   notification,
   notificationPreference,
   notificationRecipient,
-  mcpAuthorization,
+  oauthAuthorization,
   oauthAuthorizationCode,
   oauthAuthorizationRequest,
   oauthClient,
+  oauthDeviceAuthorization,
   oauthToken,
   organization,
   organizationEvent,
@@ -84,6 +85,7 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(emailJob);
           yield* database.delete(oauthToken);
           yield* database.delete(oauthAuthorizationCode);
+          yield* database.delete(oauthDeviceAuthorization);
           yield* database.delete(billingProviderEvent);
           yield* database.delete(billingSubscription);
           yield* database.delete(billingAccount);
@@ -94,7 +96,7 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(executionSubmission);
           yield* database.delete(sessionKeyPolicyState);
           yield* database.delete(sessionKeyGrant);
-          yield* database.delete(mcpAuthorization);
+          yield* database.delete(oauthAuthorization);
           yield* database.delete(oauthAuthorizationRequest);
           yield* database.delete(oauthClient);
           yield* database.delete(sessionKey);

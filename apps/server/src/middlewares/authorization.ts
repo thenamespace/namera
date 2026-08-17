@@ -3,6 +3,7 @@ import { HttpEffect, HttpServerResponse } from "effect/unstable/http";
 import { HttpApiError } from "effect/unstable/httpapi";
 
 import { Authorization, CurrentActor } from "@namera-ai/api";
+import { AuthConfig } from "@namera-ai/application";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
@@ -22,6 +23,7 @@ export const AuthorizationLive = Layer.effect(
     const crypto = yield* CryptoService;
     const repository = yield* Repository;
     const cookieConfig = yield* AuthCookieConfig;
+    const authConfig = yield* AuthConfig;
 
     return Authorization.of({
       // Machine actors carry their active grants in CurrentActor so downstream
@@ -58,6 +60,64 @@ export const AuthorizationLive = Layer.effect(
             grants,
           },
         };
+        return yield* Effect.provideService(httpEffect, CurrentActor, actor);
+      }),
+      bearer: Effect.fn("server.authorization.bearer")(function* (httpEffect, { credential }) {
+        yield* HttpEffect.appendPreResponseHandler((_request, response) =>
+          Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
+        );
+
+        const now = yield* DateTime.now;
+        const tokenHash = yield* crypto.hash({
+          purpose: cryptoPurpose.oauthAccessToken,
+          value: Redacted.value(credential),
+        });
+        const token = yield* repository.auth.oauth.token
+          .findActiveAccessByHash(tokenHash, now)
+          .pipe(Effect.orDie);
+        if (token === undefined) return yield* new HttpApiError.Unauthorized();
+
+        const authorization = yield* repository.auth.oauth.authorization
+          .findActiveById(token.authorizationId, now)
+          .pipe(Effect.orDie);
+        const expectedResource = new URL(authConfig.apiPublicOrigin).origin;
+        if (
+          authorization === undefined ||
+          authorization.type !== "cli" ||
+          authorization.actorId === undefined ||
+          authorization.clientId !== token.clientId ||
+          authorization.resource !== expectedResource ||
+          token.resource !== expectedResource
+        ) {
+          return yield* new HttpApiError.Unauthorized();
+        }
+
+        const grants = yield* repository.core.sessionKeyGrant
+          .findActiveForActor(authorization.organizationId, authorization.actorId)
+          .pipe(Effect.orDie);
+        const actor: CurrentActorResponse = {
+          type: "cli",
+          data: {
+            actorId: authorization.actorId,
+            organizationId: authorization.organizationId,
+            authorization: {
+              id: authorization.id,
+              clientId: authorization.clientId,
+              scopes: authorization.scopes,
+              metadata: authorization.metadata,
+              expiresAt: authorization.expiresAt,
+              lastUsedAt: authorization.lastUsedAt,
+              createdAt: authorization.createdAt,
+            },
+            grants,
+          },
+        };
+
+        yield* Effect.all([
+          repository.auth.oauth.token.touchLastUsed(token.id, now),
+          repository.auth.oauth.authorization.touchLastUsed(authorization.id, now),
+        ]).pipe(Effect.orDie);
+
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       // A user session is valid only while its active organization membership

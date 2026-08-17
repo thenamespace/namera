@@ -39,10 +39,16 @@ const apiKeyPermissions = [
 
 const executionPermissions = ["execution:read"] as const satisfies ReadonlyArray<MemberPermission>;
 
-const mcpAuthorizationPermissions = [
+const oauthAuthorizationPermissions = [
   "mcp-authorization:read",
   "mcp-authorization:create",
   "mcp-authorization:revoke",
+] as const satisfies ReadonlyArray<MemberPermission>;
+
+const cliAuthorizationPermissions = [
+  "cli-authorization:read",
+  "cli-authorization:create",
+  "cli-authorization:revoke",
 ] as const satisfies ReadonlyArray<MemberPermission>;
 
 export const systemRoles = [
@@ -73,7 +79,8 @@ export const systemRoles = [
       ...sessionKeyPermissions,
       ...apiKeyPermissions,
       ...executionPermissions,
-      ...mcpAuthorizationPermissions,
+      ...oauthAuthorizationPermissions,
+      ...cliAuthorizationPermissions,
     ],
   },
   {
@@ -92,6 +99,7 @@ export const systemRoles = [
       "api-key:read",
       ...executionPermissions,
       "mcp-authorization:read",
+      "cli-authorization:read",
     ],
   },
 ] as const satisfies ReadonlyArray<SystemRoleInsert>;

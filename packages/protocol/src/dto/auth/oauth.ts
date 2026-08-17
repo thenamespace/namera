@@ -2,14 +2,17 @@ import { Schema } from "effect";
 
 import {
   ActorId,
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OAuthAuthorizationRequestId,
   OAuthClientId,
+  OAuthDeviceAuthorizationId,
   OrganizationId,
   SessionKeyId,
 } from "#/common/index";
 import {
-  McpAuthorizationStatus,
+  OAuthAuthorizationStatus,
+  OAuthAuthorizationType,
+  OAuthAuthorizationMetadata,
   OAuthGrantType,
   OAuthClientRegistrationType,
   OAuthResponseType,
@@ -134,43 +137,105 @@ export const OAuthAuthorizationRedirectResponse = Schema.Struct({
   description: "Validated OAuth client callback URL",
 });
 
-export const McpAuthorizationResponse = Schema.Struct({
-  id: McpAuthorizationId,
+export const OAuthDeviceAuthorizationStartRequest = Schema.Struct({
+  client_id: Schema.NonEmptyString,
+  scope: Schema.NonEmptyString,
+  resource: Schema.NonEmptyString,
+  device_name: Schema.NonEmptyString.check(Schema.isMaxLength(128)),
+  cli_version: Schema.NonEmptyString.check(Schema.isMaxLength(32)),
+  platform: Schema.NonEmptyString.check(Schema.isMaxLength(64)),
+}).annotate({
+  identifier: "OAuthDeviceAuthorizationStartRequest",
+  description: "RFC 8628 device authorization request with bounded CLI metadata",
+});
+
+export const OAuthDeviceAuthorizationStartResponse = Schema.Struct({
+  device_code: Schema.NonEmptyString,
+  user_code: Schema.NonEmptyString,
+  verification_uri: Schema.NonEmptyString,
+  verification_uri_complete: Schema.NonEmptyString,
+  expires_in: Schema.Int.check(Schema.isGreaterThan(0)),
+  interval: Schema.Int.check(Schema.isGreaterThanOrEqualTo(5)),
+}).annotate({
+  identifier: "OAuthDeviceAuthorizationStartResponse",
+  description: "RFC 8628 device and user codes returned once to the CLI",
+});
+
+export const OAuthDeviceAuthorizationResponse = Schema.Struct({
+  id: OAuthDeviceAuthorizationId,
+  userCode: Schema.NonEmptyString,
+  client: OAuthClientResponse,
+  requestedScopes: OAuthScopes,
+  resource: Schema.NonEmptyString,
+  deviceName: Schema.NonEmptyString,
+  cliVersion: Schema.NonEmptyString,
+  platform: Schema.NonEmptyString,
+  expiresAt: Schema.DateTimeUtcFromDate,
+}).annotate({
+  identifier: "OAuthDeviceAuthorizationResponse",
+  description: "A claimed CLI authorization request safe for dashboard consent",
+});
+
+export const GetOAuthDeviceAuthorizationRequest = Schema.Struct({
+  userCode: Schema.NonEmptyString,
+}).annotate({ identifier: "GetOAuthDeviceAuthorizationRequest" });
+
+export const ApproveOAuthDeviceAuthorizationRequest = Schema.Struct({
+  deviceAuthorizationId: OAuthDeviceAuthorizationId,
+  organizationId: OrganizationId,
+  sessionKeyIds: Schema.Array(SessionKeyId).check(
+    Schema.isMinLength(1, { message: "At least one session key grant is required" }),
+    Schema.isMaxLength(100),
+  ),
+}).annotate({ identifier: "ApproveOAuthDeviceAuthorizationRequest" });
+
+export const DenyOAuthDeviceAuthorizationRequest = Schema.Struct({
+  deviceAuthorizationId: OAuthDeviceAuthorizationId,
+}).annotate({ identifier: "DenyOAuthDeviceAuthorizationRequest" });
+
+export const OAuthDeviceAuthorizationDecisionResponse = Schema.Struct({
+  status: Schema.Literals(["approved", "denied"]),
+}).annotate({ identifier: "OAuthDeviceAuthorizationDecisionResponse" });
+
+export const OAuthAuthorizationResponse = Schema.Struct({
+  id: OAuthAuthorizationId,
   organizationId: OrganizationId,
   actorId: ActorId,
+  type: OAuthAuthorizationType,
   client: OAuthClientResponse,
   authorizedBy: GetOrganizationMemberResponse,
   scopes: OAuthScopes,
   resource: Schema.NonEmptyString,
-  status: McpAuthorizationStatus,
+  status: OAuthAuthorizationStatus,
+  metadata: OAuthAuthorizationMetadata,
   expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   sessionKeys: Schema.Array(SessionKeySummaryResponse),
   ...TimestampFields,
 }).annotate({
-  identifier: "McpAuthorizationResponse",
-  description: "An MCP OAuth authorization and its active session-key grants",
+  identifier: "OAuthAuthorizationResponse",
+  description: "An OAuth authorization and its active session-key grants",
 });
 
-export const GetMcpAuthorizationRequest = Schema.Struct({
-  authorizationId: McpAuthorizationId,
-}).annotate({ identifier: "GetMcpAuthorizationRequest" });
+export const GetOAuthAuthorizationRequest = Schema.Struct({
+  authorizationId: OAuthAuthorizationId,
+}).annotate({ identifier: "GetOAuthAuthorizationRequest" });
 
-export const GetMcpAuthorizationResponse = McpAuthorizationResponse.annotate({
-  identifier: "GetMcpAuthorizationResponse",
+export const GetOAuthAuthorizationResponse = OAuthAuthorizationResponse.annotate({
+  identifier: "GetOAuthAuthorizationResponse",
 });
 
-export const ListMcpAuthorizationsResponse = Schema.Array(McpAuthorizationResponse).annotate({
-  identifier: "ListMcpAuthorizationsResponse",
+export const ListOAuthAuthorizationsResponse = Schema.Array(OAuthAuthorizationResponse).annotate({
+  identifier: "ListOAuthAuthorizationsResponse",
 });
 
-export const RevokeMcpAuthorizationRequest = Schema.Struct({
-  authorizationId: McpAuthorizationId,
-}).annotate({ identifier: "RevokeMcpAuthorizationRequest" });
+export const RevokeOAuthAuthorizationRequest = Schema.Struct({
+  authorizationId: OAuthAuthorizationId,
+}).annotate({ identifier: "RevokeOAuthAuthorizationRequest" });
 
-export const RevokeMcpAuthorizationResponse = McpAuthorizationResponse.annotate({
-  identifier: "RevokeMcpAuthorizationResponse",
+export const RevokeOAuthAuthorizationResponse = OAuthAuthorizationResponse.annotate({
+  identifier: "RevokeOAuthAuthorizationResponse",
 });
 
 export const OAuthTokenResponse = Schema.Struct({
@@ -195,10 +260,20 @@ export type GetOAuthAuthorizationRequestResponse = typeof GetOAuthAuthorizationR
 export type ApproveOAuthAuthorizationRequest = typeof ApproveOAuthAuthorizationRequest.Type;
 export type DenyOAuthAuthorizationRequest = typeof DenyOAuthAuthorizationRequest.Type;
 export type OAuthAuthorizationRedirectResponse = typeof OAuthAuthorizationRedirectResponse.Type;
-export type McpAuthorizationResponse = typeof McpAuthorizationResponse.Type;
-export type GetMcpAuthorizationRequest = typeof GetMcpAuthorizationRequest.Type;
-export type GetMcpAuthorizationResponse = typeof GetMcpAuthorizationResponse.Type;
-export type ListMcpAuthorizationsResponse = typeof ListMcpAuthorizationsResponse.Type;
-export type RevokeMcpAuthorizationRequest = typeof RevokeMcpAuthorizationRequest.Type;
-export type RevokeMcpAuthorizationResponse = typeof RevokeMcpAuthorizationResponse.Type;
+export type OAuthDeviceAuthorizationStartRequest = typeof OAuthDeviceAuthorizationStartRequest.Type;
+export type OAuthDeviceAuthorizationStartResponse =
+  typeof OAuthDeviceAuthorizationStartResponse.Type;
+export type OAuthDeviceAuthorizationResponse = typeof OAuthDeviceAuthorizationResponse.Type;
+export type GetOAuthDeviceAuthorizationRequest = typeof GetOAuthDeviceAuthorizationRequest.Type;
+export type ApproveOAuthDeviceAuthorizationRequest =
+  typeof ApproveOAuthDeviceAuthorizationRequest.Type;
+export type DenyOAuthDeviceAuthorizationRequest = typeof DenyOAuthDeviceAuthorizationRequest.Type;
+export type OAuthDeviceAuthorizationDecisionResponse =
+  typeof OAuthDeviceAuthorizationDecisionResponse.Type;
+export type OAuthAuthorizationResponse = typeof OAuthAuthorizationResponse.Type;
+export type GetOAuthAuthorizationRequest = typeof GetOAuthAuthorizationRequest.Type;
+export type GetOAuthAuthorizationResponse = typeof GetOAuthAuthorizationResponse.Type;
+export type ListOAuthAuthorizationsResponse = typeof ListOAuthAuthorizationsResponse.Type;
+export type RevokeOAuthAuthorizationRequest = typeof RevokeOAuthAuthorizationRequest.Type;
+export type RevokeOAuthAuthorizationResponse = typeof RevokeOAuthAuthorizationResponse.Type;
 export type OAuthTokenResponse = typeof OAuthTokenResponse.Type;

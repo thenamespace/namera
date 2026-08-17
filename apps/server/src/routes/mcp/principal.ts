@@ -3,7 +3,7 @@ import { Context } from "effect";
 import type { SessionKeyGrantView } from "@namera-ai/database";
 import type {
   ActorId,
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OAuthClientId,
   OAuthTokenId,
   OrganizationId,
@@ -11,7 +11,7 @@ import type {
 import type { OAuthScope } from "@namera-ai/protocol/model";
 
 export interface McpPrincipal {
-  readonly authorizationId: McpAuthorizationId;
+  readonly authorizationId: OAuthAuthorizationId;
   readonly tokenId: OAuthTokenId;
   readonly organizationId: OrganizationId;
   readonly actorId: ActorId;

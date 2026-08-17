@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
 import {
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OAuthClientId,
   OAuthTokenFamilyId,
   OAuthTokenId,
@@ -14,7 +14,7 @@ export const OAuthTokenType = Schema.Literals(["access", "refresh"]);
 
 const OAuthTokenFields = {
   id: OAuthTokenId,
-  authorizationId: McpAuthorizationId,
+  authorizationId: OAuthAuthorizationId,
   clientId: OAuthClientId,
   tokenHash: Schema.NonEmptyString,
   resource: Schema.NonEmptyString,

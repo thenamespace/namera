@@ -32,11 +32,32 @@ export class OAuthTokenError extends Schema.TaggedError<OAuthTokenError>()("OAut
     "INVALID_SCOPE",
     "INVALID_TARGET",
     "UNSUPPORTED_GRANT_TYPE",
+    "AUTHORIZATION_PENDING",
+    "SLOW_DOWN",
+    "ACCESS_DENIED",
+    "EXPIRED_TOKEN",
   ]),
 }) {}
 
-export class McpAuthorizationError extends Schema.TaggedError<McpAuthorizationError>()(
-  "McpAuthorizationError",
+export class OAuthDeviceAuthorizationError extends Schema.TaggedError<OAuthDeviceAuthorizationError>()(
+  "OAuthDeviceAuthorizationError",
+  {
+    code: Schema.Literals([
+      "INVALID_CLIENT",
+      "INVALID_REQUEST",
+      "INVALID_RESOURCE",
+      "INVALID_SCOPE",
+      "REQUEST_NOT_FOUND",
+      "REQUEST_ALREADY_CLAIMED",
+      "SESSION_KEY_NOT_FOUND",
+      "SESSION_KEY_NOT_ACTIVE",
+    ]),
+  },
+  { httpApiStatus: 400 },
+) {}
+
+export class OAuthAuthorizationError extends Schema.TaggedError<OAuthAuthorizationError>()(
+  "OAuthAuthorizationError",
   {
     code: Schema.Literals([
       "AUTHORIZATION_NOT_FOUND",

@@ -3,7 +3,7 @@ import { Schema, Struct } from "effect";
 import { ActorId, OrganizationId } from "#/common/index";
 import { TimestampFields } from "#/model/common";
 
-export const ActorType = Schema.Literals(["user", "api-key", "mcp"]);
+export const ActorType = Schema.Literals(["user", "api-key", "mcp", "cli"]);
 
 export const Actor = Schema.Struct({
   id: ActorId,

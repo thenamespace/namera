@@ -1,6 +1,15 @@
 import { Schema } from "effect";
 
-export const OAuthScope = Schema.Literals(["mcp:read", "mcp:execute", "offline_access"]);
+export const OAuthScope = Schema.Literals([
+  "mcp:read",
+  "mcp:execute",
+  "wallet:read",
+  "session-key:read",
+  "execution:read",
+  "execution:execute",
+  "signature:create",
+  "offline_access",
+]);
 export const OAuthScopes = Schema.Array(OAuthScope);
 
 export const OAuthPkceCodeChallenge = Schema.String.check(

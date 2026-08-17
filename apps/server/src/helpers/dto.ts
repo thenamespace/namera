@@ -1,4 +1,4 @@
-import type { ApiKeyView, McpAuthorizationView, SessionKeyView } from "@namera-ai/application";
+import type { ApiKeyView, OAuthAuthorizationView, SessionKeyView } from "@namera-ai/application";
 import type { NotificationInboxItem, WalletView } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
@@ -9,7 +9,7 @@ import type {
   GetSessionResponse,
   GetUserResponse,
   NotificationResponse,
-  McpAuthorizationResponse,
+  OAuthAuthorizationResponse,
   SessionKeyResponse,
   SessionKeySummaryResponse,
   WalletResponse,
@@ -165,15 +165,28 @@ export const toNotificationResponse = (input: NotificationInboxItem): Notificati
         readAt: input.recipient.readAt,
         receivedAt: input.recipient.receivedAt,
       };
+    case "cli_authorization.approved":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
+    case "cli_authorization.revoked":
+      return {
+        notification: input.notification,
+        readAt: input.recipient.readAt,
+        receivedAt: input.recipient.receivedAt,
+      };
   }
 };
 
-export const toMcpAuthorizationResponse = (
-  input: McpAuthorizationView,
-): McpAuthorizationResponse => ({
+export const toOAuthAuthorizationResponse = (
+  input: OAuthAuthorizationView,
+): OAuthAuthorizationResponse => ({
   id: input.authorization.id,
   organizationId: input.authorization.organizationId,
   actorId: input.authorization.actorId,
+  type: input.authorization.type,
   client: {
     id: input.client.id,
     clientId: input.client.clientId,
@@ -186,6 +199,7 @@ export const toMcpAuthorizationResponse = (
   scopes: input.authorization.scopes,
   resource: input.authorization.resource,
   status: input.authorization.status,
+  metadata: input.authorization.metadata,
   expiresAt: input.authorization.expiresAt,
   lastUsedAt: input.authorization.lastUsedAt,
   revokedAt: input.authorization.revokedAt,

@@ -4,6 +4,8 @@ import { NotificationId, OrganizationId } from "#/common/index";
 import {
   ApiKeyCreatedNotification,
   ApiKeyRevokedNotification,
+  CliAuthorizationApprovedNotification,
+  CliAuthorizationRevokedNotification,
   ExecutionConfirmedNotification,
   InvitationReceivedNotification,
   McpAuthorizationApprovedNotification,
@@ -61,6 +63,14 @@ export const NotificationResponse = Schema.Union([
   }),
   Schema.Struct({
     notification: McpAuthorizationRevokedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: CliAuthorizationApprovedNotification,
+    ...NotificationRecipientState,
+  }),
+  Schema.Struct({
+    notification: CliAuthorizationRevokedNotification,
     ...NotificationRecipientState,
   }),
 ]).annotate({ identifier: "NotificationResponse" });

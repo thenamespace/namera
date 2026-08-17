@@ -34,8 +34,12 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["session-key:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: {
+              user: ["session-key:read"],
+              "api-key": [],
+              cli: ["session-key:read"],
+            },
           });
           return (yield* app.sessionKey.listForOrganization(toActorReadScope(data))).map(
             toSessionKeyResponse,
@@ -47,8 +51,12 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["session-key:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: {
+              user: ["session-key:read"],
+              "api-key": [],
+              cli: ["session-key:read"],
+            },
           });
           return (yield* app.sessionKey.listForWallet({
             ...toActorReadScope(data),
@@ -61,8 +69,12 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["session-key:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: {
+              user: ["session-key:read"],
+              "api-key": [],
+              cli: ["session-key:read"],
+            },
           });
           return toSessionKeyResponse(
             yield* app.sessionKey.get({

@@ -23,6 +23,7 @@ export const OrganizationNotificationTopic = Schema.Literals([
   "api-keys",
   "executions",
   "mcp-authorizations",
+  "cli-authorizations",
 ]);
 export const BillingNotificationTopic = Schema.Literal("activity");
 
@@ -38,6 +39,7 @@ export const NotificationTopic = Schema.Literals([
   "api-keys",
   "executions",
   "mcp-authorizations",
+  "cli-authorizations",
 ]);
 
 const ProductNotificationTarget = Schema.Struct({

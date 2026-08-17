@@ -5,6 +5,10 @@ import { createInsertSchema } from "#/model/helpers";
 import { ApiKeyCreatedEventData, ApiKeyRevokedEventData } from "./api-key.js";
 import { OrganizationEventCommon } from "./base.js";
 import {
+  CliAuthorizationApprovedEventData,
+  CliAuthorizationRevokedEventData,
+} from "./cli-authorization.js";
+import {
   ExecutionConfirmedEventData,
   ExecutionFailedEventData,
   ExecutionSubmittedEventData,
@@ -16,14 +20,14 @@ import {
   InvitationRejectedEventData,
 } from "./invitation.js";
 import {
-  McpAuthorizationApprovedEventData,
-  McpAuthorizationRevokedEventData,
-} from "./mcp-authorization.js";
-import {
   MemberCreatedEventData,
   MemberRemovedEventData,
   MemberRoleUpdatedEventData,
 } from "./member.js";
+import {
+  McpAuthorizationApprovedEventData,
+  McpAuthorizationRevokedEventData,
+} from "./oauth-authorization.js";
 import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
 import { SessionKeyCreatedEventData, SessionKeyRevokedEventData } from "./session-key.js";
 import { SignatureCreatedEventData } from "./signature.js";
@@ -54,6 +58,8 @@ export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
 export const ApiKeyRevokedEvent = organizationEvent(ApiKeyRevokedEventData);
 export const McpAuthorizationApprovedEvent = organizationEvent(McpAuthorizationApprovedEventData);
 export const McpAuthorizationRevokedEvent = organizationEvent(McpAuthorizationRevokedEventData);
+export const CliAuthorizationApprovedEvent = organizationEvent(CliAuthorizationApprovedEventData);
+export const CliAuthorizationRevokedEvent = organizationEvent(CliAuthorizationRevokedEventData);
 export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
 export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
 export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
@@ -78,6 +84,8 @@ export const OrganizationEvent = Schema.Union([
   ApiKeyRevokedEvent,
   McpAuthorizationApprovedEvent,
   McpAuthorizationRevokedEvent,
+  CliAuthorizationApprovedEvent,
+  CliAuthorizationRevokedEvent,
   ExecutionSubmittedEvent,
   ExecutionConfirmedEvent,
   ExecutionFailedEvent,
@@ -104,10 +112,11 @@ export type OrganizationEventInsert = typeof OrganizationEventInsert.Type;
 
 export * from "./base.js";
 export * from "./api-key.js";
+export * from "./cli-authorization.js";
 export * from "./execution.js";
 export * from "./invitation.js";
 export * from "./member.js";
-export * from "./mcp-authorization.js";
+export * from "./oauth-authorization.js";
 export * from "./organization.js";
 export * from "./session-key.js";
 export * from "./signature.js";

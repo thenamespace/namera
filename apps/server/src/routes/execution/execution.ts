@@ -17,11 +17,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key"],
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
           });
           yield* consumeRateLimit(
             "execution.api_key",
-            data.apiKey.id,
+            data.actorId,
             rateLimitPolicy.execution.byApiKey,
           );
           return yield* app.execution.execute({
@@ -34,7 +35,11 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
       .handle("getSubmission", ({ params }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({ actor, allowedActors: ["api-key"] });
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: { "api-key": [], cli: ["execution:read"] },
+          });
           return yield* app.execution.getSubmission({
             organizationId: data.organizationId,
             actorId: data.actorId,
@@ -47,8 +52,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["execution:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: {
+              user: ["execution:read"],
+              "api-key": [],
+              cli: ["execution:read"],
+            },
           });
           return yield* app.execution.get({
             ...toActorReadScope(data),
@@ -61,8 +70,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["execution:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: {
+              user: ["execution:read"],
+              "api-key": [],
+              cli: ["execution:read"],
+            },
           });
           return yield* app.execution.list({
             ...toActorReadScope(data),

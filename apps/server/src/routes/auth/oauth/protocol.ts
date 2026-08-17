@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Layer, Metric, Predicate, Result } from "effect";
+import { Effect, FileSystem, Layer, Metric, Predicate, Result, Schema } from "effect";
 import {
   HttpIncomingMessage,
   HttpRouter,
@@ -8,7 +8,10 @@ import {
 
 import { Application, AuthConfig } from "@namera-ai/application";
 import type { OAuthTokenResult } from "@namera-ai/application";
-import { OAuthDynamicClientRegistrationRequest } from "@namera-ai/protocol/dto";
+import {
+  OAuthDeviceAuthorizationStartRequest,
+  OAuthDynamicClientRegistrationRequest,
+} from "@namera-ai/protocol/dto";
 import { oauthClientRegistrationResults } from "@namera-ai/telemetry";
 
 import { clientIdentifier, consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
@@ -31,6 +34,16 @@ const tokenParameterNames = new Set([
   "resource",
   "scope",
   "client_secret",
+  "device_code",
+]);
+
+const deviceParameterNames = new Set([
+  "client_id",
+  "scope",
+  "resource",
+  "device_name",
+  "cli_version",
+  "platform",
 ]);
 
 const revokeParameterNames = new Set(["token", "token_type_hint"]);
@@ -189,6 +202,65 @@ const authorize = HttpRouter.add("GET", "/oauth/authorize", () =>
   }),
 );
 
+const deviceAuthorize = HttpRouter.add("POST", "/oauth/device/authorize", (request) =>
+  Effect.gen(function* () {
+    const identifier = yield* clientIdentifier;
+    const limited = yield* consumeRateLimit(
+      "oauth.device_authorize.ip",
+      identifier,
+      rateLimitPolicy.oauth.tokenByIp,
+    ).pipe(Effect.result);
+    if (Result.isFailure(limited)) return rateLimited(limited.failure);
+
+    if (!hasMediaType(request, "application/x-www-form-urlencoded")) {
+      return oauthError("invalid_request", "A form-encoded device request is required");
+    }
+    const form = readUniqueFormParameters(
+      (yield* request.urlParamsBody).params,
+      deviceParameterNames,
+    );
+    if (form === undefined) {
+      return oauthError("invalid_request", "OAuth parameters must not be repeated");
+    }
+    const decoded = yield* Schema.decodeUnknownEffect(OAuthDeviceAuthorizationStartRequest)({
+      client_id: form.client_id ?? "",
+      scope: form.scope ?? "",
+      resource: form.resource ?? "",
+      device_name: form.device_name ?? "",
+      cli_version: form.cli_version ?? "",
+      platform: form.platform ?? "",
+    }).pipe(Effect.result);
+    if (Result.isFailure(decoded)) {
+      return oauthError("invalid_request", "The device authorization request is invalid");
+    }
+    const input = decoded.success;
+    const result = yield* (yield* Application).oauth.device
+      .start({
+        clientId: input.client_id,
+        scopes: input.scope.split(/\s+/).filter(Boolean),
+        resource: input.resource,
+        deviceName: input.device_name,
+        cliVersion: input.cli_version,
+        platform: input.platform,
+      })
+      .pipe(Effect.result);
+    if (Result.isFailure(result)) {
+      return oauthError(result.failure.code.toLowerCase(), "The device request is invalid");
+    }
+    return HttpServerResponse.jsonUnsafe(
+      {
+        device_code: result.success.deviceCode,
+        user_code: result.success.userCode,
+        verification_uri: result.success.verificationUri,
+        verification_uri_complete: result.success.verificationUriComplete,
+        expires_in: result.success.expiresIn,
+        interval: result.success.interval,
+      },
+      { headers: noStoreHeaders },
+    );
+  }).pipe(Effect.catch(() => Effect.succeed(oauthError("invalid_request", "Malformed form body")))),
+);
+
 const token = HttpRouter.add("POST", "/oauth/token", (request) =>
   Effect.gen(function* () {
     const identifier = yield* clientIdentifier;
@@ -233,7 +305,15 @@ const token = HttpRouter.add("POST", "/oauth/token", (request) =>
                   : { scopes: form.scope.split(/\s+/).filter(Boolean) }),
               })
               .pipe(Effect.result)
-          : undefined;
+          : grantType === "urn:ietf:params:oauth:grant-type:device_code"
+            ? yield* app.oauth.device
+                .exchange({
+                  deviceCode: form.device_code ?? "",
+                  clientId: form.client_id ?? "",
+                  resource: form.resource ?? "",
+                })
+                .pipe(Effect.result)
+            : undefined;
     if (result === undefined) {
       return oauthError("unsupported_grant_type", "The grant type is not supported");
     }
@@ -277,14 +357,28 @@ const authorizationServerMetadata = HttpRouter.add(
         {
           issuer,
           authorization_endpoint: `${issuer}/oauth/authorize`,
+          device_authorization_endpoint: `${issuer}/oauth/device/authorize`,
           registration_endpoint: `${issuer}/oauth/register`,
           token_endpoint: `${issuer}/oauth/token`,
           revocation_endpoint: `${issuer}/oauth/revoke`,
           response_types_supported: ["code"],
-          grant_types_supported: ["authorization_code", "refresh_token"],
+          grant_types_supported: [
+            "authorization_code",
+            "refresh_token",
+            "urn:ietf:params:oauth:grant-type:device_code",
+          ],
           code_challenge_methods_supported: ["S256"],
           token_endpoint_auth_methods_supported: ["none"],
-          scopes_supported: ["mcp:read", "mcp:execute", "offline_access"],
+          scopes_supported: [
+            "mcp:read",
+            "mcp:execute",
+            "wallet:read",
+            "session-key:read",
+            "execution:read",
+            "execution:execute",
+            "signature:create",
+            "offline_access",
+          ],
         },
         { headers: { "cache-control": "public, max-age=300" } },
       );
@@ -311,6 +405,7 @@ const protectedResourceMetadata = (path: `/${string}`) =>
 export const OAuthProtocolRoutes = Layer.mergeAll(
   register,
   authorize,
+  deviceAuthorize,
   token,
   revoke,
   authorizationServerMetadata,

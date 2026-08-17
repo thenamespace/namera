@@ -1,5 +1,5 @@
 import type {
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OAuthClientId,
   OAuthTokenFamilyId,
   OAuthTokenId,
@@ -11,14 +11,14 @@ import { check, foreignKey, index, jsonb, text, uniqueIndex } from "drizzle-orm/
 import { createTimestampField, generateUniqueId } from "#/schema/common";
 
 import { authSchema } from "../common.js";
-import { mcpAuthorization } from "./authorization.js";
+import { oauthAuthorization } from "./authorization.js";
 import { oauthClient } from "./client.js";
 
 export const oauthToken = authSchema.table(
   "oauth_token",
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<OAuthTokenId>(),
-    authorizationId: text("authorization_id").notNull().$type<McpAuthorizationId>(),
+    authorizationId: text("authorization_id").notNull().$type<OAuthAuthorizationId>(),
     clientId: text("client_id")
       .notNull()
       .$type<OAuthClientId>()
@@ -40,7 +40,7 @@ export const oauthToken = authSchema.table(
     foreignKey({
       name: "oauth_token_authorization_client_fk",
       columns: [table.authorizationId, table.clientId],
-      foreignColumns: [mcpAuthorization.id, mcpAuthorization.clientId],
+      foreignColumns: [oauthAuthorization.id, oauthAuthorization.clientId],
     }).onDelete("restrict"),
     foreignKey({
       name: "oauth_token_parent_fk",

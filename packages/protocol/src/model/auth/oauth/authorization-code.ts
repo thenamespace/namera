@@ -1,13 +1,13 @@
 import { Schema } from "effect";
 
-import { McpAuthorizationId, OAuthAuthorizationCodeId, OAuthClientId } from "#/common/index";
+import { OAuthAuthorizationId, OAuthAuthorizationCodeId, OAuthClientId } from "#/common/index";
 import { createInsertSchema } from "#/model/helpers";
 
 import { OAuthPkceCodeChallenge, OAuthScopes } from "./common.js";
 
 export const OAuthAuthorizationCode = Schema.Struct({
   id: OAuthAuthorizationCodeId,
-  authorizationId: McpAuthorizationId,
+  authorizationId: OAuthAuthorizationId,
   clientId: OAuthClientId,
   codeHash: Schema.NonEmptyString,
   redirectUri: Schema.NonEmptyString,

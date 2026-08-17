@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-non-null-assertion
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError, McpAuthorizationId, OAuthTokenFamilyId } from "@namera-ai/protocol";
+import type { DatabaseError, OAuthAuthorizationId, OAuthTokenFamilyId } from "@namera-ai/protocol";
 import {
   OAuthAccessTokenInsert,
   OAuthRefreshTokenInsert,
@@ -39,7 +39,7 @@ export interface OAuthTokenRepositoryService {
     consumedAt: DateTime.Utc,
   ) => Effect.Effect<OAuthTokenModel | undefined, DatabaseError>;
   readonly revokeAuthorization: (
-    authorizationId: McpAuthorizationId,
+    authorizationId: OAuthAuthorizationId,
     revokedAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<OAuthTokenModel>, DatabaseError>;
   readonly revokeByHash: (

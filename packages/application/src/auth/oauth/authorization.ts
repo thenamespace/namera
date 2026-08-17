@@ -3,24 +3,25 @@ import { DateTime, Effect, Metric } from "effect";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
-  McpAuthorizationError,
+  OAuthAuthorizationError,
   OAuthAuthorizationRequestError,
   type ActorId,
-  type McpAuthorizationId,
+  type OAuthAuthorizationId,
   type OrganizationId,
   type UserId,
 } from "@namera-ai/protocol";
 import type {
-  McpAuthorization,
+  OAuthAuthorization,
   OAuthClient,
+  OAuthAuthorizationType,
   OrganizationMember,
   OrganizationRole,
   SessionKey,
   User,
 } from "@namera-ai/protocol/model";
 import {
-  mcpAuthorizationRevocationDuration,
-  mcpAuthorizationRevocationResults,
+  oauthAuthorizationRevocationDuration,
+  oauthAuthorizationRevocationResults,
   oauthConsentDuration,
   oauthConsentResults,
 } from "@namera-ai/telemetry";
@@ -29,8 +30,8 @@ import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { makeCreateNotification } from "#/notification/create";
 
-export interface McpAuthorizationView {
-  readonly authorization: McpAuthorization;
+export interface OAuthAuthorizationView {
+  readonly authorization: OAuthAuthorization;
   readonly client: OAuthClient;
   readonly authorizedBy: {
     readonly organizationMember: OrganizationMember;
@@ -50,7 +51,7 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
 
   const loadViews = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
-    authorizations: ReadonlyArray<McpAuthorization>,
+    authorizations: ReadonlyArray<OAuthAuthorization>,
   ) {
     if (authorizations.length === 0) return [];
     const [clients, authorizers, grants] = yield* Effect.all([
@@ -84,7 +85,7 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
           sessionKeys: grants
             .filter(({ grant }) => grant.actorId === authorization.actorId)
             .map(({ sessionKey }) => sessionKey),
-        } satisfies McpAuthorizationView;
+        } satisfies OAuthAuthorizationView;
       }),
     );
   });
@@ -124,10 +125,10 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
         repository.core.sessionKey.findById(sessionKeyId, input.organizationId),
       );
       if (sessionKeys.some((sessionKey) => sessionKey === undefined)) {
-        return yield* new McpAuthorizationError({ code: "SESSION_KEY_NOT_FOUND" });
+        return yield* new OAuthAuthorizationError({ code: "SESSION_KEY_NOT_FOUND" });
       }
       if (sessionKeys.some((sessionKey) => sessionKey?.status !== "active")) {
-        return yield* new McpAuthorizationError({ code: "SESSION_KEY_NOT_ACTIVE" });
+        return yield* new OAuthAuthorizationError({ code: "SESSION_KEY_NOT_ACTIVE" });
       }
 
       const code = yield* crypto.randomToken(config.oauth.tokenBytes);
@@ -154,12 +155,13 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
             organizationId: input.organizationId,
             actorId: actor.id,
             clientId: client.id,
+            type: "mcp",
             authorizedByActorId: input.actorId,
             scopes: pending.requestedScopes,
             resource: pending.resource,
             status: "active",
             expiresAt: input.expiresAt,
-            metadata: {},
+            metadata: { type: "mcp", version: 1 },
           });
           yield* repository.core.sessionKeyGrant.insertMany(
             sessionKeyIds.map((sessionKeyId) => ({
@@ -260,23 +262,30 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
   );
 
   const list = Effect.fn("application.oauth.authorization.list")(
-    function* (organizationId: OrganizationId) {
+    function* (organizationId: OrganizationId, type?: OAuthAuthorizationType) {
       return yield* loadViews(
         organizationId,
-        yield* repository.auth.oauth.authorization.findForOrganization(organizationId),
+        yield* repository.auth.oauth.authorization.findForOrganization(organizationId, type),
       );
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
   const get = Effect.fn("application.oauth.authorization.get")(
-    function* (organizationId: OrganizationId, authorizationId: McpAuthorizationId) {
+    function* (
+      organizationId: OrganizationId,
+      authorizationId: OAuthAuthorizationId,
+      type?: OAuthAuthorizationType,
+    ) {
       const authorization = yield* repository.auth.oauth.authorization.findById(
         authorizationId,
         organizationId,
       );
       if (authorization === undefined) {
-        return yield* new McpAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
+        return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
+      }
+      if (type !== undefined && authorization.type !== type) {
+        return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
       }
       const [view] = yield* loadViews(organizationId, [authorization]);
       if (view === undefined)
@@ -290,7 +299,8 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
     function* (input: {
       readonly organizationId: OrganizationId;
       readonly actorId: ActorId;
-      readonly authorizationId: McpAuthorizationId;
+      readonly authorizationId: OAuthAuthorizationId;
+      readonly type?: OAuthAuthorizationType;
     }) {
       const now = yield* DateTime.now;
       const result = yield* transaction.run(
@@ -300,7 +310,10 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
             input.organizationId,
           );
           if (existing === undefined) {
-            return yield* new McpAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
+            return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
+          }
+          if (input.type !== undefined && existing.type !== input.type) {
+            return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
           }
           if (existing.status === "revoked") return existing;
           const revoked = yield* repository.auth.oauth.authorization.revoke({
@@ -310,7 +323,7 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
             revokedAt: now,
           });
           if (revoked === undefined) {
-            return yield* new McpAuthorizationError({ code: "AUTHORIZATION_NOT_ACTIVE" });
+            return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_ACTIVE" });
           }
           yield* repository.auth.oauth.token.revokeAuthorization(revoked.id, now);
           const revokedGrants = yield* repository.core.sessionKeyGrant.revokeActiveForActor(
@@ -321,54 +334,88 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
           );
           const client = yield* repository.auth.oauth.client.findById(revoked.clientId);
           if (client === undefined) return yield* Effect.die("OAuth client relation is missing");
-          const event = yield* audit.organization({
-            organizationId: input.organizationId,
-            actorId: input.actorId,
-            event: "mcp_authorization.revoked",
-            resourceType: "mcp-authorization",
-            resourceId: revoked.id,
-            data: {
-              version: 1,
-              clientId: client.id,
-              sessionKeyIds: revokedGrants.map(({ sessionKeyId }) => sessionKeyId),
-            },
-          });
           const members = yield* repository.auth.member.findOrganizationMembersForOrg(
             input.organizationId,
           );
-          yield* createNotification({
-            organizationId: input.organizationId,
-            actorId: input.actorId,
-            type: "mcp_authorization.revoked",
-            resourceType: "mcp-authorization",
-            resourceId: revoked.id,
-            data: {
-              version: 1,
-              clientName: client.clientName,
-              revokedGrantCount: revokedGrants.length,
-            },
-            idempotencyKey: `notification:mcp_authorization.revoked:${revoked.id}`,
-            correlationId: event.correlationId,
-            expiresAt: null,
-            recipients: members
-              .filter(({ organizationRole }) =>
-                organizationRole.permissions.includes("mcp-authorization:read"),
-              )
-              .map(({ user }) => ({ userId: user.id })),
-          });
+          if (revoked.type === "cli") {
+            const deviceName =
+              revoked.metadata.type === "cli" ? revoked.metadata.deviceName : "Namera CLI";
+            const event = yield* audit.organization({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              event: "cli_authorization.revoked",
+              resourceType: "cli-authorization",
+              resourceId: revoked.id,
+              data: {
+                version: 1,
+                clientId: client.id,
+                deviceName,
+                sessionKeyIds: revokedGrants.map(({ sessionKeyId }) => sessionKeyId),
+              },
+            });
+            yield* createNotification({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              type: "cli_authorization.revoked",
+              resourceType: "cli-authorization",
+              resourceId: revoked.id,
+              data: { version: 1, deviceName, revokedGrantCount: revokedGrants.length },
+              idempotencyKey: `notification:cli_authorization.revoked:${revoked.id}`,
+              correlationId: event.correlationId,
+              expiresAt: null,
+              recipients: members
+                .filter(({ organizationRole }) =>
+                  organizationRole.permissions.includes("cli-authorization:read"),
+                )
+                .map(({ user }) => ({ userId: user.id })),
+            });
+          } else {
+            const event = yield* audit.organization({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              event: "mcp_authorization.revoked",
+              resourceType: "mcp-authorization",
+              resourceId: revoked.id,
+              data: {
+                version: 1,
+                clientId: client.id,
+                sessionKeyIds: revokedGrants.map(({ sessionKeyId }) => sessionKeyId),
+              },
+            });
+            yield* createNotification({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              type: "mcp_authorization.revoked",
+              resourceType: "mcp-authorization",
+              resourceId: revoked.id,
+              data: {
+                version: 1,
+                clientName: client.clientName,
+                revokedGrantCount: revokedGrants.length,
+              },
+              idempotencyKey: `notification:mcp_authorization.revoked:${revoked.id}`,
+              correlationId: event.correlationId,
+              expiresAt: null,
+              recipients: members
+                .filter(({ organizationRole }) =>
+                  organizationRole.permissions.includes("mcp-authorization:read"),
+                )
+                .map(({ user }) => ({ userId: user.id })),
+            });
+          }
           return revoked;
         }),
       );
       yield* Metric.update(
-        Metric.withAttributes(mcpAuthorizationRevocationResults, { result: "success" }),
+        Metric.withAttributes(oauthAuthorizationRevocationResults, { result: "success" }),
         1,
       );
-      yield* Effect.logInfo("mcp_authorization.revoked");
+      yield* Effect.logInfo("oauth.authorization.revoked");
       const [view] = yield* loadViews(input.organizationId, [result]);
       if (view === undefined) return yield* Effect.die("Revoked MCP authorization view is missing");
       return view;
     },
-    Effect.trackDuration(mcpAuthorizationRevocationDuration),
+    Effect.trackDuration(oauthAuthorizationRevocationDuration),
     Effect.catchTag("DatabaseError", Effect.die),
   );
 

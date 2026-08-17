@@ -27,6 +27,7 @@ export class CryptoService extends Context.Service<
   {
     readonly randomToken: (byteLength?: number) => Effect.Effect<string>;
     readonly randomCode: (digits?: number) => Effect.Effect<string>;
+    readonly randomString: (alphabet: string, length: number) => Effect.Effect<string>;
     readonly hash: (input: CryptoInput) => Effect.Effect<string>;
     readonly sha256: (value: string) => Effect.Effect<string>;
     readonly hmac: (input: CryptoInput) => Effect.Effect<string>;
@@ -77,6 +78,15 @@ export class CryptoService extends Context.Service<
           Array.from({ length: digits }, () => platformCrypto.randomIntBetween(0, 9)),
         );
         return values.join("");
+      });
+
+      const randomString = Effect.fnUntraced(function* (alphabet: string, length: number) {
+        const indexes = yield* Effect.all(
+          Array.from({ length }, () =>
+            platformCrypto.randomIntBetween(0, alphabet.length, { halfOpen: true }),
+          ),
+        );
+        return indexes.map((index) => alphabet[index]).join("");
       });
 
       const hash = Effect.fnUntraced(function* (input: CryptoInput) {
@@ -167,6 +177,7 @@ export class CryptoService extends Context.Service<
       return CryptoService.of({
         randomToken,
         randomCode,
+        randomString,
         hash,
         sha256,
         hmac,

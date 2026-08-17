@@ -9,10 +9,15 @@ export const oauthRelations = defineRelationsPart(schema, (r) => ({
       from: r.oauthClient.id,
       to: r.oauthAuthorizationRequest.clientId,
     }),
-    // One OAuth client can receive many approved MCP authorizations.
-    authorizations: r.many.mcpAuthorization({
+    // One OAuth client can receive many approved authorizations.
+    authorizations: r.many.oauthAuthorization({
       from: r.oauthClient.id,
-      to: r.mcpAuthorization.clientId,
+      to: r.oauthAuthorization.clientId,
+    }),
+    // A device client can start many RFC 8628 authorization requests.
+    deviceAuthorizations: r.many.oauthDeviceAuthorization({
+      from: r.oauthClient.id,
+      to: r.oauthDeviceAuthorization.clientId,
     }),
     // One OAuth client can receive many one-time authorization codes.
     authorizationCodes: r.many.oauthAuthorizationCode({
@@ -37,52 +42,79 @@ export const oauthRelations = defineRelationsPart(schema, (r) => ({
       to: r.organization.id,
     }),
   },
-  mcpAuthorization: {
-    // Each MCP authorization belongs to one organization.
+  oauthAuthorization: {
+    // Each authorization belongs to one organization.
     organization: r.one.organization({
-      from: r.mcpAuthorization.organizationId,
+      from: r.oauthAuthorization.organizationId,
       to: r.organization.id,
       optional: false,
     }),
-    // Each MCP authorization owns one MCP actor.
+    // Each authorization owns one machine actor.
     actor: r.one.actor({
-      from: [r.mcpAuthorization.actorId, r.mcpAuthorization.organizationId],
+      from: [r.oauthAuthorization.actorId, r.oauthAuthorization.organizationId],
       to: [r.actor.id, r.actor.organizationId],
       optional: false,
     }),
-    // Each MCP authorization belongs to one OAuth client.
+    // Each authorization belongs to one OAuth client.
     client: r.one.oauthClient({
-      from: r.mcpAuthorization.clientId,
+      from: r.oauthAuthorization.clientId,
       to: r.oauthClient.id,
       optional: false,
     }),
-    // Each MCP authorization records its approving actor.
+    // Each authorization records its approving actor.
     authorizedBy: r.one.actor({
-      from: [r.mcpAuthorization.authorizedByActorId, r.mcpAuthorization.organizationId],
+      from: [r.oauthAuthorization.authorizedByActorId, r.oauthAuthorization.organizationId],
       to: [r.actor.id, r.actor.organizationId],
       optional: false,
     }),
-    // A revoked MCP authorization can record its revoking actor.
+    // A revoked authorization can record its revoking actor.
     revokedBy: r.one.actor({
-      from: [r.mcpAuthorization.revokedByActorId, r.mcpAuthorization.organizationId],
+      from: [r.oauthAuthorization.revokedByActorId, r.oauthAuthorization.organizationId],
       to: [r.actor.id, r.actor.organizationId],
     }),
-    // One MCP authorization can issue many one-time codes.
+    // One authorization can issue many one-time codes.
     authorizationCodes: r.many.oauthAuthorizationCode({
-      from: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+      from: [r.oauthAuthorization.id, r.oauthAuthorization.clientId],
       to: [r.oauthAuthorizationCode.authorizationId, r.oauthAuthorizationCode.clientId],
     }),
-    // One MCP authorization can issue many access and refresh tokens.
+    // One authorization can issue many access and refresh tokens.
     tokens: r.many.oauthToken({
-      from: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+      from: [r.oauthAuthorization.id, r.oauthAuthorization.clientId],
       to: [r.oauthToken.authorizationId, r.oauthToken.clientId],
+    }),
+    // A CLI authorization is approved by one device authorization.
+    deviceAuthorization: r.one.oauthDeviceAuthorization({
+      from: [r.oauthAuthorization.id, r.oauthAuthorization.organizationId],
+      to: [r.oauthDeviceAuthorization.authorizationId, r.oauthDeviceAuthorization.organizationId],
+    }),
+  },
+  oauthDeviceAuthorization: {
+    // Each device request belongs to the pre-registered CLI client.
+    client: r.one.oauthClient({
+      from: r.oauthDeviceAuthorization.clientId,
+      to: r.oauthClient.id,
+      optional: false,
+    }),
+    // The first signed-in user to open the code owns the consent decision.
+    claimedBy: r.one.user({
+      from: r.oauthDeviceAuthorization.claimedByUserId,
+      to: r.user.id,
+    }),
+    // Approval binds the request to one organization and authorization.
+    organization: r.one.organization({
+      from: r.oauthDeviceAuthorization.organizationId,
+      to: r.organization.id,
+    }),
+    authorization: r.one.oauthAuthorization({
+      from: [r.oauthDeviceAuthorization.authorizationId, r.oauthDeviceAuthorization.organizationId],
+      to: [r.oauthAuthorization.id, r.oauthAuthorization.organizationId],
     }),
   },
   oauthAuthorizationCode: {
-    // Each authorization code belongs to one MCP authorization.
-    authorization: r.one.mcpAuthorization({
+    // Each authorization code belongs to one authorization.
+    authorization: r.one.oauthAuthorization({
       from: [r.oauthAuthorizationCode.authorizationId, r.oauthAuthorizationCode.clientId],
-      to: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+      to: [r.oauthAuthorization.id, r.oauthAuthorization.clientId],
       optional: false,
     }),
     // Each authorization code belongs to one OAuth client.
@@ -93,10 +125,10 @@ export const oauthRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   oauthToken: {
-    // Each OAuth token belongs to one MCP authorization.
-    authorization: r.one.mcpAuthorization({
+    // Each OAuth token belongs to one authorization.
+    authorization: r.one.oauthAuthorization({
       from: [r.oauthToken.authorizationId, r.oauthToken.clientId],
-      to: [r.mcpAuthorization.id, r.mcpAuthorization.clientId],
+      to: [r.oauthAuthorization.id, r.oauthAuthorization.clientId],
       optional: false,
     }),
     // Each OAuth token belongs to one OAuth client.

@@ -4,7 +4,7 @@ import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 
-import { enforceActor, toMcpAuthorizationResponse } from "#/helpers/index";
+import { enforceActor, toOAuthAuthorizationResponse } from "#/helpers/index";
 
 export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =>
   Effect.gen(function* () {
@@ -62,6 +62,64 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
           });
         }),
       )
+      .handle("getOAuthDeviceAuthorization", ({ query }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          const { authorization, client, userCode } = yield* app.oauth.device.get({
+            userCode: query.userCode,
+            userId: data.user.id,
+          });
+          return {
+            id: authorization.id,
+            userCode,
+            client: {
+              id: client.id,
+              clientId: client.clientId,
+              registrationType: client.registrationType,
+              clientName: client.clientName,
+              clientUri: client.clientUri,
+              logoUri: client.logoUri,
+            },
+            requestedScopes: authorization.requestedScopes,
+            resource: authorization.resource,
+            deviceName: authorization.metadata.deviceName,
+            cliVersion: authorization.metadata.cliVersion,
+            platform: authorization.metadata.platform,
+            expiresAt: authorization.expiresAt,
+          };
+        }),
+      )
+      .handle("approveOAuthDeviceAuthorization", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["cli-authorization:create"] },
+          });
+          if (data.organization.id !== payload.organizationId) {
+            return yield* new HttpApiError.Forbidden();
+          }
+          yield* app.oauth.device.approve({
+            ...payload,
+            actorId: data.actorId,
+            userId: data.user.id,
+          });
+          return { status: "approved" as const };
+        }),
+      )
+      .handle("denyOAuthDeviceAuthorization", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* app.oauth.device.deny({
+            deviceAuthorizationId: payload.deviceAuthorizationId,
+            userId: data.user.id,
+          });
+          return { status: "denied" as const };
+        }),
+      )
       .handle("listMcpAuthorizations", () =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
@@ -70,8 +128,8 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["mcp-authorization:read"] },
           });
-          return (yield* app.oauth.authorization.list(data.organization.id)).map(
-            toMcpAuthorizationResponse,
+          return (yield* app.oauth.authorization.list(data.organization.id, "mcp")).map(
+            toOAuthAuthorizationResponse,
           );
         }),
       )
@@ -83,8 +141,8 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["mcp-authorization:read"] },
           });
-          return toMcpAuthorizationResponse(
-            yield* app.oauth.authorization.get(data.organization.id, params.authorizationId),
+          return toOAuthAuthorizationResponse(
+            yield* app.oauth.authorization.get(data.organization.id, params.authorizationId, "mcp"),
           );
         }),
       )
@@ -96,11 +154,56 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["mcp-authorization:revoke"] },
           });
-          return toMcpAuthorizationResponse(
+          return toOAuthAuthorizationResponse(
             yield* app.oauth.authorization.revoke({
               organizationId: data.organization.id,
               actorId: data.actorId,
               authorizationId: payload.authorizationId,
+              type: "mcp",
+            }),
+          );
+        }),
+      )
+      .handle("listCliAuthorizations", () =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["cli-authorization:read"] },
+          });
+          return (yield* app.oauth.authorization.list(data.organization.id, "cli")).map(
+            toOAuthAuthorizationResponse,
+          );
+        }),
+      )
+      .handle("getCliAuthorization", ({ params }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["cli-authorization:read"] },
+          });
+          return toOAuthAuthorizationResponse(
+            yield* app.oauth.authorization.get(data.organization.id, params.authorizationId, "cli"),
+          );
+        }),
+      )
+      .handle("revokeCliAuthorization", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["cli-authorization:revoke"] },
+          });
+          return toOAuthAuthorizationResponse(
+            yield* app.oauth.authorization.revoke({
+              organizationId: data.organization.id,
+              actorId: data.actorId,
+              authorizationId: payload.authorizationId,
+              type: "cli",
             }),
           );
         }),

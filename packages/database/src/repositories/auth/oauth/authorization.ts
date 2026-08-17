@@ -4,112 +4,127 @@ import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 import type {
   ActorId,
   DatabaseError,
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   OrganizationId,
 } from "@namera-ai/protocol";
 import {
-  McpAuthorization,
-  McpAuthorizationInsert,
-  type McpAuthorization as McpAuthorizationModel,
+  OAuthAuthorization,
+  OAuthAuthorizationInsert,
+  type OAuthAuthorization as OAuthAuthorizationModel,
+  type OAuthAuthorizationType,
 } from "@namera-ai/protocol/model";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { mcpAuthorization } from "#/schema/index";
+import { oauthAuthorization } from "#/schema/index";
 
-export interface McpAuthorizationRepositoryService {
+export interface OAuthAuthorizationRepositoryService {
   readonly insert: (
-    data: McpAuthorizationInsert,
-  ) => Effect.Effect<McpAuthorizationModel, DatabaseError>;
+    data: OAuthAuthorizationInsert,
+  ) => Effect.Effect<OAuthAuthorizationModel, DatabaseError>;
   readonly findActiveById: (
-    id: McpAuthorizationId,
+    id: OAuthAuthorizationId,
     now: DateTime.Utc,
-  ) => Effect.Effect<McpAuthorizationModel | undefined, DatabaseError>;
+  ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly findById: (
-    id: McpAuthorizationId,
+    id: OAuthAuthorizationId,
     organizationId: OrganizationId,
-  ) => Effect.Effect<McpAuthorizationModel | undefined, DatabaseError>;
+  ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
-  ) => Effect.Effect<ReadonlyArray<McpAuthorizationModel>, DatabaseError>;
+    type?: OAuthAuthorizationType,
+  ) => Effect.Effect<ReadonlyArray<OAuthAuthorizationModel>, DatabaseError>;
   readonly revoke: (params: {
-    id: McpAuthorizationId;
+    id: OAuthAuthorizationId;
     organizationId: OrganizationId;
     revokedByActorId: ActorId;
     revokedAt: DateTime.Utc;
-  }) => Effect.Effect<McpAuthorizationModel | undefined, DatabaseError>;
+  }) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly touchLastUsed: (
-    id: McpAuthorizationId,
+    id: OAuthAuthorizationId,
     usedAt: DateTime.Utc,
   ) => Effect.Effect<void, DatabaseError>;
 }
 
-export class McpAuthorizationRepository extends Context.Service<
-  McpAuthorizationRepository,
-  McpAuthorizationRepositoryService
->()("@namera-ai/database/McpAuthorizationRepository") {
-  static readonly layer: Layer.Layer<McpAuthorizationRepository, never, Database> = Layer.effect(
-    McpAuthorizationRepository,
+export class OAuthAuthorizationRepository extends Context.Service<
+  OAuthAuthorizationRepository,
+  OAuthAuthorizationRepositoryService
+>()("@namera-ai/database/OAuthAuthorizationRepository") {
+  static readonly layer: Layer.Layer<OAuthAuthorizationRepository, never, Database> = Layer.effect(
+    OAuthAuthorizationRepository,
     Effect.gen(function* () {
       const database = yield* Database;
 
-      return McpAuthorizationRepository.of({
-        insert: Effect.fn("database.mcpAuthorizationRepository.insert")(function* (data) {
+      return OAuthAuthorizationRepository.of({
+        insert: Effect.fn("database.oauthAuthorizationRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
-          const encoded = Schema.encodeSync(McpAuthorizationInsert)(data);
+          const encoded = Schema.encodeSync(OAuthAuthorizationInsert)(data);
           const rows = yield* db
-            .insert(mcpAuthorization)
+            .insert(oauthAuthorization)
             .values(encoded as any)
             .returning();
-          return Schema.decodeSync(McpAuthorization)(rows[0]! as any);
+          return Schema.decodeSync(OAuthAuthorization)(rows[0]! as any);
         }, mapRepositoryError),
-        findActiveById: Effect.fn("database.mcpAuthorizationRepository.findActiveById")(function* (
-          id,
-          now,
-        ) {
-          const db = yield* transactionOrDatabase(database);
-          const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
-          const rows = yield* db
-            .select()
-            .from(mcpAuthorization)
-            .where(
-              and(
-                eq(mcpAuthorization.id, id),
-                eq(mcpAuthorization.status, "active"),
-                or(isNull(mcpAuthorization.expiresAt), gt(mcpAuthorization.expiresAt, encodedNow)),
-              ),
-            )
-            .limit(1);
-          return rows[0] ? Schema.decodeSync(McpAuthorization)(rows[0] as any) : undefined;
-        }, mapRepositoryError),
-        findById: Effect.fn("database.mcpAuthorizationRepository.findById")(function* (
+        findActiveById: Effect.fn("database.oauthAuthorizationRepository.findActiveById")(
+          function* (id, now) {
+            const db = yield* transactionOrDatabase(database);
+            const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
+            const rows = yield* db
+              .select()
+              .from(oauthAuthorization)
+              .where(
+                and(
+                  eq(oauthAuthorization.id, id),
+                  eq(oauthAuthorization.status, "active"),
+                  or(
+                    isNull(oauthAuthorization.expiresAt),
+                    gt(oauthAuthorization.expiresAt, encodedNow),
+                  ),
+                ),
+              )
+              .limit(1);
+            return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0] as any) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        findById: Effect.fn("database.oauthAuthorizationRepository.findById")(function* (
           id,
           organizationId,
         ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .select()
-            .from(mcpAuthorization)
+            .from(oauthAuthorization)
             .where(
-              and(eq(mcpAuthorization.id, id), eq(mcpAuthorization.organizationId, organizationId)),
+              and(
+                eq(oauthAuthorization.id, id),
+                eq(oauthAuthorization.organizationId, organizationId),
+              ),
             )
             .limit(1);
-          return rows[0] ? Schema.decodeSync(McpAuthorization)(rows[0] as any) : undefined;
+          return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0] as any) : undefined;
         }, mapRepositoryError),
-        findForOrganization: Effect.fn("database.mcpAuthorizationRepository.findForOrganization")(
-          function* (organizationId) {
+        findForOrganization: Effect.fn("database.oauthAuthorizationRepository.findForOrganization")(
+          function* (organizationId, type) {
             const db = yield* transactionOrDatabase(database);
             const rows = yield* db
               .select()
-              .from(mcpAuthorization)
-              .where(eq(mcpAuthorization.organizationId, organizationId))
-              .orderBy(desc(mcpAuthorization.createdAt), desc(mcpAuthorization.id));
-            return rows.map((row) => Schema.decodeSync(McpAuthorization)(row as any));
+              .from(oauthAuthorization)
+              .where(
+                type === undefined
+                  ? eq(oauthAuthorization.organizationId, organizationId)
+                  : and(
+                      eq(oauthAuthorization.organizationId, organizationId),
+                      eq(oauthAuthorization.type, type),
+                    ),
+              )
+              .orderBy(desc(oauthAuthorization.createdAt), desc(oauthAuthorization.id));
+            return rows.map((row) => Schema.decodeSync(OAuthAuthorization)(row as any));
           },
           mapRepositoryError,
         ),
-        revoke: Effect.fn("database.mcpAuthorizationRepository.revoke")(function* ({
+        revoke: Effect.fn("database.oauthAuthorizationRepository.revoke")(function* ({
           id,
           organizationId,
           revokedByActorId,
@@ -118,28 +133,28 @@ export class McpAuthorizationRepository extends Context.Service<
           const db = yield* transactionOrDatabase(database);
           const encodedRevokedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(revokedAt);
           const rows = yield* db
-            .update(mcpAuthorization)
+            .update(oauthAuthorization)
             .set({ status: "revoked", revokedByActorId, revokedAt: encodedRevokedAt })
             .where(
               and(
-                eq(mcpAuthorization.id, id),
-                eq(mcpAuthorization.organizationId, organizationId),
-                eq(mcpAuthorization.status, "active"),
+                eq(oauthAuthorization.id, id),
+                eq(oauthAuthorization.organizationId, organizationId),
+                eq(oauthAuthorization.status, "active"),
               ),
             )
             .returning();
-          return rows[0] ? Schema.decodeSync(McpAuthorization)(rows[0] as any) : undefined;
+          return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0] as any) : undefined;
         }, mapRepositoryError),
-        touchLastUsed: Effect.fn("database.mcpAuthorizationRepository.touchLastUsed")(function* (
+        touchLastUsed: Effect.fn("database.oauthAuthorizationRepository.touchLastUsed")(function* (
           id,
           usedAt,
         ) {
           const db = yield* transactionOrDatabase(database);
           const encodedUsedAt = Schema.encodeSync(Schema.DateTimeUtcFromDate)(usedAt);
           yield* db
-            .update(mcpAuthorization)
+            .update(oauthAuthorization)
             .set({ lastUsedAt: encodedUsedAt })
-            .where(and(eq(mcpAuthorization.id, id), eq(mcpAuthorization.status, "active")));
+            .where(and(eq(oauthAuthorization.id, id), eq(oauthAuthorization.status, "active")));
         }, mapRepositoryError),
       });
     }),

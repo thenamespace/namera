@@ -14,10 +14,14 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
     return handlers.handle("sign", ({ payload }) =>
       Effect.gen(function* () {
         const actor = yield* CurrentActor;
-        const data = yield* enforceActor({ actor, allowedActors: ["api-key"] });
+        const data = yield* enforceActor({
+          actor,
+          allowedActors: ["api-key", "cli"],
+          requiredPermissions: { "api-key": [], cli: ["signature:create"] },
+        });
         yield* consumeRateLimit(
           "signature.api_key",
-          data.apiKey.id,
+          data.actorId,
           rateLimitPolicy.signature.byApiKey,
         );
         return yield* app.signature.sign({ actor: data, request: payload });

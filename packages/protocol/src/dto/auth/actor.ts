@@ -1,7 +1,19 @@
 import { Schema } from "effect";
 
-import { ActorId, ApiKeyId, OrganizationId } from "#/common/index";
-import { ApiKeyMetadata, SessionKey, SessionKeyGrant } from "#/model/index";
+import {
+  ActorId,
+  ApiKeyId,
+  OAuthAuthorizationId,
+  OAuthClientId,
+  OrganizationId,
+} from "#/common/index";
+import {
+  ApiKeyMetadata,
+  OAuthAuthorizationMetadata,
+  OAuthScopes,
+  SessionKey,
+  SessionKeyGrant,
+} from "#/model/index";
 
 import { GetSessionResponse, GetUserResponse } from "./core/index.js";
 import {
@@ -59,7 +71,25 @@ export const ApiKeyActor = Schema.Struct({
   data: ApiKeyActorData,
 }).annotate({ identifier: "ApiKeyActor" });
 
-export const CurrentActorResponse = Schema.Union([UserActor, ApiKeyActor]).annotate({
+export const CliActorData = Schema.Struct({
+  ...GrantedActorFields,
+  authorization: Schema.Struct({
+    id: OAuthAuthorizationId,
+    clientId: OAuthClientId,
+    scopes: OAuthScopes,
+    metadata: OAuthAuthorizationMetadata,
+    expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+    lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+    createdAt: Schema.DateTimeUtcFromDate,
+  }),
+}).annotate({ identifier: "CliActorData" });
+
+export const CliActor = Schema.Struct({
+  type: Schema.Literal("cli"),
+  data: CliActorData,
+}).annotate({ identifier: "CliActor" });
+
+export const CurrentActorResponse = Schema.Union([UserActor, ApiKeyActor, CliActor]).annotate({
   identifier: "CurrentActorResponse",
 });
 
@@ -68,4 +98,6 @@ export type UserActor = typeof UserActor.Type;
 export type GrantedActorData = typeof GrantedActorData.Type;
 export type ApiKeyActorData = typeof ApiKeyActorData.Type;
 export type ApiKeyActor = typeof ApiKeyActor.Type;
+export type CliActorData = typeof CliActorData.Type;
+export type CliActor = typeof CliActor.Type;
 export type CurrentActorResponse = typeof CurrentActorResponse.Type;

@@ -3,7 +3,7 @@ import { HttpApiError } from "effect/unstable/httpapi";
 
 import type { ActorId, OrganizationId } from "@namera-ai/protocol";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
-import type { MemberPermission } from "@namera-ai/protocol/model";
+import type { MemberPermission, OAuthScope } from "@namera-ai/protocol/model";
 
 type ActorType = CurrentActorResponse["type"];
 type ActorOfType<Type extends ActorType> = Extract<CurrentActorResponse, { readonly type: Type }>;
@@ -11,6 +11,7 @@ type ActorOfType<Type extends ActorType> = Extract<CurrentActorResponse, { reado
 export type ActorPermissionRequirements = {
   readonly user: readonly MemberPermission[];
   readonly "api-key": readonly never[];
+  readonly cli: readonly OAuthScope[];
 };
 
 type SupportedActorType = keyof ActorPermissionRequirements & ActorType;
@@ -30,9 +31,9 @@ export type EnforceActorProps<AllowedActor extends SupportedActorType> = {
 
 type AnyEnforceActorProps = EnforceActorProps<SupportedActorType>;
 
-const hasRequiredPermissions = (
-  grantedPermissions: readonly MemberPermission[],
-  requiredPermissions: readonly MemberPermission[] = [],
+const hasRequiredPermissions = <Permission extends string>(
+  grantedPermissions: readonly Permission[],
+  requiredPermissions: readonly Permission[] = [],
 ) => requiredPermissions.every((permission) => grantedPermissions.includes(permission));
 
 const isAllowedActor = <AllowedActor extends SupportedActorType>(
@@ -60,6 +61,11 @@ const enforceActorEffect = Effect.fn("server.enforceActor")(function* (
     }
     case "api-key":
       return actor.data;
+    case "cli":
+      if (!hasRequiredPermissions(actor.data.authorization.scopes, requiredPermissions?.cli)) {
+        return yield* new HttpApiError.Forbidden();
+      }
+      return actor.data;
   }
 });
 
@@ -72,7 +78,7 @@ export function enforceActor(
   return enforceActorEffect(props);
 }
 
-export const toActorReadScope = (data: ActorData<"user" | "api-key">): ActorReadScope =>
+export const toActorReadScope = (data: ActorData<"user" | "api-key" | "cli">): ActorReadScope =>
   // Users may inspect their organization according to role permissions. Machine
   // actors see only resources reachable through their own grants or ownership.
   "organization" in data

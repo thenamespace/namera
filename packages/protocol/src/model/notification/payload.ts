@@ -4,7 +4,7 @@ import {
   ApiKeyId,
   ExecutionId,
   InvitationId,
-  McpAuthorizationId,
+  OAuthAuthorizationId,
   SessionId,
   SessionKeyId,
   WalletId,
@@ -22,6 +22,8 @@ const ApiKeyRevokedNotificationType = Schema.Literal("api_key.revoked");
 const ExecutionConfirmedNotificationType = Schema.Literal("execution.confirmed");
 const McpAuthorizationApprovedNotificationType = Schema.Literal("mcp_authorization.approved");
 const McpAuthorizationRevokedNotificationType = Schema.Literal("mcp_authorization.revoked");
+const CliAuthorizationApprovedNotificationType = Schema.Literal("cli_authorization.approved");
+const CliAuthorizationRevokedNotificationType = Schema.Literal("cli_authorization.revoked");
 
 export const NotificationType = Schema.Union([
   NewSignInNotificationType,
@@ -34,6 +36,8 @@ export const NotificationType = Schema.Union([
   ExecutionConfirmedNotificationType,
   McpAuthorizationApprovedNotificationType,
   McpAuthorizationRevokedNotificationType,
+  CliAuthorizationApprovedNotificationType,
+  CliAuthorizationRevokedNotificationType,
 ]);
 
 export const NewSignInNotificationPayload = Schema.Struct({
@@ -129,7 +133,7 @@ export const ExecutionConfirmedNotificationPayload = Schema.Struct({
 export const McpAuthorizationApprovedNotificationPayload = Schema.Struct({
   type: McpAuthorizationApprovedNotificationType,
   resourceType: Schema.Literal("mcp-authorization"),
-  resourceId: McpAuthorizationId,
+  resourceId: OAuthAuthorizationId,
   data: Schema.Struct({
     version: Schema.Literal(1),
     clientName: Schema.NonEmptyString,
@@ -140,10 +144,32 @@ export const McpAuthorizationApprovedNotificationPayload = Schema.Struct({
 export const McpAuthorizationRevokedNotificationPayload = Schema.Struct({
   type: McpAuthorizationRevokedNotificationType,
   resourceType: Schema.Literal("mcp-authorization"),
-  resourceId: McpAuthorizationId,
+  resourceId: OAuthAuthorizationId,
   data: Schema.Struct({
     version: Schema.Literal(1),
     clientName: Schema.NonEmptyString,
+    revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  }),
+});
+
+export const CliAuthorizationApprovedNotificationPayload = Schema.Struct({
+  type: CliAuthorizationApprovedNotificationType,
+  resourceType: Schema.Literal("cli-authorization"),
+  resourceId: OAuthAuthorizationId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    deviceName: Schema.NonEmptyString,
+    sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
+  }),
+});
+
+export const CliAuthorizationRevokedNotificationPayload = Schema.Struct({
+  type: CliAuthorizationRevokedNotificationType,
+  resourceType: Schema.Literal("cli-authorization"),
+  resourceId: OAuthAuthorizationId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    deviceName: Schema.NonEmptyString,
     revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   }),
 });
@@ -159,6 +185,8 @@ export const NotificationPayload = Schema.Union([
   ExecutionConfirmedNotificationPayload,
   McpAuthorizationApprovedNotificationPayload,
   McpAuthorizationRevokedNotificationPayload,
+  CliAuthorizationApprovedNotificationPayload,
+  CliAuthorizationRevokedNotificationPayload,
 ]);
 
 export type NotificationPayload = typeof NotificationPayload.Type;

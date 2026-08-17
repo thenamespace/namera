@@ -25,6 +25,11 @@ export interface AuthPolicy {
     readonly accessTokenTimeToLive: Duration.Duration;
     readonly refreshTokenTimeToLive: Duration.Duration;
     readonly tokenBytes: number;
+    readonly cliClientId: "namera-cli";
+    readonly deviceAuthorizationTimeToLive: Duration.Duration;
+    readonly devicePollingIntervalSeconds: 5;
+    readonly userCodeLength: 8;
+    readonly userCodeAlphabet: string;
   };
   readonly cookie: {
     readonly name: string;
@@ -70,6 +75,11 @@ export const authPolicy = {
     accessTokenTimeToLive: Duration.minutes(15),
     refreshTokenTimeToLive: Duration.days(30),
     tokenBytes: 32,
+    cliClientId: "namera-cli",
+    deviceAuthorizationTimeToLive: Duration.minutes(10),
+    devicePollingIntervalSeconds: 5,
+    userCodeLength: 8,
+    userCodeAlphabet: "BCDFGHJKLMNPQRSTVWXYZ23456789",
   },
   cookie: {
     name: "auth-token",

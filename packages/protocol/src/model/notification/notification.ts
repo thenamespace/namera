@@ -7,6 +7,8 @@ import { createInsertSchema } from "#/model/helpers";
 import {
   ApiKeyCreatedNotificationPayload,
   ApiKeyRevokedNotificationPayload,
+  CliAuthorizationApprovedNotificationPayload,
+  CliAuthorizationRevokedNotificationPayload,
   ExecutionConfirmedNotificationPayload,
   InvitationReceivedNotificationPayload,
   McpAuthorizationApprovedNotificationPayload,
@@ -44,6 +46,12 @@ export const McpAuthorizationApprovedNotification = notification(
 export const McpAuthorizationRevokedNotification = notification(
   McpAuthorizationRevokedNotificationPayload,
 );
+export const CliAuthorizationApprovedNotification = notification(
+  CliAuthorizationApprovedNotificationPayload,
+);
+export const CliAuthorizationRevokedNotification = notification(
+  CliAuthorizationRevokedNotificationPayload,
+);
 
 export const Notification = Schema.Union([
   NewSignInNotification,
@@ -56,6 +64,8 @@ export const Notification = Schema.Union([
   ExecutionConfirmedNotification,
   McpAuthorizationApprovedNotification,
   McpAuthorizationRevokedNotification,
+  CliAuthorizationApprovedNotification,
+  CliAuthorizationRevokedNotification,
 ]);
 
 export const NotificationInsert = createInsertSchema(

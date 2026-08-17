@@ -17,6 +17,8 @@ export const ApiKeySecurity = HttpApiSecurity.apiKey({
   key: "x-api-key",
 });
 
+export const BearerSecurity = HttpApiSecurity.bearer;
+
 export class Authorization extends HttpApiMiddleware.Service<
   Authorization,
   {
@@ -27,5 +29,6 @@ export class Authorization extends HttpApiMiddleware.Service<
   security: {
     authToken: AuthTokenSecurity,
     apiKey: ApiKeySecurity,
+    bearer: BearerSecurity,
   },
 }) {}

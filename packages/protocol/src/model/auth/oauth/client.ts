@@ -10,7 +10,11 @@ export const OAuthClientRegistrationType = Schema.Literals([
   "dynamic",
 ]);
 export const OAuthClientStatus = Schema.Literals(["active", "disabled"]);
-export const OAuthGrantType = Schema.Literals(["authorization_code", "refresh_token"]);
+export const OAuthGrantType = Schema.Literals([
+  "authorization_code",
+  "refresh_token",
+  "urn:ietf:params:oauth:grant-type:device_code",
+]);
 export const OAuthResponseType = Schema.Literal("code");
 export const OAuthTokenEndpointAuthMethod = Schema.Literal("none");
 

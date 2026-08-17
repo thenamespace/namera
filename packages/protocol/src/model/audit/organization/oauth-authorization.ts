@@ -1,10 +1,10 @@
 import { Schema } from "effect";
 
-import { McpAuthorizationId, OAuthClientId, SessionKeyId } from "#/common/index";
+import { OAuthAuthorizationId, OAuthClientId, SessionKeyId } from "#/common/index";
 
 const McpAuthorizationResource = {
   resourceType: Schema.Literal("mcp-authorization"),
-  resourceId: McpAuthorizationId,
+  resourceId: OAuthAuthorizationId,
 };
 
 export const McpAuthorizationApprovedEventData = Schema.Struct({

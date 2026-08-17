@@ -76,19 +76,19 @@ export const authRelations = defineRelationsPart(schema, (r) => ({
       to: [r.notification.actorId, r.notification.organizationId],
     }),
     // An MCP actor can own one MCP authorization.
-    mcpAuthorization: r.one.mcpAuthorization({
+    oauthAuthorization: r.one.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
-      to: [r.mcpAuthorization.actorId, r.mcpAuthorization.organizationId],
+      to: [r.oauthAuthorization.actorId, r.oauthAuthorization.organizationId],
     }),
     // One actor can approve many MCP authorizations.
-    authorizedMcpAuthorizations: r.many.mcpAuthorization({
+    authorizedMcpAuthorizations: r.many.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
-      to: [r.mcpAuthorization.authorizedByActorId, r.mcpAuthorization.organizationId],
+      to: [r.oauthAuthorization.authorizedByActorId, r.oauthAuthorization.organizationId],
     }),
     // One actor can revoke many MCP authorizations.
-    revokedMcpAuthorizations: r.many.mcpAuthorization({
+    revokedMcpAuthorizations: r.many.oauthAuthorization({
       from: [r.actor.id, r.actor.organizationId],
-      to: [r.mcpAuthorization.revokedByActorId, r.mcpAuthorization.organizationId],
+      to: [r.oauthAuthorization.revokedByActorId, r.oauthAuthorization.organizationId],
     }),
   },
   user: {
@@ -265,10 +265,15 @@ export const authRelations = defineRelationsPart(schema, (r) => ({
       from: r.organization.id,
       to: r.oauthAuthorizationRequest.organizationId,
     }),
-    // One organization can grant many MCP authorizations.
-    mcpAuthorizations: r.many.mcpAuthorization({
+    // One organization can grant many OAuth authorizations.
+    oauthAuthorizations: r.many.oauthAuthorization({
       from: r.organization.id,
-      to: r.mcpAuthorization.organizationId,
+      to: r.oauthAuthorization.organizationId,
+    }),
+    // One organization can approve many CLI device authorizations.
+    oauthDeviceAuthorizations: r.many.oauthDeviceAuthorization({
+      from: r.organization.id,
+      to: r.oauthDeviceAuthorization.organizationId,
     }),
   },
   systemRole: {

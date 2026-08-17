@@ -33,8 +33,8 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["wallet:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
           });
           return (yield* app.wallet.list(toActorReadScope(data))).map(toWalletResponse);
         }),
@@ -44,8 +44,8 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key"],
-            requiredPermissions: { user: ["wallet:read"], "api-key": [] },
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
           });
           return toWalletResponse(
             yield* app.wallet.get({ ...toActorReadScope(data), walletId: params.walletId }),
