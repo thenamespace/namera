@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Duration, Effect, Predicate } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 
 import { Application } from "@namera-ai/application";
@@ -36,7 +36,7 @@ const mcpRequest = (
     HttpClientRequest.bodyText(JSON.stringify(body), "application/json"),
   );
 
-const authorize = Effect.fnUntraced(function* () {
+const authorize = Effect.fnUntraced(function* (options?: { readonly execute?: boolean }) {
   const client = yield* makeTestApiClient;
   const owner = yield* signIn(client, testEmail("mcp-route@example.com"));
   const repository = yield* Repository;
@@ -61,6 +61,7 @@ const authorize = Effect.fnUntraced(function* () {
       metadata: { version: 1, name: "MCP wallet" },
     },
   });
+  const expiresAt = DateTime.addDuration(yield* DateTime.now, Duration.days(1));
   const sessionKey = yield* client.sessionKey.create({
     payload: {
       namespace: "eip155",
@@ -71,8 +72,22 @@ const authorize = Effect.fnUntraced(function* () {
           type: "evm.time-window",
           version: 1,
           startsAt: null,
-          expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+          expiresAt,
         },
+        ...(options?.execute === true
+          ? [
+              {
+                type: "evm.native-spend-limit" as const,
+                version: 1 as const,
+                limits: [{ chainId: "eip155:1" as const, maxAmount: 10n }],
+              },
+              {
+                type: "evm.signature" as const,
+                version: 1 as const,
+                allowedTypes: ["message" as const],
+              },
+            ]
+          : []),
       ],
     },
   });
@@ -84,7 +99,11 @@ const authorize = Effect.fnUntraced(function* () {
     codeChallenge: yield* crypto.sha256(verifier),
     codeChallengeMethod: "S256",
     resource,
-    scopes: ["mcp:read", "offline_access"],
+    scopes: [
+      "mcp:read",
+      ...(options?.execute === true ? (["mcp:execute"] as const) : []),
+      "offline_access",
+    ],
     state: null,
   });
   const approved = yield* client.oauth.approveOAuthAuthorizationRequest({
@@ -119,7 +138,7 @@ const authorize = Effect.fnUntraced(function* () {
   ) {
     return yield* Effect.die("Expected OAuth access token");
   }
-  return { accessToken: token.access_token, sessionKey };
+  return { accessToken: token.access_token, sessionKey, wallet };
 });
 
 layer(TestServerLayer)("MCP route", (it) => {
@@ -178,7 +197,21 @@ layer(TestServerLayer)("MCP route", (it) => {
         ),
       );
       expect(yield* tools.json).toMatchObject({
-        result: { tools: [{ name: "list_session_key_grants" }] },
+        result: {
+          tools: [
+            { name: "list_wallets" },
+            { name: "get_wallet" },
+            { name: "list_session_key_grants" },
+            { name: "list_session_keys" },
+            { name: "list_session_keys_for_wallet" },
+            { name: "get_session_key" },
+            { name: "execute_transaction" },
+            { name: "get_execution_submission" },
+            { name: "get_execution" },
+            { name: "list_executions" },
+            { name: "sign" },
+          ],
+        },
       });
 
       const called = yield* client.execute(
@@ -196,6 +229,182 @@ layer(TestServerLayer)("MCP route", (it) => {
         result: {
           structuredContent: {
             grants: [{ sessionKey: { id: sessionKey.id } }],
+          },
+        },
+      });
+
+      const wallets = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 4,
+            method: "tools/call",
+            params: { name: "list_wallets", arguments: {} },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* wallets.json).toMatchObject({
+        result: { structuredContent: [{ id: sessionKey.walletId }] },
+      });
+
+      const sessionKeys = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 5,
+            method: "tools/call",
+            params: { name: "list_session_keys", arguments: {} },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* sessionKeys.json).toMatchObject({
+        result: { structuredContent: [{ id: sessionKey.id }] },
+      });
+
+      const deniedExecution = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 6,
+            method: "tools/call",
+            params: { name: "execute_transaction", arguments: {} },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* deniedExecution.json).toMatchObject({
+        result: {
+          isError: true,
+          content: [{ text: "This tool requires the mcp:execute OAuth scope." }],
+        },
+      });
+    }),
+  );
+
+  it.effect("executes, reads execution status, and signs with delegated authority", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const { accessToken, wallet } = yield* authorize({ execute: true });
+      const client = yield* makeMcpProtocolClient();
+      const initialized = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "initialize",
+            params: {
+              protocolVersion: "2025-06-18",
+              capabilities: {},
+              clientInfo: { name: "Test client", version: "1.0.0" },
+            },
+          },
+          { token: accessToken },
+        ),
+      );
+      const sessionId = initialized.headers["mcp-session-id"];
+      if (sessionId === undefined) return yield* Effect.die("Expected MCP session ID");
+
+      const executed = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 2,
+            method: "tools/call",
+            params: {
+              name: "execute_transaction",
+              arguments: {
+                idempotencyKey: "mcp-execution-1",
+                request: {
+                  namespace: "eip155",
+                  walletId: wallet.id,
+                  chainId: "eip155:1",
+                  calls: [{ to: wallet.address, value: "1", data: "0x" }],
+                },
+              },
+            },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      const executedJson = yield* executed.json;
+      if (
+        !Predicate.isObject(executedJson) ||
+        !Predicate.isObject(executedJson.result) ||
+        !Predicate.isObject(executedJson.result.structuredContent)
+      ) {
+        return yield* Effect.die("Expected a structured execution result");
+      }
+      expect(executedJson.result.structuredContent).toMatchObject({
+        namespace: "eip155",
+        status: "confirmed",
+      });
+      const submissionId = executedJson.result.structuredContent.submissionId;
+      const executionId = executedJson.result.structuredContent.executionId;
+      if (typeof submissionId !== "string" || typeof executionId !== "string") {
+        return yield* Effect.die("Expected execution identifiers");
+      }
+
+      const submission = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 3,
+            method: "tools/call",
+            params: {
+              name: "get_execution_submission",
+              arguments: { submissionId },
+            },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* submission.json).toMatchObject({
+        result: { structuredContent: { status: "confirmed", execution: { id: executionId } } },
+      });
+
+      const executions = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 4,
+            method: "tools/call",
+            params: { name: "list_executions", arguments: {} },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* executions.json).toMatchObject({
+        result: { structuredContent: { items: [{ id: executionId }] } },
+      });
+
+      const signed = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 5,
+            method: "tools/call",
+            params: {
+              name: "sign",
+              arguments: {
+                namespace: "eip155",
+                type: "message",
+                walletId: wallet.id,
+                chainId: "eip155:1",
+                message: "Sign with Namera MCP",
+              },
+            },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* signed.json).toMatchObject({
+        result: {
+          structuredContent: {
+            namespace: "eip155",
+            type: "message",
+            walletId: wallet.id,
           },
         },
       });

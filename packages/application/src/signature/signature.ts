@@ -3,7 +3,7 @@ import { DateTime, Effect, Metric } from "effect";
 import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import { SignatureError } from "@namera-ai/protocol";
-import type { ApiKeyActorData, SignRequest, SignResponse } from "@namera-ai/protocol/dto";
+import type { GrantedActorData, SignRequest, SignResponse } from "@namera-ai/protocol/dto";
 import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   signatureDuration,
@@ -21,7 +21,7 @@ type GrantedSessionKey = {
 
 export interface SignatureApplication {
   readonly sign: (input: {
-    readonly actor: ApiKeyActorData;
+    readonly actor: GrantedActorData;
     readonly request: SignRequest;
   }) => Effect.Effect<SignResponse, SignatureError>;
 }
@@ -33,7 +33,7 @@ export const makeSignatureApplication = Effect.gen(function* () {
   const loadEvmAccount = yield* makeLoadEvmAccount;
 
   const sign = Effect.fn("application.signature.sign")(
-    function* (input: { readonly actor: ApiKeyActorData; readonly request: SignRequest }) {
+    function* (input: { readonly actor: GrantedActorData; readonly request: SignRequest }) {
       const wallet = yield* repository.core.wallet.findById(
         input.request.walletId,
         input.actor.organizationId,

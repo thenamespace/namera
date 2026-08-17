@@ -60,7 +60,10 @@ const Routes = Layer.mergeAll(
       ),
     ),
   ),
-  McpRoutes.pipe(HttpRouter.provideRequest(Layer.mergeAll(ServicesLive, RateLimiterLive))),
+  McpRoutes.pipe(
+    Layer.provide(ApplicationLive),
+    HttpRouter.provideRequest(Layer.mergeAll(ServicesLive, RateLimiterLive)),
+  ),
   EmailWorkerLive,
   ExecutionWorkerLive,
 );

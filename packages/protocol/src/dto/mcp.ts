@@ -1,8 +1,20 @@
 import { Schema } from "effect";
 
 import { ActorId, OrganizationId, SessionKeyGrantId } from "#/common/index";
+import { NonEmptyString } from "#/model/common";
 
+import { ExecuteRequest } from "./execution.js";
 import { SessionKeySummaryResponse } from "./session-key/index.js";
+
+export const McpExecuteRequest = Schema.Struct({
+  idempotencyKey: NonEmptyString.annotate({
+    description: "A caller-generated key used to safely retry this execution",
+  }),
+  request: ExecuteRequest,
+}).annotate({
+  identifier: "McpExecuteRequest",
+  description: "Execute a namespace-specific transaction through delegated session keys",
+});
 
 export const McpSessionKeyGrantResponse = Schema.Struct({
   id: SessionKeyGrantId,
@@ -24,3 +36,4 @@ export const ListMcpSessionKeyGrantsResponse = Schema.Struct({
 
 export type McpSessionKeyGrantResponse = typeof McpSessionKeyGrantResponse.Type;
 export type ListMcpSessionKeyGrantsResponse = typeof ListMcpSessionKeyGrantsResponse.Type;
+export type McpExecuteRequest = typeof McpExecuteRequest.Type;

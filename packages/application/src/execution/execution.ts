@@ -22,7 +22,7 @@ import {
   type SuccessfulEvmExecutionReceipt,
 } from "@namera-ai/protocol";
 import { ExecuteRequest } from "@namera-ai/protocol/dto";
-import type { ApiKeyActorData, ExecuteResponse } from "@namera-ai/protocol/dto";
+import type { ExecuteResponse, GrantedActorData } from "@namera-ai/protocol/dto";
 import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   executionDuration,
@@ -49,7 +49,7 @@ const encodeRequest = Schema.encodeSync(ExecuteRequest);
 
 export interface ExecutionApplication extends ExecutionReadApplication {
   readonly execute: (input: {
-    readonly actor: ApiKeyActorData;
+    readonly actor: GrantedActorData;
     readonly idempotencyKey: string;
     readonly request: ExecuteRequest;
   }) => Effect.Effect<ExecuteResponse, BillingError | ExecutionError>;
@@ -110,7 +110,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
 
   const execute = Effect.fn("application.execution.execute")(
     function* (input: {
-      readonly actor: ApiKeyActorData;
+      readonly actor: GrantedActorData;
       readonly idempotencyKey: string;
       readonly request: ExecuteRequest;
     }) {

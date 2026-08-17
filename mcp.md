@@ -27,14 +27,15 @@ events, in-app notifications, and server boundary tests. OAuth authorization
 does not send email.
 
 Bearer-token authentication and the Effect Streamable HTTP transport are mounted
-at `/mcp` using Effect's available `2025-06-18` protocol adapter. The initial
-read-only tool lists the active session-key grants delegated to the current MCP
-authorization. Dynamic registration is advertised as a compatibility fallback
-for MCP hosts such as Codex CLI. Authorization errors redirect only after the
-client callback has been validated; PKCE uses strict RFC 7636 syntax; repeated
-OAuth parameters and incorrect endpoint media types are rejected; refresh
-tokens are resource-bound; and dynamic redirect URIs are limited to HTTPS or
-loopback HTTP.
+at `/mcp` using Effect's available `2025-06-18` protocol adapter. The tool
+surface supports grant-scoped wallet and session-key reads, transaction
+execution and status reads, confirmed execution history, and message or
+typed-data signing. Dynamic registration is advertised as a compatibility
+fallback for MCP hosts such as Codex CLI. Authorization errors redirect only
+after the client callback has been validated; PKCE uses strict RFC 7636 syntax;
+repeated OAuth parameters and incorrect endpoint media types are rejected;
+refresh tokens are resource-bound; and dynamic redirect URIs are limited to
+HTTPS or loopback HTTP.
 
 The OAuth authorization slice is complete for Effect's MCP `2025-06-18`
 compatibility target. Client ID Metadata Documents and later MCP authorization
@@ -680,13 +681,21 @@ FiberRef/middleware service; never use a module-global variable.
 
 ### Tool definitions
 
-Use Effect `Toolkit` plus `McpServer.toolkit`/`registerToolkit` so inputs and
-outputs remain schema-typed. Keep the first tool surface small:
+Use schema-typed Effect tools registered through the request-aware MCP server
+adapter. The current tool surface is:
 
 ```text
-list_accounts
+list_wallets
+get_wallet
+list_session_key_grants
 list_session_keys
+list_session_keys_for_wallet
+get_session_key
 execute_transaction
+get_execution_submission
+get_execution
+list_executions
+sign
 ```
 
 Tools must not accept `organizationId`, `actorId`, or arbitrary grant IDs from
@@ -938,11 +947,12 @@ database layers.
 ## Completion boundary
 
 The OAuth server, consent flow, actor/grant creation, bearer authentication, and
-one read-only MCP tool are complete for the `2025-06-18` compatibility target.
-Later MCP tools are product features rather than missing OAuth protocol work.
-Expired credential cleanup is operational maintenance. Client ID Metadata
-Documents and newer authorization behavior remain deferred until the matching
-Effect protocol adapter is available.
+the current wallet/session-key/execution/signing MCP tools are complete for the
+`2025-06-18` compatibility target. Later product operations can extend the tool
+catalog without changing the OAuth architecture. Expired credential cleanup is
+operational maintenance. Client ID Metadata Documents and newer authorization
+behavior remain deferred until the matching Effect protocol adapter is
+available.
 
 ## Primary references
 

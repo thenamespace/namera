@@ -52,7 +52,9 @@ export const makeMcpProtocolClient = Effect.fnUntraced(function* () {
   const handler = yield* HttpRouter.toHttpEffect(McpRoutes).pipe(
     Effect.provideService(ConfigProvider.ConfigProvider, protocolConfig),
   );
-  const context = yield* Effect.context<CryptoService | Repository | RateLimiter.RateLimiter>();
+  const context = yield* Effect.context<
+    Application | CryptoService | Repository | RateLimiter.RateLimiter
+  >();
   return HttpClient.make(
     Effect.fnUntraced(function* (request) {
       const serverRequest = HttpServerRequest.fromClientRequest(request).modify({

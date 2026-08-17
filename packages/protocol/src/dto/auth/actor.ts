@@ -10,6 +10,24 @@ import {
   GetOrganizationRoleResponse,
 } from "./organization/index.js";
 
+const GrantedActorFields = {
+  actorId: ActorId,
+  organizationId: OrganizationId,
+  grants: Schema.Array(
+    Schema.Struct({
+      grant: SessionKeyGrant,
+      sessionKey: SessionKey,
+    }),
+  ),
+};
+
+// API keys, MCP authorizations, and future machine credentials all execute
+// through the same durable actor grants. Provider-specific credential details
+// stay outside this shared application boundary.
+export const GrantedActorData = Schema.Struct(GrantedActorFields).annotate({
+  identifier: "GrantedActorData",
+});
+
 export const UserActorData = Schema.Struct({
   actorId: ActorId,
   session: GetSessionResponse,
@@ -25,8 +43,7 @@ export const UserActor = Schema.Struct({
 }).annotate({ identifier: "UserActor" });
 
 export const ApiKeyActorData = Schema.Struct({
-  actorId: ActorId,
-  organizationId: OrganizationId,
+  ...GrantedActorFields,
   apiKey: Schema.Struct({
     id: ApiKeyId,
     metadata: ApiKeyMetadata,
@@ -35,12 +52,6 @@ export const ApiKeyActorData = Schema.Struct({
     lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
     createdAt: Schema.DateTimeUtcFromDate,
   }),
-  grants: Schema.Array(
-    Schema.Struct({
-      grant: SessionKeyGrant,
-      sessionKey: SessionKey,
-    }),
-  ),
 }).annotate({ identifier: "ApiKeyActorData" });
 
 export const ApiKeyActor = Schema.Struct({
@@ -54,6 +65,7 @@ export const CurrentActorResponse = Schema.Union([UserActor, ApiKeyActor]).annot
 
 export type UserActorData = typeof UserActorData.Type;
 export type UserActor = typeof UserActor.Type;
+export type GrantedActorData = typeof GrantedActorData.Type;
 export type ApiKeyActorData = typeof ApiKeyActorData.Type;
 export type ApiKeyActor = typeof ApiKeyActor.Type;
 export type CurrentActorResponse = typeof CurrentActorResponse.Type;

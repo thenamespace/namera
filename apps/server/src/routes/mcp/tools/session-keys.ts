@@ -1,102 +1,116 @@
-import { Context, Effect, Metric, Schema } from "effect";
-import { McpSchema, McpServer, Tool } from "effect/unstable/ai";
+import { Effect } from "effect";
+import { Tool } from "effect/unstable/ai";
 
+import { Application } from "@namera-ai/application";
 import {
+  GetSessionKeyRequest,
+  GetSessionKeyResponse,
   ListMcpSessionKeyGrantsResponse,
-  type ListMcpSessionKeyGrantsResponse as ListMcpSessionKeyGrantsResponseType,
+  ListSessionKeysForOrganizationResponse,
+  ListSessionKeysForWalletRequest,
+  ListSessionKeysForWalletResponse,
 } from "@namera-ai/protocol/dto";
-import { mcpToolCalls } from "@namera-ai/telemetry";
 
-import { CurrentMcpPrincipal } from "../principal.js";
+import { toSessionKeyResponse } from "#/helpers/index";
+
+import { readOnlyHints, registerMcpTool } from "./register.js";
 
 const ListSessionKeyGrants = Tool.make("list_session_key_grants", {
   description:
-    "List the active session-key grants and session keys delegated to this MCP authorization.",
+    "List the active session-key grants and compact session-key details delegated to this MCP authorization.",
   success: ListMcpSessionKeyGrantsResponse,
 });
 
-export const SessionKeyGrantTools = Effect.gen(function* () {
-  const server = yield* McpServer.McpServer;
-  yield* server.addTool({
-    tool: new McpSchema.Tool({
-      name: ListSessionKeyGrants.name,
-      description: ListSessionKeyGrants.description,
-      inputSchema: Tool.getJsonSchema(ListSessionKeyGrants),
-      outputSchema: Tool.getJsonSchemaFromSchema(ListMcpSessionKeyGrantsResponse),
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    }),
-    annotations: Context.empty(),
-    handle: () =>
-      Effect.gen(function* () {
-        const principal = yield* CurrentMcpPrincipal;
-        if (principal === null) {
-          yield* Metric.update(
-            Metric.withAttributes(mcpToolCalls, {
-              tool: "list_session_key_grants",
-              result: "unauthorized",
-            }),
-            1,
-          );
-          return new McpSchema.CallToolResult({
-            isError: true,
-            content: [{ type: "text", text: "The MCP authorization is not available." }],
-          });
-        }
+const ListSessionKeys = Tool.make("list_session_keys", {
+  description:
+    "List the active session keys delegated to this authorization, including wallet and creator details.",
+  success: ListSessionKeysForOrganizationResponse,
+});
 
-        const result: ListMcpSessionKeyGrantsResponseType = {
-          grants: principal.grants.map(({ grant, sessionKey }) => ({
-            id: grant.id,
-            organizationId: grant.organizationId,
-            actorId: grant.actorId,
-            sessionKey: {
-              id: sessionKey.id,
-              organizationId: sessionKey.organizationId,
-              walletId: sessionKey.walletId,
-              namespace: sessionKey.namespace,
-              metadata: sessionKey.metadata,
-              policies: sessionKey.policies,
-              policyHash: sessionKey.policyHash,
-              status: sessionKey.status,
-              revokedAt: sessionKey.revokedAt,
-              createdAt: sessionKey.createdAt,
-            },
-            createdAt: grant.createdAt,
-          })),
-        };
-        const encoded = yield* Schema.encodeUnknownEffect(ListMcpSessionKeyGrantsResponse)(result);
-        yield* Metric.update(
-          Metric.withAttributes(mcpToolCalls, {
-            tool: "list_session_key_grants",
-            result: "success",
-          }),
-          1,
-        );
-        return new McpSchema.CallToolResult({
-          structuredContent: encoded,
-          content: [{ type: "text", text: JSON.stringify(encoded) }],
-        });
-      }).pipe(
-        Effect.catch(() =>
-          Metric.update(
-            Metric.withAttributes(mcpToolCalls, {
-              tool: "list_session_key_grants",
-              result: "error",
-            }),
-            1,
-          ).pipe(
-            Effect.as(
-              new McpSchema.CallToolResult({
-                isError: true,
-                content: [{ type: "text", text: "The session-key grants could not be listed." }],
-              }),
-            ),
-          ),
-        ),
-      ),
+const ListSessionKeysForWallet = Tool.make("list_session_keys_for_wallet", {
+  description: "List delegated session keys for one wallet.",
+  parameters: ListSessionKeysForWalletRequest,
+  success: ListSessionKeysForWalletResponse,
+});
+
+const GetSessionKey = Tool.make("get_session_key", {
+  description: "Get one delegated session key by ID.",
+  parameters: GetSessionKeyRequest,
+  success: GetSessionKeyResponse,
+});
+
+export const SessionKeyTools = Effect.gen(function* () {
+  const app = yield* Application;
+
+  yield* registerMcpTool({
+    tool: ListSessionKeyGrants,
+    requiredScope: "mcp:read",
+    hints: readOnlyHints,
+    errorMessage: "The session-key grants could not be listed.",
+    handle: (_input, principal) =>
+      Effect.succeed({
+        grants: principal.grants.map(({ grant, sessionKey }) => ({
+          id: grant.id,
+          organizationId: grant.organizationId,
+          actorId: grant.actorId,
+          sessionKey: {
+            id: sessionKey.id,
+            organizationId: sessionKey.organizationId,
+            walletId: sessionKey.walletId,
+            namespace: sessionKey.namespace,
+            metadata: sessionKey.metadata,
+            policies: sessionKey.policies,
+            policyHash: sessionKey.policyHash,
+            status: sessionKey.status,
+            revokedAt: sessionKey.revokedAt,
+            createdAt: sessionKey.createdAt,
+          },
+          createdAt: grant.createdAt,
+        })),
+      }),
+  });
+
+  yield* registerMcpTool({
+    tool: ListSessionKeys,
+    requiredScope: "mcp:read",
+    hints: readOnlyHints,
+    errorMessage: "The session keys could not be listed.",
+    handle: (_input, principal) =>
+      app.sessionKey
+        .listForOrganization({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+        })
+        .pipe(Effect.map((items) => items.map(toSessionKeyResponse))),
+  });
+
+  yield* registerMcpTool({
+    tool: ListSessionKeysForWallet,
+    requiredScope: "mcp:read",
+    hints: readOnlyHints,
+    errorMessage: "The wallet session keys could not be listed.",
+    handle: ({ walletId }, principal) =>
+      app.sessionKey
+        .listForWallet({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+          walletId,
+        })
+        .pipe(Effect.map((items) => items.map(toSessionKeyResponse))),
+  });
+
+  yield* registerMcpTool({
+    tool: GetSessionKey,
+    requiredScope: "mcp:read",
+    hints: readOnlyHints,
+    errorMessage: "The session key could not be found.",
+    handle: ({ sessionKeyId }, principal) =>
+      app.sessionKey
+        .get({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+          sessionKeyId,
+        })
+        .pipe(Effect.map(toSessionKeyResponse)),
   });
 });

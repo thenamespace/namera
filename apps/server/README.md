@@ -112,6 +112,14 @@ Authorization codes and tokens are opaque and stored only as hashes. Consent
 approval and authorization revocation create organization audit events and
 in-app notifications, but never email jobs.
 
+The authorized MCP transport is mounted at `/mcp`. Read tools require
+`mcp:read`; transaction execution and signing require `mcp:execute` in addition
+to the durable session-key grants selected during consent. The tool surface
+covers wallet list/get, session-key grant/list/get reads, transaction execution,
+submission status, confirmed execution list/get, and message or typed-data
+signing. Tool inputs never accept an organization or actor identity; those are
+always derived from the bearer authorization.
+
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally
 scaling the server, replace `RateLimiter.layerStoreMemory` with Effect's Redis
