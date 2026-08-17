@@ -19,7 +19,6 @@ import {
   FieldLabel,
   ListBox,
   Select,
-  Tag,
   Typography,
 } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
@@ -58,8 +57,13 @@ export function CliConsentForm({
     onSuccess: () => setDecision("denied"),
   });
   const activeSessionKeys = useMemo(
-    () => sessionKeys.filter(({ status }) => status === "active"),
+    () =>
+      (Array.isArray(sessionKeys) ? sessionKeys : []).filter(({ status }) => status === "active"),
     [sessionKeys],
+  );
+  const requestedScopes = useMemo(
+    () => (Array.isArray(request.requestedScopes) ? request.requestedScopes : []),
+    [request.requestedScopes],
   );
   const form = useForm<Input, unknown, Output>({
     defaultValues: {
@@ -115,8 +119,13 @@ export function CliConsentForm({
               {request.platform} · CLI {request.cliVersion}
             </Typography.Paragraph>
             <div aria-label="Requested access" className="flex flex-wrap gap-2">
-              {request.requestedScopes.map((scope) => (
-                <Tag key={scope}>{scope}</Tag>
+              {requestedScopes.map((scope) => (
+                <span
+                  key={scope}
+                  className="rounded-md border border-divider/80 bg-surface px-2 py-0.5 text-[11px] text-muted-foreground"
+                >
+                  {scope}
+                </span>
               ))}
             </div>
           </div>
