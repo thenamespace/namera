@@ -85,7 +85,7 @@ function FilterCheckbox({ isSelected, label }: FilterCheckboxProps) {
     <Checkbox
       isReadOnly
       aria-label={label}
-      className="pointer-events-none shrink-0"
+      className="pointer-events-none shrink-0 [&_input]:hidden"
       isSelected={isSelected}
     >
       <Checkbox.Content>
