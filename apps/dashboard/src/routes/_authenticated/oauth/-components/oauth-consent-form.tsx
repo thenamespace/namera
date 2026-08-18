@@ -130,15 +130,15 @@ export function OAuthConsentForm({
           <header className="flex flex-col items-center text-center">
             <div className="mb-4 flex items-center gap-3" aria-hidden="true">
               <Surface
-                className="bg-background flex size-12 items-center justify-center rounded-xl p-0 shadow-xs"
+                className="bg-background flex size-12 items-center justify-center rounded-md p-0 shadow-xs"
                 variant="secondary"
               >
-                <Avatar className="size-9 bg-transparent">
+                <Avatar className="size-12 bg-transparent rounded-md">
                   {request.client.logoUri === null ? null : (
                     <Avatar.Image alt="" src={request.client.logoUri} />
                   )}
                   <Avatar.Fallback>
-                    <HugeiconsIcon className="size-5" icon={BotIcon} />
+                    <HugeiconsIcon className="size-6" icon={BotIcon} />
                   </Avatar.Fallback>
                 </Avatar>
               </Surface>
@@ -146,7 +146,7 @@ export function OAuthConsentForm({
                 <HugeiconsIcon className="size-5" icon={ConnectIcon} />
               </span>
               <Surface
-                className="bg-background flex size-12 items-center justify-center rounded-xl p-0 shadow-xs"
+                className="bg-background flex size-12 items-center justify-center rounded-md p-0 shadow-xs"
                 variant="secondary"
               >
                 <NameraIcon className="fill-foreground h-6 w-auto" />
@@ -158,7 +158,7 @@ export function OAuthConsentForm({
             <Typography.Paragraph
               className="mt-2 max-w-md text-pretty text-center"
               color="muted"
-              size="sm"
+              size="xs"
             >
               Connect {request.client.clientName} to Namera using only the accounts and session keys
               you choose.
@@ -182,7 +182,7 @@ export function OAuthConsentForm({
             <Surface className="mt-2 rounded-xl p-0" variant="secondary">
               <ul className="divide-separator divide-y">
                 {capabilities.map((capability) => (
-                  <li className="flex items-center gap-3 px-4 py-2.5" key={capability}>
+                  <li className="flex items-center gap-2 py-1.5" key={capability}>
                     <HugeiconsIcon
                       className="size-4 shrink-0 text-success"
                       icon={CheckmarkCircle02Icon}
@@ -209,7 +209,7 @@ export function OAuthConsentForm({
                       </FieldLabel>
                       <Typography.Paragraph color="muted" size="xs">
                         Select the account authorities this connection may use. Each request must
-                        still satisfy the chosen key’s policies.
+                        still satisfy the chosen key's policies.
                       </Typography.Paragraph>
                       {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
                     </div>
@@ -262,7 +262,7 @@ export function OAuthConsentForm({
               fullWidth
               isDisabled={isPending}
               type="button"
-              variant="secondary"
+              variant="tertiary"
               onPress={handleDeny}
             >
               Reject

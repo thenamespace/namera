@@ -18,17 +18,17 @@ export function AccountActions({ account }: AccountActionsProps) {
   const copyValue = useEventCallback((value: string, title: string) => {
     void navigator.clipboard.writeText(value).then(
       () => showSuccessToast({ title }),
-      () => showErrorToast(undefined, { title: "Couldn’t copy to clipboard" }),
+      () => showErrorToast(undefined, { title: "Couldn't copy to clipboard" }),
     );
   });
   const handleAction = useEventCallback((key: string | number) => {
     if (key === "copy-id") {
-      copyValue(account.id, "Wallet ID copied");
+      copyValue(account.id, "Wallet ID copied to clipboard");
       return;
     }
 
     if (key === "copy-address") {
-      copyValue(account.address, "Wallet address copied");
+      copyValue(account.address, "Wallet address copied to clipboard");
       return;
     }
 

@@ -92,11 +92,11 @@ export function SessionKeySelect({
         <Select.Value>{selectedSummary}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover className="w-[var(--trigger-width)] min-w-80">
+      <Select.Popover className="w-(--trigger-width) min-w-80">
         <ListBox>
           {groups.map((group) => (
             <ListBox.Section id={group.id} key={group.id}>
-              <Header className="border-separator flex items-center justify-between gap-3 border-b px-3 py-2">
+              <Header className="border-separator flex items-center justify-between gap-3 border-b px-3 py-2 mb-2">
                 <MetadataDisplay fallbackName="Unnamed account" metadata={group.wallet.metadata} />
                 <div className="flex shrink-0 items-center gap-2">
                   <code className="text-xs text-muted">
@@ -118,7 +118,7 @@ export function SessionKeySelect({
                         fallbackName="Unnamed session key"
                         metadata={sessionKey.metadata}
                       />
-                      <Typography className="shrink-0 text-xs!" color="muted">
+                      <Typography className="shrink-0 text-xs! pr-6" color="muted">
                         {sessionKey.policies.length} polic
                         {sessionKey.policies.length === 1 ? "y" : "ies"}
                       </Typography>

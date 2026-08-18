@@ -11,7 +11,9 @@ type CopyableOAuthValueProps = {
 
 function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
   const displayValue = value.length > 40 ? `${value.slice(0, 20)}…${value.slice(-12)}` : value;
-  const handleCopySuccess = useEventCallback(() => showSuccessToast({ title: `${label} copied` }));
+  const handleCopySuccess = useEventCallback(() =>
+    showSuccessToast({ title: `${label} copied to clipboard` }),
+  );
   const handleCopyError = useEventCallback(() =>
     showErrorToast(undefined, { title: `Couldn’t copy ${label.toLowerCase()}` }),
   );
