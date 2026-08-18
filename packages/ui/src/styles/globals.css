@@ -88,6 +88,10 @@
 
   .tooltip {
     @apply rounded-lg border-1 shadow-lg;
+
+    &[data-exiting="true"] {
+      visibility: hidden;
+    }
   }
 
   .list-box-item {
