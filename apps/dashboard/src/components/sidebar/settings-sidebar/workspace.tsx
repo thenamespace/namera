@@ -2,6 +2,7 @@ import {
   ApiIcon,
   CreditCardIcon,
   McpServerIcon,
+  TerminalIcon,
   UserMultiple02Icon,
   WorkIcon,
 } from "@namera-ai/ui/icons";
@@ -51,6 +52,16 @@ export const workspaceGroupItems: SidebarGroupItemsProps = {
       href: "/settings/workspace/mcp",
       tooltip: {
         text: "MCP",
+      },
+    },
+    {
+      id: "cli-authorizations",
+      icon: TerminalIcon,
+      label: "CLI access",
+      textValue: "CLI access",
+      href: "/settings/workspace/cli-authorizations",
+      tooltip: {
+        text: "CLI access",
       },
     },
     {

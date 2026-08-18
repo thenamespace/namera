@@ -44,8 +44,9 @@ Workspace package imports continue to use their package names.
 - `/cli/authorize?user_code=...` is the sidebar-free CLI device consent flow.
   It claims the short user code for the signed-in user and requires explicit
   active session-key grants.
-  It preserves the full URL through sign-in, displays supplied client identity,
-  presents scopes and compact copyable protocol details, and requires an explicit
+  It preserves the full URL through sign-in, presents the CLI and Namera as a
+  connected identity pair, translates scopes into human-readable capabilities,
+  shows device and verification details, and requires an explicit
   active-session-key selection before approval.
 
 The shared auth layout prefetches the current user and redirects an already
@@ -77,8 +78,8 @@ copy the full address while retaining it in an accessible tooltip.
 Session-key create, detail, organization-list, and wallet-list atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
 list, and revoke atoms/hooks live under `src/atoms/api-key` and
-`src/hooks/api-key`. MCP authorization list, detail, and revoke atoms/hooks live
-under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
+`src/hooks/api-key`. MCP and CLI authorization list, detail, and revoke
+atoms/hooks live under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
@@ -111,6 +112,10 @@ organization API-key list.
   default, and actors with `mcp-authorization:revoke` can revoke an active
   client's session-key grants after confirmation. The former `/mcp` route
   redirects here.
+- `/settings/workspace/cli-authorizations` presents a searchable,
+  status-filtered list of authorized CLI devices. Active authorizations are
+  shown by default, and actors with `cli-authorization:revoke` can revoke an
+  active device's session-key grants after confirmation.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use
