@@ -273,3 +273,16 @@ coverage, backups, and a rollback runbook.
 For a public or multi-replica launch, also require the shared rate limiter,
 retention jobs, KMS orphan reconciliation, provider failure runbooks, packaged
 client release automation, and browser/load testing.
+
+# todos
+
+- billings page display free plan + current usage + coming soon on more plans
+- account page table, improve filters + on column vibility span full width, there is resizable on last col end as well
+- individual account page - 3 tabs - account overview, session keys for that account, executions from that account/wallet
+- individual session key page - sk overview, executions from that session key.
+- activity page - show all executions across all wallets/accounts
+- assets page - fetch all assets from alchemy api, like for all wallets etc.
+- overview page - show stats, like charts, no of wallets created, total value, tx by day for the week for month etc etc, small table for latest executions, etc.
+- move mcp page to settings - show current mcp grants
+- make new page for cli authorization - show current cli authorization + actions to revoke.
+- identity page - create a subname for namera future.

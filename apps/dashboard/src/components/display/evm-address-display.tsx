@@ -18,6 +18,7 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
     chainId: mainnet.id,
     query: { staleTime: 60 * 60 * 1000 },
   });
+
   const { data: ensAvatar } = useEnsAvatar({
     chainId: mainnet.id,
     name: ensName ?? undefined,
@@ -26,13 +27,19 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
       staleTime: 60 * 60 * 1000,
     },
   });
+
   const placeholderAvatar = `https://api.dicebear.com/10.x/glass/svg?seed=${address}&size=40`;
+
   const copyAddress = useEventCallback(() => {
     void navigator.clipboard.writeText(address).then(
-      () => showSuccessToast({ title: "Address copied" }),
-      () => showErrorToast(undefined, { title: "Couldn’t copy address" }),
+      () =>
+        showSuccessToast({
+          title: "Address copied to clipboard",
+        }),
+      () => showErrorToast(undefined, { title: "Couldn't copy address" }),
     );
   });
+
   const handleKeyDown = useEventCallback((event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();

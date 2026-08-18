@@ -92,6 +92,10 @@ const tokenResponse = (result: OAuthTokenResult) =>
 const register = HttpRouter.add("POST", "/oauth/register", (request) =>
   Effect.gen(function* () {
     const identifier = yield* clientIdentifier;
+    yield* Effect.logDebug("oauth.register.request.start", {
+      remoteIp: identifier,
+      contentType: request.headers["content-type"] ?? "",
+    });
     const limited = yield* consumeRateLimit(
       "oauth.register.ip",
       identifier,
@@ -100,6 +104,9 @@ const register = HttpRouter.add("POST", "/oauth/register", (request) =>
     if (Result.isFailure(limited)) return rateLimited(limited.failure);
 
     if (!hasMediaType(request, "application/json")) {
+      yield* Effect.logWarning("oauth.register.request.invalid_media_type", {
+        contentType: request.headers["content-type"] ?? "",
+      });
       yield* Metric.update(
         Metric.withAttributes(oauthClientRegistrationResults, { result: "invalid_request" }),
         1,
@@ -114,6 +121,9 @@ const register = HttpRouter.add("POST", "/oauth/register", (request) =>
       Effect.result,
     );
     if (Result.isFailure(decoded)) {
+      yield* Effect.logWarning("oauth.register.request.decode_failed", {
+        reason: "schema_decode_failed",
+      });
       yield* Metric.update(
         Metric.withAttributes(oauthClientRegistrationResults, { result: "invalid_request" }),
         1,
@@ -121,11 +131,23 @@ const register = HttpRouter.add("POST", "/oauth/register", (request) =>
       return oauthError("invalid_client_metadata", "The client metadata is invalid");
     }
 
+    yield* Effect.logDebug("oauth.register.request.payload", {
+      redirectCount: decoded.success.redirect_uris.length,
+      hasClientName: decoded.success.client_name !== undefined,
+      tokenEndpointAuthMethod: decoded.success.token_endpoint_auth_method,
+      grantTypes: decoded.success.grant_types,
+      responseTypes: decoded.success.response_types,
+      hasScope: decoded.success.scope !== undefined,
+    });
+
     const registered = yield* (yield* Application).oauth.registration
       .register(decoded.success)
       .pipe(Effect.result);
     if (Result.isFailure(registered)) {
       const error = registered.failure;
+      yield* Effect.logWarning("oauth.register.request.failed", {
+        code: error.code,
+      });
       yield* Metric.update(
         Metric.withAttributes(oauthClientRegistrationResults, {
           result:
@@ -142,6 +164,12 @@ const register = HttpRouter.add("POST", "/oauth/register", (request) =>
           : "The client metadata is invalid",
       );
     }
+
+    yield* Effect.logDebug("oauth.register.request.success", {
+      clientId: registered.success.client_id,
+      redirectCount: registered.success.redirect_uris.length,
+      grantCount: registered.success.grant_types.length,
+    });
     return HttpServerResponse.jsonUnsafe(registered.success, {
       status: 201,
       headers: noStoreHeaders,

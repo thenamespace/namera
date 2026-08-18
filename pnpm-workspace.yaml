@@ -69,5 +69,8 @@ minimumReleaseAgeExclude:
   - "@tanstack/router-generator@1.167.26"
   - "@tanstack/router-plugin@1.168.28"
 
+overrides:
+  "@namera-ai/cli": link:apps/cli
+
 patchedDependencies:
   drizzle-orm@1.0.0-rc.4: patches/drizzle-orm@1.0.0-rc.4.patch

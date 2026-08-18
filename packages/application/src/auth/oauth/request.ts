@@ -54,7 +54,16 @@ export const makeOAuthRequestApplication = Effect.gen(function* () {
       }
 
       const scopes = [...new Set(input.scopes)];
-      const supportedScopes = new Set<OAuthScope>(["mcp:read", "mcp:execute", "offline_access"]);
+      const supportedScopes = new Set<OAuthScope>([
+        "mcp:read",
+        "mcp:execute",
+        "wallet:read",
+        "session-key:read",
+        "execution:read",
+        "execution:execute",
+        "signature:create",
+        "offline_access",
+      ]);
       const registeredScopeValue =
         typeof client.metadata === "object" && client.metadata !== null
           ? Reflect.get(client.metadata, "scope")

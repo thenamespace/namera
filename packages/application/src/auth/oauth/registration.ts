@@ -7,7 +7,7 @@ import type {
   OAuthDynamicClientRegistrationRequest,
   OAuthDynamicClientRegistrationResponse,
 } from "@namera-ai/protocol/dto";
-import type { OAuthGrantType, OAuthResponseType } from "@namera-ai/protocol/model";
+import type { OAuthGrantType, OAuthResponseType, OAuthScope } from "@namera-ai/protocol/model";
 import {
   oauthClientRegistrationDuration,
   oauthClientRegistrationResults,
@@ -51,40 +51,79 @@ export const makeOAuthRegistrationApplication = Effect.gen(function* () {
 
   const register = Effect.fn("application.oauth.registration.register")(
     function* (input: OAuthDynamicClientRegistrationRequest) {
+      yield* Effect.logDebug("oauth.registration.input", {
+        redirectCount: input.redirect_uris.length,
+        hasClientUri: input.client_uri !== undefined,
+        hasLogoUri: input.logo_uri !== undefined,
+        tokenEndpointAuthMethod: input.token_endpoint_auth_method,
+        grantTypeCount: input.grant_types?.length ?? 0,
+        responseTypeCount: input.response_types?.length ?? 0,
+        hasScope: input.scope !== undefined,
+      });
+
       const applicationType = input.application_type ?? "native";
       const redirectUris = [...new Set(input.redirect_uris)];
       if (
         redirectUris.length !== input.redirect_uris.length ||
         redirectUris.some((uri) => !isValidRedirectUri(uri))
       ) {
+        yield* Effect.logWarning("oauth.registration.invalid_redirect_uri", {
+          redirectUris,
+          originalCount: input.redirect_uris.length,
+          uniqueCount: redirectUris.length,
+        });
         return yield* new OAuthClientRegistrationError({ code: "INVALID_REDIRECT_URI" });
       }
       if (
         (input.client_uri !== undefined && !isValidMetadataUri(input.client_uri)) ||
         (input.logo_uri !== undefined && !isValidMetadataUri(input.logo_uri))
       ) {
+        yield* Effect.logWarning("oauth.registration.invalid_metadata_uri", {
+          clientUri: input.client_uri,
+          logoUri: input.logo_uri,
+        });
         return yield* new OAuthClientRegistrationError({ code: "INVALID_CLIENT_METADATA" });
       }
 
       const grantTypes: ReadonlyArray<OAuthGrantType> = input.grant_types ?? ["authorization_code"];
       const responseTypes: ReadonlyArray<OAuthResponseType> = input.response_types ?? ["code"];
+      yield* Effect.logDebug("oauth.registration.resolved_types", {
+        grantTypes,
+        responseTypes,
+      });
       if (
         !grantTypes.includes("authorization_code") ||
         new Set(grantTypes).size !== grantTypes.length ||
         responseTypes.length !== 1 ||
         responseTypes[0] !== "code"
       ) {
+        yield* Effect.logWarning("oauth.registration.type_validation_failed", {
+          grantTypes,
+          responseTypes,
+        });
         return yield* new OAuthClientRegistrationError({ code: "INVALID_CLIENT_METADATA" });
       }
 
       const requestedScopes = input.scope?.split(/\s+/).filter(Boolean);
-      const supportedScopes = new Set(["mcp:read", "mcp:execute", "offline_access"]);
+      const supportedScopes = new Set<OAuthScope>([
+        "mcp:read",
+        "mcp:execute",
+        "wallet:read",
+        "session-key:read",
+        "execution:read",
+        "execution:execute",
+        "signature:create",
+        "offline_access",
+      ]);
       if (
         requestedScopes !== undefined &&
         (requestedScopes.length === 0 ||
           new Set(requestedScopes).size !== requestedScopes.length ||
           requestedScopes.some((scope) => !supportedScopes.has(scope)))
       ) {
+        yield* Effect.logWarning("oauth.registration.scope_validation_failed", {
+          requestedScopes,
+        });
         return yield* new OAuthClientRegistrationError({ code: "INVALID_CLIENT_METADATA" });
       }
       const scope = requestedScopes?.join(" ");
@@ -109,6 +148,13 @@ export const makeOAuthRegistrationApplication = Effect.gen(function* () {
         metadataExpiresAt: null,
       });
       if (client === undefined) return yield* Effect.die("OAuth client ID collision");
+
+      yield* Effect.logDebug("oauth.registration.client_created", {
+        clientId: client.clientId,
+        registrationType: client.registrationType,
+        status: client.status,
+        redirectCount: client.redirectUris.length,
+      });
 
       yield* Metric.update(
         Metric.withAttributes(oauthClientRegistrationResults, { result: "success" }),

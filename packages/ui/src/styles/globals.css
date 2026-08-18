@@ -98,6 +98,10 @@
     @apply rounded-lg border-1;
   }
 
+  .toast__description {
+    @apply text-xs;
+  }
+
   .table__body {
     &::before {
       content: "";

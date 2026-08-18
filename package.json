@@ -23,6 +23,9 @@
     "typecheck": "turbo run typecheck",
     "typecheck:test": "turbo run typecheck:test"
   },
+  "dependencies": {
+    "@namera-ai/cli": "link:apps/cli"
+  },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
     "@commitlint/cli": "catalog:",
