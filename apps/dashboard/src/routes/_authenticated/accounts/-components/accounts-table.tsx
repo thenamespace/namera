@@ -4,21 +4,13 @@ import { DateTime } from "effect";
 
 import type { ListWalletsResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import {
-  Button,
   DataGrid,
-  Dropdown,
   SearchField,
   Typography,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
-import {
-  HugeiconsIcon,
-  LayoutThreeColumnIcon,
-  SlidersHorizontalIcon,
-  Sorting01Icon,
-} from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import {
@@ -32,13 +24,31 @@ import {
 } from "@/components/display";
 import { useWallets } from "@/hooks/wallet";
 
+import { AccountActions } from "./account-actions";
+import {
+  AccountsTableControls,
+  type AccountFilters,
+  type AccountGrouping,
+  type ColumnOption,
+} from "./accounts-table-controls";
+
 const accountCollator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",
 });
 
+const defaultSort: DataGridSortDescriptor = {
+  column: "createdAt",
+  direction: "descending",
+};
+
+const defaultFilters: AccountFilters = {
+  status: "all",
+  implementation: "all",
+  protectionLevel: "all",
+};
+
 const columnIds = [
-  "name",
   "status",
   "namespace",
   "address",
@@ -47,89 +57,168 @@ const columnIds = [
   "createdAt",
 ] as const;
 
-const columns: DataGridColumn<WalletResponse>[] = [
+type ConfigurableColumnId = (typeof columnIds)[number];
+
+type AccountGroupRow = {
+  kind: "group";
+  id: string;
+  label: string;
+  accounts: ReadonlyArray<WalletResponse>;
+};
+
+type AccountTableRow = WalletResponse | AccountGroupRow;
+
+const isAccountGroup = (row: AccountTableRow): row is AccountGroupRow => "kind" in row;
+
+const accountSorters: Record<
+  ConfigurableColumnId | "name",
+  (left: WalletResponse, right: WalletResponse) => number
+> = {
+  name: (left, right) => accountCollator.compare(left.metadata.name, right.metadata.name),
+  status: (left, right) => accountCollator.compare(left.status, right.status),
+  namespace: (left, right) => accountCollator.compare(left.namespace, right.namespace),
+  address: (left, right) => accountCollator.compare(left.address, right.address),
+  implementation: (left, right) =>
+    accountCollator.compare(left.implementation, right.implementation),
+  protectionLevel: (left, right) =>
+    accountCollator.compare(left.protectionLevel, right.protectionLevel),
+  createdAt: (left, right) =>
+    DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
+};
+
+const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => (
-      <MetadataDisplay fallbackName="Unnamed account" metadata={account.metadata} />
-    ),
+    cell: (row) =>
+      isAccountGroup(row) ? (
+        <span className="flex min-w-0 items-center gap-2 font-medium">
+          <span className="truncate">{row.label}</span>
+          <span className="text-xs font-normal tabular-nums text-muted">{row.accounts.length}</span>
+        </span>
+      ) : (
+        <MetadataDisplay fallbackName="Unnamed account" metadata={row.metadata} />
+      ),
     header: "Name",
     id: "name",
     isRowHeader: true,
-    minWidth: 140,
+    minWidth: 160,
     pinned: "start",
     width: "20%",
-    sortFn: (left, right) => accountCollator.compare(left.metadata.name, right.metadata.name),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <WalletStatusDisplay status={account.status} />,
+    cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
     header: "Status",
     id: "status",
     minWidth: 90,
     width: "11%",
-    sortFn: (left, right) => accountCollator.compare(left.status, right.status),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <NamespaceDisplay namespace={account.namespace} />,
+    cell: (row) => (isAccountGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
     header: "Namespace",
     id: "namespace",
     minWidth: 100,
     width: "12%",
-    sortFn: (left, right) => accountCollator.compare(left.namespace, right.namespace),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <EvmAddressDisplay address={account.address} />,
+    cell: (row) => (isAccountGroup(row) ? null : <EvmAddressDisplay address={row.address} />),
     header: "Address",
     id: "address",
-    minWidth: 140,
+    minWidth: 150,
     width: "18%",
-    sortFn: (left, right) => accountCollator.compare(left.address, right.address),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <WalletImplementationDisplay implementation={account.implementation} />,
+    cell: (row) =>
+      isAccountGroup(row) ? null : (
+        <WalletImplementationDisplay implementation={row.implementation} />
+      ),
     header: "Implementation",
     id: "implementation",
     minWidth: 120,
     width: "15%",
-    sortFn: (left, right) => accountCollator.compare(left.implementation, right.implementation),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <WalletProtectionDisplay protectionLevel={account.protectionLevel} />,
+    cell: (row) =>
+      isAccountGroup(row) ? null : (
+        <WalletProtectionDisplay protectionLevel={row.protectionLevel} />
+      ),
     header: "Protection",
     id: "protectionLevel",
     minWidth: 100,
     width: "12%",
-    sortFn: (left, right) => accountCollator.compare(left.protectionLevel, right.protectionLevel),
   },
   {
     allowsResizing: true,
     allowsSorting: true,
-    cell: (account) => <DateDisplay label="Created" value={account.createdAt} />,
+    cell: (row) =>
+      isAccountGroup(row) ? null : <DateDisplay label="Created" value={row.createdAt} />,
     header: "Created",
     id: "createdAt",
     minWidth: 105,
     width: "11%",
-    sortFn: (left, right) =>
-      DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
+  },
+  {
+    align: "center",
+    allowsResizing: false,
+    allowsSorting: false,
+    cell: (row) => (isAccountGroup(row) ? null : <AccountActions account={row} />),
+    cellClassName: "px-1",
+    header: <span className="sr-only">Actions</span>,
+    headerClassName: "px-1",
+    id: "actions",
+    maxWidth: 48,
+    minWidth: 48,
+    pinned: "end",
+    width: 48,
   },
 ];
 
-const sortableColumns = columns.filter((column) => column.allowsSorting);
-const configurableColumns = columns;
-const walletStatuses = ["all", "active", "frozen", "archived"] as const;
+const configurableColumns: ReadonlyArray<ColumnOption> = columns
+  .filter((column) => columnIds.includes(column.id as ConfigurableColumnId))
+  .map((column) => ({ id: column.id, label: String(column.header) }));
 
-const getAccountId = (account: WalletResponse) => account.id;
+const sortableColumns: ReadonlyArray<ColumnOption> = columns
+  .filter((column) => column.allowsSorting)
+  .map((column) => ({ id: column.id, label: String(column.header) }));
+
+const getAccountRowId = (row: AccountTableRow) => row.id;
+const getAccountChildren = (row: AccountTableRow) =>
+  isAccountGroup(row) ? [...row.accounts] : undefined;
+
+const formatGroupLabel = (grouping: AccountGrouping, value: string) => {
+  if (grouping === "protectionLevel") return value.toUpperCase();
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+function groupAccounts(
+  accounts: ReadonlyArray<WalletResponse>,
+  grouping: Exclude<AccountGrouping, "none">,
+): AccountGroupRow[] {
+  const groups = new Map<string, WalletResponse[]>();
+  for (const account of accounts) {
+    const value = account[grouping];
+    const group = groups.get(value);
+    if (group) group.push(account);
+    else groups.set(value, [account]);
+  }
+
+  return [...groups.entries()].map(([value, groupedAccounts]) => ({
+    kind: "group",
+    id: `group:${grouping}:${value}`,
+    label: formatGroupLabel(grouping, value),
+    accounts: groupedAccounts,
+  }));
+}
 
 type AccountsTableProps = {
   initialAccounts: ListWalletsResponse;
@@ -139,11 +228,9 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const accounts = useWallets();
   const accountData = accounts.data ?? initialAccounts;
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<"all" | WalletResponse["status"]>("all");
-  const [sort, setSort] = useState<DataGridSortDescriptor>({
-    column: "createdAt",
-    direction: "descending",
-  });
+  const [filters, setFilters] = useState<AccountFilters>(defaultFilters);
+  const [grouping, setGrouping] = useState<AccountGrouping>("none");
+  const [sort, setSort] = useState<DataGridSortDescriptor>(defaultSort);
   const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(new Set(columnIds));
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -155,51 +242,46 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
           account.metadata.name.toLowerCase().includes(normalizedQuery) ||
           account.address.toLowerCase().includes(normalizedQuery) ||
           account.id.toLowerCase().includes(normalizedQuery);
-        const matchesStatus = status === "all" || account.status === status;
-        return matchesQuery && matchesStatus;
+        const matchesStatus = filters.status === "all" || account.status === filters.status;
+        const matchesImplementation =
+          filters.implementation === "all" || account.implementation === filters.implementation;
+        const matchesProtection =
+          filters.protectionLevel === "all" || account.protectionLevel === filters.protectionLevel;
+
+        return matchesQuery && matchesStatus && matchesImplementation && matchesProtection;
       }),
-    [accountData, normalizedQuery, status],
+    [accountData, filters, normalizedQuery],
   );
   const sortedAccounts = useMemo(() => {
-    const sortFn = columns.find((item) => item.id === sort.column)?.sortFn;
+    const sortFn = accountSorters[String(sort.column) as keyof typeof accountSorters];
     if (!sortFn) return filteredAccounts;
     const direction = sort.direction === "descending" ? -1 : 1;
     return filteredAccounts.toSorted((left, right) => sortFn(left, right) * direction);
   }, [filteredAccounts, sort]);
+  const tableRows = useMemo<AccountTableRow[]>(
+    () => (grouping === "none" ? sortedAccounts : groupAccounts(sortedAccounts, grouping)),
+    [grouping, sortedAccounts],
+  );
   const displayedColumns = useMemo(() => {
-    const visible = visibleColumns === "all" ? new Set<string>(columnIds) : visibleColumns;
-    return columns.filter((column) => visible.has(column.id));
+    const visible = visibleColumns === "all" ? new Set<string>(columnIds) : new Set(visibleColumns);
+    return columns.filter(
+      (column) => column.id === "name" || column.id === "actions" || visible.has(column.id),
+    );
   }, [visibleColumns]);
-  const hasFilters = normalizedQuery.length > 0 || status !== "all";
-  const statusSelection = useMemo(() => new Set([status]), [status]);
-  const sortSelection = useMemo(() => new Set([String(sort.column)]), [sort.column]);
-  const handleStatusChange = useEventCallback((keys: DataGridSelection) => {
-    if (keys === "all") return;
-    const nextStatus = [...keys][0];
-    if (typeof nextStatus === "string") {
-      setStatus(nextStatus as typeof status);
-    }
-  });
-  const handleSortColumnChange = useEventCallback((keys: DataGridSelection) => {
-    if (keys === "all") return;
-    const column = [...keys][0];
-    if (column !== undefined) {
-      setSort((current) => ({ ...current, column }));
-    }
-  });
-  const toggleSortDirection = useEventCallback(() => {
-    setSort((current) => ({
-      ...current,
-      direction: current.direction === "ascending" ? "descending" : "ascending",
-    }));
-  });
+  const hasFilters =
+    normalizedQuery.length > 0 || Object.values(filters).some((value) => value !== "all");
   const renderEmptyState = useEventCallback(() =>
     hasFilters ? "No accounts match these filters." : "No accounts yet.",
   );
+  const resetView = useEventCallback(() => {
+    setGrouping("none");
+    setSort(defaultSort);
+    setVisibleColumns(new Set(columnIds));
+  });
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex items-center gap-3">
         <SearchField
           aria-label="Filter accounts by name, address, or ID"
           className="w-full sm:max-w-80"
@@ -208,84 +290,25 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Filter accounts..." />
-            <SearchField.ClearButton aria-label="Clear account filter" />
+            <SearchField.Input placeholder="Filter accounts…" />
+            <SearchField.ClearButton aria-label="Clear account search" />
           </SearchField.Group>
         </SearchField>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Dropdown>
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={SlidersHorizontalIcon} />
-              {status === "all" ? "All statuses" : status}
-            </Button>
-            <Dropdown.Popover>
-              <Dropdown.Menu
-                selectedKeys={statusSelection}
-                selectionMode="single"
-                onSelectionChange={handleStatusChange}
-              >
-                {walletStatuses.map((value) => (
-                  <Dropdown.Item id={value} key={value} textValue={value}>
-                    <span className="capitalize">{value === "all" ? "All statuses" : value}</span>
-                    <Dropdown.ItemIndicator />
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
-
-          <Dropdown>
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={Sorting01Icon} />
-              Sort
-            </Button>
-            <Dropdown.Popover>
-              <Dropdown.Menu
-                selectedKeys={sortSelection}
-                selectionMode="single"
-                onSelectionChange={handleSortColumnChange}
-              >
-                {sortableColumns.map((column) => (
-                  <Dropdown.Item id={column.id} key={column.id} textValue={String(column.header)}>
-                    <span>{String(column.header)}</span>
-                    <Dropdown.ItemIndicator />
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
-
-          <Button
-            aria-label={`Sort ${sort.direction === "ascending" ? "descending" : "ascending"}`}
-            size="sm"
-            variant="secondary"
-            onPress={toggleSortDirection}
-          >
-            {sort.direction === "ascending" ? "Ascending" : "Descending"}
-          </Button>
-
-          <Dropdown>
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={LayoutThreeColumnIcon} />
-              Columns
-            </Button>
-            <Dropdown.Popover>
-              <Dropdown.Menu
-                disallowEmptySelection
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {configurableColumns.map((column) => (
-                  <Dropdown.Item id={column.id} key={column.id} textValue={String(column.header)}>
-                    <span>{String(column.header)}</span>
-                    <Dropdown.ItemIndicator />
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+        <div className="ml-auto">
+          <AccountsTableControls
+            columnOptions={configurableColumns}
+            filters={filters}
+            grouping={grouping}
+            sort={sort}
+            sortableColumns={sortableColumns}
+            visibleColumns={visibleColumns}
+            onFiltersChange={setFilters}
+            onGroupingChange={setGrouping}
+            onResetView={resetView}
+            onSortChange={setSort}
+            onVisibleColumnsChange={setVisibleColumns}
+          />
         </div>
       </div>
 
@@ -298,12 +321,15 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         allowsColumnResize
         aria-label="Organization accounts"
         columns={displayedColumns}
-        data={sortedAccounts}
-        getRowId={getAccountId}
+        data={tableRows}
+        defaultExpandedKeys="all"
+        getRowId={getAccountRowId}
+        key={grouping}
         renderEmptyState={renderEmptyState}
         sortDescriptor={sort}
         variant="secondary"
         onSortChange={setSort}
+        {...(grouping === "none" ? {} : { getChildren: getAccountChildren })}
       />
     </div>
   );
