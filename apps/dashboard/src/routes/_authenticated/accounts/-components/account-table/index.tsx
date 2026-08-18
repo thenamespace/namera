@@ -24,17 +24,13 @@ import {
 } from "@/components/display";
 import { useWallets } from "@/hooks/wallet";
 
-import { AccountActions } from "./account-actions";
+import { AccountActions } from "./actions";
+import { AccountsTableControls, type AccountGrouping, type ColumnOption } from "./controls";
 import {
   createEmptyAccountFilters,
   type AccountFilterCounts,
   type AccountFilters,
-} from "./account-filter-menu";
-import {
-  AccountsTableControls,
-  type AccountGrouping,
-  type ColumnOption,
-} from "./accounts-table-controls";
+} from "./filter-menu";
 
 const accountCollator = new Intl.Collator(undefined, {
   numeric: true,

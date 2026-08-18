@@ -17,11 +17,7 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import {
-  AccountFilterMenu,
-  type AccountFilterCounts,
-  type AccountFilters,
-} from "./account-filter-menu";
+import { AccountFilterMenu, type AccountFilterCounts, type AccountFilters } from "./filter-menu";
 
 const groupingOptions = [
   { id: "none", label: "No grouping" },

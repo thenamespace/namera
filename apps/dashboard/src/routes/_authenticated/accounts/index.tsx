@@ -10,7 +10,7 @@ import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 
-import { AccountsTable } from "./-components/accounts-table";
+import { AccountsTable } from "./-components/account-table";
 
 const walletCreatePermission = ["wallet:create"] as const;
 
