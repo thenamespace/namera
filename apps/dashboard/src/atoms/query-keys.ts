@@ -74,6 +74,11 @@ export const QueryKeys = {
     deviceAuthorizations: ["oauth:device-authorizations"] as const,
     deviceAuthorization: (authorizationId: OAuthDeviceAuthorizationId) =>
       [`oauth:device-authorization:${authorizationId}`] as const,
+    cliAuthorizations: ["oauth:cli-authorizations"] as const,
+    cliAuthorizationLists: ["oauth:cli-authorization-lists"] as const,
+    cliAuthorizationDetails: ["oauth:cli-authorization-details"] as const,
+    cliAuthorization: (authorizationId: OAuthAuthorizationId) =>
+      [`oauth:cli-authorization:${authorizationId}`] as const,
   },
 } as const;
 
@@ -119,4 +124,8 @@ export type QueryKey =
   | (typeof QueryKeys.oauth.authorizationRequests)[number]
   | ReturnType<typeof QueryKeys.oauth.authorizationRequest>[number]
   | (typeof QueryKeys.oauth.deviceAuthorizations)[number]
-  | ReturnType<typeof QueryKeys.oauth.deviceAuthorization>[number];
+  | ReturnType<typeof QueryKeys.oauth.deviceAuthorization>[number]
+  | (typeof QueryKeys.oauth.cliAuthorizations)[number]
+  | (typeof QueryKeys.oauth.cliAuthorizationLists)[number]
+  | (typeof QueryKeys.oauth.cliAuthorizationDetails)[number]
+  | ReturnType<typeof QueryKeys.oauth.cliAuthorization>[number];

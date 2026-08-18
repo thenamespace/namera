@@ -29,6 +29,32 @@ export const revokeMcpAuthorizationMutation = NameraClient.mutation(
   "revokeMcpAuthorization",
 );
 
+export const cliAuthorizationsAtom = NameraClient.query("oauth", "listCliAuthorizations", {
+  reactivityKeys: [
+    ...QueryKeys.organization.active,
+    ...QueryKeys.oauth.cliAuthorizations,
+    ...QueryKeys.oauth.cliAuthorizationLists,
+  ],
+  timeToLive: "30 seconds",
+});
+
+export const cliAuthorizationAtom = (authorizationId: OAuthAuthorizationId) =>
+  NameraClient.query("oauth", "getCliAuthorization", {
+    params: { authorizationId },
+    reactivityKeys: [
+      ...QueryKeys.organization.active,
+      ...QueryKeys.oauth.cliAuthorizations,
+      ...QueryKeys.oauth.cliAuthorizationDetails,
+      ...QueryKeys.oauth.cliAuthorization(authorizationId),
+    ],
+    timeToLive: "30 seconds",
+  });
+
+export const revokeCliAuthorizationMutation = NameraClient.mutation(
+  "oauth",
+  "revokeCliAuthorization",
+);
+
 export const oauthAuthorizationRequestAtom = (requestId: OAuthAuthorizationRequestId) =>
   NameraClient.query("oauth", "getOAuthAuthorizationRequest", {
     params: { requestId },

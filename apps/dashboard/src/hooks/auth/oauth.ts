@@ -1,12 +1,15 @@
 import {
   approveOAuthAuthorizationRequestMutation,
-  denyOAuthAuthorizationRequestMutation,
+  approveOAuthDeviceAuthorizationMutation,
+  cliAuthorizationAtom,
+  cliAuthorizationsAtom,
   mcpAuthorizationAtom,
   mcpAuthorizationsAtom,
   oauthAuthorizationRequestAtom,
   oauthDeviceAuthorizationAtom,
-  approveOAuthDeviceAuthorizationMutation,
+  denyOAuthAuthorizationRequestMutation,
   denyOAuthDeviceAuthorizationMutation,
+  revokeCliAuthorizationMutation,
   revokeMcpAuthorizationMutation,
 } from "@/atoms/auth/oauth";
 import { QueryKeys } from "@/atoms/query-keys";
@@ -16,6 +19,12 @@ export const useMcpAuthorizations = toQuery(() => mcpAuthorizationsAtom);
 export const useMcpAuthorization = toQuery(mcpAuthorizationAtom);
 export const useRevokeMcpAuthorization = toMutation(revokeMcpAuthorizationMutation, {
   invalidates: [...QueryKeys.oauth.authorizations],
+});
+
+export const useCliAuthorizations = toQuery(() => cliAuthorizationsAtom);
+export const useCliAuthorization = toQuery(cliAuthorizationAtom);
+export const useRevokeCliAuthorization = toMutation(revokeCliAuthorizationMutation, {
+  invalidates: [...QueryKeys.oauth.cliAuthorizations],
 });
 
 export const useOAuthAuthorizationRequest = toQuery(oauthAuthorizationRequestAtom);
