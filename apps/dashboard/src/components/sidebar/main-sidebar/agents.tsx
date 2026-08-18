@@ -1,4 +1,4 @@
-import { IdentityCardIcon, McpServerIcon } from "@namera-ai/ui/icons";
+import { IdentityCardIcon } from "@namera-ai/ui/icons";
 
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
@@ -14,16 +14,6 @@ export const agentsGroupItems: SidebarGroupItemsProps = {
       href: "/identity",
       tooltip: {
         text: "agent identity",
-      },
-    },
-    {
-      id: "mcp",
-      icon: McpServerIcon,
-      label: "MCP",
-      textValue: "MCP",
-      href: "/mcp",
-      tooltip: {
-        text: "mcp",
       },
     },
   ],

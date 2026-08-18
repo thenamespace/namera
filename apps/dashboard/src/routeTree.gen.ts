@@ -33,6 +33,7 @@ import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authent
 import { Route as AuthenticatedSettingsWorkspaceIndexRouteImport } from './routes/_authenticated/settings/workspace/index'
 import { Route as AuthenticatedSettingsWorkspaceApiKeysRouteImport } from './routes/_authenticated/settings/workspace/api-keys'
 import { Route as AuthenticatedSettingsWorkspaceBillingsRouteImport } from './routes/_authenticated/settings/workspace/billings'
+import { Route as AuthenticatedSettingsWorkspaceMcpRouteImport } from './routes/_authenticated/settings/workspace/mcp'
 import { Route as AuthenticatedSettingsWorkspaceMembersRouteImport } from './routes/_authenticated/settings/workspace/members'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -168,6 +169,12 @@ const AuthenticatedSettingsWorkspaceBillingsRoute =
     path: '/settings/workspace/billings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsWorkspaceMcpRoute =
+  AuthenticatedSettingsWorkspaceMcpRouteImport.update({
+    id: '/settings/workspace/mcp',
+    path: '/settings/workspace/mcp',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsWorkspaceMembersRoute =
   AuthenticatedSettingsWorkspaceMembersRouteImport.update({
     id: '/settings/workspace/members',
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
+  '/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
@@ -223,6 +231,7 @@ export interface FileRoutesByTo {
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
   '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
+  '/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/settings/workspace': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
@@ -251,6 +260,7 @@ export interface FileRoutesById {
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/_authenticated/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/_authenticated/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
+  '/_authenticated/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/_authenticated/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
   '/_authenticated/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/session-keys/'
     | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
+    | '/settings/workspace/mcp'
     | '/settings/workspace/members'
     | '/settings/workspace/'
   fileRoutesByTo: FileRoutesByTo
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/session-keys'
     | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
+    | '/settings/workspace/mcp'
     | '/settings/workspace/members'
     | '/settings/workspace'
   id:
@@ -331,6 +343,7 @@ export interface FileRouteTypes {
     | '/_authenticated/session-keys/'
     | '/_authenticated/settings/workspace/api-keys'
     | '/_authenticated/settings/workspace/billings'
+    | '/_authenticated/settings/workspace/mcp'
     | '/_authenticated/settings/workspace/members'
     | '/_authenticated/settings/workspace/'
   fileRoutesById: FileRoutesById
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWorkspaceBillingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/workspace/mcp': {
+      id: '/_authenticated/settings/workspace/mcp'
+      path: '/settings/workspace/mcp'
+      fullPath: '/settings/workspace/mcp'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceMcpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/workspace/members': {
       id: '/_authenticated/settings/workspace/members'
       path: '/settings/workspace/members'
@@ -540,6 +560,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSessionKeysIndexRoute: typeof AuthenticatedSessionKeysIndexRoute
   AuthenticatedSettingsWorkspaceApiKeysRoute: typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   AuthenticatedSettingsWorkspaceBillingsRoute: typeof AuthenticatedSettingsWorkspaceBillingsRoute
+  AuthenticatedSettingsWorkspaceMcpRoute: typeof AuthenticatedSettingsWorkspaceMcpRoute
   AuthenticatedSettingsWorkspaceMembersRoute: typeof AuthenticatedSettingsWorkspaceMembersRoute
   AuthenticatedSettingsWorkspaceIndexRoute: typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
@@ -568,6 +589,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSettingsWorkspaceApiKeysRoute,
   AuthenticatedSettingsWorkspaceBillingsRoute:
     AuthenticatedSettingsWorkspaceBillingsRoute,
+  AuthenticatedSettingsWorkspaceMcpRoute:
+    AuthenticatedSettingsWorkspaceMcpRoute,
   AuthenticatedSettingsWorkspaceMembersRoute:
     AuthenticatedSettingsWorkspaceMembersRoute,
   AuthenticatedSettingsWorkspaceIndexRoute:

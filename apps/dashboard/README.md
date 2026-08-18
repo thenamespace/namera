@@ -77,7 +77,8 @@ copy the full address while retaining it in an accessible tooltip.
 Session-key create, detail, organization-list, and wallet-list atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
 list, and revoke atoms/hooks live under `src/atoms/api-key` and
-`src/hooks/api-key`.
+`src/hooks/api-key`. MCP authorization list, detail, and revoke atoms/hooks live
+under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
@@ -105,6 +106,11 @@ organization API-key list.
   once after creation. Actors with `api-key:revoke` can revoke an active key from
   its row action after confirming that all of its session-key grants will also
   be revoked.
+- `/settings/workspace/mcp` presents the remote MCP endpoint and a searchable,
+  status-filtered authorization table. Active authorizations are shown by
+  default, and actors with `mcp-authorization:revoke` can revoke an active
+  client's session-key grants after confirmation. The former `/mcp` route
+  redirects here.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use

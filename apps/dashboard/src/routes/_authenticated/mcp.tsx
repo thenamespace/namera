@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { DashboardPage } from "@/components/page";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/mcp")({
-  component: DashboardPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/settings/workspace/mcp", replace: true });
+  },
 });
