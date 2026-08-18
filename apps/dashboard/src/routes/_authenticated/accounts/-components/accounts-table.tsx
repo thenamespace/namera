@@ -49,26 +49,54 @@ const defaultFilters: AccountFilters = {
 };
 
 const columnIds = [
-  "status",
   "namespace",
   "address",
   "implementation",
+  "status",
   "protectionLevel",
   "createdAt",
 ] as const;
+
+const defaultColumnIds = columnIds.filter((id) => id !== "protectionLevel");
 
 type ConfigurableColumnId = (typeof columnIds)[number];
 
 type AccountGroupRow = {
   kind: "group";
   id: string;
-  label: string;
+  grouping: Exclude<AccountGrouping, "none">;
+  value: string;
   accounts: ReadonlyArray<WalletResponse>;
 };
 
 type AccountTableRow = WalletResponse | AccountGroupRow;
 
 const isAccountGroup = (row: AccountTableRow): row is AccountGroupRow => "kind" in row;
+
+function AccountGroupLabel({ group }: { group: AccountGroupRow }) {
+  const display = (() => {
+    if (group.grouping === "status") {
+      return <WalletStatusDisplay status={group.value as WalletResponse["status"]} />;
+    }
+    if (group.grouping === "implementation") {
+      return (
+        <WalletImplementationDisplay
+          implementation={group.value as WalletResponse["implementation"]}
+        />
+      );
+    }
+    return (
+      <WalletProtectionDisplay protectionLevel={group.value as WalletResponse["protectionLevel"]} />
+    );
+  })();
+
+  return (
+    <span className="flex min-w-0 items-center gap-2" data-account-group>
+      {display}
+      <span className="text-xs tabular-nums text-muted">{group.accounts.length}</span>
+    </span>
+  );
+}
 
 const accountSorters: Record<
   ConfigurableColumnId | "name",
@@ -92,10 +120,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? (
-        <span className="flex min-w-0 items-center gap-2 font-medium">
-          <span className="truncate">{row.label}</span>
-          <span className="text-xs font-normal tabular-nums text-muted">{row.accounts.length}</span>
-        </span>
+        <AccountGroupLabel group={row} />
       ) : (
         <MetadataDisplay fallbackName="Unnamed account" metadata={row.metadata} />
       ),
@@ -104,16 +129,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     isRowHeader: true,
     minWidth: 160,
     pinned: "start",
-    width: "20%",
-  },
-  {
-    allowsResizing: true,
-    allowsSorting: true,
-    cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
-    header: "Status",
-    id: "status",
-    minWidth: 90,
-    width: "11%",
+    width: "1fr",
   },
   {
     allowsResizing: true,
@@ -121,8 +137,8 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     cell: (row) => (isAccountGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
     header: "Namespace",
     id: "namespace",
-    minWidth: 100,
-    width: "12%",
+    minWidth: 105,
+    width: 105,
   },
   {
     allowsResizing: true,
@@ -130,8 +146,8 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     cell: (row) => (isAccountGroup(row) ? null : <EvmAddressDisplay address={row.address} />),
     header: "Address",
     id: "address",
-    minWidth: 150,
-    width: "18%",
+    minWidth: 190,
+    width: 220,
   },
   {
     allowsResizing: true,
@@ -142,8 +158,17 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
       ),
     header: "Implementation",
     id: "implementation",
-    minWidth: 120,
-    width: "15%",
+    minWidth: 125,
+    width: 140,
+  },
+  {
+    allowsResizing: true,
+    allowsSorting: true,
+    cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
+    header: "Status",
+    id: "status",
+    minWidth: 90,
+    width: 105,
   },
   {
     allowsResizing: true,
@@ -155,7 +180,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     header: "Protection",
     id: "protectionLevel",
     minWidth: 100,
-    width: "12%",
+    width: 115,
   },
   {
     allowsResizing: true,
@@ -165,7 +190,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     header: "Created",
     id: "createdAt",
     minWidth: 105,
-    width: "11%",
+    width: 120,
   },
   {
     align: "center",
@@ -195,11 +220,6 @@ const getAccountRowId = (row: AccountTableRow) => row.id;
 const getAccountChildren = (row: AccountTableRow) =>
   isAccountGroup(row) ? [...row.accounts] : undefined;
 
-const formatGroupLabel = (grouping: AccountGrouping, value: string) => {
-  if (grouping === "protectionLevel") return value.toUpperCase();
-  return value.charAt(0).toUpperCase() + value.slice(1);
-};
-
 function groupAccounts(
   accounts: ReadonlyArray<WalletResponse>,
   grouping: Exclude<AccountGrouping, "none">,
@@ -215,7 +235,8 @@ function groupAccounts(
   return [...groups.entries()].map(([value, groupedAccounts]) => ({
     kind: "group",
     id: `group:${grouping}:${value}`,
-    label: formatGroupLabel(grouping, value),
+    grouping,
+    value,
     accounts: groupedAccounts,
   }));
 }
@@ -231,7 +252,9 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const [filters, setFilters] = useState<AccountFilters>(defaultFilters);
   const [grouping, setGrouping] = useState<AccountGrouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>(defaultSort);
-  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(new Set(columnIds));
+  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
+    new Set(defaultColumnIds),
+  );
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredAccounts = useMemo(
@@ -276,7 +299,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const resetView = useEventCallback(() => {
     setGrouping("none");
     setSort(defaultSort);
-    setVisibleColumns(new Set(columnIds));
+    setVisibleColumns(new Set(defaultColumnIds));
   });
 
   return (
@@ -320,6 +343,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
       <DataGrid
         allowsColumnResize
         aria-label="Organization accounts"
+        className="accounts-data-grid"
         columns={displayedColumns}
         data={tableRows}
         defaultExpandedKeys="all"

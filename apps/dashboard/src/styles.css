@@ -4,3 +4,26 @@
 @theme inline {
   --font-inter: "Inter Variable", sans-serif;
 }
+
+@layer components {
+  .accounts-data-grid .table__row:has([data-account-group]) .table__cell {
+    @apply bg-default/60 py-2;
+    border-block: 4px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .accounts-data-grid .table__row:has([data-account-group]) .table__cell:first-child {
+    @apply rounded-s-lg;
+  }
+
+  .accounts-data-grid .table__row:has([data-account-group]) .table__cell:last-child {
+    @apply rounded-e-lg;
+  }
+
+  @media (hover: hover) {
+    .accounts-data-grid .table__row:has([data-account-group]):hover .table__cell,
+    .accounts-data-grid .table__row:has([data-account-group])[data-hovered="true"] .table__cell {
+      @apply bg-default/80;
+    }
+  }
+}

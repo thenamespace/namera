@@ -9,7 +9,6 @@ import {
   Popover,
   Select,
   Separator,
-  ToggleButton,
   Tooltip,
   Typography,
   type DataGridSelection,
@@ -75,14 +74,20 @@ type ColumnToggleProps = {
 };
 
 function ColumnToggle({ column, isSelected, onChange }: ColumnToggleProps) {
-  const handleChange = useEventCallback((selected: boolean) => {
-    onChange(column.id, selected);
+  const handlePress = useEventCallback(() => {
+    onChange(column.id, !isSelected);
   });
 
   return (
-    <ToggleButton isSelected={isSelected} size="sm" onChange={handleChange}>
+    <Button
+      aria-pressed={isSelected}
+      className="h-7 px-2 text-xs"
+      size="sm"
+      variant={isSelected ? "secondary" : "tertiary"}
+      onPress={handlePress}
+    >
       {column.label}
-    </ToggleButton>
+    </Button>
   );
 }
 
@@ -137,8 +142,11 @@ export function AccountsTableControls({
   const handleSortColumnChange = useEventCallback((key: string | number | null) => {
     if (key !== null) onSortChange({ ...sort, column: key });
   });
-  const handleSortDirectionChange = useEventCallback((ascending: boolean) => {
-    onSortChange({ ...sort, direction: ascending ? "ascending" : "descending" });
+  const toggleSortDirection = useEventCallback(() => {
+    onSortChange({
+      ...sort,
+      direction: sort.direction === "ascending" ? "descending" : "ascending",
+    });
   });
   const handleColumnToggle = useEventCallback((id: string, selected: boolean) => {
     const next =
@@ -161,7 +169,7 @@ export function AccountsTableControls({
                 aria-label="Apply account filters"
                 className="relative rounded-full"
                 size="sm"
-                variant="secondary"
+                variant="tertiary"
               >
                 <HugeiconsIcon icon={FilterHorizontalIcon} />
                 {activeFilterCount > 0 ? (
@@ -275,17 +283,17 @@ export function AccountsTableControls({
                 aria-label="Configure account table view"
                 className="rounded-full"
                 size="sm"
-                variant="secondary"
+                variant="tertiary"
               >
                 <HugeiconsIcon icon={LayoutThreeColumnIcon} />
               </Button>
-              <Popover.Content className="w-[22rem] p-0" placement="bottom end">
+              <Popover.Content className="w-72 p-0" placement="bottom end">
                 <Popover.Dialog className="outline-none">
-                  <div className="grid gap-4 p-4">
-                    <Popover.Heading className="text-sm font-medium">View options</Popover.Heading>
+                  <div className="grid gap-3 p-3">
+                    <Popover.Heading className="text-xs font-medium">View options</Popover.Heading>
 
-                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                      <Typography className="text-sm" color="muted">
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+                      <Typography className="text-xs" color="muted">
                         Grouping
                       </Typography>
                       <Select
@@ -294,7 +302,7 @@ export function AccountsTableControls({
                         variant="secondary"
                         onSelectionChange={handleGroupingChange}
                       >
-                        <Select.Trigger className="min-w-40">
+                        <Select.Trigger className="h-7 min-w-32 px-2 text-xs">
                           <Select.Value />
                           <Select.Indicator />
                         </Select.Trigger>
@@ -305,29 +313,30 @@ export function AccountsTableControls({
                         </Select.Popover>
                       </Select>
 
-                      <Typography className="text-sm" color="muted">
+                      <Typography className="text-xs" color="muted">
                         Ordering
                       </Typography>
                       <div className="flex items-center gap-1.5">
                         <Tooltip delay={300}>
                           <Tooltip.Trigger>
-                            <ToggleButton
+                            <Button
                               isIconOnly
                               aria-label={
                                 sort.direction === "ascending"
                                   ? "Sort ascending"
                                   : "Sort descending"
                               }
-                              isSelected={sort.direction === "ascending"}
+                              className="size-7 min-h-7"
                               size="sm"
-                              onChange={handleSortDirectionChange}
+                              variant="secondary"
+                              onPress={toggleSortDirection}
                             >
                               <HugeiconsIcon
                                 icon={
                                   sort.direction === "ascending" ? SortByUp01Icon : SortByDown01Icon
                                 }
                               />
-                            </ToggleButton>
+                            </Button>
                           </Tooltip.Trigger>
                           <Tooltip.Content>Toggle sort direction</Tooltip.Content>
                         </Tooltip>
@@ -337,7 +346,7 @@ export function AccountsTableControls({
                           variant="secondary"
                           onSelectionChange={handleSortColumnChange}
                         >
-                          <Select.Trigger className="min-w-32">
+                          <Select.Trigger className="h-7 min-w-28 px-2 text-xs">
                             <Select.Value />
                             <Select.Indicator />
                           </Select.Trigger>
@@ -353,17 +362,25 @@ export function AccountsTableControls({
 
                   <Separator />
 
-                  <div className="grid gap-3 p-4">
+                  <div className="grid gap-2.5 p-3">
                     <div>
-                      <Typography weight="medium">Display properties</Typography>
-                      <Typography className="text-xs" color="muted">
+                      <Typography className="text-xs" weight="medium">
+                        Display properties
+                      </Typography>
+                      <Typography className="text-[11px]" color="muted">
                         Choose the account details shown in the table.
                       </Typography>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      <ToggleButton isDisabled isSelected size="sm">
+                      <Button
+                        isDisabled
+                        aria-pressed="true"
+                        className="h-7 px-2 text-xs"
+                        size="sm"
+                        variant="secondary"
+                      >
                         Name
-                      </ToggleButton>
+                      </Button>
                       {columnOptions.map((column) => (
                         <ColumnToggle
                           column={column}
@@ -377,8 +394,13 @@ export function AccountsTableControls({
 
                   <Separator />
 
-                  <div className="flex justify-end p-3">
-                    <Button size="sm" variant="tertiary" onPress={onResetView}>
+                  <div className="flex justify-end p-2.5">
+                    <Button
+                      className="h-7 px-2 text-xs"
+                      size="sm"
+                      variant="tertiary"
+                      onPress={onResetView}
+                    >
                       Reset view
                     </Button>
                   </div>
