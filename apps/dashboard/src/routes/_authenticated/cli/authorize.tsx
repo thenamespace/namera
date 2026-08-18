@@ -57,7 +57,7 @@ function CliAuthorizePage() {
 
   return (
     <main className="bg-background flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-xl">
         {request === null ? (
           <div className="flex flex-col items-center justify-center text-center">
             <Typography.Heading className="text-xl" level={1} weight="medium">
