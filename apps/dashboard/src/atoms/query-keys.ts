@@ -2,6 +2,7 @@ import type {
   ApiKeyId,
   InvitationId,
   OrganizationId,
+  OAuthAuthorizationId,
   OAuthAuthorizationRequestId,
   OAuthDeviceAuthorizationId,
   SessionKeyId,
@@ -62,6 +63,11 @@ export const QueryKeys = {
     detail: (apiKeyId: ApiKeyId) => [`api-key:detail:${apiKeyId}`] as const,
   },
   oauth: {
+    authorizations: ["oauth:authorizations"] as const,
+    authorizationLists: ["oauth:authorization-lists"] as const,
+    authorizationDetails: ["oauth:authorization-details"] as const,
+    authorization: (authorizationId: OAuthAuthorizationId) =>
+      [`oauth:authorization:${authorizationId}`] as const,
     authorizationRequests: ["oauth:authorization-requests"] as const,
     authorizationRequest: (requestId: OAuthAuthorizationRequestId) =>
       [`oauth:authorization-request:${requestId}`] as const,
@@ -106,6 +112,10 @@ export type QueryKey =
   | (typeof QueryKeys.apiKey.lists)[number]
   | (typeof QueryKeys.apiKey.details)[number]
   | ReturnType<typeof QueryKeys.apiKey.detail>[number]
+  | (typeof QueryKeys.oauth.authorizations)[number]
+  | (typeof QueryKeys.oauth.authorizationLists)[number]
+  | (typeof QueryKeys.oauth.authorizationDetails)[number]
+  | ReturnType<typeof QueryKeys.oauth.authorization>[number]
   | (typeof QueryKeys.oauth.authorizationRequests)[number]
   | ReturnType<typeof QueryKeys.oauth.authorizationRequest>[number]
   | (typeof QueryKeys.oauth.deviceAuthorizations)[number]
