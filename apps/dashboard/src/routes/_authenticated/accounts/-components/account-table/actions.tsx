@@ -1,3 +1,5 @@
+import { useNavigate } from "@tanstack/react-router";
+
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Dropdown, Label } from "@namera-ai/ui";
 import {
@@ -5,6 +7,7 @@ import {
   Copy01Icon,
   HugeiconsIcon,
   MoreHorizontalIcon,
+  Wallet01Icon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
@@ -15,6 +18,7 @@ type AccountActionsProps = {
 };
 
 export function AccountActions({ account }: AccountActionsProps) {
+  const navigate = useNavigate();
   const copyValue = useEventCallback((value: string, title: string) => {
     void navigator.clipboard.writeText(value).then(
       () => showSuccessToast({ title }),
@@ -22,6 +26,14 @@ export function AccountActions({ account }: AccountActionsProps) {
     );
   });
   const handleAction = useEventCallback((key: string | number) => {
+    if (key === "open-account") {
+      void navigate({
+        to: "/account/$accountId/overview",
+        params: { accountId: account.id },
+      });
+      return;
+    }
+
     if (key === "copy-id") {
       copyValue(account.id, "Wallet ID copied to clipboard");
       return;
@@ -54,6 +66,10 @@ export function AccountActions({ account }: AccountActionsProps) {
       <Dropdown.Popover className="min-w-52" placement="bottom end">
         <Dropdown.Menu onAction={handleAction}>
           <Dropdown.Section>
+            <Dropdown.Item id="open-account" textValue="Open account">
+              <HugeiconsIcon className="size-4 text-muted" icon={Wallet01Icon} />
+              <Label>Open account</Label>
+            </Dropdown.Item>
             <Dropdown.Item id="copy-id" textValue="Copy wallet ID">
               <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
               <Label>Copy wallet ID</Label>

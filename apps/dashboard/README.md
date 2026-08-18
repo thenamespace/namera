@@ -75,6 +75,15 @@ authoritative permission boundary. EVM address displays resolve mainnet ENS name
 and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
 
+`/account/$accountId` redirects to its overview and owns a shared account-detail
+shell with Overview, Session Keys, and Usage navigation. The overview prefetches
+the wallet detail into the shared atom registry and presents its metadata,
+semantic status, namespace, implementation, protection, identifiers,
+implementation-specific configuration, and timeline through reusable display
+components. Account names and row actions in `/accounts` link to the overview.
+Session Keys and Usage currently retain the detail shell with focused placeholder
+content for their later implementations.
+
 Session-key create, detail, organization-list, and wallet-list atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
 list, and revoke atoms/hooks live under `src/atoms/api-key` and

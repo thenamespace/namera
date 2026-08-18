@@ -19,6 +19,7 @@ import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mc
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as AuthenticatedAccountAccountIdRouteRouteImport } from './routes/_authenticated/account/$accountId/route'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
 import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenticated/accounts/new'
 import { Route as AuthenticatedCliAuthorizeRouteImport } from './routes/_authenticated/cli/authorize'
@@ -30,6 +31,10 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
 import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authenticated/workspace/new'
+import { Route as AuthenticatedAccountAccountIdIndexRouteImport } from './routes/_authenticated/account/$accountId/index'
+import { Route as AuthenticatedAccountAccountIdOverviewRouteImport } from './routes/_authenticated/account/$accountId/overview'
+import { Route as AuthenticatedAccountAccountIdSessionKeysRouteImport } from './routes/_authenticated/account/$accountId/session-keys'
+import { Route as AuthenticatedAccountAccountIdUsageRouteImport } from './routes/_authenticated/account/$accountId/usage'
 import { Route as AuthenticatedSettingsWorkspaceIndexRouteImport } from './routes/_authenticated/settings/workspace/index'
 import { Route as AuthenticatedSettingsWorkspaceApiKeysRouteImport } from './routes/_authenticated/settings/workspace/api-keys'
 import { Route as AuthenticatedSettingsWorkspaceBillingsRouteImport } from './routes/_authenticated/settings/workspace/billings'
@@ -86,6 +91,12 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthenticatedAccountAccountIdRouteRoute =
+  AuthenticatedAccountAccountIdRouteRouteImport.update({
+    id: '/account/$accountId',
+    path: '/account/$accountId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountsIndexRoute =
   AuthenticatedAccountsIndexRouteImport.update({
     id: '/accounts/',
@@ -152,6 +163,30 @@ const AuthenticatedWorkspaceNewRoute =
     path: '/workspace/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountAccountIdIndexRoute =
+  AuthenticatedAccountAccountIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
+  } as any)
+const AuthenticatedAccountAccountIdOverviewRoute =
+  AuthenticatedAccountAccountIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
+    getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
+  } as any)
+const AuthenticatedAccountAccountIdSessionKeysRoute =
+  AuthenticatedAccountAccountIdSessionKeysRouteImport.update({
+    id: '/session-keys',
+    path: '/session-keys',
+    getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
+  } as any)
+const AuthenticatedAccountAccountIdUsageRoute =
+  AuthenticatedAccountAccountIdUsageRouteImport.update({
+    id: '/usage',
+    path: '/usage',
+    getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
+  } as any)
 const AuthenticatedSettingsWorkspaceIndexRoute =
   AuthenticatedSettingsWorkspaceIndexRouteImport.update({
     id: '/settings/workspace/',
@@ -199,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
+  '/account/$accountId': typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
@@ -210,11 +246,15 @@ export interface FileRoutesByFullPath {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
+  '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
+  '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/cli-authorizations': typeof AuthenticatedSettingsWorkspaceCliAuthorizationsRoute
   '/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/account/$accountId/': typeof AuthenticatedAccountAccountIdIndexRoute
   '/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRoutesByTo {
@@ -237,11 +277,15 @@ export interface FileRoutesByTo {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
+  '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
+  '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
+  '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/settings/workspace/cli-authorizations': typeof AuthenticatedSettingsWorkspaceCliAuthorizationsRoute
   '/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/account/$accountId': typeof AuthenticatedAccountAccountIdIndexRoute
   '/settings/workspace': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRoutesById {
@@ -256,6 +300,7 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_authenticated/account/$accountId': typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
@@ -267,11 +312,15 @@ export interface FileRoutesById {
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/_authenticated/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
+  '/_authenticated/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
+  '/_authenticated/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/_authenticated/settings/workspace/api-keys': typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   '/_authenticated/settings/workspace/billings': typeof AuthenticatedSettingsWorkspaceBillingsRoute
   '/_authenticated/settings/workspace/cli-authorizations': typeof AuthenticatedSettingsWorkspaceCliAuthorizationsRoute
   '/_authenticated/settings/workspace/mcp': typeof AuthenticatedSettingsWorkspaceMcpRoute
   '/_authenticated/settings/workspace/members': typeof AuthenticatedSettingsWorkspaceMembersRoute
+  '/_authenticated/account/$accountId/': typeof AuthenticatedAccountAccountIdIndexRoute
   '/_authenticated/settings/workspace/': typeof AuthenticatedSettingsWorkspaceIndexRoute
 }
 export interface FileRouteTypes {
@@ -286,6 +335,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/auth/verify'
     | '/auth/'
+    | '/account/$accountId'
     | '/accounts/new'
     | '/cli/authorize'
     | '/invitations/$invitationId'
@@ -297,11 +347,15 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts/'
     | '/session-keys/'
+    | '/account/$accountId/overview'
+    | '/account/$accountId/session-keys'
+    | '/account/$accountId/usage'
     | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
     | '/settings/workspace/cli-authorizations'
     | '/settings/workspace/mcp'
     | '/settings/workspace/members'
+    | '/account/$accountId/'
     | '/settings/workspace/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -324,11 +378,15 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts'
     | '/session-keys'
+    | '/account/$accountId/overview'
+    | '/account/$accountId/session-keys'
+    | '/account/$accountId/usage'
     | '/settings/workspace/api-keys'
     | '/settings/workspace/billings'
     | '/settings/workspace/cli-authorizations'
     | '/settings/workspace/mcp'
     | '/settings/workspace/members'
+    | '/account/$accountId'
     | '/settings/workspace'
   id:
     | '__root__'
@@ -342,6 +400,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
+    | '/_authenticated/account/$accountId'
     | '/_authenticated/accounts/new'
     | '/_authenticated/cli/authorize'
     | '/_authenticated/invitations/$invitationId'
@@ -353,11 +412,15 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
     | '/_authenticated/session-keys/'
+    | '/_authenticated/account/$accountId/overview'
+    | '/_authenticated/account/$accountId/session-keys'
+    | '/_authenticated/account/$accountId/usage'
     | '/_authenticated/settings/workspace/api-keys'
     | '/_authenticated/settings/workspace/billings'
     | '/_authenticated/settings/workspace/cli-authorizations'
     | '/_authenticated/settings/workspace/mcp'
     | '/_authenticated/settings/workspace/members'
+    | '/_authenticated/account/$accountId/'
     | '/_authenticated/settings/workspace/'
   fileRoutesById: FileRoutesById
 }
@@ -438,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_authenticated/account/$accountId': {
+      id: '/_authenticated/account/$accountId'
+      path: '/account/$accountId'
+      fullPath: '/account/$accountId'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounts/': {
       id: '/_authenticated/accounts/'
       path: '/accounts'
@@ -515,6 +585,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/account/$accountId/': {
+      id: '/_authenticated/account/$accountId/'
+      path: '/'
+      fullPath: '/account/$accountId/'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdIndexRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
+    }
+    '/_authenticated/account/$accountId/overview': {
+      id: '/_authenticated/account/$accountId/overview'
+      path: '/overview'
+      fullPath: '/account/$accountId/overview'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdOverviewRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
+    }
+    '/_authenticated/account/$accountId/session-keys': {
+      id: '/_authenticated/account/$accountId/session-keys'
+      path: '/session-keys'
+      fullPath: '/account/$accountId/session-keys'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdSessionKeysRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
+    }
+    '/_authenticated/account/$accountId/usage': {
+      id: '/_authenticated/account/$accountId/usage'
+      path: '/usage'
+      fullPath: '/account/$accountId/usage'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdUsageRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
+    }
     '/_authenticated/settings/workspace/': {
       id: '/_authenticated/settings/workspace/'
       path: '/settings/workspace'
@@ -560,6 +658,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAccountAccountIdRouteRouteChildren {
+  AuthenticatedAccountAccountIdOverviewRoute: typeof AuthenticatedAccountAccountIdOverviewRoute
+  AuthenticatedAccountAccountIdSessionKeysRoute: typeof AuthenticatedAccountAccountIdSessionKeysRoute
+  AuthenticatedAccountAccountIdUsageRoute: typeof AuthenticatedAccountAccountIdUsageRoute
+  AuthenticatedAccountAccountIdIndexRoute: typeof AuthenticatedAccountAccountIdIndexRoute
+}
+
+const AuthenticatedAccountAccountIdRouteRouteChildren: AuthenticatedAccountAccountIdRouteRouteChildren =
+  {
+    AuthenticatedAccountAccountIdOverviewRoute:
+      AuthenticatedAccountAccountIdOverviewRoute,
+    AuthenticatedAccountAccountIdSessionKeysRoute:
+      AuthenticatedAccountAccountIdSessionKeysRoute,
+    AuthenticatedAccountAccountIdUsageRoute:
+      AuthenticatedAccountAccountIdUsageRoute,
+    AuthenticatedAccountAccountIdIndexRoute:
+      AuthenticatedAccountAccountIdIndexRoute,
+  }
+
+const AuthenticatedAccountAccountIdRouteRouteWithChildren =
+  AuthenticatedAccountAccountIdRouteRoute._addFileChildren(
+    AuthenticatedAccountAccountIdRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
@@ -567,6 +689,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAccountAccountIdRouteRoute: typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedCliAuthorizeRoute: typeof AuthenticatedCliAuthorizeRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
@@ -593,6 +716,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAccountAccountIdRouteRoute:
+    AuthenticatedAccountAccountIdRouteRouteWithChildren,
   AuthenticatedAccountsNewRoute: AuthenticatedAccountsNewRoute,
   AuthenticatedCliAuthorizeRoute: AuthenticatedCliAuthorizeRoute,
   AuthenticatedInvitationsInvitationIdRoute:

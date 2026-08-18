@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { Link } from "@tanstack/react-router";
+
 import { DateTime } from "effect";
 
 import type { ListWalletsResponse, WalletResponse } from "@namera-ai/protocol/dto";
@@ -68,6 +70,20 @@ type AccountTableRow = WalletResponse | AccountGroupRow;
 
 const isAccountGroup = (row: AccountTableRow): row is AccountGroupRow => "kind" in row;
 
+function AccountNameCell({ account }: { account: WalletResponse }) {
+  const accountParams = useMemo(() => ({ accountId: account.id }), [account.id]);
+
+  return (
+    <Link
+      className="block min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      params={accountParams}
+      to="/account/$accountId/overview"
+    >
+      <MetadataDisplay fallbackName="Unnamed account" metadata={account.metadata} />
+    </Link>
+  );
+}
+
 function AccountGroupLabel({ group }: { group: AccountGroupRow }) {
   const display = (() => {
     if (group.grouping === "status") {
@@ -113,11 +129,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
   {
     allowsSorting: true,
     cell: (row) =>
-      isAccountGroup(row) ? (
-        <AccountGroupLabel group={row} />
-      ) : (
-        <MetadataDisplay fallbackName="Unnamed account" metadata={row.metadata} />
-      ),
+      isAccountGroup(row) ? <AccountGroupLabel group={row} /> : <AccountNameCell account={row} />,
     header: "Name",
     id: "name",
     isRowHeader: true,
