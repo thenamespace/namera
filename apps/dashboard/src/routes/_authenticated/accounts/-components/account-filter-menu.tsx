@@ -1,5 +1,5 @@
 import type { WalletResponse } from "@namera-ai/protocol/dto";
-import { Button, Dropdown, Label, type DataGridSelection } from "@namera-ai/ui";
+import { Button, Checkbox, Dropdown, Label, type DataGridSelection } from "@namera-ai/ui";
 import {
   Activity01Icon,
   CodeIcon,
@@ -75,6 +75,28 @@ const protectionLabels: Record<WalletResponse["protectionLevel"], string> = {
   software: "Software",
 };
 
+type FilterCheckboxProps = {
+  isSelected: boolean;
+  label: string;
+};
+
+function FilterCheckbox({ isSelected, label }: FilterCheckboxProps) {
+  return (
+    <Checkbox
+      isReadOnly
+      aria-label={label}
+      className="pointer-events-none shrink-0"
+      isSelected={isSelected}
+    >
+      <Checkbox.Content>
+        <Checkbox.Control>
+          <Checkbox.Indicator />
+        </Checkbox.Control>
+      </Checkbox.Content>
+    </Checkbox>
+  );
+}
+
 export function AccountFilterMenu({ counts, filters, onChange }: AccountFilterMenuProps) {
   const activeFilterCount =
     filters.status.size + filters.implementation.size + filters.protectionLevel.size;
@@ -128,11 +150,14 @@ export function AccountFilterMenu({ counts, filters, onChange }: AccountFilterMe
               >
                 {statusOptions.map((value) => (
                   <Dropdown.Item id={value} key={value} textValue={statusLabels[value]}>
+                    <FilterCheckbox
+                      isSelected={filters.status.has(value)}
+                      label={`Filter by ${statusLabels[value]} status`}
+                    />
                     <WalletStatusDisplay status={value} />
                     <span className="ml-auto text-xs tabular-nums text-muted">
                       {counts.status[value]}
                     </span>
-                    <Dropdown.ItemIndicator />
                   </Dropdown.Item>
                 ))}
               </Dropdown.Menu>
@@ -156,11 +181,14 @@ export function AccountFilterMenu({ counts, filters, onChange }: AccountFilterMe
               >
                 {implementationOptions.map((value) => (
                   <Dropdown.Item id={value} key={value} textValue={implementationLabels[value]}>
+                    <FilterCheckbox
+                      isSelected={filters.implementation.has(value)}
+                      label={`Filter by ${implementationLabels[value]} implementation`}
+                    />
                     <WalletImplementationDisplay implementation={value} />
                     <span className="ml-auto text-xs tabular-nums text-muted">
                       {counts.implementation[value]}
                     </span>
-                    <Dropdown.ItemIndicator />
                   </Dropdown.Item>
                 ))}
               </Dropdown.Menu>
@@ -184,11 +212,14 @@ export function AccountFilterMenu({ counts, filters, onChange }: AccountFilterMe
               >
                 {protectionOptions.map((value) => (
                   <Dropdown.Item id={value} key={value} textValue={protectionLabels[value]}>
+                    <FilterCheckbox
+                      isSelected={filters.protectionLevel.has(value)}
+                      label={`Filter by ${protectionLabels[value]} protection`}
+                    />
                     <WalletProtectionDisplay protectionLevel={value} />
                     <span className="ml-auto text-xs tabular-nums text-muted">
                       {counts.protectionLevel[value]}
                     </span>
-                    <Dropdown.ItemIndicator />
                   </Dropdown.Item>
                 ))}
               </Dropdown.Menu>

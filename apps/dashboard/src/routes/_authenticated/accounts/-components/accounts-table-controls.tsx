@@ -14,7 +14,6 @@ import {
   LayoutThreeColumnIcon,
   SortByDown01Icon,
   SortByUp01Icon,
-  Tick02Icon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
@@ -67,13 +66,12 @@ function ColumnToggle({ column, isSelected, onChange }: ColumnToggleProps) {
   return (
     <Button
       aria-pressed={isSelected}
-      className="h-7 px-2 text-xs"
+      className={isSelected ? "h-7 px-2 text-xs" : "h-7 px-2 text-xs opacity-50"}
       size="sm"
       variant="tertiary"
       onPress={handlePress}
     >
       {column.label}
-      {isSelected ? <HugeiconsIcon className="ml-0.5 size-3.5" icon={Tick02Icon} /> : null}
     </Button>
   );
 }
@@ -144,10 +142,10 @@ export function AccountsTableControls({
               <Popover.Content className="w-96 p-0" placement="bottom end">
                 <Popover.Dialog className="outline-none">
                   <div className="grid gap-3 p-3">
-                    <Popover.Heading className="text-xs font-medium">View options</Popover.Heading>
+                    <Popover.Heading className="text-sm font-medium">View options</Popover.Heading>
 
                     <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-                      <Typography className="text-xs" color="muted">
+                      <Typography className="text-sm" color="muted">
                         Grouping
                       </Typography>
                       <Select
@@ -167,7 +165,7 @@ export function AccountsTableControls({
                         </Select.Popover>
                       </Select>
 
-                      <Typography className="text-xs" color="muted">
+                      <Typography className="text-sm" color="muted">
                         Ordering
                       </Typography>
                       <div className="flex items-center gap-1.5">
@@ -218,10 +216,10 @@ export function AccountsTableControls({
 
                   <div className="grid gap-2.5 p-3">
                     <div>
-                      <Typography className="text-xs" weight="medium">
+                      <Typography className="text-sm" weight="medium">
                         Display properties
                       </Typography>
-                      <Typography className="text-[11px]" color="muted">
+                      <Typography className="text-xs" color="muted">
                         Choose the account details shown in the table.
                       </Typography>
                     </div>
@@ -229,12 +227,11 @@ export function AccountsTableControls({
                       <Button
                         isDisabled
                         aria-pressed="true"
-                        className="h-7 px-2 text-xs"
+                        className="h-7 px-2 text-xs opacity-100"
                         size="sm"
                         variant="tertiary"
                       >
                         Name
-                        <HugeiconsIcon className="ml-0.5 size-3.5" icon={Tick02Icon} />
                       </Button>
                       {columnOptions.map((column) => (
                         <ColumnToggle

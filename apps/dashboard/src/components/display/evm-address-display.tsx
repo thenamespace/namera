@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent } from "react";
 
 import type { EthereumAddress } from "@namera-ai/protocol/evm";
 import { Avatar, Tooltip } from "@namera-ai/ui";
@@ -43,6 +43,14 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
   const handleKeyDown = useEventCallback((event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
+    event.stopPropagation();
+    copyAddress();
+  });
+  const handlePointerDown = useEventCallback((event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  });
+  const handleClick = useEventCallback((event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
     copyAddress();
   });
 
@@ -51,8 +59,9 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
       <Tooltip.Trigger
         aria-label={`Copy account address ${address}`}
         className="text-muted hover:text-foreground inline-flex cursor-copy items-center gap-2 transition-colors"
-        onClick={copyAddress}
+        onClick={handleClick}
         onKeyDown={handleKeyDown}
+        onPointerDown={handlePointerDown}
       >
         {ensName ? (
           <>
