@@ -25,7 +25,7 @@ import { Add01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { MetadataDisplay } from "@/components/display";
+import { SessionKeySelect } from "@/components/session-key-select";
 import { useCreateApiKey } from "@/hooks/api-key";
 import { useSessionKeys } from "@/hooks/session-key";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -193,44 +193,21 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                           <div className="grid gap-1">
-                            <FieldLabel id="api-key-session-keys-label">Session keys</FieldLabel>
+                            <FieldLabel id="api-key-session-keys-label">
+                              Accounts and session keys
+                            </FieldLabel>
                             {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
                           </div>
-                          <Select<(typeof availableSessionKeys)[number], "multiple">
+                          <SessionKeySelect
                             aria-labelledby="api-key-session-keys-label"
-                            fullWidth
                             isInvalid={fieldState.invalid}
                             name={field.name}
-                            selectionMode="multiple"
-                            variant="secondary"
+                            sessionKeys={availableSessionKeys}
+                            triggerRef={field.ref}
                             value={field.value}
+                            onBlur={field.onBlur}
                             onChange={field.onChange}
-                          >
-                            <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                              <Select.Value>
-                                {field.value.length === 0
-                                  ? "Select session keys"
-                                  : `${field.value.length} session key${field.value.length === 1 ? "" : "s"} selected`}
-                              </Select.Value>
-                              <Select.Indicator />
-                            </Select.Trigger>
-                            <Select.Popover>
-                              <ListBox items={availableSessionKeys}>
-                                {(sessionKey) => (
-                                  <ListBox.Item
-                                    id={sessionKey.id}
-                                    textValue={sessionKey.metadata.name}
-                                  >
-                                    <MetadataDisplay
-                                      fallbackName="Unnamed session key"
-                                      metadata={sessionKey.metadata}
-                                    />
-                                    <ListBox.ItemIndicator />
-                                  </ListBox.Item>
-                                )}
-                              </ListBox>
-                            </Select.Popover>
-                          </Select>
+                          />
                         </Field>
                       )}
                     />

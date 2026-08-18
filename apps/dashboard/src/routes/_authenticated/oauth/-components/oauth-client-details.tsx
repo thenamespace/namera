@@ -1,7 +1,7 @@
-import { Button, Chip, Surface, Tooltip } from "@namera-ai/ui";
-import { Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Surface, Tooltip } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
+import { CopyIconButton } from "@/components/copy-icon-button";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type CopyableOAuthValueProps = {
@@ -11,12 +11,10 @@ type CopyableOAuthValueProps = {
 
 function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
   const displayValue = value.length > 40 ? `${value.slice(0, 20)}…${value.slice(-12)}` : value;
-  const copyValue = useEventCallback(() => {
-    void navigator.clipboard.writeText(value).then(
-      () => showSuccessToast({ title: `${label} copied` }),
-      () => showErrorToast(undefined, { title: `Couldn’t copy ${label.toLowerCase()}` }),
-    );
-  });
+  const handleCopySuccess = useEventCallback(() => showSuccessToast({ title: `${label} copied` }));
+  const handleCopyError = useEventCallback(() =>
+    showErrorToast(undefined, { title: `Couldn’t copy ${label.toLowerCase()}` }),
+  );
 
   return (
     <div className="flex min-w-0 items-center justify-between gap-2">
@@ -29,17 +27,12 @@ function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
           {value}
         </Tooltip.Content>
       </Tooltip>
-      <Button
-        aria-label={`Copy ${label.toLowerCase()}`}
-        className="shrink-0"
-        isIconOnly
-        size="sm"
-        type="button"
-        variant="ghost"
-        onPress={copyValue}
-      >
-        <HugeiconsIcon icon={Copy01Icon} />
-      </Button>
+      <CopyIconButton
+        label={label}
+        value={value}
+        onCopyError={handleCopyError}
+        onCopySuccess={handleCopySuccess}
+      />
     </div>
   );
 }
@@ -47,32 +40,15 @@ function CopyableOAuthValue({ label, value }: CopyableOAuthValueProps) {
 type OAuthClientDetailsProps = {
   clientId: string;
   redirectUri: string;
-  scopes: ReadonlyArray<string>;
 };
 
-const scopeLabels: Readonly<Record<string, string>> = {
-  "mcp:read": "Read",
-  "mcp:execute": "Execute",
-  offline_access: "Offline access",
-};
-
-export function OAuthClientDetails({ clientId, redirectUri, scopes }: OAuthClientDetailsProps) {
+export function OAuthClientDetails({ clientId, redirectUri }: OAuthClientDetailsProps) {
   return (
-    <Surface className="mt-6 overflow-hidden rounded-xl p-0" variant="secondary">
+    <Surface className="mt-3 overflow-hidden rounded-xl p-0" variant="secondary">
       <div className="divide-separator divide-y">
         <div className="grid min-w-0 gap-1 px-4 py-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center sm:gap-3">
           <span className="text-content-tertiary text-xs">Client ID</span>
           <CopyableOAuthValue label="Client ID" value={clientId} />
-        </div>
-        <div className="grid min-w-0 gap-2 px-4 py-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center sm:gap-3">
-          <span className="text-content-tertiary text-xs">Access</span>
-          <div className="flex flex-wrap gap-1.5">
-            {scopes.map((scope) => (
-              <Chip key={scope} size="sm" variant="soft">
-                {scopeLabels[scope] ?? scope}
-              </Chip>
-            ))}
-          </div>
         </div>
         <div className="grid min-w-0 gap-1 px-4 py-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center sm:gap-3">
           <span className="text-content-tertiary text-xs">Redirect URI</span>

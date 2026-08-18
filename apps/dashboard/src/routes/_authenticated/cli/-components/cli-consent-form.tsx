@@ -17,14 +17,12 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  ListBox,
-  Select,
   Typography,
 } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
-import { MetadataDisplay } from "@/components/display";
+import { SessionKeySelect } from "@/components/session-key-select";
 import { useApproveOAuthDeviceAuthorization, useDenyOAuthDeviceAuthorization } from "@/hooks/auth";
 import { showErrorToast } from "@/lib/toasts";
 
@@ -138,7 +136,7 @@ export function CliConsentForm({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <div className="grid gap-1">
-                      <FieldLabel id="cli-session-keys-label">Session keys</FieldLabel>
+                      <FieldLabel id="cli-session-keys-label">Accounts and session keys</FieldLabel>
                       <Typography.Paragraph color="muted" size="xs">
                         Every transaction and signature must pass one selected key’s policies.
                       </Typography.Paragraph>
@@ -146,38 +144,16 @@ export function CliConsentForm({
                         <FieldError>{fieldState.error?.message}</FieldError>
                       ) : null}
                     </div>
-                    <Select<(typeof activeSessionKeys)[number], "multiple">
+                    <SessionKeySelect
                       aria-labelledby="cli-session-keys-label"
-                      fullWidth
                       isInvalid={fieldState.invalid}
                       name={field.name}
-                      selectionMode="multiple"
+                      sessionKeys={activeSessionKeys}
+                      triggerRef={field.ref}
                       value={field.value}
-                      variant="secondary"
+                      onBlur={field.onBlur}
                       onChange={field.onChange}
-                    >
-                      <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                        <Select.Value>
-                          {field.value.length === 0
-                            ? "Select session keys"
-                            : `${field.value.length} selected`}
-                        </Select.Value>
-                        <Select.Indicator />
-                      </Select.Trigger>
-                      <Select.Popover>
-                        <ListBox items={activeSessionKeys}>
-                          {(sessionKey) => (
-                            <ListBox.Item id={sessionKey.id} textValue={sessionKey.metadata.name}>
-                              <MetadataDisplay
-                                fallbackName="Unnamed session key"
-                                metadata={sessionKey.metadata}
-                              />
-                              <ListBox.ItemIndicator />
-                            </ListBox.Item>
-                          )}
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
+                    />
                   </Field>
                 )}
               />

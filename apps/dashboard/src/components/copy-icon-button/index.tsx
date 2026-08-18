@@ -1,0 +1,87 @@
+import { useEffect, useRef, useState } from "react";
+
+import { Button, cn, Tooltip } from "@namera-ai/ui";
+import { CheckIcon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEventCallback } from "usehooks-ts";
+
+type CopyIconButtonProps = {
+  label: string;
+  value: string;
+  className?: string;
+  onCopyError?: () => void;
+  onCopySuccess?: () => void;
+};
+
+const copiedDuration = 3500;
+const visibleIcon = { filter: "blur(0px)", opacity: 1, scale: 1 } as const;
+const hiddenIcon = { filter: "blur(3px)", opacity: 0, scale: 0.85 } as const;
+const motionTransition = { duration: 0.16, ease: "easeOut" } as const;
+const reducedTransition = { duration: 0 } as const;
+
+export function CopyIconButton({
+  label,
+  value,
+  className,
+  onCopyError,
+  onCopySuccess,
+}: CopyIconButtonProps) {
+  const [isCopied, setIsCopied] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+  const copy = useEventCallback(() => {
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(value);
+        setIsCopied(true);
+        onCopySuccess?.();
+        if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setIsCopied(false), copiedDuration);
+      } catch {
+        onCopyError?.();
+      }
+    })();
+  });
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+    },
+    [],
+  );
+
+  return (
+    <Tooltip delay={300}>
+      <Tooltip.Trigger>
+        <Button
+          aria-label={isCopied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
+          className={cn("relative shrink-0", className) ?? "relative shrink-0"}
+          isIconOnly
+          size="sm"
+          type="button"
+          variant="tertiary"
+          onPress={copy}
+        >
+          <AnimatePresence initial={false} mode="wait">
+            <motion.span
+              animate={visibleIcon}
+              className="flex items-center justify-center"
+              exit={shouldReduceMotion ? visibleIcon : hiddenIcon}
+              initial={shouldReduceMotion ? false : hiddenIcon}
+              key={isCopied ? "copied" : "copy"}
+              transition={shouldReduceMotion ? reducedTransition : motionTransition}
+            >
+              <HugeiconsIcon icon={isCopied ? CheckIcon : Copy01Icon} />
+            </motion.span>
+          </AnimatePresence>
+        </Button>
+      </Tooltip.Trigger>
+      <Tooltip.Content showArrow>
+        <Tooltip.Arrow />
+        {isCopied ? "Copied" : `Copy ${label.toLowerCase()}`}
+      </Tooltip.Content>
+    </Tooltip>
+  );
+}
+
+export type { CopyIconButtonProps };
