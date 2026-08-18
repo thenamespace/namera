@@ -56,12 +56,6 @@ function McpSettingsPage() {
         </HeadingGroup>
 
         <section aria-labelledby="mcp-installation-heading">
-          <HeadingGroup className="mb-4">
-            <HeadingGroup.Title id="mcp-installation-heading">Connect a client</HeadingGroup.Title>
-            <HeadingGroup.Description>
-              Use one endpoint with any compatible remote MCP client.
-            </HeadingGroup.Description>
-          </HeadingGroup>
           <McpInstallation />
         </section>
 

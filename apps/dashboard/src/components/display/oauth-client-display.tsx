@@ -19,9 +19,6 @@ export function OAuthClientDisplay({ client }: OAuthClientDisplayProps) {
         <Typography className="truncate text-sm! leading-[1.2]" weight="normal">
           {client.clientName}
         </Typography>
-        <Typography className="truncate text-xs! leading-[1.2]" color="muted">
-          {client.clientUri ?? client.clientId}
-        </Typography>
       </div>
     </div>
   );
