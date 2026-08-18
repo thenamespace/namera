@@ -69,7 +69,7 @@ function ColumnToggle({ column, isSelected, onChange }: ColumnToggleProps) {
       aria-pressed={isSelected}
       className="h-7 px-2 text-xs"
       size="sm"
-      variant={isSelected ? "secondary" : "tertiary"}
+      variant="tertiary"
       onPress={handlePress}
     >
       {column.label}
@@ -231,7 +231,7 @@ export function AccountsTableControls({
                         aria-pressed="true"
                         className="h-7 px-2 text-xs"
                         size="sm"
-                        variant="secondary"
+                        variant="tertiary"
                       >
                         Name
                         <HugeiconsIcon className="ml-0.5 size-3.5" icon={Tick02Icon} />
