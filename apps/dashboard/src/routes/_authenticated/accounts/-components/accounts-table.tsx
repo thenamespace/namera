@@ -26,8 +26,12 @@ import { useWallets } from "@/hooks/wallet";
 
 import { AccountActions } from "./account-actions";
 import {
-  AccountsTableControls,
+  createEmptyAccountFilters,
+  type AccountFilterCounts,
   type AccountFilters,
+} from "./account-filter-menu";
+import {
+  AccountsTableControls,
   type AccountGrouping,
   type ColumnOption,
 } from "./accounts-table-controls";
@@ -40,12 +44,6 @@ const accountCollator = new Intl.Collator(undefined, {
 const defaultSort: DataGridSortDescriptor = {
   column: "createdAt",
   direction: "descending",
-};
-
-const defaultFilters: AccountFilters = {
-  status: "all",
-  implementation: "all",
-  protectionLevel: "all",
 };
 
 const columnIds = [
@@ -249,7 +247,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const accounts = useWallets();
   const accountData = accounts.data ?? initialAccounts;
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<AccountFilters>(defaultFilters);
+  const [filters, setFilters] = useState<AccountFilters>(createEmptyAccountFilters);
   const [grouping, setGrouping] = useState<AccountGrouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>(defaultSort);
   const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
@@ -265,11 +263,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
           account.metadata.name.toLowerCase().includes(normalizedQuery) ||
           account.address.toLowerCase().includes(normalizedQuery) ||
           account.id.toLowerCase().includes(normalizedQuery);
-        const matchesStatus = filters.status === "all" || account.status === filters.status;
+        const matchesStatus = filters.status.size === 0 || filters.status.has(account.status);
         const matchesImplementation =
-          filters.implementation === "all" || account.implementation === filters.implementation;
+          filters.implementation.size === 0 || filters.implementation.has(account.implementation);
         const matchesProtection =
-          filters.protectionLevel === "all" || account.protectionLevel === filters.protectionLevel;
+          filters.protectionLevel.size === 0 ||
+          filters.protectionLevel.has(account.protectionLevel);
 
         return matchesQuery && matchesStatus && matchesImplementation && matchesProtection;
       }),
@@ -291,8 +290,26 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
       (column) => column.id === "name" || column.id === "actions" || visible.has(column.id),
     );
   }, [visibleColumns]);
+  const filterCounts = useMemo<AccountFilterCounts>(() => {
+    const counts: AccountFilterCounts = {
+      status: { active: 0, archived: 0, frozen: 0 },
+      implementation: { kernel: 0, safe: 0 },
+      protectionLevel: { hsm: 0, software: 0 },
+    };
+
+    for (const account of accountData) {
+      counts.status[account.status] += 1;
+      counts.implementation[account.implementation] += 1;
+      counts.protectionLevel[account.protectionLevel] += 1;
+    }
+
+    return counts;
+  }, [accountData]);
   const hasFilters =
-    normalizedQuery.length > 0 || Object.values(filters).some((value) => value !== "all");
+    normalizedQuery.length > 0 ||
+    filters.status.size > 0 ||
+    filters.implementation.size > 0 ||
+    filters.protectionLevel.size > 0;
   const renderEmptyState = useEventCallback(() =>
     hasFilters ? "No accounts match these filters." : "No accounts yet.",
   );
@@ -321,6 +338,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         <div className="ml-auto">
           <AccountsTableControls
             columnOptions={configurableColumns}
+            filterCounts={filterCounts}
             filters={filters}
             grouping={grouping}
             sort={sort}

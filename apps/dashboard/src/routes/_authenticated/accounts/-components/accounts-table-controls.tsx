@@ -1,10 +1,5 @@
-import { useMemo } from "react";
-
-import type { WalletResponse } from "@namera-ai/protocol/dto";
 import {
   Button,
-  Dropdown,
-  Label,
   ListBox,
   Popover,
   Select,
@@ -15,17 +10,19 @@ import {
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
 import {
-  FilterHorizontalIcon,
   HugeiconsIcon,
   LayoutThreeColumnIcon,
   SortByDown01Icon,
   SortByUp01Icon,
+  Tick02Icon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-const statusOptions = ["all", "active", "frozen", "archived"] as const;
-const implementationOptions = ["all", "kernel", "safe"] as const;
-const protectionOptions = ["all", "software", "hsm"] as const;
+import {
+  AccountFilterMenu,
+  type AccountFilterCounts,
+  type AccountFilters,
+} from "./account-filter-menu";
 
 const groupingOptions = [
   { id: "none", label: "No grouping" },
@@ -36,12 +33,6 @@ const groupingOptions = [
 
 type AccountGrouping = (typeof groupingOptions)[number]["id"];
 
-type AccountFilters = {
-  status: "all" | WalletResponse["status"];
-  implementation: "all" | WalletResponse["implementation"];
-  protectionLevel: "all" | WalletResponse["protectionLevel"];
-};
-
 type ColumnOption = {
   id: string;
   label: string;
@@ -49,6 +40,7 @@ type ColumnOption = {
 
 type AccountsTableControlsProps = {
   columnOptions: ReadonlyArray<ColumnOption>;
+  filterCounts: AccountFilterCounts;
   filters: AccountFilters;
   grouping: AccountGrouping;
   sort: DataGridSortDescriptor;
@@ -60,12 +52,6 @@ type AccountsTableControlsProps = {
   onSortChange: (sort: DataGridSortDescriptor) => void;
   onVisibleColumnsChange: (columns: DataGridSelection) => void;
 };
-
-const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
-
-function selection(value: string): Set<string> {
-  return new Set([value]);
-}
 
 type ColumnToggleProps = {
   column: ColumnOption;
@@ -87,12 +73,14 @@ function ColumnToggle({ column, isSelected, onChange }: ColumnToggleProps) {
       onPress={handlePress}
     >
       {column.label}
+      {isSelected ? <HugeiconsIcon className="ml-0.5 size-3.5" icon={Tick02Icon} /> : null}
     </Button>
   );
 }
 
 export function AccountsTableControls({
   columnOptions,
+  filterCounts,
   filters,
   grouping,
   sort,
@@ -104,38 +92,6 @@ export function AccountsTableControls({
   onSortChange,
   onVisibleColumnsChange,
 }: AccountsTableControlsProps) {
-  const activeFilterCount = Object.values(filters).filter((value) => value !== "all").length;
-  const statusSelection = useMemo(() => selection(filters.status), [filters.status]);
-  const implementationSelection = useMemo(
-    () => selection(filters.implementation),
-    [filters.implementation],
-  );
-  const protectionSelection = useMemo(
-    () => selection(filters.protectionLevel),
-    [filters.protectionLevel],
-  );
-
-  const updateFilter = useEventCallback((key: keyof AccountFilters, keys: DataGridSelection) => {
-    if (keys === "all") return;
-    const value = [...keys][0];
-    if (typeof value !== "string") return;
-
-    onFiltersChange({ ...filters, [key]: value });
-  });
-  const handleStatusSelectionChange = useEventCallback((keys: DataGridSelection) => {
-    updateFilter("status", keys);
-  });
-  const handleImplementationSelectionChange = useEventCallback((keys: DataGridSelection) => {
-    updateFilter("implementation", keys);
-  });
-  const handleProtectionSelectionChange = useEventCallback((keys: DataGridSelection) => {
-    updateFilter("protectionLevel", keys);
-  });
-  const handleRootFilterAction = useEventCallback((key: string | number) => {
-    if (key === "clear") {
-      onFiltersChange({ status: "all", implementation: "all", protectionLevel: "all" });
-    }
-  });
   const handleGroupingChange = useEventCallback((key: string | number | null) => {
     if (typeof key === "string") onGroupingChange(key as AccountGrouping);
   });
@@ -163,109 +119,7 @@ export function AccountsTableControls({
       <Tooltip delay={300}>
         <Tooltip.Trigger className="inline-flex">
           <span className="inline-flex">
-            <Dropdown>
-              <Button
-                isIconOnly
-                aria-label="Apply account filters"
-                className="relative rounded-full"
-                size="sm"
-                variant="tertiary"
-              >
-                <HugeiconsIcon icon={FilterHorizontalIcon} />
-                {activeFilterCount > 0 ? (
-                  <span className="bg-accent text-accent-foreground absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-[10px] font-medium">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
-              <Dropdown.Popover className="min-w-56" placement="bottom end">
-                <Dropdown.Menu onAction={handleRootFilterAction}>
-                  <Dropdown.SubmenuTrigger>
-                    <Dropdown.Item id="status" textValue="Status">
-                      <Label>Status</Label>
-                      <span className="ml-auto text-xs capitalize text-muted">
-                        {filters.status}
-                      </span>
-                      <Dropdown.SubmenuIndicator />
-                    </Dropdown.Item>
-                    <Dropdown.Popover className="min-w-44">
-                      <Dropdown.Menu
-                        selectedKeys={statusSelection}
-                        selectionMode="single"
-                        onSelectionChange={handleStatusSelectionChange}
-                      >
-                        {statusOptions.map((value) => (
-                          <Dropdown.Item id={value} key={value} textValue={value}>
-                            <Label>{value === "all" ? "Any status" : capitalize(value)}</Label>
-                            <Dropdown.ItemIndicator />
-                          </Dropdown.Item>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown.Popover>
-                  </Dropdown.SubmenuTrigger>
-
-                  <Dropdown.SubmenuTrigger>
-                    <Dropdown.Item id="implementation" textValue="Implementation">
-                      <Label>Implementation</Label>
-                      <span className="ml-auto text-xs capitalize text-muted">
-                        {filters.implementation}
-                      </span>
-                      <Dropdown.SubmenuIndicator />
-                    </Dropdown.Item>
-                    <Dropdown.Popover className="min-w-44">
-                      <Dropdown.Menu
-                        selectedKeys={implementationSelection}
-                        selectionMode="single"
-                        onSelectionChange={handleImplementationSelectionChange}
-                      >
-                        {implementationOptions.map((value) => (
-                          <Dropdown.Item id={value} key={value} textValue={value}>
-                            <Label>
-                              {value === "all" ? "Any implementation" : capitalize(value)}
-                            </Label>
-                            <Dropdown.ItemIndicator />
-                          </Dropdown.Item>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown.Popover>
-                  </Dropdown.SubmenuTrigger>
-
-                  <Dropdown.SubmenuTrigger>
-                    <Dropdown.Item id="protection" textValue="Protection">
-                      <Label>Protection</Label>
-                      <span className="ml-auto text-xs uppercase text-muted">
-                        {filters.protectionLevel}
-                      </span>
-                      <Dropdown.SubmenuIndicator />
-                    </Dropdown.Item>
-                    <Dropdown.Popover className="min-w-44">
-                      <Dropdown.Menu
-                        selectedKeys={protectionSelection}
-                        selectionMode="single"
-                        onSelectionChange={handleProtectionSelectionChange}
-                      >
-                        {protectionOptions.map((value) => (
-                          <Dropdown.Item id={value} key={value} textValue={value}>
-                            <Label>
-                              {value === "all" ? "Any protection" : value.toUpperCase()}
-                            </Label>
-                            <Dropdown.ItemIndicator />
-                          </Dropdown.Item>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown.Popover>
-                  </Dropdown.SubmenuTrigger>
-
-                  <Dropdown.Item
-                    id="clear"
-                    isDisabled={activeFilterCount === 0}
-                    textValue="Clear filters"
-                  >
-                    <Label>Clear filters</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
+            <AccountFilterMenu counts={filterCounts} filters={filters} onChange={onFiltersChange} />
           </span>
         </Tooltip.Trigger>
         <Tooltip.Content showArrow>
@@ -287,7 +141,7 @@ export function AccountsTableControls({
               >
                 <HugeiconsIcon icon={LayoutThreeColumnIcon} />
               </Button>
-              <Popover.Content className="w-72 p-0" placement="bottom end">
+              <Popover.Content className="w-96 p-0" placement="bottom end">
                 <Popover.Dialog className="outline-none">
                   <div className="grid gap-3 p-3">
                     <Popover.Heading className="text-xs font-medium">View options</Popover.Heading>
@@ -380,6 +234,7 @@ export function AccountsTableControls({
                         variant="secondary"
                       >
                         Name
+                        <HugeiconsIcon className="ml-0.5 size-3.5" icon={Tick02Icon} />
                       </Button>
                       {columnOptions.map((column) => (
                         <ColumnToggle
@@ -418,4 +273,4 @@ export function AccountsTableControls({
   );
 }
 
-export type { AccountFilters, AccountGrouping, AccountsTableControlsProps, ColumnOption };
+export type { AccountGrouping, AccountsTableControlsProps, ColumnOption };
