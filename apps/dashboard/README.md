@@ -79,8 +79,8 @@ copy the full address while retaining it in an accessible tooltip.
 shell with Overview, Session Keys, and Usage navigation. The overview prefetches
 the wallet detail into the shared atom registry and presents its metadata,
 semantic status, namespace, implementation, protection, identifiers,
-implementation-specific configuration, and timeline through reusable display
-components. Account names and row actions in `/accounts` link to the overview.
+and creation date through reusable display components. Account names and row
+actions in `/accounts` link to the overview.
 Session Keys and Usage currently retain the detail shell with focused placeholder
 content for their later implementations.
 

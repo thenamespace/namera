@@ -34,7 +34,7 @@ export function AccountShell({ account, children }: AccountShellProps) {
 
   return (
     <DashboardPage>
-      <DashboardPage.Header className="border-b border-separator">
+      <DashboardPage.Header>
         <DashboardPage.Title>
           <Link className="text-muted transition-colors hover:text-foreground" to="/accounts">
             Accounts
@@ -48,7 +48,7 @@ export function AccountShell({ account, children }: AccountShellProps) {
         </DashboardPage.Title>
       </DashboardPage.Header>
 
-      <nav aria-label="Account sections" className="border-b border-separator px-4 sm:px-6">
+      <nav aria-label="Account sections" className="px-4 sm:px-6">
         <div className="flex h-12 items-center gap-1">
           {accountSections.map((section) => (
             <Link
@@ -66,24 +66,25 @@ export function AccountShell({ account, children }: AccountShellProps) {
       </nav>
 
       <DashboardPage.Content className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
-        <header className="flex items-start gap-5 sm:gap-6">
+        <header className="flex flex-col items-start">
           <IconPreview
-            className="mt-1 shrink-0 shadow-sm"
+            className="shrink-0 shadow-sm"
             size="lg"
             value={account.metadata.logo ?? fallbackAccountIcon}
           />
-          <div className="min-w-0">
-            <Typography.Heading className="truncate text-3xl tracking-tight" level={2}>
-              {account.metadata.name}
-            </Typography.Heading>
-            <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
-              {account.metadata.description ??
-                "A programmable smart account for controlled onchain operations."}
-            </Typography.Paragraph>
-          </div>
+          <Typography.Heading
+            className="mt-5 max-w-full truncate text-3xl tracking-tight"
+            level={2}
+          >
+            {account.metadata.name}
+          </Typography.Heading>
+          <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
+            {account.metadata.description ??
+              "A programmable smart account for controlled onchain operations."}
+          </Typography.Paragraph>
         </header>
 
-        <div className="mt-12">{children}</div>
+        <div className="mt-10">{children}</div>
       </DashboardPage.Content>
     </DashboardPage>
   );
