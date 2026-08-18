@@ -1,0 +1,124 @@
+import type { ReactNode } from "react";
+
+import { Button, Checkbox, Dropdown, Label, type DataGridSelection } from "@namera-ai/ui";
+import { FilterHorizontalIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { useEventCallback } from "usehooks-ts";
+
+type TableFilterOption = {
+  count?: number;
+  id: string;
+  label: string;
+  content?: ReactNode;
+};
+
+type TableFilterFacet = {
+  icon: ReactNode;
+  id: string;
+  label: string;
+  options: ReadonlyArray<TableFilterOption>;
+  selectedKeys: ReadonlySet<string>;
+  onSelectionChange: (selection: DataGridSelection) => void;
+};
+
+type TableFilterMenuProps = {
+  ariaLabel: string;
+  facets: ReadonlyArray<TableFilterFacet>;
+  onClear: () => void;
+};
+
+function selectionSummary(facet: TableFilterFacet): string {
+  if (facet.selectedKeys.size === 0) return "Any";
+  if (facet.selectedKeys.size === 1) {
+    const selected = facet.selectedKeys.values().next().value;
+    return facet.options.find((option) => option.id === selected)?.label ?? "Any";
+  }
+  return `${facet.selectedKeys.size} selected`;
+}
+
+function TableFilterCheckbox({ isSelected, label }: { isSelected: boolean; label: string }) {
+  return (
+    <Checkbox
+      isReadOnly
+      aria-label={label}
+      className="pointer-events-none shrink-0 [&_input]:hidden"
+      isSelected={isSelected}
+    >
+      <Checkbox.Content>
+        <Checkbox.Control className="rounded-sm before:rounded-sm">
+          <Checkbox.Indicator />
+        </Checkbox.Control>
+      </Checkbox.Content>
+    </Checkbox>
+  );
+}
+
+export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuProps) {
+  const activeFilterCount = facets.reduce((count, facet) => count + facet.selectedKeys.size, 0);
+  const handleRootAction = useEventCallback((key: string | number) => {
+    if (key === "clear") onClear();
+  });
+
+  return (
+    <Dropdown>
+      <Button
+        isIconOnly
+        aria-label={ariaLabel}
+        className="relative rounded-full"
+        size="sm"
+        variant="tertiary"
+      >
+        <HugeiconsIcon icon={FilterHorizontalIcon} />
+        {activeFilterCount > 0 ? (
+          <span className="bg-accent text-accent-foreground absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-[10px] font-medium">
+            {activeFilterCount}
+          </span>
+        ) : null}
+      </Button>
+
+      <Dropdown.Popover className="min-w-72" placement="bottom end">
+        <Dropdown.Menu onAction={handleRootAction}>
+          {facets.map((facet) => (
+            <Dropdown.SubmenuTrigger key={facet.id}>
+              <Dropdown.Item id={facet.id} textValue={facet.label}>
+                {facet.icon}
+                <Label>{facet.label}</Label>
+                <span className="ml-auto max-w-24 truncate text-xs text-muted">
+                  {selectionSummary(facet)}
+                </span>
+                <Dropdown.SubmenuIndicator />
+              </Dropdown.Item>
+              <Dropdown.Popover className="min-w-64">
+                <Dropdown.Menu
+                  selectedKeys={facet.selectedKeys}
+                  selectionMode="multiple"
+                  onSelectionChange={facet.onSelectionChange}
+                >
+                  {facet.options.map((option) => (
+                    <Dropdown.Item id={option.id} key={option.id} textValue={option.label}>
+                      <TableFilterCheckbox
+                        isSelected={facet.selectedKeys.has(option.id)}
+                        label={`Filter by ${option.label}`}
+                      />
+                      {option.content ?? <Label>{option.label}</Label>}
+                      {option.count === undefined ? null : (
+                        <span className="ml-auto text-xs tabular-nums text-muted">
+                          {option.count}
+                        </span>
+                      )}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown.SubmenuTrigger>
+          ))}
+
+          <Dropdown.Item id="clear" isDisabled={activeFilterCount === 0} textValue="Clear filters">
+            <Label>Clear filters</Label>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
+}
+
+export type { TableFilterFacet, TableFilterMenuProps, TableFilterOption };

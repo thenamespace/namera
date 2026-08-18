@@ -13,6 +13,7 @@ import {
 } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
+import type { TableOption } from "@/components/common/table";
 import {
   DateDisplay,
   EvmAddressDisplay,
@@ -25,7 +26,7 @@ import {
 import { useWallets } from "@/hooks/wallet";
 
 import { AccountActions } from "./actions";
-import { AccountsTableControls, type AccountGrouping, type ColumnOption } from "./controls";
+import { AccountsTableControls, type AccountGrouping } from "./controls";
 import {
   createEmptyAccountFilters,
   type AccountFilterCounts,
@@ -110,7 +111,6 @@ const accountSorters: Record<
 
 const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? (
@@ -126,16 +126,14 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     width: "1fr",
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) => (isAccountGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
     header: "Namespace",
     id: "namespace",
-    minWidth: 105,
-    width: 105,
+    minWidth: 160,
+    width: 160,
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) => (isAccountGroup(row) ? null : <EvmAddressDisplay address={row.address} />),
     header: "Address",
@@ -144,7 +142,6 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     width: 220,
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? null : (
@@ -156,7 +153,6 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     width: 140,
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
     header: "Status",
@@ -165,7 +161,6 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     width: 105,
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? null : (
@@ -177,18 +172,16 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     width: 115,
   },
   {
-    allowsResizing: true,
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? null : <DateDisplay label="Created" value={row.createdAt} />,
     header: "Created",
     id: "createdAt",
-    minWidth: 105,
-    width: 120,
+    minWidth: 160,
+    width: 160,
   },
   {
     align: "center",
-    allowsResizing: false,
     allowsSorting: false,
     cell: (row) => (isAccountGroup(row) ? null : <AccountActions account={row} />),
     cellClassName: "px-1",
@@ -202,11 +195,11 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
   },
 ];
 
-const configurableColumns: ReadonlyArray<ColumnOption> = columns
+const configurableColumns: ReadonlyArray<TableOption> = columns
   .filter((column) => columnIds.includes(column.id as ConfigurableColumnId))
   .map((column) => ({ id: column.id, label: String(column.header) }));
 
-const sortableColumns: ReadonlyArray<ColumnOption> = columns
+const sortableColumns: ReadonlyArray<TableOption> = columns
   .filter((column) => column.allowsSorting)
   .map((column) => ({ id: column.id, label: String(column.header) }));
 
@@ -355,7 +348,6 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
       ) : null}
 
       <DataGrid
-        allowsColumnResize
         aria-label="Organization accounts"
         className="accounts-data-grid"
         columns={displayedColumns}
