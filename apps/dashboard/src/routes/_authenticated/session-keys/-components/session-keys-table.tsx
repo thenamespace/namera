@@ -33,7 +33,7 @@ import {
 import { useSessionKeys } from "@/hooks/session-key";
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-const columnIds = ["status", "account", "creator", "namespace", "createdAt"] as const;
+const columnIds = ["account", "namespace", "creator", "status", "createdAt"] as const;
 const statusOptions = ["active", "revoked"] as const;
 const groupingOptions = [
   { id: "none", label: "No grouping" },
@@ -85,14 +85,6 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <SessionKeyStatusDisplay status={row.status} />),
-    header: "Status",
-    id: "status",
-    minWidth: 100,
-    width: 120,
-  },
-  {
-    allowsSorting: true,
     cell: (row) =>
       isGroup(row) ? null : (
         <MetadataDisplay fallbackName="Unnamed account" metadata={row.wallet.metadata} />
@@ -101,6 +93,14 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
     id: "account",
     minWidth: 150,
     width: 190,
+  },
+  {
+    allowsSorting: true,
+    cell: (row) => (isGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
+    header: "Namespace",
+    id: "namespace",
+    minWidth: 120,
+    width: 150,
   },
   {
     allowsSorting: true,
@@ -118,11 +118,11 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
-    header: "Namespace",
-    id: "namespace",
-    minWidth: 120,
-    width: 150,
+    cell: (row) => (isGroup(row) ? null : <SessionKeyStatusDisplay status={row.status} />),
+    header: "Status",
+    id: "status",
+    minWidth: 100,
+    width: 120,
   },
   {
     allowsSorting: true,
