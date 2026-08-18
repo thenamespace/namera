@@ -7,8 +7,17 @@ import type {
   GetOrganizationRoleResponse,
   ListOrganizationMemberResponse,
 } from "@namera-ai/protocol/dto";
-import { DataGrid, SearchField, Typography, type DataGridColumn } from "@namera-ai/ui";
+import {
+  DataGrid,
+  SearchField,
+  Typography,
+  type DataGridColumn,
+  type DataGridSelection,
+  type DataGridSortDescriptor,
+} from "@namera-ai/ui";
+import { useEventCallback } from "usehooks-ts";
 
+import { TableViewOptions, type TableOption } from "@/components/common/table";
 import {
   DateDisplay,
   EmailDisplay,
@@ -37,6 +46,8 @@ const createMemberColumns = (
     id: "name",
     isRowHeader: true,
     minWidth: 180,
+    pinned: "start",
+    width: "1fr",
     sortFn: (left, right) =>
       memberCollator.compare(
         left.user.metadata.name ?? left.user.email,
@@ -49,6 +60,7 @@ const createMemberColumns = (
     header: "Email",
     id: "email",
     minWidth: 220,
+    width: 260,
     sortFn: (left, right) => memberCollator.compare(left.user.email, right.user.email),
   },
   {
@@ -57,6 +69,7 @@ const createMemberColumns = (
     header: "Role",
     id: "role",
     minWidth: 120,
+    width: 150,
     sortFn: (left, right) =>
       memberCollator.compare(
         left.organizationRole.metadata.name,
@@ -71,6 +84,7 @@ const createMemberColumns = (
     header: "Joined",
     id: "joinedAt",
     minWidth: 140,
+    width: 160,
     sortFn: (left, right) =>
       DateTime.toEpochMillis(left.organizationMember.joinedAt) -
       DateTime.toEpochMillis(right.organizationMember.joinedAt),
@@ -97,6 +111,7 @@ const getMemberId = ({ organizationMember }: GetOrganizationMemberResponse) =>
 const renderEmptyState = () => "No members found.";
 const invitationCreatePermission = ["invitation:create"] as const;
 const emptyRoles: ReadonlyArray<GetOrganizationRoleResponse> = [];
+const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
 
 type MembersTableProps = {
   canManageMembers: boolean;
@@ -169,13 +184,20 @@ function MembersTableContent({
   rolesLoading,
 }: MembersTableContentProps) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<DataGridSortDescriptor>({
+    column: "joinedAt",
+    direction: "descending",
+  });
+  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
+    new Set(["email", "role", "joinedAt"]),
+  );
   const normalizedQuery = query.trim().toLowerCase();
   const columns = useMemo(
     () => createMemberColumns(roleData, canManageMembers),
     [canManageMembers, roleData],
   );
 
-  const visibleMembers = useMemo(
+  const filteredMembers = useMemo(
     () =>
       memberData.filter(({ user }) => {
         const name = user.metadata.name?.toLowerCase() ?? "";
@@ -183,6 +205,37 @@ function MembersTableContent({
       }),
     [memberData, normalizedQuery],
   );
+  const sortedMembers = useMemo(() => {
+    const sorter = columns.find((column) => column.id === sort.column)?.sortFn;
+    if (!sorter) return filteredMembers;
+    const direction = sort.direction === "descending" ? -1 : 1;
+    return filteredMembers.toSorted((left, right) => sorter(left, right) * direction);
+  }, [columns, filteredMembers, sort]);
+  const configurableColumns = useMemo<ReadonlyArray<TableOption>>(
+    () =>
+      columns
+        .filter((column) => column.id !== "name" && column.id !== "actions")
+        .map((column) => ({ id: column.id, label: String(column.header) })),
+    [columns],
+  );
+  const sortableColumns = useMemo<ReadonlyArray<TableOption>>(
+    () =>
+      columns
+        .filter((column) => column.allowsSorting)
+        .map((column) => ({ id: column.id, label: String(column.header) })),
+    [columns],
+  );
+  const displayedColumns = useMemo(() => {
+    const visible =
+      visibleColumns === "all" ? new Set(configurableColumns.map(({ id }) => id)) : visibleColumns;
+    return columns.filter(
+      (column) => column.id === "name" || column.id === "actions" || visible.has(column.id),
+    );
+  }, [columns, configurableColumns, visibleColumns]);
+  const resetView = useEventCallback(() => {
+    setSort({ column: "joinedAt", direction: "descending" });
+    setVisibleColumns(new Set(["email", "role", "joinedAt"]));
+  });
 
   return (
     <div className="grid gap-5">
@@ -199,9 +252,22 @@ function MembersTableContent({
             <SearchField.ClearButton aria-label="Clear member filter" />
           </SearchField.Group>
         </SearchField>
-        <PermissionGuard required={invitationCreatePermission}>
-          <InviteMemberDialog initialRoles={roleData} />
-        </PermissionGuard>
+        <div className="ml-auto flex items-center gap-2">
+          <TableViewOptions
+            ariaLabel="Configure members table view"
+            columnOptions={configurableColumns}
+            fixedColumnOptions={fixedColumnOptions}
+            sort={sort}
+            sortableColumns={sortableColumns}
+            visibleColumns={visibleColumns}
+            onReset={resetView}
+            onSortChange={setSort}
+            onVisibleColumnsChange={setVisibleColumns}
+          />
+          <PermissionGuard required={invitationCreatePermission}>
+            <InviteMemberDialog initialRoles={roleData} />
+          </PermissionGuard>
+        </div>
       </div>
 
       {members.isLoading || rolesLoading ? (
@@ -212,12 +278,13 @@ function MembersTableContent({
       ) : null}
       <DataGrid
         aria-label="Organization members"
-        columns={columns}
-        contentClassName="min-w-[760px]"
-        data={visibleMembers}
+        columns={displayedColumns}
+        data={sortedMembers}
         getRowId={getMemberId}
         renderEmptyState={renderEmptyState}
+        sortDescriptor={sort}
         variant="secondary"
+        onSortChange={setSort}
       />
     </div>
   );

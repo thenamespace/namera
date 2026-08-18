@@ -7,91 +7,140 @@ import type {
   ListApiKeysResponse,
   ListSessionKeysForOrganizationResponse,
 } from "@namera-ai/protocol/dto";
-import { Chip, DataGrid, SearchField, Typography, type DataGridColumn } from "@namera-ai/ui";
+import {
+  Chip,
+  DataGrid,
+  SearchField,
+  Typography,
+  type DataGridColumn,
+  type DataGridSelection,
+  type DataGridSortDescriptor,
+} from "@namera-ai/ui";
+import { Activity01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { useEventCallback } from "usehooks-ts";
 
+import {
+  TableControls,
+  TableFilterControl,
+  TableViewOptions,
+  type TableFilterFacet,
+  type TableOption,
+} from "@/components/common/table";
 import { DateDisplay, MetadataDisplay } from "@/components/display";
 import { useApiKeys } from "@/hooks/api-key";
 
 import { ApiKeyActions } from "./api-key-actions";
 import { CreateApiKeyDialog } from "./create-api-key-dialog";
 
-const apiKeyCollator = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: "base",
-});
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const statusOptions = ["active", "expired", "revoked"] as const;
+type ApiKeyStatus = (typeof statusOptions)[number];
+const columnIds = [
+  "keyStart",
+  "creator",
+  "sessionKeys",
+  "status",
+  "expiresAt",
+  "createdAt",
+] as const;
+const groupingOptions = [
+  { id: "none", label: "No grouping" },
+  { id: "status", label: "Status" },
+] as const;
+type Grouping = (typeof groupingOptions)[number]["id"];
+type GroupRow = {
+  children: ReadonlyArray<ApiKeyResponse>;
+  id: string;
+  kind: "group";
+  status: ApiKeyStatus;
+};
+type Row = ApiKeyResponse | GroupRow;
+const isGroup = (row: Row): row is GroupRow => "kind" in row;
 
-const getStatus = (apiKey: ApiKeyResponse) => {
-  if (apiKey.revokedAt !== null) return "revoked" as const;
+const getStatus = (apiKey: ApiKeyResponse): ApiKeyStatus => {
+  if (apiKey.revokedAt !== null) return "revoked";
   if (apiKey.expiresAt !== null && DateTime.toEpochMillis(apiKey.expiresAt) <= Date.now()) {
-    return "expired" as const;
+    return "expired";
   }
-  return "active" as const;
+  return "active";
 };
 
-const createApiKeyColumns = (canRevoke: boolean): DataGridColumn<ApiKeyResponse>[] => [
+function StatusDisplay({ status }: { status: ApiKeyStatus }) {
+  return (
+    <Chip color={status === "active" ? "success" : "default"} size="sm" variant="soft">
+      <Chip.Label className="capitalize font-normal">{status}</Chip.Label>
+    </Chip>
+  );
+}
+
+const createColumns = (canRevoke: boolean): ReadonlyArray<DataGridColumn<Row>> => [
   {
     allowsSorting: true,
-    cell: (apiKey) => <MetadataDisplay fallbackName="Unnamed API key" metadata={apiKey.metadata} />,
+    cell: (row) =>
+      isGroup(row) ? (
+        <span className="flex items-center gap-2">
+          <StatusDisplay status={row.status} />
+          <span className="text-xs tabular-nums text-muted">{row.children.length}</span>
+        </span>
+      ) : (
+        <MetadataDisplay fallbackName="Unnamed API key" metadata={row.metadata} />
+      ),
     header: "Name",
     id: "name",
     isRowHeader: true,
-    minWidth: 150,
-    sortFn: (left, right) => apiKeyCollator.compare(left.metadata.name, right.metadata.name),
+    minWidth: 160,
+    pinned: "start",
+    width: "1fr",
   },
   {
     allowsSorting: true,
-    cell: (apiKey) => <code className="text-muted text-xs">{apiKey.keyStart}…</code>,
+    cell: (row) =>
+      isGroup(row) ? null : <code className="text-xs text-muted">{row.keyStart}…</code>,
     header: "Key",
     id: "keyStart",
     minWidth: 110,
-    sortFn: (left, right) => apiKeyCollator.compare(left.keyStart, right.keyStart),
+    width: 130,
   },
   {
     allowsSorting: true,
-    cell: ({ creator }) => (
-      <MetadataDisplay fallbackName={creator.user.email} metadata={creator.user.metadata} />
-    ),
+    cell: (row) =>
+      isGroup(row) ? null : (
+        <MetadataDisplay
+          fallbackName={row.creator.user.email}
+          metadata={row.creator.user.metadata}
+        />
+      ),
     header: "Created by",
     id: "creator",
     minWidth: 150,
-    sortFn: (left, right) =>
-      apiKeyCollator.compare(
-        left.creator.user.metadata.name ?? left.creator.user.email,
-        right.creator.user.metadata.name ?? right.creator.user.email,
-      ),
+    width: 190,
   },
   {
     allowsSorting: true,
-    cell: ({ sessionKeys }) => (
-      <Typography className="text-sm!" color="muted">
-        {sessionKeys.length} session key{sessionKeys.length === 1 ? "" : "s"}
-      </Typography>
-    ),
+    cell: (row) =>
+      isGroup(row) ? null : (
+        <Typography className="text-sm!" color="muted">
+          {row.sessionKeys.length} session key{row.sessionKeys.length === 1 ? "" : "s"}
+        </Typography>
+      ),
     header: "Access",
     id: "sessionKeys",
     minWidth: 130,
-    sortFn: (left, right) => left.sessionKeys.length - right.sessionKeys.length,
+    width: 150,
   },
   {
     allowsSorting: true,
-    cell: (apiKey) => {
-      const status = getStatus(apiKey);
-      return (
-        <Chip color={status === "active" ? "success" : "default"} size="sm" variant="soft">
-          <Chip.Label className="capitalize font-normal">{status}</Chip.Label>
-        </Chip>
-      );
-    },
+    cell: (row) => (isGroup(row) ? null : <StatusDisplay status={getStatus(row)} />),
     header: "Status",
     id: "status",
     minWidth: 100,
-    sortFn: (left, right) => apiKeyCollator.compare(getStatus(left), getStatus(right)),
+    width: 115,
   },
   {
     allowsSorting: true,
-    cell: ({ expiresAt }) =>
-      expiresAt ? (
-        <DateDisplay label="Expires" value={expiresAt} />
+    cell: (row) =>
+      isGroup(row) ? null : row.expiresAt ? (
+        <DateDisplay label="Expires" value={row.expiresAt} />
       ) : (
         <Typography className="text-sm!" color="muted">
           Never
@@ -99,26 +148,23 @@ const createApiKeyColumns = (canRevoke: boolean): DataGridColumn<ApiKeyResponse>
       ),
     header: "Valid until",
     id: "expiresAt",
-    minWidth: 120,
-    sortFn: (left, right) =>
-      (left.expiresAt ? DateTime.toEpochMillis(left.expiresAt) : Number.POSITIVE_INFINITY) -
-      (right.expiresAt ? DateTime.toEpochMillis(right.expiresAt) : Number.POSITIVE_INFINITY),
+    minWidth: 130,
+    width: 150,
   },
   {
     allowsSorting: true,
-    cell: ({ createdAt }) => <DateDisplay label="Created" value={createdAt} />,
+    cell: (row) => (isGroup(row) ? null : <DateDisplay label="Created" value={row.createdAt} />),
     header: "Created",
     id: "createdAt",
-    minWidth: 110,
-    sortFn: (left, right) =>
-      DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
+    minWidth: 130,
+    width: 150,
   },
   ...(canRevoke
     ? [
         {
           align: "end" as const,
-          cell: (apiKey: ApiKeyResponse) => <ApiKeyActions apiKey={apiKey} />,
-          header: "",
+          cell: (row: Row) => (isGroup(row) ? null : <ApiKeyActions apiKey={row} />),
+          header: <span className="sr-only">Actions</span>,
           id: "actions",
           pinned: "end" as const,
           width: 48,
@@ -127,8 +173,21 @@ const createApiKeyColumns = (canRevoke: boolean): DataGridColumn<ApiKeyResponse>
     : []),
 ];
 
-const getApiKeyId = (apiKey: ApiKeyResponse) => apiKey.id;
-const renderEmptyState = () => "No API keys found.";
+const sorters: Record<string, (left: ApiKeyResponse, right: ApiKeyResponse) => number> = {
+  name: (left, right) => collator.compare(left.metadata.name, right.metadata.name),
+  keyStart: (left, right) => collator.compare(left.keyStart, right.keyStart),
+  creator: (left, right) => collator.compare(left.creator.user.email, right.creator.user.email),
+  sessionKeys: (left, right) => left.sessionKeys.length - right.sessionKeys.length,
+  status: (left, right) => collator.compare(getStatus(left), getStatus(right)),
+  expiresAt: (left, right) =>
+    (left.expiresAt ? DateTime.toEpochMillis(left.expiresAt) : Number.POSITIVE_INFINITY) -
+    (right.expiresAt ? DateTime.toEpochMillis(right.expiresAt) : Number.POSITIVE_INFINITY),
+  createdAt: (left, right) =>
+    DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
+};
+const getRowId = (row: Row) => row.id;
+const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
+const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
 
 type ApiKeysTableProps = {
   canCreate: boolean;
@@ -144,27 +203,108 @@ export function ApiKeysTable({
   initialSessionKeys,
 }: ApiKeysTableProps) {
   const apiKeys = useApiKeys();
-  const apiKeyData = apiKeys.data ?? initialApiKeys;
+  const data = apiKeys.data ?? initialApiKeys;
   const [query, setQuery] = useState("");
-  const columns = useMemo(() => createApiKeyColumns(canRevoke), [canRevoke]);
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleApiKeys = useMemo(
+  const [statuses, setStatuses] = useState<ReadonlySet<ApiKeyStatus>>(new Set(["active"]));
+  const [grouping, setGrouping] = useState<Grouping>("none");
+  const [sort, setSort] = useState<DataGridSortDescriptor>({
+    column: "createdAt",
+    direction: "descending",
+  });
+  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(new Set(columnIds));
+  const columns = useMemo(() => createColumns(canRevoke), [canRevoke]);
+  const configurableColumns = useMemo<ReadonlyArray<TableOption>>(
     () =>
-      apiKeyData.filter((apiKey) => {
+      columns
+        .filter((column) => column.id !== "name" && column.id !== "actions")
+        .map((column) => ({ id: column.id, label: String(column.header) })),
+    [columns],
+  );
+  const sortableColumns = useMemo<ReadonlyArray<TableOption>>(
+    () =>
+      columns
+        .filter((column) => column.allowsSorting)
+        .map((column) => ({ id: column.id, label: String(column.header) })),
+    [columns],
+  );
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      data.filter((apiKey) => {
         const creatorName = apiKey.creator.user.metadata.name?.toLowerCase() ?? "";
-        return (
+        const matchesQuery =
+          normalizedQuery.length === 0 ||
           apiKey.metadata.name.toLowerCase().includes(normalizedQuery) ||
           apiKey.keyStart.toLowerCase().includes(normalizedQuery) ||
           creatorName.includes(normalizedQuery) ||
-          apiKey.creator.user.email.toLowerCase().includes(normalizedQuery)
-        );
+          apiKey.creator.user.email.toLowerCase().includes(normalizedQuery);
+        return matchesQuery && (statuses.size === 0 || statuses.has(getStatus(apiKey)));
       }),
-    [apiKeyData, normalizedQuery],
+    [data, normalizedQuery, statuses],
   );
+  const sorted = useMemo(() => {
+    const sorter = sorters[String(sort.column)];
+    if (!sorter) return filtered;
+    const direction = sort.direction === "descending" ? -1 : 1;
+    return filtered.toSorted((left, right) => sorter(left, right) * direction);
+  }, [filtered, sort]);
+  const rows = useMemo<Row[]>(() => {
+    if (grouping === "none") return sorted;
+    return statusOptions.flatMap((status) => {
+      const children = sorted.filter((item) => getStatus(item) === status);
+      return children.length === 0
+        ? []
+        : [{ children, id: `group:status:${status}`, kind: "group" as const, status }];
+    });
+  }, [grouping, sorted]);
+  const displayedColumns = useMemo(() => {
+    const visible = visibleColumns === "all" ? new Set(columnIds) : visibleColumns;
+    return columns.filter(
+      (column) =>
+        column.id === "name" || column.id === "actions" || visible.has(column.id as never),
+    );
+  }, [columns, visibleColumns]);
+  const facets = useMemo<ReadonlyArray<TableFilterFacet>>(
+    () => [
+      {
+        id: "status",
+        label: "Status",
+        icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        selectedKeys: statuses,
+        options: statusOptions.map((status) => ({
+          id: status,
+          label: `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+          content: <StatusDisplay status={status} />,
+          count: data.filter((item) => getStatus(item) === status).length,
+        })),
+        onSelectionChange: (keys) =>
+          setStatuses(
+            keys === "all"
+              ? new Set(statusOptions)
+              : new Set([...keys].map(String) as ApiKeyStatus[]),
+          ),
+      },
+    ],
+    [data, statuses],
+  );
+  const renderEmptyState = useEventCallback(() =>
+    normalizedQuery.length > 0 || statuses.size > 0
+      ? "No API keys match these filters."
+      : "No API keys yet.",
+  );
+  const resetView = useEventCallback(() => {
+    setGrouping("none");
+    setSort({ column: "createdAt", direction: "descending" });
+    setVisibleColumns(new Set(columnIds));
+  });
+  const clearFilters = useEventCallback(() => setStatuses(new Set()));
+  const handleGroupingChange = useEventCallback((value: string) => {
+    setGrouping(value as Grouping);
+  });
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
         <SearchField
           aria-label="Filter API keys"
           className="w-full sm:max-w-80"
@@ -173,25 +313,51 @@ export function ApiKeysTable({
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Filter API keys..." />
-            <SearchField.ClearButton aria-label="Clear API key filter" />
+            <SearchField.Input placeholder="Filter API keys…" />
+            <SearchField.ClearButton aria-label="Clear API key search" />
           </SearchField.Group>
         </SearchField>
-        {canCreate ? <CreateApiKeyDialog initialSessionKeys={initialSessionKeys} /> : null}
+        <div className="ml-auto flex items-center gap-2">
+          <TableControls>
+            <TableFilterControl
+              ariaLabel="Apply API key filters"
+              facets={facets}
+              onClear={clearFilters}
+            />
+            <TableViewOptions
+              ariaLabel="Configure API key table view"
+              columnOptions={configurableColumns}
+              fixedColumnOptions={fixedColumnOptions}
+              grouping={grouping}
+              groupingOptions={groupingOptions}
+              sort={sort}
+              sortableColumns={sortableColumns}
+              visibleColumns={visibleColumns}
+              onGroupingChange={handleGroupingChange}
+              onReset={resetView}
+              onSortChange={setSort}
+              onVisibleColumnsChange={setVisibleColumns}
+            />
+          </TableControls>
+          {canCreate ? <CreateApiKeyDialog initialSessionKeys={initialSessionKeys} /> : null}
+        </div>
       </div>
-
       {apiKeys.isLoading ? <Typography color="muted">Loading API keys…</Typography> : null}
       {apiKeys.isError ? (
         <Typography className="text-danger">Couldn’t load API keys.</Typography>
       ) : null}
       <DataGrid
         aria-label="Organization API keys"
-        columns={columns}
-        contentClassName="min-w-[780px]"
-        data={visibleApiKeys}
-        getRowId={getApiKeyId}
+        columns={displayedColumns}
+        data={rows}
+        defaultExpandedKeys="all"
+        getRowId={getRowId}
+        key={grouping}
         renderEmptyState={renderEmptyState}
+        sortDescriptor={sort}
         variant="secondary"
+        onSortChange={setSort}
+        {...(grouping === "none" ? {} : { getChildren })}
       />
     </div>
   );
