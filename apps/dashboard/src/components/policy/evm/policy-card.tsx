@@ -23,7 +23,7 @@ export function EvmPolicyCard({ index, policy, onChange, onRemove }: EvmPolicyCa
 
   return (
     <ItemCard className="rounded-lg" variant="outline">
-      <ItemCard.Icon>
+      <ItemCard.Icon className="self-start">
         <HugeiconsIcon icon={definition.icon} />
       </ItemCard.Icon>
       <ItemCard.Content>
@@ -32,7 +32,7 @@ export function EvmPolicyCard({ index, policy, onChange, onRemove }: EvmPolicyCa
           <EvmPolicySummary policy={policy} />
         </ItemCard.Description>
       </ItemCard.Content>
-      <ItemCard.Action>
+      <ItemCard.Action className="self-start">
         <div className="flex items-center gap-1">
           <Modal>
             <Button

@@ -4,7 +4,7 @@ import type { FormEvent, ReactNode } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { CreateEvmTimeWindowPolicy } from "@namera-ai/protocol";
 import {
   Calendar,
@@ -51,6 +51,8 @@ function DateTimePolicyField({
   onBlur,
   onChange,
 }: DateTimeFieldProps) {
+  const minimumDate = today(getLocalTimeZone());
+
   return (
     <Field data-invalid={Boolean(error)}>
       <DatePicker
@@ -58,7 +60,7 @@ function DateTimePolicyField({
         granularity="day"
         isInvalid={Boolean(error)}
         isRequired={isRequired}
-        minValue={now(getLocalTimeZone())}
+        minValue={minimumDate}
         name={name}
         value={parseDateValue(value)}
         onBlur={onBlur}
@@ -75,7 +77,7 @@ function DateTimePolicyField({
         </DateField.Group>
         {error ? <FieldError errors={[error]} /> : null}
         <DatePicker.Popover className="flex flex-col gap-3">
-          <Calendar aria-label={`Choose ${label.toLowerCase()}`}>
+          <Calendar aria-label={`Choose ${label.toLowerCase()}`} minValue={minimumDate}>
             <Calendar.Header>
               <Calendar.YearPickerTrigger>
                 <Calendar.YearPickerTriggerHeading />
