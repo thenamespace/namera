@@ -25,6 +25,7 @@ import {
   signatureVerificationDuration,
   signatureVerificationResults,
 } from "@namera-ai/telemetry";
+import { utf8ByteLength } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { enforceSignatureLimit, lockOrganizationBilling } from "#/billing/index";
@@ -36,7 +37,6 @@ type GrantedSessionKey = {
 };
 
 const encodeRequest = Schema.encodeSync(SignRequest);
-const textEncoder = new TextEncoder();
 
 export interface SignatureApplication {
   readonly sign: (input: {
@@ -194,11 +194,11 @@ export const makeSignatureApplication = Effect.gen(function* () {
             : { type: "typed-data", typedData: input.request.typedData },
         )
         .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));
-      const payloadSizeBytes = textEncoder.encode(
+      const payloadSizeBytes = utf8ByteLength(
         input.request.type === "message"
           ? input.request.message
           : JSON.stringify(input.request.typedData),
-      ).byteLength;
+      );
       const candidates = input.actor.grants.filter(
         (item): item is GrantedSessionKey =>
           item.sessionKey.namespace === "eip155" &&

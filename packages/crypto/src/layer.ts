@@ -1,7 +1,7 @@
 import { Context, Crypto, Effect, Layer, Redacted } from "effect";
 
 import { CryptoError } from "@namera-ai/protocol";
-import { Base64 } from "@namera-ai/utils";
+import { Base64, decodeUtf8, encodeUtf8 } from "@namera-ai/utils";
 
 import { CryptoConfig } from "./config.js";
 
@@ -10,17 +10,14 @@ type CryptoInput = {
   readonly value: string;
 };
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
 const encryptionVersion = "v1";
 
-const encodeText = (value: string) => textEncoder.encode(value);
 const decodeBase64Url = (value: string) => new Uint8Array(Base64.toUint8Array(value));
 
 // Length-prefixing the purpose creates an unambiguous domain boundary. A token
 // hashed for one protocol cannot be replayed as a credential for another.
 const domainSeparatedValue = ({ purpose, value }: CryptoInput) =>
-  encodeText(`${purpose.length}:${purpose}${value}`);
+  encodeUtf8(`${purpose.length}:${purpose}${value}`);
 
 export class CryptoService extends Context.Service<
   CryptoService,
@@ -98,7 +95,7 @@ export class CryptoService extends Context.Service<
 
       const sha256 = Effect.fnUntraced(function* (value: string) {
         const digest = yield* platformCrypto
-          .digest("SHA-256", encodeText(value))
+          .digest("SHA-256", encodeUtf8(value))
           .pipe(Effect.orDie);
         return Base64.fromUint8Array(digest, true);
       });
@@ -133,11 +130,11 @@ export class CryptoService extends Context.Service<
             {
               name: "AES-GCM",
               iv,
-              additionalData: encodeText(input.purpose),
+              additionalData: encodeUtf8(input.purpose),
               tagLength: 128,
             },
             encryptionKey,
-            encodeText(input.value),
+            encodeUtf8(input.value),
           ),
         );
 
@@ -162,7 +159,7 @@ export class CryptoService extends Context.Service<
               {
                 name: "AES-GCM",
                 iv: decodeBase64Url(encodedIv),
-                additionalData: encodeText(input.purpose),
+                additionalData: encodeUtf8(input.purpose),
                 tagLength: 128,
               },
               encryptionKey,
@@ -171,7 +168,7 @@ export class CryptoService extends Context.Service<
           catch: (cause) => new CryptoError({ cause }),
         });
 
-        return textDecoder.decode(plaintext);
+        return decodeUtf8(plaintext);
       });
 
       return CryptoService.of({

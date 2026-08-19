@@ -10,12 +10,19 @@ state.
 - `src/id.ts` — shared UUIDv7 generation for application and persistence IDs.
 - `src/origin.ts` — URL origin parsing and origin-pattern matching.
 - `src/random.ts` — cryptographically secure random-string helpers.
+- `src/text.ts` — shared UTF-8 encoding, decoding, and byte-length helpers.
 - `src/wildcard.ts` — wildcard matching used by origin utilities.
 
 ## Usage
 
 ```ts
-import { Base64, generateUniqueId, getOrigin, matchesOriginPattern } from "@namera-ai/utils";
+import {
+  Base64,
+  encodeUtf8,
+  generateUniqueId,
+  getOrigin,
+  matchesOriginPattern,
+} from "@namera-ai/utils";
 ```
 
 Keep this package dependency-light. Effect services, configuration, business
