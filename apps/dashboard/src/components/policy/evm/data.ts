@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 
 import { chains } from "@namera-ai/evm";
+import type { EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   CalendarClockIcon,
@@ -28,6 +29,24 @@ export const evmChainById = new Map<SupportedEvmChainId, (typeof evmChainOptions
   evmChainOptions.map((chain) => [chain.id, chain]),
 );
 
+export const nativeSpendPeriodOptions = [
+  { id: "operation", label: "Per operation", description: "Applies to each execution" },
+  { id: "hour", label: "Hourly", description: "Resets at the start of each UTC hour" },
+  { id: "day", label: "Daily", description: "Resets every day at 00:00 UTC" },
+  { id: "week", label: "Weekly", description: "Resets every Monday at 00:00 UTC" },
+  { id: "month", label: "Monthly", description: "Resets on the first day of each UTC month" },
+  { id: "lifetime", label: "Lifetime", description: "Never resets" },
+] as const satisfies ReadonlyArray<{
+  readonly id: EvmNativeSpendLimitPeriod;
+  readonly label: string;
+  readonly description: string;
+}>;
+
+export const nativeSpendPeriodById = new Map<
+  EvmNativeSpendLimitPeriod,
+  (typeof nativeSpendPeriodOptions)[number]
+>(nativeSpendPeriodOptions.map((period) => [period.id, period]));
+
 type PolicyDefinition = {
   readonly type: EvmPolicyType;
   readonly name: string;
@@ -47,7 +66,7 @@ export const evmPolicyDefinitions = {
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
     name: "Native spend",
-    description: "Set a lifetime native-token allowance for each network.",
+    description: "Limit native-token spending per operation or reset period.",
     cardinality: "singleton",
     icon: Coins01Icon,
   },

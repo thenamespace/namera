@@ -6,7 +6,7 @@ import { formatUnits } from "viem";
 
 import { formatDateTime } from "@/lib/helpers/date";
 
-import { evmChainById } from "./data";
+import { evmChainById, nativeSpendPeriodById } from "./data";
 import type { EvmPolicyInput, SignaturePolicyInput } from "./types";
 
 const signatureTypeLabels: Record<SignaturePolicyInput["allowedTypes"][number], string> = {
@@ -46,12 +46,13 @@ function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPol
     <span className="flex flex-wrap items-center gap-1.5">
       {policy.limits.map((limit) => {
         const chain = evmChainById.get(limit.chainId);
-        if (!chain) return <span key={limit.chainId}>{limit.chainId}</span>;
+        const period = nativeSpendPeriodById.get(limit.period)?.label ?? limit.period;
+        if (!chain) return <span key={`${limit.chainId}:${limit.period}`}>{limit.chainId}</span>;
 
         return (
           <span
             className="bg-surface text-muted inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs"
-            key={limit.chainId}
+            key={`${limit.chainId}:${limit.period}`}
           >
             <ChainIcon
               aria-hidden
@@ -63,6 +64,10 @@ function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPol
               {formatUnits(BigInt(limit.maxAmount), chain.nativeCurrency.decimals)}
             </span>
             {chain.nativeCurrency.symbol}
+            <span aria-hidden className="text-muted/70">
+              ·
+            </span>
+            {period}
             <span aria-hidden className="text-muted/70">
               ·
             </span>

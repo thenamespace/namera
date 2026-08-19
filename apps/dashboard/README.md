@@ -109,7 +109,8 @@ policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.
 Shared EVM policy components under `src/components/policy/evm/` own the policy
 catalog, summaries, cards, and editors. Session-key creation supports time
-windows, shared-amount multi-network lifetime native-spend allowances, and
+windows, shared-amount multi-network native-spend allowances scoped per
+operation, UTC hour/day/week/month, or session-key lifetime, and
 message or EIP-712 typed-data signature permissions without duplicating their
 presentation in the route.
 
