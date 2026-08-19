@@ -9,16 +9,17 @@ and subscription history. Organization records do not duplicate plan state.
 stores both the plan key and plan version so existing subscriptions keep the
 limits they were assigned when a future catalog version is introduced.
 
-The only current plan is `free` version 1:
+The current code-owned catalog contains version 1 of each launch plan:
 
-| Entitlement                 | Value |
-| --------------------------- | ----: |
-| Monthly price               |    $0 |
-| Members                     |     5 |
-| Software wallets            |     5 |
-| HSM-backed wallets          |     0 |
-| Included executions / month |   100 |
-| Execution overage           |  none |
+| Entitlement                 |   Free |     Pro |  Business |
+| --------------------------- | -----: | ------: | --------: |
+| Monthly price               |     $0 |     $49 |      $249 |
+| Members                     |      5 |      20 |       100 |
+| Software wallets            |      5 |      20 |       100 |
+| HSM-backed wallets          |      0 |       3 |        10 |
+| Included executions / month |    100 |   2,000 |    10,000 |
+| Included signatures / month | 10,000 | 250,000 | 1,000,000 |
+| Execution overage           |   none |   $0.02 |     $0.02 |
 
 Import the catalog from the application package:
 
@@ -61,9 +62,15 @@ concurrent requests cannot exceed the included allowance. Definitively failed
 submissions release that derived capacity. The free plan has no overage: an
 operation past a limit is rejected.
 
+Signature requests reserve capacity under the same billing-account lock before
+calling the key provider. Current-month successful operations and unexpired
+reservations consume the signature allowance; a definitive provider failure
+marks the reservation failed and releases its capacity. Signature limits are
+hard caps for all plans until paid signature overage is designed explicitly.
+
 ## Deferred
 
-Stripe synchronization, paid-plan mutations, external usage-event delivery, and
+Stripe synchronization, paid-plan mutations, paid usage-event delivery, and
 dashboard billing UI remain deferred. Follow the repository root `STRIPE.md`
 for the planned catalog, subscription, metering, webhook, and rollout
 configuration.

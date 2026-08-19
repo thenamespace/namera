@@ -411,6 +411,7 @@ layer(TestServerLayer)("MCP route", (it) => {
             params: {
               name: "sign",
               arguments: {
+                idempotencyKey: "mcp-signature-1",
                 request: {
                   namespace: "eip155",
                   type: "message",

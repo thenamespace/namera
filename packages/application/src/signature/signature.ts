@@ -1,9 +1,15 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 
-import { Repository } from "@namera-ai/database";
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
+import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
-import { SignatureError } from "@namera-ai/protocol";
-import type { GrantedActorData, SignRequest, SignResponse } from "@namera-ai/protocol/dto";
+import { SignatureError, type BillingError, type SignatureOperationId } from "@namera-ai/protocol";
+import {
+  SignRequest,
+  type GrantedActorData,
+  type SignRequest as SignRequestType,
+  type SignResponse,
+} from "@namera-ai/protocol/dto";
 import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   signatureDuration,
@@ -12,6 +18,7 @@ import {
 } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+import { enforceSignatureLimit, lockOrganizationBilling } from "#/billing/index";
 import { makeLoadEvmAccount } from "#/wallet/account";
 
 type GrantedSessionKey = {
@@ -19,21 +26,111 @@ type GrantedSessionKey = {
   readonly sessionKey: EvmSessionKey;
 };
 
+const encodeRequest = Schema.encodeSync(SignRequest);
+const textEncoder = new TextEncoder();
+
 export interface SignatureApplication {
   readonly sign: (input: {
     readonly actor: GrantedActorData;
-    readonly request: SignRequest;
-  }) => Effect.Effect<SignResponse, SignatureError>;
+    readonly idempotencyKey: string;
+    readonly request: SignRequestType;
+  }) => Effect.Effect<SignResponse, BillingError | SignatureError>;
 }
 
 export const makeSignatureApplication = Effect.gen(function* () {
   const audit = yield* Audit;
+  const crypto = yield* CryptoService;
   const evm = yield* Evm;
   const repository = yield* Repository;
+  const transaction = yield* TransactionService;
   const loadEvmAccount = yield* makeLoadEvmAccount;
 
+  const failOperation = Effect.fn("application.signature.failOperation")(function* (input: {
+    readonly organizationId: GrantedActorData["organizationId"];
+    readonly operationId: SignatureOperationId;
+  }) {
+    yield* transaction.run(
+      Effect.gen(function* () {
+        const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
+          input.operationId,
+          input.organizationId,
+        );
+        if (operation === undefined || operation.status !== "reserved") return;
+
+        yield* repository.core.signatureOperation.markFailed({
+          id: operation.id,
+          organizationId: operation.organizationId,
+          failureCode: "SIGNING_FAILED",
+          failedAt: yield* DateTime.now,
+        });
+      }),
+    );
+  });
+
+  const succeedOperation = Effect.fn("application.signature.succeedOperation")(function* (input: {
+    readonly actor: GrantedActorData;
+    readonly operationId: SignatureOperationId;
+  }) {
+    yield* transaction.run(
+      Effect.gen(function* () {
+        const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
+          input.operationId,
+          input.actor.organizationId,
+        );
+        if (operation === undefined || operation.status !== "reserved") {
+          return yield* Effect.die("Signature operation reservation is missing");
+        }
+
+        const succeeded = yield* repository.core.signatureOperation.markSucceeded({
+          id: operation.id,
+          organizationId: operation.organizationId,
+          succeededAt: yield* DateTime.now,
+        });
+        if (succeeded === undefined) {
+          return yield* Effect.die("Signature operation could not be completed");
+        }
+
+        yield* audit.organization({
+          organizationId: input.actor.organizationId,
+          actorId: input.actor.actorId,
+          event: "signature.created",
+          resourceType: "wallet",
+          resourceId: operation.walletId,
+          data: {
+            version: 1,
+            namespace: "eip155",
+            chainId: operation.data.chainId,
+            type: operation.data.type,
+            sessionKeyGrantId: operation.sessionKeyGrantId,
+          },
+        });
+      }),
+    );
+  });
+
   const sign = Effect.fn("application.signature.sign")(
-    function* (input: { readonly actor: GrantedActorData; readonly request: SignRequest }) {
+    function* (input: {
+      readonly actor: GrantedActorData;
+      readonly idempotencyKey: string;
+      readonly request: SignRequestType;
+    }) {
+      const encodedRequest = encodeRequest(input.request);
+      const requestHash = yield* crypto.hash({
+        purpose: cryptoPurpose.signatureRequest,
+        value: JSON.stringify(encodedRequest),
+      });
+      const prior = yield* repository.core.signatureOperation.findByActorAndIdempotencyKey(
+        input.actor.organizationId,
+        input.actor.actorId,
+        input.idempotencyKey,
+      );
+      if (prior !== undefined) {
+        return yield* new SignatureError({
+          code:
+            prior.requestHash === requestHash ? "SIGNATURE_UNAVAILABLE" : "IDEMPOTENCY_CONFLICT",
+        });
+      }
+
       const wallet = yield* repository.core.wallet.findById(
         input.request.walletId,
         input.actor.organizationId,
@@ -65,6 +162,18 @@ export const makeSignatureApplication = Effect.gen(function* () {
               type: "typed-data",
               typedData: input.request.typedData,
             } as const);
+      const payloadDigest = yield* evm
+        .digestSignature(
+          input.request.type === "message"
+            ? { type: "message", message: input.request.message }
+            : { type: "typed-data", typedData: input.request.typedData },
+        )
+        .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));
+      const payloadSizeBytes = textEncoder.encode(
+        input.request.type === "message"
+          ? input.request.message
+          : JSON.stringify(input.request.typedData),
+      ).byteLength;
       const candidates = input.actor.grants.filter(
         (item): item is GrantedSessionKey =>
           item.sessionKey.namespace === "eip155" &&
@@ -84,7 +193,7 @@ export const makeSignatureApplication = Effect.gen(function* () {
         return yield* new SignatureError({ code: "NO_AUTHORIZED_SESSION_KEY" });
       }
 
-      let selected: GrantedSessionKey | undefined;
+      let operationId: SignatureOperationId | undefined;
       let lastPolicyCode: string | undefined;
       for (const candidate of candidates) {
         const decision = yield* evm.policy.evaluateSignature({
@@ -103,10 +212,76 @@ export const makeSignatureApplication = Effect.gen(function* () {
           lastPolicyCode = decision.code;
           continue;
         }
-        selected = candidate;
+
+        const reserved = yield* transaction.run(
+          Effect.gen(function* () {
+            yield* lockOrganizationBilling(repository, input.actor.organizationId);
+            const existing = yield* repository.core.signatureOperation.findByActorAndIdempotencyKey(
+              input.actor.organizationId,
+              input.actor.actorId,
+              input.idempotencyKey,
+            );
+            if (existing !== undefined) return { existing } as const;
+
+            yield* enforceSignatureLimit(repository, input.actor.organizationId);
+            const reservationNow = yield* DateTime.now;
+            const commonInsert = {
+              organizationId: input.actor.organizationId,
+              actorId: input.actor.actorId,
+              walletId: wallet.wallet.id,
+              sessionKeyId: candidate.sessionKey.id,
+              sessionKeyGrantId: candidate.grant.id,
+              idempotencyKey: input.idempotencyKey,
+              requestHash,
+              policyHash: candidate.sessionKey.policyHash,
+              reservationExpiresAt: DateTime.addDuration(reservationNow, Duration.minutes(5)),
+              namespace: "eip155" as const,
+            };
+            const inserted = yield* repository.core.signatureOperation.insert(
+              input.request.type === "message"
+                ? {
+                    ...commonInsert,
+                    data: {
+                      version: 1,
+                      chainId: input.request.chainId,
+                      account: wallet.wallet.data.address,
+                      type: "message",
+                      message: input.request.message,
+                      payloadDigest,
+                      payloadSizeBytes,
+                    },
+                  }
+                : {
+                    ...commonInsert,
+                    data: {
+                      version: 1,
+                      chainId: input.request.chainId,
+                      account: wallet.wallet.data.address,
+                      type: "typed-data",
+                      typedData: input.request.typedData,
+                      payloadDigest,
+                      payloadSizeBytes,
+                    },
+                  },
+            );
+            return inserted.inserted
+              ? ({ operation: inserted.operation } as const)
+              : ({ existing: inserted.operation } as const);
+          }),
+        );
+        if ("existing" in reserved) {
+          return yield* new SignatureError({
+            code:
+              reserved.existing.requestHash === requestHash
+                ? "SIGNATURE_UNAVAILABLE"
+                : "IDEMPOTENCY_CONFLICT",
+          });
+        }
+
+        operationId = reserved.operation.id;
         break;
       }
-      if (selected === undefined) {
+      if (operationId === undefined) {
         yield* Metric.update(
           Metric.withAttributes(signatureResults, {
             namespace: "eip155",
@@ -128,6 +303,12 @@ export const makeSignatureApplication = Effect.gen(function* () {
         })
         .pipe(
           Effect.tapError(() =>
+            failOperation({
+              organizationId: input.actor.organizationId,
+              operationId,
+            }).pipe(Effect.orDie),
+          ),
+          Effect.tapError(() =>
             Metric.update(
               Metric.withAttributes(signatureResults, {
                 namespace: "eip155",
@@ -139,20 +320,8 @@ export const makeSignatureApplication = Effect.gen(function* () {
           ),
           Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })),
         );
-      yield* audit.organization({
-        organizationId: input.actor.organizationId,
-        actorId: input.actor.actorId,
-        event: "signature.created",
-        resourceType: "wallet",
-        resourceId: wallet.wallet.id,
-        data: {
-          version: 1,
-          namespace: "eip155",
-          chainId: input.request.chainId,
-          type: input.request.type,
-          sessionKeyGrantId: selected.grant.id,
-        },
-      });
+
+      yield* succeedOperation({ actor: input.actor, operationId });
       yield* Metric.update(
         Metric.withAttributes(signatureResults, {
           namespace: "eip155",

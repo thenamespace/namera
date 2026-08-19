@@ -105,7 +105,7 @@ export const makeOAuthRegistrationApplication = Effect.gen(function* () {
       }
 
       const requestedScopes = input.scope?.split(/\s+/).filter(Boolean);
-      const supportedScopes = new Set<OAuthScope>([
+      const supportedScopes: ReadonlySet<string> = new Set<OAuthScope>([
         "mcp:read",
         "mcp:execute",
         "wallet:read",

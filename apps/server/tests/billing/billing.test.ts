@@ -32,12 +32,15 @@ layer(TestServerLayer)("billing routes", (it) => {
           maxSoftwareWallets: 5,
           maxHsmWallets: 0,
           includedExecutions: 100,
+          includedSignatures: 10_000,
         },
         usage: {
           members: 1,
           pendingInvitations: 0,
           softwareWallets: 0,
           hsmWallets: 0,
+          executions: 0,
+          signatures: 0,
         },
       });
 

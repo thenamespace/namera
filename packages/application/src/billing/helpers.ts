@@ -92,4 +92,17 @@ export const enforceExecutionLimit = Effect.fn("application.enforceExecutionLimi
   }
 });
 
+export const enforceSignatureLimit = Effect.fn("application.enforceSignatureLimit")(function* (
+  repository: RepositoryService,
+  organizationId: OrganizationId,
+) {
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  if (usage.signatures >= limits.includedSignatures) {
+    return yield* new BillingLimitExceededError({
+      code: "LIMIT_EXCEEDED",
+      limit: "signatures",
+    });
+  }
+});
+
 export type BillingLimits = BillingPlanLimits;

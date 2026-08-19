@@ -8,7 +8,7 @@ import {
   SignatureOperationId,
   WalletId,
 } from "#/common/index";
-import { Bytes32, EthereumAddress, EvmTypedDataDomain, SupportedEvmChainId } from "#/evm/index";
+import { Bytes32, EthereumAddress, EvmTypedData, SupportedEvmChainId } from "#/evm/index";
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 
@@ -27,13 +27,13 @@ const EvmSignatureOperationDataCommon = {
 export const EvmMessageSignatureOperationData = Schema.Struct({
   ...EvmSignatureOperationDataCommon,
   type: Schema.Literal("message"),
+  message: Schema.String,
 });
 
 export const EvmTypedDataSignatureOperationData = Schema.Struct({
   ...EvmSignatureOperationDataCommon,
   type: Schema.Literal("typed-data"),
-  domain: EvmTypedDataDomain,
-  primaryType: NonEmptyString,
+  typedData: EvmTypedData,
 });
 
 export const EvmSignatureOperationData = Schema.Union(

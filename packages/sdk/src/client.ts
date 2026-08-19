@@ -22,11 +22,21 @@ export class NameraClient {
     this.wallets = new WalletClient(this.#transport);
   }
 
-  sign(request: SignRequestType) {
+  sign(request: SignRequestType, options: { readonly idempotencyKey: string }) {
     if (request.type === "message") {
-      return this.#transport.request(this.#transport.client.signature.sign({ payload: request }));
+      return this.#transport.request(
+        this.#transport.client.signature.sign({
+          headers: { "idempotency-key": options.idempotencyKey },
+          payload: request,
+        }),
+      );
     }
 
-    return this.#transport.request(this.#transport.client.signature.sign({ payload: request }));
+    return this.#transport.request(
+      this.#transport.client.signature.sign({
+        headers: { "idempotency-key": options.idempotencyKey },
+        payload: request,
+      }),
+    );
   }
 }

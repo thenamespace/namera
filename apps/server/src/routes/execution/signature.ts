@@ -11,7 +11,7 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
   Effect.gen(function* () {
     const app = yield* Application.Application;
 
-    return handlers.handle("sign", ({ payload }) =>
+    return handlers.handle("sign", ({ headers, payload }) =>
       Effect.gen(function* () {
         const actor = yield* CurrentActor;
         const data = yield* enforceActor({
@@ -24,7 +24,11 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
           data.actorId,
           rateLimitPolicy.signature.byApiKey,
         );
-        return yield* app.signature.sign({ actor: data, request: payload });
+        return yield* app.signature.sign({
+          actor: data,
+          idempotencyKey: headers["idempotency-key"],
+          request: payload,
+        });
       }),
     );
   }),

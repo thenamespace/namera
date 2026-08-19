@@ -60,6 +60,7 @@ layer(TestServerLayer)("signature routes", (it) => {
       yield* setApiKey(apiKey.key);
 
       const message = yield* client.signature.sign({
+        headers: { "idempotency-key": "signature-message-1" },
         payload: {
           namespace: "eip155",
           type: "message",
@@ -76,7 +77,25 @@ layer(TestServerLayer)("signature routes", (it) => {
         signature: "0x1234",
       });
 
+      const conflict = yield* client.signature
+        .sign({
+          headers: { "idempotency-key": "signature-message-1" },
+          payload: {
+            namespace: "eip155",
+            type: "message",
+            walletId: wallet.id,
+            chainId: "eip155:1",
+            message: "A different request",
+          },
+        })
+        .pipe(Effect.flip);
+      expect(conflict).toMatchObject({
+        _tag: "SignatureError",
+        code: "IDEMPOTENCY_CONFLICT",
+      });
+
       const typedData = yield* client.signature.sign({
+        headers: { "idempotency-key": "signature-typed-data-1" },
         payload: {
           namespace: "eip155",
           type: "typed-data",
@@ -92,10 +111,48 @@ layer(TestServerLayer)("signature routes", (it) => {
       });
       expect(typedData).toMatchObject({ type: "typed-data", signature: "0x1234" });
 
-      const events = yield* Repository.pipe(
-        Effect.flatMap((repository) =>
-          repository.audit.organization.findForOrganization(owner.actor.organization.id),
-        ),
+      const repository = yield* Repository;
+      const messageOperation =
+        yield* repository.core.signatureOperation.findByActorAndIdempotencyKey(
+          owner.actor.organization.id,
+          apiKey.apiKey.actorId,
+          "signature-message-1",
+        );
+      expect(messageOperation).toMatchObject({
+        status: "succeeded",
+        namespace: "eip155",
+        data: {
+          type: "message",
+          chainId: "eip155:1",
+          account: wallet.address,
+          message: "Authorize this action",
+          payloadSizeBytes: 21,
+        },
+      });
+
+      const typedDataOperation =
+        yield* repository.core.signatureOperation.findByActorAndIdempotencyKey(
+          owner.actor.organization.id,
+          apiKey.apiKey.actorId,
+          "signature-typed-data-1",
+        );
+      expect(typedDataOperation).toMatchObject({
+        status: "succeeded",
+        data: {
+          type: "typed-data",
+          typedData: {
+            domain: { name: "Namera", version: "1", chainId: 1 },
+            primaryType: "Authorization",
+            message: { action: "test" },
+          },
+        },
+      });
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      expect((yield* client.billing.get()).usage.signatures).toBe(2);
+
+      const events = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
       );
       expect(events.filter(({ event }) => event === "signature.created")).toHaveLength(2);
     }),
@@ -142,6 +199,7 @@ layer(TestServerLayer)("signature routes", (it) => {
 
       const error = yield* client.signature
         .sign({
+          headers: { "idempotency-key": "signature-denied-1" },
           payload: {
             namespace: "eip155",
             type: "typed-data",

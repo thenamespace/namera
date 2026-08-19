@@ -146,13 +146,16 @@ an actor ID returns only wallets and session keys reachable through active
 grants and executions started by that actor. Keep this distinction in one use
 case rather than duplicating machine-specific operations.
 
-Signature requests are synchronous and non-persisted. They require an active
+Signature requests are synchronous and idempotently reserved. They require an active
 API-key grant to an active wallet session key with an explicit `evm.signature`
 policy, evaluate the signature-specific context and time window, reconstruct
-the account, and call `evm.sign`. Success records only a safe organization audit
-event and bounded metrics; messages, typed data, and returned signatures are
-never stored or logged. Signature workflows do not enqueue notifications or
-emails.
+the account, enforce the organization monthly signature allowance, and call
+`evm.sign`. The persisted operation uses a discriminated message/typed-data
+payload and records its digest, policy hash, actor, grant, and lifecycle. The
+returned signature bytes are never stored or logged. Success and its safe
+organization audit event share one transaction; definitive signing failures
+release reserved billing capacity. Signature workflows do not enqueue
+notifications or emails.
 
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data

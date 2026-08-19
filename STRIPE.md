@@ -1,8 +1,9 @@
 # Stripe billing setup
 
 This document describes the intended Stripe configuration for Namera. The
-current application implements only the free plan. Pro, Business, Stripe
-synchronization, and usage metering remain planned work.
+current application defines Free, Pro, and Business entitlements locally, but
+new organizations still start on Free. Paid-plan mutations, Stripe
+synchronization, and paid usage metering remain planned work.
 
 The editable pricing model lives in `script/calculate-margin.ts`; `pricing.md`
 is generated from it. Keep the application plan catalog and Stripe prices in
@@ -10,11 +11,11 @@ sync with that source before enabling a paid plan.
 
 ## Pricing model
 
-| Plan     | Monthly | Members | Software wallets | HSM wallets | Executions / month | Execution overage |
-| -------- | ------: | ------: | ---------------: | ----------: | -----------------: | ----------------: |
-| Free     |      $0 |       5 |                5 |           0 |                100 |          hard cap |
-| Pro      |     $49 |      20 |               20 |           3 |              2,000 |             $0.02 |
-| Business |    $249 |     100 |              100 |          10 |             10,000 |             $0.02 |
+| Plan     | Monthly | Members | Software wallets | HSM wallets | Executions / month | Signatures / month | Execution overage |
+| -------- | ------: | ------: | ---------------: | ----------: | -----------------: | -----------------: | ----------------: |
+| Free     |      $0 |       5 |                5 |           0 |                100 |             10,000 |          hard cap |
+| Pro      |     $49 |      20 |               20 |           3 |              2,000 |            250,000 |             $0.02 |
+| Business |    $249 |     100 |              100 |          10 |             10,000 |          1,000,000 |             $0.02 |
 
 An additional HSM wallet slot is planned at **$7/month**. Scale and Enterprise
 should use negotiated prices and entitlements rather than sharing a public
@@ -123,7 +124,7 @@ base fee is billed in advance; metered execution usage is billed in arrears.
 Namera remains authoritative for:
 
 - the mapping from plan/version to product entitlements;
-- active member, wallet, and execution counts;
+- active member, wallet, execution, and signature counts;
 - whether an operation is allowed;
 - durable execution usage records and their delivery status;
 - organization authorization for billing changes.
@@ -213,6 +214,12 @@ For Pro and Business, send every successful execution to Stripe. Stripe applies
 the zero-cost included tier and the paid overage tier. Meter ingestion is
 asynchronous, so Namera must use its local counter for real-time limits and
 spending controls.
+
+Signature operations are currently a local hard-capped entitlement on every
+plan. Successful operations are derived from the local signature-operation
+ledger; live reservations also consume capacity to prevent concurrent requests
+from crossing the limit. Do not create a Stripe signature meter until signature
+overage pricing is intentionally introduced.
 
 The worker must use bounded retries with backoff. Each Stripe meter event needs
 a stable unique identifier so retrying cannot double-count usage. Monitor

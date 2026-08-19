@@ -6,6 +6,7 @@ export const cryptoPurpose = {
   emailOutbox: "email.outbox.payload",
   sessionKeyPolicies: "session-key.policies",
   executionRequest: "execution.request",
+  signatureRequest: "signature.request",
   oauthAuthorizationCode: "auth.oauth.authorization-code",
   oauthAccessToken: "auth.oauth.access-token",
   oauthRefreshToken: "auth.oauth.refresh-token",
