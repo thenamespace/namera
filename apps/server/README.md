@@ -19,7 +19,8 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/routes/execution/` — execution and signature handlers.
 - `src/routes/billing/`, `src/routes/mcp/`, and `src/routes/proxy/` — focused
   billing, MCP, RPC, and telemetry transport boundaries.
-- `src/helpers/` — actor enforcement, DTO mapping, and cookie helpers.
+- `src/helpers/` — actor enforcement, cookie helpers, and domain-separated DTO
+  mappers composed through one stable helper barrel.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
 - `src/rate-limit.ts` — code-owned route policies and keyed limit helpers.
 - `src/layers/` — runtime and dependency composition.
