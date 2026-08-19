@@ -5,6 +5,7 @@ import {
   PolicyHandler,
   type EvmIntentContext,
   type EvmPolicyDecision,
+  type EvmSignatureContext,
 } from "@namera-ai/protocol";
 
 export const evaluateTimeWindow = (
@@ -35,6 +36,24 @@ export class EvmTimeWindowPolicyHandler extends PolicyHandler<
   readonly evaluate = Effect.fn("evm.policy.time-window.evaluate")(
     (policy: EvmTimeWindowPolicy, context: EvmIntentContext): Effect.Effect<EvmPolicyDecision> => {
       return Effect.succeed(evaluateTimeWindow(policy, context.block.timestamp));
+    },
+  );
+}
+
+export class EvmTimeWindowSignaturePolicyHandler extends PolicyHandler<
+  EvmTimeWindowPolicy,
+  EvmSignatureContext,
+  EvmPolicyDecision
+> {
+  readonly type = "evm.time-window";
+  readonly policySchema = EvmTimeWindowPolicy;
+
+  readonly evaluate = Effect.fn("evm.policy.time-window.evaluate-signature")(
+    (
+      policy: EvmTimeWindowPolicy,
+      context: EvmSignatureContext,
+    ): Effect.Effect<EvmPolicyDecision> => {
+      return Effect.succeed(evaluateTimeWindow(policy, context.timestamp));
     },
   );
 }
