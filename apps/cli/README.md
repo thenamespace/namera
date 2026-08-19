@@ -41,10 +41,11 @@ Execution, simulation, signing, and verification prompt for their request fields
 the same public request shape inline with `--params '<json>'` for non-interactive use; the CLI
 decodes both paths through the public protocol schema and does not read request files.
 
-`--output pretty|json|ndjson` is global and defaults to `pretty`. JSON emits one compact document;
-NDJSON emits one compact document per top-level array item. `--quiet` (or `-q`) suppresses normal
-command output. Execution and signing commands rely on the SDK to generate one idempotency key and
-reuse it across transient retries; no retry-key flag is exposed.
+`--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
+colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact
+document, while NDJSON emits one compact document per top-level array item. `--quiet` (or `-q`)
+suppresses normal command output. Execution and signing commands rely on the SDK to generate one
+idempotency key and reuse it across transient retries; no retry-key flag is exposed.
 
 ## Credentials
 

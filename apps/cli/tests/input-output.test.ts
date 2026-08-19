@@ -44,15 +44,16 @@ describe("CLI input and output", () => {
     ).rejects.toThrow("walletId");
   });
 
-  it("formats stable pretty, JSON, and NDJSON output", () => {
+  it("formats human-readable pretty output and stable machine output", () => {
     const value = [
       { id: "first", amount: 1n },
       { id: "second", amount: 2n },
     ];
 
     expect(formatValue(value, "pretty")).toEqual([
-      '[\n  {\n    "id": "first",\n    "amount": "1"\n  },\n  {\n    "id": "second",\n    "amount": "2"\n  }\n]',
+      "1.\n  id: first\n  amount: 1\n2.\n  id: second\n  amount: 2",
     ]);
+    expect(formatValue(value[0], "pretty", { colors: true })[0]).toContain("\u001B[36mid");
     expect(formatValue(value, "json")).toEqual([
       '[{"id":"first","amount":"1"},{"id":"second","amount":"2"}]',
     ]);
