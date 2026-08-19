@@ -1,7 +1,52 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { currentUserAtom } from "@/atoms/auth/session";
+import { executionsAtom } from "@/atoms/execution";
+import { prefetchQuery } from "@/atoms/prefetch";
+import { ExecutionsTable } from "@/components/executions-table";
+import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
 export const Route = createFileRoute("/_authenticated/activity")({
-  component: DashboardPage,
+  loader: async ({ abortController, context }) => {
+    const currentUser = await prefetchQuery(
+      context.atomRegistry,
+      currentUserAtom,
+      abortController.signal,
+    );
+    if (currentUser === null) throw redirect({ to: "/auth", replace: true });
+
+    const executions = await prefetchQuery(
+      context.atomRegistry,
+      executionsAtom,
+      abortController.signal,
+    );
+
+    return { executions };
+  },
+  component: ActivityPage,
 });
+
+function ActivityPage() {
+  const { executions } = Route.useLoaderData();
+
+  return (
+    <DashboardPage>
+      <DashboardPage.Header className="md:hidden">
+        <DashboardPage.Title />
+      </DashboardPage.Header>
+      <DashboardPage.Content className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 md:py-16">
+        <HeadingGroup className="mb-8">
+          <HeadingGroup.Title level={1} size="lg">
+            Activity
+          </HeadingGroup.Title>
+          <HeadingGroup.Description>
+            Review confirmed transactions across every account and delegated client.
+          </HeadingGroup.Description>
+        </HeadingGroup>
+
+        <ExecutionsTable initialExecutions={executions} />
+      </DashboardPage.Content>
+    </DashboardPage>
+  );
+}
