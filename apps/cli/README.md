@@ -7,7 +7,7 @@ keyring, and uses `@namera-ai/sdk` for typed wallet operations.
 ## Commands
 
 ```sh
-namera login --profile personal --host https://api.namera.ai
+namera login
 namera auth status --profile personal --json
 namera wallet list
 namera wallet get <wallet-id>
@@ -19,6 +19,21 @@ namera execution get <execution-id>
 namera execution list [--cursor <execution-id>]
 namera sign --file request.json
 namera logout
+```
+
+The development build targets `http://localhost:8080` by default, so `namera
+login` connects directly to the local API. Pass `--host <origin>` during login
+to target another server. For API-key automation, `NAMERA_API_URL` overrides the
+same local default.
+
+## Local installation
+
+From the repository root:
+
+```sh
+pnpm --filter @namera-ai/cli build
+(cd apps/cli && npm link)
+namera --help
 ```
 
 Structured transaction and signature payloads are read from JSON files so they

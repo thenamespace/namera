@@ -84,7 +84,7 @@ describe("NameraClient", () => {
 
     const headers = init.headers as Record<string, string>;
 
-    expect(url?.toString()).toBe("https://api.namera.ai/executions");
+    expect(url?.toString()).toBe("http://localhost:8080/executions");
     expect(init.method).toBe("POST");
     expect(headers["content-type"]).toBe("application/json");
     expect(headers["idempotency-key"]).toMatch(uuidV7Pattern);
@@ -142,7 +142,7 @@ describe("NameraClient", () => {
     expect(result.success).toBe(true);
     const [url, init] = fetch.mock.calls[0] ?? [];
     if (init === undefined) throw new Error("Expected a fetch request");
-    expect(url?.toString()).toBe("https://api.namera.ai/signatures");
+    expect(url?.toString()).toBe("http://localhost:8080/signatures");
     expect((init.headers as Record<string, string>)["idempotency-key"]).toMatch(uuidV7Pattern);
   });
 

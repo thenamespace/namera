@@ -6,7 +6,7 @@ import { getValidAccessToken } from "./oauth.js";
 export const makeCliClient = async (profile?: string) => {
   const apiKey = process.env.NAMERA_API_KEY;
   if (apiKey !== undefined) {
-    const baseUrl = process.env.NAMERA_API_URL ?? "https://api.namera.ai";
+    const baseUrl = process.env.NAMERA_API_URL ?? "http://localhost:8080";
     return {
       config: { activeProfile: "automation", profiles: {} },
       profile: { baseUrl },

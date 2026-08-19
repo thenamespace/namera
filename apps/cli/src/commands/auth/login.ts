@@ -53,7 +53,7 @@ export const loginCommand = Command.make(
     profile: profileFlag,
     host: Flag.string("host").pipe(
       Flag.withDescription("Namera API origin"),
-      Flag.withDefault("https://api.namera.ai"),
+      Flag.withDefault("http://localhost:8080"),
     ),
     deviceName: Flag.string("device-name").pipe(
       Flag.withDescription("Friendly name shown on the consent screen"),

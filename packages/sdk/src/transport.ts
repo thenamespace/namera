@@ -122,7 +122,7 @@ export class NameraTransport {
 
     this.client = Effect.runSync(
       HttpApiClient.make(NameraApi, {
-        baseUrl: config.baseUrl ?? "https://api.namera.ai",
+        baseUrl: config.baseUrl ?? "http://localhost:8080",
       }).pipe(Effect.provide(Layer.merge(FetchHttpClient.layer, authorizationLayer))),
     );
     this.#fetch = config.fetch;

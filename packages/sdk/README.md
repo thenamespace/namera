@@ -29,7 +29,7 @@ client:
 
 ```ts
 const namera = new NameraClient({
-  baseUrl: "https://api.namera.ai",
+  baseUrl: "http://localhost:8080",
   getAccessToken: refreshAccessToken,
 });
 ```
@@ -56,7 +56,8 @@ if (!wallet.success && wallet.error.kind === "api") {
 }
 ```
 
-Use `baseUrl` for self-hosted or local servers. A Fetch-compatible runtime is
+The current development default is `http://localhost:8080`. Use `baseUrl` to
+target another self-hosted or deployed server. A Fetch-compatible runtime is
 used automatically; `fetch` may be supplied explicitly for nonstandard
 runtimes and tests.
 
