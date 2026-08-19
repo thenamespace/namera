@@ -85,7 +85,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   because policies are JSON wire and persistence values. The public creation
   DTO supports time-window, native-spend-limit, and signature policies and
   requires a time window. SQL timestamp columns continue using date-backed
-  schemas. Grants are
+  schemas. Policy reservations use a discriminated execution-or-signature
+  operation reference while their persisted model exposes the corresponding
+  nullable foreign-key pair. Grants are
   organization-scoped actor-to-session-key records and preserve revoked
   history.
 - Wallet metadata updates replace only presentation metadata. Session-key

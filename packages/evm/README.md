@@ -91,7 +91,10 @@ database claims and performs bounded concurrent lookups across their chains.
 uses the prepared block timestamp with an inclusive start and exclusive
 expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
 CAIP-2 chain so concurrent executions cannot consume the same allowance. Each
-handler owns the schemas used to decode persisted state and reservations.
+handler owns the schemas used to decode persisted state and reservations plus
+the context-derived seeds for any missing state. Registry priorities define
+denial precedence and policy IDs provide a stable tie-breaker, so caller array
+order cannot change evaluation, reservation, settlement, or release behavior.
 
 `evm.sign` reconstructs the stored Kernel or Safe account on the requested
 supported chain and delegates either UTF-8 message signing or EIP-712 typed-data

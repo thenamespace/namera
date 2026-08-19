@@ -271,13 +271,15 @@ history.
 
 `core.session_key_policy_state` stores versioned, handler-owned JSON state for
 one policy instance and state key. `core.session_key_policy_reservation` holds
-bounded in-flight changes so concurrent executions cannot consume the same
-allowance. Reservations reference the execution submission that owns the
-in-flight work and move through reserved, submitted, settled, or released
-states. The policy-state repository supports transaction-scoped row locks and
-revision-checked updates; reservation transitions are conditional batch
-updates. Policy handlers own decoding the JSON payloads; the database owns
-tenant isolation, uniqueness, and expiry lookup indexes.
+bounded in-flight changes so concurrent operations cannot consume the same
+allowance. Each reservation references exactly one execution submission or
+signature operation through tenant-scoped foreign keys. Partial unique indexes
+enforce one reservation per operation, policy, and state key. Reservations move
+through reserved, submitted, settled, or released states. The policy-state
+repository supports transaction-scoped row locks and revision-checked updates;
+reservation lookup and terminal transitions accept a discriminated operation
+reference. Policy handlers own decoding the JSON payloads; the database owns
+tenant isolation, ownership constraints, uniqueness, and expiry lookup indexes.
 
 `core.execution_submission` is mutable operational state for an actor's
 idempotent execution attempt. It references the exact session-key grant,

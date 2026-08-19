@@ -138,6 +138,9 @@ settles policy state and creates the execution in the same transaction. A
 definitive failure releases policy state. Timeout or uncertain RPC outcomes
 return `submitted`; `Application.execution.reconcile` later claims a bounded
 batch with database leases and performs the same settle/release lifecycle.
+Before reservation, the EVM policy registry derives any missing state rows from
+the prepared intent context. Application code inserts those generic seeds and
+locks policy/state keys in stable order without branching on policy types.
 
 Submission status reads require the creating API-key actor identity. Wallet,
 session-key, and confirmed-execution reads accept an optional actor scope. An
