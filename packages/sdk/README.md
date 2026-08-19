@@ -64,8 +64,8 @@ runtimes and tests.
 ## Supported API-key operations
 
 - `wallets.list`, `wallets.get`
-- `sessionKeys.list`, `sessionKeys.listForWallet`, `sessionKeys.get`
-- `executions.execute`, `executions.getSubmission`, `executions.get`,
+- `sessionKeys.list({ walletId? })`, `sessionKeys.get`
+- `executions.simulate`, `executions.execute`, `executions.getStatus`,
   `executions.list`
 - `sign`, `verifySignature`
 
@@ -73,7 +73,8 @@ Resource operations are intentionally grouped. Signing and verification remain
 at the root because they are cross-resource signature capabilities rather than
 collections. Verification is read-only and does not consume signature usage.
 
-Execution and signing methods generate an idempotency key internally before
+Simulation is read-only and reports call success separately from session-key
+policy eligibility. Execution and signing methods generate an idempotency key internally before
 the first request. The same key is reused for up to three retries with bounded
 exponential backoff when the failure is a network interruption, HTTP 408, or
 HTTP 5xx response. Validation, authorization, policy, rate-limit, billing, and

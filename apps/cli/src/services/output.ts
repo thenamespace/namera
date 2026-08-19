@@ -14,7 +14,9 @@ export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A,
     : Effect.fail(
         new Error(
           result.error.kind === "api"
-            ? (result.error.code ?? result.error.message)
+            ? result.error.code === undefined
+              ? result.error.message
+              : `${result.error.code}: ${result.error.message}`
             : result.error.message,
         ),
       );

@@ -52,6 +52,21 @@ const readField = (value: unknown, key: string): string | undefined => {
   return typeof field === "string" && field.length > 0 ? field : undefined;
 };
 
+const apiErrorMessages: Readonly<Record<string, string>> = {
+  WALLET_NOT_FOUND: "The wallet was not found or is not available to this authorization.",
+  SESSION_KEY_NOT_FOUND: "The session key was not found or is not available to this authorization.",
+  EXECUTION_SUBMISSION_NOT_FOUND: "The transaction submission was not found.",
+  NO_AUTHORIZED_SESSION_KEY: "No delegated session key can authorize this operation.",
+  POLICY_DENIED: "Every eligible session key was denied by policy.",
+  IDEMPOTENCY_CONFLICT: "The operation conflicts with an earlier request.",
+  EXECUTION_FAILED: "The transaction could not be prepared, signed, or submitted.",
+  EXECUTION_UNAVAILABLE: "Transaction execution is temporarily unavailable.",
+  SIGNING_FAILED: "The wallet could not sign the requested payload.",
+  SIGNATURE_UNAVAILABLE: "Signature creation is temporarily unavailable.",
+  VERIFICATION_FAILED: "The smart-account signature could not be verified.",
+  LIMIT_EXCEEDED: "The organization has reached the applicable plan limit.",
+};
+
 const toSdkError = <E>(error: E): NameraSdkError<NameraEndpointError<E>> => {
   if (Schema.isSchemaError(error)) {
     return {
@@ -77,10 +92,16 @@ const toSdkError = <E>(error: E): NameraSdkError<NameraEndpointError<E>> => {
   const code = readField(error, "code");
   const tag = readField(error, "_tag");
   const message = readField(error, "message");
+  const fallbackMessage =
+    tag === "RateLimitExceeded"
+      ? "Too many requests were made. Retry after the returned delay."
+      : code === undefined
+        ? "The Namera API rejected the request."
+        : (apiErrorMessages[code] ?? "The Namera API rejected the request.");
 
   return {
     kind: "api",
-    message: message ?? "The Namera API rejected the request.",
+    message: message ?? fallbackMessage,
     status: null,
     ...(code === undefined ? {} : { code: code as NameraApiErrorCode<NameraEndpointError<E>> }),
     ...(tag === undefined ? {} : { tag: tag as NameraApiErrorTag<NameraEndpointError<E>> }),

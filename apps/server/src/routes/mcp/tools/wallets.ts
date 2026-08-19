@@ -2,21 +2,34 @@ import { Effect, Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
 import { Application } from "@namera-ai/application";
-import { GetWalletRequest, GetWalletResponse, ListWalletsResponse } from "@namera-ai/protocol/dto";
+import {
+  GetWalletResponse,
+  ListWalletsResponse,
+  McpGetWalletRequest,
+  McpToolError,
+} from "@namera-ai/protocol/dto";
 
 import { toWalletResponse } from "#/helpers/index";
 
 import { readOnlyHints, registerMcpTool } from "./register.js";
 
 const ListWallets = Tool.make("list_wallets", {
-  description: "List wallets reachable through this authorization's active session-key grants.",
-  success: Schema.Struct({ wallets: ListWalletsResponse }),
+  description:
+    "List the Namera wallets delegated to this authorization. Call this before transaction or signature tools when you do not already have a walletId. Use the returned wallet id as walletId; never use the wallet address or a session-key id in its place.",
+  success: Schema.Struct({
+    wallets: Schema.optionalKey(ListWalletsResponse),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
 const GetWallet = Tool.make("get_wallet", {
-  description: "Get one wallet reachable through this authorization by wallet ID.",
-  parameters: GetWalletRequest,
-  success: Schema.Struct({ wallet: GetWalletResponse }),
+  description:
+    "Get one delegated Namera wallet by its walletId. Use a walletId returned by list_wallets. Do not pass a wallet address or session-key ID.",
+  parameters: McpGetWalletRequest,
+  success: Schema.Struct({
+    wallet: Schema.optionalKey(GetWalletResponse),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
 export const WalletTools = Effect.gen(function* () {
@@ -24,9 +37,9 @@ export const WalletTools = Effect.gen(function* () {
 
   yield* registerMcpTool({
     tool: ListWallets,
+    title: "List wallets",
     requiredScope: "mcp:read",
     hints: readOnlyHints,
-    errorMessage: "The wallets could not be listed.",
     handle: (_input, principal) =>
       app.wallet
         .list({
@@ -38,9 +51,9 @@ export const WalletTools = Effect.gen(function* () {
 
   yield* registerMcpTool({
     tool: GetWallet,
+    title: "Get wallet",
     requiredScope: "mcp:read",
     hints: readOnlyHints,
-    errorMessage: "The wallet could not be found.",
     handle: ({ walletId }, principal) =>
       app.wallet
         .get({

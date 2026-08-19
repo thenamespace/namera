@@ -25,23 +25,32 @@ const execute = Command.make(
   }),
 );
 
+const simulate = Command.make(
+  "simulate",
+  {
+    file: Flag.string("file").pipe(Flag.withDescription("JSON execution request file")),
+    profile: profileFlag,
+    json: jsonFlag,
+  },
+  Effect.fn(function* ({ file, profile, json }) {
+    const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
+    const request = yield* Schema.decodeUnknownEffect(ExecuteRequest)(JSON.parse(raw));
+    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
+    yield* printValue(yield* runPromise(client.executions.simulate(request)), json);
+  }),
+).pipe(
+  Command.withDescription(
+    "Simulate calls and evaluate session-key policies without signing or submitting",
+  ),
+);
+
 const status = Command.make(
   "status",
   { submissionId: Argument.string("submission-id"), profile: profileFlag, json: jsonFlag },
   Effect.fn(function* ({ submissionId, profile, json }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.getSubmission(id)), json);
-  }),
-);
-
-const get = Command.make(
-  "get",
-  { executionId: Argument.string("execution-id"), profile: profileFlag, json: jsonFlag },
-  Effect.fn(function* ({ executionId, profile, json }) {
-    const id = yield* Schema.decodeUnknownEffect(ExecutionId)(executionId);
-    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.get(id)), json);
+    yield* printValue(yield* runPromise(client.executions.getStatus(id)), json);
   }),
 );
 
@@ -68,5 +77,5 @@ const list = Command.make(
 
 export const executionCommand = Command.make("execution").pipe(
   Command.withDescription("Execute and inspect onchain operations"),
-  Command.withSubcommands([execute, status, get, list]),
+  Command.withSubcommands([execute, simulate, status, list]),
 );

@@ -1,5 +1,8 @@
 import type { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
-import { type ExecuteRequest as ExecuteRequestType } from "@namera-ai/protocol/dto";
+import {
+  type ExecuteRequest as ExecuteRequestType,
+  type SimulateExecutionRequest,
+} from "@namera-ai/protocol/dto";
 import { generateUniqueId } from "@namera-ai/utils";
 
 import type { NameraTransport } from "#/transport";
@@ -22,14 +25,14 @@ export class ExecutionClient {
     );
   }
 
-  getSubmission(submissionId: ExecutionSubmissionId) {
+  simulate(request: SimulateExecutionRequest) {
+    return this.transport.request(this.transport.client.execution.simulate({ payload: request }));
+  }
+
+  getStatus(submissionId: ExecutionSubmissionId) {
     return this.transport.request(
       this.transport.client.execution.getSubmission({ params: { submissionId } }),
     );
-  }
-
-  get(executionId: ExecutionId) {
-    return this.transport.request(this.transport.client.execution.get({ params: { executionId } }));
   }
 
   list(options: ListExecutionsOptions = {}) {

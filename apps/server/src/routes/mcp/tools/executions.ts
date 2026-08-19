@@ -4,42 +4,58 @@ import { Tool } from "effect/unstable/ai";
 import { Application } from "@namera-ai/application";
 import {
   ExecuteResponse,
-  GetExecutionRequest,
-  GetExecutionResponse,
-  GetExecutionSubmissionRequest,
   GetExecutionSubmissionResponse,
-  ListExecutionsRequest,
   ListExecutionsResponse,
-  McpExecuteRequest,
+  McpGetExecutionsRequest,
+  McpGetTransactionStatusRequest,
+  McpToolError,
+  McpTransactionRequest,
+  SimulateExecutionResponse,
 } from "@namera-ai/protocol/dto";
 
 import { toExecutionListItemResponse } from "#/helpers/index";
 
-import { executionHints, readOnlyHints, registerMcpTool } from "./register.js";
+import { executionHints, readOnlyHints, registerMcpTool, simulationHints } from "./register.js";
 
 const ExecuteTransaction = Tool.make("execute_transaction", {
   description:
-    "Execute a namespace-specific transaction through one delegated session key whose policies authorize the complete operation.",
-  parameters: McpExecuteRequest,
-  success: Schema.Struct({ execution: ExecuteResponse }),
+    "Sign and submit the exact EVM calls from a delegated Namera wallet. Call simulate_transaction first and proceed only when allowed and callsSucceeded are both true. Use walletId from list_wallets, never a wallet address or session-key ID. Namera selects an eligible session key automatically. This operation can transfer assets and repeated tool calls can submit more than one transaction.",
+  parameters: McpTransactionRequest,
+  success: Schema.Struct({
+    execution: Schema.optionalKey(ExecuteResponse),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
-const GetExecutionSubmission = Tool.make("get_execution_submission", {
-  description: "Get the current status of an execution submission created by this authorization.",
-  parameters: GetExecutionSubmissionRequest,
-  success: Schema.Struct({ submission: GetExecutionSubmissionResponse }),
+const SimulateTransaction = Tool.make("simulate_transaction", {
+  description:
+    "Simulate exact EVM calls and evaluate every eligible delegated session key policy without signing, submitting, reserving policy usage, or consuming billing usage. Use walletId from list_wallets, never a wallet address or session-key ID. Execute only when allowed and callsSucceeded are both true.",
+  parameters: McpTransactionRequest,
+  success: Schema.Struct({
+    simulation: Schema.optionalKey(SimulateExecutionResponse),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
-const GetExecution = Tool.make("get_execution", {
-  description: "Get one confirmed execution created by this authorization.",
-  parameters: GetExecutionRequest,
-  success: Schema.Struct({ execution: GetExecutionResponse }),
+const GetTransactionStatus = Tool.make("get_transaction_status", {
+  description:
+    "Get the current lifecycle status of a transaction submission. Use the submissionId returned by execute_transaction. A submitted status is still pending; poll this tool until it returns confirmed or failed.",
+  parameters: McpGetTransactionStatusRequest,
+  success: Schema.Struct({
+    submission: Schema.optionalKey(GetExecutionSubmissionResponse),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
-const ListExecutions = Tool.make("list_executions", {
-  description: "List confirmed executions created by this authorization using cursor pagination.",
-  parameters: ListExecutionsRequest,
-  success: ListExecutionsResponse,
+const GetExecutions = Tool.make("get_executions", {
+  description:
+    "Get confirmed executions created by this authorization, newest first. Omit cursor for the first page; pass the returned nextCursor to fetch the next page. Transaction submissions that are still pending are available through get_transaction_status instead.",
+  parameters: McpGetExecutionsRequest,
+  success: Schema.Struct({
+    items: Schema.optionalKey(ListExecutionsResponse.fields.items),
+    nextCursor: Schema.optionalKey(ListExecutionsResponse.fields.nextCursor),
+    error: Schema.optionalKey(McpToolError),
+  }),
 });
 
 export const ExecutionTools = Effect.gen(function* () {
@@ -47,20 +63,31 @@ export const ExecutionTools = Effect.gen(function* () {
 
   yield* registerMcpTool({
     tool: ExecuteTransaction,
+    title: "Execute transaction",
     requiredScope: "mcp:execute",
     hints: executionHints,
-    errorMessage: "The transaction could not be executed.",
-    handle: ({ request }, principal) =>
+    handle: (request, principal) =>
       app.execution
         .execute({ actor: principal, idempotencyKey: crypto.randomUUID(), request })
         .pipe(Effect.map((execution) => ({ execution }))),
   });
 
   yield* registerMcpTool({
-    tool: GetExecutionSubmission,
+    tool: SimulateTransaction,
+    title: "Simulate transaction",
+    requiredScope: "mcp:execute",
+    hints: simulationHints,
+    handle: (request, principal) =>
+      app.execution
+        .simulate({ actor: principal, request })
+        .pipe(Effect.map((simulation) => ({ simulation }))),
+  });
+
+  yield* registerMcpTool({
+    tool: GetTransactionStatus,
+    title: "Get transaction status",
     requiredScope: "mcp:read",
     hints: readOnlyHints,
-    errorMessage: "The execution submission could not be found.",
     handle: ({ submissionId }, principal) =>
       app.execution
         .getSubmission({
@@ -72,25 +99,10 @@ export const ExecutionTools = Effect.gen(function* () {
   });
 
   yield* registerMcpTool({
-    tool: GetExecution,
+    tool: GetExecutions,
+    title: "Get executions",
     requiredScope: "mcp:read",
     hints: readOnlyHints,
-    errorMessage: "The execution could not be found.",
-    handle: ({ executionId }, principal) =>
-      app.execution
-        .get({
-          organizationId: principal.organizationId,
-          actorId: principal.actorId,
-          executionId,
-        })
-        .pipe(Effect.map((execution) => ({ execution }))),
-  });
-
-  yield* registerMcpTool({
-    tool: ListExecutions,
-    requiredScope: "mcp:read",
-    hints: readOnlyHints,
-    errorMessage: "The executions could not be listed.",
     handle: ({ cursor }, principal) =>
       app.execution
         .list({

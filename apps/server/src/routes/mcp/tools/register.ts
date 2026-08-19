@@ -1,6 +1,7 @@
-import { Context, Effect, Metric, Schema } from "effect";
+import { Context, Effect, Metric, Predicate, Schema } from "effect";
 import { McpSchema, McpServer, Tool } from "effect/unstable/ai";
 
+import type { McpToolError, McpToolErrorCode } from "@namera-ai/protocol/dto";
 import type { OAuthScope } from "@namera-ai/protocol/model";
 import { mcpToolCalls } from "@namera-ai/telemetry";
 
@@ -36,9 +37,9 @@ const inlineRootReference = (schema: ReturnType<typeof Tool.getJsonSchema>) => {
 
 export const registerMcpTool = <T extends Tool.Any, E>(options: {
   readonly tool: T;
+  readonly title: string;
   readonly requiredScope: Extract<OAuthScope, "mcp:read" | "mcp:execute">;
   readonly hints: ToolHints;
-  readonly errorMessage: string;
   readonly handle: (
     input: Tool.Parameters<T>,
     principal: McpPrincipal,
@@ -54,6 +55,7 @@ export const registerMcpTool = <T extends Tool.Any, E>(options: {
         inputSchema: inlineRootReference(Tool.getJsonSchema(options.tool)),
         outputSchema: inlineRootReference(Tool.getJsonSchemaFromSchema(options.tool.successSchema)),
         annotations: {
+          title: options.title,
           readOnlyHint: options.hints.readOnly,
           destructiveHint: options.hints.destructive,
           idempotentHint: options.hints.idempotent,
@@ -73,9 +75,10 @@ export const registerMcpTool = <T extends Tool.Any, E>(options: {
               1,
             );
 
-            return new McpSchema.CallToolResult({
-              isError: true,
-              content: [{ type: "text", text: "The MCP authorization is not available." }],
+            return makeToolError({
+              code: "UNAUTHORIZED",
+              message: "The MCP authorization is unavailable or expired. Reconnect Namera.",
+              retryable: false,
             });
           }
 
@@ -88,14 +91,10 @@ export const registerMcpTool = <T extends Tool.Any, E>(options: {
               1,
             );
 
-            return new McpSchema.CallToolResult({
-              isError: true,
-              content: [
-                {
-                  type: "text",
-                  text: `This tool requires the ${options.requiredScope} OAuth scope.`,
-                },
-              ],
+            return makeToolError({
+              code: "INSUFFICIENT_SCOPE",
+              message: `This tool requires the ${options.requiredScope} OAuth scope. Reauthorize Namera with that scope before retrying.`,
+              retryable: false,
             });
           }
 
@@ -125,21 +124,14 @@ export const registerMcpTool = <T extends Tool.Any, E>(options: {
             content: [{ type: "text", text: JSON.stringify(encoded) }],
           });
         }).pipe(
-          Effect.catch(() =>
+          Effect.catch((error) =>
             Metric.update(
               Metric.withAttributes(mcpToolCalls, {
                 tool: options.tool.name,
                 result: "error",
               }),
               1,
-            ).pipe(
-              Effect.as(
-                new McpSchema.CallToolResult({
-                  isError: true,
-                  content: [{ type: "text", text: options.errorMessage }],
-                }),
-              ),
-            ),
+            ).pipe(Effect.as(makeToolError(toToolError(error)))),
           ),
         ),
     });
@@ -155,6 +147,20 @@ export const readOnlyHints = {
 export const executionHints = {
   readOnly: false,
   destructive: true,
+  idempotent: false,
+  openWorld: true,
+} as const;
+
+export const simulationHints = {
+  readOnly: true,
+  destructive: false,
+  idempotent: true,
+  openWorld: true,
+} as const;
+
+export const verificationHints = {
+  readOnly: true,
+  destructive: false,
   idempotent: true,
   openWorld: true,
 } as const;
@@ -165,3 +171,89 @@ export const signingHints = {
   idempotent: false,
   openWorld: false,
 } as const;
+
+const errorMessages: Readonly<Record<McpToolErrorCode, string>> = {
+  INVALID_ARGUMENT:
+    "The tool arguments are invalid. Use IDs returned by Namera tools and follow the documented field formats.",
+  UNAUTHORIZED: "The MCP authorization is unavailable or expired. Reconnect Namera.",
+  INSUFFICIENT_SCOPE: "The MCP authorization does not include the scope required by this tool.",
+  WALLET_NOT_FOUND:
+    "The wallet was not found or is not delegated to this authorization. Call list_wallets and use a returned wallet ID.",
+  SESSION_KEY_NOT_FOUND:
+    "The session key was not found or is not delegated to this authorization. Call list_session_keys and use a returned session-key ID.",
+  EXECUTION_SUBMISSION_NOT_FOUND:
+    "The transaction submission was not found. Use the submissionId returned by execute_transaction.",
+  NO_AUTHORIZED_SESSION_KEY:
+    "No delegated session key can authorize this operation for the selected wallet.",
+  POLICY_DENIED:
+    "Every eligible session key was denied by policy. Inspect policyCode, adjust the operation, and simulate it again.",
+  IDEMPOTENCY_CONFLICT: "The operation conflicts with an earlier request and was not repeated.",
+  EXECUTION_FAILED: "The transaction could not be prepared, signed, or submitted.",
+  EXECUTION_UNAVAILABLE:
+    "Transaction execution is temporarily unavailable. Retry later or simulate the operation again.",
+  SIGNING_FAILED: "The wallet could not sign the requested payload.",
+  SIGNATURE_UNAVAILABLE: "Signature creation is temporarily unavailable.",
+  VERIFICATION_FAILED: "The smart-account signature could not be verified on the selected chain.",
+  LIMIT_EXCEEDED: "The organization has reached the applicable plan limit.",
+  RATE_LIMITED: "Too many requests were made. Wait for retryAfterSeconds before retrying.",
+  INTERNAL_ERROR: "Namera could not complete the tool call because of an internal error.",
+};
+
+const knownErrorCodes = new Set<McpToolErrorCode>(Object.keys(errorMessages) as McpToolErrorCode[]);
+
+const readString = (value: unknown, key: string): string | undefined => {
+  if (!Predicate.isObject(value)) return undefined;
+  const field = Reflect.get(value, key);
+  return typeof field === "string" ? field : undefined;
+};
+
+const readNumber = (value: unknown, key: string): number | undefined => {
+  if (!Predicate.isObject(value)) return undefined;
+  const field = Reflect.get(value, key);
+  return typeof field === "number" ? field : undefined;
+};
+
+const toToolError = (error: unknown): McpToolError => {
+  if (Schema.isSchemaError(error)) {
+    return {
+      code: "INVALID_ARGUMENT",
+      message: errorMessages.INVALID_ARGUMENT,
+      retryable: false,
+    };
+  }
+
+  const tag = readString(error, "_tag");
+  const rawCode = readString(error, "code");
+  const code =
+    tag === "RateLimitExceeded"
+      ? "RATE_LIMITED"
+      : rawCode !== undefined && knownErrorCodes.has(rawCode as McpToolErrorCode)
+        ? (rawCode as McpToolErrorCode)
+        : "INTERNAL_ERROR";
+  const policyId = readString(error, "policyId");
+  const policyCode = readString(error, "policyCode");
+  const retryAfterSeconds = readNumber(error, "retryAfterSeconds");
+
+  return {
+    code,
+    message: errorMessages[code],
+    retryable: code === "RATE_LIMITED" || code === "EXECUTION_UNAVAILABLE",
+    ...(policyId === undefined
+      ? {}
+      : { policyId: policyId as NonNullable<McpToolError["policyId"]> }),
+    ...(policyCode === undefined
+      ? {}
+      : { policyCode: policyCode as NonNullable<McpToolError["policyCode"]> }),
+    ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+  };
+};
+
+const makeToolError = (error: McpToolError) => {
+  const structuredContent = { error };
+
+  return new McpSchema.CallToolResult({
+    isError: true,
+    structuredContent,
+    content: [{ type: "text", text: JSON.stringify(structuredContent) }],
+  });
+};

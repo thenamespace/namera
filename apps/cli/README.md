@@ -13,11 +13,12 @@ namera wallet list
 namera wallet get <wallet-id>
 namera session-key list [--wallet <wallet-id>]
 namera session-key get <session-key-id>
+namera execution simulate --file request.json
 namera execution execute --file request.json
 namera execution status <submission-id>
-namera execution get <execution-id>
 namera execution list [--cursor <execution-id>]
 namera sign --file request.json
+namera verify-signature --file request.json
 namera logout
 ```
 
@@ -36,7 +37,7 @@ pnpm --filter @namera-ai/cli build
 namera --help
 ```
 
-Structured transaction and signature payloads are read from JSON files so they
+Structured transaction, signature, and verification payloads are read from JSON files so they
 can be validated with the public protocol schemas without fragile shell
 quoting. Use `--json` for machine-readable output. Execution and signing
 commands rely on the SDK to generate one idempotency key and reuse it across

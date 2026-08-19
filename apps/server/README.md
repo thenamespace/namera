@@ -140,12 +140,20 @@ grants; CLI authorization does not emit email.
 
 The authorized MCP transport is mounted at `/mcp`. Read tools require
 `mcp:read`; transaction execution and signing require `mcp:execute` in addition
-to the durable session-key grants selected during consent. The tool surface
-covers wallet list/get, session-key grant/list/get reads, transaction execution,
-submission status, confirmed execution list/get, and message or typed-data
-signing. Tool inputs never accept an organization or actor identity; those are
-always derived from the bearer authorization. Execution and signing tool inputs
-also omit idempotency keys; the MCP adapter generates one per tool invocation.
+to the durable session-key grants selected during consent. The compact tool
+surface covers wallet list/get, session-key list/get with an optional wallet
+filter, transaction simulation/execution/status/history, and message or typed-data
+signing/verification. Tool inputs never accept an organization, actor identity,
+or session-key selector; those are derived from the bearer authorization and
+Namera automatically evaluates eligible delegated session keys. Execution and
+signing tool inputs also omit idempotency keys; the MCP adapter generates one
+per tool invocation.
+
+Tool failures set `isError`, return a stable structured error `code`, an
+actionable human message, and retry metadata where relevant. Declared wallet,
+session-key, execution, policy, billing, and rate-limit failures retain their
+domain codes. Invalid tool arguments use `INVALID_ARGUMENT`; unexpected defects
+use `INTERNAL_ERROR` without exposing their cause.
 
 MCP tool inputs and structured outputs use root object schemas. The registration
 adapter inlines Effect's root `$ref` while retaining nested `$defs`, avoiding

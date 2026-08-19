@@ -208,15 +208,14 @@ layer(TestServerLayer)("MCP route", (it) => {
           tools: [
             { name: "list_wallets" },
             { name: "get_wallet" },
-            { name: "list_session_key_grants" },
             { name: "list_session_keys" },
-            { name: "list_session_keys_for_wallet" },
             { name: "get_session_key" },
             { name: "execute_transaction" },
-            { name: "get_execution_submission" },
-            { name: "get_execution" },
-            { name: "list_executions" },
+            { name: "simulate_transaction" },
+            { name: "get_transaction_status" },
+            { name: "get_executions" },
             { name: "sign" },
+            { name: "verify_signature" },
           ],
         },
       });
@@ -239,7 +238,7 @@ layer(TestServerLayer)("MCP route", (it) => {
             jsonrpc: "2.0",
             id: 3,
             method: "tools/call",
-            params: { name: "list_session_key_grants", arguments: {} },
+            params: { name: "list_session_keys", arguments: {} },
           },
           { token: accessToken, sessionId },
         ),
@@ -247,7 +246,7 @@ layer(TestServerLayer)("MCP route", (it) => {
       expect(yield* called.json).toMatchObject({
         result: {
           structuredContent: {
-            grants: [{ sessionKey: { id: sessionKey.id } }],
+            sessionKeys: [{ id: sessionKey.id }],
           },
         },
       });
@@ -267,18 +266,21 @@ layer(TestServerLayer)("MCP route", (it) => {
         result: { structuredContent: { wallets: [{ id: sessionKey.walletId }] } },
       });
 
-      const sessionKeys = yield* client.execute(
+      const walletSessionKeys = yield* client.execute(
         mcpRequest(
           {
             jsonrpc: "2.0",
             id: 5,
             method: "tools/call",
-            params: { name: "list_session_keys", arguments: {} },
+            params: {
+              name: "list_session_keys",
+              arguments: { walletId: sessionKey.walletId },
+            },
           },
           { token: accessToken, sessionId },
         ),
       );
-      expect(yield* sessionKeys.json).toMatchObject({
+      expect(yield* walletSessionKeys.json).toMatchObject({
         result: { structuredContent: { sessionKeys: [{ id: sessionKey.id }] } },
       });
 
@@ -296,13 +298,15 @@ layer(TestServerLayer)("MCP route", (it) => {
       expect(yield* deniedExecution.json).toMatchObject({
         result: {
           isError: true,
-          content: [{ text: "This tool requires the mcp:execute OAuth scope." }],
+          structuredContent: {
+            error: { code: "INSUFFICIENT_SCOPE", retryable: false },
+          },
         },
       });
     }),
   );
 
-  it.effect("executes, reads execution status, and signs with delegated authority", () =>
+  it.effect("simulates, executes, reads status, signs, and verifies with delegated authority", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const { accessToken, wallet } = yield* authorize({ execute: true });
@@ -325,6 +329,33 @@ layer(TestServerLayer)("MCP route", (it) => {
       const sessionId = initialized.headers["mcp-session-id"];
       if (sessionId === undefined) return yield* Effect.die("Expected MCP session ID");
 
+      const simulated = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 2,
+            method: "tools/call",
+            params: {
+              name: "simulate_transaction",
+              arguments: {
+                namespace: "eip155",
+                walletId: wallet.id,
+                chainId: "eip155:1",
+                calls: [{ to: wallet.address, value: "1", data: "0x" }],
+              },
+            },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* simulated.json).toMatchObject({
+        result: {
+          structuredContent: {
+            simulation: { allowed: true, callsSucceeded: true, walletId: wallet.id },
+          },
+        },
+      });
+
       const executed = yield* client.execute(
         mcpRequest(
           {
@@ -334,12 +365,10 @@ layer(TestServerLayer)("MCP route", (it) => {
             params: {
               name: "execute_transaction",
               arguments: {
-                request: {
-                  namespace: "eip155",
-                  walletId: wallet.id,
-                  chainId: "eip155:1",
-                  calls: [{ to: wallet.address, value: "1", data: "0x" }],
-                },
+                namespace: "eip155",
+                walletId: wallet.id,
+                chainId: "eip155:1",
+                calls: [{ to: wallet.address, value: "1", data: "0x" }],
               },
             },
           },
@@ -377,7 +406,7 @@ layer(TestServerLayer)("MCP route", (it) => {
             id: 3,
             method: "tools/call",
             params: {
-              name: "get_execution_submission",
+              name: "get_transaction_status",
               arguments: { submissionId },
             },
           },
@@ -398,13 +427,13 @@ layer(TestServerLayer)("MCP route", (it) => {
             jsonrpc: "2.0",
             id: 4,
             method: "tools/call",
-            params: { name: "list_executions", arguments: {} },
+            params: { name: "get_executions", arguments: {} },
           },
           { token: accessToken, sessionId },
         ),
       );
       expect(yield* executions.json).toMatchObject({
-        result: { structuredContent: { items: [{ id: executionId }] } },
+        result: { structuredContent: { items: [{ execution: { id: executionId } }] } },
       });
 
       const signed = yield* client.execute(
@@ -429,7 +458,8 @@ layer(TestServerLayer)("MCP route", (it) => {
           { token: accessToken, sessionId },
         ),
       );
-      expect(yield* signed.json).toMatchObject({
+      const signedJson = yield* signed.json;
+      expect(signedJson).toMatchObject({
         result: {
           structuredContent: {
             signature: {
@@ -437,6 +467,66 @@ layer(TestServerLayer)("MCP route", (it) => {
               type: "message",
               walletId: wallet.id,
             },
+          },
+        },
+      });
+      if (
+        !Predicate.isObject(signedJson) ||
+        !Predicate.isObject(signedJson.result) ||
+        !Predicate.isObject(signedJson.result.structuredContent) ||
+        !Predicate.isObject(signedJson.result.structuredContent.signature) ||
+        typeof signedJson.result.structuredContent.signature.signature !== "string"
+      ) {
+        return yield* Effect.die("Expected a structured signature result");
+      }
+
+      const verified = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 6,
+            method: "tools/call",
+            params: {
+              name: "verify_signature",
+              arguments: {
+                request: {
+                  namespace: "eip155",
+                  type: "message",
+                  walletId: wallet.id,
+                  chainId: "eip155:1",
+                  message: "Sign with Namera MCP",
+                  signature: signedJson.result.structuredContent.signature.signature,
+                },
+              },
+            },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* verified.json).toMatchObject({
+        result: {
+          structuredContent: {
+            verification: { valid: true, walletId: wallet.id },
+          },
+        },
+      });
+
+      const invalid = yield* client.execute(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 7,
+            method: "tools/call",
+            params: { name: "execute_transaction", arguments: {} },
+          },
+          { token: accessToken, sessionId },
+        ),
+      );
+      expect(yield* invalid.json).toMatchObject({
+        result: {
+          isError: true,
+          structuredContent: {
+            error: { code: "INVALID_ARGUMENT", retryable: false },
           },
         },
       });

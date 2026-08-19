@@ -19,13 +19,13 @@ const list = Command.make(
   },
   Effect.fn(function* ({ wallet, profile, json }) {
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    const result = Option.isSome(wallet)
-      ? yield* runPromise(
-          client.sessionKeys.listForWallet(
-            yield* Schema.decodeUnknownEffect(WalletId)(wallet.value),
-          ),
-        )
-      : yield* runPromise(client.sessionKeys.list());
+    const result = yield* runPromise(
+      client.sessionKeys.list(
+        Option.isSome(wallet)
+          ? { walletId: yield* Schema.decodeUnknownEffect(WalletId)(wallet.value) }
+          : {},
+      ),
+    );
     yield* printValue(result, json);
   }),
 );

@@ -96,6 +96,51 @@ describe("NameraClient", () => {
     });
   });
 
+  it("simulates transactions without an idempotency header", async () => {
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(
+      jsonResponse({
+        namespace: "eip155",
+        walletId,
+        chainId: "eip155:1",
+        account: address,
+        callsSucceeded: true,
+        simulation: {
+          userOperation: {
+            source: "eth_estimateUserOperationGas",
+            callGasLimit: "1",
+            verificationGasLimit: "1",
+            preVerificationGas: "1",
+            paymasterVerificationGasLimit: "0",
+            paymasterPostOpGasLimit: "0",
+          },
+          calls: {
+            source: "viem.simulateCalls",
+            results: [{ status: "success", returnData: "0x", gasUsed: "1" }],
+            assetChanges: [],
+            transfers: [],
+          },
+        },
+        allowed: true,
+        sessionKeyId: "01a00427-5cb5-75be-9159-97eb6b3dca9e",
+      }),
+    );
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    const result = await client.executions.simulate({
+      namespace: "eip155",
+      walletId,
+      chainId: "eip155:1",
+      calls: [{ to: address, value: 0n, data: "0x" }],
+    });
+
+    expect(result).toMatchObject({ success: true, data: { allowed: true } });
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    if (init === undefined) throw new Error("Expected a fetch request");
+    expect(url?.toString()).toBe("http://localhost:8080/executions/simulate");
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["idempotency-key"]).toBeUndefined();
+  });
+
   it("reuses one generated idempotency key across transient retries", async () => {
     const fetch = vi
       .fn<NameraFetch>()
@@ -219,7 +264,7 @@ describe("NameraClient", () => {
         status: null,
         tag: "WalletError",
         code: "WALLET_NOT_FOUND",
-        message: "The Namera API rejected the request.",
+        message: "The wallet was not found or is not available to this authorization.",
         cause: expect.objectContaining({
           _tag: "WalletError",
           code: "WALLET_NOT_FOUND",
@@ -250,7 +295,7 @@ describe("NameraClient", () => {
       fetch: vi.fn<NameraFetch>().mockRejectedValue(new Error("offline")),
     });
 
-    expect(await client.executions.getSubmission(submissionId)).toMatchObject({
+    expect(await client.executions.getStatus(submissionId)).toMatchObject({
       success: false,
       data: null,
       error: { kind: "network", status: null },

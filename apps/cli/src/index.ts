@@ -7,6 +7,7 @@ import { authCommand, loginCommand, logoutCommand } from "#/commands/auth/index"
 import { executionCommand } from "#/commands/execution/index";
 import { sessionKeyCommand } from "#/commands/session-key/index";
 import { signCommand } from "#/commands/sign";
+import { verifySignatureCommand } from "#/commands/verify-signature";
 import { walletCommand } from "#/commands/wallet/index";
 
 const namera = Command.make("namera").pipe(
@@ -19,6 +20,7 @@ const namera = Command.make("namera").pipe(
     sessionKeyCommand,
     executionCommand,
     signCommand,
+    verifySignatureCommand,
   ]),
 );
 
