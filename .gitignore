@@ -197,5 +197,6 @@ research
 
 # Local feature progress
 /progress/
+policies.md
 pricing.md
 script/calculate-margin.ts
