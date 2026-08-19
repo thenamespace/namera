@@ -24,8 +24,8 @@ HTTP requests to application methods.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/billing/` — code-owned billing plan and entitlement catalog.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
-- `src/session-key/` — immutable session-key creation, canonical policy hashing,
-  and organization- or actor-scoped reads.
+- `src/session-key/` — separately composed creation, revocation, relation-view,
+  and organization- or actor-scoped read workflows plus canonical policy hashing.
 - `src/signature/` — shared account/grant resolution, signature-operation
   lifecycle, and separate policy-gated signing and read-only verification
   builders composed behind one application surface.
