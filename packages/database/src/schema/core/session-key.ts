@@ -30,6 +30,11 @@ export const sessionKey = coreSchema.table(
   },
   (table) => [
     unique("session_key_id_organization_unique").on(table.id, table.organizationId),
+    unique("session_key_id_wallet_organization_unique").on(
+      table.id,
+      table.walletId,
+      table.organizationId,
+    ),
     foreignKey({
       name: "session_key_wallet_organization_fk",
       columns: [table.walletId, table.organizationId],

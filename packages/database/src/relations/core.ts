@@ -40,6 +40,10 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       from: [r.wallet.id, r.wallet.organizationId],
       to: [r.sessionKey.walletId, r.sessionKey.organizationId],
     }),
+    signatureOperations: r.many.signatureOperation({
+      from: [r.wallet.id, r.wallet.organizationId],
+      to: [r.signatureOperation.walletId, r.signatureOperation.organizationId],
+    }),
   },
   sessionKey: {
     // Each session key belongs to one organization.
@@ -83,6 +87,10 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
         r.sessionKeyPolicyReservation.organizationId,
       ],
     }),
+    signatureOperations: r.many.signatureOperation({
+      from: [r.sessionKey.id, r.sessionKey.organizationId],
+      to: [r.signatureOperation.sessionKeyId, r.signatureOperation.organizationId],
+    }),
   },
   sessionKeyGrant: {
     // Each grant belongs to one organization.
@@ -123,6 +131,37 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     executionSubmissions: r.many.executionSubmission({
       from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
       to: [r.executionSubmission.sessionKeyGrantId, r.executionSubmission.organizationId],
+    }),
+    signatureOperations: r.many.signatureOperation({
+      from: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      to: [r.signatureOperation.sessionKeyGrantId, r.signatureOperation.organizationId],
+    }),
+  },
+  signatureOperation: {
+    organization: r.one.organization({
+      from: r.signatureOperation.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    actor: r.one.actor({
+      from: [r.signatureOperation.actorId, r.signatureOperation.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+    wallet: r.one.wallet({
+      from: [r.signatureOperation.walletId, r.signatureOperation.organizationId],
+      to: [r.wallet.id, r.wallet.organizationId],
+      optional: false,
+    }),
+    sessionKey: r.one.sessionKey({
+      from: [r.signatureOperation.sessionKeyId, r.signatureOperation.organizationId],
+      to: [r.sessionKey.id, r.sessionKey.organizationId],
+      optional: false,
+    }),
+    sessionKeyGrant: r.one.sessionKeyGrant({
+      from: [r.signatureOperation.sessionKeyGrantId, r.signatureOperation.organizationId],
+      to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
+      optional: false,
     }),
   },
   executionSubmission: {

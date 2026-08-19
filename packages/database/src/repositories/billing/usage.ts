@@ -2,7 +2,7 @@ import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
 import type { BillingUsage } from "@namera-ai/protocol/dto";
-import { and, count, eq, gt, gte, inArray, isNull, ne } from "drizzle-orm";
+import { and, count, eq, gt, gte, inArray, isNull, ne, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -12,6 +12,7 @@ import {
   organizationMember,
   wallet,
   walletKey,
+  signatureOperation,
 } from "#/schema/index";
 
 export interface BillingUsageRepositoryService {
@@ -101,6 +102,22 @@ export class BillingUsageRepository extends Context.Service<
                   gte(executionSubmission.createdAt, monthStart),
                 ),
               );
+            const signatureRows = yield* db
+              .select({ value: count() })
+              .from(signatureOperation)
+              .where(
+                and(
+                  eq(signatureOperation.organizationId, organizationId),
+                  gte(signatureOperation.createdAt, monthStart),
+                  or(
+                    eq(signatureOperation.status, "succeeded"),
+                    and(
+                      eq(signatureOperation.status, "reserved"),
+                      gt(signatureOperation.reservationExpiresAt, encodedNow),
+                    ),
+                  ),
+                ),
+              );
 
             return {
               members: memberRows[0]?.value ?? 0,
@@ -108,6 +125,7 @@ export class BillingUsageRepository extends Context.Service<
               softwareWallets: softwareWalletRows[0]?.value ?? 0,
               hsmWallets: hsmWalletRows[0]?.value ?? 0,
               executions: executionRows[0]?.value ?? 0,
+              signatures: signatureRows[0]?.value ?? 0,
             };
           },
           mapRepositoryError,
