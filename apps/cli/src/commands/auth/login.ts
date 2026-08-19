@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { platform } from "node:os";
 
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
 import { NameraClient } from "@namera-ai/sdk";
@@ -10,7 +10,7 @@ import { profileFlag } from "#/commands/common";
 import { saveProfile } from "#/services/config";
 import { writeCredentials } from "#/services/credentials";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
-import { runPromise } from "#/services/output";
+import { printLine, runPromise } from "#/services/output";
 
 const openBrowser = (url: string) => {
   const command =
@@ -70,8 +70,8 @@ export const loginCommand = Command.make(
       }),
     );
 
-    yield* Console.log(`Open ${request.verification_uri}`);
-    yield* Console.log(`Confirm code: ${request.user_code}`);
+    yield* printLine(`Open ${request.verification_uri}`);
+    yield* printLine(`Confirm code: ${request.user_code}`);
     yield* Effect.sync(() => openBrowser(request.verification_uri_complete));
 
     const credentials = yield* Effect.tryPromise(() =>
@@ -91,6 +91,6 @@ export const loginCommand = Command.make(
         organizationId: actor.data.organizationId,
       }),
     );
-    yield* Console.log(`Logged in as profile "${profile}".`);
+    yield* printLine(`Logged in as profile "${profile}".`);
   }),
 ).pipe(Command.withDescription("Authorize this CLI using the browser device flow"));

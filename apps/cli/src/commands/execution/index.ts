@@ -1,42 +1,53 @@
-import { readFile } from "node:fs/promises";
-
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
-import { ExecuteRequest } from "@namera-ai/protocol/dto";
+import { ExecuteRequest, type ExecuteRequest as ExecuteRequestType } from "@namera-ai/protocol/dto";
 
-import { jsonFlag, profileFlag } from "#/commands/common";
+import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { CliPrompts } from "#/services/prompts";
+
+const promptExecutionRequest = Effect.fn("cli.execution.promptRequest")(function* () {
+  const prompts = yield* CliPrompts;
+  const namespace = yield* prompts.namespace;
+  const walletId = yield* prompts.walletId();
+  const chainId = yield* prompts.chainId();
+  const callCount = yield* prompts.integer("Number of calls", { min: 1, default: 1 });
+  const calls = yield* Effect.forEach(
+    Array.from({ length: callCount }, (_, index) => index),
+    (index) =>
+      Effect.gen(function* () {
+        const number = callCount === 1 ? "" : ` ${index + 1}`;
+        return {
+          to: yield* prompts.ethereumAddress(`Recipient${number}`),
+          value: yield* prompts.ethereumValue(`Native value${number} (wei)`),
+          data: yield* prompts.hex(`Calldata${number}`),
+        };
+      }),
+  );
+
+  return { namespace, walletId, chainId, calls } satisfies ExecuteRequestType;
+});
 
 const execute = Command.make(
   "execute",
-  {
-    file: Flag.string("file").pipe(Flag.withDescription("JSON execution request file")),
-    profile: profileFlag,
-    json: jsonFlag,
-  },
-  Effect.fn(function* ({ file, profile, json }) {
-    const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
-    const request = yield* Schema.decodeUnknownEffect(ExecuteRequest)(JSON.parse(raw));
+  { params: paramsFlag, profile: profileFlag },
+  Effect.fn(function* ({ params, profile }) {
+    const request = yield* resolveParams(params, ExecuteRequest, promptExecutionRequest());
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.execute(request)), json);
+    yield* printValue(yield* runPromise(client.executions.execute(request)));
   }),
-);
+).pipe(Command.withDescription("Execute EVM calls after validating an inline or prompted request"));
 
 const simulate = Command.make(
   "simulate",
-  {
-    file: Flag.string("file").pipe(Flag.withDescription("JSON execution request file")),
-    profile: profileFlag,
-    json: jsonFlag,
-  },
-  Effect.fn(function* ({ file, profile, json }) {
-    const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
-    const request = yield* Schema.decodeUnknownEffect(ExecuteRequest)(JSON.parse(raw));
+  { params: paramsFlag, profile: profileFlag },
+  Effect.fn(function* ({ params, profile }) {
+    const request = yield* resolveParams(params, ExecuteRequest, promptExecutionRequest());
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.simulate(request)), json);
+    yield* printValue(yield* runPromise(client.executions.simulate(request)));
   }),
 ).pipe(
   Command.withDescription(
@@ -46,11 +57,11 @@ const simulate = Command.make(
 
 const status = Command.make(
   "status",
-  { submissionId: Argument.string("submission-id"), profile: profileFlag, json: jsonFlag },
-  Effect.fn(function* ({ submissionId, profile, json }) {
+  { submissionId: Argument.string("submission-id"), profile: profileFlag },
+  Effect.fn(function* ({ submissionId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.getStatus(id)), json);
+    yield* printValue(yield* runPromise(client.executions.getStatus(id)));
   }),
 );
 
@@ -59,9 +70,8 @@ const list = Command.make(
   {
     cursor: Flag.string("cursor").pipe(Flag.optional),
     profile: profileFlag,
-    json: jsonFlag,
   },
-  Effect.fn(function* ({ cursor, profile, json }) {
+  Effect.fn(function* ({ cursor, profile }) {
     const decodedCursor = Option.isSome(cursor)
       ? yield* Schema.decodeUnknownEffect(ExecutionId)(cursor.value)
       : undefined;
@@ -70,7 +80,6 @@ const list = Command.make(
       yield* runPromise(
         client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
       ),
-      json,
     );
   }),
 );

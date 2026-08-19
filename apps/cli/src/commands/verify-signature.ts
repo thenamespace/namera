@@ -1,27 +1,53 @@
-import { readFile } from "node:fs/promises";
+import { Effect } from "effect";
+import { Command } from "effect/unstable/cli";
 
-import { Effect, Schema } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
+import {
+  VerifySignatureRequest,
+  type VerifySignatureRequest as VerifySignatureRequestType,
+} from "@namera-ai/protocol/dto";
 
-import { VerifySignatureRequest } from "@namera-ai/protocol/dto";
-
-import { jsonFlag, profileFlag } from "#/commands/common";
+import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { CliPrompts } from "#/services/prompts";
+
+const promptVerifySignatureRequest = Effect.fn("cli.verifySignature.promptRequest")(function* () {
+  const prompts = yield* CliPrompts;
+  const namespace = yield* prompts.namespace;
+  const walletId = yield* prompts.walletId();
+  const chainId = yield* prompts.chainId();
+  const type = yield* prompts.signatureType;
+  const signature = yield* prompts.hex("Signature");
+
+  return type === "message"
+    ? ({
+        namespace,
+        walletId,
+        chainId,
+        type,
+        signature,
+        message: yield* prompts.message(),
+      } satisfies VerifySignatureRequestType)
+    : ({
+        namespace,
+        walletId,
+        chainId,
+        type,
+        signature,
+        typedData: yield* prompts.typedData,
+      } satisfies VerifySignatureRequestType);
+});
 
 export const verifySignatureCommand = Command.make(
   "verify-signature",
-  {
-    file: Flag.string("file").pipe(
-      Flag.withDescription("JSON message or typed-data verification request file"),
-    ),
-    profile: profileFlag,
-    json: jsonFlag,
-  },
-  Effect.fn(function* ({ file, profile, json }) {
-    const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
-    const request = yield* Schema.decodeUnknownEffect(VerifySignatureRequest)(JSON.parse(raw));
+  { params: paramsFlag, profile: profileFlag },
+  Effect.fn(function* ({ params, profile }) {
+    const request = yield* resolveParams(
+      params,
+      VerifySignatureRequest,
+      promptVerifySignatureRequest(),
+    );
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.verifySignature(request)), json);
+    yield* printValue(yield* runPromise(client.verifySignature(request)));
   }),
 ).pipe(Command.withDescription("Verify an EVM smart-account signature"));

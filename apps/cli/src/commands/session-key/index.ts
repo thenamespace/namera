@@ -3,7 +3,7 @@ import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { SessionKeyId, WalletId } from "@namera-ai/protocol";
 
-import { jsonFlag, profileFlag } from "#/commands/common";
+import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
 
@@ -15,9 +15,8 @@ const list = Command.make(
       Flag.optional,
     ),
     profile: profileFlag,
-    json: jsonFlag,
   },
-  Effect.fn(function* ({ wallet, profile, json }) {
+  Effect.fn(function* ({ wallet, profile }) {
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     const result = yield* runPromise(
       client.sessionKeys.list(
@@ -26,17 +25,17 @@ const list = Command.make(
           : {},
       ),
     );
-    yield* printValue(result, json);
+    yield* printValue(result);
   }),
 );
 
 const get = Command.make(
   "get",
-  { sessionKeyId: Argument.string("session-key-id"), profile: profileFlag, json: jsonFlag },
-  Effect.fn(function* ({ sessionKeyId, profile, json }) {
+  { sessionKeyId: Argument.string("session-key-id"), profile: profileFlag },
+  Effect.fn(function* ({ sessionKeyId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(SessionKeyId)(sessionKeyId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.sessionKeys.get(id)), json);
+    yield* printValue(yield* runPromise(client.sessionKeys.get(id)));
   }),
 );
 

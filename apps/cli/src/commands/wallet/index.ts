@@ -3,26 +3,26 @@ import { Argument, Command } from "effect/unstable/cli";
 
 import { WalletId } from "@namera-ai/protocol";
 
-import { jsonFlag, profileFlag } from "#/commands/common";
+import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
 
 const list = Command.make(
   "list",
-  { profile: profileFlag, json: jsonFlag },
-  Effect.fn(function* ({ profile, json }) {
+  { profile: profileFlag },
+  Effect.fn(function* ({ profile }) {
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.wallets.list()), json);
+    yield* printValue(yield* runPromise(client.wallets.list()));
   }),
 );
 
 const get = Command.make(
   "get",
-  { walletId: Argument.string("wallet-id"), profile: profileFlag, json: jsonFlag },
-  Effect.fn(function* ({ walletId, profile, json }) {
+  { walletId: Argument.string("wallet-id"), profile: profileFlag },
+  Effect.fn(function* ({ walletId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(WalletId)(walletId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.wallets.get(id)), json);
+    yield* printValue(yield* runPromise(client.wallets.get(id)));
   }),
 );
 

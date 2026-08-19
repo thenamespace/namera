@@ -8,17 +8,17 @@ keyring, and uses `@namera-ai/sdk` for typed wallet operations.
 
 ```sh
 namera login
-namera auth status --profile personal --json
-namera wallet list
+namera --output json auth status --profile personal
+namera --output ndjson wallet list
 namera wallet get <wallet-id>
 namera session-key list [--wallet <wallet-id>]
 namera session-key get <session-key-id>
-namera execution simulate --file request.json
-namera execution execute --file request.json
+namera execution simulate
+namera execution execute --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","calls":[...]}'
 namera execution status <submission-id>
 namera execution list [--cursor <execution-id>]
-namera sign --file request.json
-namera verify-signature --file request.json
+namera sign
+namera verify-signature --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","type":"message","message":"hello","signature":"0x..."}'
 namera logout
 ```
 
@@ -37,11 +37,14 @@ pnpm --filter @namera-ai/cli build
 namera --help
 ```
 
-Structured transaction, signature, and verification payloads are read from JSON files so they
-can be validated with the public protocol schemas without fragile shell
-quoting. Use `--json` for machine-readable output. Execution and signing
-commands rely on the SDK to generate one idempotency key and reuse it across
-transient retries; no retry-key flag is exposed.
+Execution, simulation, signing, and verification prompt for their request fields by default. Pass
+the same public request shape inline with `--params '<json>'` for non-interactive use; the CLI
+decodes both paths through the public protocol schema and does not read request files.
+
+`--output pretty|json|ndjson` is global and defaults to `pretty`. JSON emits one compact document;
+NDJSON emits one compact document per top-level array item. `--quiet` (or `-q`) suppresses normal
+command output. Execution and signing commands rely on the SDK to generate one idempotency key and
+reuse it across transient retries; no retry-key flag is exposed.
 
 ## Credentials
 

@@ -1,25 +1,43 @@
-import { readFile } from "node:fs/promises";
+import { Effect } from "effect";
+import { Command } from "effect/unstable/cli";
 
-import { Effect, Schema } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
+import { SignRequest, type SignRequest as SignRequestType } from "@namera-ai/protocol/dto";
 
-import { SignRequest } from "@namera-ai/protocol/dto";
-
-import { jsonFlag, profileFlag } from "#/commands/common";
+import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { CliPrompts } from "#/services/prompts";
+
+const promptSignRequest = Effect.fn("cli.sign.promptRequest")(function* () {
+  const prompts = yield* CliPrompts;
+  const namespace = yield* prompts.namespace;
+  const walletId = yield* prompts.walletId();
+  const chainId = yield* prompts.chainId();
+  const type = yield* prompts.signatureType;
+
+  return type === "message"
+    ? ({
+        namespace,
+        walletId,
+        chainId,
+        type,
+        message: yield* prompts.message(),
+      } satisfies SignRequestType)
+    : ({
+        namespace,
+        walletId,
+        chainId,
+        type,
+        typedData: yield* prompts.typedData,
+      } satisfies SignRequestType);
+});
 
 export const signCommand = Command.make(
   "sign",
-  {
-    file: Flag.string("file").pipe(Flag.withDescription("JSON message or typed-data request file")),
-    profile: profileFlag,
-    json: jsonFlag,
-  },
-  Effect.fn(function* ({ file, profile, json }) {
-    const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
-    const request = yield* Schema.decodeUnknownEffect(SignRequest)(JSON.parse(raw));
+  { params: paramsFlag, profile: profileFlag },
+  Effect.fn(function* ({ params, profile }) {
+    const request = yield* resolveParams(params, SignRequest, promptSignRequest());
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.sign(request)), json);
+    yield* printValue(yield* runPromise(client.sign(request)));
   }),
 ).pipe(Command.withDescription("Sign an EVM message or typed-data request"));

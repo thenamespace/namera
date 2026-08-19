@@ -2,11 +2,31 @@ import { Console, Effect } from "effect";
 
 import type { NameraResult } from "@namera-ai/sdk";
 
-const stringify = (value: unknown) =>
-  JSON.stringify(value, (_, item) => (typeof item === "bigint" ? item.toString() : item), 2);
+import { nameraCommand } from "#/commands/root";
 
-export const printValue = (value: unknown, json: boolean) =>
-  Console.log(json || typeof value !== "string" ? stringify(value) : value);
+export type OutputFormat = "pretty" | "json" | "ndjson";
+
+const replacer = (_: string, item: unknown) => (typeof item === "bigint" ? item.toString() : item);
+
+export const formatValue = (value: unknown, output: OutputFormat): ReadonlyArray<string> => {
+  if (output === "pretty") {
+    return [typeof value === "string" ? value : JSON.stringify(value, replacer, 2)];
+  }
+  if (output === "json") return [JSON.stringify(value, replacer)];
+  if (Array.isArray(value)) return value.map((item) => JSON.stringify(item, replacer));
+  return [JSON.stringify(value, replacer)];
+};
+
+export const printValue = Effect.fn("cli.output.printValue")(function* (value: unknown) {
+  const { output, quiet } = yield* nameraCommand;
+  if (quiet) return;
+  for (const line of formatValue(value, output)) yield* Console.log(line);
+});
+
+export const printLine = Effect.fn("cli.output.printLine")(function* (value: string) {
+  const { quiet } = yield* nameraCommand;
+  if (!quiet) yield* Console.log(value);
+});
 
 export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, Error> =>
   result.success
