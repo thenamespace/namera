@@ -1,8 +1,7 @@
 import type { WalletResponse } from "@namera-ai/protocol/dto";
-import type { DataGridSelection } from "@namera-ai/ui";
 import { Activity01Icon, CodeIcon, HugeiconsIcon, Shield01Icon } from "@namera-ai/ui/icons";
 
-import type { TableFilterMenuProps } from "@/components/common/table";
+import { toTableSelection, type TableFilterMenuProps } from "@/components/common/table";
 import {
   WalletImplementationDisplay,
   WalletProtectionDisplay,
@@ -37,11 +36,6 @@ function createEmptyAccountFilters(): AccountFilters {
     implementation: new Set(),
     protectionLevel: new Set(),
   };
-}
-
-function toSelection<T extends string>(keys: DataGridSelection, options: ReadonlyArray<T>): Set<T> {
-  if (keys === "all") return new Set(options);
-  return new Set([...keys].filter((key): key is T => typeof key === "string"));
 }
 
 const statusLabels: Record<WalletResponse["status"], string> = {
@@ -80,7 +74,7 @@ export function AccountFilterMenu({
           content: <WalletStatusDisplay status={value} />,
         })),
         onSelectionChange: (keys) =>
-          onChange({ ...filters, status: toSelection(keys, statusOptions) }),
+          onChange({ ...filters, status: toTableSelection(keys, statusOptions) }),
       },
       {
         id: "implementation",
@@ -94,7 +88,10 @@ export function AccountFilterMenu({
           content: <WalletImplementationDisplay implementation={value} />,
         })),
         onSelectionChange: (keys) =>
-          onChange({ ...filters, implementation: toSelection(keys, implementationOptions) }),
+          onChange({
+            ...filters,
+            implementation: toTableSelection(keys, implementationOptions),
+          }),
       },
       {
         id: "protection",
@@ -108,7 +105,7 @@ export function AccountFilterMenu({
           content: <WalletProtectionDisplay protectionLevel={value} />,
         })),
         onSelectionChange: (keys) =>
-          onChange({ ...filters, protectionLevel: toSelection(keys, protectionOptions) }),
+          onChange({ ...filters, protectionLevel: toTableSelection(keys, protectionOptions) }),
       },
     ],
     onClear: () => onChange(createEmptyAccountFilters()),

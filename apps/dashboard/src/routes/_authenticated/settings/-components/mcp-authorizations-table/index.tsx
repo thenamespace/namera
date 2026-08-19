@@ -19,6 +19,7 @@ import { useEventCallback } from "usehooks-ts";
 import {
   TableControls,
   TableFilterControl,
+  toTableSelection,
   type TableFilterFacet,
 } from "@/components/common/table";
 import {
@@ -187,12 +188,7 @@ export function McpAuthorizationsTable({
           content: <OAuthAuthorizationStatusDisplay status={status} />,
           count: data.filter((authorization) => authorization.status === status).length,
         })),
-        onSelectionChange: (keys) =>
-          setStatuses(
-            keys === "all"
-              ? new Set(statusOptions)
-              : new Set([...keys].map(String) as AuthorizationStatus[]),
-          ),
+        onSelectionChange: (keys) => setStatuses(toTableSelection(keys, statusOptions)),
       },
     ],
     [data, statuses],

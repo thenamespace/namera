@@ -23,6 +23,7 @@ import {
   TableControls,
   TableFilterControl,
   TableViewOptions,
+  toTableSelection,
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
@@ -277,12 +278,7 @@ export function ApiKeysTable({
           content: <StatusDisplay status={status} />,
           count: data.filter((item) => getStatus(item) === status).length,
         })),
-        onSelectionChange: (keys) =>
-          setStatuses(
-            keys === "all"
-              ? new Set(statusOptions)
-              : new Set([...keys].map(String) as ApiKeyStatus[]),
-          ),
+        onSelectionChange: (keys) => setStatuses(toTableSelection(keys, statusOptions)),
       },
     ],
     [data, statuses],

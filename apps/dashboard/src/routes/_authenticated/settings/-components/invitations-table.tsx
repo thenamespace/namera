@@ -20,6 +20,7 @@ import {
   TableControls,
   TableFilterControl,
   TableViewOptions,
+  toTableSelection,
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
@@ -265,12 +266,7 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
           content: <InvitationStatusDisplay status={status} />,
           count: data.filter((item) => item.invitation.status === status).length,
         })),
-        onSelectionChange: (keys) =>
-          setStatuses(
-            keys === "all"
-              ? new Set(statusOptions)
-              : new Set([...keys].map(String) as InvitationStatus[]),
-          ),
+        onSelectionChange: (keys) => setStatuses(toTableSelection(keys, statusOptions)),
       },
       {
         id: "role",
@@ -280,9 +276,10 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
         options: roleOptions,
         onSelectionChange: (keys) =>
           setRoles(
-            keys === "all"
-              ? new Set(roleOptions.map(({ id }) => id))
-              : new Set([...keys].map(String)),
+            toTableSelection(
+              keys,
+              roleOptions.map(({ id }) => id),
+            ),
           ),
       },
     ],
