@@ -12,6 +12,22 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
     const app = yield* Application.Application;
 
     return handlers
+      .handle("simulate", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
+          });
+          yield* consumeRateLimit(
+            "execution.simulation.actor",
+            data.actorId,
+            rateLimitPolicy.execution.simulationByActor,
+          );
+          return yield* app.execution.simulate({ actor: data, request: payload });
+        }),
+      )
       .handle("execute", ({ headers, payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

@@ -105,6 +105,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   installed Viem adapter. Quantities decode to `bigint` and encode to strings so
   signed operations remain safe to store in JSONB and can be reconstructed
   exactly for submission or reconciliation.
+- Execution simulation contracts return normalized call results separately from
+  point-in-time session-key policy eligibility. Allowed responses identify the
+  selected session key; denied responses identify each candidate session key's
+  first deterministic policy ID and bounded denial code.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, the standardized bundler
   gas-estimation result, and normalized `simulateCalls` outcomes. The latter

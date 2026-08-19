@@ -4,6 +4,8 @@ import {
   ExecutionId,
   ExecutionSubmissionId,
   OrganizationId,
+  PolicyId,
+  SessionKeyId,
   SessionKeyGrantId,
   WalletId,
 } from "#/common/index";
@@ -16,6 +18,8 @@ import {
 } from "#/evm/index";
 import { NonEmptyString } from "#/model/common";
 import { EvmExecutionData } from "#/model/core/execution";
+import { EvmIntentSimulation } from "#/policy/evm/context";
+import { EvmPolicyDenialCode } from "#/policy/evm/decision";
 
 const EvmExecutionCallRequest = Schema.Struct({
   to: EthereumAddress,
@@ -42,6 +46,52 @@ export const ExecuteRequest = Schema.Union([ExecuteEvmRequest], { mode: "oneOf" 
 export const ExecuteRequestHeaders = Schema.Struct({
   "idempotency-key": NonEmptyString,
 }).annotate({ identifier: "ExecuteRequestHeaders" });
+
+export const SimulateExecutionRequest = ExecuteRequest.annotate({
+  identifier: "SimulateExecutionRequest",
+  description: "Simulate an execution and evaluate the current delegated session-key policies",
+});
+
+const ExecutionSimulationResponseFields = {
+  namespace: Schema.Literal("eip155"),
+  walletId: WalletId,
+  chainId: SupportedEvmChainId,
+  account: EthereumAddress,
+  callsSucceeded: Schema.Boolean,
+  simulation: EvmIntentSimulation,
+};
+
+export const ExecutionSimulationPolicyDenial = Schema.Struct({
+  sessionKeyId: SessionKeyId,
+  policyId: PolicyId,
+  code: EvmPolicyDenialCode,
+}).annotate({
+  identifier: "ExecutionSimulationPolicyDenial",
+  description: "The first deterministic policy denial for one delegated session key",
+});
+
+export const AllowedExecutionSimulationResponse = Schema.Struct({
+  ...ExecutionSimulationResponseFields,
+  allowed: Schema.Literal(true),
+  sessionKeyId: SessionKeyId,
+}).annotate({ identifier: "AllowedExecutionSimulationResponse" });
+
+export const DeniedExecutionSimulationResponse = Schema.Struct({
+  ...ExecutionSimulationResponseFields,
+  allowed: Schema.Literal(false),
+  denials: Schema.Array(ExecutionSimulationPolicyDenial).check(
+    Schema.isMinLength(1, { message: "At least one policy denial is required" }),
+  ),
+}).annotate({ identifier: "DeniedExecutionSimulationResponse" });
+
+export const SimulateExecutionResponse = Schema.Union(
+  [AllowedExecutionSimulationResponse, DeniedExecutionSimulationResponse],
+  { mode: "oneOf" },
+).annotate({
+  identifier: "SimulateExecutionResponse",
+  description:
+    "Unsigned call simulation and point-in-time policy eligibility for delegated session keys",
+});
 
 export const SubmittedEvmExecutionResponse = Schema.Struct({
   namespace: Schema.Literal("eip155"),
@@ -132,6 +182,11 @@ export const ListExecutionsResponse = Schema.Struct({
 export type ExecuteEvmRequest = typeof ExecuteEvmRequest.Type;
 export type ExecuteRequest = typeof ExecuteRequest.Type;
 export type ExecuteRequestHeaders = typeof ExecuteRequestHeaders.Type;
+export type SimulateExecutionRequest = typeof SimulateExecutionRequest.Type;
+export type ExecutionSimulationPolicyDenial = typeof ExecutionSimulationPolicyDenial.Type;
+export type AllowedExecutionSimulationResponse = typeof AllowedExecutionSimulationResponse.Type;
+export type DeniedExecutionSimulationResponse = typeof DeniedExecutionSimulationResponse.Type;
+export type SimulateExecutionResponse = typeof SimulateExecutionResponse.Type;
 export type SubmittedEvmExecutionResponse = typeof SubmittedEvmExecutionResponse.Type;
 export type ConfirmedEvmExecutionResponse = typeof ConfirmedEvmExecutionResponse.Type;
 export type ExecuteResponse = typeof ExecuteResponse.Type;

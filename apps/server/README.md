@@ -39,6 +39,13 @@ it. Confirmed execution detail and history use one route for user and API-key
 actors: users require `execution:read` and see the active organization, while
 API keys see only executions started by their own actor.
 
+`POST /executions/simulate` is available to API-key and CLI actors that may
+execute. It applies a dedicated actor rate limit, runs the same unsigned EVM call
+simulation and current policy evaluation used before execution, and returns
+call success independently from session-key policy eligibility. It does not
+reserve policy state, sign or submit calls, create records, or consume billing
+usage.
+
 `POST /signatures` is available to granted machine actors. It requires an
 `Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
 grant, signature-policy, persistence, and monthly billing enforcement to the

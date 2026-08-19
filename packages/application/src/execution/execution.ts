@@ -24,7 +24,6 @@ import {
 } from "@namera-ai/protocol";
 import { ExecuteRequest } from "@namera-ai/protocol/dto";
 import type { ExecuteResponse, GrantedActorData } from "@namera-ai/protocol/dto";
-import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   executionDuration,
   executionPolicyDecisions,
@@ -33,22 +32,22 @@ import {
 
 import { enforceExecutionLimit, lockOrganizationBilling } from "#/billing/index";
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
+import { makePrepareExecution, type GrantedEvmSessionKey } from "#/execution/preparation";
 import { makeExecutionReadApplication, type ExecutionReadApplication } from "#/execution/read";
 import { makeExecutionReconciliation } from "#/execution/reconciliation";
-import { makeLoadEvmAccount } from "#/wallet/account";
+import {
+  makeExecutionSimulationApplication,
+  type ExecutionSimulationApplication,
+} from "#/execution/simulation";
 
 class ExistingSubmission extends Data.TaggedError("ExistingSubmission")<{
   readonly id: ExecutionSubmissionId;
 }> {}
 
-type GrantedSessionKey = {
-  readonly grant: SessionKeyGrant;
-  readonly sessionKey: EvmSessionKey;
-};
-
 const encodeRequest = Schema.encodeSync(ExecuteRequest);
 
-export interface ExecutionApplication extends ExecutionReadApplication {
+export interface ExecutionApplication
+  extends ExecutionReadApplication, ExecutionSimulationApplication {
   readonly execute: (input: {
     readonly actor: GrantedActorData;
     readonly idempotencyKey: string;
@@ -62,10 +61,11 @@ export const makeExecutionApplication = Effect.gen(function* () {
   const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
-  const loadEvmAccount = yield* makeLoadEvmAccount;
+  const prepareExecution = yield* makePrepareExecution;
   const lifecycle = yield* makeExecutionLifecycle;
   const reconciliation = yield* makeExecutionReconciliation;
   const read = yield* makeExecutionReadApplication;
+  const simulation = yield* makeExecutionSimulationApplication;
 
   const responseForExisting = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
@@ -128,31 +128,9 @@ export const makeExecutionApplication = Effect.gen(function* () {
         return yield* responseForExisting(input.actor.organizationId, requestHash, prior.id);
       }
 
-      const wallet = yield* repository.core.wallet.findById(
-        input.request.walletId,
-        input.actor.organizationId,
-      );
-      if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
-        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-      }
-      const account = yield* loadEvmAccount(wallet).pipe(
-        Effect.mapError(() => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
-      );
-      const prepared = yield* evm.execution
-        .prepare({ chainId: input.request.chainId, account, calls: input.request.calls })
-        .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
+      const { wallet, account, prepared, candidates } = yield* prepareExecution(input);
 
-      const candidates = input.actor.grants.filter(
-        (item): item is GrantedSessionKey =>
-          item.sessionKey.namespace === "eip155" &&
-          item.sessionKey.walletId === input.request.walletId &&
-          item.sessionKey.status === "active",
-      );
-      if (candidates.length === 0) {
-        return yield* new ExecutionError({ code: "NO_AUTHORIZED_SESSION_KEY" });
-      }
-
-      let selected: GrantedSessionKey | undefined;
+      let selected: GrantedEvmSessionKey | undefined;
       let submissionId: ExecutionSubmissionId | undefined;
       let lastPolicyDenial: EvmPolicyDeniedDecision | undefined;
       // One session key must authorize the complete call batch. Combining
@@ -367,5 +345,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
     Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
   );
 
-  return { execute, reconcile: reconciliation.reconcile, ...read } satisfies ExecutionApplication;
+  return {
+    execute,
+    reconcile: reconciliation.reconcile,
+    ...read,
+    ...simulation,
+  } satisfies ExecutionApplication;
 });

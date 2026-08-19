@@ -89,6 +89,11 @@ export const rateLimitPolicy = {
       window: Duration.minutes(1),
       algorithm: "token-bucket",
     },
+    simulationByActor: {
+      limit: 120,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
   },
   signature: {
     byApiKey: {

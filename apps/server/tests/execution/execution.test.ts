@@ -21,6 +21,102 @@ const metadata = (name: string) => ({ version: 1 as const, name });
 
 layer(TestServerLayer)("execution routes", (it) => {
   it.effect(
+    "simulates calls and policy eligibility without consuming limits or billing usage",
+    () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const owner = yield* signIn(client, testEmail("execution-simulation@example.com"));
+        const wallet = yield* client.wallet.create({
+          payload: {
+            namespace: "eip155",
+            implementation: "kernel",
+            protectionLevel: "software",
+            metadata: metadata("Simulation treasury"),
+          },
+        });
+        const sessionKey = yield* client.sessionKey.create({
+          payload: {
+            namespace: "eip155",
+            walletId: wallet.id,
+            metadata: metadata("Simulation agent"),
+            policies: [
+              {
+                type: "evm.time-window",
+                version: 1,
+                startsAt: null,
+                expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+              },
+              {
+                type: "evm.native-spend-limit",
+                version: 1,
+                limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 1n }],
+              },
+            ],
+          },
+        });
+        const spendPolicy = sessionKey.policies.find(
+          (policy) => policy.type === "evm.native-spend-limit",
+        );
+        if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
+        const apiKey = yield* client.apiKey.create({
+          payload: {
+            metadata: metadata("Simulation API key"),
+            durationDays: 7,
+            sessionKeyIds: [sessionKey.id],
+          },
+        });
+        yield* setAuthToken();
+        yield* setApiKey(apiKey.key);
+
+        const simulate = (value: bigint) =>
+          client.execution.simulate({
+            payload: {
+              namespace: "eip155",
+              walletId: wallet.id,
+              chainId: "eip155:1",
+              calls: [{ to: wallet.address, value, data: "0x" }],
+            },
+          });
+
+        const allowed = yield* simulate(1n);
+        expect(allowed).toMatchObject({
+          namespace: "eip155",
+          walletId: wallet.id,
+          chainId: "eip155:1",
+          account: wallet.address,
+          callsSucceeded: true,
+          allowed: true,
+          sessionKeyId: sessionKey.id,
+        });
+        const denied = yield* simulate(2n);
+        expect(denied).toMatchObject({
+          callsSucceeded: true,
+          allowed: false,
+          denials: [
+            {
+              sessionKeyId: sessionKey.id,
+              policyId: spendPolicy.id,
+              code: "NATIVE_SPEND_LIMIT_EXCEEDED",
+            },
+          ],
+        });
+
+        const repository = yield* Repository;
+        expect(
+          yield* repository.core.sessionKeyPolicyState.findForPolicy(
+            owner.actor.organization.id,
+            sessionKey.id,
+            spendPolicy.id,
+          ),
+        ).toEqual([]);
+        yield* setApiKey();
+        yield* setAuthToken(owner.cookie.value);
+        expect((yield* client.billing.get()).usage.executions).toBe(0);
+      }),
+  );
+
+  it.effect(
     "authenticates an API key, settles policy state, and returns an idempotent receipt",
     () =>
       Effect.gen(function* () {

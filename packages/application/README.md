@@ -148,6 +148,14 @@ on policy types. Periodic allowance settlement remains attached to the exact
 window in which the execution was authorized, even when confirmation occurs in
 a later window.
 
+Execution simulation prepares the same unsigned operation and normalized call
+simulation as execution, then previews every eligible session key against its
+current policy state. It returns the first allowed session key or each
+candidate's first deterministic policy denial. The preview does not reserve or
+settle policy state, sign or submit an operation, create execution records,
+consume billing usage, or emit audit events, so its authorization result is
+point-in-time only.
+
 Submission status reads require the creating API-key actor identity. Wallet,
 session-key, and confirmed-execution reads accept an optional actor scope. An
 omitted actor ID returns the permission-authorized organization view for users;

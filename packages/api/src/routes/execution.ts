@@ -16,12 +16,24 @@ import {
   GetExecutionSubmissionResponse,
   ListExecutionsRequest,
   ListExecutionsResponse,
+  SimulateExecutionRequest,
+  SimulateExecutionResponse,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
 import { Authorization } from "#/middlewares/index";
 
 export class ExecutionGroup extends HttpApiGroup.make("execution")
+  .add(
+    HttpApiEndpoint.post("simulate", "/simulate", {
+      payload: SimulateExecutionRequest,
+      success: SimulateExecutionResponse,
+      error: [ExecutionError, ...CommonErrors],
+    }).annotate(
+      OpenApi.Summary,
+      "Simulate an operation and evaluate authorized session-key policies",
+    ),
+  )
   .add(
     HttpApiEndpoint.post("execute", "/", {
       payload: ExecuteRequest,
