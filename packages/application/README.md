@@ -31,7 +31,8 @@ HTTP requests to application methods.
   builders composed behind one application surface.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
-- `src/wallet/` — wallet creation and organization- or actor-scoped wallet reads.
+- `src/wallet/` — separately composed creation, metadata update, and
+  organization- or actor-scoped wallet read workflows.
 - `BILLING.md` — organization billing model and plan-versioning rules.
 - `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
