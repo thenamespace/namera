@@ -5,7 +5,6 @@ import { PolicyId } from "#/common/index";
 const TimeWindowFields = {
   type: Schema.Literal("evm.time-window"),
   version: Schema.Literal(1),
-  appliesTo: Schema.Literal("both"),
   startsAt: Schema.NullOr(Schema.DateTimeUtcFromString),
   expiresAt: Schema.DateTimeUtcFromString,
 };
@@ -29,6 +28,7 @@ export const CreateEvmTimeWindowPolicy = Schema.Struct(TimeWindowFields)
 
 export const EvmTimeWindowPolicy = Schema.Struct({
   id: PolicyId,
+  appliesTo: Schema.Literal("both"),
   ...TimeWindowFields,
 })
   .check(validTimeWindow)

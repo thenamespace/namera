@@ -13,7 +13,6 @@ export const EvmNativeSpendLimit = Schema.Struct({
 const NativeSpendLimitFields = {
   type: Schema.Literal("evm.native-spend-limit"),
   version: Schema.Literal(1),
-  appliesTo: Schema.Literal("execution"),
   limits: Schema.Array(EvmNativeSpendLimit).check(
     Schema.isMinLength(1, { message: "At least one chain limit is required" }),
   ),
@@ -36,6 +35,7 @@ export const CreateEvmNativeSpendLimitPolicy = Schema.Struct(NativeSpendLimitFie
 
 export const EvmNativeSpendLimitPolicy = Schema.Struct({
   id: PolicyId,
+  appliesTo: Schema.Literal("execution"),
   ...NativeSpendLimitFields,
 })
   .check(uniqueChainLimits)

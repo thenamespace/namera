@@ -73,10 +73,18 @@ export const EvmSimulatedAssetChange = Schema.Struct({
   diff: EvmQuantity,
 });
 
+export const EvmSimulatedNativeTransfer = Schema.Struct({
+  callIndex: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  from: EthereumAddress,
+  to: EthereumAddress,
+  value: NonNegativeEvmQuantity,
+});
+
 export const EvmCallSimulation = Schema.Struct({
   source: Schema.Literal("viem.simulateCalls"),
   results: Schema.Array(EvmSimulatedCallResult),
   assetChanges: Schema.Array(EvmSimulatedAssetChange).check(Schema.isMaxLength(256)),
+  transfers: Schema.Array(EvmSimulatedNativeTransfer).check(Schema.isMaxLength(256)),
 });
 
 export const EvmIntentSimulation = Schema.Struct({
@@ -106,6 +114,7 @@ export type EvmUserOperationSimulation = typeof EvmUserOperationSimulation.Type;
 export type EvmSimulatedCallResult = typeof EvmSimulatedCallResult.Type;
 export type EvmSimulatedAsset = typeof EvmSimulatedAsset.Type;
 export type EvmSimulatedAssetChange = typeof EvmSimulatedAssetChange.Type;
+export type EvmSimulatedNativeTransfer = typeof EvmSimulatedNativeTransfer.Type;
 export type EvmCallSimulation = typeof EvmCallSimulation.Type;
 export type EvmIntentSimulation = typeof EvmIntentSimulation.Type;
 export type EvmIntentContext = typeof EvmIntentContext.Type;
