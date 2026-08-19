@@ -12,7 +12,9 @@ and delegates authenticated workflows to `@namera-ai/application` services.
 - `src/config.ts` — server host, port, and browser origin configuration.
 - `src/routes/core/` — API assembly, root, health, and Scalar reference routes.
 - `src/routes/auth/` — user authentication, organizations, API keys,
-  notifications, and OAuth management/protocol routes.
+  notifications, and OAuth routes. OAuth protocol registration,
+  authorization, token/device/revocation, metadata, and shared response parsing
+  are separate modules composed by one route layer.
 - `src/routes/wallet/` — wallet and session-key handlers.
 - `src/routes/execution/` — execution and signature handlers.
 - `src/routes/billing/`, `src/routes/mcp/`, and `src/routes/proxy/` — focused
