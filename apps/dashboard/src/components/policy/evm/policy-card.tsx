@@ -68,7 +68,7 @@ export function EvmPolicyCard({ index, policy, onChange, onRemove }: EvmPolicyCa
                         />
                       </Modal.Body>
                       <Modal.Footer>
-                        <Button type="button" variant="secondary" onPress={close}>
+                        <Button type="button" variant="tertiary" onPress={close}>
                           Cancel
                         </Button>
                         <Button form={formId} type="submit">
