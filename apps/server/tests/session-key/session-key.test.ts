@@ -47,10 +47,9 @@ layer(TestServerLayer)("session-key routes", (it) => {
             expiresAt,
           },
           {
-            type: "evm.time-window" as const,
+            type: "evm.signature" as const,
             version: 1 as const,
-            startsAt: DateTime.addDuration(now, Duration.minutes(5)),
-            expiresAt: DateTime.addDuration(now, Duration.hours(2)),
+            allowedTypes: ["message" as const],
           },
         ],
       };
@@ -80,7 +79,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
         },
         policies: [
           { type: "evm.time-window", version: 1, startsAt: null },
-          { type: "evm.time-window", version: 1 },
+          { type: "evm.signature", version: 1, allowedTypes: ["message"] },
         ],
       });
       expect(created.policies[0]?.id).toBeDefined();
@@ -134,6 +133,64 @@ layer(TestServerLayer)("session-key routes", (it) => {
         walletName: "Treasury",
         organizationName: owner.actor.organization.metadata.name,
       });
+    }),
+  );
+
+  it.effect("rejects repeated singleton policies and excessive lifetimes", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("session-key-policy-limits@example.com"));
+      const wallet = yield* client.wallet.create({
+        payload: {
+          namespace: "eip155",
+          implementation: "kernel",
+          protectionLevel: "software",
+          metadata: metadata("Policy limits"),
+        },
+      });
+      const now = yield* DateTime.now;
+      const timeWindow = {
+        type: "evm.time-window" as const,
+        version: 1 as const,
+        startsAt: null,
+        expiresAt: DateTime.addDuration(now, Duration.days(1)),
+      };
+
+      expect(
+        yield* client.sessionKey
+          .create({
+            payload: {
+              namespace: "eip155",
+              walletId: wallet.id,
+              metadata: metadata("Repeated policy"),
+              policies: [timeWindow, timeWindow],
+            },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({
+        _tag: "SessionKeyCreationError",
+        code: "POLICY_CARDINALITY_EXCEEDED",
+      });
+
+      expect(
+        yield* client.sessionKey
+          .create({
+            payload: {
+              namespace: "eip155",
+              walletId: wallet.id,
+              metadata: metadata("Excessive lifetime"),
+              policies: [
+                {
+                  ...timeWindow,
+                  expiresAt: DateTime.addDuration(now, Duration.days(366)),
+                },
+              ],
+            },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "SessionKeyCreationError", code: "TIME_WINDOW_TOO_LONG" });
+      expect(yield* client.sessionKey.listForOrganization()).toEqual([]);
     }),
   );
 

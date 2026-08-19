@@ -2,6 +2,7 @@ import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
+import { findEvmPolicyCardinalityViolation, materializeEvmPolicy } from "@namera-ai/evm";
 import {
   PolicyId,
   SessionKeyCreationError,
@@ -32,6 +33,7 @@ import { Audit } from "#/audit/layer";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
+import { sessionKeyPolicy } from "./data.js";
 import { hashSessionKeyPolicies } from "./hash.js";
 
 export interface SessionKeyView {
@@ -117,6 +119,15 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
         namespace: input.request.namespace,
       });
       const now = yield* DateTime.now;
+      const cardinalityViolation = findEvmPolicyCardinalityViolation(input.request.policies);
+      if (cardinalityViolation !== undefined) {
+        yield* Metric.update(
+          Metric.withAttributes(creationResults, { result: "policy_cardinality_exceeded" }),
+          1,
+        );
+        return yield* new SessionKeyCreationError({ code: "POLICY_CARDINALITY_EXCEEDED" });
+      }
+
       const timeWindows = input.request.policies.filter(
         (policy) => policy.type === "evm.time-window",
       );
@@ -130,6 +141,19 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
           1,
         );
         return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
+      }
+      const maximumExpiry = DateTime.addDuration(now, sessionKeyPolicy.maximumLifetime);
+      if (
+        timeWindows.some(
+          (policy) =>
+            DateTime.toEpochMillis(policy.expiresAt) > DateTime.toEpochMillis(maximumExpiry),
+        )
+      ) {
+        yield* Metric.update(
+          Metric.withAttributes(creationResults, { result: "time_window_too_long" }),
+          1,
+        );
+        return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_TOO_LONG" });
       }
 
       const wallet = yield* repository.core.wallet.findById(
@@ -158,17 +182,9 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
         return yield* new SessionKeyCreationError({ code: "WALLET_NAMESPACE_MISMATCH" });
       }
 
-      const policies = input.request.policies.map((policy) => {
-        const id = Schema.decodeSync(PolicyId)(generateUniqueId());
-        switch (policy.type) {
-          case "evm.native-spend-limit":
-            return { ...policy, id, appliesTo: "execution" } as const;
-          case "evm.time-window":
-            return { ...policy, id, appliesTo: "both" } as const;
-          case "evm.signature":
-            return { ...policy, id, appliesTo: "signature" } as const;
-        }
-      }) satisfies EvmSessionKeyPolicies;
+      const policies = input.request.policies.map((policy) =>
+        materializeEvmPolicy(policy, Schema.decodeSync(PolicyId)(generateUniqueId())),
+      ) satisfies EvmSessionKeyPolicies;
       const policyHash = yield* hashSessionKeyPolicies(crypto, policies);
       const policyTypes = policies.map((policy) => policy.type);
       const effectiveExpiry = policies
