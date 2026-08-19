@@ -5,6 +5,7 @@ import { PolicyId } from "#/common/index";
 const TimeWindowFields = {
   type: Schema.Literal("evm.time-window"),
   version: Schema.Literal(1),
+  appliesTo: Schema.Literal("both"),
   startsAt: Schema.NullOr(Schema.DateTimeUtcFromString),
   expiresAt: Schema.DateTimeUtcFromString,
 };

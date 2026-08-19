@@ -6,6 +6,7 @@ import { EvmSignatureType } from "#/evm/signature";
 const EvmSignaturePolicyFields = {
   type: Schema.Literal("evm.signature"),
   version: Schema.Literal(1),
+  appliesTo: Schema.Literal("signature"),
   allowedTypes: Schema.Array(EvmSignatureType)
     .check(Schema.isMinLength(1, { message: "At least one signature type is required" }))
     .check(Schema.isUnique()),

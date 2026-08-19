@@ -1,5 +1,8 @@
 import { Schema } from "effect";
 
+import { PolicyId } from "#/common/index";
+import { EvmPolicyDenialCode } from "#/policy/evm/decision";
+
 export const EvmExecutionErrorCode = Schema.Literals([
   "ACCOUNT_RECONSTRUCTION_FAILED",
   "ACCOUNT_ADDRESS_MISMATCH",
@@ -34,7 +37,8 @@ export class ExecutionError extends Schema.TaggedError<ExecutionError>()(
   "ExecutionError",
   {
     code: ExecutionErrorCode,
-    policyCode: Schema.optional(Schema.String),
+    policyId: Schema.optional(PolicyId),
+    policyCode: Schema.optional(EvmPolicyDenialCode),
   },
   { httpApiStatus: 409 },
 ) {}

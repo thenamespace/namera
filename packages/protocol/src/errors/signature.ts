@@ -1,5 +1,8 @@
 import { Schema } from "effect";
 
+import { PolicyId } from "#/common/index";
+import { EvmPolicyDenialCode } from "#/policy/evm/decision";
+
 export const EvmSignatureErrorCode = Schema.Literals([
   "ACCOUNT_RECONSTRUCTION_FAILED",
   "ACCOUNT_ADDRESS_MISMATCH",
@@ -26,7 +29,8 @@ export class SignatureError extends Schema.TaggedError<SignatureError>()(
   "SignatureError",
   {
     code: SignatureErrorCode,
-    policyCode: Schema.optional(Schema.String),
+    policyId: Schema.optional(PolicyId),
+    policyCode: Schema.optional(EvmPolicyDenialCode),
   },
   { httpApiStatus: 409 },
 ) {}

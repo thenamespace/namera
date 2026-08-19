@@ -1,6 +1,10 @@
-import { type Effect, type Schema } from "effect";
+import { type Effect, Schema } from "effect";
 
 import type { PolicyId } from "#/common/index";
+
+export const PolicyApplicability = Schema.Literals(["execution", "signature", "both"]);
+
+export type PolicyApplicability = typeof PolicyApplicability.Type;
 
 // Policy handlers define a namespace adapter's complete policy lifecycle:
 // evaluate performs a read-only eligibility check; reserve atomically claims

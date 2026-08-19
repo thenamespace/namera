@@ -10,13 +10,20 @@ export const EvmPolicyDenialCode = Schema.Literals([
   "SIGNATURE_TYPE_NOT_ALLOWED",
 ]);
 
+export const EvmPolicyAllowedDecision = Schema.Struct({ allowed: Schema.Literal(true) });
+
+export const EvmPolicyDeniedDecision = Schema.Struct({
+  allowed: Schema.Literal(false),
+  policyId: PolicyId,
+  code: EvmPolicyDenialCode,
+}).annotate({
+  identifier: "EvmPolicyDeniedDecision",
+  description: "A bounded policy denial attributed to the exact policy instance",
+});
+
 export const EvmPolicyDecision = Schema.Union([
-  Schema.Struct({ allowed: Schema.Literal(true) }),
-  Schema.Struct({
-    allowed: Schema.Literal(false),
-    policyId: PolicyId,
-    code: EvmPolicyDenialCode,
-  }),
+  EvmPolicyAllowedDecision,
+  EvmPolicyDeniedDecision,
 ]).annotate({
   identifier: "EvmPolicyDecision",
   description: "The result of evaluating one complete EVM policy set",
@@ -34,5 +41,7 @@ export const EvmSignaturePolicyDecision = Schema.Union([
 });
 
 export type EvmPolicyDenialCode = typeof EvmPolicyDenialCode.Type;
+export type EvmPolicyAllowedDecision = typeof EvmPolicyAllowedDecision.Type;
+export type EvmPolicyDeniedDecision = typeof EvmPolicyDeniedDecision.Type;
 export type EvmPolicyDecision = typeof EvmPolicyDecision.Type;
 export type EvmSignaturePolicyDecision = typeof EvmSignaturePolicyDecision.Type;
