@@ -90,11 +90,13 @@ database claims and performs bounded concurrent lookups across their chains.
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive
 expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
-CAIP-2 chain so concurrent executions cannot consume the same allowance. Each
-handler owns the schemas used to decode persisted state and reservations plus
-the context-derived seeds for any missing state. Registry priorities define
-denial precedence and policy IDs provide a stable tie-breaker, so caller array
-order cannot change evaluation, reservation, settlement, or release behavior.
+CAIP-2 chain so concurrent executions cannot consume the same allowance. An
+unconfigured chain permits zero-value calls but denies any positive native
+value. Each handler owns the schemas used to decode persisted state and
+reservations plus the context-derived seeds for any missing state. Registry
+priorities define denial precedence and policy IDs provide a stable tie-breaker,
+so caller array order cannot change evaluation, reservation, settlement, or
+release behavior.
 Each registry definition also declares whether its type is singleton or
 repeatable. The registry materializes persisted policy IDs and applicability,
 so application workflows do not branch on policy names.

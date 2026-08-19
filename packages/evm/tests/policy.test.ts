@@ -247,6 +247,26 @@ it.effect("denies native spend on a chain without a configured limit", () =>
   }).pipe(Effect.provide(Evm.testLayer)),
 );
 
+it.effect("allows zero-value calls on a chain without a configured limit", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const context = {
+      ...makeContext(0n),
+      chainId: Schema.decodeSync(SupportedEvmChainId)("eip155:10"),
+    };
+
+    const evaluated = yield* evm.policy.evaluate({ policies: [policy], context });
+    const reserved = yield* evm.policy.reserve({ policies: [policy], context, states: [] });
+
+    expect(evaluated).toEqual({ allowed: true });
+    expect(reserved).toEqual({
+      decision: { allowed: true },
+      stateChanges: [],
+      reservations: [],
+    });
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
 it.effect("treats time-window expiration as an exclusive boundary", () =>
   Effect.gen(function* () {
     const evm = yield* Evm;

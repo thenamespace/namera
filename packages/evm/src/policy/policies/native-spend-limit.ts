@@ -23,16 +23,18 @@ const evaluateNativeSpend = (
   policy: EvmNativeSpendLimitPolicy,
   context: EvmIntentContext,
 ): EvmPolicyDecision => {
+  const amount = context.calls.reduce((total, call) => total + call.value, 0n);
   const limit = policy.limits.find((item) => item.chainId === context.chainId);
   if (limit === undefined) {
-    return {
-      allowed: false,
-      policyId: policy.id,
-      code: "NATIVE_SPEND_CHAIN_NOT_CONFIGURED",
-    };
+    return amount === 0n
+      ? { allowed: true }
+      : {
+          allowed: false,
+          policyId: policy.id,
+          code: "NATIVE_SPEND_CHAIN_NOT_CONFIGURED",
+        };
   }
 
-  const amount = context.calls.reduce((total, call) => total + call.value, 0n);
   if (amount > limit.maxAmount) {
     return { allowed: false, policyId: policy.id, code: "NATIVE_SPEND_LIMIT_EXCEEDED" };
   }
@@ -85,15 +87,7 @@ export class EvmNativeSpendLimitPolicyHandler extends PolicyHandler<
 
       const limit = policy.limits.find((item) => item.chainId === context.chainId);
       if (limit === undefined) {
-        return Effect.succeed({
-          decision: {
-            allowed: false,
-            policyId: policy.id,
-            code: "NATIVE_SPEND_CHAIN_NOT_CONFIGURED",
-          },
-          states: new Map(),
-          reservations: new Map(),
-        });
+        return Effect.succeed({ decision, states: new Map(), reservations: new Map() });
       }
 
       const amount = context.calls.reduce((total, call) => total + call.value, 0n);
