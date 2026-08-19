@@ -10,6 +10,7 @@ import { useEventCallback } from "usehooks-ts";
 import { hasPermissions } from "@/components/permission";
 import { useCurrentUser } from "@/hooks/auth";
 import { useRevokeSessionKey } from "@/hooks/session-key";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const sessionKeyRevokePermission = ["session-key:revoke"] as const;
@@ -53,10 +54,10 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
     }
 
     if (key === "copy-id") {
-      void navigator.clipboard.writeText(sessionKey.id).then(
-        () => showSuccessToast({ title: "Session key ID copied" }),
-        () => showErrorToast(undefined, { title: "Couldn't copy session key ID" }),
-      );
+      void copyTextWithFeedback(sessionKey.id, {
+        success: { title: "Session key ID copied" },
+        error: { title: "Couldn't copy session key ID" },
+      });
       return;
     }
 

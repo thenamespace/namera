@@ -5,6 +5,8 @@ import { CheckIcon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEventCallback } from "usehooks-ts";
 
+import { writeClipboardText } from "@/lib/clipboard";
+
 type CopyIconButtonProps = {
   label: string;
   value: string;
@@ -31,13 +33,13 @@ export function CopyIconButton({
   const shouldReduceMotion = useReducedMotion();
   const copy = useEventCallback(() => {
     void (async () => {
-      try {
-        await navigator.clipboard.writeText(value);
+      const copied = await writeClipboardText(value);
+      if (copied) {
         setIsCopied(true);
         onCopySuccess?.();
         if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => setIsCopied(false), copiedDuration);
-      } catch {
+      } else {
         onCopyError?.();
       }
     })();

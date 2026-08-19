@@ -11,7 +11,7 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 
 type AccountActionsProps = {
   account: WalletResponse;
@@ -20,10 +20,10 @@ type AccountActionsProps = {
 export function AccountActions({ account }: AccountActionsProps) {
   const navigate = useNavigate();
   const copyValue = useEventCallback((value: string, title: string) => {
-    void navigator.clipboard.writeText(value).then(
-      () => showSuccessToast({ title }),
-      () => showErrorToast(undefined, { title: "Couldn't copy to clipboard" }),
-    );
+    void copyTextWithFeedback(value, {
+      success: { title },
+      error: { title: "Couldn't copy to clipboard" },
+    });
   });
   const handleAction = useEventCallback((key: string | number) => {
     if (key === "open-account") {

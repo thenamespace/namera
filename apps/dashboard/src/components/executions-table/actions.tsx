@@ -13,7 +13,7 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 
 import { getTransactionUrl } from "./data";
 
@@ -47,10 +47,10 @@ export function ExecutionActions({ execution }: ExecutionActionsProps) {
           : undefined;
     if (copy === undefined) return;
 
-    void navigator.clipboard.writeText(copy.value).then(
-      () => showSuccessToast({ title: `${copy.label} copied` }),
-      () => showErrorToast(undefined, { title: `Couldn't copy ${copy.label.toLowerCase()}` }),
-    );
+    void copyTextWithFeedback(copy.value, {
+      success: { title: `${copy.label} copied` },
+      error: { title: `Couldn't copy ${copy.label.toLowerCase()}` },
+    });
   });
 
   return (

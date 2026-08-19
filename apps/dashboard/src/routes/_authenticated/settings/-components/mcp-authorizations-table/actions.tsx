@@ -6,6 +6,7 @@ import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import { useRevokeMcpAuthorization } from "@/hooks/auth";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type McpAuthorizationActionsProps = {
@@ -34,14 +35,10 @@ export function McpAuthorizationActions({
   });
   const handleAction = useEventCallback((key: Key) => {
     if (key === "copy") {
-      void (async () => {
-        try {
-          await navigator.clipboard.writeText(authorization.id);
-          showSuccessToast({ title: "Authorization ID copied" });
-        } catch {
-          showErrorToast(undefined, { title: "Couldn’t copy authorization ID" });
-        }
-      })();
+      void copyTextWithFeedback(authorization.id, {
+        success: { title: "Authorization ID copied" },
+        error: { title: "Couldn’t copy authorization ID" },
+      });
       return;
     }
     if (key === "revoke") setIsOpen(true);

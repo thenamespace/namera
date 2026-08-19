@@ -6,7 +6,7 @@ import { useEventCallback } from "usehooks-ts";
 import { useEnsAvatar, useEnsName } from "wagmi";
 import { mainnet } from "wagmi/chains";
 
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 
 type EvmAddressDisplayProps = {
   address: EthereumAddress;
@@ -31,13 +31,10 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
   const placeholderAvatar = `https://api.dicebear.com/10.x/glass/svg?seed=${address}&size=40`;
 
   const copyAddress = useEventCallback(() => {
-    void navigator.clipboard.writeText(address).then(
-      () =>
-        showSuccessToast({
-          title: "Address copied to clipboard",
-        }),
-      () => showErrorToast(undefined, { title: "Couldn't copy address" }),
-    );
+    void copyTextWithFeedback(address, {
+      success: { title: "Address copied to clipboard" },
+      error: { title: "Couldn't copy address" },
+    });
   });
 
   const handleKeyDown = useEventCallback((event: KeyboardEvent<HTMLDivElement>) => {

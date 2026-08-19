@@ -28,6 +28,7 @@ import { useEventCallback } from "usehooks-ts";
 import { SessionKeySelect } from "@/components/session-key-select";
 import { useCreateApiKey } from "@/hooks/api-key";
 import { useSessionKeys } from "@/hooks/session-key";
+import { copyTextWithFeedback, writeClipboardText } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type CreateApiKeyInput = typeof CreateApiKeyRequest.Encoded;
@@ -65,17 +66,16 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
       }),
     onSuccess: (key) => {
       setCreated(key);
-      void navigator.clipboard.writeText(key.key).then(
-        () =>
-          showSuccessToast({
-            title: "API key created and copied",
-            description: "Store it now. It won’t be shown again.",
-          }),
-        () =>
-          showSuccessToast({
-            title: "API key created",
-            description: "Copy and store it now. It won’t be shown again.",
-          }),
+      void writeClipboardText(key.key).then((copied) =>
+        copied
+          ? showSuccessToast({
+              title: "API key created and copied",
+              description: "Store it now. It won’t be shown again.",
+            })
+          : showSuccessToast({
+              title: "API key created",
+              description: "Copy and store it now. It won’t be shown again.",
+            }),
       );
     },
   });
@@ -102,18 +102,16 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
   const copyKey = useEventCallback(() => {
     if (created === null) return;
 
-    void navigator.clipboard.writeText(created.key).then(
-      () =>
-        showSuccessToast({
-          title: "API key copied",
-          description: "Store it somewhere secure before closing this dialog.",
-        }),
-      () =>
-        showErrorToast(undefined, {
-          title: "Couldn’t copy API key",
-          description: "Copy it manually before closing this dialog.",
-        }),
-    );
+    void copyTextWithFeedback(created.key, {
+      success: {
+        title: "API key copied",
+        description: "Store it somewhere secure before closing this dialog.",
+      },
+      error: {
+        title: "Couldn’t copy API key",
+        description: "Copy it manually before closing this dialog.",
+      },
+    });
   });
 
   return (

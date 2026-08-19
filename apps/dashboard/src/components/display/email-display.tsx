@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { copyTextWithFeedback } from "@/lib/clipboard";
 
 type EmailDisplayProps = {
   email: string;
@@ -8,10 +8,10 @@ type EmailDisplayProps = {
 
 export function EmailDisplay({ email }: EmailDisplayProps) {
   const copyEmail = useCallback(() => {
-    void navigator.clipboard.writeText(email).then(
-      () => showSuccessToast({ title: "Email copied" }),
-      () => showErrorToast(undefined, { title: "Couldn’t copy email" }),
-    );
+    void copyTextWithFeedback(email, {
+      success: { title: "Email copied" },
+      error: { title: "Couldn’t copy email" },
+    });
   }, [email]);
 
   return (
