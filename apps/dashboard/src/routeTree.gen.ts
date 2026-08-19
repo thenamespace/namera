@@ -23,6 +23,7 @@ import { Route as AuthenticatedAccountAccountIdRouteRouteImport } from './routes
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
 import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenticated/accounts/new'
 import { Route as AuthenticatedCliAuthorizeRouteImport } from './routes/_authenticated/cli/authorize'
+import { Route as AuthenticatedExecutionExecutionIdRouteImport } from './routes/_authenticated/execution/$executionId'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
 import { Route as AuthenticatedOauthAuthorizeRouteImport } from './routes/_authenticated/oauth/authorize'
 import { Route as AuthenticatedSessionKeySessionKeyIdRouteRouteImport } from './routes/_authenticated/session-key/$sessionKeyId/route'
@@ -118,6 +119,12 @@ const AuthenticatedCliAuthorizeRoute =
   AuthenticatedCliAuthorizeRouteImport.update({
     id: '/cli/authorize',
     path: '/cli/authorize',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExecutionExecutionIdRoute =
+  AuthenticatedExecutionExecutionIdRouteImport.update({
+    id: '/execution/$executionId',
+    path: '/execution/$executionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInvitationsInvitationIdRoute =
@@ -273,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/session-key/$sessionKeyId': typeof AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
+  '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
@@ -308,6 +316,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
+  '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
@@ -348,6 +357,7 @@ export interface FileRoutesById {
   '/_authenticated/session-key/$sessionKeyId': typeof AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
+  '/_authenticated/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/_authenticated/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/_authenticated/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/session-key/$sessionKeyId'
     | '/accounts/new'
     | '/cli/authorize'
+    | '/execution/$executionId'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/session-keys/new'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/accounts/new'
     | '/cli/authorize'
+    | '/execution/$executionId'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/session-keys/new'
@@ -462,6 +474,7 @@ export interface FileRouteTypes {
     | '/_authenticated/session-key/$sessionKeyId'
     | '/_authenticated/accounts/new'
     | '/_authenticated/cli/authorize'
+    | '/_authenticated/execution/$executionId'
     | '/_authenticated/invitations/$invitationId'
     | '/_authenticated/oauth/authorize'
     | '/_authenticated/session-keys/new'
@@ -590,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/cli/authorize'
       fullPath: '/cli/authorize'
       preLoaderRoute: typeof AuthenticatedCliAuthorizeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/execution/$executionId': {
+      id: '/_authenticated/execution/$executionId'
+      path: '/execution/$executionId'
+      fullPath: '/execution/$executionId'
+      preLoaderRoute: typeof AuthenticatedExecutionExecutionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invitations/$invitationId': {
@@ -815,6 +835,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSessionKeySessionKeyIdRouteRoute: typeof AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedCliAuthorizeRoute: typeof AuthenticatedCliAuthorizeRoute
+  AuthenticatedExecutionExecutionIdRoute: typeof AuthenticatedExecutionExecutionIdRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
   AuthenticatedOauthAuthorizeRoute: typeof AuthenticatedOauthAuthorizeRoute
   AuthenticatedSessionKeysNewRoute: typeof AuthenticatedSessionKeysNewRoute
@@ -845,6 +866,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren,
   AuthenticatedAccountsNewRoute: AuthenticatedAccountsNewRoute,
   AuthenticatedCliAuthorizeRoute: AuthenticatedCliAuthorizeRoute,
+  AuthenticatedExecutionExecutionIdRoute:
+    AuthenticatedExecutionExecutionIdRoute,
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
   AuthenticatedOauthAuthorizeRoute: AuthenticatedOauthAuthorizeRoute,

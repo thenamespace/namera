@@ -64,7 +64,7 @@ type GroupRow = {
 type Row = ExecutionListItemResponse | GroupRow;
 
 const isGroup = (row: Row): row is GroupRow => "kind" in row;
-const getRowId = (row: Row) => (isGroup(row) ? row.id : row.execution.id);
+const getRowId = (row: Row) => (isGroup(row) ? row.id : row.details.id);
 const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
 
 function GroupLabel({ row }: { row: GroupRow }) {
@@ -78,11 +78,11 @@ function GroupLabel({ row }: { row: GroupRow }) {
       ) : row.grouping === "sessionKey" ? (
         <MetadataDisplay fallbackName="Unnamed session key" metadata={first.sessionKey.metadata} />
       ) : row.grouping === "namespace" ? (
-        <NamespaceDisplay namespace={first.execution.namespace} />
+        <NamespaceDisplay namespace={first.details.namespace} />
       ) : row.grouping === "chain" ? (
-        <ChainDisplay chainId={first.execution.data.chainId} />
+        <ChainDisplay chainId={first.details.chainId} />
       ) : (
-        <ExecutionActorDisplay type={first.actor.type} />
+        <ExecutionActorDisplay type={first.actorType} />
       )}
       <span className="text-xs tabular-nums text-muted">{row.children.length}</span>
     </span>
@@ -118,7 +118,7 @@ function SessionKeyCell({ item }: { item: ExecutionListItemResponse }) {
 }
 
 function TransactionCell({ item }: { item: ExecutionListItemResponse }) {
-  const hash = item.execution.data.transactionHash;
+  const hash = item.details.transactionHash;
   const transactionUrl = getTransactionUrl(item);
   const compactHash = `${hash.slice(0, 8)}…${hash.slice(-6)}`;
   const content = (
@@ -158,7 +158,7 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <NamespaceDisplay namespace={row.execution.namespace} />),
+    cell: (row) => (isGroup(row) ? null : <NamespaceDisplay namespace={row.details.namespace} />),
     header: "Namespace",
     id: "namespace",
     minWidth: 115,
@@ -166,7 +166,7 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <ChainDisplay chainId={row.execution.data.chainId} />),
+    cell: (row) => (isGroup(row) ? null : <ChainDisplay chainId={row.details.chainId} />),
     header: "Chain",
     id: "chain",
     minWidth: 145,
@@ -182,7 +182,7 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <ExecutionActorDisplay type={row.actor.type} />),
+    cell: (row) => (isGroup(row) ? null : <ExecutionActorDisplay type={row.actorType} />),
     header: "Called by",
     id: "actor",
     minWidth: 110,
@@ -199,7 +199,7 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
   {
     allowsSorting: true,
     cell: (row) =>
-      isGroup(row) ? null : <DateDisplay label="Executed" value={row.execution.createdAt} />,
+      isGroup(row) ? null : <DateDisplay label="Executed" value={row.details.createdAt} />,
     header: "Executed",
     id: "createdAt",
     minWidth: 130,
@@ -225,20 +225,20 @@ const sorters: Record<
   (left: ExecutionListItemResponse, right: ExecutionListItemResponse) => number
 > = {
   account: (left, right) => collator.compare(left.wallet.metadata.name, right.wallet.metadata.name),
-  namespace: (left, right) => collator.compare(left.execution.namespace, right.execution.namespace),
+  namespace: (left, right) => collator.compare(left.details.namespace, right.details.namespace),
   chain: (left, right) =>
     collator.compare(
-      getExecutionChain(left)?.chain.name ?? left.execution.data.chainId,
-      getExecutionChain(right)?.chain.name ?? right.execution.data.chainId,
+      getExecutionChain(left)?.chain.name ?? left.details.chainId,
+      getExecutionChain(right)?.chain.name ?? right.details.chainId,
     ),
   sessionKey: (left, right) =>
     collator.compare(left.sessionKey.metadata.name, right.sessionKey.metadata.name),
   actor: (left, right) => collator.compare(getActorLabel(left), getActorLabel(right)),
   txHash: (left, right) =>
-    collator.compare(left.execution.data.transactionHash, right.execution.data.transactionHash),
+    collator.compare(left.details.transactionHash, right.details.transactionHash),
   createdAt: (left, right) =>
-    DateTime.toEpochMillis(left.execution.createdAt) -
-    DateTime.toEpochMillis(right.execution.createdAt),
+    DateTime.toEpochMillis(left.details.createdAt) -
+    DateTime.toEpochMillis(right.details.createdAt),
 };
 
 const configurableColumns: ReadonlyArray<TableOption> = columns
@@ -283,24 +283,23 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   );
   const namespaceOptions = useMemo(
     () =>
-      [...new Set(items.map((item) => item.execution.namespace))].map((namespace) => ({
+      [...new Set(items.map((item) => item.details.namespace))].map((namespace) => ({
         id: namespace,
         label: namespace,
         content: <NamespaceDisplay namespace={namespace} />,
-        count: items.filter((item) => item.execution.namespace === namespace).length,
+        count: items.filter((item) => item.details.namespace === namespace).length,
       })),
     [items],
   );
   const chainOptions = useMemo(
     () =>
-      [...new Map(items.map((item) => [item.execution.data.chainId, item] as const)).values()].map(
+      [...new Map(items.map((item) => [item.details.chainId, item] as const)).values()].map(
         (item) => ({
-          id: item.execution.data.chainId,
-          label: getExecutionChain(item)?.chain.name ?? item.execution.data.chainId,
-          content: <ChainDisplay chainId={item.execution.data.chainId} />,
-          count: items.filter(
-            (candidate) => candidate.execution.data.chainId === item.execution.data.chainId,
-          ).length,
+          id: item.details.chainId,
+          label: getExecutionChain(item)?.chain.name ?? item.details.chainId,
+          content: <ChainDisplay chainId={item.details.chainId} />,
+          count: items.filter((candidate) => candidate.details.chainId === item.details.chainId)
+            .length,
         }),
       ),
     [items],
@@ -321,11 +320,11 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   );
   const actorOptions = useMemo(
     () =>
-      [...new Map(items.map((item) => [item.actor.type, item] as const)).values()].map((item) => ({
-        id: item.actor.type,
+      [...new Map(items.map((item) => [item.actorType, item] as const)).values()].map((item) => ({
+        id: item.actorType,
         label: getActorLabel(item),
-        content: <ExecutionActorDisplay type={item.actor.type} />,
-        count: items.filter((candidate) => candidate.actor.type === item.actor.type).length,
+        content: <ExecutionActorDisplay type={item.actorType} />,
+        count: items.filter((candidate) => candidate.actorType === item.actorType).length,
       })),
     [items],
   );
@@ -335,17 +334,16 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
       items.filter((item) => {
         const chain = getExecutionChain(item);
         const searchable = [
-          item.execution.id,
-          item.execution.namespace,
-          item.execution.data.chainId,
+          item.details.id,
+          item.details.namespace,
+          item.details.chainId,
           chain?.chain.name,
-          item.execution.data.transactionHash,
+          item.details.transactionHash,
           item.wallet.id,
           item.wallet.address,
           item.wallet.metadata.name,
           item.sessionKey.id,
           item.sessionKey.metadata.name,
-          item.actor.id,
           getActorLabel(item),
         ];
         const matchesQuery =
@@ -355,10 +353,10 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
         return (
           matchesQuery &&
           (accounts.size === 0 || accounts.has(item.wallet.id)) &&
-          (namespaces.size === 0 || namespaces.has(item.execution.namespace)) &&
-          (chainsFilter.size === 0 || chainsFilter.has(item.execution.data.chainId)) &&
+          (namespaces.size === 0 || namespaces.has(item.details.namespace)) &&
+          (chainsFilter.size === 0 || chainsFilter.has(item.details.chainId)) &&
           (sessionKeys.size === 0 || sessionKeys.has(item.sessionKey.id)) &&
-          (actors.size === 0 || actors.has(item.actor.type))
+          (actors.size === 0 || actors.has(item.actorType))
         );
       }),
     [accounts, actors, chainsFilter, items, namespaces, normalizedQuery, sessionKeys],
@@ -380,10 +378,10 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
           : grouping === "sessionKey"
             ? item.sessionKey.id
             : grouping === "namespace"
-              ? item.execution.namespace
+              ? item.details.namespace
               : grouping === "chain"
-                ? item.execution.data.chainId
-                : item.actor.type;
+                ? item.details.chainId
+                : item.actorType;
       grouped.set(value, [...(grouped.get(value) ?? []), item]);
     }
 

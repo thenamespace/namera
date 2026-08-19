@@ -2,8 +2,10 @@ import { Schema } from "effect";
 
 import {
   ActorId,
+  ApiKeyId,
   ExecutionId,
   ExecutionSubmissionId,
+  OAuthAuthorizationId,
   OrganizationId,
   PolicyId,
   SessionKeyId,
@@ -15,14 +17,25 @@ import {
   Hex,
   SuccessfulEvmExecutionReceipt,
   SupportedEvmChainId,
+  TransactionHash,
   UserOperationHash,
 } from "#/evm/index";
 import { ActorType } from "#/model/auth/actor";
-import { NonEmptyString } from "#/model/common";
+import { ApiKeyMetadata } from "#/model/auth/core/api-key";
+import {
+  OAuthAuthorizationMetadata,
+  OAuthAuthorizationStatus,
+  OAuthScopes,
+} from "#/model/auth/oauth/index";
+import { NonEmptyString, TimestampFields } from "#/model/common";
 import { EvmExecutionData } from "#/model/core/execution";
+import { SessionKeyMetadata } from "#/model/core/session-key";
+import { WalletMetadata } from "#/model/core/wallet/index";
 import { EvmIntentSimulation } from "#/policy/evm/context";
 import { EvmPolicyDenialCode } from "#/policy/evm/decision";
 
+import { OAuthClientResponse } from "./auth/oauth.js";
+import { GetOrganizationMemberResponse } from "./auth/organization/member.js";
 import { SessionKeySummaryResponse } from "./session-key/index.js";
 import { WalletResponse } from "./wallet/index.js";
 
@@ -132,22 +145,103 @@ export const ExecutionResponse = Schema.Union([EvmExecutionResponse], { mode: "o
   identifier: "ExecutionResponse",
 });
 
-export const ExecutionActorResponse = Schema.Struct({
-  id: ActorId,
-  type: ActorType,
-}).annotate({
-  identifier: "ExecutionActorResponse",
-  description: "The durable actor that initiated a confirmed execution",
-});
+export const ExecutionListDetailsResponse = Schema.Struct({
+  id: ExecutionId,
+  namespace: Schema.Literal("eip155"),
+  chainId: SupportedEvmChainId,
+  transactionHash: TransactionHash,
+  createdAt: Schema.DateTimeUtcFromDate,
+}).annotate({ identifier: "ExecutionListDetailsResponse" });
+
+export const ExecutionListWalletResponse = Schema.Struct({
+  id: WalletId,
+  namespace: Schema.Literal("eip155"),
+  address: EthereumAddress,
+  metadata: WalletMetadata,
+}).annotate({ identifier: "ExecutionListWalletResponse" });
+
+export const ExecutionListSessionKeyResponse = Schema.Struct({
+  id: SessionKeyId,
+  namespace: Schema.Literal("eip155"),
+  metadata: SessionKeyMetadata,
+}).annotate({ identifier: "ExecutionListSessionKeyResponse" });
 
 export const ExecutionListItemResponse = Schema.Struct({
+  details: ExecutionListDetailsResponse,
+  wallet: ExecutionListWalletResponse,
+  sessionKey: ExecutionListSessionKeyResponse,
+  actorType: ActorType,
+}).annotate({
+  identifier: "ExecutionListItemResponse",
+  description: "A compact confirmed-execution projection for list surfaces",
+});
+
+const ExecutionApiKeyDetails = Schema.Struct({
+  id: ApiKeyId,
+  metadata: ApiKeyMetadata,
+  keyStart: Schema.NonEmptyString,
+  expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  ...TimestampFields,
+});
+
+const ExecutionOAuthAuthorizationDetails = Schema.Struct({
+  id: OAuthAuthorizationId,
+  client: OAuthClientResponse,
+  scopes: OAuthScopes,
+  resource: Schema.NonEmptyString,
+  status: OAuthAuthorizationStatus,
+  metadata: OAuthAuthorizationMetadata,
+  expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  ...TimestampFields,
+});
+
+export const ExecutionUserActorDetailsResponse = Schema.Struct({
+  id: ActorId,
+  type: Schema.Literal("user"),
+  member: GetOrganizationMemberResponse,
+});
+
+export const ExecutionApiKeyActorDetailsResponse = Schema.Struct({
+  id: ActorId,
+  type: Schema.Literal("api-key"),
+  apiKey: ExecutionApiKeyDetails,
+});
+
+const executionOAuthActorDetailsResponse = <Type extends "mcp" | "cli">(type: Type) =>
+  Schema.Struct({
+    id: ActorId,
+    type: Schema.Literal(type),
+    authorization: ExecutionOAuthAuthorizationDetails,
+  });
+
+export const ExecutionMcpActorDetailsResponse = executionOAuthActorDetailsResponse("mcp");
+export const ExecutionCliActorDetailsResponse = executionOAuthActorDetailsResponse("cli");
+
+export const ExecutionActorDetailsResponse = Schema.Union(
+  [
+    ExecutionUserActorDetailsResponse,
+    ExecutionApiKeyActorDetailsResponse,
+    ExecutionMcpActorDetailsResponse,
+    ExecutionCliActorDetailsResponse,
+  ],
+  { mode: "oneOf" },
+).annotate({
+  identifier: "ExecutionActorDetailsResponse",
+  description: "Safe details for the actor that initiated a confirmed execution",
+});
+
+export const ExecutionDetailsResponse = Schema.Struct({
   execution: ExecutionResponse,
   wallet: WalletResponse,
   sessionKey: SessionKeySummaryResponse,
-  actor: ExecutionActorResponse,
+  actor: ExecutionActorDetailsResponse,
 }).annotate({
-  identifier: "ExecutionListItemResponse",
-  description: "A confirmed execution with the account, session key, and initiating actor",
+  identifier: "ExecutionDetailsResponse",
+  description: "A confirmed execution with its complete related display details",
 });
 
 export const GetExecutionSubmissionRequest = Schema.Struct({
@@ -189,7 +283,7 @@ export const GetExecutionRequest = Schema.Struct({
   executionId: ExecutionId,
 }).annotate({ identifier: "GetExecutionRequest" });
 
-export const GetExecutionResponse = ExecutionResponse.annotate({
+export const GetExecutionResponse = ExecutionDetailsResponse.annotate({
   identifier: "GetExecutionResponse",
 });
 
@@ -215,8 +309,12 @@ export type ConfirmedEvmExecutionResponse = typeof ConfirmedEvmExecutionResponse
 export type ExecuteResponse = typeof ExecuteResponse.Type;
 export type EvmExecutionResponse = typeof EvmExecutionResponse.Type;
 export type ExecutionResponse = typeof ExecutionResponse.Type;
-export type ExecutionActorResponse = typeof ExecutionActorResponse.Type;
+export type ExecutionListDetailsResponse = typeof ExecutionListDetailsResponse.Type;
+export type ExecutionListWalletResponse = typeof ExecutionListWalletResponse.Type;
+export type ExecutionListSessionKeyResponse = typeof ExecutionListSessionKeyResponse.Type;
 export type ExecutionListItemResponse = typeof ExecutionListItemResponse.Type;
+export type ExecutionActorDetailsResponse = typeof ExecutionActorDetailsResponse.Type;
+export type ExecutionDetailsResponse = typeof ExecutionDetailsResponse.Type;
 export type GetExecutionSubmissionRequest = typeof GetExecutionSubmissionRequest.Type;
 export type GetExecutionSubmissionResponse = typeof GetExecutionSubmissionResponse.Type;
 export type GetExecutionRequest = typeof GetExecutionRequest.Type;

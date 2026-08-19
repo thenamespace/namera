@@ -1,6 +1,10 @@
 import { Effect } from "effect";
 
-import { Repository, type ExecutionListView } from "@namera-ai/database";
+import {
+  Repository,
+  type ExecutionDetailsView as DatabaseExecutionDetailsView,
+  type ExecutionListView,
+} from "@namera-ai/database";
 import {
   ExecutionNotFoundError,
   ExecutionSubmissionNotFoundError,
@@ -9,11 +13,44 @@ import {
   type ExecutionSubmissionId,
   type OrganizationId,
 } from "@namera-ai/protocol";
-import type { ExecutionResponse, GetExecutionSubmissionResponse } from "@namera-ai/protocol/dto";
+import type { GetExecutionSubmissionResponse } from "@namera-ai/protocol/dto";
+import type {
+  ApiKey,
+  OAuthAuthorization,
+  OAuthClient,
+  OrganizationMember,
+  OrganizationRole,
+  User,
+} from "@namera-ai/protocol/model";
 
 const executionPageSize = 50;
 
 export type ExecutionActivityView = ExecutionListView;
+
+interface ExecutionMemberView {
+  readonly organizationMember: OrganizationMember;
+  readonly organizationRole: OrganizationRole;
+  readonly user: User;
+}
+
+export type ExecutionActorDetailsView =
+  | {
+      readonly type: "user";
+      readonly member: ExecutionMemberView;
+    }
+  | {
+      readonly type: "api-key";
+      readonly apiKey: ApiKey;
+    }
+  | {
+      readonly type: "mcp" | "cli";
+      readonly authorization: OAuthAuthorization;
+      readonly client: OAuthClient;
+    };
+
+export interface ExecutionDetailsView extends DatabaseExecutionDetailsView {
+  readonly actorDetails: ExecutionActorDetailsView;
+}
 
 export interface ExecutionListResult {
   readonly items: ReadonlyArray<ExecutionListView>;
@@ -30,7 +67,7 @@ export interface ExecutionReadApplication {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;
     readonly executionId: ExecutionId;
-  }) => Effect.Effect<ExecutionResponse, ExecutionNotFoundError>;
+  }) => Effect.Effect<ExecutionDetailsView, ExecutionNotFoundError>;
   readonly list: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;
@@ -40,6 +77,45 @@ export interface ExecutionReadApplication {
 
 export const makeExecutionReadApplication = Effect.gen(function* () {
   const repository = yield* Repository;
+
+  const loadActorDetails = Effect.fnUntraced(function* (details: DatabaseExecutionDetailsView) {
+    switch (details.actor.type) {
+      case "user": {
+        const member = (yield* repository.auth.member.findByActorIds(
+          details.execution.organizationId,
+          [details.actor.id],
+        ))[0];
+        if (member === undefined)
+          return yield* Effect.die("Execution user actor relation is missing");
+        return { type: "user", member } as const;
+      }
+      case "api-key": {
+        const apiKey = yield* repository.auth.apiKey.findByActorId(
+          details.actor.id,
+          details.execution.organizationId,
+        );
+        if (apiKey === undefined) {
+          return yield* Effect.die("Execution API-key actor relation is missing");
+        }
+        return { type: "api-key", apiKey } as const;
+      }
+      case "mcp":
+      case "cli": {
+        const authorization = yield* repository.auth.oauth.authorization.findByActorId(
+          details.actor.id,
+          details.execution.organizationId,
+        );
+        if (authorization === undefined || authorization.type !== details.actor.type) {
+          return yield* Effect.die("Execution OAuth actor relation is missing");
+        }
+        const client = yield* repository.auth.oauth.client.findById(authorization.clientId);
+        if (client === undefined) {
+          return yield* Effect.die("Execution OAuth client relation is missing");
+        }
+        return { type: details.actor.type, authorization, client } as const;
+      }
+    }
+  });
 
   const getSubmission = Effect.fn("application.execution.getSubmission")(
     function* (input: {
@@ -97,17 +173,20 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
       readonly actorId?: ActorId;
       readonly executionId: ExecutionId;
     }) {
-      const execution = yield* input.actorId === undefined
-        ? repository.core.execution.findById(input.executionId, input.organizationId)
-        : repository.core.execution.findByIdForActor(
+      const details = yield* input.actorId === undefined
+        ? repository.core.execution.findDetailsById(input.executionId, input.organizationId)
+        : repository.core.execution.findDetailsByIdForActor(
             input.executionId,
             input.organizationId,
             input.actorId,
           );
-      if (execution === undefined) {
+      if (details === undefined) {
         return yield* new ExecutionNotFoundError({ code: "EXECUTION_NOT_FOUND" });
       }
-      return execution;
+      return {
+        ...details,
+        actorDetails: yield* loadActorDetails(details),
+      };
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
@@ -133,7 +212,7 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
       const items = rows.slice(0, executionPageSize);
       return {
         items,
-        nextCursor: rows.length > executionPageSize ? (items.at(-1)?.execution.id ?? null) : null,
+        nextCursor: rows.length > executionPageSize ? (items.at(-1)?.details.id ?? null) : null,
       };
     },
     Effect.catchTag("DatabaseError", Effect.die),

@@ -31,6 +31,10 @@ export interface OAuthAuthorizationRepositoryService {
     id: OAuthAuthorizationId,
     organizationId: OrganizationId,
   ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
+  readonly findByActorId: (
+    actorId: ActorId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
     type?: OAuthAuthorizationType,
@@ -99,6 +103,23 @@ export class OAuthAuthorizationRepository extends Context.Service<
             .where(
               and(
                 eq(oauthAuthorization.id, id),
+                eq(oauthAuthorization.organizationId, organizationId),
+              ),
+            )
+            .limit(1);
+          return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0] as any) : undefined;
+        }, mapRepositoryError),
+        findByActorId: Effect.fn("database.oauthAuthorizationRepository.findByActorId")(function* (
+          actorId,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(oauthAuthorization)
+            .where(
+              and(
+                eq(oauthAuthorization.actorId, actorId),
                 eq(oauthAuthorization.organizationId, organizationId),
               ),
             )

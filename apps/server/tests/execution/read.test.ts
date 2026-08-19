@@ -92,7 +92,8 @@ layer(TestServerLayer)("execution read routes", (it) => {
       const actorPage = yield* client.execution.list({ query: {} });
       expect(actorPage.items).toHaveLength(50);
       expect(
-        (yield* client.execution.get({ params: { executionId: firstExecution.executionId } })).id,
+        (yield* client.execution.get({ params: { executionId: firstExecution.executionId } }))
+          .execution.id,
       ).toBe(firstExecution.executionId);
 
       yield* setApiKey(otherApiKey.key);
@@ -111,16 +112,26 @@ layer(TestServerLayer)("execution read routes", (it) => {
       const detail = yield* client.execution.get({
         params: { executionId: firstExecution.executionId },
       });
-      expect(detail.executionSubmissionId).toBe(firstExecution.submissionId);
+      expect(detail.execution.executionSubmissionId).toBe(firstExecution.submissionId);
+      expect(detail.actor).toMatchObject({
+        type: "api-key",
+        apiKey: { id: fixture.apiKey.apiKey.id, metadata: { name: "Agent list" } },
+      });
 
       const firstPage = yield* client.execution.list({ query: {} });
       expect(firstPage.items).toHaveLength(50);
       expect(firstPage.items[0]).toMatchObject({
-        actor: { type: "api-key" },
+        actorType: "api-key",
         sessionKey: { id: fixture.sessionKey.id },
         wallet: { id: fixture.wallet.id },
-        execution: { namespace: "eip155" },
+        details: { namespace: "eip155" },
       });
+      expect(Object.keys(firstPage.items[0] ?? {}).toSorted()).toEqual([
+        "actorType",
+        "details",
+        "sessionKey",
+        "wallet",
+      ]);
       expect(firstPage.nextCursor).not.toBeNull();
       if (firstPage.nextCursor === null) return yield* Effect.die("Expected a next cursor");
       const secondPage = yield* client.execution.list({
@@ -129,8 +140,7 @@ layer(TestServerLayer)("execution read routes", (it) => {
       expect(secondPage.items).toHaveLength(1);
       expect(secondPage.nextCursor).toBeNull();
       expect(
-        new Set([...firstPage.items, ...secondPage.items].map(({ execution }) => execution.id))
-          .size,
+        new Set([...firstPage.items, ...secondPage.items].map(({ details }) => details.id)).size,
       ).toBe(51);
     }),
   );

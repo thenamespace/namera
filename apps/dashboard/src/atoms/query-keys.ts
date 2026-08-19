@@ -1,5 +1,6 @@
 import type {
   ApiKeyId,
+  ExecutionId,
   InvitationId,
   OrganizationId,
   OAuthAuthorizationId,
@@ -50,6 +51,8 @@ export const QueryKeys = {
   execution: {
     all: ["execution:all"] as const,
     lists: ["execution:lists"] as const,
+    details: ["execution:details"] as const,
+    detail: (executionId: ExecutionId) => [`execution:detail:${executionId}`] as const,
   },
   sessionKey: {
     all: ["session-key:all"] as const,
@@ -112,6 +115,8 @@ export type QueryKey =
   | ReturnType<typeof QueryKeys.wallet.detail>[number]
   | (typeof QueryKeys.execution.all)[number]
   | (typeof QueryKeys.execution.lists)[number]
+  | (typeof QueryKeys.execution.details)[number]
+  | ReturnType<typeof QueryKeys.execution.detail>[number]
   | (typeof QueryKeys.sessionKey.all)[number]
   | (typeof QueryKeys.sessionKey.lists)[number]
   | (typeof QueryKeys.sessionKey.organizationLists)[number]

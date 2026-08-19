@@ -433,7 +433,7 @@ layer(TestServerLayer)("MCP route", (it) => {
         ),
       );
       expect(yield* executions.json).toMatchObject({
-        result: { structuredContent: { items: [{ execution: { id: executionId } }] } },
+        result: { structuredContent: { items: [{ details: { id: executionId } }] } },
       });
 
       const signed = yield* client.execute(
