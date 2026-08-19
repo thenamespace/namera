@@ -8,7 +8,6 @@ import type { EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   Button,
-  Checkbox,
   Field,
   FieldGroup,
   FieldLabel,
@@ -17,7 +16,7 @@ import {
   Select,
   Typography,
 } from "@namera-ai/ui";
-import { Add01Icon, ChainIcon, Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Add01Icon, Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useFieldArray, useForm, useWatch, type Control } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 import { formatUnits, parseUnits } from "viem";
@@ -29,6 +28,7 @@ import {
   nativeSpendPeriodById,
   nativeSpendPeriodOptions,
 } from "./data";
+import { EvmNetworkMultiSelect } from "./network-multi-select";
 import type { EvmPolicyInput, NativeSpendLimitPolicyInput } from "./types";
 
 const NativeAmount = Schema.String.check(
@@ -131,11 +131,6 @@ type NativeSpendLimitRowProps = {
 };
 
 function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpendLimitRowProps) {
-  const chainIds = useWatch({ control, name: `limits.${index}.chainIds` });
-  const selectedChains = chainIds.flatMap((chainId) => {
-    const chain = evmChainById.get(chainId);
-    return chain ? [chain] : [];
-  });
   const handleRemove = useEventCallback(() => onRemove(index));
 
   return (
@@ -160,98 +155,25 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
       <Controller
         control={control}
         name={`limits.${index}.chainIds`}
-        render={({ field, fieldState }) => {
-          const error = fieldState.error;
-          const allNetworksSelected = field.value.length === evmChainOptions.length;
-
-          return (
-            <Field data-invalid={Boolean(error)}>
-              <FieldLabel id={`native-spend-network-${index}`}>Networks</FieldLabel>
-              <Select<(typeof evmChainOptions)[number], "multiple">
-                aria-labelledby={`native-spend-network-${index}`}
-                fullWidth
-                isInvalid={Boolean(error)}
-                name={field.name}
-                selectionMode="multiple"
-                value={Array.from(field.value)}
-                variant="secondary"
-                onChange={(keys) =>
-                  field.onChange(keys.map((key) => String(key) as SupportedEvmChainId))
-                }
-              >
-                <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                  <Select.Value>
-                    {selectedChains[0] ? (
-                      <span className="flex items-center gap-2">
-                        <ChainIcon
-                          aria-hidden
-                          chain={selectedChains[0].chain}
-                          className="size-4"
-                          namespace="eip155"
-                        />
-                        <span className="truncate">
-                          {selectedChains.length === 1
-                            ? selectedChains[0].name
-                            : `${selectedChains.length} networks`}
-                        </span>
-                      </span>
-                    ) : (
-                      "Select networks"
-                    )}
-                  </Select.Value>
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover className="w-(--trigger-width) overflow-hidden p-1">
-                  <Checkbox
-                    aria-label="Select all networks"
-                    className="w-full rounded-md px-2 py-1.5 transition-colors hover:bg-default"
-                    isSelected={allNetworksSelected}
-                    onChange={(isSelected) =>
-                      field.onChange(isSelected ? evmChainOptions.map((chain) => chain.id) : [])
-                    }
-                  >
-                    <Checkbox.Content className="w-full">
-                      <Checkbox.Control>
-                        <Checkbox.Indicator />
-                      </Checkbox.Control>
-                      <span className="flex-1 text-left font-medium">Select all networks</span>
-                      <span className="text-muted text-xs">{evmChainOptions.length}</span>
-                    </Checkbox.Content>
-                  </Checkbox>
-                  <ListBox className="max-h-60 overflow-y-auto" items={evmChainOptions}>
-                    {(chain) => (
-                      <ListBox.Item
-                        id={chain.id}
-                        textValue={`${chain.name} (${chain.nativeCurrency.symbol})`}
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <ChainIcon
-                            aria-hidden
-                            chain={chain.chain}
-                            className="size-4 shrink-0"
-                            namespace="eip155"
-                          />
-                          <span className="truncate">
-                            {chain.name}{" "}
-                            <span className="text-muted text-xs">
-                              ({chain.nativeCurrency.symbol})
-                            </span>
-                          </span>
-                        </div>
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    )}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-              {error ? (
-                <Typography.Paragraph className="text-danger" role="alert" size="xs">
-                  {error.message ?? "Select a supported network"}
-                </Typography.Paragraph>
-              ) : null}
-            </Field>
-          );
-        }}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel id={`native-spend-network-${index}`}>Networks</FieldLabel>
+            <EvmNetworkMultiSelect
+              aria-labelledby={`native-spend-network-${index}`}
+              isInvalid={fieldState.invalid}
+              name={field.name}
+              triggerRef={field.ref}
+              value={field.value as ReadonlyArray<SupportedEvmChainId>}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+            />
+            {fieldState.error ? (
+              <Typography.Paragraph className="text-danger" role="alert" size="xs">
+                {fieldState.error.message ?? "Select a supported network"}
+              </Typography.Paragraph>
+            ) : null}
+          </Field>
+        )}
       />
 
       <Controller

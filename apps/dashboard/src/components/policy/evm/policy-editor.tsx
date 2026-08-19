@@ -9,6 +9,22 @@ type PolicyEditorProps = EvmPolicyEditorProps & {
 
 export function EvmPolicyEditor({ type, formId, initialValue, onSave }: PolicyEditorProps) {
   switch (type) {
+    case "evm.chain-allowlist":
+      return (
+        <ChainAllowlistPolicyEditor
+          formId={formId}
+          onSave={onSave}
+          {...(initialValue?.type === "evm.chain-allowlist" ? { initialValue } : {})}
+        />
+      );
+    case "evm.gas-budget":
+      return (
+        <GasBudgetPolicyEditor
+          formId={formId}
+          onSave={onSave}
+          {...(initialValue?.type === "evm.gas-budget" ? { initialValue } : {})}
+        />
+      );
     case "evm.time-window":
       return (
         <TimeWindowPolicyEditor
@@ -35,3 +51,5 @@ export function EvmPolicyEditor({ type, formId, initialValue, onSave }: PolicyEd
       );
   }
 }
+import { ChainAllowlistPolicyEditor } from "./chain-allowlist-editor";
+import { GasBudgetPolicyEditor } from "./gas-budget-editor";

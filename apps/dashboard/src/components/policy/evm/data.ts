@@ -1,11 +1,13 @@
 import type { ComponentProps } from "react";
 
 import { chains } from "@namera-ai/evm";
-import type { EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
+import type { EvmGasBudgetPeriod, EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   CalendarClockIcon,
   Coins01Icon,
+  FuelStationIcon,
+  GlobalIcon,
   type HugeiconsIcon,
   SignatureIcon,
 } from "@namera-ai/ui/icons";
@@ -47,6 +49,22 @@ export const nativeSpendPeriodById = new Map<
   (typeof nativeSpendPeriodOptions)[number]
 >(nativeSpendPeriodOptions.map((period) => [period.id, period]));
 
+export const gasBudgetPeriodOptions = [
+  { id: "hour", label: "Hourly", description: "Resets at the start of each UTC hour" },
+  { id: "day", label: "Daily", description: "Resets every day at 00:00 UTC" },
+  { id: "week", label: "Weekly", description: "Resets every Monday at 00:00 UTC" },
+  { id: "lifetime", label: "Lifetime", description: "Never resets" },
+] as const satisfies ReadonlyArray<{
+  readonly id: EvmGasBudgetPeriod;
+  readonly label: string;
+  readonly description: string;
+}>;
+
+export const gasBudgetPeriodById = new Map<
+  EvmGasBudgetPeriod,
+  (typeof gasBudgetPeriodOptions)[number]
+>(gasBudgetPeriodOptions.map((period) => [period.id, period]));
+
 type PolicyDefinition = {
   readonly type: EvmPolicyType;
   readonly name: string;
@@ -56,6 +74,20 @@ type PolicyDefinition = {
 };
 
 export const evmPolicyDefinitions = {
+  "evm.chain-allowlist": {
+    type: "evm.chain-allowlist",
+    name: "Allowed networks",
+    description: "Choose the networks where this session key can execute or sign.",
+    cardinality: "singleton",
+    icon: GlobalIcon,
+  },
+  "evm.gas-budget": {
+    type: "evm.gas-budget",
+    name: "Gas budget",
+    description: "Limit native gas costs by network and reset period.",
+    cardinality: "singleton",
+    icon: FuelStationIcon,
+  },
   "evm.time-window": {
     type: "evm.time-window",
     name: "Time window",
@@ -82,6 +114,8 @@ export const evmPolicyDefinitions = {
 export const evmPolicyCatalog = Object.values(evmPolicyDefinitions);
 
 export const evmPolicyFormIds = {
+  "evm.chain-allowlist": "evm-chain-allowlist-policy-form",
+  "evm.gas-budget": "evm-gas-budget-policy-form",
   "evm.time-window": "evm-time-window-policy-form",
   "evm.native-spend-limit": "evm-native-spend-limit-policy-form",
   "evm.signature": "evm-signature-policy-form",
