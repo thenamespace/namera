@@ -184,19 +184,22 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
                 <Select.Popover className="w-(--trigger-width)">
                   <ListBox items={evmChainOptions}>
                     {(chain) => (
-                      <ListBox.Item id={chain.id} textValue={chain.name}>
-                        <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-                          <span className="flex min-w-0 items-center gap-2">
-                            <ChainIcon
-                              aria-hidden
-                              chain={chain.chain}
-                              className="size-4 shrink-0"
-                              namespace="eip155"
-                            />
-                            <span className="truncate">{chain.name}</span>
-                          </span>
-                          <span className="text-muted shrink-0 text-xs">
-                            {chain.nativeCurrency.symbol}
+                      <ListBox.Item
+                        id={chain.id}
+                        textValue={`${chain.name} (${chain.nativeCurrency.symbol})`}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <ChainIcon
+                            aria-hidden
+                            chain={chain.chain}
+                            className="size-4 shrink-0"
+                            namespace="eip155"
+                          />
+                          <span className="truncate">
+                            {chain.name}{" "}
+                            <span className="text-muted text-xs">
+                              ({chain.nativeCurrency.symbol})
+                            </span>
                           </span>
                         </div>
                         <ListBox.ItemIndicator />
