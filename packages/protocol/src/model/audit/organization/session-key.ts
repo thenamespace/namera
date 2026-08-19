@@ -11,7 +11,12 @@ export const SessionKeyCreatedEventData = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     policyTypes: Schema.Array(
-      Schema.Literals(["evm.native-spend-limit", "evm.signature", "evm.time-window"]),
+      Schema.Literals([
+        "evm.chain-allowlist",
+        "evm.native-spend-limit",
+        "evm.signature",
+        "evm.time-window",
+      ]),
     ),
   }),
 });

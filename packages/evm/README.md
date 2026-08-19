@@ -89,7 +89,9 @@ database claims and performs bounded concurrent lookups across their chains.
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive
-expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
+expiration. `evm.chain-allowlist` is a stateless execution and signature
+constraint over a non-empty unique set of supported CAIP-2 networks; it does not
+grant signature access by itself. `evm.native-spend-limit` tracks spent and in-flight native value per
 CAIP-2 chain and fixed UTC allowance window so concurrent executions cannot
 consume the same allowance. It supports per-operation, hourly, daily, weekly,
 monthly, and lifetime limits; weekly windows begin Monday at 00:00 UTC. Window

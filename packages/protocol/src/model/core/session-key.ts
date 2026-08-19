@@ -4,9 +4,11 @@ import { ActorId, OrganizationId, SessionKeyId, WalletId } from "#/common/index"
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import {
+  CreateEvmChainAllowlistPolicy,
   CreateEvmNativeSpendLimitPolicy,
   CreateEvmSignaturePolicy,
   CreateEvmTimeWindowPolicy,
+  EvmChainAllowlistPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
   EvmTimeWindowPolicy,
@@ -23,11 +25,13 @@ export const SessionKeyMetadata = Schema.Struct({
 
 export const EvmSessionKeyPolicy = Schema.Union([
   EvmTimeWindowPolicy,
+  EvmChainAllowlistPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
 ]);
 export const CreateEvmSessionKeyPolicy = Schema.Union([
   CreateEvmTimeWindowPolicy,
+  CreateEvmChainAllowlistPolicy,
   CreateEvmNativeSpendLimitPolicy,
   CreateEvmSignaturePolicy,
 ]);

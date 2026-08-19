@@ -5,6 +5,7 @@ import { PolicyId } from "#/common/index";
 export const EvmPolicyDenialCode = Schema.Literals([
   "TIME_WINDOW_NOT_STARTED",
   "TIME_WINDOW_EXPIRED",
+  "CHAIN_NOT_ALLOWED",
   "NATIVE_SPEND_CHAIN_NOT_CONFIGURED",
   "NATIVE_SPEND_LIMIT_EXCEEDED",
   "SIGNATURE_TYPE_NOT_ALLOWED",

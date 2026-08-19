@@ -2,6 +2,7 @@ import { expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
 
 import {
+  type EvmChainAllowlistPolicy,
   EthereumAddress,
   PolicyId,
   SupportedEvmChainId,
@@ -16,6 +17,7 @@ const chainId = Schema.decodeSync(SupportedEvmChainId)("eip155:1");
 const account = EthereumAddress.make("0x1111111111111111111111111111111111111111");
 const timeWindowId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000001");
 const signaturePolicyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000002");
+const chainAllowlistPolicyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000003");
 const timeWindow = {
   id: timeWindowId,
   type: "evm.time-window",
@@ -31,6 +33,13 @@ const signaturePolicy = {
   appliesTo: "signature",
   allowedTypes: ["message"],
 } satisfies EvmSignaturePolicy;
+const chainAllowlistPolicy = {
+  id: chainAllowlistPolicyId,
+  type: "evm.chain-allowlist",
+  version: 1,
+  appliesTo: "both",
+  chainIds: [chainId],
+} satisfies EvmChainAllowlistPolicy;
 const context = {
   version: 1,
   namespace: "eip155",
@@ -86,6 +95,28 @@ it.effect("denies signature types not listed by the policy", () =>
       allowed: false,
       policyId: signaturePolicyId,
       code: "SIGNATURE_TYPE_NOT_ALLOWED",
+    });
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("applies the chain allowlist to signatures without granting signature access", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    expect(
+      yield* evm.policy.evaluateSignature({ policies: [chainAllowlistPolicy], context }),
+    ).toEqual({ allowed: false, code: "SIGNATURE_POLICY_REQUIRED" });
+
+    const denied = yield* evm.policy.evaluateSignature({
+      policies: [chainAllowlistPolicy, signaturePolicy],
+      context: {
+        ...context,
+        chainId: Schema.decodeSync(SupportedEvmChainId)("eip155:10"),
+      },
+    });
+    expect(denied).toEqual({
+      allowed: false,
+      policyId: chainAllowlistPolicyId,
+      code: "CHAIN_NOT_ALLOWED",
     });
   }).pipe(Effect.provide(Evm.testLayer)),
 );

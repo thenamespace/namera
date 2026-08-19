@@ -15,6 +15,14 @@ import {
 } from "../src/policy/registry.js";
 
 it("declares operation applicability for every current EVM policy", () => {
+  expect(evmPolicyRegistry["evm.chain-allowlist"].applicability).toBe("both");
+  expect(evmPolicyRegistry["evm.chain-allowlist"].cardinality).toBe("singleton");
+  expect(evmPolicyRegistry["evm.chain-allowlist"].execution.kind).toBe("stateless");
+  expect(evmPolicyRegistry["evm.chain-allowlist"].signature).toMatchObject({
+    kind: "stateless",
+    grantsAccess: false,
+  });
+
   expect(evmPolicyRegistry["evm.native-spend-limit"].applicability).toBe("execution");
   expect(evmPolicyRegistry["evm.native-spend-limit"].cardinality).toBe("singleton");
   expect(evmPolicyRegistry["evm.native-spend-limit"].execution.kind).toBe("stateful");

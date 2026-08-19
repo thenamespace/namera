@@ -3,6 +3,7 @@ import { DateTime, Effect, Schema } from "effect";
 
 import {
   Bytes32,
+  EvmChainAllowlistPolicy,
   EvmNativeSpendLimitPolicy,
   EthereumAddress,
   Hex,
@@ -19,6 +20,7 @@ import { Evm } from "../src/index.js";
 const chainId = Schema.decodeSync(SupportedEvmChainId)("eip155:1");
 const policyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000001");
 const timeWindowPolicyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000002");
+const chainAllowlistPolicyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000003");
 const address = EthereumAddress.make("0x1111111111111111111111111111111111111111");
 
 const policy = {
@@ -29,6 +31,13 @@ const policy = {
   limits: [{ chainId, period: "lifetime", maxAmount: 10n }],
 } satisfies EvmNativeSpendLimitPolicy;
 const lifetimeStateKey = `${chainId}:lifetime`;
+const chainAllowlistPolicy = {
+  id: chainAllowlistPolicyId,
+  type: "evm.chain-allowlist",
+  version: 1,
+  appliesTo: "both",
+  chainIds: [chainId],
+} satisfies EvmChainAllowlistPolicy;
 
 const makeContext = (
   value: bigint,
@@ -113,6 +122,38 @@ it("accepts multiple periods per chain but rejects duplicate chain-period limits
     }),
   ).toBe(false);
 });
+
+it("requires a non-empty unique chain allowlist", () => {
+  expect(Schema.is(EvmChainAllowlistPolicy)(chainAllowlistPolicy)).toBe(true);
+  expect(Schema.is(EvmChainAllowlistPolicy)({ ...chainAllowlistPolicy, chainIds: [] })).toBe(false);
+  expect(
+    Schema.is(EvmChainAllowlistPolicy)({ ...chainAllowlistPolicy, chainIds: [chainId, chainId] }),
+  ).toBe(false);
+});
+
+it.effect("allows only configured execution chains", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const allowed = yield* evm.policy.evaluate({
+      policies: [chainAllowlistPolicy],
+      context: makeContext(0n),
+    });
+    const denied = yield* evm.policy.evaluate({
+      policies: [chainAllowlistPolicy],
+      context: {
+        ...makeContext(0n),
+        chainId: Schema.decodeSync(SupportedEvmChainId)("eip155:10"),
+      },
+    });
+
+    expect(allowed).toEqual({ allowed: true });
+    expect(denied).toEqual({
+      allowed: false,
+      policyId: chainAllowlistPolicyId,
+      code: "CHAIN_NOT_ALLOWED",
+    });
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
 
 it.effect("reserves, settles, and releases native spend", () =>
   Effect.gen(function* () {

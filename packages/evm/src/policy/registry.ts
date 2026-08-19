@@ -15,6 +15,10 @@ import type {
   SessionKeyPolicyState,
 } from "@namera-ai/protocol/model";
 
+import {
+  EvmChainAllowlistPolicyHandler,
+  EvmChainAllowlistSignaturePolicyHandler,
+} from "./policies/chain-allowlist.js";
 import { EvmNativeSpendLimitPolicyHandler } from "./policies/native-spend-limit.js";
 import { EvmSignaturePolicyHandler } from "./policies/signature.js";
 import {
@@ -347,12 +351,22 @@ export const signatureStateless = <
     ),
 });
 
+const chainAllowlistHandler = new EvmChainAllowlistPolicyHandler();
+const chainAllowlistSignatureHandler = new EvmChainAllowlistSignaturePolicyHandler();
 const nativeSpendLimitHandler = new EvmNativeSpendLimitPolicyHandler();
 const timeWindowHandler = new EvmTimeWindowPolicyHandler();
 const timeWindowSignatureHandler = new EvmTimeWindowSignaturePolicyHandler();
 const signatureHandler = new EvmSignaturePolicyHandler();
 
 export const evmPolicyRegistry = {
+  "evm.chain-allowlist": {
+    type: "evm.chain-allowlist",
+    applicability: "both",
+    cardinality: "singleton",
+    priority: 200,
+    execution: executionStateless(chainAllowlistHandler),
+    signature: signatureStateless(chainAllowlistSignatureHandler, { grantsAccess: false }),
+  },
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
     applicability: "execution",
