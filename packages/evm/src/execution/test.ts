@@ -67,12 +67,24 @@ export const makeTestEvmExecutionService = (
             paymaster: null,
           },
           simulation: {
-            source: "eth_estimateUserOperationGas",
-            callGasLimit: 0n,
-            verificationGasLimit: 0n,
-            preVerificationGas: 0n,
-            paymasterVerificationGasLimit: 0n,
-            paymasterPostOpGasLimit: 0n,
+            userOperation: {
+              source: "eth_estimateUserOperationGas",
+              callGasLimit: 0n,
+              verificationGasLimit: 0n,
+              preVerificationGas: 0n,
+              paymasterVerificationGasLimit: 0n,
+              paymasterPostOpGasLimit: 0n,
+            },
+            calls: {
+              source: "viem.simulateCalls",
+              results: input.calls.map(() => ({
+                status: "success" as const,
+                returnData: Hex.make("0x"),
+                gasUsed: 0n,
+              })),
+              assetChanges: [],
+              transfers: [],
+            },
           },
         },
         userOperation: {

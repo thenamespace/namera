@@ -6,6 +6,7 @@ import {
   type EvmIntentContext,
   type EvmPolicyDecision,
   type EvmSignatureContext,
+  type PolicyApplicability,
 } from "@namera-ai/protocol";
 import type {
   EvmSessionKeyPolicy,
@@ -114,6 +115,7 @@ export type EvmSignaturePolicyOperation =
 
 export type EvmPolicyDefinition<Type extends EvmPolicyType = EvmPolicyType> = {
   readonly type: Type;
+  readonly applicability: PolicyApplicability;
   readonly execution: EvmExecutionPolicyOperation;
   readonly signature: EvmSignaturePolicyOperation;
 };
@@ -335,16 +337,19 @@ const signatureHandler = new EvmSignaturePolicyHandler();
 export const evmPolicyRegistry = {
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
+    applicability: "execution",
     execution: executionStateful(nativeSpendLimitHandler),
     signature: notApplicable,
   },
   "evm.time-window": {
     type: "evm.time-window",
+    applicability: "both",
     execution: executionStateless(timeWindowHandler),
     signature: signatureStateless(timeWindowSignatureHandler, { grantsAccess: false }),
   },
   "evm.signature": {
     type: "evm.signature",
+    applicability: "signature",
     execution: notApplicable,
     signature: signatureStateless(signatureHandler, { grantsAccess: true }),
   },
@@ -353,5 +358,12 @@ export const evmPolicyRegistry = {
 export const getEvmPolicyDefinition = (type: EvmPolicyType): EvmPolicyDefinition =>
   evmPolicyRegistry[type];
 
-export const getEvmPolicyDefinitionFor = (policy: EvmSessionKeyPolicy): EvmPolicyDefinition =>
-  getEvmPolicyDefinition(policy.type);
+export const getEvmPolicyDefinitionFor = (policy: EvmSessionKeyPolicy): EvmPolicyDefinition => {
+  const definition = getEvmPolicyDefinition(policy.type);
+  if (definition.applicability !== policy.appliesTo) {
+    throw new Error(
+      `Policy registry applicability mismatch: expected ${definition.applicability}, received ${policy.appliesTo}`,
+    );
+  }
+  return definition;
+};

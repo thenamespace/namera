@@ -82,9 +82,15 @@ it.effect("exposes the complete deterministic execution lifecycle from the root 
       userOperationHash: submitted.userOperationHash,
     });
 
-    expect(prepared.context.simulation).toMatchObject({
+    expect(prepared.context.simulation.userOperation).toMatchObject({
       source: "eth_estimateUserOperationGas",
       callGasLimit: 0n,
+    });
+    expect(prepared.context.simulation.calls).toEqual({
+      source: "viem.simulateCalls",
+      results: [{ status: "success", returnData: "0x", gasUsed: 0n }],
+      assetChanges: [],
+      transfers: [],
     });
     expect(signed.userOperation.signature).not.toBe(Hex.make("0x"));
     expect(submitted.userOperationHash).toBe(signed.userOperationHash);

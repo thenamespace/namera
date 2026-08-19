@@ -24,6 +24,7 @@ const policy = {
   id: policyId,
   type: "evm.native-spend-limit",
   version: 1,
+  appliesTo: "execution",
   limits: [{ chainId, maxAmount: 10n }],
 } satisfies EvmNativeSpendLimitPolicy;
 
@@ -52,12 +53,20 @@ const makeContext = (value: bigint): EvmIntentContext => ({
     paymaster: null,
   },
   simulation: {
-    source: "eth_estimateUserOperationGas",
-    callGasLimit: 1n,
-    verificationGasLimit: 1n,
-    preVerificationGas: 1n,
-    paymasterVerificationGasLimit: 0n,
-    paymasterPostOpGasLimit: 0n,
+    userOperation: {
+      source: "eth_estimateUserOperationGas",
+      callGasLimit: 1n,
+      verificationGasLimit: 1n,
+      preVerificationGas: 1n,
+      paymasterVerificationGasLimit: 0n,
+      paymasterPostOpGasLimit: 0n,
+    },
+    calls: {
+      source: "viem.simulateCalls",
+      results: [{ status: "success", returnData: Hex.make("0x"), gasUsed: 1n }],
+      assetChanges: [],
+      transfers: [],
+    },
   },
 });
 
@@ -225,6 +234,7 @@ it.effect("treats time-window expiration as an exclusive boundary", () =>
       id: policyId,
       type: "evm.time-window",
       version: 1,
+      appliesTo: "both",
       startsAt: DateTime.fromEpochSeconds(1),
       expiresAt: DateTime.fromEpochSeconds(2),
     } satisfies EvmTimeWindowPolicy;

@@ -20,6 +20,7 @@ const timeWindow = {
   id: timeWindowId,
   type: "evm.time-window",
   version: 1,
+  appliesTo: "both",
   startsAt: null,
   expiresAt: DateTime.fromEpochSeconds(10),
 } satisfies EvmTimeWindowPolicy;
@@ -27,6 +28,7 @@ const signaturePolicy = {
   id: signaturePolicyId,
   type: "evm.signature",
   version: 1,
+  appliesTo: "signature",
   allowedTypes: ["message"],
 } satisfies EvmSignaturePolicy;
 const context = {
