@@ -51,6 +51,22 @@ layer(TestServerLayer)("session-key routes", (it) => {
             version: 1 as const,
             allowedTypes: ["message" as const],
           },
+          {
+            type: "evm.chain-allowlist" as const,
+            version: 1 as const,
+            chainIds: ["eip155:1" as const, "eip155:8453" as const],
+          },
+          {
+            type: "evm.gas-budget" as const,
+            version: 1 as const,
+            budgets: [
+              {
+                chainId: "eip155:1" as const,
+                period: "day" as const,
+                maxCost: 10_000_000_000_000_000n,
+              },
+            ],
+          },
         ],
       };
 
@@ -80,6 +96,22 @@ layer(TestServerLayer)("session-key routes", (it) => {
         policies: [
           { type: "evm.time-window", version: 1, startsAt: null },
           { type: "evm.signature", version: 1, allowedTypes: ["message"] },
+          {
+            type: "evm.chain-allowlist",
+            version: 1,
+            chainIds: ["eip155:1", "eip155:8453"],
+          },
+          {
+            type: "evm.gas-budget",
+            version: 1,
+            budgets: [
+              {
+                chainId: "eip155:1",
+                period: "day",
+                maxCost: 10_000_000_000_000_000n,
+              },
+            ],
+          },
         ],
       });
       expect(created.policies[0]?.id).toBeDefined();
