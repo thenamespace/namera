@@ -1,8 +1,14 @@
-import type { ApiKeyView, OAuthAuthorizationView, SessionKeyView } from "@namera-ai/application";
+import type {
+  ApiKeyView,
+  ExecutionActivityView,
+  OAuthAuthorizationView,
+  SessionKeyView,
+} from "@namera-ai/application";
 import type { NotificationInboxItem, WalletView } from "@namera-ai/database";
 import type {
   GetInvitationResponse,
   ApiKeyResponse,
+  ExecutionListItemResponse,
   GetOrganizationMemberResponse,
   GetOrganizationResponse,
   GetOrganizationRoleResponse,
@@ -240,6 +246,18 @@ export const toSessionKeyResponse = (input: SessionKeyView): SessionKeyResponse 
   ...toSessionKeySummaryResponse(input.sessionKey),
   wallet: toWalletResponse(input.wallet),
   creator: toMemberResponse(input.creator),
+});
+
+export const toExecutionListItemResponse = (
+  input: ExecutionActivityView,
+): ExecutionListItemResponse => ({
+  execution: input.execution,
+  wallet: toWalletResponse(input.wallet),
+  sessionKey: toSessionKeySummaryResponse(input.sessionKey),
+  actor: {
+    id: input.actor.id,
+    type: input.actor.type,
+  },
 });
 
 export const toWalletResponse = (input: WalletView): WalletResponse => {

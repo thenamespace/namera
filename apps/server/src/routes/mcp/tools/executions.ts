@@ -13,6 +13,8 @@ import {
   McpExecuteRequest,
 } from "@namera-ai/protocol/dto";
 
+import { toExecutionListItemResponse } from "#/helpers/index";
+
 import { executionHints, readOnlyHints, registerMcpTool } from "./register.js";
 
 const ExecuteTransaction = Tool.make("execute_transaction", {
@@ -90,10 +92,17 @@ export const ExecutionTools = Effect.gen(function* () {
     hints: readOnlyHints,
     errorMessage: "The executions could not be listed.",
     handle: ({ cursor }, principal) =>
-      app.execution.list({
-        organizationId: principal.organizationId,
-        actorId: principal.actorId,
-        ...(cursor === undefined ? {} : { cursor }),
-      }),
+      app.execution
+        .list({
+          organizationId: principal.organizationId,
+          actorId: principal.actorId,
+          ...(cursor === undefined ? {} : { cursor }),
+        })
+        .pipe(
+          Effect.map((result) => ({
+            items: result.items.map(toExecutionListItemResponse),
+            nextCursor: result.nextCursor,
+          })),
+        ),
   });
 });

@@ -104,7 +104,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - EVM execution contracts model the EntryPoint 0.7 UserOperation used by the
   installed Viem adapter. Quantities decode to `bigint` and encode to strings so
   signed operations remain safe to store in JSONB and can be reconstructed
-  exactly for submission or reconciliation.
+  exactly for submission or reconciliation. Confirmed execution list items
+  expand the safe account response, session-key summary, and initiating actor
+  identity needed by activity consumers without exposing credential data.
 - Execution simulation contracts return normalized call results separately from
   point-in-time session-key policy eligibility. Allowed responses identify the
   selected session key; denied responses identify each candidate session key's

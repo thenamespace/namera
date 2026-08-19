@@ -37,7 +37,9 @@ HTTP requests only enqueue email work and never wait for background delivery.
 Execution submission status is readable only by the API-key actor that created
 it. Confirmed execution detail and history use one route for user and API-key
 actors: users require `execution:read` and see the active organization, while
-API keys see only executions started by their own actor.
+API keys see only executions started by their own actor. History rows include
+safe account presentation data, a session-key summary, and the initiating actor
+type and ID so dashboard and delegated clients do not need secondary lookups.
 
 `POST /executions/simulate` is available to API-key and CLI actors that may
 execute. It applies a dedicated actor rate limit, runs the same unsigned EVM call

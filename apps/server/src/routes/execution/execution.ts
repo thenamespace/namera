@@ -4,7 +4,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toActorReadScope } from "#/helpers/index";
+import { enforceActor, toActorReadScope, toExecutionListItemResponse } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (handlers) =>
@@ -93,10 +93,14 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
               cli: ["execution:read"],
             },
           });
-          return yield* app.execution.list({
+          const result = yield* app.execution.list({
             ...toActorReadScope(data),
             ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
           });
+          return {
+            items: result.items.map(toExecutionListItemResponse),
+            nextCursor: result.nextCursor,
+          };
         }),
       );
   }),

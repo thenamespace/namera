@@ -160,8 +160,10 @@ Submission status reads require the creating API-key actor identity. Wallet,
 session-key, and confirmed-execution reads accept an optional actor scope. An
 omitted actor ID returns the permission-authorized organization view for users;
 an actor ID returns only wallets and session keys reachable through active
-grants and executions started by that actor. Keep this distinction in one use
-case rather than duplicating machine-specific operations.
+grants and executions started by that actor. Confirmed execution list results
+retain their account, session key, and initiating actor view for transport
+mapping. Keep this distinction in one use case rather than duplicating
+machine-specific operations.
 
 Signature requests are synchronous and idempotently reserved. They require an active
 API-key grant to an active wallet session key with an explicit `evm.signature`

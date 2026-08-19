@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { Repository } from "@namera-ai/database";
+import { Repository, type ExecutionListView } from "@namera-ai/database";
 import {
   ExecutionNotFoundError,
   ExecutionSubmissionNotFoundError,
@@ -9,13 +9,16 @@ import {
   type ExecutionSubmissionId,
   type OrganizationId,
 } from "@namera-ai/protocol";
-import type {
-  ExecutionResponse,
-  GetExecutionSubmissionResponse,
-  ListExecutionsResponse,
-} from "@namera-ai/protocol/dto";
+import type { ExecutionResponse, GetExecutionSubmissionResponse } from "@namera-ai/protocol/dto";
 
 const executionPageSize = 50;
+
+export type ExecutionActivityView = ExecutionListView;
+
+export interface ExecutionListResult {
+  readonly items: ReadonlyArray<ExecutionListView>;
+  readonly nextCursor: ExecutionId | null;
+}
 
 export interface ExecutionReadApplication {
   readonly getSubmission: (input: {
@@ -32,7 +35,7 @@ export interface ExecutionReadApplication {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;
     readonly cursor?: ExecutionId;
-  }) => Effect.Effect<ListExecutionsResponse>;
+  }) => Effect.Effect<ExecutionListResult>;
 }
 
 export const makeExecutionReadApplication = Effect.gen(function* () {
@@ -130,7 +133,7 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
       const items = rows.slice(0, executionPageSize);
       return {
         items,
-        nextCursor: rows.length > executionPageSize ? (items.at(-1)?.id ?? null) : null,
+        nextCursor: rows.length > executionPageSize ? (items.at(-1)?.execution.id ?? null) : null,
       };
     },
     Effect.catchTag("DatabaseError", Effect.die),

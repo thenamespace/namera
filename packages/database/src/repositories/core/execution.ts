@@ -9,16 +9,55 @@ import type {
   OrganizationId,
 } from "@namera-ai/protocol";
 import {
+  Actor,
   Execution,
   ExecutionInsert,
+  SessionKey,
+  Wallet,
+  WalletKey,
+  type Actor as ActorModel,
   type Execution as ExecutionModel,
   type ExecutionInsert as ExecutionInsertModel,
+  type SessionKey as SessionKeyModel,
 } from "@namera-ai/protocol/model";
 import { and, desc, eq, lt, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { execution, executionSubmission } from "#/schema/index";
+import {
+  actor,
+  execution,
+  executionSubmission,
+  sessionKey,
+  sessionKeyGrant,
+  wallet,
+  walletKey,
+} from "#/schema/index";
+
+import type { WalletView } from "./wallet.js";
+
+export interface ExecutionListView {
+  readonly execution: ExecutionModel;
+  readonly actor: ActorModel;
+  readonly sessionKey: SessionKeyModel;
+  readonly wallet: WalletView;
+}
+
+const decodeExecutionListView = (row: {
+  readonly execution: unknown;
+  readonly actor: unknown;
+  readonly sessionKey: unknown;
+  readonly wallet: unknown;
+  readonly walletKey: unknown;
+}): ExecutionListView => ({
+  execution: Schema.decodeSync(Execution)(row.execution as any),
+  actor: Schema.decodeSync(Actor)(row.actor as any),
+  sessionKey: Schema.decodeSync(SessionKey)(row.sessionKey as any),
+  wallet: {
+    wallet: Schema.decodeSync(Wallet)(row.wallet as any),
+    walletKey: Schema.decodeSync(WalletKey)(row.walletKey as any),
+  },
+});
 
 export interface ExecutionRepositoryService {
   readonly insert: (data: ExecutionInsertModel) => Effect.Effect<ExecutionModel, DatabaseError>;
@@ -34,7 +73,7 @@ export interface ExecutionRepositoryService {
     readonly organizationId: OrganizationId;
     readonly cursor?: ExecutionId;
     readonly limit: number;
-  }) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
+  }) => Effect.Effect<ReadonlyArray<ExecutionListView>, DatabaseError>;
   readonly findByIdForActor: (
     id: ExecutionId,
     organizationId: OrganizationId,
@@ -45,7 +84,7 @@ export interface ExecutionRepositoryService {
     readonly actorId: ActorId;
     readonly cursor?: ExecutionId;
     readonly limit: number;
-  }) => Effect.Effect<ReadonlyArray<ExecutionModel>, DatabaseError>;
+  }) => Effect.Effect<ReadonlyArray<ExecutionListView>, DatabaseError>;
 }
 
 export class ExecutionRepository extends Context.Service<
@@ -111,8 +150,50 @@ export class ExecutionRepository extends Context.Service<
             if (input.cursor !== undefined && cursor === undefined) return [];
 
             const rows = yield* db
-              .select()
+              .select({ execution, actor, sessionKey, wallet, walletKey })
               .from(execution)
+              .innerJoin(
+                executionSubmission,
+                and(
+                  eq(executionSubmission.id, execution.executionSubmissionId),
+                  eq(executionSubmission.organizationId, execution.organizationId),
+                ),
+              )
+              .innerJoin(
+                actor,
+                and(
+                  eq(actor.id, executionSubmission.actorId),
+                  eq(actor.organizationId, execution.organizationId),
+                ),
+              )
+              .innerJoin(
+                sessionKeyGrant,
+                and(
+                  eq(sessionKeyGrant.id, execution.sessionKeyGrantId),
+                  eq(sessionKeyGrant.organizationId, execution.organizationId),
+                ),
+              )
+              .innerJoin(
+                sessionKey,
+                and(
+                  eq(sessionKey.id, sessionKeyGrant.sessionKeyId),
+                  eq(sessionKey.organizationId, execution.organizationId),
+                ),
+              )
+              .innerJoin(
+                wallet,
+                and(
+                  eq(wallet.id, sessionKey.walletId),
+                  eq(wallet.organizationId, execution.organizationId),
+                ),
+              )
+              .innerJoin(
+                walletKey,
+                and(
+                  eq(walletKey.id, wallet.walletKeyId),
+                  eq(walletKey.organizationId, execution.organizationId),
+                ),
+              )
               .where(
                 and(
                   eq(execution.organizationId, input.organizationId),
@@ -126,7 +207,7 @@ export class ExecutionRepository extends Context.Service<
               )
               .orderBy(desc(execution.createdAt), desc(execution.id))
               .limit(Math.min(Math.max(Math.trunc(input.limit), 1), 100));
-            return rows.map((row) => Schema.decodeSync(Execution)(row as any));
+            return rows.map(decodeExecutionListView);
           },
           mapRepositoryError,
         ),
@@ -185,13 +266,48 @@ export class ExecutionRepository extends Context.Service<
           if (input.cursor !== undefined && cursor === undefined) return [];
 
           const rows = yield* db
-            .select({ execution })
+            .select({ execution, actor, sessionKey, wallet, walletKey })
             .from(execution)
             .innerJoin(
               executionSubmission,
               and(
                 eq(executionSubmission.id, execution.executionSubmissionId),
                 eq(executionSubmission.organizationId, execution.organizationId),
+              ),
+            )
+            .innerJoin(
+              actor,
+              and(
+                eq(actor.id, executionSubmission.actorId),
+                eq(actor.organizationId, execution.organizationId),
+              ),
+            )
+            .innerJoin(
+              sessionKeyGrant,
+              and(
+                eq(sessionKeyGrant.id, execution.sessionKeyGrantId),
+                eq(sessionKeyGrant.organizationId, execution.organizationId),
+              ),
+            )
+            .innerJoin(
+              sessionKey,
+              and(
+                eq(sessionKey.id, sessionKeyGrant.sessionKeyId),
+                eq(sessionKey.organizationId, execution.organizationId),
+              ),
+            )
+            .innerJoin(
+              wallet,
+              and(
+                eq(wallet.id, sessionKey.walletId),
+                eq(wallet.organizationId, execution.organizationId),
+              ),
+            )
+            .innerJoin(
+              walletKey,
+              and(
+                eq(walletKey.id, wallet.walletKeyId),
+                eq(walletKey.organizationId, execution.organizationId),
               ),
             )
             .where(
@@ -208,7 +324,7 @@ export class ExecutionRepository extends Context.Service<
             )
             .orderBy(desc(execution.createdAt), desc(execution.id))
             .limit(Math.min(Math.max(Math.trunc(input.limit), 1), 100));
-          return rows.map((row) => Schema.decodeSync(Execution)(row.execution as any));
+          return rows.map(decodeExecutionListView);
         }, mapRepositoryError),
       });
     }),

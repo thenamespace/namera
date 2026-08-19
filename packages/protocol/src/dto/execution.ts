@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 import {
+  ActorId,
   ExecutionId,
   ExecutionSubmissionId,
   OrganizationId,
@@ -16,10 +17,14 @@ import {
   SupportedEvmChainId,
   UserOperationHash,
 } from "#/evm/index";
+import { ActorType } from "#/model/auth/actor";
 import { NonEmptyString } from "#/model/common";
 import { EvmExecutionData } from "#/model/core/execution";
 import { EvmIntentSimulation } from "#/policy/evm/context";
 import { EvmPolicyDenialCode } from "#/policy/evm/decision";
+
+import { SessionKeySummaryResponse } from "./session-key/index.js";
+import { WalletResponse } from "./wallet/index.js";
 
 const EvmExecutionCallRequest = Schema.Struct({
   to: EthereumAddress,
@@ -127,6 +132,24 @@ export const ExecutionResponse = Schema.Union([EvmExecutionResponse], { mode: "o
   identifier: "ExecutionResponse",
 });
 
+export const ExecutionActorResponse = Schema.Struct({
+  id: ActorId,
+  type: ActorType,
+}).annotate({
+  identifier: "ExecutionActorResponse",
+  description: "The durable actor that initiated a confirmed execution",
+});
+
+export const ExecutionListItemResponse = Schema.Struct({
+  execution: ExecutionResponse,
+  wallet: WalletResponse,
+  sessionKey: SessionKeySummaryResponse,
+  actor: ExecutionActorResponse,
+}).annotate({
+  identifier: "ExecutionListItemResponse",
+  description: "A confirmed execution with the account, session key, and initiating actor",
+});
+
 export const GetExecutionSubmissionRequest = Schema.Struct({
   submissionId: ExecutionSubmissionId,
 }).annotate({ identifier: "GetExecutionSubmissionRequest" });
@@ -175,7 +198,7 @@ export const ListExecutionsRequest = Schema.Struct({
 }).annotate({ identifier: "ListExecutionsRequest" });
 
 export const ListExecutionsResponse = Schema.Struct({
-  items: Schema.Array(ExecutionResponse),
+  items: Schema.Array(ExecutionListItemResponse),
   nextCursor: Schema.NullOr(ExecutionId),
 }).annotate({ identifier: "ListExecutionsResponse" });
 
@@ -192,6 +215,8 @@ export type ConfirmedEvmExecutionResponse = typeof ConfirmedEvmExecutionResponse
 export type ExecuteResponse = typeof ExecuteResponse.Type;
 export type EvmExecutionResponse = typeof EvmExecutionResponse.Type;
 export type ExecutionResponse = typeof ExecutionResponse.Type;
+export type ExecutionActorResponse = typeof ExecutionActorResponse.Type;
+export type ExecutionListItemResponse = typeof ExecutionListItemResponse.Type;
 export type GetExecutionSubmissionRequest = typeof GetExecutionSubmissionRequest.Type;
 export type GetExecutionSubmissionResponse = typeof GetExecutionSubmissionResponse.Type;
 export type GetExecutionRequest = typeof GetExecutionRequest.Type;
