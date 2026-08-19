@@ -5,13 +5,16 @@ import { Evm, getChainDataByCaip2 } from "@namera-ai/evm";
 import type {
   ActorId,
   ExecutionSubmissionId,
+  EvmIntentContext,
   OrganizationId,
+  PolicyId,
   SuccessfulEvmExecutionReceipt,
 } from "@namera-ai/protocol";
 import type {
   EvmSessionKey,
   ExecutionSubmission,
   SessionKeyGrant,
+  SessionKeyPolicyReservation,
   SessionKeyPolicyState,
 } from "@namera-ai/protocol/model";
 
@@ -52,32 +55,55 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     }
   });
 
-  const loadLockedStates = Effect.fnUntraced(function* (
+  const lockPolicyStates = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
     sessionKey: EvmSessionKey,
-    chainId: string,
+    policyIds: ReadonlyArray<PolicyId>,
   ) {
-    const statefulPolicies = sessionKey.policies.filter(
-      (policy) => policy.type === "evm.native-spend-limit",
-    );
-    yield* repository.core.sessionKeyPolicyState.insertManyIfMissing(
-      statefulPolicies.map((policy) => ({
-        organizationId,
-        sessionKeyId: sessionKey.id,
-        policyId: policy.id,
-        stateKey: chainId,
-        stateVersion: 1,
-        data: { version: 1, spent: "0", reserved: "0" },
-      })),
-    );
-    const states = yield* Effect.forEach(sessionKey.policies, (policy) =>
+    const orderedPolicyIds = [...new Set(policyIds)].toSorted();
+    const states = yield* Effect.forEach(orderedPolicyIds, (policyId) =>
       repository.core.sessionKeyPolicyState.findForPolicyForUpdate(
         organizationId,
         sessionKey.id,
-        policy.id,
+        policyId,
       ),
     );
     return states.flat();
+  });
+
+  const initializeAndLockStates = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    sessionKey: EvmSessionKey,
+    context: EvmIntentContext,
+  ) {
+    const seeds = yield* evm.policy.getStateSeeds({ policies: sessionKey.policies, context });
+    yield* repository.core.sessionKeyPolicyState.insertManyIfMissing(
+      seeds.map((seed) => ({
+        organizationId,
+        sessionKeyId: sessionKey.id,
+        policyId: seed.policyId,
+        stateKey: seed.stateKey,
+        stateVersion: seed.stateVersion,
+        data: seed.data,
+      })),
+    );
+    return yield* lockPolicyStates(
+      organizationId,
+      sessionKey,
+      seeds.map((seed) => seed.policyId),
+    );
+  });
+
+  const lockReservationStates = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    sessionKey: EvmSessionKey,
+    reservations: ReadonlyArray<SessionKeyPolicyReservation>,
+  ) {
+    return yield* lockPolicyStates(
+      organizationId,
+      sessionKey,
+      reservations.map((reservation) => reservation.policyId),
+    );
   });
 
   // Release and settle lock the submission before touching policy state. This
@@ -105,14 +131,15 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         ) {
           return false;
         }
-        const states = yield* loadLockedStates(
+        const operation = { type: "execution", id: input.submissionId } as const;
+        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForOperation(
+          input.organizationId,
+          operation,
+        );
+        const states = yield* lockReservationStates(
           input.organizationId,
           input.sessionKey,
-          submission.data.chainId,
-        );
-        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForSubmission(
-          input.organizationId,
-          input.submissionId,
+          reservations,
         );
         const changes = yield* evm.policy.release({
           policies: input.sessionKey.policies,
@@ -123,7 +150,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         const now = yield* DateTime.now;
         yield* repository.core.sessionKeyPolicyReservation.markReleased(
           input.organizationId,
-          input.submissionId,
+          operation,
           now,
         );
         const failed = yield* repository.core.executionSubmission.markFailed({
@@ -176,7 +203,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           ...(input.leaseToken === undefined ? {} : { leaseToken: input.leaseToken }),
         });
         if (updated === undefined) return false;
-        yield* repository.core.sessionKeyPolicyReservation.markSubmitted(
+        yield* repository.core.sessionKeyPolicyReservation.markSubmittedForExecution(
           input.organizationId,
           input.submissionId,
           now,
@@ -233,14 +260,15 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           return undefined;
         }
 
-        const states = yield* loadLockedStates(
+        const operation = { type: "execution", id: input.submissionId } as const;
+        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForOperation(
+          input.organizationId,
+          operation,
+        );
+        const states = yield* lockReservationStates(
           input.organizationId,
           input.sessionKey,
-          submission.data.chainId,
-        );
-        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForSubmission(
-          input.organizationId,
-          input.submissionId,
+          reservations,
         );
         const changes = yield* evm.policy.settle({
           policies: input.sessionKey.policies,
@@ -252,7 +280,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         const now = yield* DateTime.now;
         yield* repository.core.sessionKeyPolicyReservation.markSettled(
           input.organizationId,
-          input.submissionId,
+          operation,
           now,
         );
         const created = yield* repository.core.execution.insert({
@@ -348,5 +376,5 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     );
   });
 
-  return { loadLockedStates, applyStateChanges, markSubmitted, release, settle } as const;
+  return { initializeAndLockStates, applyStateChanges, markSubmitted, release, settle } as const;
 });

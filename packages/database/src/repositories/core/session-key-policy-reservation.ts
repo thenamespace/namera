@@ -3,6 +3,7 @@ import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, ExecutionSubmissionId, OrganizationId } from "@namera-ai/protocol";
 import {
+  type PolicyOperationReference,
   SessionKeyPolicyReservation,
   SessionKeyPolicyReservationInsert,
   type SessionKeyPolicyReservation as SessionKeyPolicyReservationModel,
@@ -18,28 +19,33 @@ export interface SessionKeyPolicyReservationRepositoryService {
   readonly insertMany: (
     data: ReadonlyArray<SessionKeyPolicyReservationInsertModel>,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyReservationModel>, DatabaseError>;
-  readonly findForSubmission: (
+  readonly findForOperation: (
     organizationId: OrganizationId,
-    executionSubmissionId: ExecutionSubmissionId,
+    operation: PolicyOperationReference,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyReservationModel>, DatabaseError>;
-  readonly markSubmitted: (
+  readonly markSubmittedForExecution: (
     organizationId: OrganizationId,
     executionSubmissionId: ExecutionSubmissionId,
     submittedAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyReservationModel>, DatabaseError>;
   readonly markSettled: (
     organizationId: OrganizationId,
-    executionSubmissionId: ExecutionSubmissionId,
+    operation: PolicyOperationReference,
     settledAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyReservationModel>, DatabaseError>;
   readonly markReleased: (
     organizationId: OrganizationId,
-    executionSubmissionId: ExecutionSubmissionId,
+    operation: PolicyOperationReference,
     releasedAt: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyReservationModel>, DatabaseError>;
 }
 
 const encodeDate = Schema.encodeSync(Schema.DateTimeUtcFromDate);
+
+const operationPredicate = (operation: PolicyOperationReference) =>
+  operation.type === "execution"
+    ? eq(sessionKeyPolicyReservation.executionSubmissionId, operation.id)
+    : eq(sessionKeyPolicyReservation.signatureOperationId, operation.id);
 
 export class SessionKeyPolicyReservationRepository extends Context.Service<
   SessionKeyPolicyReservationRepository,
@@ -67,9 +73,9 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
             },
             mapRepositoryError,
           ),
-          findForSubmission: Effect.fn(
-            "database.sessionKeyPolicyReservationRepository.findForSubmission",
-          )(function* (organizationId, executionSubmissionId) {
+          findForOperation: Effect.fn(
+            "database.sessionKeyPolicyReservationRepository.findForOperation",
+          )(function* (organizationId, operation) {
             const db = yield* transactionOrDatabase(database);
             const rows = yield* db
               .select()
@@ -77,7 +83,7 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
               .where(
                 and(
                   eq(sessionKeyPolicyReservation.organizationId, organizationId),
-                  eq(sessionKeyPolicyReservation.executionSubmissionId, executionSubmissionId),
+                  operationPredicate(operation),
                 ),
               )
               .orderBy(
@@ -86,29 +92,28 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
               );
             return rows.map((row) => Schema.decodeSync(SessionKeyPolicyReservation)(row as any));
           }, mapRepositoryError),
-          markSubmitted: Effect.fn("database.sessionKeyPolicyReservationRepository.markSubmitted")(
-            function* (organizationId, executionSubmissionId, submittedAt) {
-              const db = yield* transactionOrDatabase(database);
-              const rows = yield* db
-                .update(sessionKeyPolicyReservation)
-                .set({
-                  status: "submitted",
-                  submittedAt: encodeDate(submittedAt),
-                })
-                .where(
-                  and(
-                    eq(sessionKeyPolicyReservation.organizationId, organizationId),
-                    eq(sessionKeyPolicyReservation.executionSubmissionId, executionSubmissionId),
-                    eq(sessionKeyPolicyReservation.status, "reserved"),
-                  ),
-                )
-                .returning();
-              return rows.map((row) => Schema.decodeSync(SessionKeyPolicyReservation)(row as any));
-            },
-            mapRepositoryError,
-          ),
+          markSubmittedForExecution: Effect.fn(
+            "database.sessionKeyPolicyReservationRepository.markSubmittedForExecution",
+          )(function* (organizationId, executionSubmissionId, submittedAt) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(sessionKeyPolicyReservation)
+              .set({
+                status: "submitted",
+                submittedAt: encodeDate(submittedAt),
+              })
+              .where(
+                and(
+                  eq(sessionKeyPolicyReservation.organizationId, organizationId),
+                  eq(sessionKeyPolicyReservation.executionSubmissionId, executionSubmissionId),
+                  eq(sessionKeyPolicyReservation.status, "reserved"),
+                ),
+              )
+              .returning();
+            return rows.map((row) => Schema.decodeSync(SessionKeyPolicyReservation)(row as any));
+          }, mapRepositoryError),
           markSettled: Effect.fn("database.sessionKeyPolicyReservationRepository.markSettled")(
-            function* (organizationId, executionSubmissionId, settledAt) {
+            function* (organizationId, operation, settledAt) {
               const db = yield* transactionOrDatabase(database);
               const rows = yield* db
                 .update(sessionKeyPolicyReservation)
@@ -119,7 +124,7 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
                 .where(
                   and(
                     eq(sessionKeyPolicyReservation.organizationId, organizationId),
-                    eq(sessionKeyPolicyReservation.executionSubmissionId, executionSubmissionId),
+                    operationPredicate(operation),
                     inArray(sessionKeyPolicyReservation.status, ["reserved", "submitted"]),
                   ),
                 )
@@ -129,7 +134,7 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
             mapRepositoryError,
           ),
           markReleased: Effect.fn("database.sessionKeyPolicyReservationRepository.markReleased")(
-            function* (organizationId, executionSubmissionId, releasedAt) {
+            function* (organizationId, operation, releasedAt) {
               const db = yield* transactionOrDatabase(database);
               const rows = yield* db
                 .update(sessionKeyPolicyReservation)
@@ -140,7 +145,7 @@ export class SessionKeyPolicyReservationRepository extends Context.Service<
                 .where(
                   and(
                     eq(sessionKeyPolicyReservation.organizationId, organizationId),
-                    eq(sessionKeyPolicyReservation.executionSubmissionId, executionSubmissionId),
+                    operationPredicate(operation),
                     inArray(sessionKeyPolicyReservation.status, ["reserved", "submitted"]),
                   ),
                 )

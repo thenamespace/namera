@@ -4,9 +4,11 @@ import type {
   PolicyId,
   SessionKeyId,
   SessionKeyPolicyReservationId,
+  SignatureOperationId,
 } from "@namera-ai/protocol";
 import type { SessionKeyPolicyReservation } from "@namera-ai/protocol/model";
-import { foreignKey, index, integer, jsonb, text, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, foreignKey, index, integer, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId, timestamps } from "#/schema/common";
 
@@ -14,6 +16,7 @@ import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
 import { executionSubmission } from "./execution-submission.js";
 import { sessionKey } from "./session-key.js";
+import { signatureOperation } from "./signature-operation.js";
 
 export const sessionKeyPolicyReservation = coreSchema.table(
   "session_key_policy_reservation",
@@ -25,7 +28,8 @@ export const sessionKeyPolicyReservation = coreSchema.table(
       .references(() => organization.id, { onDelete: "restrict" }),
     sessionKeyId: text("session_key_id").notNull().$type<SessionKeyId>(),
     policyId: text("policy_id").notNull().$type<PolicyId>(),
-    executionSubmissionId: text("execution_submission_id").notNull().$type<ExecutionSubmissionId>(),
+    executionSubmissionId: text("execution_submission_id").$type<ExecutionSubmissionId>(),
+    signatureOperationId: text("signature_operation_id").$type<SignatureOperationId>(),
     stateKey: text("state_key").notNull(),
     reservationVersion: integer("reservation_version").notNull(),
     data: jsonb("data").notNull().$type<SessionKeyPolicyReservation["data"]>(),
@@ -40,17 +44,26 @@ export const sessionKeyPolicyReservation = coreSchema.table(
     ...timestamps,
   },
   (table) => [
-    unique("session_key_policy_reservation_submission_scope_unique").on(
-      table.organizationId,
-      table.executionSubmissionId,
-      table.policyId,
-      table.stateKey,
-    ),
+    uniqueIndex("session_key_policy_reservation_execution_scope_uidx")
+      .on(table.organizationId, table.executionSubmissionId, table.policyId, table.stateKey)
+      .where(sql`${table.executionSubmissionId} IS NOT NULL`),
+    uniqueIndex("session_key_policy_reservation_signature_scope_uidx")
+      .on(table.organizationId, table.signatureOperationId, table.policyId, table.stateKey)
+      .where(sql`${table.signatureOperationId} IS NOT NULL`),
     foreignKey({
       name: "session_key_policy_reservation_session_key_organization_fk",
       columns: [table.sessionKeyId, table.organizationId],
       foreignColumns: [sessionKey.id, sessionKey.organizationId],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "session_key_policy_reservation_signature_organization_fk",
+      columns: [table.signatureOperationId, table.organizationId],
+      foreignColumns: [signatureOperation.id, signatureOperation.organizationId],
+    }).onDelete("restrict"),
+    check(
+      "session_key_policy_reservation_operation_check",
+      sql`num_nonnulls(${table.executionSubmissionId}, ${table.signatureOperationId}) = 1`,
+    ),
     foreignKey({
       name: "session_key_policy_reservation_submission_organization_fk",
       columns: [table.executionSubmissionId, table.organizationId],

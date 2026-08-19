@@ -180,10 +180,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
             Effect.gen(function* () {
               yield* lockOrganizationBilling(repository, input.actor.organizationId);
               yield* enforceExecutionLimit(repository, input.actor.organizationId);
-              const states = yield* lifecycle.loadLockedStates(
+              const states = yield* lifecycle.initializeAndLockStates(
                 input.actor.organizationId,
                 candidate.sessionKey,
-                input.request.chainId,
+                prepared.context,
               );
               const plan = yield* evm.policy.reserve({
                 policies: candidate.sessionKey.policies,
@@ -220,6 +220,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
                   sessionKeyId: candidate.sessionKey.id,
                   policyId: reservation.policyId,
                   executionSubmissionId: inserted.submission.id,
+                  signatureOperationId: null,
                   stateKey: reservation.stateKey,
                   reservationVersion: reservation.reservationVersion,
                   data: reservation.data,

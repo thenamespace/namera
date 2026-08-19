@@ -8,7 +8,7 @@ import type {
 } from "@namera-ai/protocol";
 import type { SignatureOperation, SignatureOperationEncoded } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
-import { check, foreignKey, index, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, foreignKey, index, jsonb, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId, timestamps } from "#/schema/common";
 
@@ -44,6 +44,7 @@ export const signatureOperation = coreSchema.table(
     ...timestamps,
   },
   (table) => [
+    unique("signature_operation_id_organization_unique").on(table.id, table.organizationId),
     foreignKey({
       name: "signature_operation_actor_organization_fk",
       columns: [table.actorId, table.organizationId],

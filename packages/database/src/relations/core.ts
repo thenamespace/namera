@@ -163,6 +163,13 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       to: [r.sessionKeyGrant.id, r.sessionKeyGrant.organizationId],
       optional: false,
     }),
+    policyReservations: r.many.sessionKeyPolicyReservation({
+      from: [r.signatureOperation.id, r.signatureOperation.organizationId],
+      to: [
+        r.sessionKeyPolicyReservation.signatureOperationId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+    }),
   },
   executionSubmission: {
     // Each execution submission belongs to one organization.
@@ -255,14 +262,21 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       to: [r.sessionKey.id, r.sessionKey.organizationId],
       optional: false,
     }),
-    // Each policy reservation belongs to one execution submission.
+    // A policy reservation may belong to an execution submission.
     executionSubmission: r.one.executionSubmission({
       from: [
         r.sessionKeyPolicyReservation.executionSubmissionId,
         r.sessionKeyPolicyReservation.organizationId,
       ],
       to: [r.executionSubmission.id, r.executionSubmission.organizationId],
-      optional: false,
+    }),
+    // A policy reservation may belong to a signature operation.
+    signatureOperation: r.one.signatureOperation({
+      from: [
+        r.sessionKeyPolicyReservation.signatureOperationId,
+        r.sessionKeyPolicyReservation.organizationId,
+      ],
+      to: [r.signatureOperation.id, r.signatureOperation.organizationId],
     }),
   },
 }));
