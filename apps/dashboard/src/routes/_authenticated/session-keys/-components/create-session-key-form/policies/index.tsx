@@ -8,14 +8,16 @@ import { useEventCallback } from "usehooks-ts";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
 import { HeadingGroup } from "@/components/heading-group";
+import {
+  EvmPolicyCard,
+  EvmPolicyDialog,
+  type EvmPolicyInput,
+  type EvmPolicyType,
+} from "@/components/policy/evm";
 
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
-import { TimeWindowPolicyCard } from "./evm/time-window";
-import { PolicyDialog } from "./policy-dialog";
 
 type SessionKeyPolicyInput = CreateSessionKeyFormInput["policies"][number];
-type TimeWindowPolicyInput = Extract<SessionKeyPolicyInput, { readonly type: "evm.time-window" }>;
-type PolicyNamespace = "eip155";
 const emptyPolicies: ReadonlyArray<SessionKeyPolicyInput> = [];
 
 type PolicySectionProps = {
@@ -29,15 +31,14 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
   const watchedPolicies = useWatch({ control: form.control, name: "policies" });
   const policies = watchedPolicies ?? emptyPolicies;
   const wallet = wallets.find((candidate) => candidate.id === walletId);
-  const namespace = wallet?.namespace as PolicyNamespace | undefined;
   const existingPolicyTypes = useMemo(() => policies.map((policy) => policy.type), [policies]);
-  const handleAdd = useEventCallback((policy: SessionKeyPolicyInput) => {
+  const handleAdd = useEventCallback((policy: EvmPolicyInput) => {
     policyFields.append(policy, { shouldFocus: false });
   });
   const handleRemove = useEventCallback((index: number) => {
     policyFields.remove(index);
   });
-  const handleChange = useEventCallback((index: number, policy: SessionKeyPolicyInput) => {
+  const handleChange = useEventCallback((index: number, policy: EvmPolicyInput) => {
     policyFields.update(index, policy);
   });
 
@@ -50,9 +51,9 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
             Define when and how this session key can be used.
           </HeadingGroup.Description>
         </HeadingGroup>
-        <PolicyDialog
-          existingPolicyTypes={existingPolicyTypes}
-          namespace={namespace}
+        <EvmPolicyDialog
+          existingPolicyTypes={existingPolicyTypes as ReadonlyArray<EvmPolicyType>}
+          isDisabled={!wallet}
           onAdd={handleAdd}
         />
       </div>
@@ -69,17 +70,18 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
         </DashboardCardRoot>
       ) : (
         <div className="grid gap-3">
-          {policyFields.fields.map((field, index) =>
-            policies[index]?.type === "evm.time-window" ? (
-              <TimeWindowPolicyCard
+          {policyFields.fields.map((field, index) => {
+            const policy = policies[index];
+            return policy ? (
+              <EvmPolicyCard
                 index={index}
                 key={field.id}
-                policy={policies[index] as TimeWindowPolicyInput}
+                policy={policy}
                 onChange={handleChange}
                 onRemove={handleRemove}
               />
-            ) : null,
-          )}
+            ) : null;
+          })}
         </div>
       )}
     </section>

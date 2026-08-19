@@ -7,7 +7,6 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { CreateEvmTimeWindowPolicy } from "@namera-ai/protocol";
 import {
-  Button,
   Calendar,
   DateField,
   DatePicker,
@@ -15,26 +14,19 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  ItemCard,
-  Modal,
-  Typography,
 } from "@namera-ai/ui";
-import { Delete02Icon, HugeiconsIcon, PencilEdit02Icon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { encodeDateValue, formatDateTime, parseDateValue } from "@/lib/helpers/date";
+import { encodeDateValue, parseDateValue } from "@/lib/helpers/date";
 
-import type { CreateSessionKeyFormInput } from "../../types";
-import { timeWindowPolicy } from "../data";
+import { evmPolicyFormIds } from "./data";
+import type { EvmPolicyInput, TimeWindowPolicyInput } from "./types";
 
-type TimeWindowPolicyInput = typeof CreateEvmTimeWindowPolicy.Encoded;
 type TimeWindowPolicyValues = typeof CreateEvmTimeWindowPolicy.Type;
-type SessionKeyPolicyInput = CreateSessionKeyFormInput["policies"][number];
 
-const timeWindowFormId = "time-window-policy-form";
 const emptyTimeWindow: TimeWindowPolicyInput = {
-  type: timeWindowPolicy.type,
+  type: "evm.time-window",
   version: 1,
   startsAt: null,
   expiresAt: "",
@@ -50,7 +42,7 @@ type DateTimeFieldProps = {
   onChange: (value: string | null) => void;
 };
 
-function DateTimeField({
+function DateTimePolicyField({
   error,
   isRequired = false,
   label,
@@ -113,11 +105,11 @@ function DateTimeField({
 type TimeWindowPolicyEditorProps = {
   formId?: string;
   initialValue?: TimeWindowPolicyInput;
-  onSave: (policy: SessionKeyPolicyInput) => void;
+  onSave: (policy: EvmPolicyInput) => void;
 };
 
 export function TimeWindowPolicyEditor({
-  formId = timeWindowFormId,
+  formId = evmPolicyFormIds["evm.time-window"],
   initialValue = emptyTimeWindow,
   onSave,
 }: TimeWindowPolicyEditorProps) {
@@ -140,7 +132,7 @@ export function TimeWindowPolicyEditor({
           control={form.control}
           name="startsAt"
           render={({ field, fieldState }) => (
-            <DateTimeField
+            <DateTimePolicyField
               error={fieldState.error}
               label="Starts at"
               name={field.name}
@@ -155,7 +147,7 @@ export function TimeWindowPolicyEditor({
           control={form.control}
           name="expiresAt"
           render={({ field, fieldState }) => (
-            <DateTimeField
+            <DateTimePolicyField
               isRequired
               error={fieldState.error}
               label="Expires at"
@@ -168,96 +160,5 @@ export function TimeWindowPolicyEditor({
         />
       </FieldGroup>
     </form>
-  );
-}
-
-type TimeWindowPolicyCardProps = {
-  index: number;
-  policy: TimeWindowPolicyInput;
-  onChange: (index: number, policy: SessionKeyPolicyInput) => void;
-  onRemove: (index: number) => void;
-};
-
-export function TimeWindowPolicyCard({
-  index,
-  policy,
-  onChange,
-  onRemove,
-}: TimeWindowPolicyCardProps) {
-  const summary = `${policy.startsAt ? `From ${formatDateTime(policy.startsAt)}` : "Available immediately"} · Expires ${formatDateTime(policy.expiresAt)}`;
-  const handleSave = useEventCallback((nextPolicy: SessionKeyPolicyInput) =>
-    onChange(index, nextPolicy),
-  );
-  const handleRemove = useEventCallback(() => onRemove(index));
-
-  return (
-    <ItemCard className="rounded-lg" variant="outline">
-      <ItemCard.Icon>
-        <HugeiconsIcon icon={timeWindowPolicy.icon} />
-      </ItemCard.Icon>
-      <ItemCard.Content>
-        <ItemCard.Title>{timeWindowPolicy.name}</ItemCard.Title>
-        <ItemCard.Description>{summary}</ItemCard.Description>
-      </ItemCard.Content>
-      <ItemCard.Action>
-        <div className="flex items-center gap-1">
-          <Modal>
-            <Button
-              isIconOnly
-              aria-label={`Edit ${timeWindowPolicy.name} policy`}
-              size="sm"
-              type="button"
-              variant="tertiary"
-            >
-              <HugeiconsIcon icon={PencilEdit02Icon} />
-            </Button>
-            <Modal.Backdrop>
-              <Modal.Container size="md">
-                <Modal.Dialog>
-                  {({ close }) => (
-                    <>
-                      <Modal.CloseTrigger />
-                      <Modal.Header>
-                        <Modal.Heading>Edit {timeWindowPolicy.name.toLowerCase()}</Modal.Heading>
-                      </Modal.Header>
-                      <Modal.Body className="grid gap-5">
-                        <Typography.Paragraph color="muted" size="sm">
-                          {timeWindowPolicy.description}
-                        </Typography.Paragraph>
-                        <TimeWindowPolicyEditor
-                          initialValue={policy}
-                          onSave={(nextPolicy) => {
-                            handleSave(nextPolicy);
-                            close();
-                          }}
-                        />
-                      </Modal.Body>
-                      <Modal.Footer>
-                        <Button type="button" variant="secondary" onPress={close}>
-                          Cancel
-                        </Button>
-                        <Button form={timeWindowFormId} type="submit">
-                          Save changes
-                        </Button>
-                      </Modal.Footer>
-                    </>
-                  )}
-                </Modal.Dialog>
-              </Modal.Container>
-            </Modal.Backdrop>
-          </Modal>
-          <Button
-            isIconOnly
-            aria-label={`Remove ${timeWindowPolicy.name} policy`}
-            size="sm"
-            type="button"
-            variant="tertiary"
-            onPress={handleRemove}
-          >
-            <HugeiconsIcon icon={Delete02Icon} />
-          </Button>
-        </div>
-      </ItemCard.Action>
-    </ItemCard>
   );
 }

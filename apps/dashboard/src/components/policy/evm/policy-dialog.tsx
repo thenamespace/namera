@@ -5,66 +5,67 @@ import { Button, ItemCard, Modal, Typography } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import type { CreateSessionKeyFormInput } from "../types";
-import { policyCatalog, policyDefinitions, type PolicyNamespace } from "./data";
-import { TimeWindowPolicyEditor } from "./evm/time-window";
+import { evmPolicyCatalog, evmPolicyDefinitions, evmPolicyFormIds } from "./data";
+import { EvmPolicyEditor } from "./policy-editor";
+import type { EvmPolicyInput, EvmPolicyType } from "./types";
 
-type SessionKeyPolicyInput = CreateSessionKeyFormInput["policies"][number];
-type AvailablePolicyType = keyof typeof policyDefinitions;
-
-const timeWindowFormId = "add-time-window-policy-form";
-
-type PolicyDialogProps = {
-  existingPolicyTypes: ReadonlyArray<SessionKeyPolicyInput["type"]>;
-  namespace: PolicyNamespace | undefined;
-  onAdd: (policy: SessionKeyPolicyInput) => void;
+type EvmPolicyDialogProps = {
+  existingPolicyTypes: ReadonlyArray<EvmPolicyType>;
+  isDisabled?: boolean;
+  onAdd: (policy: EvmPolicyInput) => void;
 };
 
-export function PolicyDialog({ existingPolicyTypes, namespace, onAdd }: PolicyDialogProps) {
+export function EvmPolicyDialog({
+  existingPolicyTypes,
+  isDisabled = false,
+  onAdd,
+}: EvmPolicyDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState<AvailablePolicyType | null>(null);
-  const policies = namespace ? policyCatalog[namespace] : [];
-  const selectedDefinition = selectedPolicy ? policyDefinitions[selectedPolicy] : null;
+  const [selectedPolicy, setSelectedPolicy] = useState<EvmPolicyType | null>(null);
+  const selectedDefinition = selectedPolicy ? evmPolicyDefinitions[selectedPolicy] : null;
+  const formId = selectedPolicy ? evmPolicyFormIds[selectedPolicy] : undefined;
   const handleOpenChange = useEventCallback((open: boolean) => {
     setIsOpen(open);
     if (!open) setSelectedPolicy(null);
   });
   const handleBack = useEventCallback(() => setSelectedPolicy(null));
-  const handleAdd = useEventCallback((policy: SessionKeyPolicyInput) => {
+  const handleAdd = useEventCallback((policy: EvmPolicyInput) => {
     onAdd(policy);
     handleOpenChange(false);
   });
 
   return (
     <Modal isOpen={isOpen} onOpenChange={handleOpenChange}>
-      <Button isDisabled={!namespace} size="sm" type="button" variant="tertiary">
+      <Button isDisabled={isDisabled} size="sm" type="button" variant="tertiary">
         <HugeiconsIcon icon={Add01Icon} />
         Add policy
       </Button>
 
       <Modal.Backdrop>
-        <Modal.Container size="lg">
+        <Modal.Container
+          size={
+            selectedPolicy === null || selectedPolicy === "evm.native-spend-limit" ? "lg" : "md"
+          }
+        >
           <Modal.Dialog>
             <Modal.CloseTrigger />
             <Modal.Header>
               <Modal.Heading>{selectedDefinition?.name ?? "Add a policy"}</Modal.Heading>
             </Modal.Header>
 
-            {selectedPolicy ? (
+            {selectedPolicy && formId ? (
               <>
                 <Modal.Body className="grid gap-5">
                   <Typography.Paragraph color="muted" size="sm">
                     {selectedDefinition?.description}
                   </Typography.Paragraph>
-                  {selectedPolicy === "evm.time-window" ? (
-                    <TimeWindowPolicyEditor formId={timeWindowFormId} onSave={handleAdd} />
-                  ) : null}
+                  <EvmPolicyEditor formId={formId} type={selectedPolicy} onSave={handleAdd} />
                 </Modal.Body>
                 <Modal.Footer>
                   <Button type="button" variant="secondary" onPress={handleBack}>
                     Back
                   </Button>
-                  <Button form={timeWindowFormId} type="submit">
+                  <Button form={formId} type="submit">
                     Add policy
                   </Button>
                 </Modal.Footer>
@@ -72,7 +73,7 @@ export function PolicyDialog({ existingPolicyTypes, namespace, onAdd }: PolicyDi
             ) : (
               <>
                 <Modal.Body className="my-4 grid gap-2 px-0">
-                  {policies.map((policy) => {
+                  {evmPolicyCatalog.map((policy) => {
                     const isAdded =
                       policy.cardinality === "singleton" &&
                       existingPolicyTypes.includes(policy.type);
