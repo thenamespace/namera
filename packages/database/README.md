@@ -295,7 +295,9 @@ conditional lifecycle transitions, and leased reconciliation claims.
 `ExecutionRepository` exposes append-only insertion and organization-scoped
 reads using a stable `(created_at, id)` newest-first cursor. List reads join the
 historical actor, session key, wallet, and wallet-key presentation data in one
-query so activity consumers do not perform relation lookups per row. Both use
+query so activity consumers do not perform relation lookups per row. The
+selection shapes and row decoders live in a focused execution-view module, so
+the repository service remains centered on queries and transaction behavior. Both use
 the transaction context so confirmation can atomically settle policy state and
 create the successful execution.
 
