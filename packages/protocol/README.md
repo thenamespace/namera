@@ -101,10 +101,13 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   signed operations remain safe to store in JSONB and can be reconstructed
   exactly for submission or reconciliation.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
-  calls, the prepared UserOperation gas envelope, and the standardized bundler
-  gas-estimation simulation result. Policy evaluation returns a typed allowed decision or the first
-  policy ID and bounded denial code. Keep Viem clients, provider errors,
-  signatures, and raw provider responses outside this contract.
+  calls, the prepared UserOperation gas envelope, the standardized bundler
+  gas-estimation result, and normalized `simulateCalls` outcomes. The latter
+  includes bounded account-relative asset changes and traced native transfers
+  at the simulated block. Policy evaluation returns a typed allowed decision or
+  the first policy ID and bounded denial code. Keep Viem clients, provider
+  errors, signatures, raw logs, and raw provider responses outside this
+  contract.
 - Signature DTOs are namespace-discriminated and expose only EVM `message` and
   EIP-712 `typed-data` operations. Raw digest signing is intentionally absent.
   Signature authorization uses its own `EvmSignatureContext` and requires an

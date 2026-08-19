@@ -15,7 +15,9 @@ evaluation behind one root `Evm` service.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
-  receipt operations exposed through `evm.execution`.
+  receipt operations exposed through `evm.execution`. Preparation combines
+  ERC-4337 gas simulation with `simulateCalls` asset-change and native-transfer
+  tracing, then exposes only the bounded protocol context to policies.
 - `src/policy/` — exhaustive EVM policy registry and lifecycle service;
   individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
