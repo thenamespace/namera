@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 
 import { DateTime } from "effect";
 
+import type { WalletId } from "@namera-ai/protocol";
 import type {
   ListSessionKeysForOrganizationResponse,
+  ListSessionKeysForWalletResponse,
   SessionKeyResponse,
 } from "@namera-ai/protocol/dto";
 import {
@@ -30,7 +32,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
-import { useSessionKeys } from "@/hooks/session-key";
+import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const columnIds = ["account", "namespace", "creator", "status", "createdAt"] as const;
@@ -169,7 +171,49 @@ type SessionKeysTableProps = {
 
 export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) {
   const sessionKeys = useSessionKeys();
-  const data = sessionKeys.data ?? initialSessionKeys;
+  return (
+    <SessionKeysTableContent
+      ariaLabel="Organization session keys"
+      data={sessionKeys.data ?? initialSessionKeys}
+      isError={sessionKeys.isError}
+      isLoading={sessionKeys.isLoading}
+    />
+  );
+}
+
+type WalletSessionKeysTableProps = {
+  initialSessionKeys: ListSessionKeysForWalletResponse;
+  walletId: WalletId;
+};
+
+export function WalletSessionKeysTable({
+  initialSessionKeys,
+  walletId,
+}: WalletSessionKeysTableProps) {
+  const sessionKeys = useWalletSessionKeys(walletId);
+  return (
+    <SessionKeysTableContent
+      ariaLabel="Account session keys"
+      data={sessionKeys.data ?? initialSessionKeys}
+      isError={sessionKeys.isError}
+      isLoading={sessionKeys.isLoading}
+    />
+  );
+}
+
+type SessionKeysTableContentProps = {
+  ariaLabel: string;
+  data: ReadonlyArray<SessionKeyResponse>;
+  isError: boolean;
+  isLoading: boolean;
+};
+
+function SessionKeysTableContent({
+  ariaLabel,
+  data,
+  isError,
+  isLoading,
+}: SessionKeysTableContentProps) {
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<SessionKeyResponse["status"]>>(new Set());
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
@@ -348,12 +392,12 @@ export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) 
         </div>
       </div>
 
-      {sessionKeys.isLoading ? <Typography color="muted">Loading session keys…</Typography> : null}
-      {sessionKeys.isError ? (
+      {isLoading ? <Typography color="muted">Loading session keys…</Typography> : null}
+      {isError ? (
         <Typography className="text-danger">Couldn’t load session keys.</Typography>
       ) : null}
       <DataGrid
-        aria-label="Organization session keys"
+        aria-label={ariaLabel}
         columns={displayedColumns}
         data={rows}
         defaultExpandedKeys="all"
@@ -369,4 +413,4 @@ export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) 
   );
 }
 
-export type { SessionKeysTableProps };
+export type { SessionKeysTableProps, WalletSessionKeysTableProps };

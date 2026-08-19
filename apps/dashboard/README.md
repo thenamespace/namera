@@ -19,6 +19,8 @@ Workspace package imports continue to use their package names.
   `index.tsx` entry only after it is split across multiple files.
 - `src/components/` — components shared by unrelated routes. Do not move route-only
   components here.
+- `src/components/session-keys-table/` — the shared organization or wallet-scoped
+  session-key table, with query-specific wrappers around one table body.
 - `src/components/display/` — reusable compact value renderers for metadata,
   email addresses, dates, roles, and future table cells.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
@@ -81,8 +83,10 @@ the wallet detail into the shared atom registry and presents its metadata,
 semantic status, namespace, implementation, protection, identifiers,
 and creation date through reusable display components. Account names and row
 actions in `/accounts` link to the overview.
-Session Keys and Usage currently retain the detail shell with focused placeholder
-content for their later implementations.
+The Session Keys tab prefetches the wallet-scoped session-key list and renders it
+through the same table used by the organization session-key page. Usage currently
+retains the detail shell with focused placeholder content for its later
+implementation.
 
 Session-key create, detail, organization-list, and wallet-list atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,

@@ -9,8 +9,7 @@ import { sessionKeysAtom } from "@/atoms/session-key";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
-
-import { SessionKeysTable } from "./-components/session-keys-table";
+import { SessionKeysTable } from "@/components/session-keys-table";
 
 const sessionKeyCreatePermission = ["session-key:create"] as const;
 

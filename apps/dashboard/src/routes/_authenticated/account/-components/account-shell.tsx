@@ -3,13 +3,10 @@ import { type ReactNode, useMemo } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 
 import type { WalletResponse } from "@namera-ai/protocol/dto";
-import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { IconPreview, Typography, cn } from "@namera-ai/ui";
+import { cn } from "@namera-ai/ui";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
-
-const fallbackAccountIcon: MetadataIcon = { type: "emoji", value: "👛" };
 
 const accountSections = [
   { label: "Overview", to: "/account/$accountId/overview" },
@@ -65,27 +62,7 @@ export function AccountShell({ account, children }: AccountShellProps) {
         </div>
       </nav>
 
-      <DashboardPage.Content className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
-        <header className="flex flex-col items-start">
-          <IconPreview
-            className="shrink-0 shadow-sm"
-            size="lg"
-            value={account.metadata.logo ?? fallbackAccountIcon}
-          />
-          <Typography.Heading
-            className="mt-5 max-w-full truncate text-3xl tracking-tight"
-            level={2}
-          >
-            {account.metadata.name}
-          </Typography.Heading>
-          <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
-            {account.metadata.description ??
-              "A programmable smart account for controlled onchain operations."}
-          </Typography.Paragraph>
-        </header>
-
-        <div className="mt-10">{children}</div>
-      </DashboardPage.Content>
+      <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">{children}</DashboardPage.Content>
     </DashboardPage>
   );
 }
