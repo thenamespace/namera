@@ -77,7 +77,7 @@ export const evmPolicyDefinitions = {
   "evm.chain-allowlist": {
     type: "evm.chain-allowlist",
     name: "Allowed networks",
-    description: "Choose the networks where this session key can execute or sign.",
+    description: "Choose the networks allowed for this session key.",
     cardinality: "singleton",
     icon: GlobalIcon,
   },
@@ -98,7 +98,7 @@ export const evmPolicyDefinitions = {
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
     name: "Native spend",
-    description: "Limit native-token spending per operation or reset period.",
+    description: "Limit native-token spending for the session key.",
     cardinality: "singleton",
     icon: Coins01Icon,
   },
