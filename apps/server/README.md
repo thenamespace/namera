@@ -43,6 +43,8 @@ API keys see only executions started by their own actor.
 `Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
 grant, signature-policy, persistence, and monthly billing enforcement to the
 application workflow. Signing remains synchronous and has no background worker.
+The public SDK creates this header internally; CLI and MCP users never manage
+it themselves.
 
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.
@@ -124,7 +126,8 @@ to the durable session-key grants selected during consent. The tool surface
 covers wallet list/get, session-key grant/list/get reads, transaction execution,
 submission status, confirmed execution list/get, and message or typed-data
 signing. Tool inputs never accept an organization or actor identity; those are
-always derived from the bearer authorization.
+always derived from the bearer authorization. Execution and signing tool inputs
+also omit idempotency keys; the MCP adapter generates one per tool invocation.
 
 MCP tool inputs and structured outputs use root object schemas. The registration
 adapter inlines Effect's root `$ref` while retaining nested `$defs`, avoiding

@@ -1,15 +1,11 @@
 import { Schema } from "effect";
 
 import { ActorId, OrganizationId, SessionKeyGrantId } from "#/common/index";
-import { NonEmptyString } from "#/model/common";
 
 import { ExecuteRequest } from "./execution.js";
 import { SessionKeySummaryResponse } from "./session-key/index.js";
 
 export const McpExecuteRequest = Schema.Struct({
-  idempotencyKey: NonEmptyString.annotate({
-    description: "A caller-generated key used to safely retry this execution",
-  }),
   request: ExecuteRequest,
 }).annotate({
   identifier: "McpExecuteRequest",

@@ -328,7 +328,6 @@ layer(TestServerLayer)("MCP route", (it) => {
             params: {
               name: "execute_transaction",
               arguments: {
-                idempotencyKey: "mcp-execution-1",
                 request: {
                   namespace: "eip155",
                   walletId: wallet.id,
@@ -411,7 +410,6 @@ layer(TestServerLayer)("MCP route", (it) => {
             params: {
               name: "sign",
               arguments: {
-                idempotencyKey: "mcp-signature-1",
                 request: {
                   namespace: "eip155",
                   type: "message",

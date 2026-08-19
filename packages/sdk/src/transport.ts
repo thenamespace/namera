@@ -1,4 +1,4 @@
-import { Cause, Effect, Layer, Option, Predicate, Schema } from "effect";
+import { Cause, Effect, Layer, Option, Predicate, Schedule, Schema } from "effect";
 import type { Context } from "effect";
 import { FetchHttpClient, HttpClientError, HttpClientRequest } from "effect/unstable/http";
 import { HttpApiClient, HttpApiMiddleware } from "effect/unstable/httpapi";
@@ -88,6 +88,17 @@ const toSdkError = <E>(error: E): NameraSdkError<NameraEndpointError<E>> => {
   };
 };
 
+const isTransientRequestError = (error: unknown): boolean => {
+  if (Predicate.isTagged(error, "InternalServerError")) return true;
+  if (!HttpClientError.isHttpClientError(error)) return false;
+  if (error.reason instanceof HttpClientError.TransportError) return true;
+  if (!(error.reason instanceof HttpClientError.StatusCodeError)) return false;
+
+  return error.reason.response.status === 408 || error.reason.response.status >= 500;
+};
+
+const transientRetrySchedule = Schedule.exponential("100 millis");
+
 export class NameraTransport {
   readonly client: NameraApiClient;
   readonly #fetch: NameraFetch | undefined;
@@ -141,6 +152,20 @@ export class NameraTransport {
       this.#fetch === undefined
         ? handled
         : Effect.provideService(handled, FetchHttpClient.Fetch, this.#fetch),
+    );
+  }
+
+  requestWithRetry<A, E>(
+    effect: Effect.Effect<A, E>,
+  ): Promise<NameraResult<A, NameraEndpointError<E>>> {
+    return this.request(
+      effect.pipe(
+        Effect.retry({
+          times: 3,
+          schedule: transientRetrySchedule,
+          while: isTransientRequestError,
+        }),
+      ),
     );
   }
 }

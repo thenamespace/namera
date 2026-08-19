@@ -23,7 +23,9 @@ namera logout
 
 Structured transaction and signature payloads are read from JSON files so they
 can be validated with the public protocol schemas without fragile shell
-quoting. Use `--json` for machine-readable output.
+quoting. Use `--json` for machine-readable output. Execution and signing
+commands rely on the SDK to generate one idempotency key and reuse it across
+transient retries; no retry-key flag is exposed.
 
 ## Credentials
 

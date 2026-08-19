@@ -71,12 +71,20 @@ runtimes and tests.
 Resource operations are intentionally grouped. Only `sign` remains at the root
 because it is a cross-resource signing capability rather than a collection.
 
+Execution and signing methods generate an idempotency key internally before
+the first request. The same key is reused for up to three retries with bounded
+exponential backoff when the failure is a network interruption, HTTP 408, or
+HTTP 5xx response. Validation, authorization, policy, rate-limit, billing, and
+other declared API failures are returned immediately and are never retried.
+Callers do not supply or manage idempotency keys.
+
 ## Structure
 
 - `src/client.ts` — public `NameraClient` facade.
 - `src/wallets.ts`, `src/session-keys.ts`, `src/executions.ts` — focused resource
   clients.
-- `src/transport.ts` — internal generated HttpApi client and API-key middleware.
+- `src/transport.ts` — internal generated HttpApi client, authentication
+  middleware, and transient retry boundary.
 - `src/result.ts` — promise result and SDK error contracts.
 - `src/index.ts` — intentional public exports.
 - `tests/` — transport-boundary contract tests using an injected Fetch function.

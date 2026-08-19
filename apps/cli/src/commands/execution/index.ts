@@ -14,21 +14,14 @@ const execute = Command.make(
   "execute",
   {
     file: Flag.string("file").pipe(Flag.withDescription("JSON execution request file")),
-    idempotencyKey: Flag.string("idempotency-key").pipe(
-      Flag.withDescription("Stable retry key"),
-      Flag.withDefault(crypto.randomUUID()),
-    ),
     profile: profileFlag,
     json: jsonFlag,
   },
-  Effect.fn(function* ({ file, idempotencyKey, profile, json }) {
+  Effect.fn(function* ({ file, profile, json }) {
     const raw = yield* Effect.tryPromise(() => readFile(file, "utf8"));
     const request = yield* Schema.decodeUnknownEffect(ExecuteRequest)(JSON.parse(raw));
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(
-      yield* runPromise(client.executions.execute(request, { idempotencyKey })),
-      json,
-    );
+    yield* printValue(yield* runPromise(client.executions.execute(request)), json);
   }),
 );
 

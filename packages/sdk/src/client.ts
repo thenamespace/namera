@@ -1,4 +1,5 @@
 import { type SignRequest as SignRequestType } from "@namera-ai/protocol/dto";
+import { generateUniqueId } from "@namera-ai/utils";
 
 import { AuthClient } from "#/auth";
 import { ExecutionClient } from "#/executions";
@@ -22,19 +23,21 @@ export class NameraClient {
     this.wallets = new WalletClient(this.#transport);
   }
 
-  sign(request: SignRequestType, options: { readonly idempotencyKey: string }) {
+  sign(request: SignRequestType) {
+    const idempotencyKey = generateUniqueId();
+
     if (request.type === "message") {
-      return this.#transport.request(
+      return this.#transport.requestWithRetry(
         this.#transport.client.signature.sign({
-          headers: { "idempotency-key": options.idempotencyKey },
+          headers: { "idempotency-key": idempotencyKey },
           payload: request,
         }),
       );
     }
 
-    return this.#transport.request(
+    return this.#transport.requestWithRetry(
       this.#transport.client.signature.sign({
-        headers: { "idempotency-key": options.idempotencyKey },
+        headers: { "idempotency-key": idempotencyKey },
         payload: request,
       }),
     );

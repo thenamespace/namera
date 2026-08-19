@@ -50,6 +50,7 @@
   "dependencies": {
     "@namera-ai/api": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/utils": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

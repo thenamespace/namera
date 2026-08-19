@@ -14,6 +14,13 @@ const address = Schema.decodeSync(EthereumAddress)("0x11111111111111111111111111
 const userOperationHash = Schema.decodeSync(UserOperationHash)(
   "0x5220eca56a1918b04ebd0a4ca0f460f0e72dbcf639e00f9f8b5f6b5cb5365f86",
 );
+const submittedExecution = {
+  namespace: "eip155",
+  status: "submitted",
+  submissionId,
+  userOperationHash,
+} as const;
+const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -58,25 +65,15 @@ describe("NameraClient", () => {
   });
 
   it("encodes execution input and returns the typed submitted result", async () => {
-    const fetch = vi.fn<NameraFetch>().mockResolvedValue(
-      jsonResponse({
-        namespace: "eip155",
-        status: "submitted",
-        submissionId,
-        userOperationHash,
-      }),
-    );
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(jsonResponse(submittedExecution));
     const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
 
-    const result = await client.executions.execute(
-      {
-        namespace: "eip155",
-        walletId,
-        chainId: "eip155:1",
-        calls: [{ to: address, value: 0n, data: "0x" }],
-      },
-      { idempotencyKey: "transfer-1" },
-    );
+    const result = await client.executions.execute({
+      namespace: "eip155",
+      walletId,
+      chainId: "eip155:1",
+      calls: [{ to: address, value: 0n, data: "0x" }],
+    });
 
     expect(result).toMatchObject({
       success: true,
@@ -90,13 +87,84 @@ describe("NameraClient", () => {
     expect(url?.toString()).toBe("https://api.namera.ai/executions");
     expect(init.method).toBe("POST");
     expect(headers["content-type"]).toBe("application/json");
-    expect(headers["idempotency-key"]).toBe("transfer-1");
+    expect(headers["idempotency-key"]).toMatch(uuidV7Pattern);
     expect(JSON.parse(new TextDecoder().decode(init.body as Uint8Array))).toEqual({
       namespace: "eip155",
       walletId,
       chainId: "eip155:1",
       calls: [{ to: address, value: "0", data: "0x" }],
     });
+  });
+
+  it("reuses one generated idempotency key across transient retries", async () => {
+    const fetch = vi
+      .fn<NameraFetch>()
+      .mockRejectedValueOnce(new Error("connection reset"))
+      .mockResolvedValue(jsonResponse(submittedExecution));
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    const result = await client.executions.execute({
+      namespace: "eip155",
+      walletId,
+      chainId: "eip155:1",
+      calls: [{ to: address, value: 0n, data: "0x" }],
+    });
+
+    expect(result.success).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    const firstHeaders = fetch.mock.calls[0]?.[1]?.headers as Record<string, string>;
+    const retryHeaders = fetch.mock.calls[1]?.[1]?.headers as Record<string, string>;
+    expect(firstHeaders["idempotency-key"]).toMatch(uuidV7Pattern);
+    expect(retryHeaders["idempotency-key"]).toBe(firstHeaders["idempotency-key"]);
+  });
+
+  it("generates signature idempotency internally", async () => {
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(
+      jsonResponse({
+        namespace: "eip155",
+        type: "message",
+        walletId,
+        chainId: "eip155:1",
+        account: address,
+        signature: "0x1234",
+      }),
+    );
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    const result = await client.sign({
+      namespace: "eip155",
+      type: "message",
+      walletId,
+      chainId: "eip155:1",
+      message: "Sign with Namera",
+    });
+
+    expect(result.success).toBe(true);
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    if (init === undefined) throw new Error("Expected a fetch request");
+    expect(url?.toString()).toBe("https://api.namera.ai/signatures");
+    expect((init.headers as Record<string, string>)["idempotency-key"]).toMatch(uuidV7Pattern);
+  });
+
+  it("does not retry declared API failures", async () => {
+    const fetch = vi
+      .fn<NameraFetch>()
+      .mockResolvedValue(jsonResponse({ _tag: "RateLimitExceeded", retryAfterSeconds: 60 }, 429));
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    const result = await client.sign({
+      namespace: "eip155",
+      type: "message",
+      walletId,
+      chainId: "eip155:1",
+      message: "Do not retry this request",
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      error: { kind: "api", tag: "RateLimitExceeded" },
+    });
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it("returns structured API and response-contract failures", async () => {

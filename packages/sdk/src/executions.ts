@@ -1,11 +1,8 @@
 import type { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
 import { type ExecuteRequest as ExecuteRequestType } from "@namera-ai/protocol/dto";
+import { generateUniqueId } from "@namera-ai/utils";
 
 import type { NameraTransport } from "#/transport";
-
-export type ExecuteOptions = {
-  readonly idempotencyKey: string;
-};
 
 export type ListExecutionsOptions = {
   readonly cursor?: ExecutionId;
@@ -14,11 +11,13 @@ export type ListExecutionsOptions = {
 export class ExecutionClient {
   constructor(private readonly transport: NameraTransport) {}
 
-  execute(request: ExecuteRequestType, options: ExecuteOptions) {
-    return this.transport.request(
+  execute(request: ExecuteRequestType) {
+    const idempotencyKey = generateUniqueId();
+
+    return this.transport.requestWithRetry(
       this.transport.client.execution.execute({
         payload: request,
-        headers: { "idempotency-key": options.idempotencyKey },
+        headers: { "idempotency-key": idempotencyKey },
       }),
     );
   }

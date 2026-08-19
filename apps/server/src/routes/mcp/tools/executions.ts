@@ -48,9 +48,9 @@ export const ExecutionTools = Effect.gen(function* () {
     requiredScope: "mcp:execute",
     hints: executionHints,
     errorMessage: "The transaction could not be executed.",
-    handle: ({ idempotencyKey, request }, principal) =>
+    handle: ({ request }, principal) =>
       app.execution
-        .execute({ actor: principal, idempotencyKey, request })
+        .execute({ actor: principal, idempotencyKey: crypto.randomUUID(), request })
         .pipe(Effect.map((execution) => ({ execution }))),
   });
 
