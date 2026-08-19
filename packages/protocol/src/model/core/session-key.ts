@@ -4,6 +4,9 @@ import { ActorId, OrganizationId, SessionKeyId, WalletId } from "#/common/index"
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import {
+  CreateEvmNativeSpendLimitPolicy,
+  CreateEvmSignaturePolicy,
+  CreateEvmTimeWindowPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
   EvmTimeWindowPolicy,
@@ -22,6 +25,11 @@ export const EvmSessionKeyPolicy = Schema.Union([
   EvmTimeWindowPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
+]);
+export const CreateEvmSessionKeyPolicy = Schema.Union([
+  CreateEvmTimeWindowPolicy,
+  CreateEvmNativeSpendLimitPolicy,
+  CreateEvmSignaturePolicy,
 ]);
 export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy).check(
   Schema.isMinLength(1, { message: "At least one policy is required" }),
@@ -66,6 +74,7 @@ export const SessionKeyInsert = createInsertSchema(
 export type SessionKeyStatus = typeof SessionKeyStatus.Type;
 export type SessionKeyMetadata = typeof SessionKeyMetadata.Type;
 export type EvmSessionKeyPolicy = typeof EvmSessionKeyPolicy.Type;
+export type CreateEvmSessionKeyPolicy = typeof CreateEvmSessionKeyPolicy.Type;
 export type EvmSessionKeyPolicies = typeof EvmSessionKeyPolicies.Type;
 export type SessionKeyPolicy = typeof SessionKeyPolicy.Type;
 export type SessionKeyPolicies = typeof SessionKeyPolicies.Type;

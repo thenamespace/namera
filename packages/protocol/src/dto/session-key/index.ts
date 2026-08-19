@@ -1,12 +1,12 @@
 import { Schema } from "effect";
 
 import { OrganizationId, SessionKeyId, WalletId } from "#/common/index";
-import { EvmSessionKeyPolicies, SessionKeyMetadata, SessionKeyStatus } from "#/model/index";
 import {
-  CreateEvmNativeSpendLimitPolicy,
-  CreateEvmSignaturePolicy,
-  CreateEvmTimeWindowPolicy,
-} from "#/policy/index";
+  CreateEvmSessionKeyPolicy,
+  EvmSessionKeyPolicies,
+  SessionKeyMetadata,
+  SessionKeyStatus,
+} from "#/model/index";
 
 import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
 import { WalletResponse } from "../wallet/index.js";
@@ -15,13 +15,7 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,
-  policies: Schema.Array(
-    Schema.Union([
-      CreateEvmTimeWindowPolicy,
-      CreateEvmNativeSpendLimitPolicy,
-      CreateEvmSignaturePolicy,
-    ]),
-  )
+  policies: Schema.Array(CreateEvmSessionKeyPolicy)
     .check(Schema.isMinLength(1, { message: "At least one policy is required" }))
     .check(
       Schema.makeFilter((policies) =>

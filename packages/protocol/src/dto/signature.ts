@@ -1,7 +1,13 @@
 import { Schema } from "effect";
 
 import { WalletId } from "#/common/index";
-import { EthereumAddress, EvmTypedData, Hex, SupportedEvmChainId } from "#/evm/index";
+import {
+  EthereumAddress,
+  EVM_MAX_SIGNATURE_PAYLOAD_BYTES,
+  EvmTypedData,
+  Hex,
+  SupportedEvmChainId,
+} from "#/evm/index";
 import { NonEmptyString } from "#/model/common";
 
 const SignEvmRequestCommon = {
@@ -10,12 +16,16 @@ const SignEvmRequestCommon = {
   chainId: SupportedEvmChainId,
 };
 
+const textEncoder = new TextEncoder();
+const boundedSignaturePayload = (payload: string) =>
+  textEncoder.encode(payload).byteLength <= EVM_MAX_SIGNATURE_PAYLOAD_BYTES
+    ? undefined
+    : { path: [], issue: "Signature payloads may not exceed 64 KiB" };
+
 export const SignEvmMessageRequest = Schema.Struct({
   ...SignEvmRequestCommon,
   type: Schema.Literal("message"),
-  message: Schema.String.check(
-    Schema.isMaxLength(16_384, { message: "Messages may not exceed 16 KiB" }),
-  ),
+  message: Schema.String.check(Schema.makeFilter(boundedSignaturePayload)),
 }).annotate({
   identifier: "SignEvmMessageRequest",
   description: "Sign a UTF-8 message with an authorized EVM smart account",
@@ -25,10 +35,12 @@ export const SignEvmTypedDataRequest = Schema.Struct({
   ...SignEvmRequestCommon,
   type: Schema.Literal("typed-data"),
   typedData: EvmTypedData,
-}).annotate({
-  identifier: "SignEvmTypedDataRequest",
-  description: "Sign EIP-712 typed data with an authorized EVM smart account",
-});
+})
+  .check(Schema.makeFilter((request) => boundedSignaturePayload(JSON.stringify(request.typedData))))
+  .annotate({
+    identifier: "SignEvmTypedDataRequest",
+    description: "Sign EIP-712 typed data with an authorized EVM smart account",
+  });
 
 export const SignRequest = Schema.Union([SignEvmMessageRequest, SignEvmTypedDataRequest], {
   mode: "oneOf",

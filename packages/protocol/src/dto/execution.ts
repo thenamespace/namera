@@ -9,10 +9,14 @@ import {
 } from "#/common/index";
 import {
   EthereumAddress,
+  EVM_MAX_AGGREGATE_CALL_DATA_BYTES,
+  EVM_MAX_CALL_DATA_BYTES,
+  EVM_MAX_CALLS,
   Hex,
   SuccessfulEvmExecutionReceipt,
   SupportedEvmChainId,
   UserOperationHash,
+  evmHexByteLength,
 } from "#/evm/index";
 import { NonEmptyString } from "#/model/common";
 import { EvmExecutionData } from "#/model/core/execution";
@@ -20,8 +24,22 @@ import { EvmExecutionData } from "#/model/core/execution";
 const EvmExecutionCallRequest = Schema.Struct({
   to: EthereumAddress,
   value: Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n)),
-  data: Hex,
+  data: Hex.check(
+    Schema.makeFilter((data) =>
+      evmHexByteLength(data) <= EVM_MAX_CALL_DATA_BYTES
+        ? undefined
+        : { path: [], issue: "Call data may not exceed 32 KiB" },
+    ),
+  ),
 });
+
+const boundedExecutionCalls = Schema.makeFilter<ReadonlyArray<{ readonly data: string }>>(
+  (calls) =>
+    calls.reduce((total, call) => total + evmHexByteLength(call.data), 0) <=
+    EVM_MAX_AGGREGATE_CALL_DATA_BYTES
+      ? undefined
+      : { path: [], issue: "Aggregate call data may not exceed 128 KiB" },
+);
 
 export const ExecuteEvmRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
@@ -29,6 +47,8 @@ export const ExecuteEvmRequest = Schema.Struct({
   chainId: SupportedEvmChainId,
   calls: Schema.Array(EvmExecutionCallRequest).check(
     Schema.isMinLength(1, { message: "At least one call is required" }),
+    Schema.isMaxLength(EVM_MAX_CALLS, { message: "At most 32 calls are allowed" }),
+    boundedExecutionCalls,
   ),
 }).annotate({
   identifier: "ExecuteEvmRequest",
