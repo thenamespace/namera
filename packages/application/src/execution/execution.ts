@@ -17,6 +17,7 @@ import {
   ExecutionError,
   type BillingError,
   type EvmExecutionReceipt,
+  type EvmPolicyDeniedDecision,
   type ExecutionSubmissionId,
   type OrganizationId,
   type SuccessfulEvmExecutionReceipt,
@@ -153,7 +154,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
 
       let selected: GrantedSessionKey | undefined;
       let submissionId: ExecutionSubmissionId | undefined;
-      let lastPolicyCode: string | undefined;
+      let lastPolicyDenial: EvmPolicyDeniedDecision | undefined;
       // One session key must authorize the complete call batch. Combining
       // permissions from multiple grants would create authority that no user
       // explicitly granted and would make stateful reservations ambiguous.
@@ -170,7 +171,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
           1,
         );
         if (!decision.allowed) {
-          lastPolicyCode = decision.code;
+          lastPolicyDenial = decision;
           continue;
         }
 
@@ -237,7 +238,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
           );
         if ("existing" in reserved) return reserved.existing;
         if (!reserved.decision.allowed) {
-          lastPolicyCode = reserved.decision.code;
+          lastPolicyDenial = reserved.decision;
           continue;
         }
         selected = candidate;
@@ -246,7 +247,15 @@ export const makeExecutionApplication = Effect.gen(function* () {
       }
 
       if (selected === undefined || submissionId === undefined) {
-        return yield* new ExecutionError({ code: "POLICY_DENIED", policyCode: lastPolicyCode });
+        return yield* new ExecutionError({
+          code: "POLICY_DENIED",
+          ...(lastPolicyDenial === undefined
+            ? {}
+            : {
+                policyId: lastPolicyDenial.policyId,
+                policyCode: lastPolicyDenial.code,
+              }),
+        });
       }
 
       const signed = yield* evm.execution.sign({ account, prepared }).pipe(

@@ -3,7 +3,12 @@ import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
-import { SignatureError, type BillingError, type SignatureOperationId } from "@namera-ai/protocol";
+import {
+  SignatureError,
+  type BillingError,
+  type EvmPolicyDeniedDecision,
+  type SignatureOperationId,
+} from "@namera-ai/protocol";
 import {
   SignRequest,
   type GrantedActorData,
@@ -194,7 +199,7 @@ export const makeSignatureApplication = Effect.gen(function* () {
       }
 
       let operationId: SignatureOperationId | undefined;
-      let lastPolicyCode: string | undefined;
+      let lastPolicyDenial: EvmPolicyDeniedDecision | undefined;
       for (const candidate of candidates) {
         const decision = yield* evm.policy.evaluateSignature({
           policies: candidate.sessionKey.policies,
@@ -209,7 +214,7 @@ export const makeSignatureApplication = Effect.gen(function* () {
           1,
         );
         if (!decision.allowed) {
-          lastPolicyCode = decision.code;
+          if ("policyId" in decision) lastPolicyDenial = decision;
           continue;
         }
 
@@ -290,7 +295,15 @@ export const makeSignatureApplication = Effect.gen(function* () {
           }),
           1,
         );
-        return yield* new SignatureError({ code: "POLICY_DENIED", policyCode: lastPolicyCode });
+        return yield* new SignatureError({
+          code: "POLICY_DENIED",
+          ...(lastPolicyDenial === undefined
+            ? {}
+            : {
+                policyId: lastPolicyDenial.policyId,
+                policyCode: lastPolicyDenial.code,
+              }),
+        });
       }
 
       const signature = yield* evm

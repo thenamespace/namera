@@ -158,10 +158,17 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
         return yield* new SessionKeyCreationError({ code: "WALLET_NAMESPACE_MISMATCH" });
       }
 
-      const policies = input.request.policies.map((policy) => ({
-        ...policy,
-        id: Schema.decodeSync(PolicyId)(generateUniqueId()),
-      })) satisfies EvmSessionKeyPolicies;
+      const policies = input.request.policies.map((policy) => {
+        const id = Schema.decodeSync(PolicyId)(generateUniqueId());
+        switch (policy.type) {
+          case "evm.native-spend-limit":
+            return { ...policy, id, appliesTo: "execution" } as const;
+          case "evm.time-window":
+            return { ...policy, id, appliesTo: "both" } as const;
+          case "evm.signature":
+            return { ...policy, id, appliesTo: "signature" } as const;
+        }
+      }) satisfies EvmSessionKeyPolicies;
       const policyHash = yield* hashSessionKeyPolicies(crypto, policies);
       const policyTypes = policies.map((policy) => policy.type);
       const effectiveExpiry = policies
