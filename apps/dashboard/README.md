@@ -96,6 +96,9 @@ atoms/hooks live under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
+The session-key policy catalog declares singleton or repeatable cardinality per
+policy. The picker disables only an already-added singleton and uses stable
+React Hook Form field identities for repeatable instances.
 
 ## Settings routes
 

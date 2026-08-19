@@ -95,6 +95,9 @@ handler owns the schemas used to decode persisted state and reservations plus
 the context-derived seeds for any missing state. Registry priorities define
 denial precedence and policy IDs provide a stable tie-breaker, so caller array
 order cannot change evaluation, reservation, settlement, or release behavior.
+Each registry definition also declares whether its type is singleton or
+repeatable. The registry materializes persisted policy IDs and applicability,
+so application workflows do not branch on policy names.
 
 `evm.sign` reconstructs the stored Kernel or Safe account on the requested
 supported chain and delegates either UTF-8 message signing or EIP-712 typed-data

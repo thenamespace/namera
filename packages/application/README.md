@@ -96,9 +96,12 @@ failed final transaction may leave an unreferenced provider key for later
 operational reconciliation.
 
 Session-key creation validates the organization wallet and its namespace before
-persisting versioned policy instances. Revocation atomically marks the immutable
-key revoked and revokes all active grants while preserving in-flight execution
-history. Policy hashes are purpose-separated and
+persisting versioned policy instances. Registry-owned cardinality rejects a
+second instance only for policy types declared singleton; repeatable types and
+the total policy array have no product-level maximum. The same registry assigns
+IDs and code-owned applicability without application policy switches. Revocation
+atomically marks the immutable key revoked and revokes all active grants while
+preserving in-flight execution history. Policy hashes are purpose-separated and
 canonical across object-key and policy-array ordering while excluding generated
 policy IDs. The session key, audit event, inbox recipients, and durable email
 jobs share one transaction.
