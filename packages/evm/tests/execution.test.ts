@@ -5,6 +5,7 @@ import { Bytes32, EthereumAddress, Hex, SupportedEvmChainId } from "@namera-ai/p
 import type { KernelWalletData } from "@namera-ai/protocol/model";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { toSimulationCalls } from "../src/execution/prepare.js";
 import { normalizeEvmUserOperation, toViemUserOperation } from "../src/execution/user-operation.js";
 import { Evm } from "../src/index.js";
 
@@ -22,6 +23,18 @@ const account = {
   } satisfies KernelWalletData,
   owner: privateKeyToAccount(`0x${"1".repeat(64)}`),
 };
+
+it("omits empty calldata only from auxiliary call simulation", () => {
+  const calls = toSimulationCalls([
+    { to: address, value: 1n, data: Hex.make("0x") },
+    { to: address, value: 0n, data: Hex.make("0x1234") },
+  ]);
+
+  expect(calls).toEqual([
+    { to: address, value: 1n },
+    { to: address, value: 0n, data: "0x1234" },
+  ]);
+});
 
 it.effect("round trips serializable EntryPoint 0.7 UserOperations", () =>
   Effect.gen(function* () {

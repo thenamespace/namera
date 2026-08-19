@@ -59,6 +59,14 @@ const normalizeNativeTransfers = (
     }),
   );
 
+export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"]) =>
+  calls.map(({ data, ...call }) =>
+    // Viem discovers touched assets through eth_createAccessList whenever
+    // calldata is present. Empty calldata carries no asset selector and must
+    // be omitted from this auxiliary simulation to avoid provider gas errors.
+    data === "0x" ? call : { ...call, data },
+  );
+
 export const makePrepareEvmExecution = (getClients: (chain: ChainData) => ExecutionClients) =>
   Effect.fn("evm.execution.prepare")(function* (input: PrepareEvmExecutionInput) {
     const chain = getChainDataByCaip2(input.chainId);
@@ -95,7 +103,7 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
       try: () =>
         clients.publicClient.simulateCalls({
           account: account.address,
-          calls: input.calls,
+          calls: toSimulationCalls(input.calls),
           traceAssetChanges: true,
           traceTransfers: true,
         }),
