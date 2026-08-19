@@ -9,6 +9,7 @@ export const BillingUsage = Schema.Struct({
   softwareWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   hsmWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   executions: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  signatures: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
 }).annotate({ identifier: "BillingUsage" });
 
 export const GetBillingResponse = Schema.Struct({

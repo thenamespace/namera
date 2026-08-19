@@ -19,6 +19,7 @@ export const SignatureErrorCode = Schema.Literals([
   "POLICY_DENIED",
   "SIGNING_FAILED",
   "SIGNATURE_UNAVAILABLE",
+  "IDEMPOTENCY_CONFLICT",
 ]);
 
 export class SignatureError extends Schema.TaggedError<SignatureError>()(

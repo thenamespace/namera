@@ -38,6 +38,7 @@ export const SessionKeyPolicyStateId = createBrandedId("SessionKeyPolicyStateId"
 export const SessionKeyPolicyReservationId = createBrandedId("SessionKeyPolicyReservationId");
 export const ExecutionSubmissionId = createBrandedId("ExecutionSubmissionId");
 export const ExecutionId = createBrandedId("ExecutionId");
+export const SignatureOperationId = createBrandedId("SignatureOperationId");
 
 // Audit Tables
 export const UserEventId = createBrandedId("UserEventId");
@@ -81,6 +82,7 @@ export type SessionKeyPolicyStateId = typeof SessionKeyPolicyStateId.Type;
 export type SessionKeyPolicyReservationId = typeof SessionKeyPolicyReservationId.Type;
 export type ExecutionSubmissionId = typeof ExecutionSubmissionId.Type;
 export type ExecutionId = typeof ExecutionId.Type;
+export type SignatureOperationId = typeof SignatureOperationId.Type;
 export type UserEventId = typeof UserEventId.Type;
 export type OrganizationEventId = typeof OrganizationEventId.Type;
 export type EmailJobId = typeof EmailJobId.Type;

@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import { WalletId } from "#/common/index";
 import { EthereumAddress, EvmTypedData, Hex, SupportedEvmChainId } from "#/evm/index";
+import { NonEmptyString } from "#/model/common";
 
 const SignEvmRequestCommon = {
   namespace: Schema.Literal("eip155"),
@@ -33,6 +34,10 @@ export const SignRequest = Schema.Union([SignEvmMessageRequest, SignEvmTypedData
   mode: "oneOf",
 }).annotate({ identifier: "SignRequest" });
 
+export const SignRequestHeaders = Schema.Struct({
+  "idempotency-key": NonEmptyString,
+}).annotate({ identifier: "SignRequestHeaders" });
+
 const SignEvmResponseCommon = {
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
@@ -58,6 +63,7 @@ export const SignResponse = Schema.Union([SignEvmMessageResponse, SignEvmTypedDa
 export type SignEvmMessageRequest = typeof SignEvmMessageRequest.Type;
 export type SignEvmTypedDataRequest = typeof SignEvmTypedDataRequest.Type;
 export type SignRequest = typeof SignRequest.Type;
+export type SignRequestHeaders = typeof SignRequestHeaders.Type;
 export type SignEvmMessageResponse = typeof SignEvmMessageResponse.Type;
 export type SignEvmTypedDataResponse = typeof SignEvmTypedDataResponse.Type;
 export type SignResponse = typeof SignResponse.Type;

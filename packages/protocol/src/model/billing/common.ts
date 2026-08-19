@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-export const BillingPlan = Schema.Literals(["free"]);
+export const BillingPlan = Schema.Literals(["free", "pro", "business"]);
 export const BillingProvider = Schema.Literals(["stripe"]);
 export const BillingCurrency = Schema.Literals(["usd"]);
 
@@ -9,6 +9,7 @@ export const BillingPlanLimits = Schema.Struct({
   maxSoftwareWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   maxHsmWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   includedExecutions: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  includedSignatures: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
 });
 
 export type BillingPlan = typeof BillingPlan.Type;
