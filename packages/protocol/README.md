@@ -81,12 +81,12 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   Each policy instance has a stable `PolicyId` so its handler can address typed
   state and in-flight reservations. The EVM model supports stateless
   `evm.time-window`, stateless `evm.chain-allowlist`, and stateful
-  `evm.native-spend-limit` policies. Time-window
+  `evm.native-spend-limit` and `evm.gas-budget` policies. Time-window
   dates encode as ISO strings, while native amounts encode as decimal strings.
   Native-spend limits are unique per chain and allowance period and support
   per-operation, fixed UTC hour/day/week/month, and lifetime ceilings. The
-  public creation
-  DTO supports time-window, chain-allowlist, native-spend-limit, and signature policies and
+  public creation DTO supports time-window, chain-allowlist, gas-budget,
+  native-spend-limit, and signature policies and
   requires a time window. SQL timestamp columns continue using date-backed
   schemas. Policy reservations use a discriminated execution-or-signature
   operation reference while their persisted model exposes the corresponding

@@ -23,6 +23,11 @@ it("declares operation applicability for every current EVM policy", () => {
     grantsAccess: false,
   });
 
+  expect(evmPolicyRegistry["evm.gas-budget"].applicability).toBe("execution");
+  expect(evmPolicyRegistry["evm.gas-budget"].cardinality).toBe("singleton");
+  expect(evmPolicyRegistry["evm.gas-budget"].execution.kind).toBe("stateful");
+  expect(evmPolicyRegistry["evm.gas-budget"].signature.kind).toBe("not-applicable");
+
   expect(evmPolicyRegistry["evm.native-spend-limit"].applicability).toBe("execution");
   expect(evmPolicyRegistry["evm.native-spend-limit"].cardinality).toBe("singleton");
   expect(evmPolicyRegistry["evm.native-spend-limit"].execution.kind).toBe("stateful");

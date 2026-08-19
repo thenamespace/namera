@@ -19,6 +19,7 @@ import {
   EvmChainAllowlistPolicyHandler,
   EvmChainAllowlistSignaturePolicyHandler,
 } from "./policies/chain-allowlist.js";
+import { EvmGasBudgetPolicyHandler } from "./policies/gas-budget.js";
 import { EvmNativeSpendLimitPolicyHandler } from "./policies/native-spend-limit.js";
 import { EvmSignaturePolicyHandler } from "./policies/signature.js";
 import {
@@ -353,6 +354,7 @@ export const signatureStateless = <
 
 const chainAllowlistHandler = new EvmChainAllowlistPolicyHandler();
 const chainAllowlistSignatureHandler = new EvmChainAllowlistSignaturePolicyHandler();
+const gasBudgetHandler = new EvmGasBudgetPolicyHandler();
 const nativeSpendLimitHandler = new EvmNativeSpendLimitPolicyHandler();
 const timeWindowHandler = new EvmTimeWindowPolicyHandler();
 const timeWindowSignatureHandler = new EvmTimeWindowSignaturePolicyHandler();
@@ -366,6 +368,14 @@ export const evmPolicyRegistry = {
     priority: 200,
     execution: executionStateless(chainAllowlistHandler),
     signature: signatureStateless(chainAllowlistSignatureHandler, { grantsAccess: false }),
+  },
+  "evm.gas-budget": {
+    type: "evm.gas-budget",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 400,
+    execution: executionStateful(gasBudgetHandler),
+    signature: notApplicable,
   },
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",

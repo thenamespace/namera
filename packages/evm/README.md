@@ -91,14 +91,18 @@ database claims and performs bounded concurrent lookups across their chains.
 uses the prepared block timestamp with an inclusive start and exclusive
 expiration. `evm.chain-allowlist` is a stateless execution and signature
 constraint over a non-empty unique set of supported CAIP-2 networks; it does not
-grant signature access by itself. `evm.native-spend-limit` tracks spent and in-flight native value per
-CAIP-2 chain and fixed UTC allowance window so concurrent executions cannot
+grant signature access by itself. `evm.native-spend-limit` tracks spent and
+in-flight native value per CAIP-2 chain and fixed UTC allowance window so concurrent executions cannot
 consume the same allowance. It supports per-operation, hourly, daily, weekly,
 monthly, and lifetime limits; weekly windows begin Monday at 00:00 UTC. Window
 resets use context-derived state keys rather than a scheduled reset. An
 unconfigured chain permits zero-value calls but denies any positive native
-value. Each handler owns the schemas used to decode persisted state and
-reservations plus the context-derived seeds for any missing state. Registry
+value. `evm.gas-budget` reserves the prepared UserOperation's maximum native gas cost
+across per-chain UTC hour/day/week or lifetime budgets. Confirmation replaces
+that pessimistic reservation with `actualGasCost`; definitive failure releases
+it. Missing chain configuration denies execution. Each handler owns the schemas
+used to decode persisted state and reservations
+plus the context-derived seeds for any missing state. Registry
 priorities define denial precedence and policy IDs provide a stable tie-breaker,
 so caller array order cannot change evaluation, reservation, settlement, or
 release behavior.

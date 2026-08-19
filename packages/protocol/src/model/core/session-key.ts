@@ -5,10 +5,12 @@ import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common"
 import { createInsertSchema } from "#/model/helpers";
 import {
   CreateEvmChainAllowlistPolicy,
+  CreateEvmGasBudgetPolicy,
   CreateEvmNativeSpendLimitPolicy,
   CreateEvmSignaturePolicy,
   CreateEvmTimeWindowPolicy,
   EvmChainAllowlistPolicy,
+  EvmGasBudgetPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
   EvmTimeWindowPolicy,
@@ -26,12 +28,14 @@ export const SessionKeyMetadata = Schema.Struct({
 export const EvmSessionKeyPolicy = Schema.Union([
   EvmTimeWindowPolicy,
   EvmChainAllowlistPolicy,
+  EvmGasBudgetPolicy,
   EvmNativeSpendLimitPolicy,
   EvmSignaturePolicy,
 ]);
 export const CreateEvmSessionKeyPolicy = Schema.Union([
   CreateEvmTimeWindowPolicy,
   CreateEvmChainAllowlistPolicy,
+  CreateEvmGasBudgetPolicy,
   CreateEvmNativeSpendLimitPolicy,
   CreateEvmSignaturePolicy,
 ]);

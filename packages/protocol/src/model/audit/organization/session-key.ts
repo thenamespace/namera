@@ -13,6 +13,7 @@ export const SessionKeyCreatedEventData = Schema.Struct({
     policyTypes: Schema.Array(
       Schema.Literals([
         "evm.chain-allowlist",
+        "evm.gas-budget",
         "evm.native-spend-limit",
         "evm.signature",
         "evm.time-window",
