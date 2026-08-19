@@ -26,7 +26,9 @@ HTTP requests to application methods.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — immutable session-key creation, canonical policy hashing,
   and organization- or actor-scoped reads.
-- `src/signature/` — API-key grant selection and policy-gated smart-account signatures.
+- `src/signature/` — shared account/grant resolution, signature-operation
+  lifecycle, and separate policy-gated signing and read-only verification
+  builders composed behind one application surface.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
 - `src/wallet/` — wallet creation and organization- or actor-scoped wallet reads.
