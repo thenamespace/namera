@@ -88,7 +88,7 @@ through the same table used by the organization session-key page. Usage currentl
 retains the detail shell with focused placeholder content for its later
 implementation.
 
-Session-key create, detail, organization-list, and wallet-list atoms/hooks live
+Session-key create, detail, organization-list, wallet-list, and revoke atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
 list, and revoke atoms/hooks live under `src/atoms/api-key` and
 `src/hooks/api-key`. MCP and CLI authorization list, detail, and revoke
@@ -99,11 +99,13 @@ organization API-key list.
 `/session-key/$sessionKeyId` redirects to its overview and owns a shared detail
 shell with Overview, Policies, and Executions navigation. The overview presents
 the session key identity and its core status, account, namespace, creator,
-identifier, and lifecycle metadata. Policies renders the persisted EVM rules as
+identifier, and lifecycle metadata. Actors with `session-key:revoke` can revoke
+an active key from either its overview actions or table row actions after
+confirming that all active grants will also be revoked. Policies renders the persisted EVM rules as
 read-only cards through the shared policy summaries; Executions intentionally
 retains a focused placeholder until execution activity is implemented. Session
 key names and row actions open the overview, and the pinned action column can
-copy the session-key ID.
+copy or revoke the session key according to its lifecycle and the actor's permissions.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.

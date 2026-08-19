@@ -13,6 +13,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyActions } from "@/components/session-keys-table/actions";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const fallbackSessionKeyIcon: MetadataIcon = { type: "emoji", value: "🔑" };
@@ -49,19 +50,25 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
 
   return (
     <div className="mx-auto w-full max-w-5xl py-4 sm:px-2 sm:py-8">
-      <header className="flex flex-col items-start">
-        <IconPreview
-          className="shrink-0 shadow-sm"
-          size="lg"
-          value={sessionKey.metadata.logo ?? fallbackSessionKeyIcon}
-        />
-        <Typography.Heading className="mt-5 max-w-full truncate text-3xl tracking-tight" level={2}>
-          {sessionKey.metadata.name}
-        </Typography.Heading>
-        <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
-          {sessionKey.metadata.description ??
-            "Scoped access for agents and integrations operating this account."}
-        </Typography.Paragraph>
+      <header className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col items-start">
+          <IconPreview
+            className="shrink-0 shadow-sm"
+            size="lg"
+            value={sessionKey.metadata.logo ?? fallbackSessionKeyIcon}
+          />
+          <Typography.Heading
+            className="mt-5 max-w-full truncate text-3xl tracking-tight"
+            level={2}
+          >
+            {sessionKey.metadata.name}
+          </Typography.Heading>
+          <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
+            {sessionKey.metadata.description ??
+              "Scoped access for agents and integrations operating this account."}
+          </Typography.Paragraph>
+        </div>
+        <SessionKeyActions sessionKey={sessionKey} showOpenAction={false} />
       </header>
 
       <section aria-labelledby="session-key-properties" className="mt-10 max-w-2xl">

@@ -39,3 +39,4 @@ export const sessionKeyAtom = (sessionKeyId: SessionKeyId) =>
   });
 
 export const createSessionKeyMutation = NameraClient.mutation("sessionKey", "create");
+export const revokeSessionKeyMutation = NameraClient.mutation("sessionKey", "revoke");

@@ -1,6 +1,7 @@
 import { QueryKeys } from "@/atoms/query-keys";
 import {
   createSessionKeyMutation,
+  revokeSessionKeyMutation,
   sessionKeyAtom,
   sessionKeysAtom,
   walletSessionKeysAtom,
@@ -18,5 +19,14 @@ export const useCreateSessionKey = toMutation(createSessionKeyMutation, {
     ...QueryKeys.sessionKey.organizationLists,
     ...QueryKeys.sessionKey.walletLists,
     ...QueryKeys.sessionKey.walletList(payload.walletId),
+  ],
+});
+
+export const useRevokeSessionKey = toMutation(revokeSessionKeyMutation, {
+  invalidates: [
+    ...QueryKeys.sessionKey.all,
+    ...QueryKeys.apiKey.all,
+    ...QueryKeys.oauth.authorizations,
+    ...QueryKeys.oauth.cliAuthorizations,
   ],
 });
