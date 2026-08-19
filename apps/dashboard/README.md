@@ -20,7 +20,10 @@ Workspace package imports continue to use their package names.
 - `src/components/` — components shared by unrelated routes. Do not move route-only
   components here.
 - `src/components/session-keys-table/` — the shared organization or wallet-scoped
-  session-key table, with query-specific wrappers around one table body.
+  session-key table, with query-specific wrappers around one table body and a
+  separate declarative column module.
+- `src/components/common/table/` — shared table controls and pure collection
+  helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
   email addresses, dates, roles, and future table cells.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
@@ -69,7 +72,7 @@ Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key
 family and refresh when the active organization changes. `/accounts` prefetches
 the active organization's wallets and presents them through a sortable,
-filterable, resizable DataGrid with configurable visible columns. `/accounts/new`
+filterable, non-resizable DataGrid with configurable visible columns. `/accounts/new`
 creates a software-protected EVM smart account using the shared wallet DTO while
 presenting wallet terminology as "account" in the UI. The route and the Accounts
 header action derive visibility from `wallet:create`; the server remains the
@@ -118,7 +121,9 @@ actor type, explorer-aware transaction hashes, execution timestamps, and copy
 actions. The grid supports search, controlled sorting, display properties,
 multi-select facets, and grouping by account, session key, namespace, chain, or
 actor. The same component is ready for future account- and session-key-scoped
-history once those backend query boundaries exist.
+history once those backend query boundaries exist. Execution and session-key
+tables keep columns, cells, sorting, and grouping row contracts separate from
+their query, filtering, and view state.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.

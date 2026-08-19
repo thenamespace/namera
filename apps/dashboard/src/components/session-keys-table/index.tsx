@@ -1,9 +1,5 @@
 import { useMemo, useState } from "react";
 
-import { Link } from "@tanstack/react-router";
-
-import { DateTime } from "effect";
-
 import type { WalletId } from "@namera-ai/protocol";
 import type {
   ListSessionKeysForOrganizationResponse,
@@ -14,7 +10,6 @@ import {
   DataGrid,
   SearchField,
   Typography,
-  type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
@@ -22,178 +17,33 @@ import { Activity01Icon, HugeiconsIcon, Key01Icon, Layers01Icon } from "@namera-
 import { useEventCallback } from "usehooks-ts";
 
 import {
+  countTableValues,
   TableControls,
   TableFilterControl,
   TableViewOptions,
+  toTableSelection,
+  uniqueTableValues,
   type TableFilterFacet,
-  type TableOption,
 } from "@/components/common/table";
-import {
-  DateDisplay,
-  MetadataDisplay,
-  NamespaceDisplay,
-  SessionKeyStatusDisplay,
-} from "@/components/display";
+import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/components/display";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
 
-import { SessionKeyActions } from "./actions";
+import {
+  getSessionKeyChildren,
+  getSessionKeyRowId,
+  sessionKeyColumnIds,
+  sessionKeyColumns,
+  sessionKeyConfigurableColumns,
+  sessionKeyFixedColumnOptions,
+  sessionKeyGroupingOptions,
+  sessionKeySorters,
+  sessionKeySortableColumns,
+  sessionKeyStatusOptions,
+  type SessionKeyGrouping,
+  type SessionKeyTableRow,
+} from "./columns";
 
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-const columnIds = ["account", "namespace", "creator", "status", "createdAt"] as const;
-const statusOptions = ["active", "revoked"] as const;
-const groupingOptions = [
-  { id: "none", label: "No grouping" },
-  { id: "status", label: "Status" },
-  { id: "account", label: "Account" },
-  { id: "namespace", label: "Namespace" },
-] as const;
-type Grouping = (typeof groupingOptions)[number]["id"];
-type GroupRow = {
-  children: ReadonlyArray<SessionKeyResponse>;
-  grouping: Exclude<Grouping, "none">;
-  id: string;
-  kind: "group";
-  label: string;
-};
-type Row = SessionKeyResponse | GroupRow;
-const isGroup = (row: Row): row is GroupRow => "kind" in row;
-
-function GroupLabel({ row }: { row: GroupRow }) {
-  return (
-    <span className="flex min-w-0 items-center gap-2">
-      {row.grouping === "status" ? (
-        <SessionKeyStatusDisplay status={row.label as SessionKeyResponse["status"]} />
-      ) : row.grouping === "namespace" ? (
-        <NamespaceDisplay namespace={row.label as SessionKeyResponse["namespace"]} />
-      ) : (
-        row.label
-      )}
-      <span className="text-xs tabular-nums text-muted">{row.children.length}</span>
-    </span>
-  );
-}
-
-function SessionKeyNameCell({ sessionKey }: { sessionKey: SessionKeyResponse }) {
-  const sessionKeyParams = useMemo(() => ({ sessionKeyId: sessionKey.id }), [sessionKey.id]);
-
-  return (
-    <Link
-      className="block min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      params={sessionKeyParams}
-      to="/session-key/$sessionKeyId/overview"
-    >
-      <MetadataDisplay fallbackName="Unnamed session key" metadata={sessionKey.metadata} />
-    </Link>
-  );
-}
-
-const columns: ReadonlyArray<DataGridColumn<Row>> = [
-  {
-    allowsSorting: true,
-    cell: (row) =>
-      isGroup(row) ? <GroupLabel row={row} /> : <SessionKeyNameCell sessionKey={row} />,
-    header: "Name",
-    id: "name",
-    isRowHeader: true,
-    minWidth: 160,
-    pinned: "start",
-    width: "1fr",
-  },
-  {
-    allowsSorting: true,
-    cell: (row) =>
-      isGroup(row) ? null : (
-        <MetadataDisplay fallbackName="Unnamed account" metadata={row.wallet.metadata} />
-      ),
-    header: "Account",
-    id: "account",
-    minWidth: 150,
-    width: 190,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
-    header: "Namespace",
-    id: "namespace",
-    minWidth: 120,
-    width: 150,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) =>
-      isGroup(row) ? null : (
-        <MetadataDisplay
-          fallbackName={row.creator.user.email}
-          metadata={row.creator.user.metadata}
-        />
-      ),
-    header: "Created by",
-    id: "creator",
-    minWidth: 150,
-    width: 190,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <SessionKeyStatusDisplay status={row.status} />),
-    header: "Status",
-    id: "status",
-    minWidth: 100,
-    width: 120,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <DateDisplay label="Created" value={row.createdAt} />),
-    header: "Created",
-    id: "createdAt",
-    minWidth: 130,
-    width: 150,
-  },
-  {
-    align: "center",
-    allowsSorting: false,
-    cell: (row) => (isGroup(row) ? null : <SessionKeyActions sessionKey={row} />),
-    cellClassName: "px-1",
-    header: <span className="sr-only">Actions</span>,
-    headerClassName: "px-1",
-    id: "actions",
-    maxWidth: 48,
-    minWidth: 48,
-    pinned: "end",
-    width: 48,
-  },
-];
-
-const sorters: Record<string, (left: SessionKeyResponse, right: SessionKeyResponse) => number> = {
-  name: (left, right) => collator.compare(left.metadata.name, right.metadata.name),
-  status: (left, right) => collator.compare(left.status, right.status),
-  account: (left, right) => collator.compare(left.wallet.metadata.name, right.wallet.metadata.name),
-  creator: (left, right) =>
-    collator.compare(
-      left.creator.user.metadata.name ?? left.creator.user.email,
-      right.creator.user.metadata.name ?? right.creator.user.email,
-    ),
-  namespace: (left, right) => collator.compare(left.namespace, right.namespace),
-  createdAt: (left, right) =>
-    DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
-};
-const configurableColumns: ReadonlyArray<TableOption> = columns
-  .filter((column) => columnIds.includes(column.id as (typeof columnIds)[number]))
-  .map((column) => ({ id: column.id, label: String(column.header) }));
-const sortableColumns: ReadonlyArray<TableOption> = columns
-  .filter((column) => column.allowsSorting)
-  .map((column) => ({ id: column.id, label: String(column.header) }));
-const getRowId = (row: Row) => row.id;
-const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
-const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
-
-function toSelection<T extends string>(keys: DataGridSelection, options: ReadonlyArray<T>): Set<T> {
-  if (keys === "all") return new Set(options);
-  return new Set([...keys].filter((key): key is T => typeof key === "string"));
-}
-
-type SessionKeysTableProps = {
-  initialSessionKeys: ListSessionKeysForOrganizationResponse;
-};
+type SessionKeysTableProps = { initialSessionKeys: ListSessionKeysForOrganizationResponse };
 
 export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) {
   const sessionKeys = useSessionKeys();
@@ -246,43 +96,47 @@ function SessionKeysTableContent({
   );
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
-  const [grouping, setGrouping] = useState<Grouping>("none");
+  const [grouping, setGrouping] = useState<SessionKeyGrouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "createdAt",
     direction: "descending",
   });
-  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(new Set(columnIds));
+  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
+    new Set(sessionKeyColumnIds),
+  );
   const normalizedQuery = query.trim().toLowerCase();
-  const accountOptions = useMemo(
-    () =>
-      [...new Map(data.map((item) => [item.wallet.id, item.wallet])).values()].map((wallet) => ({
-        id: wallet.id,
-        label: wallet.metadata.name,
-        content: <MetadataDisplay fallbackName="Unnamed account" metadata={wallet.metadata} />,
-        count: data.filter((item) => item.wallet.id === wallet.id).length,
-      })),
-    [data],
-  );
-  const namespaceOptions = useMemo(
-    () =>
-      [...new Set(data.map((item) => item.namespace))].map((namespace) => ({
-        id: namespace,
-        label: namespace,
-        content: <NamespaceDisplay namespace={namespace} />,
-        count: data.filter((item) => item.namespace === namespace).length,
-      })),
-    [data],
-  );
+
+  const statusCounts = useMemo(() => countTableValues(data, (item) => item.status), [data]);
+  const accountOptions = useMemo(() => {
+    const counts = countTableValues(data, (item) => item.wallet.id);
+    return [...uniqueTableValues(data, (item) => item.wallet.id).values()].map((item) => ({
+      id: item.wallet.id,
+      label: item.wallet.metadata.name,
+      content: <MetadataDisplay fallbackName="Unnamed account" metadata={item.wallet.metadata} />,
+      count: counts.get(item.wallet.id) ?? 0,
+    }));
+  }, [data]);
+  const namespaceOptions = useMemo(() => {
+    const counts = countTableValues(data, (item) => item.namespace);
+    return [...uniqueTableValues(data, (item) => item.namespace).values()].map((item) => ({
+      id: item.namespace,
+      label: item.namespace,
+      content: <NamespaceDisplay namespace={item.namespace} />,
+      count: counts.get(item.namespace) ?? 0,
+    }));
+  }, [data]);
   const filtered = useMemo(
     () =>
       data.filter((item) => {
         const matchesQuery =
           normalizedQuery.length === 0 ||
-          item.metadata.name.toLowerCase().includes(normalizedQuery) ||
-          item.id.toLowerCase().includes(normalizedQuery) ||
-          item.wallet.metadata.name.toLowerCase().includes(normalizedQuery) ||
-          item.wallet.address.toLowerCase().includes(normalizedQuery) ||
-          item.creator.user.email.toLowerCase().includes(normalizedQuery);
+          [
+            item.metadata.name,
+            item.id,
+            item.wallet.metadata.name,
+            item.wallet.address,
+            item.creator.user.email,
+          ].some((value) => value.toLowerCase().includes(normalizedQuery));
         return (
           matchesQuery &&
           (statuses.size === 0 || statuses.has(item.status)) &&
@@ -293,12 +147,12 @@ function SessionKeysTableContent({
     [accounts, data, namespaces, normalizedQuery, statuses],
   );
   const sorted = useMemo(() => {
-    const sorter = sorters[String(sort.column)];
-    if (!sorter) return filtered;
+    const sorter = sessionKeySorters[String(sort.column)];
+    if (sorter === undefined) return filtered;
     const direction = sort.direction === "descending" ? -1 : 1;
     return filtered.toSorted((left, right) => sorter(left, right) * direction);
   }, [filtered, sort]);
-  const rows = useMemo<Row[]>(() => {
+  const rows = useMemo<SessionKeyTableRow[]>(() => {
     if (grouping === "none") return sorted;
     const grouped = new Map<string, SessionKeyResponse[]>();
     for (const item of sorted) {
@@ -314,12 +168,13 @@ function SessionKeysTableContent({
     }));
   }, [grouping, sorted]);
   const displayedColumns = useMemo(() => {
-    const visible = visibleColumns === "all" ? new Set(columnIds) : visibleColumns;
-    return columns.filter(
+    const visible = visibleColumns === "all" ? new Set(sessionKeyColumnIds) : visibleColumns;
+    return sessionKeyColumns.filter(
       (column) =>
         column.id === "name" || column.id === "actions" || visible.has(column.id as never),
     );
   }, [visibleColumns]);
+
   const facets = useMemo<ReadonlyArray<TableFilterFacet>>(
     () => [
       {
@@ -327,13 +182,13 @@ function SessionKeysTableContent({
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
         selectedKeys: statuses,
-        options: statusOptions.map((value) => ({
+        options: sessionKeyStatusOptions.map((value) => ({
           id: value,
           label: value === "active" ? "Active" : "Revoked",
           content: <SessionKeyStatusDisplay status={value} />,
-          count: data.filter((item) => item.status === value).length,
+          count: statusCounts.get(value) ?? 0,
         })),
-        onSelectionChange: (keys) => setStatuses(toSelection(keys, statusOptions)),
+        onSelectionChange: (keys) => setStatuses(toTableSelection(keys, sessionKeyStatusOptions)),
       },
       {
         id: "account",
@@ -343,9 +198,10 @@ function SessionKeysTableContent({
         options: accountOptions,
         onSelectionChange: (keys) =>
           setAccounts(
-            keys === "all"
-              ? new Set(accountOptions.map((item) => item.id))
-              : new Set([...keys].map(String)),
+            toTableSelection(
+              keys,
+              accountOptions.map((option) => option.id),
+            ),
           ),
       },
       {
@@ -356,13 +212,14 @@ function SessionKeysTableContent({
         options: namespaceOptions,
         onSelectionChange: (keys) =>
           setNamespaces(
-            keys === "all"
-              ? new Set(namespaceOptions.map((item) => item.id))
-              : new Set([...keys].map(String)),
+            toTableSelection(
+              keys,
+              namespaceOptions.map((option) => option.id),
+            ),
           ),
       },
     ],
-    [accountOptions, accounts, data, namespaceOptions, namespaces, statuses],
+    [accountOptions, accounts, namespaceOptions, namespaces, statusCounts, statuses],
   );
   const hasFilters =
     normalizedQuery.length > 0 || statuses.size > 0 || accounts.size > 0 || namespaces.size > 0;
@@ -372,16 +229,17 @@ function SessionKeysTableContent({
   const resetView = useEventCallback(() => {
     setGrouping("none");
     setSort({ column: "createdAt", direction: "descending" });
-    setVisibleColumns(new Set(columnIds));
+    setVisibleColumns(new Set(sessionKeyColumnIds));
   });
   const clearFilters = useEventCallback(() => {
+    setQuery("");
     setStatuses(new Set());
     setAccounts(new Set());
     setNamespaces(new Set());
   });
-  const handleGroupingChange = useEventCallback((value: string) => {
-    setGrouping(value as Grouping);
-  });
+  const handleGroupingChange = useEventCallback((value: string) =>
+    setGrouping(value as SessionKeyGrouping),
+  );
 
   return (
     <div className="grid gap-5">
@@ -407,12 +265,12 @@ function SessionKeysTableContent({
             />
             <TableViewOptions
               ariaLabel="Configure session key table view"
-              columnOptions={configurableColumns}
-              fixedColumnOptions={fixedColumnOptions}
+              columnOptions={sessionKeyConfigurableColumns}
+              fixedColumnOptions={sessionKeyFixedColumnOptions}
               grouping={grouping}
-              groupingOptions={groupingOptions}
+              groupingOptions={sessionKeyGroupingOptions}
               sort={sort}
-              sortableColumns={sortableColumns}
+              sortableColumns={sessionKeySortableColumns}
               visibleColumns={visibleColumns}
               onGroupingChange={handleGroupingChange}
               onReset={resetView}
@@ -432,13 +290,13 @@ function SessionKeysTableContent({
         columns={displayedColumns}
         data={rows}
         defaultExpandedKeys="all"
-        getRowId={getRowId}
+        getRowId={getSessionKeyRowId}
         key={grouping}
         renderEmptyState={renderEmptyState}
         sortDescriptor={sort}
         variant="secondary"
         onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren })}
+        {...(grouping === "none" ? {} : { getChildren: getSessionKeyChildren })}
       />
     </div>
   );

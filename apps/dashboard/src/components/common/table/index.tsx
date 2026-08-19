@@ -1,4 +1,5 @@
 export { TableControls, TableFilterControl, type TableControlsProps } from "./controls";
+export { countTableValues, toTableSelection, uniqueTableValues } from "./data";
 export {
   TableFilterMenu,
   type TableFilterFacet,
