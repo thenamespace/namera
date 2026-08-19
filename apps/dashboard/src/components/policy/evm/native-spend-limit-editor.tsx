@@ -84,12 +84,6 @@ type NativeSpendLimitFormValues = typeof NativeSpendLimitForm.Type;
 const defaultChain = evmChainOptions.find((chain) => chain.id === "eip155:1") ?? evmChainOptions[0];
 if (!defaultChain) throw new Error("At least one supported EVM chain is required");
 
-const selectAllNetworksId = "select-all-networks" as const;
-const nativeSpendNetworkOptions = [
-  { id: selectAllNetworksId, kind: "all" as const },
-  ...evmChainOptions.map((chain) => ({ ...chain, kind: "chain" as const })),
-];
-
 const emptyNativeSpendLimit: NativeSpendLimitFormInput = {
   limits: [{ chainIds: [defaultChain.id], amount: "" }],
 };
@@ -151,40 +145,21 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
         render={({ field, fieldState }) => {
           const error = fieldState.error;
           const allNetworksSelected = field.value.length === evmChainOptions.length;
-          const selectValue = allNetworksSelected
-            ? [selectAllNetworksId, ...field.value]
-            : Array.from(field.value);
 
           return (
             <Field data-invalid={Boolean(error)}>
               <FieldLabel id={`native-spend-network-${index}`}>Networks</FieldLabel>
-              <Select<(typeof nativeSpendNetworkOptions)[number], "multiple">
+              <Select<(typeof evmChainOptions)[number], "multiple">
                 aria-labelledby={`native-spend-network-${index}`}
                 fullWidth
                 isInvalid={Boolean(error)}
                 name={field.name}
                 selectionMode="multiple"
-                value={selectValue}
+                value={Array.from(field.value)}
                 variant="secondary"
-                onChange={(keys) => {
-                  const nextKeys = keys.map(String);
-                  const includesSelectAll = nextKeys.includes(selectAllNetworksId);
-
-                  if (!allNetworksSelected && includesSelectAll) {
-                    field.onChange(evmChainOptions.map((chain) => chain.id));
-                    return;
-                  }
-                  if (allNetworksSelected && !includesSelectAll) {
-                    field.onChange([]);
-                    return;
-                  }
-
-                  field.onChange(
-                    nextKeys.filter(
-                      (key): key is SupportedEvmChainId => key !== selectAllNetworksId,
-                    ),
-                  );
-                }}
+                onChange={(keys) =>
+                  field.onChange(keys.map((key) => String(key) as SupportedEvmChainId))
+                }
               >
                 <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
                   <Select.Value>
@@ -208,49 +183,46 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
                   </Select.Value>
                   <Select.Indicator />
                 </Select.Trigger>
-                <Select.Popover className="w-(--trigger-width)">
-                  <ListBox items={nativeSpendNetworkOptions}>
-                    {(option) =>
-                      option.kind === "all" ? (
-                        <ListBox.Item id={option.id} textValue="Select all networks">
-                          <Checkbox
-                            isReadOnly
-                            aria-label="Select all networks"
-                            className="pointer-events-none shrink-0 [&_input]:hidden"
-                            isSelected={allNetworksSelected}
-                          >
-                            <Checkbox.Content>
-                              <Checkbox.Control>
-                                <Checkbox.Indicator />
-                              </Checkbox.Control>
-                            </Checkbox.Content>
-                          </Checkbox>
-                          <span className="flex-1 font-medium">Select all networks</span>
-                          <span className="text-muted text-xs">{evmChainOptions.length}</span>
-                        </ListBox.Item>
-                      ) : (
-                        <ListBox.Item
-                          id={option.id}
-                          textValue={`${option.name} (${option.nativeCurrency.symbol})`}
-                        >
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <ChainIcon
-                              aria-hidden
-                              chain={option.chain}
-                              className="size-4 shrink-0"
-                              namespace="eip155"
-                            />
-                            <span className="truncate">
-                              {option.name}{" "}
-                              <span className="text-muted text-xs">
-                                ({option.nativeCurrency.symbol})
-                              </span>
-                            </span>
-                          </div>
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      )
+                <Select.Popover className="w-(--trigger-width) overflow-hidden p-1">
+                  <Checkbox
+                    aria-label="Select all networks"
+                    className="w-full rounded-md px-2 py-1.5 transition-colors hover:bg-default"
+                    isSelected={allNetworksSelected}
+                    onChange={(isSelected) =>
+                      field.onChange(isSelected ? evmChainOptions.map((chain) => chain.id) : [])
                     }
+                  >
+                    <Checkbox.Content className="w-full">
+                      <Checkbox.Control>
+                        <Checkbox.Indicator />
+                      </Checkbox.Control>
+                      <span className="flex-1 text-left font-medium">Select all networks</span>
+                      <span className="text-muted text-xs">{evmChainOptions.length}</span>
+                    </Checkbox.Content>
+                  </Checkbox>
+                  <ListBox className="max-h-60 overflow-y-auto" items={evmChainOptions}>
+                    {(chain) => (
+                      <ListBox.Item
+                        id={chain.id}
+                        textValue={`${chain.name} (${chain.nativeCurrency.symbol})`}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <ChainIcon
+                            aria-hidden
+                            chain={chain.chain}
+                            className="size-4 shrink-0"
+                            namespace="eip155"
+                          />
+                          <span className="truncate">
+                            {chain.name}{" "}
+                            <span className="text-muted text-xs">
+                              ({chain.nativeCurrency.symbol})
+                            </span>
+                          </span>
+                        </div>
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    )}
                   </ListBox>
                 </Select.Popover>
               </Select>
