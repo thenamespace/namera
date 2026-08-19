@@ -151,7 +151,6 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
         render={({ field, fieldState }) => {
           const error = fieldState.error;
           const allNetworksSelected = field.value.length === evmChainOptions.length;
-          const someNetworksSelected = field.value.length > 0 && !allNetworksSelected;
           const selectValue = allNetworksSelected
             ? [selectAllNetworksId, ...field.value]
             : Array.from(field.value);
@@ -218,7 +217,6 @@ function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpen
                             isReadOnly
                             aria-label="Select all networks"
                             className="pointer-events-none shrink-0 [&_input]:hidden"
-                            isIndeterminate={someNetworksSelected}
                             isSelected={allNetworksSelected}
                           >
                             <Checkbox.Content>
