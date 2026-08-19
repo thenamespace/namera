@@ -9,6 +9,7 @@ import {
   type PolicyApplicability,
 } from "@namera-ai/protocol";
 import type {
+  CreateEvmSessionKeyPolicy,
   EvmSessionKeyPolicy,
   SessionKeyPolicyReservation,
   SessionKeyPolicyState,
@@ -31,6 +32,7 @@ import type {
 
 type SuccessfulEvmExecutionReceipt = Extract<EvmExecutionReceipt, { readonly success: true }>;
 type EvmPolicyType = EvmSessionKeyPolicy["type"];
+export type EvmPolicyCardinality = "singleton" | "repeatable";
 
 type StatelessPolicyHandler<Policy extends EvmSessionKeyPolicy, Context, Error> = {
   readonly type: Policy["type"];
@@ -125,6 +127,7 @@ export type EvmSignaturePolicyOperation =
 export type EvmPolicyDefinition<Type extends EvmPolicyType = EvmPolicyType> = {
   readonly type: Type;
   readonly applicability: PolicyApplicability;
+  readonly cardinality: EvmPolicyCardinality;
   readonly priority: number;
   readonly execution: EvmExecutionPolicyOperation;
   readonly signature: EvmSignaturePolicyOperation;
@@ -353,6 +356,7 @@ export const evmPolicyRegistry = {
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
     applicability: "execution",
+    cardinality: "singleton",
     priority: 500,
     execution: executionStateful(nativeSpendLimitHandler),
     signature: notApplicable,
@@ -360,6 +364,7 @@ export const evmPolicyRegistry = {
   "evm.time-window": {
     type: "evm.time-window",
     applicability: "both",
+    cardinality: "singleton",
     priority: 100,
     execution: executionStateless(timeWindowHandler),
     signature: signatureStateless(timeWindowSignatureHandler, { grantsAccess: false }),
@@ -367,6 +372,7 @@ export const evmPolicyRegistry = {
   "evm.signature": {
     type: "evm.signature",
     applicability: "signature",
+    cardinality: "singleton",
     priority: 600,
     execution: notApplicable,
     signature: signatureStateless(signatureHandler, { grantsAccess: true }),
@@ -375,6 +381,31 @@ export const evmPolicyRegistry = {
 
 export const getEvmPolicyDefinition = (type: EvmPolicyType): EvmPolicyDefinition =>
   evmPolicyRegistry[type];
+
+export const materializeEvmPolicy = (
+  policy: CreateEvmSessionKeyPolicy,
+  id: EvmSessionKeyPolicy["id"],
+): EvmSessionKeyPolicy => {
+  const definition = getEvmPolicyDefinition(policy.type);
+
+  // The exhaustive registry couples each policy discriminator to its code-owned
+  // applicability. The protocol union validates the public fields before this
+  // trusted materialization boundary.
+  return { ...policy, id, appliesTo: definition.applicability } as EvmSessionKeyPolicy;
+};
+
+export const findEvmPolicyCardinalityViolation = (
+  policies: ReadonlyArray<CreateEvmSessionKeyPolicy>,
+): EvmPolicyType | undefined => {
+  const seen = new Set<EvmPolicyType>();
+  for (const policy of policies) {
+    const definition = getEvmPolicyDefinition(policy.type);
+    if (definition.cardinality === "repeatable") continue;
+    if (seen.has(policy.type)) return policy.type;
+    seen.add(policy.type);
+  }
+  return undefined;
+};
 
 export const getEvmPolicyDefinitionFor = (policy: EvmSessionKeyPolicy): EvmPolicyDefinition => {
   const definition = getEvmPolicyDefinition(policy.type);

@@ -10,6 +10,12 @@ export type {
   WaitForEvmExecutionReceiptInput,
 } from "./execution/types.js";
 export * from "./layer.js";
+export {
+  findEvmPolicyCardinalityViolation,
+  getEvmPolicyDefinition,
+  materializeEvmPolicy,
+  type EvmPolicyCardinality,
+} from "./policy/registry.js";
 export { TestEvmExecution, type EvmTestOptions } from "./test.js";
 export type {
   EvaluateEvmPoliciesInput,

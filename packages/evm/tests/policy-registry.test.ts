@@ -1,16 +1,27 @@
 import { expect, it } from "@effect/vitest";
 import { DateTime } from "effect";
 
-import { PolicyId, type EvmTimeWindowPolicy } from "@namera-ai/protocol";
+import {
+  PolicyId,
+  type CreateEvmTimeWindowPolicy,
+  type EvmTimeWindowPolicy,
+} from "@namera-ai/protocol";
 
-import { evmPolicyRegistry, orderEvmPolicies } from "../src/policy/registry.js";
+import {
+  evmPolicyRegistry,
+  findEvmPolicyCardinalityViolation,
+  materializeEvmPolicy,
+  orderEvmPolicies,
+} from "../src/policy/registry.js";
 
 it("declares operation applicability for every current EVM policy", () => {
   expect(evmPolicyRegistry["evm.native-spend-limit"].applicability).toBe("execution");
+  expect(evmPolicyRegistry["evm.native-spend-limit"].cardinality).toBe("singleton");
   expect(evmPolicyRegistry["evm.native-spend-limit"].execution.kind).toBe("stateful");
   expect(evmPolicyRegistry["evm.native-spend-limit"].signature.kind).toBe("not-applicable");
 
   expect(evmPolicyRegistry["evm.time-window"].applicability).toBe("both");
+  expect(evmPolicyRegistry["evm.time-window"].cardinality).toBe("singleton");
   expect(evmPolicyRegistry["evm.time-window"].execution.kind).toBe("stateless");
   expect(evmPolicyRegistry["evm.time-window"].signature).toMatchObject({
     kind: "stateless",
@@ -18,11 +29,36 @@ it("declares operation applicability for every current EVM policy", () => {
   });
 
   expect(evmPolicyRegistry["evm.signature"].applicability).toBe("signature");
+  expect(evmPolicyRegistry["evm.signature"].cardinality).toBe("singleton");
   expect(evmPolicyRegistry["evm.signature"].execution.kind).toBe("not-applicable");
   expect(evmPolicyRegistry["evm.signature"].signature).toMatchObject({
     kind: "stateless",
     grantsAccess: true,
   });
+});
+
+it("materializes code-owned policy metadata without a policy switch", () => {
+  const id = PolicyId.make("01900000-0000-7000-8000-000000000001");
+  const input = {
+    type: "evm.time-window",
+    version: 1,
+    startsAt: null,
+    expiresAt: DateTime.fromEpochSeconds(1),
+  } satisfies CreateEvmTimeWindowPolicy;
+
+  expect(materializeEvmPolicy(input, id)).toEqual({ ...input, id, appliesTo: "both" });
+});
+
+it("reports only repeated singleton policies", () => {
+  const timeWindow = {
+    type: "evm.time-window",
+    version: 1,
+    startsAt: null,
+    expiresAt: DateTime.fromEpochSeconds(1),
+  } satisfies CreateEvmTimeWindowPolicy;
+
+  expect(findEvmPolicyCardinalityViolation([timeWindow])).toBeUndefined();
+  expect(findEvmPolicyCardinalityViolation([timeWindow, timeWindow])).toBe("evm.time-window");
 });
 
 it("uses policy id as a stable tie-breaker within a priority", () => {
