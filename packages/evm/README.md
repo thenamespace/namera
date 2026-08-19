@@ -21,8 +21,9 @@ evaluation behind one root `Evm` service.
 - `src/policy/` — exhaustive EVM policy registry and lifecycle service;
   individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
-- `src/signing/` — smart-account message and EIP-712 signing exposed as
-  `evm.sign`; raw digest signing is not supported.
+- `src/signing/` — smart-account message and EIP-712 signing and verification
+  exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
+  supported.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -115,6 +116,13 @@ supported chain and delegates either UTF-8 message signing or EIP-712 typed-data
 signing to the smart account. Callers provide the provider-neutral account
 reconstruction input; database access and grant selection remain in
 `application`.
+
+`evm.verifySignature` reconstructs the same account and verifies the original
+message or typed data through the chain public client. Deployed Kernel and Safe
+accounts use ERC-1271. Counterfactual accounts supply their deterministic
+factory and initialization data to Viem's ERC-6492 deployless verifier. Invalid
+signatures return `false`; account, chain, and RPC failures remain typed adapter
+errors. Verification never invokes the wallet-key signer.
 
 Preparation records the standardized `eth_estimateUserOperationGas` result in
 the policy context. This verifies EntryPoint validation and execution before

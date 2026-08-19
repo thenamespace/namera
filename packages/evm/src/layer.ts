@@ -21,7 +21,7 @@ import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
-import type { DigestEvmSignature, SignEvm } from "./signing/types.js";
+import type { DigestEvmSignature, SignEvm, VerifyEvm } from "./signing/types.js";
 import { makeEvmTestService, TestEvmExecution, type EvmTestOptions } from "./test.js";
 
 export type EvmRpcType = "public" | "bundler" | "paymaster";
@@ -44,6 +44,7 @@ export interface EvmService {
   readonly policy: EvmPolicyService;
   readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
+  readonly verifySignature: VerifyEvm;
 }
 
 // Evm is the namespace adapter consumed by application workflows. It owns
@@ -59,7 +60,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config);
       const policy = makeEvmPolicyService();
-      const sign = makeEvmSignatureService(makeExecutionClients(config)).sign;
+      const signature = makeEvmSignatureService(makeExecutionClients(config));
 
       const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, type: EvmRpcType) {
         const data = getChainDataByChainId(chainId);
@@ -83,7 +84,8 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         getRpcUrl,
         execution,
         policy,
-        sign,
+        sign: signature.sign,
+        verifySignature: signature.verify,
       });
     }),
   );

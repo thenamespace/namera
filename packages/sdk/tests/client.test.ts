@@ -146,6 +146,36 @@ describe("NameraClient", () => {
     expect((init.headers as Record<string, string>)["idempotency-key"]).toMatch(uuidV7Pattern);
   });
 
+  it("verifies smart-account signatures without an idempotency header", async () => {
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(
+      jsonResponse({
+        namespace: "eip155",
+        type: "message",
+        walletId,
+        chainId: "eip155:1",
+        account: address,
+        valid: true,
+      }),
+    );
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    const result = await client.verifySignature({
+      namespace: "eip155",
+      type: "message",
+      walletId,
+      chainId: "eip155:1",
+      message: "Verify with Namera",
+      signature: "0x1234",
+    });
+
+    expect(result).toMatchObject({ success: true, data: { valid: true } });
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    if (init === undefined) throw new Error("Expected a fetch request");
+    expect(url?.toString()).toBe("http://localhost:8080/signatures/verify");
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["idempotency-key"]).toBeUndefined();
+  });
+
   it("does not retry declared API failures", async () => {
     const fetch = vi
       .fn<NameraFetch>()

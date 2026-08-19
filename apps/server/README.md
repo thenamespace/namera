@@ -53,6 +53,13 @@ application workflow. Signing remains synchronous and has no background worker.
 The public SDK creates this header internally; CLI and MCP users never manage
 it themselves.
 
+`POST /signatures/verify` verifies the original message or EIP-712 payload for
+an actively granted wallet. It uses ERC-1271 for deployed accounts and ERC-6492
+for counterfactual accounts, returns invalid signatures as `valid: false`, and
+does not evaluate signature policies, consume billing usage, persist an
+operation, or write an audit event. Verification has a separate 240
+requests-per-minute actor rate limit.
+
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.
 If authorization finds
@@ -96,6 +103,8 @@ Session-key revocation is limited to 60 attempts per active organization per
 hour. It revokes the key and every active grant in one application transaction.
 
 Smart-account signatures are limited to 120 requests per API key per minute.
+Smart-account signature verification is limited separately to 240 requests per
+machine actor per minute.
 
 `POST /rpc/eip155/:chainId` is limited separately to 600 requests per minute per
 client IP. RPC traffic bypasses the lower global API limit and is validated

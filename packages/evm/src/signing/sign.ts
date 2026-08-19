@@ -9,6 +9,7 @@ import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
 import { digestEvmSignature } from "./digest.js";
 import type { EvmSignatureService } from "./types.js";
+import { makeVerifyEvmSignature } from "./verify.js";
 
 export const makeEvmSignatureService = (
   getClients: (chain: ChainData) => ExecutionClients,
@@ -50,4 +51,5 @@ export const makeEvmSignatureService = (
       Effect.mapError((cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause })),
     );
   }),
+  verify: makeVerifyEvmSignature(getClients),
 });

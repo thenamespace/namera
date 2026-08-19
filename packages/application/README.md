@@ -174,6 +174,12 @@ organization audit event share one transaction; definitive signing failures
 release reserved billing capacity. Signature workflows do not enqueue
 notifications or emails.
 
+Signature verification is a separate read-only workflow. It requires an active
+machine-actor grant to the requested wallet but does not require signature
+authority, evaluate policies, reserve billing, persist an operation, or write an
+audit event. It reconstructs the smart account and delegates deployed ERC-1271
+or counterfactual ERC-6492 verification to `evm.verifySignature`.
+
 Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data
 must remain safe historical context and must never contain credentials.

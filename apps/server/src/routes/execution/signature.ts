@@ -11,25 +11,42 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
   Effect.gen(function* () {
     const app = yield* Application.Application;
 
-    return handlers.handle("sign", ({ headers, payload }) =>
-      Effect.gen(function* () {
-        const actor = yield* CurrentActor;
-        const data = yield* enforceActor({
-          actor,
-          allowedActors: ["api-key", "cli"],
-          requiredPermissions: { "api-key": [], cli: ["signature:create"] },
-        });
-        yield* consumeRateLimit(
-          "signature.api_key",
-          data.actorId,
-          rateLimitPolicy.signature.byApiKey,
-        );
-        return yield* app.signature.sign({
-          actor: data,
-          idempotencyKey: headers["idempotency-key"],
-          request: payload,
-        });
-      }),
-    );
+    return handlers
+      .handle("verify", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: { "api-key": [], cli: ["signature:create"] },
+          });
+          yield* consumeRateLimit(
+            "signature.verification.actor",
+            data.actorId,
+            rateLimitPolicy.signature.verificationByActor,
+          );
+          return yield* app.signature.verify({ actor: data, request: payload });
+        }),
+      )
+      .handle("sign", ({ headers, payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: { "api-key": [], cli: ["signature:create"] },
+          });
+          yield* consumeRateLimit(
+            "signature.api_key",
+            data.actorId,
+            rateLimitPolicy.signature.byApiKey,
+          );
+          return yield* app.signature.sign({
+            actor: data,
+            idempotencyKey: headers["idempotency-key"],
+            request: payload,
+          });
+        }),
+      );
   }),
 );

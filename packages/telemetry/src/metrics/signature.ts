@@ -13,3 +13,18 @@ export const signaturePolicyDecisions = Metric.counter("namera.signature.policy.
   description: "Bounded policy decisions made while selecting a signature session key",
   incremental: true,
 });
+
+export const signatureVerificationResults = Metric.counter(
+  "namera.signature.verification.results",
+  {
+    description: "Smart-account signature verification outcomes",
+    incremental: true,
+  },
+);
+
+export const signatureVerificationDuration = Metric.timer(
+  "namera.signature.verification.duration",
+  {
+    description: "Duration of smart-account signature verification workflows",
+  },
+);

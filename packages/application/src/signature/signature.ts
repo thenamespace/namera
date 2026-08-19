@@ -14,12 +14,16 @@ import {
   type GrantedActorData,
   type SignRequest as SignRequestType,
   type SignResponse,
+  type VerifySignatureRequest,
+  type VerifySignatureResponse,
 } from "@namera-ai/protocol/dto";
 import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 import {
   signatureDuration,
   signaturePolicyDecisions,
   signatureResults,
+  signatureVerificationDuration,
+  signatureVerificationResults,
 } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
@@ -40,6 +44,10 @@ export interface SignatureApplication {
     readonly idempotencyKey: string;
     readonly request: SignRequestType;
   }) => Effect.Effect<SignResponse, BillingError | SignatureError>;
+  readonly verify: (input: {
+    readonly actor: GrantedActorData;
+    readonly request: VerifySignatureRequest;
+  }) => Effect.Effect<VerifySignatureResponse, SignatureError>;
 }
 
 export const makeSignatureApplication = Effect.gen(function* () {
@@ -49,6 +57,24 @@ export const makeSignatureApplication = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const loadEvmAccount = yield* makeLoadEvmAccount;
+
+  const loadSignatureAccount = Effect.fnUntraced(function* (input: {
+    readonly organizationId: GrantedActorData["organizationId"];
+    readonly request: SignRequestType | VerifySignatureRequest;
+  }) {
+    const wallet = yield* repository.core.wallet.findById(
+      input.request.walletId,
+      input.organizationId,
+    );
+    if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
+      return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
+    }
+    const account = yield* loadEvmAccount(wallet).pipe(
+      Effect.mapError(() => new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
+    );
+
+    return { wallet, account } as const;
+  });
 
   const failOperation = Effect.fn("application.signature.failOperation")(function* (input: {
     readonly organizationId: GrantedActorData["organizationId"];
@@ -136,16 +162,10 @@ export const makeSignatureApplication = Effect.gen(function* () {
         });
       }
 
-      const wallet = yield* repository.core.wallet.findById(
-        input.request.walletId,
-        input.actor.organizationId,
-      );
-      if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
-        return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
-      }
-      const account = yield* loadEvmAccount(wallet).pipe(
-        Effect.mapError(() => new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
-      );
+      const { wallet, account } = yield* loadSignatureAccount({
+        organizationId: input.actor.organizationId,
+        request: input.request,
+      });
       const timestamp = yield* DateTime.now;
       const context =
         input.request.type === "message"
@@ -359,5 +379,96 @@ export const makeSignatureApplication = Effect.gen(function* () {
     Effect.catchTag("EvmPolicyError", () => new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
   );
 
-  return { sign } satisfies SignatureApplication;
+  const verify = Effect.fn("application.signature.verify")(
+    function* (input: {
+      readonly actor: GrantedActorData;
+      readonly request: VerifySignatureRequest;
+    }) {
+      const { wallet, account } = yield* loadSignatureAccount({
+        organizationId: input.actor.organizationId,
+        request: input.request,
+      }).pipe(
+        Effect.tapError(() =>
+          Metric.update(
+            Metric.withAttributes(signatureVerificationResults, {
+              namespace: "eip155",
+              type: input.request.type,
+              result: "unavailable",
+            }),
+            1,
+          ),
+        ),
+      );
+      const hasActiveGrant = input.actor.grants.some(
+        ({ sessionKey }) =>
+          sessionKey.namespace === "eip155" &&
+          sessionKey.walletId === input.request.walletId &&
+          sessionKey.status === "active",
+      );
+      if (!hasActiveGrant) {
+        yield* Metric.update(
+          Metric.withAttributes(signatureVerificationResults, {
+            namespace: "eip155",
+            type: input.request.type,
+            result: "no_authorized_session_key",
+          }),
+          1,
+        );
+        return yield* new SignatureError({ code: "NO_AUTHORIZED_SESSION_KEY" });
+      }
+
+      const valid = yield* evm
+        .verifySignature({
+          account,
+          chainId: input.request.chainId,
+          ...(input.request.type === "message"
+            ? {
+                type: "message" as const,
+                message: input.request.message,
+                signature: input.request.signature,
+              }
+            : {
+                type: "typed-data" as const,
+                typedData: input.request.typedData,
+                signature: input.request.signature,
+              }),
+        })
+        .pipe(
+          Effect.tapError(() =>
+            Metric.update(
+              Metric.withAttributes(signatureVerificationResults, {
+                namespace: "eip155",
+                type: input.request.type,
+                result: "failed",
+              }),
+              1,
+            ),
+          ),
+          Effect.mapError(() => new SignatureError({ code: "VERIFICATION_FAILED" })),
+        );
+      yield* Metric.update(
+        Metric.withAttributes(signatureVerificationResults, {
+          namespace: "eip155",
+          type: input.request.type,
+          result: valid ? "valid" : "invalid",
+        }),
+        1,
+      );
+
+      const response = {
+        namespace: "eip155" as const,
+        walletId: wallet.wallet.id,
+        chainId: input.request.chainId,
+        account: wallet.wallet.data.address,
+        valid,
+      };
+      return input.request.type === "message"
+        ? ({ ...response, type: "message" } satisfies VerifySignatureResponse)
+        : ({ ...response, type: "typed-data" } satisfies VerifySignatureResponse);
+    },
+    Effect.trackDuration(signatureVerificationDuration),
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  return { sign, verify } satisfies SignatureApplication;
 });

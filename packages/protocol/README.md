@@ -120,7 +120,9 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Signature DTOs are namespace-discriminated and expose only EVM `message` and
   EIP-712 `typed-data` operations. Raw digest signing is intentionally absent.
   Signature authorization uses its own `EvmSignatureContext` and requires an
-  explicit `evm.signature` policy listing the allowed operation types.
+  explicit `evm.signature` policy listing the allowed operation types. Matching
+  verification DTOs include the original payload and signature and return the
+  resolved smart-account address with a boolean validity result.
 - EVM chain contracts distinguish the stable supported-network key, the chain
   name used for presentation/icons, and the exact supported CAIP-2 chain ID.
   Provider-specific RPC slugs do not belong in protocol.

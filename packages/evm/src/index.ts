@@ -36,4 +36,6 @@ export type {
   EvmSignatureService,
   SignEvm,
   SignEvmInput,
+  VerifyEvm,
+  VerifyEvmInput,
 } from "./signing/types.js";

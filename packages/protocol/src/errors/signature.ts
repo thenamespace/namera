@@ -7,6 +7,7 @@ export const EvmSignatureErrorCode = Schema.Literals([
   "ACCOUNT_RECONSTRUCTION_FAILED",
   "ACCOUNT_ADDRESS_MISMATCH",
   "SIGNING_FAILED",
+  "VERIFICATION_FAILED",
 ]);
 
 export class EvmSignatureError extends Schema.TaggedError<EvmSignatureError>()(
@@ -22,6 +23,7 @@ export const SignatureErrorCode = Schema.Literals([
   "POLICY_DENIED",
   "SIGNING_FAILED",
   "SIGNATURE_UNAVAILABLE",
+  "VERIFICATION_FAILED",
   "IDEMPOTENCY_CONFLICT",
 ]);
 

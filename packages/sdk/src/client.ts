@@ -1,4 +1,7 @@
-import { type SignRequest as SignRequestType } from "@namera-ai/protocol/dto";
+import type {
+  SignRequest as SignRequestType,
+  VerifySignatureRequest,
+} from "@namera-ai/protocol/dto";
 import { generateUniqueId } from "@namera-ai/utils";
 
 import { AuthClient } from "#/auth";
@@ -40,6 +43,18 @@ export class NameraClient {
         headers: { "idempotency-key": idempotencyKey },
         payload: request,
       }),
+    );
+  }
+
+  verifySignature(request: VerifySignatureRequest) {
+    if (request.type === "message") {
+      return this.#transport.requestWithRetry(
+        this.#transport.client.signature.verify({ payload: request }),
+      );
+    }
+
+    return this.#transport.requestWithRetry(
+      this.#transport.client.signature.verify({ payload: request }),
     );
   }
 }

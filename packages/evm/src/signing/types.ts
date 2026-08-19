@@ -26,6 +26,20 @@ export type SignEvm = (
   input: SignEvmInput,
 ) => Effect.Effect<Hex, EvmSignatureError | UnsupportedChainError>;
 
+export type VerifyEvmInput = SignEvmInputCommon &
+  (
+    | { readonly type: "message"; readonly message: string; readonly signature: Hex }
+    | {
+        readonly type: "typed-data";
+        readonly typedData: EvmTypedData;
+        readonly signature: Hex;
+      }
+  );
+
+export type VerifyEvm = (
+  input: VerifyEvmInput,
+) => Effect.Effect<boolean, EvmSignatureError | UnsupportedChainError>;
+
 export type DigestEvmSignature = (
   input:
     | { readonly type: "message"; readonly message: string }
@@ -35,4 +49,5 @@ export type DigestEvmSignature = (
 export interface EvmSignatureService {
   readonly digest: DigestEvmSignature;
   readonly sign: SignEvm;
+  readonly verify: VerifyEvm;
 }

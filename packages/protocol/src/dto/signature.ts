@@ -58,6 +58,54 @@ export const SignResponse = Schema.Union([SignEvmMessageResponse, SignEvmTypedDa
   mode: "oneOf",
 }).annotate({ identifier: "SignResponse" });
 
+export const VerifyEvmMessageRequest = Schema.Struct({
+  ...SignEvmRequestCommon,
+  type: Schema.Literal("message"),
+  message: Schema.String,
+  signature: Hex,
+}).annotate({
+  identifier: "VerifyEvmMessageRequest",
+  description: "Verify an EVM smart-account message signature",
+});
+
+export const VerifyEvmTypedDataRequest = Schema.Struct({
+  ...SignEvmRequestCommon,
+  type: Schema.Literal("typed-data"),
+  typedData: EvmTypedData,
+  signature: Hex,
+}).annotate({
+  identifier: "VerifyEvmTypedDataRequest",
+  description: "Verify an EVM smart-account EIP-712 signature",
+});
+
+export const VerifySignatureRequest = Schema.Union(
+  [VerifyEvmMessageRequest, VerifyEvmTypedDataRequest],
+  { mode: "oneOf" },
+).annotate({ identifier: "VerifySignatureRequest" });
+
+const VerifyEvmSignatureResponseCommon = {
+  namespace: Schema.Literal("eip155"),
+  walletId: WalletId,
+  chainId: SupportedEvmChainId,
+  account: EthereumAddress,
+  valid: Schema.Boolean,
+};
+
+export const VerifyEvmMessageResponse = Schema.Struct({
+  ...VerifyEvmSignatureResponseCommon,
+  type: Schema.Literal("message"),
+}).annotate({ identifier: "VerifyEvmMessageResponse" });
+
+export const VerifyEvmTypedDataResponse = Schema.Struct({
+  ...VerifyEvmSignatureResponseCommon,
+  type: Schema.Literal("typed-data"),
+}).annotate({ identifier: "VerifyEvmTypedDataResponse" });
+
+export const VerifySignatureResponse = Schema.Union(
+  [VerifyEvmMessageResponse, VerifyEvmTypedDataResponse],
+  { mode: "oneOf" },
+).annotate({ identifier: "VerifySignatureResponse" });
+
 export type SignEvmMessageRequest = typeof SignEvmMessageRequest.Type;
 export type SignEvmTypedDataRequest = typeof SignEvmTypedDataRequest.Type;
 export type SignRequest = typeof SignRequest.Type;
@@ -65,3 +113,9 @@ export type SignRequestHeaders = typeof SignRequestHeaders.Type;
 export type SignEvmMessageResponse = typeof SignEvmMessageResponse.Type;
 export type SignEvmTypedDataResponse = typeof SignEvmTypedDataResponse.Type;
 export type SignResponse = typeof SignResponse.Type;
+export type VerifyEvmMessageRequest = typeof VerifyEvmMessageRequest.Type;
+export type VerifyEvmTypedDataRequest = typeof VerifyEvmTypedDataRequest.Type;
+export type VerifySignatureRequest = typeof VerifySignatureRequest.Type;
+export type VerifyEvmMessageResponse = typeof VerifyEvmMessageResponse.Type;
+export type VerifyEvmTypedDataResponse = typeof VerifyEvmTypedDataResponse.Type;
+export type VerifySignatureResponse = typeof VerifySignatureResponse.Type;

@@ -78,6 +78,9 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
     policy: makeEvmPolicyService(),
     digestSignature: digestEvmSignature,
     sign: Effect.fn("evm.signature.test.sign")(() => Effect.succeed(Hex.make("0x1234"))),
+    verifySignature: Effect.fn("evm.signature.test.verify")((input) =>
+      Effect.succeed(input.signature === Hex.make("0x1234")),
+    ),
     ...serviceOverrides,
   };
 };

@@ -67,10 +67,11 @@ runtimes and tests.
 - `sessionKeys.list`, `sessionKeys.listForWallet`, `sessionKeys.get`
 - `executions.execute`, `executions.getSubmission`, `executions.get`,
   `executions.list`
-- `sign`
+- `sign`, `verifySignature`
 
-Resource operations are intentionally grouped. Only `sign` remains at the root
-because it is a cross-resource signing capability rather than a collection.
+Resource operations are intentionally grouped. Signing and verification remain
+at the root because they are cross-resource signature capabilities rather than
+collections. Verification is read-only and does not consume signature usage.
 
 Execution and signing methods generate an idempotency key internally before
 the first request. The same key is reused for up to three retries with bounded

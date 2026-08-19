@@ -101,6 +101,11 @@ export const rateLimitPolicy = {
       window: Duration.minutes(1),
       algorithm: "token-bucket",
     },
+    verificationByActor: {
+      limit: 240,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
   },
   rpc: {
     byIp: {
