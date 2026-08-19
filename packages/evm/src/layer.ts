@@ -19,8 +19,9 @@ import { makeEvmExecutionService } from "./execution/service.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
+import { digestEvmSignature } from "./signing/digest.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
-import type { SignEvm } from "./signing/types.js";
+import type { DigestEvmSignature, SignEvm } from "./signing/types.js";
 import { makeEvmTestService, TestEvmExecution, type EvmTestOptions } from "./test.js";
 
 export type EvmRpcType = "public" | "bundler" | "paymaster";
@@ -41,6 +42,7 @@ export interface EvmService {
   ) => Effect.Effect<string, UnsupportedChainError>;
   readonly execution: EvmExecutionService;
   readonly policy: EvmPolicyService;
+  readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
 }
 
@@ -75,7 +77,14 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         return `https://api.pimlico.io/v2/${data.chain.id}/rpc?apikey=${pimlicoApiKey}`;
       });
 
-      return Evm.of({ createAccount, getRpcUrl, execution, policy, sign });
+      return Evm.of({
+        createAccount,
+        digestSignature: digestEvmSignature,
+        getRpcUrl,
+        execution,
+        policy,
+        sign,
+      });
     }),
   );
 

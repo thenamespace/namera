@@ -25,4 +25,9 @@ export type {
   SettleEvmPoliciesInput,
 } from "./policy/types.js";
 export * from "./signatures/index.js";
-export type { EvmSignatureService, SignEvm, SignEvmInput } from "./signing/types.js";
+export type {
+  DigestEvmSignature,
+  EvmSignatureService,
+  SignEvm,
+  SignEvmInput,
+} from "./signing/types.js";

@@ -8,6 +8,7 @@ import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import type { EvmService } from "./layer.js";
 import { makeEvmPolicyService } from "./policy/service.js";
+import { digestEvmSignature } from "./signing/digest.js";
 
 export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
   readonly execution?: Partial<EvmExecutionService>;
@@ -75,6 +76,7 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
     }),
     execution: makeTestEvmExecutionService(execution),
     policy: makeEvmPolicyService(),
+    digestSignature: digestEvmSignature,
     sign: Effect.fn("evm.signature.test.sign")(() => Effect.succeed(Hex.make("0x1234"))),
     ...serviceOverrides,
   };

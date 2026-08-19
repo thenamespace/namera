@@ -1,6 +1,7 @@
 import type { Effect } from "effect";
 
 import type {
+  Bytes32,
   EvmSignatureError,
   EvmTypedData,
   Hex,
@@ -25,6 +26,13 @@ export type SignEvm = (
   input: SignEvmInput,
 ) => Effect.Effect<Hex, EvmSignatureError | UnsupportedChainError>;
 
+export type DigestEvmSignature = (
+  input:
+    | { readonly type: "message"; readonly message: string }
+    | { readonly type: "typed-data"; readonly typedData: EvmTypedData },
+) => Effect.Effect<Bytes32, EvmSignatureError>;
+
 export interface EvmSignatureService {
+  readonly digest: DigestEvmSignature;
   readonly sign: SignEvm;
 }
