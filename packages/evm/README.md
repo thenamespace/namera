@@ -18,8 +18,9 @@ evaluation behind one root `Evm` service.
   receipt operations exposed through `evm.execution`. Preparation combines
   ERC-4337 gas simulation with `simulateCalls` asset-change and native-transfer
   tracing, then exposes only the bounded protocol context to policies.
-- `src/policy/` — exhaustive EVM policy registry and lifecycle service;
-  individual handlers live in `src/policy/policies/`.
+- `src/policy/` — exhaustive EVM policy definitions and lifecycle service. The
+  registry remains declarative, generic state/reservation adapters live in
+  `operations.ts`, and individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
 - `src/signing/` — smart-account message and EIP-712 signing and verification
   exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
