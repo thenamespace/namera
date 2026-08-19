@@ -106,6 +106,10 @@ read-only cards through the shared policy summaries; Executions intentionally
 retains a focused placeholder until execution activity is implemented. Session
 key names and row actions open the overview, and the pinned action column can
 copy or revoke the session key according to its lifecycle and the actor's permissions.
+Session-key tables initially show active keys; revoked keys remain available through
+the status filter. MCP and CLI authorization tables follow the same active-first
+default, while the members page initially shows pending invitations and keeps
+completed invitation history available through its status filter.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.

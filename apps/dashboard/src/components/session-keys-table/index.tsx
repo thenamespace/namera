@@ -241,7 +241,9 @@ function SessionKeysTableContent({
   isLoading,
 }: SessionKeysTableContentProps) {
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<SessionKeyResponse["status"]>>(new Set());
+  const [statuses, setStatuses] = useState<ReadonlySet<SessionKeyResponse["status"]>>(
+    new Set(["active"]),
+  );
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
   const [grouping, setGrouping] = useState<Grouping>("none");

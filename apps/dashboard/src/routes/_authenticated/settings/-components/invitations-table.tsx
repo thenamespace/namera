@@ -169,7 +169,7 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
   const invitations = useOrganizationInvitations();
   const data = invitations.data ?? initialInvitations;
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<InvitationStatus>>(new Set());
+  const [statuses, setStatuses] = useState<ReadonlySet<InvitationStatus>>(new Set(["pending"]));
   const [roles, setRoles] = useState<ReadonlySet<string>>(new Set());
   const [grouping, setGrouping] = useState<Grouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
