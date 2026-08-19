@@ -2,6 +2,7 @@ export * from "./data";
 export * from "./native-spend-limit-editor";
 export * from "./policy-card";
 export * from "./policy-dialog";
+export * from "./policy-display-card";
 export * from "./policy-editor";
 export * from "./signature-editor";
 export * from "./summary";

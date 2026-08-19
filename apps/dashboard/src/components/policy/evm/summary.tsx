@@ -1,32 +1,47 @@
+import { DateTime } from "effect";
+
+import type { EvmSessionKeyPolicy } from "@namera-ai/protocol/model";
 import { ChainIcon } from "@namera-ai/ui/icons";
 import { formatUnits } from "viem";
 
 import { formatDateTime } from "@/lib/helpers/date";
 
 import { evmChainById } from "./data";
-import type {
-  EvmPolicyInput,
-  NativeSpendLimitPolicyInput,
-  SignaturePolicyInput,
-  TimeWindowPolicyInput,
-} from "./types";
+import type { EvmPolicyInput, SignaturePolicyInput } from "./types";
 
 const signatureTypeLabels: Record<SignaturePolicyInput["allowedTypes"][number], string> = {
   message: "Messages",
   "typed-data": "Typed data",
 };
 
-function TimeWindowPolicySummary({ policy }: { policy: TimeWindowPolicyInput }) {
+type PolicySummaryValue = EvmPolicyInput | EvmSessionKeyPolicy;
+type TimeWindowPolicySummaryValue = Extract<
+  PolicySummaryValue,
+  { readonly type: "evm.time-window" }
+>;
+type NativeSpendLimitPolicySummaryValue = Extract<
+  PolicySummaryValue,
+  { readonly type: "evm.native-spend-limit" }
+>;
+type SignaturePolicySummaryValue = Extract<PolicySummaryValue, { readonly type: "evm.signature" }>;
+
+function formatPolicyDate(value: string | DateTime.DateTime) {
+  return typeof value === "string"
+    ? formatDateTime(value)
+    : DateTime.formatLocal(value, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function TimeWindowPolicySummary({ policy }: { policy: TimeWindowPolicySummaryValue }) {
   return (
     <span>
-      {policy.startsAt ? `From ${formatDateTime(policy.startsAt)}` : "Available immediately"}
+      {policy.startsAt ? `From ${formatPolicyDate(policy.startsAt)}` : "Available immediately"}
       {" · "}
-      Expires {formatDateTime(policy.expiresAt)}
+      Expires {formatPolicyDate(policy.expiresAt)}
     </span>
   );
 }
 
-function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPolicyInput }) {
+function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPolicySummaryValue }) {
   return (
     <span className="flex flex-wrap items-center gap-1.5">
       {policy.limits.map((limit) => {
@@ -59,11 +74,11 @@ function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPol
   );
 }
 
-function SignaturePolicySummary({ policy }: { policy: SignaturePolicyInput }) {
+function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValue }) {
   return <span>{policy.allowedTypes.map((type) => signatureTypeLabels[type]).join(" and ")}</span>;
 }
 
-export function EvmPolicySummary({ policy }: { policy: EvmPolicyInput }) {
+export function EvmPolicySummary({ policy }: { policy: PolicySummaryValue }) {
   switch (policy.type) {
     case "evm.time-window":
       return <TimeWindowPolicySummary policy={policy} />;

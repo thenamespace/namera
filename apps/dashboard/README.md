@@ -96,6 +96,14 @@ atoms/hooks live under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
+`/session-key/$sessionKeyId` redirects to its overview and owns a shared detail
+shell with Overview, Policies, and Executions navigation. The overview presents
+the session key identity and its core status, account, namespace, creator,
+identifier, and lifecycle metadata. Policies renders the persisted EVM rules as
+read-only cards through the shared policy summaries; Executions intentionally
+retains a focused placeholder until execution activity is implemented. Session
+key names and row actions open the overview, and the pinned action column can
+copy the session-key ID.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.

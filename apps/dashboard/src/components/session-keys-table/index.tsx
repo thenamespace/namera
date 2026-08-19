@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { Link } from "@tanstack/react-router";
+
 import { DateTime } from "effect";
 
 import type { WalletId } from "@namera-ai/protocol";
@@ -33,6 +35,8 @@ import {
   SessionKeyStatusDisplay,
 } from "@/components/display";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
+
+import { SessionKeyActions } from "./actions";
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const columnIds = ["account", "namespace", "creator", "status", "createdAt"] as const;
@@ -69,15 +73,25 @@ function GroupLabel({ row }: { row: GroupRow }) {
   );
 }
 
+function SessionKeyNameCell({ sessionKey }: { sessionKey: SessionKeyResponse }) {
+  const sessionKeyParams = useMemo(() => ({ sessionKeyId: sessionKey.id }), [sessionKey.id]);
+
+  return (
+    <Link
+      className="block min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      params={sessionKeyParams}
+      to="/session-key/$sessionKeyId/overview"
+    >
+      <MetadataDisplay fallbackName="Unnamed session key" metadata={sessionKey.metadata} />
+    </Link>
+  );
+}
+
 const columns: ReadonlyArray<DataGridColumn<Row>> = [
   {
     allowsSorting: true,
     cell: (row) =>
-      isGroup(row) ? (
-        <GroupLabel row={row} />
-      ) : (
-        <MetadataDisplay fallbackName="Unnamed session key" metadata={row.metadata} />
-      ),
+      isGroup(row) ? <GroupLabel row={row} /> : <SessionKeyNameCell sessionKey={row} />,
     header: "Name",
     id: "name",
     isRowHeader: true,
@@ -134,6 +148,19 @@ const columns: ReadonlyArray<DataGridColumn<Row>> = [
     minWidth: 130,
     width: 150,
   },
+  {
+    align: "center",
+    allowsSorting: false,
+    cell: (row) => (isGroup(row) ? null : <SessionKeyActions sessionKey={row} />),
+    cellClassName: "px-1",
+    header: <span className="sr-only">Actions</span>,
+    headerClassName: "px-1",
+    id: "actions",
+    maxWidth: 48,
+    minWidth: 48,
+    pinned: "end",
+    width: 48,
+  },
 ];
 
 const sorters: Record<string, (left: SessionKeyResponse, right: SessionKeyResponse) => number> = {
@@ -150,12 +177,11 @@ const sorters: Record<string, (left: SessionKeyResponse, right: SessionKeyRespon
     DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
 };
 const configurableColumns: ReadonlyArray<TableOption> = columns
-  .filter((column) => column.id !== "name")
+  .filter((column) => columnIds.includes(column.id as (typeof columnIds)[number]))
   .map((column) => ({ id: column.id, label: String(column.header) }));
-const sortableColumns: ReadonlyArray<TableOption> = columns.map((column) => ({
-  id: column.id,
-  label: String(column.header),
-}));
+const sortableColumns: ReadonlyArray<TableOption> = columns
+  .filter((column) => column.allowsSorting)
+  .map((column) => ({ id: column.id, label: String(column.header) }));
 const getRowId = (row: Row) => row.id;
 const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
 const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
@@ -287,7 +313,10 @@ function SessionKeysTableContent({
   }, [grouping, sorted]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set(columnIds) : visibleColumns;
-    return columns.filter((column) => column.id === "name" || visible.has(column.id as never));
+    return columns.filter(
+      (column) =>
+        column.id === "name" || column.id === "actions" || visible.has(column.id as never),
+    );
   }, [visibleColumns]);
   const facets = useMemo<ReadonlyArray<TableFilterFacet>>(
     () => [
