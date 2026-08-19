@@ -45,7 +45,7 @@ export function EvmPolicyCard({ index, policy, onChange, onRemove }: EvmPolicyCa
               <HugeiconsIcon icon={PencilEdit02Icon} />
             </Button>
             <Modal.Backdrop>
-              <Modal.Container size={policy.type === "evm.native-spend-limit" ? "lg" : "md"}>
+              <Modal.Container size="lg">
                 <Modal.Dialog>
                   {({ close }) => (
                     <>
@@ -53,7 +53,7 @@ export function EvmPolicyCard({ index, policy, onChange, onRemove }: EvmPolicyCa
                       <Modal.Header>
                         <Modal.Heading>Edit {definition.name.toLowerCase()}</Modal.Heading>
                       </Modal.Header>
-                      <Modal.Body className="grid gap-5">
+                      <Modal.Body className="grid max-h-[60vh] min-h-0 gap-5 overflow-y-auto">
                         <Typography.Paragraph color="muted" size="sm">
                           {definition.description}
                         </Typography.Paragraph>

@@ -32,7 +32,9 @@ const NativeAmount = Schema.String.check(
 const NativeSpendLimitFormFields = Schema.Struct({
   limits: Schema.Array(
     Schema.Struct({
-      chainId: Schema.Literals(evmChainOptions.map((chain) => chain.id)),
+      chainIds: Schema.Array(Schema.Literals(evmChainOptions.map((chain) => chain.id))).check(
+        Schema.isMinLength(1, { message: "Select at least one network" }),
+      ),
       amount: NativeAmount,
     }),
   ).check(Schema.isMinLength(1, { message: "Add at least one network limit" })),
@@ -40,13 +42,26 @@ const NativeSpendLimitFormFields = Schema.Struct({
 
 const validNativeSpendLimits = Schema.makeFilter<typeof NativeSpendLimitFormFields.Type>(
   (value) => {
-    const chainIds = value.limits.map((limit) => limit.chainId);
-    if (new Set(chainIds).size !== chainIds.length) {
-      return { path: ["limits"], issue: "Each network may have only one limit" };
-    }
+    const firstLimitByChain = new Map<SupportedEvmChainId, number>();
 
     for (const [index, limit] of value.limits.entries()) {
-      const decimals = evmChainById.get(limit.chainId)?.nativeCurrency.decimals ?? 18;
+      for (const chainId of limit.chainIds) {
+        const firstIndex = firstLimitByChain.get(chainId);
+        if (firstIndex !== undefined) {
+          const chainName = evmChainById.get(chainId)?.name ?? "This network";
+          return {
+            path: ["limits", index, "chainIds"],
+            issue: `${chainName} is already selected in limit ${firstIndex + 1}`,
+          };
+        }
+        firstLimitByChain.set(chainId, index);
+      }
+
+      const decimals = Math.min(
+        ...limit.chainIds.map(
+          (chainId) => evmChainById.get(chainId)?.nativeCurrency.decimals ?? 18,
+        ),
+      );
       const fractionalDigits = limit.amount.split(".")[1]?.length ?? 0;
       if (fractionalDigits > decimals) {
         return {
@@ -69,82 +84,107 @@ const defaultChain = evmChainOptions.find((chain) => chain.id === "eip155:1") ??
 if (!defaultChain) throw new Error("At least one supported EVM chain is required");
 
 const emptyNativeSpendLimit: NativeSpendLimitFormInput = {
-  limits: [{ chainId: defaultChain.id, amount: "" }],
+  limits: [{ chainIds: [defaultChain.id], amount: "" }],
 };
 
-const toFormValue = (policy: NativeSpendLimitPolicyInput): NativeSpendLimitFormInput => ({
-  limits: policy.limits.map((limit) => {
+const toFormValue = (policy: NativeSpendLimitPolicyInput): NativeSpendLimitFormInput => {
+  const groupedLimits = new Map<string, { amount: string; chainIds: Array<SupportedEvmChainId> }>();
+
+  for (const limit of policy.limits) {
     const chain = evmChainById.get(limit.chainId);
-    return {
-      chainId: limit.chainId,
-      amount: formatUnits(BigInt(limit.maxAmount), chain?.nativeCurrency.decimals ?? 18),
-    };
-  }),
-});
+    const amount = formatUnits(BigInt(limit.maxAmount), chain?.nativeCurrency.decimals ?? 18);
+    const existing = groupedLimits.get(amount);
+    if (existing) {
+      existing.chainIds.push(limit.chainId);
+    } else {
+      groupedLimits.set(amount, { amount, chainIds: [limit.chainId] });
+    }
+  }
+
+  return { limits: [...groupedLimits.values()] };
+};
 
 type NativeSpendLimitRowProps = {
   canRemove: boolean;
   control: Control<NativeSpendLimitFormInput, unknown, NativeSpendLimitFormValues>;
   index: number;
-  selectedChainIds: ReadonlyArray<SupportedEvmChainId>;
   onRemove: (index: number) => void;
 };
 
-function NativeSpendLimitRow({
-  canRemove,
-  control,
-  index,
-  selectedChainIds,
-  onRemove,
-}: NativeSpendLimitRowProps) {
-  const chainId = useWatch({ control, name: `limits.${index}.chainId` });
-  const selectedChain = evmChainById.get(chainId);
+function NativeSpendLimitRow({ canRemove, control, index, onRemove }: NativeSpendLimitRowProps) {
+  const chainIds = useWatch({ control, name: `limits.${index}.chainIds` });
+  const selectedChains = chainIds.flatMap((chainId) => {
+    const chain = evmChainById.get(chainId);
+    return chain ? [chain] : [];
+  });
   const handleRemove = useEventCallback(() => onRemove(index));
 
   return (
-    <div className="border-separator bg-surface/40 grid gap-3 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+    <div className="border-separator bg-surface/40 grid gap-3 rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-3">
+        <Typography.Paragraph color="muted" size="xs">
+          Limit {index + 1}
+        </Typography.Paragraph>
+        <Button
+          isIconOnly
+          aria-label={`Remove limit ${index + 1}`}
+          isDisabled={!canRemove}
+          size="sm"
+          type="button"
+          variant="tertiary"
+          onPress={handleRemove}
+        >
+          <HugeiconsIcon icon={Delete02Icon} />
+        </Button>
+      </div>
+
       <Controller
         control={control}
-        name={`limits.${index}.chainId`}
+        name={`limits.${index}.chainIds`}
         render={({ field, fieldState }) => {
           const error = fieldState.error;
 
           return (
             <Field data-invalid={Boolean(error)}>
-              <FieldLabel id={`native-spend-network-${index}`}>Network</FieldLabel>
-              <Select
+              <FieldLabel id={`native-spend-network-${index}`}>Networks</FieldLabel>
+              <Select<(typeof evmChainOptions)[number], "multiple">
                 aria-labelledby={`native-spend-network-${index}`}
                 fullWidth
                 isInvalid={Boolean(error)}
                 name={field.name}
-                selectedKey={field.value}
+                selectionMode="multiple"
+                value={Array.from(field.value)}
                 variant="secondary"
-                onSelectionChange={field.onChange}
+                onChange={(keys) =>
+                  field.onChange(keys.map((key) => String(key) as SupportedEvmChainId))
+                }
               >
                 <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
                   <Select.Value>
-                    {selectedChain ? (
+                    {selectedChains[0] ? (
                       <span className="flex items-center gap-2">
                         <ChainIcon
                           aria-hidden
-                          chain={selectedChain.chain}
+                          chain={selectedChains[0].chain}
                           className="size-4"
                           namespace="eip155"
                         />
-                        {selectedChain.name}
+                        <span className="truncate">
+                          {selectedChains.length === 1
+                            ? selectedChains[0].name
+                            : `${selectedChains.length} networks`}
+                        </span>
                       </span>
-                    ) : null}
+                    ) : (
+                      "Select networks"
+                    )}
                   </Select.Value>
                   <Select.Indicator />
                 </Select.Trigger>
-                <Select.Popover>
+                <Select.Popover className="w-(--trigger-width)">
                   <ListBox items={evmChainOptions}>
                     {(chain) => (
-                      <ListBox.Item
-                        id={chain.id}
-                        isDisabled={selectedChainIds.includes(chain.id) && chain.id !== field.value}
-                        textValue={chain.name}
-                      >
+                      <ListBox.Item id={chain.id} textValue={chain.name}>
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
                           <span className="flex min-w-0 items-center gap-2">
                             <ChainIcon
@@ -159,6 +199,7 @@ function NativeSpendLimitRow({
                             {chain.nativeCurrency.symbol}
                           </span>
                         </div>
+                        <ListBox.ItemIndicator />
                       </ListBox.Item>
                     )}
                   </ListBox>
@@ -193,7 +234,7 @@ function NativeSpendLimitRow({
                   placeholder="0.00"
                 />
                 <InputGroup.Suffix>
-                  <span className="text-muted text-xs">{selectedChain?.nativeCurrency.symbol}</span>
+                  <span className="text-muted text-xs">Native</span>
                 </InputGroup.Suffix>
               </InputGroup>
               {error ? (
@@ -205,18 +246,6 @@ function NativeSpendLimitRow({
           );
         }}
       />
-
-      <Button
-        isIconOnly
-        aria-label={`Remove ${selectedChain?.name ?? "network"} limit`}
-        isDisabled={!canRemove}
-        size="sm"
-        type="button"
-        variant="tertiary"
-        onPress={handleRemove}
-      >
-        <HugeiconsIcon icon={Delete02Icon} />
-      </Button>
     </div>
   );
 }
@@ -238,11 +267,11 @@ export function NativeSpendLimitPolicyEditor({
   });
   const limitFields = useFieldArray({ control: form.control, name: "limits" });
   const limits = useWatch({ control: form.control, name: "limits" });
-  const selectedChainIds = limits.map((limit) => limit.chainId);
-  const availableChain = evmChainOptions.find((chain) => !selectedChainIds.includes(chain.id));
+  const selectedChainIds = new Set(limits.flatMap((limit) => limit.chainIds));
+  const availableChain = evmChainOptions.find((chain) => !selectedChainIds.has(chain.id));
   const handleAdd = useEventCallback(() => {
     if (!availableChain) return;
-    limitFields.append({ chainId: availableChain.id, amount: "" }, { shouldFocus: false });
+    limitFields.append({ chainIds: [availableChain.id], amount: "" }, { shouldFocus: false });
   });
   const handleRemove = useEventCallback((index: number) => {
     if (limitFields.fields.length === 1) return;
@@ -252,13 +281,15 @@ export function NativeSpendLimitPolicyEditor({
     const policy: NativeSpendLimitPolicyInput = {
       type: "evm.native-spend-limit",
       version: 1,
-      limits: value.limits.map((limit) => {
-        const chain = evmChainById.get(limit.chainId);
-        return {
-          chainId: limit.chainId,
-          maxAmount: parseUnits(limit.amount, chain?.nativeCurrency.decimals ?? 18).toString(),
-        };
-      }),
+      limits: value.limits.flatMap((limit) =>
+        limit.chainIds.map((chainId) => {
+          const chain = evmChainById.get(chainId);
+          return {
+            chainId,
+            maxAmount: parseUnits(limit.amount, chain?.nativeCurrency.decimals ?? 18).toString(),
+          };
+        }),
+      ),
     };
     onSave(policy);
   });
@@ -277,7 +308,6 @@ export function NativeSpendLimitPolicyEditor({
               control={form.control}
               index={index}
               key={field.id}
-              selectedChainIds={selectedChainIds}
               onRemove={handleRemove}
             />
           ))}
@@ -295,7 +325,7 @@ export function NativeSpendLimitPolicyEditor({
             onPress={handleAdd}
           >
             <HugeiconsIcon icon={Add01Icon} />
-            Add network
+            Add another limit
           </Button>
         </div>
       </FieldGroup>

@@ -44,7 +44,7 @@ function TableFilterCheckbox({ isSelected, label }: { isSelected: boolean; label
       isSelected={isSelected}
     >
       <Checkbox.Content>
-        <Checkbox.Control className="rounded-sm before:rounded-sm">
+        <Checkbox.Control>
           <Checkbox.Indicator />
         </Checkbox.Control>
       </Checkbox.Content>

@@ -42,11 +42,7 @@ export function EvmPolicyDialog({
       </Button>
 
       <Modal.Backdrop>
-        <Modal.Container
-          size={
-            selectedPolicy === null || selectedPolicy === "evm.native-spend-limit" ? "lg" : "md"
-          }
-        >
+        <Modal.Container size="lg">
           <Modal.Dialog>
             <Modal.CloseTrigger />
             <Modal.Header>
@@ -55,14 +51,14 @@ export function EvmPolicyDialog({
 
             {selectedPolicy && formId ? (
               <>
-                <Modal.Body className="grid gap-5">
+                <Modal.Body className="grid max-h-[60vh] min-h-0 gap-5 overflow-y-auto">
                   <Typography.Paragraph color="muted" size="sm">
                     {selectedDefinition?.description}
                   </Typography.Paragraph>
                   <EvmPolicyEditor formId={formId} type={selectedPolicy} onSave={handleAdd} />
                 </Modal.Body>
                 <Modal.Footer>
-                  <Button type="button" variant="secondary" onPress={handleBack}>
+                  <Button type="button" variant="tertiary" onPress={handleBack}>
                     Back
                   </Button>
                   <Button form={formId} type="submit">
@@ -71,42 +67,34 @@ export function EvmPolicyDialog({
                 </Modal.Footer>
               </>
             ) : (
-              <>
-                <Modal.Body className="my-4 grid gap-2 px-0">
-                  {evmPolicyCatalog.map((policy) => {
-                    const isAdded =
-                      policy.cardinality === "singleton" &&
-                      existingPolicyTypes.includes(policy.type);
+              <Modal.Body className="my-4 grid gap-2 px-0">
+                {evmPolicyCatalog.map((policy) => {
+                  const isAdded =
+                    policy.cardinality === "singleton" && existingPolicyTypes.includes(policy.type);
 
-                    return (
-                      <ItemCard className="rounded-lg" key={policy.type} variant="outline">
-                        <ItemCard.Icon>
-                          <HugeiconsIcon icon={policy.icon} />
-                        </ItemCard.Icon>
-                        <ItemCard.Content>
-                          <ItemCard.Title>{policy.name}</ItemCard.Title>
-                          <ItemCard.Description>{policy.description}</ItemCard.Description>
-                        </ItemCard.Content>
-                        <ItemCard.Action>
-                          <Button
-                            isDisabled={isAdded}
-                            size="sm"
-                            variant="tertiary"
-                            onPress={() => setSelectedPolicy(policy.type)}
-                          >
-                            {isAdded ? "Added" : "Add"}
-                          </Button>
-                        </ItemCard.Action>
-                      </ItemCard>
-                    );
-                  })}
-                </Modal.Body>
-                <Modal.Footer>
-                  <Button type="button" variant="secondary" onPress={() => setIsOpen(false)}>
-                    Cancel
-                  </Button>
-                </Modal.Footer>
-              </>
+                  return (
+                    <ItemCard className="rounded-lg" key={policy.type} variant="outline">
+                      <ItemCard.Icon>
+                        <HugeiconsIcon icon={policy.icon} />
+                      </ItemCard.Icon>
+                      <ItemCard.Content>
+                        <ItemCard.Title>{policy.name}</ItemCard.Title>
+                        <ItemCard.Description>{policy.description}</ItemCard.Description>
+                      </ItemCard.Content>
+                      <ItemCard.Action>
+                        <Button
+                          isDisabled={isAdded}
+                          size="sm"
+                          variant="tertiary"
+                          onPress={() => setSelectedPolicy(policy.type)}
+                        >
+                          {isAdded ? "Added" : "Add"}
+                        </Button>
+                      </ItemCard.Action>
+                    </ItemCard>
+                  );
+                })}
+              </Modal.Body>
             )}
           </Modal.Dialog>
         </Modal.Container>

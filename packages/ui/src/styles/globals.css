@@ -107,11 +107,15 @@
   }
 
   .checkbox__control {
-    @apply rounded-sm border border-separator;
+    @apply rounded-sm border border-separator before:rounded-sm;
   }
 
   .checkbox__indicator {
     @apply rounded-none!;
+  }
+
+  .checkbox-button-group__indicator {
+    @apply rounded-sm before:rounded-sm;
   }
 
   .table__body {
