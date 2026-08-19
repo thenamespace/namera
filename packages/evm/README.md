@@ -90,7 +90,10 @@ database claims and performs bounded concurrent lookups across their chains.
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive
 expiration. `evm.native-spend-limit` tracks spent and in-flight native value per
-CAIP-2 chain so concurrent executions cannot consume the same allowance. An
+CAIP-2 chain and fixed UTC allowance window so concurrent executions cannot
+consume the same allowance. It supports per-operation, hourly, daily, weekly,
+monthly, and lifetime limits; weekly windows begin Monday at 00:00 UTC. Window
+resets use context-derived state keys rather than a scheduled reset. An
 unconfigured chain permits zero-value calls but denies any positive native
 value. Each handler owns the schemas used to decode persisted state and
 reservations plus the context-derived seeds for any missing state. Registry

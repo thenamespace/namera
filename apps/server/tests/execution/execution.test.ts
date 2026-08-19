@@ -50,7 +50,7 @@ layer(TestServerLayer)("execution routes", (it) => {
               {
                 type: "evm.native-spend-limit",
                 version: 1,
-                limits: [{ chainId: "eip155:1", maxAmount: 10n }],
+                limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
               },
             ],
           },
@@ -166,7 +166,7 @@ layer(TestServerLayer)("execution routes", (it) => {
             {
               type: "evm.native-spend-limit",
               version: 1,
-              limits: [{ chainId: "eip155:1", maxAmount: 1n }],
+              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 1n }],
             },
           ],
         },
@@ -234,7 +234,7 @@ layer(TestServerLayer)("execution routes", (it) => {
             {
               type: "evm.native-spend-limit",
               version: 1,
-              limits: [{ chainId: "eip155:1", maxAmount: 10n }],
+              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
             },
           ],
         },
@@ -326,7 +326,7 @@ layer(TestServerLayer)("execution routes", (it) => {
             {
               type: "evm.native-spend-limit",
               version: 1,
-              limits: [{ chainId: "eip155:1", maxAmount: 10n }],
+              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
             },
           ],
         },

@@ -276,7 +276,7 @@ allowance. Each reservation references exactly one execution submission or
 signature operation through tenant-scoped foreign keys. Partial unique indexes
 enforce one reservation per operation, policy, and state key. Reservations move
 through reserved, submitted, settled, or released states. The policy-state
-repository supports transaction-scoped row locks and revision-checked updates;
+repository supports exact-scope transaction row locks and revision-checked updates;
 reservation lookup and terminal transitions accept a discriminated operation
 reference. Policy handlers own decoding the JSON payloads; the database owns
 tenant isolation, ownership constraints, uniqueness, and expiry lookup indexes.

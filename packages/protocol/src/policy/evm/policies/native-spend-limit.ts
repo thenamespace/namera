@@ -5,8 +5,18 @@ import { SupportedEvmChainId } from "#/evm/chains";
 
 const EvmAmount = Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n));
 
+export const EvmNativeSpendLimitPeriod = Schema.Literals([
+  "operation",
+  "hour",
+  "day",
+  "week",
+  "month",
+  "lifetime",
+]);
+
 export const EvmNativeSpendLimit = Schema.Struct({
   chainId: SupportedEvmChainId,
+  period: EvmNativeSpendLimitPeriod,
   maxAmount: EvmAmount,
 });
 
@@ -18,19 +28,23 @@ const NativeSpendLimitFields = {
   ),
 };
 
-const uniqueChainLimits = Schema.makeFilter<{
-  readonly limits: ReadonlyArray<{ readonly chainId: string }>;
+const uniqueChainPeriodLimits = Schema.makeFilter<{
+  readonly limits: ReadonlyArray<{ readonly chainId: string; readonly period: string }>;
 }>((policy) =>
-  new Set(policy.limits.map((limit) => limit.chainId)).size === policy.limits.length
+  new Set(policy.limits.map((limit) => `${limit.chainId}:${limit.period}`)).size ===
+  policy.limits.length
     ? undefined
-    : { path: ["limits"], issue: "Each chain may have only one native spend limit" },
+    : {
+        path: ["limits"],
+        issue: "Each chain and period may have only one native spend limit",
+      },
 );
 
 export const CreateEvmNativeSpendLimitPolicy = Schema.Struct(NativeSpendLimitFields)
-  .check(uniqueChainLimits)
+  .check(uniqueChainPeriodLimits)
   .annotate({
     identifier: "CreateEvmNativeSpendLimitPolicy",
-    description: "A cumulative native-value spend limit for an EVM session key",
+    description: "Fixed-period and lifetime native-value limits for an EVM session key",
   });
 
 export const EvmNativeSpendLimitPolicy = Schema.Struct({
@@ -38,10 +52,10 @@ export const EvmNativeSpendLimitPolicy = Schema.Struct({
   appliesTo: Schema.Literal("execution"),
   ...NativeSpendLimitFields,
 })
-  .check(uniqueChainLimits)
+  .check(uniqueChainPeriodLimits)
   .annotate({
     identifier: "EvmNativeSpendLimitPolicy",
-    description: "A persisted cumulative native-value spend limit for an EVM session key",
+    description: "Persisted fixed-period and lifetime native-value limits for an EVM session key",
   });
 
 export const EvmNativeSpendLimitPolicyState = Schema.Struct({
@@ -56,6 +70,7 @@ export const EvmNativeSpendLimitPolicyReservation = Schema.Struct({
 });
 
 export type EvmNativeSpendLimit = typeof EvmNativeSpendLimit.Type;
+export type EvmNativeSpendLimitPeriod = typeof EvmNativeSpendLimitPeriod.Type;
 export type CreateEvmNativeSpendLimitPolicy = typeof CreateEvmNativeSpendLimitPolicy.Type;
 export type EvmNativeSpendLimitPolicy = typeof EvmNativeSpendLimitPolicy.Type;
 export type EvmNativeSpendLimitPolicyState = typeof EvmNativeSpendLimitPolicyState.Type;

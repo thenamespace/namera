@@ -143,7 +143,10 @@ return `submitted`; `Application.execution.reconcile` later claims a bounded
 batch with database leases and performs the same settle/release lifecycle.
 Before reservation, the EVM policy registry derives any missing state rows from
 the prepared intent context. Application code inserts those generic seeds and
-locks policy/state keys in stable order without branching on policy types.
+locks only the referenced policy/state keys in stable order without branching
+on policy types. Periodic allowance settlement remains attached to the exact
+window in which the execution was authorized, even when confirmation occurs in
+a later window.
 
 Submission status reads require the creating API-key actor identity. Wallet,
 session-key, and confirmed-execution reads accept an optional actor scope. An

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import {
   EvmNativeSpendLimitPolicy,
@@ -8,6 +8,8 @@ import {
   PolicyHandler,
   type EvmExecutionReceipt,
   type EvmIntentContext,
+  type EvmNativeSpendLimit,
+  type EvmNativeSpendLimitPeriod,
   type EvmPolicyDecision,
 } from "@namera-ai/protocol";
 
@@ -19,13 +21,44 @@ type NativeSpendReservationResult = {
   readonly reservations: ReadonlyMap<string, EvmNativeSpendLimitPolicyReservation>;
 };
 
+type StatefulNativeSpendLimitPeriod = Exclude<EvmNativeSpendLimitPeriod, "operation">;
+
+const getNativeSpendAmount = (context: EvmIntentContext) =>
+  context.calls.reduce((total, call) => total + call.value, 0n);
+
+const getApplicableLimits = (policy: EvmNativeSpendLimitPolicy, context: EvmIntentContext) =>
+  policy.limits.filter((limit) => limit.chainId === context.chainId);
+
+const getWindowStart = (
+  timestamp: DateTime.Utc,
+  period: Exclude<StatefulNativeSpendLimitPeriod, "lifetime">,
+) =>
+  period === "week"
+    ? DateTime.startOf(timestamp, "week", { weekStartsOn: 1 })
+    : DateTime.startOf(timestamp, period);
+
+const getStateKey = (
+  limit: EvmNativeSpendLimit & { readonly period: StatefulNativeSpendLimitPeriod },
+  context: EvmIntentContext,
+) =>
+  limit.period === "lifetime"
+    ? `${limit.chainId}:lifetime`
+    : `${limit.chainId}:${limit.period}:${DateTime.toEpochMillis(
+        getWindowStart(context.block.timestamp, limit.period),
+      )}`;
+
+const isStatefulLimit = (
+  limit: EvmNativeSpendLimit,
+): limit is EvmNativeSpendLimit & { readonly period: StatefulNativeSpendLimitPeriod } =>
+  limit.period !== "operation";
+
 const evaluateNativeSpend = (
   policy: EvmNativeSpendLimitPolicy,
   context: EvmIntentContext,
 ): EvmPolicyDecision => {
-  const amount = context.calls.reduce((total, call) => total + call.value, 0n);
-  const limit = policy.limits.find((item) => item.chainId === context.chainId);
-  if (limit === undefined) {
+  const amount = getNativeSpendAmount(context);
+  const limits = getApplicableLimits(policy, context);
+  if (limits.length === 0) {
     return amount === 0n
       ? { allowed: true }
       : {
@@ -35,7 +68,7 @@ const evaluateNativeSpend = (
         };
   }
 
-  if (amount > limit.maxAmount) {
+  if (limits.some((limit) => amount > limit.maxAmount)) {
     return { allowed: false, policyId: policy.id, code: "NATIVE_SPEND_LIMIT_EXCEEDED" };
   }
 
@@ -58,11 +91,17 @@ export class EvmNativeSpendLimitPolicyHandler extends PolicyHandler<
 
   override readonly initialStates = Effect.fn("evm.policy.native-spend-limit.initial-states")(
     (policy: EvmNativeSpendLimitPolicy, context: EvmIntentContext) => {
-      const configured = policy.limits.some((limit) => limit.chainId === context.chainId);
+      if (getNativeSpendAmount(context) === 0n) return Effect.succeed(new Map());
+
       return Effect.succeed(
-        configured
-          ? new Map([[context.chainId, { version: 1 as const, spent: 0n, reserved: 0n }]])
-          : new Map(),
+        new Map(
+          getApplicableLimits(policy, context)
+            .filter(isStatefulLimit)
+            .map((limit) => [
+              getStateKey(limit, context),
+              { version: 1 as const, spent: 0n, reserved: 0n },
+            ]),
+        ),
       );
     },
   );
@@ -85,34 +124,42 @@ export class EvmNativeSpendLimitPolicyHandler extends PolicyHandler<
         return Effect.succeed({ decision, states: new Map(), reservations: new Map() });
       }
 
-      const limit = policy.limits.find((item) => item.chainId === context.chainId);
-      if (limit === undefined) {
+      const amount = getNativeSpendAmount(context);
+      const limits = getApplicableLimits(policy, context).filter(isStatefulLimit);
+      if (amount === 0n || limits.length === 0) {
         return Effect.succeed({ decision, states: new Map(), reservations: new Map() });
       }
 
-      const amount = context.calls.reduce((total, call) => total + call.value, 0n);
-      const state = states.get(context.chainId) ?? {
-        version: 1 as const,
-        spent: 0n,
-        reserved: 0n,
-      };
+      const stateChanges = new Map<string, EvmNativeSpendLimitPolicyState>();
+      const reservations = new Map<string, EvmNativeSpendLimitPolicyReservation>();
+      for (const limit of limits) {
+        const stateKey = getStateKey(limit, context);
+        const state = states.get(stateKey) ?? {
+          version: 1 as const,
+          spent: 0n,
+          reserved: 0n,
+        };
 
-      if (state.spent + state.reserved + amount > limit.maxAmount) {
-        return Effect.succeed({
-          decision: {
-            allowed: false,
-            policyId: policy.id,
-            code: "NATIVE_SPEND_LIMIT_EXCEEDED",
-          },
-          states: new Map(),
-          reservations: new Map(),
-        });
+        if (state.spent + state.reserved + amount > limit.maxAmount) {
+          return Effect.succeed({
+            decision: {
+              allowed: false,
+              policyId: policy.id,
+              code: "NATIVE_SPEND_LIMIT_EXCEEDED",
+            },
+            states: new Map(),
+            reservations: new Map(),
+          });
+        }
+
+        stateChanges.set(stateKey, { ...state, reserved: state.reserved + amount });
+        reservations.set(stateKey, { version: 1, amount });
       }
 
       return Effect.succeed({
         decision: { allowed: true },
-        states: new Map([[context.chainId, { ...state, reserved: state.reserved + amount }]]),
-        reservations: new Map([[context.chainId, { version: 1, amount }]]),
+        states: stateChanges,
+        reservations,
       });
     },
   );
@@ -121,42 +168,34 @@ export class EvmNativeSpendLimitPolicyHandler extends PolicyHandler<
     policy: EvmNativeSpendLimitPolicy,
     states: ReadonlyMap<string, EvmNativeSpendLimitPolicyState>,
     reservations: ReadonlyMap<string, EvmNativeSpendLimitPolicyReservation>,
-    result: SuccessfulEvmExecutionReceipt,
+    _result: SuccessfulEvmExecutionReceipt,
   ) {
-    const state = states.get(result.chainId);
-    const reservation = reservations.get(result.chainId);
-    if (state === undefined) {
-      return yield* new EvmPolicyError({
-        code: "MISSING_POLICY_STATE",
-        policyId: policy.id,
-        cause: new Error(`Missing policy state for ${result.chainId}`),
-      });
-    }
-    if (reservation === undefined) {
-      return yield* new EvmPolicyError({
-        code: "MISSING_POLICY_RESERVATION",
-        policyId: policy.id,
-        cause: new Error(`Missing policy reservation for ${result.chainId}`),
-      });
-    }
-    if (state.reserved < reservation.amount) {
-      return yield* new EvmPolicyError({
-        code: "INVALID_POLICY_STATE",
-        policyId: policy.id,
-        cause: new Error("Reserved native value is smaller than the reservation"),
+    const changes = new Map<string, EvmNativeSpendLimitPolicyState>();
+    for (const [stateKey, reservation] of reservations) {
+      const state = states.get(stateKey);
+      if (state === undefined) {
+        return yield* new EvmPolicyError({
+          code: "MISSING_POLICY_STATE",
+          policyId: policy.id,
+          cause: new Error(`Missing policy state for ${stateKey}`),
+        });
+      }
+      if (state.reserved < reservation.amount) {
+        return yield* new EvmPolicyError({
+          code: "INVALID_POLICY_STATE",
+          policyId: policy.id,
+          cause: new Error("Reserved native value is smaller than the reservation"),
+        });
+      }
+
+      changes.set(stateKey, {
+        ...state,
+        spent: state.spent + reservation.amount,
+        reserved: state.reserved - reservation.amount,
       });
     }
 
-    return new Map([
-      [
-        result.chainId,
-        {
-          ...state,
-          spent: state.spent + reservation.amount,
-          reserved: state.reserved - reservation.amount,
-        },
-      ],
-    ]);
+    return changes;
   });
 
   override readonly release = Effect.fn("evm.policy.native-spend-limit.release")(function* (

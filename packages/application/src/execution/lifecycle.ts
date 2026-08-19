@@ -55,20 +55,25 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     }
   });
 
-  const lockPolicyStates = Effect.fnUntraced(function* (
+  const lockPolicyStateScopes = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
     sessionKey: EvmSessionKey,
-    policyIds: ReadonlyArray<PolicyId>,
+    scopes: ReadonlyArray<{ readonly policyId: PolicyId; readonly stateKey: string }>,
   ) {
-    const orderedPolicyIds = [...new Set(policyIds)].toSorted();
-    const states = yield* Effect.forEach(orderedPolicyIds, (policyId) =>
-      repository.core.sessionKeyPolicyState.findForPolicyForUpdate(
-        organizationId,
-        sessionKey.id,
-        policyId,
-      ),
+    const orderedScopes = [
+      ...new Map(
+        scopes.map((scope) => [`${scope.policyId}:${scope.stateKey}`, scope] as const),
+      ).values(),
+    ].toSorted((left, right) =>
+      left.policyId === right.policyId
+        ? left.stateKey.localeCompare(right.stateKey)
+        : left.policyId.localeCompare(right.policyId),
     );
-    return states.flat();
+    return yield* repository.core.sessionKeyPolicyState.findForScopesForUpdate(
+      organizationId,
+      sessionKey.id,
+      orderedScopes,
+    );
   });
 
   const initializeAndLockStates = Effect.fnUntraced(function* (
@@ -87,11 +92,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         data: seed.data,
       })),
     );
-    return yield* lockPolicyStates(
-      organizationId,
-      sessionKey,
-      seeds.map((seed) => seed.policyId),
-    );
+    return yield* lockPolicyStateScopes(organizationId, sessionKey, seeds);
   });
 
   const lockReservationStates = Effect.fnUntraced(function* (
@@ -99,11 +100,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     sessionKey: EvmSessionKey,
     reservations: ReadonlyArray<SessionKeyPolicyReservation>,
   ) {
-    return yield* lockPolicyStates(
-      organizationId,
-      sessionKey,
-      reservations.map((reservation) => reservation.policyId),
-    );
+    return yield* lockPolicyStateScopes(organizationId, sessionKey, reservations);
   });
 
   // Release and settle lock the submission before touching policy state. This

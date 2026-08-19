@@ -3,6 +3,7 @@ import { DateTime, Effect, Schema } from "effect";
 
 import {
   Bytes32,
+  EvmNativeSpendLimitPolicy,
   EthereumAddress,
   Hex,
   PolicyId,
@@ -10,7 +11,6 @@ import {
   TransactionHash,
   UserOperationHash,
   type EvmIntentContext,
-  type EvmNativeSpendLimitPolicy,
   type EvmTimeWindowPolicy,
 } from "@namera-ai/protocol";
 
@@ -26,10 +26,14 @@ const policy = {
   type: "evm.native-spend-limit",
   version: 1,
   appliesTo: "execution",
-  limits: [{ chainId, maxAmount: 10n }],
+  limits: [{ chainId, period: "lifetime", maxAmount: 10n }],
 } satisfies EvmNativeSpendLimitPolicy;
+const lifetimeStateKey = `${chainId}:lifetime`;
 
-const makeContext = (value: bigint): EvmIntentContext => ({
+const makeContext = (
+  value: bigint,
+  timestamp: DateTime.Utc = DateTime.fromEpochSeconds(1),
+): EvmIntentContext => ({
   version: 1,
   namespace: "eip155",
   chainId,
@@ -37,7 +41,7 @@ const makeContext = (value: bigint): EvmIntentContext => ({
   block: {
     number: 1n,
     hash: Bytes32.make(`0x${"1".repeat(64)}`),
-    timestamp: DateTime.fromEpochSeconds(1),
+    timestamp,
   },
   calls: [{ to: address, value, data: Hex.make("0x") }],
   userOperation: {
@@ -89,6 +93,27 @@ const receipt = {
   reason: null,
 } as const;
 
+it("accepts multiple periods per chain but rejects duplicate chain-period limits", () => {
+  expect(
+    Schema.is(EvmNativeSpendLimitPolicy)({
+      ...policy,
+      limits: [
+        { chainId, period: "day", maxAmount: 1n },
+        { chainId, period: "lifetime", maxAmount: 10n },
+      ],
+    }),
+  ).toBe(true);
+  expect(
+    Schema.is(EvmNativeSpendLimitPolicy)({
+      ...policy,
+      limits: [
+        { chainId, period: "day", maxAmount: 1n },
+        { chainId, period: "day", maxAmount: 2n },
+      ],
+    }),
+  ).toBe(false);
+});
+
 it.effect("reserves, settles, and releases native spend", () =>
   Effect.gen(function* () {
     const evm = yield* Evm;
@@ -102,7 +127,7 @@ it.effect("reserves, settles, and releases native spend", () =>
     expect(reserved.stateChanges).toEqual([
       {
         policyId,
-        stateKey: chainId,
+        stateKey: lifetimeStateKey,
         stateVersion: 1,
         data: { version: 1, spent: "0", reserved: "4" },
       },
@@ -110,7 +135,7 @@ it.effect("reserves, settles, and releases native spend", () =>
     expect(reserved.reservations).toEqual([
       {
         policyId,
-        stateKey: chainId,
+        stateKey: lifetimeStateKey,
         reservationVersion: 1,
         data: { version: 1, amount: "4" },
       },
@@ -143,17 +168,162 @@ it.effect("derives initial state from the registered policy handler", () =>
     const evm = yield* Evm;
     const seeds = yield* evm.policy.getStateSeeds({
       policies: [policy],
-      context: makeContext(0n),
+      context: makeContext(1n),
     });
 
     expect(seeds).toEqual([
       {
         policyId,
-        stateKey: chainId,
+        stateKey: lifetimeStateKey,
         stateVersion: 1,
         data: { version: 1, spent: "0", reserved: "0" },
       },
     ]);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("reserves every configured fixed-window and lifetime allowance atomically", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const timestamp = DateTime.makeUnsafe("2026-08-19T12:34:56Z");
+    const dailyStateKey = `${chainId}:day:${DateTime.toEpochMillis(
+      DateTime.makeUnsafe("2026-08-19T00:00:00Z"),
+    )}`;
+    const combinedPolicy = {
+      ...policy,
+      limits: [
+        { chainId, period: "operation", maxAmount: 5n },
+        { chainId, period: "day", maxAmount: 8n },
+        { chainId, period: "lifetime", maxAmount: 20n },
+      ],
+    } satisfies EvmNativeSpendLimitPolicy;
+
+    const reserved = yield* evm.policy.reserve({
+      policies: [combinedPolicy],
+      context: makeContext(4n, timestamp),
+      states: [
+        {
+          policyId,
+          stateKey: dailyStateKey,
+          data: { version: 1, spent: "2", reserved: "1" },
+        },
+        {
+          policyId,
+          stateKey: lifetimeStateKey,
+          data: { version: 1, spent: "10", reserved: "1" },
+        },
+      ],
+    });
+
+    expect(reserved.decision).toEqual({ allowed: true });
+    expect(reserved.stateChanges).toEqual([
+      {
+        policyId,
+        stateKey: dailyStateKey,
+        stateVersion: 1,
+        data: { version: 1, spent: "2", reserved: "5" },
+      },
+      {
+        policyId,
+        stateKey: lifetimeStateKey,
+        stateVersion: 1,
+        data: { version: 1, spent: "10", reserved: "5" },
+      },
+    ]);
+    expect(reserved.reservations.map(({ stateKey }) => stateKey)).toEqual([
+      dailyStateKey,
+      lifetimeStateKey,
+    ]);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("uses a new state key when a fixed UTC period resets", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const dailyPolicy = {
+      ...policy,
+      limits: [{ chainId, period: "day", maxAmount: 5n }],
+    } satisfies EvmNativeSpendLimitPolicy;
+    const previousStateKey = `${chainId}:day:${DateTime.toEpochMillis(
+      DateTime.makeUnsafe("2026-08-18T00:00:00Z"),
+    )}`;
+    const currentStateKey = `${chainId}:day:${DateTime.toEpochMillis(
+      DateTime.makeUnsafe("2026-08-19T00:00:00Z"),
+    )}`;
+
+    const reserved = yield* evm.policy.reserve({
+      policies: [dailyPolicy],
+      context: makeContext(3n, DateTime.makeUnsafe("2026-08-19T00:00:00Z")),
+      states: [
+        {
+          policyId,
+          stateKey: previousStateKey,
+          data: { version: 1, spent: "5", reserved: "0" },
+        },
+      ],
+    });
+
+    expect(reserved.decision).toEqual({ allowed: true });
+    expect(reserved.stateChanges).toEqual([
+      {
+        policyId,
+        stateKey: currentStateKey,
+        stateVersion: 1,
+        data: { version: 1, spent: "0", reserved: "3" },
+      },
+    ]);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("starts weekly native allowances on Monday at 00:00 UTC", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const weeklyPolicy = {
+      ...policy,
+      limits: [{ chainId, period: "week", maxAmount: 5n }],
+    } satisfies EvmNativeSpendLimitPolicy;
+    const expectedStateKey = `${chainId}:week:${DateTime.toEpochMillis(
+      DateTime.makeUnsafe("2026-08-17T00:00:00Z"),
+    )}`;
+
+    const seeds = yield* evm.policy.getStateSeeds({
+      policies: [weeklyPolicy],
+      context: makeContext(1n, DateTime.makeUnsafe("2026-08-19T12:00:00Z")),
+    });
+
+    expect(seeds.map(({ stateKey }) => stateKey)).toEqual([expectedStateKey]);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("enforces a per-operation allowance without creating durable state", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const operationPolicy = {
+      ...policy,
+      limits: [{ chainId, period: "operation", maxAmount: 3n }],
+    } satisfies EvmNativeSpendLimitPolicy;
+
+    const allowed = yield* evm.policy.reserve({
+      policies: [operationPolicy],
+      context: makeContext(3n),
+      states: [],
+    });
+    const denied = yield* evm.policy.reserve({
+      policies: [operationPolicy],
+      context: makeContext(4n),
+      states: [],
+    });
+
+    expect(allowed).toEqual({
+      decision: { allowed: true },
+      stateChanges: [],
+      reservations: [],
+    });
+    expect(denied.decision).toEqual({
+      allowed: false,
+      policyId,
+      code: "NATIVE_SPEND_LIMIT_EXCEEDED",
+    });
   }).pipe(Effect.provide(Evm.testLayer)),
 );
 
@@ -166,7 +336,7 @@ it.effect("denies native spend when committed and reserved value exhaust the lim
       states: [
         {
           policyId,
-          stateKey: chainId,
+          stateKey: lifetimeStateKey,
           data: { version: 1, spent: "5", reserved: "2" },
         },
       ],
@@ -190,7 +360,7 @@ it.effect("rejects malformed persisted policy state", () =>
         states: [
           {
             policyId,
-            stateKey: chainId,
+            stateKey: lifetimeStateKey,
             data: { version: 1, spent: "invalid", reserved: "0" },
           },
         ],
@@ -211,14 +381,14 @@ it.effect("rejects a persisted reservation with an invalid version", () =>
         states: [
           {
             policyId,
-            stateKey: chainId,
+            stateKey: lifetimeStateKey,
             data: { version: 1, spent: "0", reserved: "1" },
           },
         ],
         reservations: [
           {
             policyId,
-            stateKey: chainId,
+            stateKey: lifetimeStateKey,
             data: { version: 2, amount: "1" },
           },
         ],

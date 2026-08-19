@@ -79,7 +79,13 @@ const authorize = Effect.fnUntraced(function* (options?: { readonly execute?: bo
               {
                 type: "evm.native-spend-limit" as const,
                 version: 1 as const,
-                limits: [{ chainId: "eip155:1" as const, maxAmount: 10n }],
+                limits: [
+                  {
+                    chainId: "eip155:1" as const,
+                    period: "lifetime" as const,
+                    maxAmount: 10n,
+                  },
+                ],
               },
               {
                 type: "evm.signature" as const,

@@ -37,6 +37,11 @@ export interface SessionKeyPolicyStateRepositoryService {
     sessionKeyId: SessionKeyId,
     policyId: PolicyId,
   ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyStateModel>, DatabaseError>;
+  readonly findForScopesForUpdate: (
+    organizationId: OrganizationId,
+    sessionKeyId: SessionKeyId,
+    scopes: ReadonlyArray<{ readonly policyId: PolicyId; readonly stateKey: string }>,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyPolicyStateModel>, DatabaseError>;
   readonly update: (input: {
     readonly id: SessionKeyPolicyStateId;
     readonly organizationId: OrganizationId;
@@ -128,6 +133,28 @@ export class SessionKeyPolicyStateRepository extends Context.Service<
               .orderBy(asc(sessionKeyPolicyState.stateKey))
               .for("update");
             return rows.map((row) => Schema.decodeSync(SessionKeyPolicyState)(row as any));
+          }, mapRepositoryError),
+          findForScopesForUpdate: Effect.fn(
+            "database.sessionKeyPolicyStateRepository.findForScopesForUpdate",
+          )(function* (organizationId, sessionKeyId, scopes) {
+            if (scopes.length === 0) return [];
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* Effect.forEach(scopes, (scope) =>
+              db
+                .select()
+                .from(sessionKeyPolicyState)
+                .where(
+                  and(
+                    eq(sessionKeyPolicyState.organizationId, organizationId),
+                    eq(sessionKeyPolicyState.sessionKeyId, sessionKeyId),
+                    eq(sessionKeyPolicyState.policyId, scope.policyId),
+                    eq(sessionKeyPolicyState.stateKey, scope.stateKey),
+                  ),
+                )
+                .limit(1)
+                .for("update"),
+            );
+            return rows.flat().map((row) => Schema.decodeSync(SessionKeyPolicyState)(row as any));
           }, mapRepositoryError),
           update: Effect.fn("database.sessionKeyPolicyStateRepository.update")(function* ({
             id,
