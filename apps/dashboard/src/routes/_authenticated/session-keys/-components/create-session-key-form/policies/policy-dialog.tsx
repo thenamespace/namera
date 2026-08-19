@@ -73,7 +73,9 @@ export function PolicyDialog({ existingPolicyTypes, namespace, onAdd }: PolicyDi
               <>
                 <Modal.Body className="my-4 grid gap-2 px-0">
                   {policies.map((policy) => {
-                    const isAdded = existingPolicyTypes.includes(policy.type);
+                    const isAdded =
+                      policy.cardinality === "singleton" &&
+                      existingPolicyTypes.includes(policy.type);
 
                     return (
                       <ItemCard className="rounded-lg" key={policy.type} variant="outline">

@@ -136,7 +136,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
     }),
   );
 
-  it.effect("rejects repeated singleton policies and excessive lifetimes", () =>
+  it.effect("rejects repeated singleton policies", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
@@ -173,23 +173,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
         code: "POLICY_CARDINALITY_EXCEEDED",
       });
 
-      expect(
-        yield* client.sessionKey
-          .create({
-            payload: {
-              namespace: "eip155",
-              walletId: wallet.id,
-              metadata: metadata("Excessive lifetime"),
-              policies: [
-                {
-                  ...timeWindow,
-                  expiresAt: DateTime.addDuration(now, Duration.days(366)),
-                },
-              ],
-            },
-          })
-          .pipe(Effect.flip),
-      ).toMatchObject({ _tag: "SessionKeyCreationError", code: "TIME_WINDOW_TOO_LONG" });
       expect(yield* client.sessionKey.listForOrganization()).toEqual([]);
     }),
   );

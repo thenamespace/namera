@@ -4,6 +4,7 @@ export const timeWindowPolicy = {
   type: "evm.time-window",
   name: "Time window",
   description: "Restrict when this session key can be used.",
+  cardinality: "singleton",
   icon: CalendarClockIcon,
 } as const;
 

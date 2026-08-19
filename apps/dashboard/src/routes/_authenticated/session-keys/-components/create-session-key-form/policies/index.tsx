@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
 import { Typography } from "@namera-ai/ui";
 import type { UseFormReturn } from "react-hook-form";
-import { useWatch } from "react-hook-form";
+import { useFieldArray, useWatch } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
@@ -24,6 +24,7 @@ type PolicySectionProps = {
 };
 
 export function PolicySection({ form, wallets }: PolicySectionProps) {
+  const policyFields = useFieldArray({ control: form.control, name: "policies" });
   const walletId = useWatch({ control: form.control, name: "walletId" });
   const watchedPolicies = useWatch({ control: form.control, name: "policies" });
   const policies = watchedPolicies ?? emptyPolicies;
@@ -31,27 +32,13 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
   const namespace = wallet?.namespace as PolicyNamespace | undefined;
   const existingPolicyTypes = useMemo(() => policies.map((policy) => policy.type), [policies]);
   const handleAdd = useEventCallback((policy: SessionKeyPolicyInput) => {
-    form.setValue("policies", [...policies, policy], {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    });
+    policyFields.append(policy, { shouldFocus: false });
   });
   const handleRemove = useEventCallback((index: number) => {
-    form.setValue(
-      "policies",
-      policies.filter((_, policyIndex) => policyIndex !== index),
-      { shouldDirty: true, shouldTouch: true, shouldValidate: true },
-    );
+    policyFields.remove(index);
   });
   const handleChange = useEventCallback((index: number, policy: SessionKeyPolicyInput) => {
-    form.setValue(
-      "policies",
-      policies.map((currentPolicy, policyIndex) =>
-        policyIndex === index ? policy : currentPolicy,
-      ),
-      { shouldDirty: true, shouldTouch: true, shouldValidate: true },
-    );
+    policyFields.update(index, policy);
   });
 
   return (
@@ -82,12 +69,12 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
         </DashboardCardRoot>
       ) : (
         <div className="grid gap-3">
-          {policies.map((policy, index) =>
-            policy.type === "evm.time-window" ? (
+          {policyFields.fields.map((field, index) =>
+            policies[index]?.type === "evm.time-window" ? (
               <TimeWindowPolicyCard
                 index={index}
-                key={policy.type}
-                policy={policy as TimeWindowPolicyInput}
+                key={field.id}
+                policy={policies[index] as TimeWindowPolicyInput}
                 onChange={handleChange}
                 onRemove={handleRemove}
               />

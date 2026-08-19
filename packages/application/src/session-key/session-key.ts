@@ -33,7 +33,6 @@ import { Audit } from "#/audit/layer";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
-import { sessionKeyPolicy } from "./data.js";
 import { hashSessionKeyPolicies } from "./hash.js";
 
 export interface SessionKeyView {
@@ -141,19 +140,6 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
           1,
         );
         return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
-      }
-      const maximumExpiry = DateTime.addDuration(now, sessionKeyPolicy.maximumLifetime);
-      if (
-        timeWindows.some(
-          (policy) =>
-            DateTime.toEpochMillis(policy.expiresAt) > DateTime.toEpochMillis(maximumExpiry),
-        )
-      ) {
-        yield* Metric.update(
-          Metric.withAttributes(creationResults, { result: "time_window_too_long" }),
-          1,
-        );
-        return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_TOO_LONG" });
       }
 
       const wallet = yield* repository.core.wallet.findById(

@@ -1,14 +1,6 @@
 import { Schema } from "effect";
 
 import { SupportedEvmChainId } from "#/evm/chains";
-import {
-  EVM_MAX_AGGREGATE_CALL_DATA_BYTES,
-  EVM_MAX_AGGREGATE_RETURN_DATA_BYTES,
-  EVM_MAX_CALL_DATA_BYTES,
-  EVM_MAX_CALLS,
-  EVM_MAX_RETURN_DATA_BYTES,
-  evmHexByteLength,
-} from "#/evm/limits";
 import { Bytes32, EthereumAddress, Hex } from "#/evm/primitives";
 
 const NonNegativeEvmQuantity = Schema.BigIntFromString.check(
@@ -19,13 +11,7 @@ const EvmQuantity = Schema.BigIntFromString;
 export const EvmIntentCall = Schema.Struct({
   to: EthereumAddress,
   value: NonNegativeEvmQuantity,
-  data: Hex.check(
-    Schema.makeFilter((data) =>
-      evmHexByteLength(data) <= EVM_MAX_CALL_DATA_BYTES
-        ? undefined
-        : { path: [], issue: "Call data may not exceed 32 KiB" },
-    ),
-  ),
+  data: Hex,
 });
 
 export const EvmIntentBlock = Schema.Struct({
@@ -62,24 +48,12 @@ export const EvmUserOperationSimulation = Schema.Struct({
 export const EvmSimulatedCallResult = Schema.Union([
   Schema.Struct({
     status: Schema.Literal("success"),
-    returnData: Hex.check(
-      Schema.makeFilter((data) =>
-        evmHexByteLength(data) <= EVM_MAX_RETURN_DATA_BYTES
-          ? undefined
-          : { path: [], issue: "Return data may not exceed 32 KiB" },
-      ),
-    ),
+    returnData: Hex,
     gasUsed: NonNegativeEvmQuantity,
   }),
   Schema.Struct({
     status: Schema.Literal("failure"),
-    returnData: Hex.check(
-      Schema.makeFilter((data) =>
-        evmHexByteLength(data) <= EVM_MAX_RETURN_DATA_BYTES
-          ? undefined
-          : { path: [], issue: "Return data may not exceed 32 KiB" },
-      ),
-    ),
+    returnData: Hex,
     gasUsed: NonNegativeEvmQuantity,
   }),
 ]);
@@ -108,15 +82,7 @@ export const EvmSimulatedNativeTransfer = Schema.Struct({
 
 export const EvmCallSimulation = Schema.Struct({
   source: Schema.Literal("viem.simulateCalls"),
-  results: Schema.Array(EvmSimulatedCallResult).check(
-    Schema.isMaxLength(EVM_MAX_CALLS, { message: "At most 32 call results are allowed" }),
-    Schema.makeFilter((results) =>
-      results.reduce((total, result) => total + evmHexByteLength(result.returnData), 0) <=
-      EVM_MAX_AGGREGATE_RETURN_DATA_BYTES
-        ? undefined
-        : { path: [], issue: "Aggregate return data may not exceed 128 KiB" },
-    ),
-  ),
+  results: Schema.Array(EvmSimulatedCallResult),
   assetChanges: Schema.Array(EvmSimulatedAssetChange).check(Schema.isMaxLength(256)),
   transfers: Schema.Array(EvmSimulatedNativeTransfer).check(Schema.isMaxLength(256)),
 });
@@ -132,33 +98,13 @@ export const EvmIntentContext = Schema.Struct({
   chainId: SupportedEvmChainId,
   account: EthereumAddress,
   block: EvmIntentBlock,
-  calls: Schema.Array(EvmIntentCall).check(
-    Schema.isMinLength(1),
-    Schema.isMaxLength(EVM_MAX_CALLS),
-    Schema.makeFilter((calls) =>
-      calls.reduce((total, call) => total + evmHexByteLength(call.data), 0) <=
-      EVM_MAX_AGGREGATE_CALL_DATA_BYTES
-        ? undefined
-        : { path: [], issue: "Aggregate call data may not exceed 128 KiB" },
-    ),
-  ),
+  calls: Schema.Array(EvmIntentCall),
   userOperation: EvmIntentUserOperation,
   simulation: EvmIntentSimulation,
-})
-  .check(
-    Schema.makeFilter((context) =>
-      context.simulation.calls.results.length === context.calls.length
-        ? undefined
-        : {
-            path: ["simulation", "calls", "results"],
-            issue: "Simulation results must match the number of calls",
-          },
-    ),
-  )
-  .annotate({
-    identifier: "EvmIntentContext",
-    description: "A normalized EVM execution intent evaluated by offchain policies",
-  });
+}).annotate({
+  identifier: "EvmIntentContext",
+  description: "A normalized EVM execution intent evaluated by offchain policies",
+});
 
 export type EvmIntentCall = typeof EvmIntentCall.Type;
 export type EvmIntentBlock = typeof EvmIntentBlock.Type;

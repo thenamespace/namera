@@ -11,7 +11,6 @@ export class SessionKeyCreationError extends Schema.TaggedError<SessionKeyCreati
   {
     code: Schema.Literals([
       "TIME_WINDOW_EXPIRED",
-      "TIME_WINDOW_TOO_LONG",
       "POLICY_CARDINALITY_EXCEEDED",
       "WALLET_NOT_ACTIVE",
       "WALLET_NAMESPACE_MISMATCH",
