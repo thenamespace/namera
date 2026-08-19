@@ -39,6 +39,8 @@ export type EvmPolicyStateChange = {
   readonly data: SessionKeyPolicyState["data"];
 };
 
+export type EvmPolicyStateSeed = EvmPolicyStateChange;
+
 export type EvmPolicyReservationPlan = {
   readonly policyId: PolicyId;
   readonly stateKey: string;
@@ -75,6 +77,9 @@ export interface EvmPolicyService {
   readonly evaluateSignature: (
     input: EvaluateEvmSignaturePoliciesInput,
   ) => Effect.Effect<EvmSignaturePolicyDecision, EvmPolicyError>;
+  readonly getStateSeeds: (
+    input: EvaluateEvmPoliciesInput,
+  ) => Effect.Effect<ReadonlyArray<EvmPolicyStateSeed>, EvmPolicyError>;
   readonly reserve: (
     input: ReserveEvmPoliciesInput,
   ) => Effect.Effect<ReserveEvmPoliciesResult, EvmPolicyError>;

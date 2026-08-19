@@ -1,6 +1,9 @@
 import { expect, it } from "@effect/vitest";
+import { DateTime } from "effect";
 
-import { evmPolicyRegistry } from "../src/policy/registry.js";
+import { PolicyId, type EvmTimeWindowPolicy } from "@namera-ai/protocol";
+
+import { evmPolicyRegistry, orderEvmPolicies } from "../src/policy/registry.js";
 
 it("declares operation applicability for every current EVM policy", () => {
   expect(evmPolicyRegistry["evm.native-spend-limit"].applicability).toBe("execution");
@@ -20,4 +23,21 @@ it("declares operation applicability for every current EVM policy", () => {
     kind: "stateless",
     grantsAccess: true,
   });
+});
+
+it("uses policy id as a stable tie-breaker within a priority", () => {
+  const earlier = {
+    id: PolicyId.make("01900000-0000-7000-8000-000000000001"),
+    type: "evm.time-window",
+    version: 1,
+    appliesTo: "both",
+    startsAt: DateTime.fromEpochSeconds(0),
+    expiresAt: DateTime.fromEpochSeconds(1),
+  } satisfies EvmTimeWindowPolicy;
+  const later = {
+    ...earlier,
+    id: PolicyId.make("01900000-0000-7000-8000-000000000002"),
+  } satisfies EvmTimeWindowPolicy;
+
+  expect(orderEvmPolicies([later, earlier])).toEqual([earlier, later]);
 });

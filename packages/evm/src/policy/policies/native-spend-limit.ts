@@ -54,6 +54,17 @@ export class EvmNativeSpendLimitPolicyHandler extends PolicyHandler<
   override readonly stateSchema = EvmNativeSpendLimitPolicyState;
   override readonly reservationSchema = EvmNativeSpendLimitPolicyReservation;
 
+  override readonly initialStates = Effect.fn("evm.policy.native-spend-limit.initial-states")(
+    (policy: EvmNativeSpendLimitPolicy, context: EvmIntentContext) => {
+      const configured = policy.limits.some((limit) => limit.chainId === context.chainId);
+      return Effect.succeed(
+        configured
+          ? new Map([[context.chainId, { version: 1 as const, spent: 0n, reserved: 0n }]])
+          : new Map(),
+      );
+    },
+  );
+
   readonly evaluate = Effect.fn("evm.policy.native-spend-limit.evaluate")(
     (
       policy: EvmNativeSpendLimitPolicy,

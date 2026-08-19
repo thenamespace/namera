@@ -18,6 +18,7 @@ import { Evm } from "../src/index.js";
 
 const chainId = Schema.decodeSync(SupportedEvmChainId)("eip155:1");
 const policyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000001");
+const timeWindowPolicyId = Schema.decodeSync(PolicyId)("01900000-0000-7000-8000-000000000002");
 const address = EthereumAddress.make("0x1111111111111111111111111111111111111111");
 
 const policy = {
@@ -137,6 +138,25 @@ it.effect("reserves, settles, and releases native spend", () =>
   }).pipe(Effect.provide(Evm.testLayer)),
 );
 
+it.effect("derives initial state from the registered policy handler", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const seeds = yield* evm.policy.getStateSeeds({
+      policies: [policy],
+      context: makeContext(0n),
+    });
+
+    expect(seeds).toEqual([
+      {
+        policyId,
+        stateKey: chainId,
+        stateVersion: 1,
+        data: { version: 1, spent: "0", reserved: "0" },
+      },
+    ]);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
 it.effect("denies native spend when committed and reserved value exhaust the limit", () =>
   Effect.gen(function* () {
     const evm = yield* Evm;
@@ -253,5 +273,31 @@ it.effect("treats time-window expiration as an exclusive boundary", () =>
 
     expect(allowed).toEqual({ allowed: true });
     expect(expired).toEqual({ allowed: false, policyId, code: "TIME_WINDOW_EXPIRED" });
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it.effect("evaluates policy denials in registry priority order", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const timeWindow = {
+      id: timeWindowPolicyId,
+      type: "evm.time-window",
+      version: 1,
+      appliesTo: "both",
+      startsAt: DateTime.fromEpochSeconds(0),
+      expiresAt: DateTime.fromEpochSeconds(1),
+    } satisfies EvmTimeWindowPolicy;
+    const context = makeContext(11n);
+
+    const first = yield* evm.policy.evaluate({ policies: [policy, timeWindow], context });
+    const second = yield* evm.policy.evaluate({ policies: [timeWindow, policy], context });
+
+    const expected = {
+      allowed: false,
+      policyId: timeWindowPolicyId,
+      code: "TIME_WINDOW_EXPIRED",
+    } as const;
+    expect(first).toEqual(expected);
+    expect(second).toEqual(expected);
   }).pipe(Effect.provide(Evm.testLayer)),
 );

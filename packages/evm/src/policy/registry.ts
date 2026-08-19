@@ -25,6 +25,7 @@ import type {
   EvmPolicyReservationPlan,
   EvmPolicyStateChange,
   EvmPolicyStateInput,
+  EvmPolicyStateSeed,
   ReserveEvmPoliciesResult,
 } from "./types.js";
 
@@ -40,6 +41,10 @@ type StatefulExecutionPolicyHandler<Policy extends EvmSessionKeyPolicy, State, R
   readonly type: Policy["type"];
   readonly stateSchema: Schema.Codec<State, unknown, never, never>;
   readonly reservationSchema: Schema.Codec<Reservation, unknown, never, never>;
+  readonly initialStates: (
+    policy: Policy,
+    context: EvmIntentContext,
+  ) => Effect.Effect<ReadonlyMap<string, State>, EvmPolicyError>;
   readonly evaluate: (
     policy: Policy,
     context: EvmIntentContext,
@@ -84,6 +89,10 @@ export type EvmExecutionPolicyOperation =
         policy: EvmSessionKeyPolicy,
         context: EvmIntentContext,
       ) => Effect.Effect<EvmPolicyDecision, EvmPolicyError>;
+      readonly getStateSeeds: (
+        policy: EvmSessionKeyPolicy,
+        context: EvmIntentContext,
+      ) => Effect.Effect<ReadonlyArray<EvmPolicyStateSeed>, EvmPolicyError>;
       readonly reserve: (
         policy: EvmSessionKeyPolicy,
         context: EvmIntentContext,
@@ -116,6 +125,7 @@ export type EvmSignaturePolicyOperation =
 export type EvmPolicyDefinition<Type extends EvmPolicyType = EvmPolicyType> = {
   readonly type: Type;
   readonly applicability: PolicyApplicability;
+  readonly priority: number;
   readonly execution: EvmExecutionPolicyOperation;
   readonly signature: EvmSignaturePolicyOperation;
 };
@@ -268,6 +278,11 @@ export const executionStateful = <Policy extends EvmSessionKeyPolicy, State, Res
     Effect.sync(() => getRegisteredPolicy(handler, policy)).pipe(
       Effect.flatMap((registeredPolicy) => handler.evaluate(registeredPolicy, context)),
     ),
+  getStateSeeds: (policy, context) =>
+    Effect.sync(() => getRegisteredPolicy(handler, policy)).pipe(
+      Effect.flatMap((registeredPolicy) => handler.initialStates(registeredPolicy, context)),
+      Effect.flatMap((states) => encodeStates(policy, states, handler.stateSchema)),
+    ),
   reserve: Effect.fn("evm.policy.registry.reserve")(function* (policy, context, stateInputs) {
     const registeredPolicy = getRegisteredPolicy(handler, policy);
     const states = yield* decodeStates(registeredPolicy, stateInputs, handler.stateSchema);
@@ -338,18 +353,21 @@ export const evmPolicyRegistry = {
   "evm.native-spend-limit": {
     type: "evm.native-spend-limit",
     applicability: "execution",
+    priority: 500,
     execution: executionStateful(nativeSpendLimitHandler),
     signature: notApplicable,
   },
   "evm.time-window": {
     type: "evm.time-window",
     applicability: "both",
+    priority: 100,
     execution: executionStateless(timeWindowHandler),
     signature: signatureStateless(timeWindowSignatureHandler, { grantsAccess: false }),
   },
   "evm.signature": {
     type: "evm.signature",
     applicability: "signature",
+    priority: 600,
     execution: notApplicable,
     signature: signatureStateless(signatureHandler, { grantsAccess: true }),
   },
@@ -367,3 +385,10 @@ export const getEvmPolicyDefinitionFor = (policy: EvmSessionKeyPolicy): EvmPolic
   }
   return definition;
 };
+
+export const orderEvmPolicies = (policies: ReadonlyArray<EvmSessionKeyPolicy>) =>
+  policies.toSorted((left, right) => {
+    const priorityDifference =
+      getEvmPolicyDefinitionFor(left).priority - getEvmPolicyDefinitionFor(right).priority;
+    return priorityDifference === 0 ? left.id.localeCompare(right.id) : priorityDifference;
+  });

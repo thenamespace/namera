@@ -1,11 +1,16 @@
 import { Effect } from "effect";
 
-import { getEvmPolicyDefinitionFor } from "./registry.js";
-import type { EvmPolicyReservationPlan, EvmPolicyService, EvmPolicyStateChange } from "./types.js";
+import { getEvmPolicyDefinitionFor, orderEvmPolicies } from "./registry.js";
+import type {
+  EvmPolicyReservationPlan,
+  EvmPolicyService,
+  EvmPolicyStateChange,
+  EvmPolicyStateSeed,
+} from "./types.js";
 
 export const makeEvmPolicyService = (): EvmPolicyService => ({
   evaluate: Effect.fn("evm.policy.evaluate")(function* (input) {
-    for (const policy of input.policies) {
+    for (const policy of orderEvmPolicies(input.policies)) {
       const operation = getEvmPolicyDefinitionFor(policy).execution;
       if (operation.kind === "not-applicable") continue;
 
@@ -16,7 +21,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
     return { allowed: true };
   }),
   evaluateSignature: Effect.fn("evm.policy.evaluateSignature")(function* (input) {
-    const operations = input.policies.map((policy) => ({
+    const operations = orderEvmPolicies(input.policies).map((policy) => ({
       policy,
       operation: getEvmPolicyDefinitionFor(policy).signature,
     }));
@@ -35,11 +40,20 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
 
     return { allowed: true };
   }),
+  getStateSeeds: Effect.fn("evm.policy.getStateSeeds")(function* (input) {
+    const seeds: Array<EvmPolicyStateSeed> = [];
+    for (const policy of orderEvmPolicies(input.policies)) {
+      const operation = getEvmPolicyDefinitionFor(policy).execution;
+      if (operation.kind !== "stateful") continue;
+      seeds.push(...(yield* operation.getStateSeeds(policy, input.context)));
+    }
+    return seeds;
+  }),
   reserve: Effect.fn("evm.policy.reserve")(function* (input) {
     const stateChanges: Array<EvmPolicyStateChange> = [];
     const reservations: Array<EvmPolicyReservationPlan> = [];
 
-    for (const policy of input.policies) {
+    for (const policy of orderEvmPolicies(input.policies)) {
       const operation = getEvmPolicyDefinitionFor(policy).execution;
       if (operation.kind === "not-applicable") continue;
       if (operation.kind === "stateless") {
@@ -62,7 +76,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
   }),
   settle: Effect.fn("evm.policy.settle")(function* (input) {
     const stateChanges: Array<EvmPolicyStateChange> = [];
-    for (const policy of input.policies) {
+    for (const policy of orderEvmPolicies(input.policies)) {
       const operation = getEvmPolicyDefinitionFor(policy).execution;
       if (operation.kind !== "stateful") continue;
 
@@ -74,7 +88,7 @@ export const makeEvmPolicyService = (): EvmPolicyService => ({
   }),
   release: Effect.fn("evm.policy.release")(function* (input) {
     const stateChanges: Array<EvmPolicyStateChange> = [];
-    for (const policy of input.policies) {
+    for (const policy of orderEvmPolicies(input.policies)) {
       const operation = getEvmPolicyDefinitionFor(policy).execution;
       if (operation.kind !== "stateful") continue;
 

@@ -26,6 +26,11 @@ export abstract class PolicyHandler<
   readonly stateSchema?: Schema.Schema<State>;
   readonly reservationSchema?: Schema.Schema<Reservation>;
 
+  readonly initialStates?: (
+    policy: Policy,
+    context: Context,
+  ) => Effect.Effect<ReadonlyMap<string, State>, Error, Requirements>;
+
   abstract readonly evaluate: (
     policy: Policy,
     context: Context,
