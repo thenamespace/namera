@@ -46,6 +46,7 @@ application contracts are the extension point for future chain families.
 ### Engineering
 
 - [Repository and package boundaries](engineering/repository.md)
+- [Package-by-package ownership and extension guide](packages/README.md)
 - [Feature development](engineering/development.md)
 - [Testing](engineering/testing.md)
 
