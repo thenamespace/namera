@@ -87,11 +87,15 @@ const program = Effect.gen(function* () {
 
 `Application.layer` is the only application layer provided by the server.
 
-Organization creation initializes an active free billing subscription in its
-existing transaction. Quota-sensitive workflows lock the organization billing
-account, resolve the stored plan/version through `billingPlans`, check current
-usage, and create the resource before that transaction commits. Pending
-invitations reserve member capacity. See
+Organization creation initializes a providerless billing account, active Free
+v1 subscription, one-month organization-anniversary period, and one balance per
+Free meter in its existing transaction. The period begins at the organization's
+exact creation instant rather than a calendar-month boundary. Quota-sensitive
+workflows currently lock the organization billing account, resolve the stored
+plan/version through the Free-only registry, derive current usage from domain
+rows, and create the resource before that transaction commits. Pending
+invitations reserve member capacity. Transactional meter reservation and
+settlement are the next billing integration boundary. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 

@@ -323,17 +323,21 @@ The `billing` schema keeps plan state separate from organization identity:
 - `provider_event` is an idempotent provider-webhook inbox keyed by provider and
   provider event ID.
 
-Free subscriptions need no provider identifiers or subscription items, but the
-new metering workflow will give every active subscription a period so all plans
-share one allowance model. Plan, component, and meter definitions live in the
+Free subscriptions need no provider identifiers or subscription items. Every
+new organization receives an active Free subscription, an organization-anniversary
+period, and one balance for each enabled meter so all plans share one allowance
+model. Plan, component, and meter definitions live in the
 code-owned catalog documented in the
 [billing architecture](../../architecture/billing/README.md). Meter keys are row
 dimensions; adding a supported meter does not add fixed usage columns.
 
 The billing repository aggregate exposes account creation/lookup/locking,
-current-subscription lookup, and a usage read model. Quota-sensitive application
-transactions lock `billing.account` before reading usage so concurrent writes for
-one organization are serialized without globally locking other organizations.
-Repositories and workflows for the new period, meter, reservation, ledger, and
-delivery tables remain to be implemented; current quota reads still derive
-usage from domain operation rows.
+current-subscription lookup, period and balance access, subscription-item
+lifecycle, idempotent reservation and ledger insertion, outbound-delivery
+lifecycle, provider-event inbox lifecycle, and the existing usage read model.
+All repository operations use the ambient transaction when present.
+Quota-sensitive application transactions lock `billing.account` before reading
+usage so concurrent writes for one organization are serialized without globally
+locking other organizations. Transactional metering workflows and period
+rollover remain application work; current quota reads still derive usage from
+domain operation rows.

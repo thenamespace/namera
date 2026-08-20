@@ -1,50 +1,73 @@
-import type { BillingPlan, BillingPlanLimits } from "@namera-ai/protocol/model";
+import type {
+  BillingMeterKey,
+  BillingMeterUnit,
+  BillingPlanLimits,
+} from "@namera-ai/protocol/model";
 
+export interface BillingMeterDefinition {
+  readonly key: BillingMeterKey;
+  readonly version: number;
+  readonly unit: BillingMeterUnit;
+  readonly includedAmount: bigint;
+  readonly hardLimitAmount: bigint | null;
+}
+
+const freeResourceLimits = {
+  maxMembers: 5,
+  maxSoftwareWallets: 5,
+  maxHsmWallets: 0,
+} as const;
+
+const freeMeters = {
+  "execution.mainnet": {
+    key: "execution.mainnet",
+    version: 1,
+    unit: "operation",
+    includedAmount: 100n,
+    hardLimitAmount: 100n,
+  },
+  "execution.testnet": {
+    key: "execution.testnet",
+    version: 1,
+    unit: "operation",
+    includedAmount: 10_000n,
+    hardLimitAmount: 10_000n,
+  },
+  signature: {
+    key: "signature",
+    version: 1,
+    unit: "operation",
+    includedAmount: 10_000n,
+    hardLimitAmount: 10_000n,
+  },
+  "gas-sponsorship": {
+    key: "gas-sponsorship",
+    version: 1,
+    unit: "micro-usd",
+    includedAmount: 5_000_000n,
+    hardLimitAmount: 5_000_000n,
+  },
+} as const satisfies Readonly<Record<BillingMeterKey, BillingMeterDefinition>>;
+
+export const freeBillingPlan = {
+  key: "free",
+  version: 1,
+  period: {
+    type: "monthly-anniversary",
+    months: 1,
+  },
+  resources: freeResourceLimits,
+  meters: freeMeters,
+  // Preserve the current public billing response until it is upgraded to the
+  // normalized meter read model. Values are derived from the same registry.
+  limits: {
+    ...freeResourceLimits,
+    includedExecutions: Number(freeMeters["execution.mainnet"].includedAmount),
+    includedSignatures: Number(freeMeters.signature.includedAmount),
+  } satisfies BillingPlanLimits,
+} as const;
+
+/** Only Free v1 is assignable until paid-plan workflows are implemented. */
 export const billingPlans = {
-  free: {
-    version: 1,
-    monthlyPriceUsd: 0,
-    executionOveragePriceUsd: null,
-    limits: {
-      maxMembers: 5,
-      maxSoftwareWallets: 5,
-      maxHsmWallets: 0,
-      includedExecutions: 100,
-      includedSignatures: 10_000,
-    },
-  },
-  pro: {
-    version: 1,
-    monthlyPriceUsd: 49,
-    executionOveragePriceUsd: 0.02,
-    limits: {
-      maxMembers: 20,
-      maxSoftwareWallets: 20,
-      maxHsmWallets: 3,
-      includedExecutions: 2_000,
-      includedSignatures: 250_000,
-    },
-  },
-  business: {
-    version: 1,
-    monthlyPriceUsd: 249,
-    executionOveragePriceUsd: 0.02,
-    limits: {
-      maxMembers: 100,
-      maxSoftwareWallets: 100,
-      maxHsmWallets: 10,
-      includedExecutions: 10_000,
-      includedSignatures: 1_000_000,
-    },
-  },
-} as const satisfies Readonly<
-  Record<
-    BillingPlan,
-    {
-      readonly version: number;
-      readonly monthlyPriceUsd: number;
-      readonly executionOveragePriceUsd: number | null;
-      readonly limits: BillingPlanLimits;
-    }
-  >
->;
+  free: freeBillingPlan,
+} as const;

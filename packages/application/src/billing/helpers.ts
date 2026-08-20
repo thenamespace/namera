@@ -8,16 +8,18 @@ import type {
   WalletKeyProtectionLevel,
 } from "@namera-ai/protocol/model";
 
-import { billingPlans } from "./data.js";
+import { freeBillingPlan } from "./data.js";
 
 export const resolveBillingPlan = (subscription: BillingSubscription) => {
-  const plan = billingPlans[subscription.plan];
-  if (plan.version !== subscription.planVersion) {
+  if (
+    subscription.plan !== freeBillingPlan.key ||
+    subscription.planVersion !== freeBillingPlan.version
+  ) {
     throw new Error(
       `Unsupported billing plan version: ${subscription.plan}@${subscription.planVersion}`,
     );
   }
-  return plan;
+  return freeBillingPlan;
 };
 
 export const lockOrganizationBilling = Effect.fn("application.lockOrganizationBilling")(function* (

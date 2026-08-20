@@ -21,8 +21,15 @@ import {
 } from "#/repositories/auth/index";
 import {
   BillingAccountRepository,
+  BillingMeterBalanceRepository,
+  BillingPeriodRepository,
+  BillingProviderEventRepository,
   BillingSubscriptionRepository,
+  BillingSubscriptionItemRepository,
+  BillingUsageDeliveryRepository,
+  BillingUsageEventRepository,
   BillingUsageRepository,
+  BillingUsageReservationRepository,
 } from "#/repositories/billing/index";
 import {
   ExecutionRepository,
@@ -67,7 +74,14 @@ export interface RepositoryService {
   };
   billing: {
     account: BillingAccountRepository["Service"];
+    meterBalance: BillingMeterBalanceRepository["Service"];
+    period: BillingPeriodRepository["Service"];
+    providerEvent: BillingProviderEventRepository["Service"];
     subscription: BillingSubscriptionRepository["Service"];
+    subscriptionItem: BillingSubscriptionItemRepository["Service"];
+    usageDelivery: BillingUsageDeliveryRepository["Service"];
+    usageEvent: BillingUsageEventRepository["Service"];
+    usageReservation: BillingUsageReservationRepository["Service"];
     usage: BillingUsageRepository["Service"];
   };
   core: {
@@ -117,7 +131,14 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const notification = yield* NotificationRepository;
       const notificationPreference = yield* NotificationPreferenceRepository;
       const billingAccount = yield* BillingAccountRepository;
+      const billingMeterBalance = yield* BillingMeterBalanceRepository;
+      const billingPeriod = yield* BillingPeriodRepository;
+      const billingProviderEvent = yield* BillingProviderEventRepository;
       const billingSubscription = yield* BillingSubscriptionRepository;
+      const billingSubscriptionItem = yield* BillingSubscriptionItemRepository;
+      const billingUsageDelivery = yield* BillingUsageDeliveryRepository;
+      const billingUsageEvent = yield* BillingUsageEventRepository;
+      const billingUsageReservation = yield* BillingUsageReservationRepository;
       const billingUsage = yield* BillingUsageRepository;
       const wallet = yield* WalletRepository;
       const walletKey = yield* WalletKeyRepository;
@@ -155,7 +176,14 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         billing: {
           account: billingAccount,
+          meterBalance: billingMeterBalance,
+          period: billingPeriod,
+          providerEvent: billingProviderEvent,
           subscription: billingSubscription,
+          subscriptionItem: billingSubscriptionItem,
+          usageDelivery: billingUsageDelivery,
+          usageEvent: billingUsageEvent,
+          usageReservation: billingUsageReservation,
           usage: billingUsage,
         },
         core: {
@@ -202,7 +230,14 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         NotificationRepository.layer,
         NotificationPreferenceRepository.layer,
         BillingAccountRepository.layer,
+        BillingMeterBalanceRepository.layer,
+        BillingPeriodRepository.layer,
+        BillingProviderEventRepository.layer,
         BillingSubscriptionRepository.layer,
+        BillingSubscriptionItemRepository.layer,
+        BillingUsageDeliveryRepository.layer,
+        BillingUsageEventRepository.layer,
+        BillingUsageReservationRepository.layer,
         BillingUsageRepository.layer,
         SessionKeyRepository.layer,
         SessionKeyGrantRepository.layer,

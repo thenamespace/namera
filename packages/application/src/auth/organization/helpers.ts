@@ -61,7 +61,7 @@ export const createOrganizationWithOwner = Effect.fn("application.createOrganiza
       metadata: { version: 1, name },
     });
 
-    yield* initializeOrganizationBilling(repository, organization.id);
+    yield* initializeOrganizationBilling(repository, organization.id, organization.createdAt);
 
     const roles = yield* Effect.forEach(availableRoles, (role) =>
       repository.auth.role.insert({

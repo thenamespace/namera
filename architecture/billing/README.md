@@ -4,10 +4,11 @@ Billing is organization-scoped. Namera owns product access, quota decisions,
 usage evidence, and plan definitions. A payment provider owns payment methods,
 invoices, tax, collection, and the provider-side subscription representation.
 
-This document describes the target billing persistence foundation. The protocol
-schemas, Drizzle tables, relations, constraints, and migration exist. The
-existing application quota workflows still use their derived domain-row usage
-model until the repositories and transactional metering workflows are wired.
+This document describes the billing persistence foundation and its current
+application boundary. The protocol schemas, Drizzle tables, relations,
+constraints, migration, repositories, Free plan registry, and organization
+initialization are implemented. Existing quota-sensitive workflows still use
+their derived domain-row usage model until transactional metering is wired.
 
 ## Design principles
 
@@ -30,7 +31,9 @@ model until the repositories and transactional metering workflows are wired.
 ### Plans
 
 The plan catalog maps `(plan, planVersion)` to commercial and entitlement
-configuration. The stable plan keys are `free`, `pro`, and `business`. A version
+configuration. Only `free@1` is currently assignable. The protocol reserves the
+future `pro` and `business` keys, but they are intentionally absent from the
+assignable application registry until paid-plan workflows exist. A version
 change creates a new immutable definition; historical periods continue to
 reference the version under which their usage occurred.
 
@@ -44,6 +47,24 @@ A plan definition is expected to describe:
 - included and overage-priced signatures;
 - included gas sponsorship measured in micro-USD;
 - whether a meter has a hard product limit or allows paid overage.
+
+### Free v1
+
+Free v1 uses a one-month organization-anniversary period. All included amounts
+are also hard limits because Free has no overage path.
+
+| Resource or meter    | Included | Hard limit | Unit      |
+| -------------------- | -------: | ---------: | --------- |
+| Organization members |        5 |          5 | resource  |
+| Software wallets     |        5 |          5 | resource  |
+| HSM wallets          |        0 |          0 | resource  |
+| Mainnet executions   |      100 |        100 | operation |
+| Testnet executions   |   10,000 |     10,000 | operation |
+| Signatures           |   10,000 |     10,000 | operation |
+| Sponsored gas        |    $5.00 |      $5.00 | micro-USD |
+
+The gas meter stores `$5.00` as `5,000,000` micro-USD. Meter versions and units
+are part of the registry and are snapshotted into each period balance.
 
 ### Subscription component keys
 
@@ -115,11 +136,13 @@ so the inbox first records the event and the worker resolves its target later.
 
 ## Subscription and period lifecycle
 
-Organization creation currently inserts a providerless billing account and an
-active Free subscription in the same transaction. Under the new metering
-workflow, every active subscription—including Free—also receives an open
-billing period. The period snapshots the selected plan and version so a later
-catalog change cannot rewrite historical entitlement meaning.
+Organization creation inserts a providerless billing account, an active Free
+subscription, its first open period, and one balance for each Free meter in the
+same transaction as the organization and owner membership. The first period
+starts at the organization's exact `createdAt` instant and ends one calendar
+month later. It does not align to a UTC calendar-month boundary. The period
+snapshots the selected plan and version so a later catalog change cannot
+rewrite historical entitlement meaning.
 
 At rollover:
 
@@ -239,21 +262,25 @@ Implemented:
 - code-owned component, meter, unit, and source discriminators;
 - Drizzle tables, tenant-safe relations, checks, indexes, and migration;
 - test-database reset ordering;
-- existing Free account/subscription initialization and derived quota reads.
+- a code-owned, Free-only v1 plan and meter registry;
+- transaction-aware repositories for every billing table;
+- atomic Free account, subscription, anniversary-period, and meter-balance
+  initialization during organization creation;
+- existing derived quota reads and public billing response.
 
 Not yet wired:
 
-- period initialization and rollover;
-- meter-balance repositories and transactional reserve/settle/release service;
-- immutable event creation and reconciliation;
+- anniversary-period rollover;
+- transactional reserve/settle/release application workflows and balance
+  projection updates;
+- immutable event creation from execution, signature, and gas workflows;
+- ledger-to-balance reconciliation;
 - provider delivery worker;
 - Stripe customer, Checkout, portal, price mapping, and webhook processing;
 - billing audit events, metrics, operational alerts, and dashboard UI.
 
 ## Pending before production
 
-- Implement repositories for periods, balances, reservations, events,
-  deliveries, subscription items, and provider events.
 - Replace derived execution/signature counters with transactional metering while
   retaining domain-row reconciliation queries.
 - Define the production catalog, price mappings, overage rounding, proration,
