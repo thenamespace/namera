@@ -2,6 +2,7 @@ export * from "./cta";
 export * from "./faqs";
 export * from "./features";
 export * from "./hero";
+export * from "./how-it-works";
 export * from "./industries";
 export * from "./integrate";
 export * from "./mcp-section";

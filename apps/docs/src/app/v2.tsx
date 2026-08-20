@@ -2,34 +2,30 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Navbar } from "@/components";
 import { Footer } from "@/components/footer";
+import { Integrate, McpSection, SessionKeys } from "@/sections";
 import {
+  BoundedAutonomy,
+  ControlPlane,
   Cta,
+  Demos,
   Faqs,
   Features,
   Hero,
   HowItWorks,
-  Industries,
-  Integrate,
-  McpSection,
-  Products,
-  SessionKeys,
-  UseCases,
-  WhyNamera,
-} from "@/sections";
+} from "@/sections/v2";
 
-const Home = () => {
+const HomeV2 = () => {
   return (
     <div className="min-h-screen bg-[#08090a]">
       <Navbar />
       <Hero />
       <HowItWorks />
-      <Products />
+      <ControlPlane />
       <SessionKeys />
       <Features />
-      <WhyNamera />
+      <BoundedAutonomy />
       <McpSection />
-      <UseCases />
-      <Industries />
+      <Demos />
       <Integrate />
       <Faqs />
       <Cta />
@@ -38,4 +34,4 @@ const Home = () => {
   );
 };
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/v2")({ component: HomeV2 });

@@ -27,26 +27,25 @@ export const Hero = () => {
       <div className="relative max-w-7xl mx-auto flex flex-col gap-6 px-4 ">
         <div className="flex flex-col gap-7 text-center sm:text-left">
           <h1 className="pb-2 text-4xl leading-[0.96] sm:text-5xl md:text-6xl lg:text-7xl md:leading-[0.92] text-balance tracking-tight font-medium heading-gradient">
-            Programmable wallets
+            Let agents spend money
             <br />
-            for autonomous agents
+            without full wallet access
           </h1>
           <p className="text-muted-foreground text-sm font-normal md:text-base max-w-4xl mx-auto sm:mx-0">
-            Permissions and policy layer that gives agents and apps scoped
-            access to smart wallets.
-            <br />
-            Safe delegation for automation, multi-chain execution, and agentic
-            workflows.
+            Namera issues scoped, revocable financial permissions to AI agents:
+            spend limits, contract allowlists, rate limits, and expiry, all
+            enforced onchain.
           </p>
           <ButtonGroup className="max-w-full overflow-x-auto">
-            <span
-              className={cn(
-                buttonVariants({ size: "xl", variant: "outline" }),
-                "rounded-r-none hover:bg-background! hover:text-muted-foreground rounded-l-xl",
-              )}
+            <Button
+              className="rounded-r-none rounded-l-xl group pl-4"
+              render={<Link to="/docs/$" />}
+              size="xl"
+              variant="outline"
             >
-              Get Started
-            </span>
+              Start with x402 guardrails
+              <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-all" />
+            </Button>
             <Button
               className="rounded-none"
               onClick={() => copy("npm i -g @namera-ai/cli")}
@@ -63,15 +62,14 @@ export const Hero = () => {
               )}
             </Button>
 
-            <Button
-              className="rounded-xl rounded-l-none group pr-4"
-              render={<Link to="/docs/$" />}
-              size="xl"
-              variant="outline"
+            <span
+              className={cn(
+                buttonVariants({ size: "xl", variant: "outline" }),
+                "rounded-l-none hover:bg-background! hover:text-muted-foreground rounded-r-xl",
+              )}
             >
-              Docs
-              <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-all" />
-            </Button>
+              View demo
+            </span>
           </ButtonGroup>
         </div>
         {/* Video container with glowing border + fade mask */}
