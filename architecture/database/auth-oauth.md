@@ -53,7 +53,7 @@ Short-lived consent transaction. It binds client, redirect URI, PKCE, resource, 
 | Column                  | PostgreSQL type | Required | Default   | Description                                         |
 | ----------------------- | --------------- | -------- | --------- | --------------------------------------------------- |
 | `id`                    | `text`          | Yes      | UUIDv7    | Request identifier used by the authorization UI.    |
-| `client_id`             | `text`          | Yes      | —         | Requesting OAuth client.                            |
+| `client_id`             | `text`          | Yes      | —         | Internal `auth.oauth_client.id` of the requester.   |
 | `user_id`               | `text`          | No       | `NULL`    | Authenticated user after browser resolution.        |
 | `organization_id`       | `text`          | No       | `NULL`    | Organization selected during consent.               |
 | `redirect_uri`          | `text`          | Yes      | —         | Exact validated callback URI.                       |
@@ -76,7 +76,7 @@ Short-lived consent transaction. It binds client, redirect URI, PKCE, resource, 
 
 ### Foreign keys
 
-- `client_id` → `auth.oauth_client.client_id`, `ON DELETE RESTRICT`.
+- `client_id` → `auth.oauth_client.id`, `ON DELETE RESTRICT`.
 - `user_id` → `auth.user.id`, `ON DELETE RESTRICT`.
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 
@@ -100,7 +100,7 @@ Durable user-approved grant. It owns the non-human actor used by downstream auth
 | `id`                     | `text`          | Yes      | UUIDv7   | Authorization identifier.                         |
 | `organization_id`        | `text`          | Yes      | —        | Tenant granting access.                           |
 | `actor_id`               | `text`          | Yes      | —        | `mcp` or `cli` actor representing the client.     |
-| `client_id`              | `text`          | Yes      | —        | OAuth client.                                     |
+| `client_id`              | `text`          | Yes      | —        | Internal OAuth client row ID.                     |
 | `type`                   | `text`          | Yes      | —        | Dashboard classification: `mcp` or `cli`.         |
 | `authorized_by_actor_id` | `text`          | Yes      | —        | User actor that approved the grant.               |
 | `scopes`                 | `jsonb`         | Yes      | —        | Approved scope set, never broader than requested. |
@@ -124,7 +124,7 @@ Durable user-approved grant. It owns the non-human actor used by downstream auth
 ### Foreign keys
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
-- `client_id` → `auth.oauth_client.client_id`, `ON DELETE RESTRICT`.
+- `client_id` → `auth.oauth_client.id`, `ON DELETE RESTRICT`.
 - (`actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 - (`authorized_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 - (`revoked_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
@@ -147,7 +147,7 @@ Single-use authorization-code credential bound to its client, redirect URI, PKCE
 | ----------------------- | --------------- | -------- | ------- | ----------------------------------------------- |
 | `id`                    | `text`          | Yes      | UUIDv7  | Code-row identifier.                            |
 | `authorization_id`      | `text`          | Yes      | —       | Durable approved grant.                         |
-| `client_id`             | `text`          | Yes      | —       | Client that may redeem the code.                |
+| `client_id`             | `text`          | Yes      | —       | Internal client row ID allowed to redeem.       |
 | `code_hash`             | `text`          | Yes      | —       | Digest of the raw authorization code.           |
 | `redirect_uri`          | `text`          | Yes      | —       | Redirect URI that must match during redemption. |
 | `code_challenge`        | `text`          | Yes      | —       | Original PKCE challenge.                        |
@@ -165,7 +165,7 @@ Single-use authorization-code credential bound to its client, redirect URI, PKCE
 
 ### Foreign keys
 
-- `client_id` → `auth.oauth_client.client_id`, `ON DELETE RESTRICT`.
+- `client_id` → `auth.oauth_client.id`, `ON DELETE RESTRICT`.
 - (`authorization_id`, `client_id`) → (`auth.oauth_authorization.id`, `client_id`), `ON DELETE RESTRICT`.
 
 ### Checks
@@ -183,7 +183,7 @@ RFC-style device flow state. The raw device code and displayed user code are rep
 | Column                     | PostgreSQL type | Required | Default   | Description                                                |
 | -------------------------- | --------------- | -------- | --------- | ---------------------------------------------------------- |
 | `id`                       | `text`          | Yes      | UUIDv7    | Device authorization identifier.                           |
-| `client_id`                | `text`          | Yes      | —         | CLI/device client.                                         |
+| `client_id`                | `text`          | Yes      | —         | Internal CLI/device client row ID.                         |
 | `device_code_hash`         | `text`          | Yes      | —         | Digest of the high-entropy polling credential.             |
 | `user_code_hmac`           | `text`          | Yes      | —         | Keyed digest of the short human-entered code.              |
 | `claimed_by_user_id`       | `text`          | No       | `NULL`    | User who opened and claimed the code.                      |
@@ -211,7 +211,7 @@ RFC-style device flow state. The raw device code and displayed user code are rep
 
 ### Foreign keys
 
-- `client_id` → `auth.oauth_client.client_id`, `ON DELETE RESTRICT`.
+- `client_id` → `auth.oauth_client.id`, `ON DELETE RESTRICT`.
 - `claimed_by_user_id` → `auth.user.id`, `ON DELETE RESTRICT`.
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 - (`authorization_id`, `organization_id`) → (`auth.oauth_authorization.id`, `organization_id`), `ON DELETE RESTRICT`.
@@ -235,7 +235,7 @@ Hashed access or refresh credential. Refresh tokens form a rotation family using
 | ------------------ | --------------- | -------- | ------- | ----------------------------------------------------------- |
 | `id`               | `text`          | Yes      | UUIDv7  | Token record identifier.                                    |
 | `authorization_id` | `text`          | Yes      | —       | Durable grant that owns the token.                          |
-| `client_id`        | `text`          | Yes      | —       | Bound OAuth client.                                         |
+| `client_id`        | `text`          | Yes      | —       | Internal bound OAuth client row ID.                         |
 | `type`             | `text`          | Yes      | —       | `access` or `refresh`.                                      |
 | `token_hash`       | `text`          | Yes      | —       | Digest of the bearer credential.                            |
 | `family_id`        | `text`          | No       | `NULL`  | Refresh rotation family identifier.                         |
@@ -255,7 +255,7 @@ Hashed access or refresh credential. Refresh tokens form a rotation family using
 
 ### Foreign keys
 
-- `client_id` → `auth.oauth_client.client_id`, `ON DELETE RESTRICT`.
+- `client_id` → `auth.oauth_client.id`, `ON DELETE RESTRICT`.
 - (`authorization_id`, `client_id`) → (`auth.oauth_authorization.id`, `client_id`), `ON DELETE RESTRICT`.
 - `parent_id` → `auth.oauth_token.id`, `ON DELETE RESTRICT`.
 
