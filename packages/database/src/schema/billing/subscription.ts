@@ -1,7 +1,16 @@
 import type { BillingSubscriptionId, OrganizationId } from "@namera-ai/protocol";
 import type { BillingSubscription, BillingSubscriptionEncoded } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  text,
+  unique,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId, timestamps } from "#/schema/common";
 
@@ -29,6 +38,7 @@ export const billingSubscription = billingSchema.table(
     ...timestamps,
   },
   (table) => [
+    unique("billing_subscription_id_organization_unique").on(table.id, table.organizationId),
     uniqueIndex("billing_subscription_current_organization_uidx")
       .on(table.organizationId)
       .where(sql`${table.status} IN ('trialing', 'active', 'past_due')`),

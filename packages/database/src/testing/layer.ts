@@ -13,8 +13,14 @@ import {
   apiKey,
   actor,
   billingAccount,
+  billingMeterBalance,
+  billingPeriod,
   billingProviderEvent,
   billingSubscription,
+  billingSubscriptionItem,
+  billingUsageDelivery,
+  billingUsageEvent,
+  billingUsageReservation,
   emailJob,
   execution,
   executionSubmission,
@@ -87,6 +93,12 @@ export class TestDatabase extends Context.Service<
           yield* database.delete(oauthToken);
           yield* database.delete(oauthAuthorizationCode);
           yield* database.delete(oauthDeviceAuthorization);
+          yield* database.delete(billingUsageDelivery);
+          yield* database.delete(billingUsageEvent);
+          yield* database.delete(billingUsageReservation);
+          yield* database.delete(billingMeterBalance);
+          yield* database.delete(billingPeriod);
+          yield* database.delete(billingSubscriptionItem);
           yield* database.delete(billingProviderEvent);
           yield* database.delete(billingSubscription);
           yield* database.delete(billingAccount);

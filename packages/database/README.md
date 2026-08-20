@@ -314,15 +314,26 @@ The `billing` schema keeps plan state separate from organization identity:
   provider customer.
 - `subscription` preserves plan/version history and permits only one trialing,
   active, or past-due row per organization.
+- `subscription_item` maps code-owned priced components to provider items.
+- `period` snapshots the plan/version and time window used for metering.
+- `meter_balance` stores one admission-control projection per period and meter.
+- `usage_reservation` holds quota while billable work is in flight.
+- `usage_event` is an append-only debit/credit usage ledger.
+- `usage_delivery` is the retryable outbound provider-reporting outbox.
 - `provider_event` is an idempotent provider-webhook inbox keyed by provider and
   provider event ID.
 
-Free subscriptions need neither provider identifiers nor artificial billing
-periods. Plan limits live in the application catalog documented in
-the [billing architecture](../../architecture/billing/README.md); database rows store only the selected key and
-version.
+Free subscriptions need no provider identifiers or subscription items, but the
+new metering workflow will give every active subscription a period so all plans
+share one allowance model. Plan, component, and meter definitions live in the
+code-owned catalog documented in the
+[billing architecture](../../architecture/billing/README.md). Meter keys are row
+dimensions; adding a supported meter does not add fixed usage columns.
 
 The billing repository aggregate exposes account creation/lookup/locking,
 current-subscription lookup, and a usage read model. Quota-sensitive application
 transactions lock `billing.account` before reading usage so concurrent writes for
 one organization are serialized without globally locking other organizations.
+Repositories and workflows for the new period, meter, reservation, ledger, and
+delivery tables remain to be implemented; current quota reads still derive
+usage from domain operation rows.

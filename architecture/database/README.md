@@ -8,7 +8,7 @@ This directory is the canonical catalog for Namera's PostgreSQL data model. Feat
 | -------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `auth`         | Identities, browser sessions, organizations, actors, API keys, invitations, and OAuth | [Core identity](auth-core.md), [organizations](auth-organization.md), [OAuth](auth-oauth.md) |
 | `core`         | Wallets, wallet keys, session-key authority, policy state, executions, and signatures | [Wallets and operations](core-wallets-operations.md)                                         |
-| `billing`      | Organization billing identity, subscriptions, and provider webhook inbox              | [Billing](billing.md)                                                                        |
+| `billing`      | Billing identity, subscriptions, metering ledger, and provider synchronization        | [Billing](billing.md)                                                                        |
 | `notification` | Durable user-visible notification facts, recipients, and preferences                  | [Notifications and jobs](notifications-jobs.md)                                              |
 | `jobs`         | Leased asynchronous work, currently email delivery                                    | [Notifications and jobs](notifications-jobs.md)                                              |
 | `audit`        | Append-oriented user and organization security history                                | [Audit](audit.md)                                                                            |
@@ -41,6 +41,9 @@ erDiagram
   SESSION_KEY_GRANT ||--o{ SIGNATURE_OPERATION : authorizes
   ORGANIZATION ||--|| BILLING_ACCOUNT : bills
   BILLING_ACCOUNT ||--o{ BILLING_SUBSCRIPTION : subscribes
+  BILLING_SUBSCRIPTION ||--o{ BILLING_PERIOD : creates
+  BILLING_PERIOD ||--o{ BILLING_USAGE_EVENT : records
+  BILLING_USAGE_EVENT ||--o{ BILLING_USAGE_DELIVERY : exports
   ORGANIZATION ||--o{ ORGANIZATION_EVENT : audits
 ```
 

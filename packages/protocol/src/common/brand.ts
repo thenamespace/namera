@@ -53,6 +53,11 @@ export const NotificationPreferenceId = createBrandedId("NotificationPreferenceI
 
 // Billing Tables
 export const BillingSubscriptionId = createBrandedId("BillingSubscriptionId");
+export const BillingSubscriptionItemId = createBrandedId("BillingSubscriptionItemId");
+export const BillingPeriodId = createBrandedId("BillingPeriodId");
+export const BillingUsageReservationId = createBrandedId("BillingUsageReservationId");
+export const BillingUsageEventId = createBrandedId("BillingUsageEventId");
+export const BillingUsageDeliveryId = createBrandedId("BillingUsageDeliveryId");
 export const BillingProviderEventId = createBrandedId("BillingProviderEventId");
 
 export type UserId = typeof UserId.Type;
@@ -89,4 +94,9 @@ export type EmailJobId = typeof EmailJobId.Type;
 export type NotificationId = typeof NotificationId.Type;
 export type NotificationPreferenceId = typeof NotificationPreferenceId.Type;
 export type BillingSubscriptionId = typeof BillingSubscriptionId.Type;
+export type BillingSubscriptionItemId = typeof BillingSubscriptionItemId.Type;
+export type BillingPeriodId = typeof BillingPeriodId.Type;
+export type BillingUsageReservationId = typeof BillingUsageReservationId.Type;
+export type BillingUsageEventId = typeof BillingUsageEventId.Type;
+export type BillingUsageDeliveryId = typeof BillingUsageDeliveryId.Type;
 export type BillingProviderEventId = typeof BillingProviderEventId.Type;
