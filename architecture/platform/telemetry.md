@@ -54,6 +54,20 @@ messages are prohibited metric labels.
 HTTP metrics exclude `/t/*` to prevent an exporter feedback loop. No-op
 mutations do not increment successful mutation metrics.
 
+### Billing signals
+
+| Metric                              | Bounded attributes  | Meaning                                     |
+| ----------------------------------- | ------------------- | ------------------------------------------- |
+| `namera.billing.meter.transitions`  | `meter`, `outcome`  | Reserve/reuse/deny/settle/release attempts. |
+| `namera.billing.period.rollovers`   | —                   | Anniversary periods created.                |
+| `namera.billing.recovery.results`   | `source`, `outcome` | Expired holds recovered or safely deferred. |
+| `namera.billing.projection.repairs` | `meter`             | Ledger-derived balance repairs.             |
+
+The immutable usage ledger and meter balances remain the accounting truth;
+metrics are operational signals and may reflect an attempted transition that
+is later rolled back by a wider domain transaction. The billing worker logs
+only nonzero aggregate run counts and one bounded failure event.
+
 ## Runtime variables
 
 | Variable                      | Use                                |

@@ -46,9 +46,14 @@ export class TransactionService extends Context.Service<
 
       return TransactionService.of({
         run: (effect) =>
-          db
-            .transaction((tx) => effect.pipe(Effect.provideService(TransactionClient, tx)))
-            .pipe(mapToDatabaseError),
+          Effect.serviceOption(TransactionClient).pipe(
+            Effect.flatMap((current) =>
+              Option.isSome(current)
+                ? effect
+                : db.transaction((tx) => effect.pipe(Effect.provideService(TransactionClient, tx))),
+            ),
+            mapToDatabaseError,
+          ),
       });
     }),
   );

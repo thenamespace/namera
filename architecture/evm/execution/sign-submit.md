@@ -54,6 +54,11 @@ This classification is critical. Treating a timeout as rejection can double-spen
 
 The signed execution is persisted before submission so reconciliation can safely retry or query status after process failure.
 
+The signed envelope also persists the EVM-owned billing measurement selected at
+preparation. Successful and reverted receipts calculate micro-USD from
+`actualGasCost` using that exact quote. A pre-inclusion rejection releases the
+gas hold; an uncertain or included failure keeps it until a receipt is available.
+
 ## Pending before production
 
 - Test provider error classification against actual Pimlico/HTTP failure shapes.

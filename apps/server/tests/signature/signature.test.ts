@@ -194,7 +194,9 @@ layer(TestServerLayer)("signature routes", (it) => {
       });
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);
-      expect((yield* client.billing.get()).usage.signatures).toBe(2);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature")?.consumedAmount,
+      ).toBe(2n);
 
       const events = yield* repository.audit.organization.findForOrganization(
         owner.actor.organization.id,
@@ -281,7 +283,9 @@ layer(TestServerLayer)("signature routes", (it) => {
 
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);
-      expect((yield* client.billing.get()).usage.signatures).toBe(0);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature")?.consumedAmount,
+      ).toBe(0n);
       const repository = yield* Repository;
       const events = yield* repository.audit.organization.findForOrganization(
         owner.actor.organization.id,

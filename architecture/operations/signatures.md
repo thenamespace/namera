@@ -32,7 +32,7 @@ sequenceDiagram
   App->>App: hash request; resolve prior attempt
   App->>App: find active account/grant/session-key candidates
   App->>Policy: time, chain, and explicit signature capability evaluation
-  App->>Tx: lock billing; reserve monthly signature; insert reserved operation
+  App->>Tx: insert reserved operation + reserve anniversary-period signature unit
   App->>EVM: reconstruct Kernel/Safe and sign
   alt success
     App->>Tx: mark succeeded + audit + settle policy reservations
@@ -44,9 +44,9 @@ sequenceDiagram
 ```
 
 The current `evm.signature` policy explicitly permits message, typed data, or
-both. Time-window and chain-allowlist policies also apply. Billing counts
-successful operations plus unexpired reservations, preventing concurrent
-requests from crossing the organization monthly quota.
+both. Time-window and chain-allowlist policies also apply. Billing settles
+successful operations and holds active reservations, preventing concurrent
+requests from crossing the organization's anniversary-period quota.
 
 SDK, CLI, and MCP generate and reuse the idempotency key across transient
 retries. Declared policy, billing, authorization, and validation failures are not

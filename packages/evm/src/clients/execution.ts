@@ -15,7 +15,10 @@ import type { EvmConfigValues } from "../config.js";
 export type ExecutionClients = {
   readonly publicClient: PublicClient;
   readonly pimlicoClient: PimlicoClient<"0.7">;
-  readonly createSmartAccountClient: (account: SmartAccount) => SmartAccountClient;
+  readonly createSmartAccountClient: (
+    account: SmartAccount,
+    sponsorship: "none" | "pimlico",
+  ) => SmartAccountClient;
 };
 
 export const makeExecutionClients = (
@@ -43,13 +46,13 @@ export const makeExecutionClients = (
     return {
       publicClient,
       pimlicoClient,
-      createSmartAccountClient: (account) =>
+      createSmartAccountClient: (account, sponsorship) =>
         createSmartAccountClient({
           account,
           chain: chain.chain,
           client: publicClient,
           bundlerTransport: http(pimlicoUrl),
-          paymaster: pimlicoClient,
+          ...(sponsorship === "pimlico" ? { paymaster: pimlicoClient } : {}),
           userOperation: {
             estimateFeesPerGas: async () => (await pimlicoClient.getUserOperationGasPrice()).fast,
           },

@@ -206,7 +206,10 @@ layer(TestServerLayer)("invitation routes", (it) => {
         ),
       );
       const billing = yield* client.billing.get();
-      expect(billing.usage).toMatchObject({ members: 1, pendingInvitations: 4 });
+      expect(billing.resources.find((resource) => resource.key === "members")).toMatchObject({
+        usedAmount: 5n,
+        remainingAmount: 0n,
+      });
 
       const error = yield* inviteMember(
         client,
@@ -229,7 +232,9 @@ layer(TestServerLayer)("invitation routes", (it) => {
         testEmail("capacity-released@example.com"),
         owner.actor.organization.id,
       );
-      expect((yield* client.billing.get()).usage.pendingInvitations).toBe(4);
+      expect(
+        (yield* client.billing.get()).resources.find(({ key }) => key === "members")?.usedAmount,
+      ).toBe(5n);
     }),
   );
 
@@ -264,7 +269,9 @@ layer(TestServerLayer)("invitation routes", (it) => {
 
       expect(results.filter(Result.isSuccess)).toHaveLength(1);
       expect(results.filter(Result.isFailure)).toHaveLength(1);
-      expect((yield* client.billing.get()).usage.pendingInvitations).toBe(4);
+      expect(
+        (yield* client.billing.get()).resources.find(({ key }) => key === "members")?.usedAmount,
+      ).toBe(5n);
     }),
   );
 });

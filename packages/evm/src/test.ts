@@ -3,6 +3,7 @@ import { Context, Effect, Layer, Ref, Schema } from "effect";
 import { EthereumAddress, Hex, UnsupportedChainError } from "@namera-ai/protocol";
 
 import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
+import { settleEvmGasSponsorship } from "./billing/execution.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
@@ -37,6 +38,7 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
   const { execution, ...serviceOverrides } = options;
 
   return {
+    billing: { settleGasSponsorship: settleEvmGasSponsorship },
     createAccount: Effect.fn("evm.test.createAccount")(
       <const Props extends CreateAccountProps>(props: Props) => {
         if (props.implementation === "kernel") {

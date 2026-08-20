@@ -23,6 +23,9 @@ remain under [operations](../../architecture/operations/executions.md).
   receipt operations exposed through `evm.execution`. Preparation combines
   ERC-4337 gas simulation with `simulateCalls` asset-change and native-transfer
   tracing, then exposes only the bounded protocol context to policies.
+- `src/billing/` — mainnet/testnet meter classification, Alchemy ETH/USD quote
+  decoding, conservative micro-USD arithmetic, Pimlico margin, pessimistic
+  sponsorship reservation, and receipt-based actual-cost settlement.
 - `src/policy/` — exhaustive EVM policy definitions and lifecycle service. The
   registry remains declarative, generic state/reservation adapters live in
   `operations.ts`, and individual handlers live in `src/policy/policies/`.
@@ -51,6 +54,12 @@ remain under [operations](../../architecture/operations/executions.md).
 5. Put EVM-specific transaction normalization, simulation, execution, and policy
    evaluation here. The application package selects the wallet/grants and
    coordinates persistence; the server only adapts HTTP.
+
+EVM-specific billing remains in this package. Simulation prepares without a
+paymaster. Execution prepares with Pimlico, and sponsored mainnet preparation
+attaches a persisted price/cost envelope. `application` only reserves and
+settles the generic meter amounts returned here, preserving the namespace
+boundary for future Solana support.
 
 Provider ECDSA signatures are DER encoded. Use
 `derSignatureToEvmSignature` to produce the validator representation:

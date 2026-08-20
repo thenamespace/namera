@@ -85,5 +85,6 @@ export const makeSignEvmExecution = (getClients: (chain: ChainData) => Execution
       entryPoint: input.prepared.entryPoint,
       userOperation: encodedUserOperation,
       userOperationHash,
+      billing: input.prepared.billing,
     }).pipe(Effect.mapError((cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause })));
   });

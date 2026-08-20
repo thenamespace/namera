@@ -6,7 +6,8 @@ Preparation turns decoded calls and stored smart-account data into an unsigned E
 
 - supported CAIP-2 chain ID;
 - reconstructed Kernel or Safe account data and owner account;
-- ordered calls containing destination, native value, and calldata.
+- ordered calls containing destination, native value, and calldata;
+- sponsorship mode (`none` for simulation, `pimlico` for execution).
 
 ## Pipeline
 
@@ -15,7 +16,10 @@ flowchart TD
   Input[chain, account, calls] --> Chain{Supported CAIP-2 chain?}
   Chain -->|No| Unsupported[UnsupportedChainError]
   Chain -->|Yes| Reconstruct[Reconstruct smart account and verify address]
-  Reconstruct --> Prepare[SmartAccountClient.prepareUserOperation]
+  Reconstruct --> Sponsor{Sponsorship requested?}
+  Sponsor -->|No| Prepare[Prepare without paymaster]
+  Sponsor -->|Pimlico| PrepareSponsored[Prepare with Pimlico paymaster]
+  PrepareSponsored --> Prepare
   Prepare --> Estimate[Pimlico estimateUserOperationGas]
   Estimate --> Calls[Viem simulateCalls]
   Calls --> Block{Latest block has hash and number?}
@@ -34,6 +38,24 @@ flowchart TD
 | `viem.simulateCalls` through public RPC        | Execute exact account calls and trace user-visible effects       | per-call status/return/gas, asset changes, native transfers, block anchor |
 
 Both are required: EntryPoint gas estimation does not provide the same asset-transfer context, while raw call simulation does not validate the complete ERC-4337 envelope.
+
+Simulation requests explicitly prepare without a paymaster and therefore never
+consume or imply Namera-sponsored gas. Execution requests prepare with Pimlico.
+After preparation, the adapter classifies the chain and attaches a JSON-safe
+billing envelope:
+
+- testnet: `execution.testnet`, no gas sponsorship measurement;
+- mainnet without a paymaster: `execution.mainnet`, no gas measurement;
+- mainnet with a Pimlico paymaster: `execution.mainnet` plus a pessimistic
+  sponsored-cost reservation.
+
+For sponsored mainnet execution, the adapter fetches ETH/USD from Alchemy,
+rounds the quote upward to micro-USD, applies the code-owned 10% provider margin,
+and prices the sum of call, verification, pre-verification, paymaster
+verification, and paymaster post-op gas at `maxFeePerGas`. The quote timestamp,
+price, and margin remain embedded in the signed execution so receipt settlement
+uses the same cost basis. Pricing failure is a preparation failure; application
+code never reimplements these EVM rules.
 
 ## Call normalization
 

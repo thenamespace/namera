@@ -35,6 +35,7 @@ export interface ChainData {
   readonly name: EvmChainName;
   readonly namespace: "eip155";
   readonly alchemyChain: AlchemyChain;
+  readonly environment: "mainnet" | "testnet";
 }
 
 const chainData = <const TChain extends Chain, const TAlchemyChain extends AlchemyChain>(
@@ -47,6 +48,7 @@ const chainData = <const TChain extends Chain, const TAlchemyChain extends Alche
   name,
   namespace: "eip155",
   alchemyChain,
+  environment: chain.testnet === true ? "testnet" : "mainnet",
 });
 
 export const chains: Readonly<Record<SupportedEvmChain, ChainData>> = {

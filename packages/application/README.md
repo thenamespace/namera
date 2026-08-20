@@ -26,7 +26,8 @@ composition model.
 - `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
 - `src/auth/config.ts` — environment-backed authentication configuration.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
-- `src/billing/` — code-owned billing plan and entitlement catalog.
+- `src/billing/` — code-owned plan registry, anniversary periods, generic
+  transactional metering, and recovery/reconciliation orchestration.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — separately composed creation, revocation, relation-view,
   and organization- or actor-scoped read workflows plus canonical policy hashing.
@@ -90,12 +91,13 @@ const program = Effect.gen(function* () {
 Organization creation initializes a providerless billing account, active Free
 v1 subscription, one-month organization-anniversary period, and one balance per
 Free meter in its existing transaction. The period begins at the organization's
-exact creation instant rather than a calendar-month boundary. Quota-sensitive
-workflows currently lock the organization billing account, resolve the stored
-plan/version through the Free-only registry, derive current usage from domain
-rows, and create the resource before that transaction commits. Pending
-invitations reserve member capacity. Transactional meter reservation and
-settlement are the next billing integration boundary. See
+exact creation instant rather than a calendar-month boundary. Resource-limited
+workflows lock the organization billing account and use current domain-row
+counts. Metered workflows create their domain operation and generic billing
+reservation together, then atomically settle or release it through an immutable
+usage ledger. The billing worker advances anniversary periods, recovers expired
+reservations, and repairs projections. Namespace packages own their measurement
+rules; application only coordinates their results with persistence. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 

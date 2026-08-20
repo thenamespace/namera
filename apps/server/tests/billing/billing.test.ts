@@ -1,7 +1,12 @@
 import { expect, layer } from "@effect/vitest";
 import { DateTime, Effect } from "effect";
 
-import { freeBillingPlan } from "@namera-ai/application";
+import {
+  Application,
+  freeBillingPlan,
+  makeBillingMetering,
+  makeBillingPeriods,
+} from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 
 import {
@@ -29,22 +34,55 @@ layer(TestServerLayer)("billing routes", (it) => {
         plan: "free",
         planVersion: 1,
         status: "active",
-        limits: {
-          maxMembers: 5,
-          maxSoftwareWallets: 5,
-          maxHsmWallets: 0,
-          includedExecutions: 100,
-          includedSignatures: 10_000,
-        },
-        usage: {
-          members: 1,
-          pendingInvitations: 0,
-          softwareWallets: 0,
-          hsmWallets: 0,
-          executions: 0,
-          signatures: 0,
-        },
+        resources: [
+          { key: "members", includedAmount: 5n, usedAmount: 1n, remainingAmount: 4n },
+          {
+            key: "software-wallets",
+            includedAmount: 5n,
+            usedAmount: 0n,
+            remainingAmount: 5n,
+          },
+          { key: "hsm-wallets", includedAmount: 0n, usedAmount: 0n, remainingAmount: 0n },
+        ],
       });
+      expect(personalBilling.meters).toEqual([
+        {
+          key: "execution.mainnet",
+          unit: "operation",
+          includedAmount: 100n,
+          hardLimitAmount: 100n,
+          consumedAmount: 0n,
+          reservedAmount: 0n,
+          remainingAmount: 100n,
+        },
+        {
+          key: "execution.testnet",
+          unit: "operation",
+          includedAmount: 10_000n,
+          hardLimitAmount: 10_000n,
+          consumedAmount: 0n,
+          reservedAmount: 0n,
+          remainingAmount: 10_000n,
+        },
+        {
+          key: "gas-sponsorship",
+          unit: "micro-usd",
+          includedAmount: 5_000_000n,
+          hardLimitAmount: 5_000_000n,
+          consumedAmount: 0n,
+          reservedAmount: 0n,
+          remainingAmount: 5_000_000n,
+        },
+        {
+          key: "signature",
+          unit: "operation",
+          includedAmount: 10_000n,
+          hardLimitAmount: 10_000n,
+          consumedAmount: 0n,
+          reservedAmount: 0n,
+          remainingAmount: 10_000n,
+        },
+      ]);
 
       const personalPeriod = yield* repository.billing.period.findOpen(
         signedIn.actor.organization.id,
@@ -229,6 +267,171 @@ layer(TestServerLayer)("billing routes", (it) => {
       expect(
         yield* repository.billing.subscriptionItem.markRemoved(organizationId, item.id, now),
       ).toMatchObject({ status: "removed" });
+    }),
+  );
+
+  it.effect("reserves, settles, replays, releases, and repairs metered usage", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("billing-metering@example.com"));
+      const organizationId = signedIn.actor.organization.id;
+      const metering = yield* makeBillingMetering;
+      const repository = yield* Repository;
+      const now = yield* DateTime.now;
+
+      const reservation = yield* metering.reserve({
+        organizationId,
+        meterKey: "execution.mainnet",
+        amount: 80n,
+        sourceType: "manual-adjustment",
+        sourceId: "metering-reserve",
+        expiresAt: DateTime.add(now, { minutes: 5 }),
+      });
+      expect(
+        (yield* metering.reserve({
+          organizationId,
+          meterKey: "execution.mainnet",
+          amount: 80n,
+          sourceType: "manual-adjustment",
+          sourceId: "metering-reserve",
+          expiresAt: DateTime.add(now, { minutes: 5 }),
+        })).id,
+      ).toBe(reservation.id);
+
+      const limitError = yield* metering
+        .reserve({
+          organizationId,
+          meterKey: "execution.mainnet",
+          amount: 21n,
+          sourceType: "manual-adjustment",
+          sourceId: "metering-over-limit",
+          expiresAt: DateTime.add(now, { minutes: 5 }),
+        })
+        .pipe(Effect.flip);
+      expect(limitError).toMatchObject({
+        _tag: "BillingError",
+        code: "LIMIT_EXCEEDED",
+        limit: "execution.mainnet",
+      });
+
+      const settled = yield* metering.settle({
+        organizationId,
+        reservationId: reservation.id,
+        amount: 60n,
+        data: { version: 1, test: true },
+      });
+      expect(settled).toBeDefined();
+      expect(
+        (yield* metering.settle({
+          organizationId,
+          reservationId: reservation.id,
+          amount: 60n,
+        }))?.id,
+      ).toBe(settled?.id);
+
+      const releasedReservation = yield* metering.reserve({
+        organizationId,
+        meterKey: "execution.mainnet",
+        amount: 10n,
+        sourceType: "manual-adjustment",
+        sourceId: "metering-release",
+        expiresAt: DateTime.add(now, { minutes: 5 }),
+      });
+      expect(
+        yield* metering.release({ organizationId, reservationId: releasedReservation.id }),
+      ).toMatchObject({ status: "released" });
+      expect(
+        yield* metering.release({ organizationId, reservationId: releasedReservation.id }),
+      ).toMatchObject({ status: "released" });
+
+      const period = yield* repository.billing.period.findOpen(organizationId);
+      if (period === undefined) return yield* Effect.die("Expected billing period");
+      expect(
+        yield* repository.billing.meterBalance.find(organizationId, period.id, "execution.mainnet"),
+      ).toMatchObject({ consumedAmount: 60n, reservedAmount: 0n });
+
+      yield* repository.billing.meterBalance.replaceProjection(
+        organizationId,
+        period.id,
+        "execution.mainnet",
+        0n,
+        0n,
+      );
+      const application = yield* Application;
+      expect(yield* application.billing.reconcile()).toMatchObject({ repaired: 1 });
+      expect(
+        yield* repository.billing.meterBalance.find(organizationId, period.id, "execution.mainnet"),
+      ).toMatchObject({ consumedAmount: 60n, reservedAmount: 0n });
+      expect(
+        (yield* client.billing.get()).meters.find((meter) => meter.key === "execution.mainnet"),
+      ).toMatchObject({ consumedAmount: 60n, reservedAmount: 0n, remainingAmount: 40n });
+    }),
+  );
+
+  it.effect("rolls anniversary periods forward without calendar-month resets", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("billing-anniversary@example.com"));
+      const organizationId = signedIn.actor.organization.id;
+      const repository = yield* Repository;
+      const periods = yield* makeBillingPeriods;
+      const initial = yield* repository.billing.period.findOpen(organizationId);
+      if (initial === undefined) return yield* Effect.die("Expected initial billing period");
+
+      const future = DateTime.add(DateTime.add(initial.startsAt, { months: 2 }), { seconds: 1 });
+      const current = yield* periods.current(organizationId, future);
+      expect(DateTime.toEpochMillis(current.startsAt)).toBe(
+        DateTime.toEpochMillis(DateTime.add(initial.startsAt, { months: 2 })),
+      );
+      expect(DateTime.toEpochMillis(current.endsAt)).toBe(
+        DateTime.toEpochMillis(DateTime.add(initial.startsAt, { months: 3 })),
+      );
+      expect(current.status).toBe("open");
+
+      const subscription = yield* repository.billing.subscription.findCurrent(organizationId);
+      if (subscription === undefined) return yield* Effect.die("Expected billing subscription");
+      const history = yield* repository.billing.period.listForSubscription(
+        organizationId,
+        subscription.id,
+      );
+      expect(history).toHaveLength(3);
+      expect(history.filter((period) => period.status === "open")).toHaveLength(1);
+      expect(
+        yield* repository.billing.meterBalance.listForPeriod(organizationId, current.id),
+      ).toHaveLength(Object.keys(freeBillingPlan.meters).length);
+    }),
+  );
+
+  it.effect("recovers expired reservations without leaking meter capacity", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("billing-recovery@example.com"));
+      const organizationId = signedIn.actor.organization.id;
+      const metering = yield* makeBillingMetering;
+      const repository = yield* Repository;
+      const now = yield* DateTime.now;
+      const reservation = yield* metering.reserve({
+        organizationId,
+        meterKey: "signature",
+        amount: 25n,
+        sourceType: "manual-adjustment",
+        sourceId: "expired-reservation",
+        expiresAt: DateTime.subtract(now, { seconds: 1 }),
+      });
+
+      const application = yield* Application;
+      expect(yield* application.billing.reconcile()).toMatchObject({ recovered: 1 });
+      expect(
+        yield* repository.billing.usageReservation.findById(organizationId, reservation.id),
+      ).toMatchObject({ status: "expired" });
+      const period = yield* repository.billing.period.findOpen(organizationId);
+      if (period === undefined) return yield* Effect.die("Expected billing period");
+      expect(
+        yield* repository.billing.meterBalance.find(organizationId, period.id, "signature"),
+      ).toMatchObject({ consumedAmount: 0n, reservedAmount: 0n });
     }),
   );
 

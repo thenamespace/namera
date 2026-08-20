@@ -296,7 +296,8 @@ Billing history uses `ON DELETE RESTRICT`; product cleanup cannot cascade-delete
 invoice evidence. Production retention should archive or anonymize eligible
 contact/provider data without removing financial evidence.
 
-Before production, wire repositories and transactions, backfill an initial open
-period, add reservation-expiry and balance-reconciliation workers, define
-provider data retention/dead-letter procedures, and add PostgreSQL boundary tests
-for concurrency, idempotency, correction, rollover, and provider retry behavior.
+Free v1 initializes these rows with every organization and uses the reservation,
+ledger, balance, period, recovery, and reconciliation paths in production code.
+Before paid plans, define provider data retention/dead-letter procedures and add
+PostgreSQL stress tests for concurrent admission plus provider-specific tests for
+corrections, webhook replay, and delivery retries.

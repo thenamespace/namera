@@ -15,7 +15,7 @@ import {
   type BillingUsageReservationInsert as BillingUsageReservationInsertModel,
   type BillingUsageSourceType,
 } from "@namera-ai/protocol/model";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, lte, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -41,6 +41,11 @@ export interface BillingUsageReservationRepositoryService {
     sourceType: BillingUsageSourceType,
     sourceId: string,
   ) => Effect.Effect<BillingUsageReservationModel | undefined, DatabaseError>;
+  readonly listBySource: (
+    organizationId: OrganizationId,
+    sourceType: BillingUsageSourceType,
+    sourceId: string,
+  ) => Effect.Effect<ReadonlyArray<BillingUsageReservationModel>, DatabaseError>;
   readonly findForUpdate: (
     organizationId: OrganizationId,
     id: BillingUsageReservationId,
@@ -56,6 +61,20 @@ export interface BillingUsageReservationRepositoryService {
     status: "released" | "expired",
     releasedAt: DateTime.Utc,
   ) => Effect.Effect<BillingUsageReservationModel | undefined, DatabaseError>;
+  readonly deferExpiry: (
+    organizationId: OrganizationId,
+    id: BillingUsageReservationId,
+    expiresAt: DateTime.Utc,
+  ) => Effect.Effect<BillingUsageReservationModel | undefined, DatabaseError>;
+  readonly claimExpired: (
+    now: DateTime.Utc,
+    limit: number,
+  ) => Effect.Effect<ReadonlyArray<BillingUsageReservationModel>, DatabaseError>;
+  readonly sumActiveForMeter: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+  ) => Effect.Effect<bigint, DatabaseError>;
 }
 
 export class BillingUsageReservationRepository extends Context.Service<
@@ -130,6 +149,24 @@ export class BillingUsageReservationRepository extends Context.Service<
             },
             mapRepositoryError,
           ),
+          listBySource: Effect.fn("database.billingUsageReservationRepository.listBySource")(
+            function* (organizationId, sourceType, sourceId) {
+              const db = yield* transactionOrDatabase(database);
+              const rows = yield* db
+                .select()
+                .from(billingUsageReservation)
+                .where(
+                  and(
+                    eq(billingUsageReservation.organizationId, organizationId),
+                    eq(billingUsageReservation.sourceType, sourceType),
+                    eq(billingUsageReservation.sourceId, sourceId),
+                  ),
+                )
+                .orderBy(asc(billingUsageReservation.meterKey));
+              return Schema.decodeUnknownSync(Schema.Array(BillingUsageReservation))(rows);
+            },
+            mapRepositoryError,
+          ),
           findForUpdate: Effect.fn("database.billingUsageReservationRepository.findForUpdate")(
             function* (organizationId, id) {
               const db = yield* transactionOrDatabase(database);
@@ -190,6 +227,62 @@ export class BillingUsageReservationRepository extends Context.Service<
             },
             mapRepositoryError,
           ),
+          deferExpiry: Effect.fn("database.billingUsageReservationRepository.deferExpiry")(
+            function* (organizationId, id, expiresAt) {
+              const db = yield* transactionOrDatabase(database);
+              const rows = yield* db
+                .update(billingUsageReservation)
+                .set({ expiresAt: encodeDate(expiresAt) })
+                .where(
+                  and(
+                    eq(billingUsageReservation.organizationId, organizationId),
+                    eq(billingUsageReservation.id, id),
+                    eq(billingUsageReservation.status, "active"),
+                  ),
+                )
+                .returning();
+              return rows[0]
+                ? Schema.decodeUnknownSync(BillingUsageReservation)(rows[0])
+                : undefined;
+            },
+            mapRepositoryError,
+          ),
+          claimExpired: Effect.fn("database.billingUsageReservationRepository.claimExpired")(
+            function* (now, limit) {
+              const db = yield* transactionOrDatabase(database);
+              const rows = yield* db
+                .select()
+                .from(billingUsageReservation)
+                .where(
+                  and(
+                    eq(billingUsageReservation.status, "active"),
+                    lte(billingUsageReservation.expiresAt, encodeDate(now)),
+                  ),
+                )
+                .orderBy(asc(billingUsageReservation.expiresAt), asc(billingUsageReservation.id))
+                .limit(Math.min(Math.max(Math.trunc(limit), 1), 100))
+                .for("update", { skipLocked: true });
+              return Schema.decodeUnknownSync(Schema.Array(BillingUsageReservation))(rows);
+            },
+            mapRepositoryError,
+          ),
+          sumActiveForMeter: Effect.fn(
+            "database.billingUsageReservationRepository.sumActiveForMeter",
+          )(function* (organizationId, periodId, meterKey) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select({ amount: sql<string>`coalesce(sum(${billingUsageReservation.amount}), 0)` })
+              .from(billingUsageReservation)
+              .where(
+                and(
+                  eq(billingUsageReservation.organizationId, organizationId),
+                  eq(billingUsageReservation.periodId, periodId),
+                  eq(billingUsageReservation.meterKey, meterKey),
+                  eq(billingUsageReservation.status, "active"),
+                ),
+              );
+            return BigInt(rows[0]?.amount ?? "0");
+          }, mapRepositoryError),
         });
       }),
     );

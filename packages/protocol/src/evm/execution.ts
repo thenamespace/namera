@@ -53,10 +53,33 @@ const EvmExecutionEnvelope = {
   entryPoint: EthereumAddress,
 };
 
+export const EvmGasPriceQuote = Schema.Struct({
+  provider: Schema.Literal("alchemy"),
+  currency: Schema.Literal("usd"),
+  nativeAsset: Schema.Literal("ETH"),
+  nativePriceMicroUsd: EvmQuantity,
+  surchargeBasisPoints: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  // The encoded form remains an ISO string inside JSON persistence while the
+  // decoded domain value is a validated UTC timestamp.
+  quotedAt: Schema.DateTimeUtcFromString,
+}).annotate({ identifier: "EvmGasPriceQuote" });
+
+export const EvmExecutionBilling = Schema.Struct({
+  executionMeter: Schema.Literals(["execution.mainnet", "execution.testnet"]),
+  sponsorship: Schema.NullOr(
+    Schema.Struct({
+      provider: Schema.Literal("pimlico"),
+      reservationAmountMicroUsd: EvmQuantity,
+      quote: EvmGasPriceQuote,
+    }),
+  ),
+}).annotate({ identifier: "EvmExecutionBilling" });
+
 export const EvmPreparedExecution = Schema.Struct({
   ...EvmExecutionEnvelope,
   context: EvmIntentContext,
   userOperation: EvmSerializedUserOperation,
+  billing: EvmExecutionBilling,
 }).annotate({
   identifier: "EvmPreparedExecution",
   description: "A simulated EVM execution with a prepared stub-signed UserOperation",
@@ -66,6 +89,7 @@ export const EvmSignedExecution = Schema.Struct({
   ...EvmExecutionEnvelope,
   userOperation: EvmSerializedUserOperation,
   userOperationHash: UserOperationHash,
+  billing: EvmExecutionBilling,
 }).annotate({
   identifier: "EvmSignedExecution",
   description: "An EVM execution containing the exact signed UserOperation",
@@ -134,6 +158,8 @@ export const EvmExecutionReceipt = Schema.Union([
 });
 
 export type EvmSerializedUserOperation = typeof EvmSerializedUserOperation.Type;
+export type EvmGasPriceQuote = typeof EvmGasPriceQuote.Type;
+export type EvmExecutionBilling = typeof EvmExecutionBilling.Type;
 export type EvmPreparedExecution = typeof EvmPreparedExecution.Type;
 export type EvmSignedExecution = typeof EvmSignedExecution.Type;
 export type EvmSubmittedExecution = typeof EvmSubmittedExecution.Type;

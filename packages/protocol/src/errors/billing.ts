@@ -4,8 +4,10 @@ export const BillingLimit = Schema.Literals([
   "members",
   "softwareWallets",
   "hsmWallets",
-  "executions",
-  "signatures",
+  "execution.mainnet",
+  "execution.testnet",
+  "signature",
+  "gas-sponsorship",
 ]);
 
 export class BillingLimitExceededError extends Schema.TaggedError<BillingLimitExceededError>()(

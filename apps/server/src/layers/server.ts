@@ -10,6 +10,7 @@ import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 import { ServerConfig } from "#/config";
 import {
   ApplicationLive,
+  BillingWorkerLive,
   EmailWorkerLive,
   ExecutionWorkerLive,
   ServicesLive,
@@ -30,7 +31,6 @@ import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
     // Never accept traffic against an older schema. Migrations and system-data
-    // reconciliation complete before the listening socket opens.
     yield* DatabaseMigration;
     const config = yield* ServerConfig;
 
@@ -65,6 +65,7 @@ const Routes = Layer.mergeAll(
     HttpRouter.provideRequest(Layer.mergeAll(ServicesLive, RateLimiterLive)),
   ),
   EmailWorkerLive,
+  BillingWorkerLive,
   ExecutionWorkerLive,
 );
 

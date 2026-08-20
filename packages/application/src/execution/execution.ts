@@ -30,7 +30,7 @@ import {
   executionResults,
 } from "@namera-ai/telemetry";
 
-import { enforceExecutionLimit, lockOrganizationBilling } from "#/billing/index";
+import { makeBillingMetering } from "#/billing/index";
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
 import { makePrepareExecution, type GrantedEvmSessionKey } from "#/execution/preparation";
 import { makeExecutionReadApplication, type ExecutionReadApplication } from "#/execution/read";
@@ -66,6 +66,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
   const reconciliation = yield* makeExecutionReconciliation;
   const read = yield* makeExecutionReadApplication;
   const simulation = yield* makeExecutionSimulationApplication;
+  const billing = yield* makeBillingMetering;
 
   const responseForExisting = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
@@ -128,7 +129,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
         return yield* responseForExisting(input.actor.organizationId, requestHash, prior.id);
       }
 
-      const { wallet, account, prepared, candidates } = yield* prepareExecution(input);
+      const { wallet, account, prepared, candidates } = yield* prepareExecution({
+        ...input,
+        sponsorship: "pimlico",
+      });
 
       let selected: GrantedEvmSessionKey | undefined;
       let submissionId: ExecutionSubmissionId | undefined;
@@ -156,8 +160,6 @@ export const makeExecutionApplication = Effect.gen(function* () {
         const reserved = yield* transaction
           .run(
             Effect.gen(function* () {
-              yield* lockOrganizationBilling(repository, input.actor.organizationId);
-              yield* enforceExecutionLimit(repository, input.actor.organizationId);
               const states = yield* lifecycle.initializeAndLockStates(
                 input.actor.organizationId,
                 candidate.sessionKey,
@@ -186,12 +188,12 @@ export const makeExecutionApplication = Effect.gen(function* () {
               });
               if (!inserted.inserted)
                 return yield* new ExistingSubmission({ id: inserted.submission.id });
+              const reservationNow = yield* DateTime.now;
               yield* lifecycle.applyStateChanges(
                 input.actor.organizationId,
                 states,
                 plan.stateChanges,
               );
-              const reservationNow = yield* DateTime.now;
               yield* repository.core.sessionKeyPolicyReservation.insertMany(
                 plan.reservations.map((reservation) => ({
                   organizationId: input.actor.organizationId,
@@ -205,6 +207,28 @@ export const makeExecutionApplication = Effect.gen(function* () {
                   expiresAt: DateTime.addDuration(reservationNow, Duration.minutes(10)),
                 })),
               );
+              const billingExpiresAt = DateTime.addDuration(reservationNow, Duration.hours(24));
+              yield* billing.reserve({
+                organizationId: input.actor.organizationId,
+                meterKey: prepared.billing.executionMeter,
+                amount: 1n,
+                sourceType: "execution-submission",
+                sourceId: inserted.submission.id,
+                expiresAt: billingExpiresAt,
+              });
+              if (
+                prepared.billing.sponsorship !== null &&
+                prepared.billing.sponsorship.reservationAmountMicroUsd > 0n
+              ) {
+                yield* billing.reserve({
+                  organizationId: input.actor.organizationId,
+                  meterKey: "gas-sponsorship",
+                  amount: prepared.billing.sponsorship.reservationAmountMicroUsd,
+                  sourceType: "execution-submission",
+                  sourceId: inserted.submission.id,
+                  expiresAt: billingExpiresAt,
+                });
+              }
               return { decision: plan.decision, submissionId: inserted.submission.id } as const;
             }),
           )
@@ -311,6 +335,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
           submissionId,
           sessionKey: selected.sessionKey,
           stage: "receipt",
+          receipt,
         });
         return yield* new ExecutionError({ code: "EXECUTION_FAILED" });
       }

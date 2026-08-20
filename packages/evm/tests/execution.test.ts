@@ -83,6 +83,7 @@ it.effect("exposes the complete deterministic execution lifecycle from the root 
       chainId,
       account,
       calls: [{ to: address, value: 0n, data: Hex.make("0x") }],
+      sponsorship: "none",
     });
     const signed = yield* evm.execution.sign({ account, prepared });
     const submitted = yield* evm.execution.submit({ signed });

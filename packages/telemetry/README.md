@@ -22,6 +22,8 @@ this package's dependency role.
 - `src/layer.ts` — reusable OTLP exporter layer and the server live layer.
 - `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
 - `src/metrics/api-key.ts` — API-key creation outcomes and duration.
+- `src/metrics/billing.ts` — meter transitions, anniversary rollover,
+  reservation recovery, and projection repair counts.
 - `src/metrics/common.ts` — transport-level metrics shared by server handlers.
 - `src/metrics/email.ts` — durable email enqueue and delivery metrics.
 - `src/metrics/magic-link.ts` — magic-link workflow metrics.

@@ -4,11 +4,11 @@ Billing is organization-scoped. Namera owns product access, quota decisions,
 usage evidence, and plan definitions. A payment provider owns payment methods,
 invoices, tax, collection, and the provider-side subscription representation.
 
-This document describes the billing persistence foundation and its current
-application boundary. The protocol schemas, Drizzle tables, relations,
-constraints, migration, repositories, Free plan registry, and organization
-initialization are implemented. Existing quota-sensitive workflows still use
-their derived domain-row usage model until transactional metering is wired.
+This document describes the implemented Free v1 billing system. Protocol
+contracts, normalized persistence, anniversary periods, transactional metering,
+EVM sponsorship measurement, operation integration, recovery, reconciliation,
+the read API, metrics, and boundary tests are active. Stripe-facing delivery
+tables remain dormant until paid plans are introduced.
 
 ## Design principles
 
@@ -154,6 +154,12 @@ At rollover:
 6. commit all changes atomically.
 
 Only one open period and one current subscription can exist for an organization.
+Rollover is lazy on any metered admission or billing read and is also swept by
+the billing worker. Boundaries are always calculated from the original first
+period start (`anchor + N months`), not by repeatedly adding one month to the
+previous end. This preserves a January 31 anniversary after February instead of
+permanently drifting it to the 28th. A single account row lock serializes
+rollover and admission for one organization.
 
 ## Usage authorization lifecycle
 
@@ -172,8 +178,8 @@ sequenceDiagram
   Tx->>Account: lock organization billing account
   Tx->>Balance: load period and meter balance
   alt hard limit has capacity
-    Tx->>Balance: increment reserved_amount
     Tx->>Reservation: insert active reservation
+    Tx->>Balance: atomically increment reserved_amount if consumed + reserved + requested <= hard limit
     Tx-->>Product: commit
   else hard limit exceeded
     Tx-->>Product: reject and roll back
@@ -203,6 +209,53 @@ provider costs, and manual adjustments use one mechanism without nullable
 foreign-key growth. Application code must create the domain operation and its
 reservation within the same transaction.
 
+Reservation and settlement identities are retry-safe:
+
+- `(period, meter, sourceType, sourceId)` uniquely identifies admission;
+- replaying an identical reservation returns the existing row without changing
+  the balance;
+- a conflicting amount or source shape is rejected as an invariant violation;
+- `billing:settle:<reservationId>` uniquely identifies the ledger debit;
+- settlement locks the reservation, subtracts its full pessimistic hold, adds
+  the measured amount, appends the debit, and marks the reservation settled in
+  one transaction;
+- release locks the same row and returns capacity only while it is active.
+
+## Operation measurements
+
+### Executions
+
+The EVM package classifies each supported chain as mainnet or testnet and owns
+the execution billing envelope. Every accepted submission reserves one unit on
+`execution.mainnet` or `execution.testnet`. Confirmation settles one unit;
+signing or definitive pre-inclusion failure releases it. A reverted included
+operation releases the execution unit because Free v1 counts successful
+executions, but still settles sponsored gas from its receipt.
+
+Testnet operations never reserve sponsored-gas allowance. A mainnet operation
+only does so when the prepared UserOperation contains a Pimlico paymaster. The
+EVM adapter fetches ETH/USD from Alchemy, converts it conservatively to integer
+micro-USD, applies the code-owned 10% Pimlico cost margin, and reserves the
+pessimistic maximum UserOperation gas envelope. Settlement uses
+`receipt.actualGasCost` with the exact persisted quote and margin. If pricing is
+unavailable, sponsored mainnet preparation fails closed before signing or
+submission.
+
+### Signatures
+
+Creating a durable reserved signature operation and reserving one `signature`
+unit share a transaction. Successful signing settles the unit in the same
+transaction as the operation success and audit row. A definitive signer failure
+releases it. Verification is read-only and never consumes billing usage.
+
+### Resource limits
+
+Members (including pending invitations), software wallets, and HSM wallets are
+current-resource entitlements rather than period meters. Their workflows use
+the stored plan version and organization billing lock. Wallet provider work may
+happen before persistence, but the locked capacity check is repeated in the
+final transaction.
+
 ## Immutable usage and corrections
 
 `usage_event` is the auditable ledger. A debit records billable usage. Existing
@@ -221,6 +274,37 @@ billing evidence.
 checks. It is not the historical evidence source. Reconciliation recomputes
 consumed totals from debit minus credit events and compares them with the
 projection.
+
+## Recovery and reconciliation
+
+The server runs a scoped billing worker every minute after migrations. Each run:
+
+1. advances expired open anniversary periods in bounded batches;
+2. claims expired active reservations with `FOR UPDATE SKIP LOCKED`;
+3. settles terminal successful execution/signature sources, releases terminal
+   failures and missing/manual sources, and defers operations still in flight;
+4. locks each open meter balance and recomputes consumed usage from immutable
+   events plus reserved usage from active reservations;
+5. repairs a divergent projection only when the reconstructed totals remain
+   within the snapshotted hard limit.
+
+Execution receipt reconciliation remains the authority for uncertain onchain
+state. Billing recovery will not guess gas cost for an active submission.
+Included failures remain reserved until an actual receipt provides the gas
+measurement; rejected pre-inclusion work can be released.
+
+The worker is safe across replicas because claims skip locked rows and all
+terminal transitions are idempotent. Logs contain only aggregate counts;
+metrics use bounded meter, source, and outcome attributes.
+
+## Billing API
+
+Authenticated `GET /billing` returns the selected plan/version and status, the
+current anniversary period, current resource entitlement usage, and every
+period meter's included, hard-limit, consumed, reserved, and remaining amounts.
+Big integer quantities are encoded as decimal strings on HTTP and decoded by
+the typed client. The route requires billing read permission and never contacts
+a payment or pricing provider.
 
 ## Provider synchronization
 
@@ -256,8 +340,6 @@ subscription, and item state. Checkout redirects never grant product access.
 
 ## Current implementation boundary
 
-Implemented:
-
 - branded IDs and Effect persistence schemas for all billing tables;
 - code-owned component, meter, unit, and source discriminators;
 - Drizzle tables, tenant-safe relations, checks, indexes, and migration;
@@ -266,28 +348,31 @@ Implemented:
 - transaction-aware repositories for every billing table;
 - atomic Free account, subscription, anniversary-period, and meter-balance
   initialization during organization creation;
-- existing derived quota reads and public billing response.
+- locked, idempotent reserve/settle/release workflows with hard-limit admission;
+- anchor-preserving lazy and scheduled anniversary rollover;
+- execution, signature, and sponsored-gas integration;
+- EVM-owned chain classification, Alchemy price quotes, pessimistic gas holds,
+  and receipt-based actual-cost settlement;
+- expired-reservation recovery and ledger-to-projection reconciliation worker;
+- normalized authenticated `GET /billing` response;
+- bounded billing metrics and server/EVM tests for lifecycle, limit, rollover,
+  recovery, repair, chain classification, and monetary rounding.
 
-Not yet wired:
+Deliberately inactive until paid plans:
 
-- anniversary-period rollover;
-- transactional reserve/settle/release application workflows and balance
-  projection updates;
-- immutable event creation from execution, signature, and gas workflows;
-- ledger-to-balance reconciliation;
 - provider delivery worker;
 - Stripe customer, Checkout, portal, price mapping, and webhook processing;
-- billing audit events, metrics, operational alerts, and dashboard UI.
+- billing dashboard UI.
 
 ## Pending before production
 
-- Replace derived execution/signature counters with transactional metering while
-  retaining domain-row reconciliation queries.
 - Define the production catalog, price mappings, overage rounding, proration,
   trial, grace-period, delinquency, and cancellation semantics.
-- Implement reservation expiry and ledger-to-balance reconciliation workers.
 - Implement Stripe, verified raw-body webhook processing, Checkout/portal, and
   subscription reconciliation.
-- Define gas cost ingestion and currency conversion evidence for every sponsor.
-- Add audit events, bounded metrics, alerts, and boundary tests for concurrency,
-  idempotency, correction, rollover, webhook replay, and delivery retries.
+- Confirm Pimlico's production cost basis and replace the code-owned margin if
+  provider invoices expose a more exact billable amount.
+- Add production alerts for repeated recovery failures, projection repairs,
+  hard-limit denial spikes, stale reservations, and pricing outages.
+- Add PostgreSQL concurrency stress tests and future paid-path tests for credit
+  corrections, webhook replay, delivery retries, and overage reporting.

@@ -13,7 +13,7 @@ import {
   type BillingPeriod as BillingPeriodModel,
   type BillingPeriodInsert as BillingPeriodInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq, gt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -45,6 +45,14 @@ export interface BillingPeriodRepositoryService {
     id: BillingPeriodId,
     closedAt: DateTime.Utc,
   ) => Effect.Effect<BillingPeriodModel | undefined, DatabaseError>;
+  readonly listExpiredOpen: (
+    now: DateTime.Utc,
+    limit: number,
+  ) => Effect.Effect<ReadonlyArray<BillingPeriodModel>, DatabaseError>;
+  readonly listOpen: (
+    limit: number,
+    afterId?: BillingPeriodId,
+  ) => Effect.Effect<ReadonlyArray<BillingPeriodModel>, DatabaseError>;
 }
 
 export class BillingPeriodRepository extends Context.Service<
@@ -140,6 +148,38 @@ export class BillingPeriodRepository extends Context.Service<
             )
             .returning();
           return rows[0] ? Schema.decodeUnknownSync(BillingPeriod)(rows[0]) : undefined;
+        }, mapRepositoryError),
+        listExpiredOpen: Effect.fn("database.billingPeriodRepository.listExpiredOpen")(function* (
+          now,
+          limit,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(billingPeriod)
+            .where(
+              and(eq(billingPeriod.status, "open"), lte(billingPeriod.endsAt, encodeDate(now))),
+            )
+            .orderBy(asc(billingPeriod.endsAt), asc(billingPeriod.id))
+            .limit(Math.min(Math.max(Math.trunc(limit), 1), 100));
+          return Schema.decodeUnknownSync(Schema.Array(BillingPeriod))(rows);
+        }, mapRepositoryError),
+        listOpen: Effect.fn("database.billingPeriodRepository.listOpen")(function* (
+          limit,
+          afterId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(billingPeriod)
+            .where(
+              afterId === undefined
+                ? eq(billingPeriod.status, "open")
+                : and(eq(billingPeriod.status, "open"), gt(billingPeriod.id, afterId)),
+            )
+            .orderBy(asc(billingPeriod.id))
+            .limit(Math.min(Math.max(Math.trunc(limit), 1), 100));
+          return Schema.decodeUnknownSync(Schema.Array(BillingPeriod))(rows);
         }, mapRepositoryError),
       });
     }),

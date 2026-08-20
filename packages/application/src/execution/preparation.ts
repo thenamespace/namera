@@ -21,6 +21,7 @@ export const makePrepareExecution = Effect.gen(function* () {
   return Effect.fn("application.execution.prepare")(function* (input: {
     readonly actor: GrantedActorData;
     readonly request: ExecuteRequest;
+    readonly sponsorship: "none" | "pimlico";
   }) {
     const wallet = yield* repository.core.wallet.findById(
       input.request.walletId,
@@ -34,7 +35,12 @@ export const makePrepareExecution = Effect.gen(function* () {
       Effect.mapError(() => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
     );
     const prepared = yield* evm.execution
-      .prepare({ chainId: input.request.chainId, account, calls: input.request.calls })
+      .prepare({
+        chainId: input.request.chainId,
+        account,
+        calls: input.request.calls,
+        sponsorship: input.sponsorship,
+      })
       .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
     const candidates = input.actor.grants.filter(
       (item): item is GrantedEvmSessionKey =>

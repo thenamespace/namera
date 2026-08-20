@@ -9,7 +9,7 @@ import {
   type BillingMeterBalanceInsert as BillingMeterBalanceInsertModel,
   type BillingMeterKey,
 } from "@namera-ai/protocol/model";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -33,6 +33,32 @@ export interface BillingMeterBalanceRepositoryService {
     organizationId: OrganizationId,
     periodId: BillingPeriodId,
   ) => Effect.Effect<ReadonlyArray<BillingMeterBalanceModel>, DatabaseError>;
+  readonly addReserved: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+    amount: bigint,
+  ) => Effect.Effect<BillingMeterBalanceModel | undefined, DatabaseError>;
+  readonly settleReserved: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+    reservedAmount: bigint,
+    consumedAmount: bigint,
+  ) => Effect.Effect<BillingMeterBalanceModel | undefined, DatabaseError>;
+  readonly releaseReserved: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+    amount: bigint,
+  ) => Effect.Effect<BillingMeterBalanceModel | undefined, DatabaseError>;
+  readonly replaceProjection: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+    consumedAmount: bigint,
+    reservedAmount: bigint,
+  ) => Effect.Effect<BillingMeterBalanceModel | undefined, DatabaseError>;
 }
 
 export class BillingMeterBalanceRepository extends Context.Service<
@@ -100,6 +126,103 @@ export class BillingMeterBalanceRepository extends Context.Service<
             .orderBy(asc(billingMeterBalance.meterKey));
           return Schema.decodeUnknownSync(Schema.Array(BillingMeterBalance))(rows);
         }, mapRepositoryError),
+        addReserved: Effect.fn("database.billingMeterBalanceRepository.addReserved")(function* (
+          organizationId,
+          periodId,
+          meterKey,
+          amount,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(billingMeterBalance)
+            .set({ reservedAmount: sql`${billingMeterBalance.reservedAmount} + ${amount}` })
+            .where(
+              and(
+                eq(billingMeterBalance.organizationId, organizationId),
+                eq(billingMeterBalance.periodId, periodId),
+                eq(billingMeterBalance.meterKey, meterKey),
+                or(
+                  isNull(billingMeterBalance.hardLimitAmount),
+                  gte(
+                    billingMeterBalance.hardLimitAmount,
+                    sql`${billingMeterBalance.consumedAmount} + ${billingMeterBalance.reservedAmount} + ${amount}`,
+                  ),
+                ),
+              ),
+            )
+            .returning();
+          return rows[0] ? Schema.decodeUnknownSync(BillingMeterBalance)(rows[0]) : undefined;
+        }, mapRepositoryError),
+        settleReserved: Effect.fn("database.billingMeterBalanceRepository.settleReserved")(
+          function* (organizationId, periodId, meterKey, reservedAmount, consumedAmount) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(billingMeterBalance)
+              .set({
+                reservedAmount: sql`${billingMeterBalance.reservedAmount} - ${reservedAmount}`,
+                consumedAmount: sql`${billingMeterBalance.consumedAmount} + ${consumedAmount}`,
+              })
+              .where(
+                and(
+                  eq(billingMeterBalance.organizationId, organizationId),
+                  eq(billingMeterBalance.periodId, periodId),
+                  eq(billingMeterBalance.meterKey, meterKey),
+                  gte(billingMeterBalance.reservedAmount, reservedAmount),
+                  or(
+                    isNull(billingMeterBalance.hardLimitAmount),
+                    gte(
+                      billingMeterBalance.hardLimitAmount,
+                      sql`${billingMeterBalance.consumedAmount} + ${billingMeterBalance.reservedAmount} - ${reservedAmount} + ${consumedAmount}`,
+                    ),
+                  ),
+                ),
+              )
+              .returning();
+            return rows[0] ? Schema.decodeUnknownSync(BillingMeterBalance)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        releaseReserved: Effect.fn("database.billingMeterBalanceRepository.releaseReserved")(
+          function* (organizationId, periodId, meterKey, amount) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(billingMeterBalance)
+              .set({ reservedAmount: sql`${billingMeterBalance.reservedAmount} - ${amount}` })
+              .where(
+                and(
+                  eq(billingMeterBalance.organizationId, organizationId),
+                  eq(billingMeterBalance.periodId, periodId),
+                  eq(billingMeterBalance.meterKey, meterKey),
+                  gte(billingMeterBalance.reservedAmount, amount),
+                ),
+              )
+              .returning();
+            return rows[0] ? Schema.decodeUnknownSync(BillingMeterBalance)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        replaceProjection: Effect.fn("database.billingMeterBalanceRepository.replaceProjection")(
+          function* (organizationId, periodId, meterKey, consumedAmount, reservedAmount) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(billingMeterBalance)
+              .set({ consumedAmount, reservedAmount })
+              .where(
+                and(
+                  eq(billingMeterBalance.organizationId, organizationId),
+                  eq(billingMeterBalance.periodId, periodId),
+                  eq(billingMeterBalance.meterKey, meterKey),
+                  or(
+                    isNull(billingMeterBalance.hardLimitAmount),
+                    gte(billingMeterBalance.hardLimitAmount, consumedAmount + reservedAmount),
+                  ),
+                ),
+              )
+              .returning();
+            return rows[0] ? Schema.decodeUnknownSync(BillingMeterBalance)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
       });
     }),
   );

@@ -1,25 +1,24 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
-import type { BillingUsage } from "@namera-ai/protocol/dto";
-import { and, count, eq, gt, gte, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, count, eq, gt, isNull, ne } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import {
-  executionSubmission,
-  invitation,
-  organizationMember,
-  wallet,
-  walletKey,
-  signatureOperation,
-} from "#/schema/index";
+import { invitation, organizationMember, wallet, walletKey } from "#/schema/index";
+
+export interface BillingResourceUsage {
+  readonly members: number;
+  readonly pendingInvitations: number;
+  readonly softwareWallets: number;
+  readonly hsmWallets: number;
+}
 
 export interface BillingUsageRepositoryService {
   readonly getForOrganization: (
     organizationId: OrganizationId,
     now: DateTime.Utc,
-  ) => Effect.Effect<BillingUsage, DatabaseError>;
+  ) => Effect.Effect<BillingResourceUsage, DatabaseError>;
 }
 
 export class BillingUsageRepository extends Context.Service<
@@ -80,52 +79,11 @@ export class BillingUsageRepository extends Context.Service<
                   ne(walletKey.status, "destroyed"),
                 ),
               );
-            const monthStart = new Date(
-              Date.UTC(
-                new Date(encodedNow).getUTCFullYear(),
-                new Date(encodedNow).getUTCMonth(),
-                1,
-              ),
-            );
-            const executionRows = yield* db
-              .select({ value: count() })
-              .from(executionSubmission)
-              .where(
-                and(
-                  eq(executionSubmission.organizationId, organizationId),
-                  inArray(executionSubmission.status, [
-                    "reserved",
-                    "prepared",
-                    "submitted",
-                    "confirmed",
-                  ]),
-                  gte(executionSubmission.createdAt, monthStart),
-                ),
-              );
-            const signatureRows = yield* db
-              .select({ value: count() })
-              .from(signatureOperation)
-              .where(
-                and(
-                  eq(signatureOperation.organizationId, organizationId),
-                  gte(signatureOperation.createdAt, monthStart),
-                  or(
-                    eq(signatureOperation.status, "succeeded"),
-                    and(
-                      eq(signatureOperation.status, "reserved"),
-                      gt(signatureOperation.reservationExpiresAt, encodedNow),
-                    ),
-                  ),
-                ),
-              );
-
             return {
               members: memberRows[0]?.value ?? 0,
               pendingInvitations: invitationRows[0]?.value ?? 0,
               softwareWallets: softwareWalletRows[0]?.value ?? 0,
               hsmWallets: hsmWalletRows[0]?.value ?? 0,
-              executions: executionRows[0]?.value ?? 0,
-              signatures: signatureRows[0]?.value ?? 0,
             };
           },
           mapRepositoryError,

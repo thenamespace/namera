@@ -16,6 +16,7 @@ export const makeTestEvmExecutionService = (
 ): EvmExecutionService => {
   const entryPoint = EthereumAddress.make(entryPoint07Address);
   const userOperationHash = UserOperationHash.make(`0x${"1".repeat(64)}`);
+  const paymaster = EthereumAddress.make("0x3333333333333333333333333333333333333333");
   const receipt = {
     version: 1,
     namespace: "eip155",
@@ -27,9 +28,9 @@ export const makeTestEvmExecutionService = (
     sender: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
     nonce: 0n,
     entryPoint,
-    paymaster: null,
-    actualGasCost: 0n,
-    actualGasUsed: 0n,
+    paymaster,
+    actualGasCost: 10_000_000_000_000n,
+    actualGasUsed: 100_000n,
     success: true,
     reason: null,
   } as const;
@@ -64,7 +65,7 @@ export const makeTestEvmExecutionService = (
               maxFeePerGas: 0n,
               maxPriorityFeePerGas: 0n,
             },
-            paymaster: null,
+            paymaster: input.sponsorship === "pimlico" ? paymaster : null,
           },
           simulation: {
             userOperation: {
@@ -97,6 +98,31 @@ export const makeTestEvmExecutionService = (
           maxFeePerGas: 0n,
           maxPriorityFeePerGas: 0n,
           signature: Hex.make("0x"),
+          ...(input.sponsorship === "pimlico"
+            ? {
+                paymaster,
+                paymasterVerificationGasLimit: 10_000n,
+                paymasterPostOpGasLimit: 10_000n,
+              }
+            : {}),
+        },
+        billing: {
+          executionMeter: input.chainId === "eip155:1" ? "execution.mainnet" : "execution.testnet",
+          sponsorship:
+            input.sponsorship === "pimlico" && input.chainId === "eip155:1"
+              ? {
+                  provider: "pimlico",
+                  reservationAmountMicroUsd: 100_000n,
+                  quote: {
+                    provider: "alchemy",
+                    currency: "usd",
+                    nativeAsset: "ETH",
+                    nativePriceMicroUsd: 3_000_000_000n,
+                    surchargeBasisPoints: 1_000,
+                    quotedAt: DateTime.fromEpochSeconds(0),
+                  },
+                }
+              : null,
         },
       }),
     ),
@@ -112,6 +138,7 @@ export const makeTestEvmExecutionService = (
           signature: Hex.make(`0x${"4".repeat(128)}`),
         },
         userOperationHash,
+        billing: input.prepared.billing,
       }),
     ),
     submit: Effect.fn("evm.execution.test.submit")((input) =>

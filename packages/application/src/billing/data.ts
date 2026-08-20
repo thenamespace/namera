@@ -1,8 +1,4 @@
-import type {
-  BillingMeterKey,
-  BillingMeterUnit,
-  BillingPlanLimits,
-} from "@namera-ai/protocol/model";
+import type { BillingMeterKey, BillingMeterUnit } from "@namera-ai/protocol/model";
 
 export interface BillingMeterDefinition {
   readonly key: BillingMeterKey;
@@ -58,13 +54,6 @@ export const freeBillingPlan = {
   },
   resources: freeResourceLimits,
   meters: freeMeters,
-  // Preserve the current public billing response until it is upgraded to the
-  // normalized meter read model. Values are derived from the same registry.
-  limits: {
-    ...freeResourceLimits,
-    includedExecutions: Number(freeMeters["execution.mainnet"].includedAmount),
-    includedSignatures: Number(freeMeters.signature.includedAmount),
-  } satisfies BillingPlanLimits,
 } as const;
 
 /** Only Free v1 is assignable until paid-plan workflows are implemented. */

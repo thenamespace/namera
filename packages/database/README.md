@@ -334,10 +334,11 @@ dimensions; adding a supported meter does not add fixed usage columns.
 The billing repository aggregate exposes account creation/lookup/locking,
 current-subscription lookup, period and balance access, subscription-item
 lifecycle, idempotent reservation and ledger insertion, outbound-delivery
-lifecycle, provider-event inbox lifecycle, and the existing usage read model.
-All repository operations use the ambient transaction when present.
-Quota-sensitive application transactions lock `billing.account` before reading
-usage so concurrent writes for one organization are serialized without globally
-locking other organizations. Transactional metering workflows and period
-rollover remain application work; current quota reads still derive usage from
+lifecycle, provider-event inbox lifecycle, current resource counts, locked meter
+transitions, ledger aggregation, expiry claims, and projection replacement. All
+repository operations use the ambient transaction when present. Nested
+`TransactionService.run` calls join that transaction, allowing operation,
+policy, audit, and billing rows to commit atomically. Resource-sensitive
+transactions lock `billing.account`; metered admission uses conditional balance
+updates so concurrent operations cannot cross the hard limit. Resource reads derive usage from
 domain operation rows.

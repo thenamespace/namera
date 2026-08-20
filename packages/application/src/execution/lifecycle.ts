@@ -4,6 +4,7 @@ import { Repository, TransactionService, type WalletView } from "@namera-ai/data
 import { Evm, getChainDataByCaip2 } from "@namera-ai/evm";
 import type {
   ActorId,
+  EvmExecutionReceipt,
   ExecutionSubmissionId,
   EvmIntentContext,
   OrganizationId,
@@ -19,6 +20,7 @@ import type {
 } from "@namera-ai/protocol/model";
 
 import { Audit } from "#/audit/layer";
+import { makeBillingMetering } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
@@ -28,6 +30,87 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
+  const billing = yield* makeBillingMetering;
+
+  const releaseExecutionBilling = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    submission: Extract<ExecutionSubmission, { namespace: "eip155" }>,
+    receipt?: EvmExecutionReceipt,
+  ) {
+    const reservations = yield* repository.billing.usageReservation.listBySource(
+      organizationId,
+      "execution-submission",
+      submission.id,
+    );
+    for (const reservation of reservations) {
+      if (reservation.meterKey !== "gas-sponsorship" || receipt === undefined) {
+        yield* billing.release({ organizationId, reservationId: reservation.id });
+        continue;
+      }
+      const signed = submission.data.signedExecution;
+      if (signed === null) {
+        yield* billing.release({ organizationId, reservationId: reservation.id });
+        continue;
+      }
+      const amount = evm.billing.settleGasSponsorship({ billing: signed.billing, receipt });
+      yield* billing.settle({
+        organizationId,
+        reservationId: reservation.id,
+        amount,
+        data: {
+          version: 1,
+          namespace: "eip155",
+          chainId: receipt.chainId,
+          provider: "pimlico",
+          actualGasCostWei: receipt.actualGasCost.toString(),
+          transactionHash: receipt.transactionHash,
+        },
+      });
+    }
+  });
+
+  const settleExecutionBilling = Effect.fnUntraced(function* (
+    organizationId: OrganizationId,
+    submission: Extract<ExecutionSubmission, { namespace: "eip155" }>,
+    receipt: EvmExecutionReceipt,
+  ) {
+    const reservations = yield* repository.billing.usageReservation.listBySource(
+      organizationId,
+      "execution-submission",
+      submission.id,
+    );
+    for (const reservation of reservations) {
+      const signed = submission.data.signedExecution;
+      if (reservation.meterKey === "gas-sponsorship" && signed === null) {
+        return yield* Effect.die("Sponsored execution billing envelope is missing");
+      }
+      const amount =
+        reservation.meterKey === "gas-sponsorship" && signed !== null
+          ? evm.billing.settleGasSponsorship({ billing: signed.billing, receipt })
+          : 1n;
+      yield* billing.settle({
+        organizationId,
+        reservationId: reservation.id,
+        amount,
+        data:
+          reservation.meterKey === "gas-sponsorship"
+            ? {
+                version: 1,
+                namespace: "eip155",
+                chainId: receipt.chainId,
+                provider: "pimlico",
+                actualGasCostWei: receipt.actualGasCost.toString(),
+                transactionHash: receipt.transactionHash,
+              }
+            : {
+                version: 1,
+                namespace: "eip155",
+                chainId: receipt.chainId,
+                transactionHash: receipt.transactionHash,
+              },
+      });
+    }
+  });
 
   const applyStateChanges = Effect.fnUntraced(function* (
     organizationId: OrganizationId,
@@ -112,6 +195,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     readonly submissionId: ExecutionSubmissionId;
     readonly sessionKey: EvmSessionKey;
     readonly stage: "sign" | "submit" | "receipt";
+    readonly receipt?: EvmExecutionReceipt;
     readonly leaseToken?: string;
   }) {
     return yield* transaction.run(
@@ -150,6 +234,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           operation,
           now,
         );
+        yield* releaseExecutionBilling(input.organizationId, submission, input.receipt);
         const failed = yield* repository.core.executionSubmission.markFailed({
           id: input.submissionId,
           organizationId: input.organizationId,
@@ -280,6 +365,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           operation,
           now,
         );
+        yield* settleExecutionBilling(input.organizationId, submission, input.receipt);
         const created = yield* repository.core.execution.insert({
           executionSubmissionId: input.submissionId,
           organizationId: input.organizationId,

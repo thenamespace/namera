@@ -197,3 +197,6 @@ research
 
 # Local research and generated pricing inputs
 script/calculate-margin.ts
+
+# Repository-local implementation status
+progress/

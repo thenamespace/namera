@@ -36,10 +36,12 @@ Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
 `@namera-ai/database/DatabaseMigration`.
 
-After migrations complete, the server starts scoped email and execution workers.
-Both use database leases safe for multiple instances and stop with the server
-scope. The execution worker claims bounded batches, checks receipts concurrently,
+After migrations complete, the server starts scoped email, execution, and
+billing workers. They use locked/leased claims safe for multiple instances and
+stop with the server scope. The execution worker claims bounded batches, checks receipts concurrently,
 and settles, releases, or reschedules submissions left pending by HTTP requests.
+The billing worker advances anniversary periods, recovers expired usage holds,
+and repairs balance projections from the immutable ledger.
 HTTP requests only enqueue email work and never wait for background delivery.
 
 Execution submission status is readable only by the API-key actor that created
@@ -58,7 +60,7 @@ usage.
 
 `POST /signatures` is available to granted machine actors. It requires an
 `Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
-grant, signature-policy, persistence, and monthly billing enforcement to the
+grant, signature-policy, persistence, and anniversary-period billing enforcement to the
 application workflow. Signing remains synchronous and has no background worker.
 The public SDK creates this header internally; CLI and MCP users never manage
 it themselves.

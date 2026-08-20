@@ -29,14 +29,6 @@ export const BillingUsageSourceType = Schema.Literals([
   "manual-adjustment",
 ]);
 
-export const BillingPlanLimits = Schema.Struct({
-  maxMembers: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  maxSoftwareWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  maxHsmWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  includedExecutions: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  includedSignatures: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-});
-
 export type BillingPlan = typeof BillingPlan.Type;
 export type BillingProvider = typeof BillingProvider.Type;
 export type BillingCurrency = typeof BillingCurrency.Type;
@@ -44,4 +36,3 @@ export type BillingSubscriptionComponentKey = typeof BillingSubscriptionComponen
 export type BillingMeterKey = typeof BillingMeterKey.Type;
 export type BillingMeterUnit = typeof BillingMeterUnit.Type;
 export type BillingUsageSourceType = typeof BillingUsageSourceType.Type;
-export type BillingPlanLimits = typeof BillingPlanLimits.Type;

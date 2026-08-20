@@ -3,7 +3,6 @@ import { DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "e
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
-import type { EvmUserOperationStatus } from "@namera-ai/protocol";
 import type { EvmSessionKey, ExecutionSubmission } from "@namera-ai/protocol/model";
 import { executionReconciliations, executionResults } from "@namera-ai/telemetry";
 
@@ -15,12 +14,6 @@ const reconciliationPolicy = {
   leaseDuration: Duration.minutes(2),
   retryDelay: Duration.seconds(15),
 } as const;
-
-const failedStatuses = new Set<EvmUserOperationStatus["status"]>([
-  "rejected",
-  "reverted",
-  "failed",
-]);
 
 export const makeExecutionReconciliation = Effect.gen(function* () {
   const crypto = yield* CryptoService;
@@ -119,7 +112,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
         });
         return;
       }
-      if (failedStatuses.has(status.success.status)) {
+      if (status.success.status === "rejected") {
         yield* lifecycle.release({
           organizationId: submission.organizationId,
           actorId: submission.actorId,
@@ -128,6 +121,12 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
           stage: "submit",
           leaseToken,
         });
+        return;
+      }
+      if (status.success.status === "reverted" || status.success.status === "failed") {
+        // Included failures consume sponsored gas. Wait for the receipt so the
+        // billing settlement uses the provider's actual gas cost.
+        yield* retry(submission, leaseToken, "failed_receipt_pending");
         return;
       }
       if (
@@ -159,6 +158,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
           submissionId: submission.id,
           sessionKey,
           stage: "receipt",
+          receipt: receipt.success.value,
           leaseToken,
         });
         yield* Metric.update(
@@ -203,7 +203,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     const status = yield* evm.execution
       .getStatus({ chainId: signed.chainId, userOperationHash: signed.userOperationHash })
       .pipe(Effect.result);
-    if (Result.isSuccess(status) && failedStatuses.has(status.success.status)) {
+    if (Result.isSuccess(status) && status.success.status === "rejected") {
       yield* lifecycle.release({
         organizationId: submission.organizationId,
         actorId: submission.actorId,

@@ -10,7 +10,7 @@ export class BillingGroup extends HttpApiGroup.make("billing")
     HttpApiEndpoint.get("get", "/billing", {
       success: GetBillingResponse,
       error: CommonErrors,
-    }).annotate(OpenApi.Summary, "Get billing for the active organization"),
+    }).annotate(OpenApi.Summary, "Get the active billing period, entitlements, and meter balances"),
   )
   .annotate(OpenApi.Description, "Organization billing and entitlements")
   .middleware(Authorization) {}

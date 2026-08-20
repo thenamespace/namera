@@ -31,7 +31,10 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
       readonly actor: GrantedActorData;
       readonly request: SimulateExecutionRequest;
     }) {
-      const { prepared, candidates } = yield* prepareExecution(input);
+      const { prepared, candidates } = yield* prepareExecution({
+        ...input,
+        sponsorship: "none",
+      });
 
       const callsSucceeded = prepared.context.simulation.calls.results.every(
         (result) => result.status === "success",

@@ -1,4 +1,5 @@
 export * from "./accounts/index.js";
+export * from "./billing/index.js";
 export * from "./chains/index.js";
 export * from "./config.js";
 export type {

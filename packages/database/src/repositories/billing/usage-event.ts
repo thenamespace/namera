@@ -14,7 +14,7 @@ import {
   type BillingUsageEvent as BillingUsageEventModel,
   type BillingUsageEventInsert as BillingUsageEventInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -31,11 +31,20 @@ export interface BillingUsageEventRepositoryService {
     organizationId: OrganizationId,
     id: BillingUsageEventId,
   ) => Effect.Effect<BillingUsageEventModel | undefined, DatabaseError>;
+  readonly findByIdempotencyKey: (
+    organizationId: OrganizationId,
+    idempotencyKey: string,
+  ) => Effect.Effect<BillingUsageEventModel | undefined, DatabaseError>;
   readonly listForMeter: (
     organizationId: OrganizationId,
     periodId: BillingPeriodId,
     meterKey: BillingMeterKey,
   ) => Effect.Effect<ReadonlyArray<BillingUsageEventModel>, DatabaseError>;
+  readonly getNetAmount: (
+    organizationId: OrganizationId,
+    periodId: BillingPeriodId,
+    meterKey: BillingMeterKey,
+  ) => Effect.Effect<bigint, DatabaseError>;
 }
 
 export class BillingUsageEventRepository extends Context.Service<
@@ -80,6 +89,18 @@ export class BillingUsageEventRepository extends Context.Service<
           });
           return row ? Schema.decodeUnknownSync(BillingUsageEvent)(row) : undefined;
         }, mapRepositoryError),
+        findByIdempotencyKey: Effect.fn(
+          "database.billingUsageEventRepository.findByIdempotencyKey",
+        )(function* (organizationId, idempotencyKey) {
+          const db = yield* transactionOrDatabase(database);
+          const row = yield* db.query.billingUsageEvent.findFirst({
+            where: {
+              organizationId: { eq: organizationId },
+              idempotencyKey: { eq: idempotencyKey },
+            },
+          });
+          return row ? Schema.decodeUnknownSync(BillingUsageEvent)(row) : undefined;
+        }, mapRepositoryError),
         listForMeter: Effect.fn("database.billingUsageEventRepository.listForMeter")(function* (
           organizationId,
           periodId,
@@ -98,6 +119,26 @@ export class BillingUsageEventRepository extends Context.Service<
             )
             .orderBy(desc(billingUsageEvent.occurredAt), desc(billingUsageEvent.id));
           return Schema.decodeUnknownSync(Schema.Array(BillingUsageEvent))(rows);
+        }, mapRepositoryError),
+        getNetAmount: Effect.fn("database.billingUsageEventRepository.getNetAmount")(function* (
+          organizationId,
+          periodId,
+          meterKey,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({
+              amount: sql<string>`coalesce(sum(case when ${billingUsageEvent.direction} = 'debit' then ${billingUsageEvent.amount} else -${billingUsageEvent.amount} end), 0)`,
+            })
+            .from(billingUsageEvent)
+            .where(
+              and(
+                eq(billingUsageEvent.organizationId, organizationId),
+                eq(billingUsageEvent.periodId, periodId),
+                eq(billingUsageEvent.meterKey, meterKey),
+              ),
+            );
+          return BigInt(rows[0]?.amount ?? "0");
         }, mapRepositoryError),
       });
     }),

@@ -21,7 +21,7 @@ import {
 } from "@namera-ai/telemetry";
 import { utf8ByteLength } from "@namera-ai/utils";
 
-import { enforceSignatureLimit, lockOrganizationBilling } from "#/billing/index";
+import { makeBillingMetering } from "#/billing/index";
 
 import { getSignatureCandidates, makeLoadSignatureAccount } from "./account.js";
 import { makeSignatureOperationLifecycle } from "./lifecycle.js";
@@ -35,6 +35,7 @@ export const makeSign = Effect.gen(function* () {
   const transaction = yield* TransactionService;
   const loadSignatureAccount = yield* makeLoadSignatureAccount;
   const lifecycle = yield* makeSignatureOperationLifecycle;
+  const billing = yield* makeBillingMetering;
 
   return Effect.fn("application.signature.sign")(
     function* (input: {
@@ -130,7 +131,6 @@ export const makeSign = Effect.gen(function* () {
 
         const reserved = yield* transaction.run(
           Effect.gen(function* () {
-            yield* lockOrganizationBilling(repository, input.actor.organizationId);
             const existing = yield* repository.core.signatureOperation.findByActorAndIdempotencyKey(
               input.actor.organizationId,
               input.actor.actorId,
@@ -138,8 +138,8 @@ export const makeSign = Effect.gen(function* () {
             );
             if (existing !== undefined) return { existing } as const;
 
-            yield* enforceSignatureLimit(repository, input.actor.organizationId);
             const reservationNow = yield* DateTime.now;
+            const reservationExpiresAt = DateTime.addDuration(reservationNow, Duration.minutes(5));
             const commonInsert = {
               organizationId: input.actor.organizationId,
               actorId: input.actor.actorId,
@@ -149,7 +149,7 @@ export const makeSign = Effect.gen(function* () {
               idempotencyKey: input.idempotencyKey,
               requestHash,
               policyHash: candidate.sessionKey.policyHash,
-              reservationExpiresAt: DateTime.addDuration(reservationNow, Duration.minutes(5)),
+              reservationExpiresAt,
               namespace: "eip155" as const,
             };
             const inserted = yield* repository.core.signatureOperation.insert(
@@ -179,9 +179,16 @@ export const makeSign = Effect.gen(function* () {
                     },
                   },
             );
-            return inserted.inserted
-              ? ({ operation: inserted.operation } as const)
-              : ({ existing: inserted.operation } as const);
+            if (!inserted.inserted) return { existing: inserted.operation } as const;
+            yield* billing.reserve({
+              organizationId: input.actor.organizationId,
+              meterKey: "signature",
+              amount: 1n,
+              sourceType: "signature-operation",
+              sourceId: inserted.operation.id,
+              expiresAt: reservationExpiresAt,
+            });
+            return { operation: inserted.operation } as const;
           }),
         );
         if ("existing" in reserved) {

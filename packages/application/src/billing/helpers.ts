@@ -2,13 +2,20 @@ import { DateTime, Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
 import { BillingLimitExceededError, type OrganizationId } from "@namera-ai/protocol";
-import type {
-  BillingPlanLimits,
-  BillingSubscription,
-  WalletKeyProtectionLevel,
-} from "@namera-ai/protocol/model";
+import type { BillingSubscription, WalletKeyProtectionLevel } from "@namera-ai/protocol/model";
 
 import { freeBillingPlan } from "./data.js";
+
+export interface OrganizationBillingSnapshot {
+  readonly subscription: BillingSubscription;
+  readonly limits: typeof freeBillingPlan.resources;
+  readonly usage: {
+    readonly members: number;
+    readonly pendingInvitations: number;
+    readonly softwareWallets: number;
+    readonly hsmWallets: number;
+  };
+}
 
 export const resolveBillingPlan = (subscription: BillingSubscription) => {
   if (
@@ -45,7 +52,8 @@ export const loadOrganizationBilling = Effect.fnUntraced(function* (
     organizationId,
     yield* DateTime.now,
   );
-  return { subscription, limits: plan.limits, usage };
+  const result: OrganizationBillingSnapshot = { subscription, limits: plan.resources, usage };
+  return result;
 });
 
 export const enforceMemberLimit = Effect.fn("application.enforceMemberLimit")(function* (
@@ -80,31 +88,3 @@ export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(fu
     });
   }
 });
-
-export const enforceExecutionLimit = Effect.fn("application.enforceExecutionLimit")(function* (
-  repository: RepositoryService,
-  organizationId: OrganizationId,
-) {
-  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
-  if (usage.executions >= limits.includedExecutions) {
-    return yield* new BillingLimitExceededError({
-      code: "LIMIT_EXCEEDED",
-      limit: "executions",
-    });
-  }
-});
-
-export const enforceSignatureLimit = Effect.fn("application.enforceSignatureLimit")(function* (
-  repository: RepositoryService,
-  organizationId: OrganizationId,
-) {
-  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
-  if (usage.signatures >= limits.includedSignatures) {
-    return yield* new BillingLimitExceededError({
-      code: "LIMIT_EXCEEDED",
-      limit: "signatures",
-    });
-  }
-});
-
-export type BillingLimits = BillingPlanLimits;

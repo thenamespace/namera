@@ -1,28 +1,52 @@
 import { Schema } from "effect";
 
-import { OrganizationId } from "#/common/index";
-import { BillingPlan, BillingPlanLimits, BillingSubscriptionStatus } from "#/model/index";
+import { BillingPeriodId, OrganizationId } from "#/common/index";
+import {
+  BillingMeterKey,
+  BillingMeterUnit,
+  BillingPlan,
+  BillingSubscriptionStatus,
+} from "#/model/index";
 
-export const BillingUsage = Schema.Struct({
-  members: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  pendingInvitations: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  softwareWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  hsmWallets: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  executions: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  signatures: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-}).annotate({ identifier: "BillingUsage" });
+const NonNegativeAmount = Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n));
+
+export const BillingResourceKey = Schema.Literals(["members", "software-wallets", "hsm-wallets"]);
+
+export const BillingResourceUsage = Schema.Struct({
+  key: BillingResourceKey,
+  includedAmount: NonNegativeAmount,
+  usedAmount: NonNegativeAmount,
+  remainingAmount: NonNegativeAmount,
+});
+
+export const BillingMeterUsage = Schema.Struct({
+  key: BillingMeterKey,
+  unit: BillingMeterUnit,
+  includedAmount: NonNegativeAmount,
+  hardLimitAmount: Schema.NullOr(NonNegativeAmount),
+  consumedAmount: NonNegativeAmount,
+  reservedAmount: NonNegativeAmount,
+  remainingAmount: Schema.NullOr(NonNegativeAmount),
+});
 
 export const GetBillingResponse = Schema.Struct({
   organizationId: OrganizationId,
   plan: BillingPlan,
   planVersion: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
   status: BillingSubscriptionStatus,
-  limits: BillingPlanLimits,
-  usage: BillingUsage,
+  period: Schema.Struct({
+    id: BillingPeriodId,
+    startsAt: Schema.DateTimeUtcFromDate,
+    endsAt: Schema.DateTimeUtcFromDate,
+  }),
+  resources: Schema.Array(BillingResourceUsage),
+  meters: Schema.Array(BillingMeterUsage),
 }).annotate({
   identifier: "GetBillingResponse",
-  description: "Current billing plan, limits, and usage for the active organization",
+  description: "Current anniversary period, resource entitlements, and metered usage",
 });
 
-export type BillingUsage = typeof BillingUsage.Type;
+export type BillingResourceKey = typeof BillingResourceKey.Type;
+export type BillingResourceUsage = typeof BillingResourceUsage.Type;
+export type BillingMeterUsage = typeof BillingMeterUsage.Type;
 export type GetBillingResponse = typeof GetBillingResponse.Type;

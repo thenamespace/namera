@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Option, Redacted } from "effect";
+import { HttpClient } from "effect/unstable/http";
 
 import { UnsupportedChainError } from "@namera-ai/protocol";
 import type {
@@ -12,6 +13,7 @@ import {
   type CreateAccountResult,
   makeCreateAccount,
 } from "./accounts/index.js";
+import { settleEvmGasSponsorship } from "./billing/execution.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeExecutionClients } from "./clients/execution.js";
 import { EvmConfig } from "./config.js";
@@ -41,6 +43,9 @@ export interface EvmService {
     type: EvmRpcType,
   ) => Effect.Effect<string, UnsupportedChainError>;
   readonly execution: EvmExecutionService;
+  readonly billing: {
+    readonly settleGasSponsorship: typeof settleEvmGasSponsorship;
+  };
   readonly policy: EvmPolicyService;
   readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
@@ -55,10 +60,11 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
     Evm,
     Effect.gen(function* () {
       const config = yield* EvmConfig;
+      const httpClient = yield* HttpClient.HttpClient;
       const alchemyApiKey = encodeURIComponent(Redacted.value(config.alchemyApiKey));
       const pimlicoApiKey = encodeURIComponent(Redacted.value(config.pimlicoApiKey));
       const createAccount = makeCreateAccount(config);
-      const execution = makeEvmExecutionService(config);
+      const execution = makeEvmExecutionService(config, httpClient);
       const policy = makeEvmPolicyService();
       const signature = makeEvmSignatureService(makeExecutionClients(config));
 
@@ -80,6 +86,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
 
       return Evm.of({
         createAccount,
+        billing: { settleGasSponsorship: settleEvmGasSponsorship },
         digestSignature: digestEvmSignature,
         getRpcUrl,
         execution,

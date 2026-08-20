@@ -112,7 +112,10 @@ layer(TestServerLayer)("execution routes", (it) => {
         ).toEqual([]);
         yield* setApiKey();
         yield* setAuthToken(owner.cookie.value);
-        expect((yield* client.billing.get()).usage.executions).toBe(0);
+        expect(
+          (yield* client.billing.get()).meters.find(({ key }) => key === "execution.mainnet")
+            ?.consumedAmount,
+        ).toBe(0n);
       }),
   );
 
@@ -207,7 +210,13 @@ layer(TestServerLayer)("execution routes", (it) => {
         expect(states[0]?.data).toEqual({ version: 1, spent: "4", reserved: "0" });
         yield* setApiKey();
         yield* setAuthToken(owner.cookie.value);
-        expect((yield* client.billing.get()).usage.executions).toBe(1);
+        const billing = yield* client.billing.get();
+        expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
+          1n,
+        );
+        expect(
+          billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount,
+        ).toBeGreaterThan(0n);
         expect(
           (yield* repository.audit.organization.findForOrganization(
             owner.actor.organization.id,
@@ -479,6 +488,22 @@ layer(TestServerLayer)("execution routes", (it) => {
           spendPolicy.id,
         ),
       ).toMatchObject([{ data: { version: 1, spent: "0", reserved: "0" } }]);
+      const period = yield* repository.billing.period.findOpen(owner.actor.organization.id);
+      if (period === undefined) return yield* Effect.die("Expected billing period");
+      expect(
+        yield* repository.billing.meterBalance.find(
+          owner.actor.organization.id,
+          period.id,
+          "execution.mainnet",
+        ),
+      ).toMatchObject({ consumedAmount: 0n, reservedAmount: 0n });
+      expect(
+        yield* repository.billing.meterBalance.find(
+          owner.actor.organization.id,
+          period.id,
+          "gas-sponsorship",
+        ),
+      ).toMatchObject({ consumedAmount: 33_000n, reservedAmount: 0n });
       yield* testExecution.setReceiptMode("immediate");
     }),
   );

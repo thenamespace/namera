@@ -6,10 +6,12 @@ import {
   EvmSerializedUserOperation,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
+import type { EvmGasPriceQuote } from "@namera-ai/protocol";
 import { getAddress, toEventSelector } from "viem";
 import { UserOperationExecutionError } from "viem/account-abstraction";
 
 import { reconstructEvmAccount } from "../accounts/reconstruct.js";
+import { makeEvmExecutionBilling } from "../billing/execution.js";
 import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
@@ -67,7 +69,10 @@ export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"]) =>
     data === "0x" ? call : { ...call, data },
   );
 
-export const makePrepareEvmExecution = (getClients: (chain: ChainData) => ExecutionClients) =>
+export const makePrepareEvmExecution = (
+  getClients: (chain: ChainData) => ExecutionClients,
+  getGasPrice: () => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>,
+) =>
   Effect.fn("evm.execution.prepare")(function* (input: PrepareEvmExecutionInput) {
     const chain = getChainDataByCaip2(input.chainId);
     if (chain === undefined) {
@@ -79,7 +84,7 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
 
     const clients = getClients(chain);
     const account = yield* reconstructEvmAccount(input.account, clients.publicClient);
-    const smartAccountClient = clients.createSmartAccountClient(account);
+    const smartAccountClient = clients.createSmartAccountClient(account, input.sponsorship);
     const userOperation = yield* Effect.tryPromise({
       try: () => smartAccountClient.prepareUserOperation({ account, calls: input.calls }),
       catch: (cause) =>
@@ -121,6 +126,17 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
       normalizedUserOperation,
     ).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "PREPARATION_FAILED", cause })),
+    );
+    const billing = yield* makeEvmExecutionBilling({
+      chain,
+      userOperation: normalizedUserOperation,
+      getGasPrice,
+    }).pipe(
+      Effect.mapError((cause) =>
+        cause instanceof EvmExecutionError
+          ? cause
+          : new EvmExecutionError({ code: "PREPARATION_FAILED", cause }),
+      ),
     );
 
     return yield* Schema.decodeUnknownEffect(EvmPreparedExecution)({
@@ -200,6 +216,7 @@ export const makePrepareEvmExecution = (getClients: (chain: ChainData) => Execut
         },
       },
       userOperation: encodedUserOperation,
+      billing,
     }).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "PREPARATION_FAILED", cause })),
     );
