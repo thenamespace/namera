@@ -15,38 +15,12 @@ an organization uses and future provider synchronization state.
 Only Free activation is implemented. Pro and Business values define the future
 entitlement contract but are not assignable through a public mutation.
 
-## Tables
+## Persistence
 
-### `billing.account`
-
-One row per organization; `organization_id` is the primary key. Optional
-provider and provider-customer ID must be both null or both present. A partial
-unique index prevents one provider customer from mapping to multiple accounts.
-The row also stores billing email, currency, and timestamps. Application
-workflows lock this row to serialize capacity reservations.
-
-### `billing.subscription`
-
-Stores historical subscriptions with organization, optional provider
-subscription identity, plan/version, lifecycle status, optional paired period
-start/end, cancellation flag, end time, typed provider data, and timestamps.
-
-Constraints enforce:
-
-- one current `trialing`, `active`, or `past_due` row per organization;
-- unique provider subscription identity when present;
-- plan version at least 1;
-- both period timestamps or neither, with end after start;
-- provider and provider subscription both present or both absent.
-
-Indexes support organization history and status/period processing.
-
-### `billing.provider_event`
-
-Future provider webhook inbox with provider event identity, type, live mode,
-typed data, pending/processed/failed state, attempts, provider timestamp,
-processed time, bounded last error, and timestamps. Provider/event ID is unique;
-status/creation is indexed for a worker.
+Complete per-column definitions, current-subscription partial uniqueness,
+provider-pair checks, period checks, webhook idempotency, foreign keys, and
+indexes are in the [billing database catalog](../database/billing.md).
+Application workflows lock `billing.account` to serialize capacity decisions.
 
 ## Initialization
 

@@ -4,24 +4,14 @@ The dashboard calls a wallet an **account**. The backend and public contracts us
 wallet terminology. A wallet combines organization-owned metadata, a
 namespace-specific smart-account address, and one provider-managed owner key.
 
-## Tables
+## Persistence and adapter references
 
-### `core.wallet_key`
-
-Stores organization, provider, algorithm, protection level, lifecycle status,
-public key, and provider-discriminated opaque data. It never stores a private
-key. `(id, organization_id)` is unique and organization/status is indexed.
-
-### `core.wallet`
-
-Stores organization, wallet-key reference, metadata, status, creator actor,
-namespace, namespace-discriminated account data, and timestamps. Composite
-foreign keys require the wallet key and creator to belong to the organization.
-Indexes support organization/status, wallet-key, and creator lookups.
-
-Public EVM responses contain the address and Kernel- or Safe-discriminated
-account configuration. Provider key references and provider metadata remain
-private.
+The canonical per-column definitions, keys, foreign keys, checks, and indexes
+for `core.wallet_key` and `core.wallet` are in the
+[core database catalog](../database/core-wallets-operations.md). Public EVM
+responses expose address and Kernel/Safe account configuration; provider key
+locators remain private. Smart-account versions, reconstruction, and
+counterfactual behavior are documented in [EVM accounts](../evm/accounts/README.md).
 
 ## Creation
 
@@ -58,6 +48,9 @@ signing policy are server-owned constants rather than public input.
   when it does not match the stored address.
 - Owner signatures use provider-neutral key operations and adapter-owned EVM
   formatting.
+
+See [supported EVM chains](../evm/supported-chains.md) for registry/provider
+requirements and [wallet-key providers](wallet-keys.md) for custody boundaries.
 
 ## Reads and updates
 

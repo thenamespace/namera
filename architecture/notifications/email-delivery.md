@@ -4,20 +4,11 @@
 Resend provider adapter, and delivery processing. Domain workflows enqueue jobs
 inside their existing transaction and never wait for the provider.
 
-## Table: `jobs.email_jobs`
+## Persistence
 
-| Field                                              | Purpose                                                           |
-| -------------------------------------------------- | ----------------------------------------------------------------- |
-| `id`, `type`, `idempotency_key`                    | Typed job identity and unique business delivery.                  |
-| `encrypted_payload`                                | Versioned authenticated ciphertext, cleared at terminal outcomes. |
-| `status`, `attempts`, `available_at`, `expires_at` | Queue lifecycle and scheduling.                                   |
-| `lease_token`, `lease_expires_at`                  | Atomic worker ownership and stale-lease recovery.                 |
-| `provider_message_id`, `sent_at`                   | Successful provider projection.                                   |
-| `last_error_code`                                  | Bounded terminal/retry classification.                            |
-| timestamps                                         | Creation/update.                                                  |
-
-Indexes serve due status, lease recovery, and expiry. Attempts are constrained
-non-negative and idempotency key is unique.
+The complete `jobs.email_jobs` column definitions, uniqueness, attempt check,
+and worker indexes are in the
+[notification and jobs database catalog](../database/notifications-jobs.md#jobsemail_jobs).
 
 ## Payload security
 

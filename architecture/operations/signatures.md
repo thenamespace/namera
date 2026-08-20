@@ -5,20 +5,14 @@ signing. Raw digest signing is not public. Signature creation is policy-gated,
 metered, idempotent, and persisted as an operation; verification is read-only
 and unmetered.
 
-## Table: `core.signature_operation`
+## Persistence and EVM internals
 
-| Field group | Meaning                                                                                                        |
-| ----------- | -------------------------------------------------------------------------------------------------------------- |
-| Identity    | ID, organization, actor, wallet, session key, grant, namespace.                                                |
-| Idempotency | Actor-scoped idempotency key, request hash, policy hash.                                                       |
-| Lifecycle   | `reserved`, `succeeded`, or `failed`; reservation expiry; success/failure timestamps and bounded failure code. |
-| Data        | Fully discriminated EVM message or typed-data operation, including chain/account and original content.         |
-| Metadata    | Creation/update timestamps.                                                                                    |
-
-Composite foreign keys prove that actor, wallet, key, and grant all belong to
-the organization and one another. `(organization, actor, idempotency_key)` is
-unique. Indexes serve organization, wallet, session-key/status, and actor
-history. A lifecycle check requires timestamps/failure code to match status.
+The canonical `core.signature_operation` column, lifecycle check, keys, foreign
+keys, and indexes are in the
+[core database catalog](../database/core-wallets-operations.md#coresignature_operation).
+Digesting, smart-account signing, deployed ERC-1271 verification, and
+counterfactual factory verification are documented in
+[EVM signatures](../evm/signatures.md).
 
 The returned signature bytes are never persisted or logged. The message or
 typed data is persisted because it is the auditable metered operation and is

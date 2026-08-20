@@ -4,29 +4,13 @@ Notifications separate an immutable business occurrence from per-user inbox
 state and optional email delivery. In-app delivery is mandatory for selected
 recipients; email respects sparse user preferences.
 
-## Tables
+## Persistence
 
-### `notification.notifications`
-
-Stores typed occurrence, optional organization/actor context, resource identity,
-business idempotency key, correlation ID, optional expiry, and creation time.
-The idempotency key is unique. A composite actor/organization foreign key and
-check prevent an actor without organization scope. Indexes support organization,
-type, resource, and expiry queries.
-
-### `notification.notification_recipients`
-
-Composite primary key `(notification_id, user_id)` represents one inbox item.
-It stores optional linked email job, read/archive timestamps, and received time.
-Email job is unique so one durable delivery cannot belong to two recipient
-rows. User newest-first and partial unread indexes serve the inbox.
-
-### `notification.notification_preferences`
-
-Sparse email overrides keyed by user, category, topic, channel, and optional
-organization. Separate partial unique indexes handle global null scope and
-organization scope correctly. Missing override falls back to the code-owned
-notification policy default.
+Complete notification, recipient, preference, and email-job table definitions
+are in the
+[notification and jobs database catalog](../database/notifications-jobs.md).
+Missing preference overrides fall back to the code-owned notification policy;
+email preferences never remove in-app recipient state.
 
 ## Creation
 

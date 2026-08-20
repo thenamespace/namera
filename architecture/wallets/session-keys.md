@@ -5,35 +5,16 @@ secret signing key: Namera's wallet owner remains the signer. A session key
 describes delegated authority and becomes usable by a machine actor only through
 an active grant.
 
-## Tables
+## Persistence and policy references
 
-### `core.session_key`
-
-Stores organization, wallet, creator actor, namespace, metadata, immutable
-namespace-specific policies, deterministic policy hash, active/revoked status,
-revocation attribution, and timestamps. Composite foreign keys bind wallet,
-creator, and revoker to the organization. Organization/wallet/status indexes
-serve lists and grant resolution.
-
-### `core.session_key_grant`
-
-Links an actor to a session key with granter/revoker attribution and lifecycle
-timestamps. A partial unique index allows one active actor/session-key pair while
-retaining history. Composite foreign keys prove actor, key, granter, and revoker
-organization ownership.
-
-### `core.session_key_policy_state`
-
-Stores versioned handler-owned state by organization, session key, policy ID,
-and logical state key. The unique scope prevents two counters for the same
-window. `revision` supports compare-and-update under a locked transaction.
-
-### `core.session_key_policy_reservation`
-
-Stores policy-owned reserved data with status, expiry, and lifecycle timestamps.
-Exactly one operation owner must be present: execution submission or signature
-operation. Partial unique indexes prevent duplicate reservations for the same
-operation/policy/state key.
+The complete `core.session_key`, `core.session_key_grant`, policy-state, and
+policy-reservation definitions are in the
+[core database catalog](../database/core-wallets-operations.md). Generic state
+initialization, deterministic lock order, operation ownership, settlement, and
+release are documented in
+[policy state and reservations](../evm/policies/state-reservations.md). The
+[policy catalog](../evm/policies/catalog.md) defines current behavior and denial
+codes.
 
 ## Creation
 

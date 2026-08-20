@@ -4,26 +4,11 @@ Audit events preserve typed historical context for successful state changes.
 They are distinct from logs: audit data is queryable product history, while logs
 describe operational transitions.
 
-## Tables
+## Persistence
 
-### `audit.user_events`
-
-| Column group                                        | Meaning                                                   |
-| --------------------------------------------------- | --------------------------------------------------------- |
-| `id`, `user_id`, optional `session_id`              | Event identity and user scope.                            |
-| `event`, `source`, `data`                           | Versioned event discriminator, origin, and typed payload. |
-| `correlation_id`, optional `request_id`, `trace_id` | Cross-boundary correlation.                               |
-| `created_at`                                        | Immutable event time.                                     |
-
-Indexes support newest-first user history, event filtering, session history, and
-correlation lookup.
-
-### `audit.organization_events`
-
-Adds `organization_id`, optional organization actor, and an optional
-`resource_type`/`resource_id` pair. A check requires both resource fields or
-neither. A composite foreign key proves actor ownership by the organization.
-Indexes cover organization time, event type, actor, resource, and correlation.
+The complete `audit.user_events` and `audit.organization_events` column,
+foreign-key, check, and index definitions are in the
+[audit database catalog](../database/audit.md).
 
 ## Write contract
 

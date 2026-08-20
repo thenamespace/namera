@@ -5,32 +5,14 @@ and one ERC-4337 smart account. Preparation and simulation happen before policy
 reservation; state and billing capacity are reserved transactionally before the
 wallet owner signs.
 
-## Tables
+## Persistence and EVM internals
 
-### `core.execution_submission`
-
-Mutable operation ledger containing organization, actor, selected grant,
-namespace, actor-scoped idempotency key, request hash, policy hash, lifecycle
-status, namespace-discriminated requested calls and signed operation, recovery
-lease, reconcile time, and submitted/confirmed/failed timestamps.
-
-Key constraints and indexes:
-
-- unique `(organization_id, actor_id, idempotency_key)`;
-- composite grant/actor/organization ownership;
-- organization and actor newest-first lists;
-- status/next-reconcile/lease indexes for workers;
-- one stable `(id, grant, organization)` identity for the confirmed record.
-
-### `core.execution`
-
-Append-only confirmed record containing execution ID, submission, organization,
-grant, namespace, complete typed receipt/calls, and creation time. Submission is
-unique, and composite foreign keys prove the execution uses the same grant and
-organization. Cursor indexes serve organization and grant history.
-
-The mutable submission makes retries and reconciliation explicit. The immutable
-execution is the billable, user-visible confirmed ledger.
+The complete `core.execution_submission` and `core.execution` definitions are
+in the [core database catalog](../database/core-wallets-operations.md). The
+mutable submission makes retries/reconciliation explicit; the confirmed
+execution is the user-visible successful fact. EVM preparation, integrity
+checks, provider submission, receipt normalization, and worker decisions are
+documented in the [EVM execution pipeline](../evm/execution/README.md).
 
 ## Execute flow
 
