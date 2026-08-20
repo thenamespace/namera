@@ -17,22 +17,7 @@ const monochromeColors = {
   dark: "#F5F5F5",
 } as const;
 
-const chainNames: ReadonlyArray<EvmChainName> = [
-  "arbitrum",
-  "arc",
-  "avalanche",
-  "base",
-  "celo",
-  "ethereum",
-  "hyper-evm",
-  "megaeth",
-  "monad",
-  "optimism",
-  "polygon",
-  "scroll",
-  "tempo",
-  "unichain",
-];
+const chainNames: ReadonlyArray<EvmChainName> = ["arbitrum", "base", "ethereum", "optimism"];
 
 const renderPng = async (
   directory: string,

@@ -11,19 +11,9 @@ export const emailAssets = {
   },
   chains: {
     arbitrum: emailAssetUrl("chains/arbitrum.png"),
-    arc: emailAssetUrl("chains/arc.png"),
-    avalanche: emailAssetUrl("chains/avalanche.png"),
     base: emailAssetUrl("chains/base.png"),
-    celo: emailAssetUrl("chains/celo.png"),
     ethereum: emailAssetUrl("chains/ethereum.png"),
-    "hyper-evm": emailAssetUrl("chains/hyper-evm.png"),
-    megaeth: emailAssetUrl("chains/megaeth.png"),
-    monad: emailAssetUrl("chains/monad.png"),
     optimism: emailAssetUrl("chains/optimism.png"),
-    polygon: emailAssetUrl("chains/polygon.png"),
-    scroll: emailAssetUrl("chains/scroll.png"),
-    tempo: emailAssetUrl("chains/tempo.png"),
-    unichain: emailAssetUrl("chains/unichain.png"),
   } satisfies Readonly<Record<EvmChainName, string>>,
   social: {
     website: {
