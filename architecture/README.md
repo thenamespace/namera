@@ -52,7 +52,8 @@ application contracts are the extension point for future chain families.
 ### Platform
 
 - [Server runtime](platform/runtime.md)
-- [Database](platform/database.md)
+- [Database runtime](platform/database.md)
+- [Canonical database catalog](database/README.md)
 - [Audit events](platform/audit.md)
 - [Telemetry](platform/telemetry.md)
 - [Production readiness](platform/production.md)
@@ -71,7 +72,12 @@ application contracts are the extension point for future chain families.
 - [Accounts and smart wallets](wallets/accounts.md)
 - [Wallet-key providers](wallets/wallet-keys.md)
 - [Session keys and grants](wallets/session-keys.md)
-- [EVM policy engine](wallets/policies.md)
+- [EVM namespace adapter](evm/README.md)
+- [Supported EVM chains](evm/supported-chains.md)
+- [EVM smart accounts](evm/accounts/README.md)
+- [EVM execution pipeline](evm/execution/README.md)
+- [EVM signatures](evm/signatures.md)
+- [EVM policy engine](evm/policies/README.md)
 
 ### Operations
 
@@ -93,5 +99,7 @@ application contracts are the extension point for future chain families.
 - Link to source boundaries instead of duplicating implementation code.
 - Update the relevant document in the same change as a contract, table,
   transaction boundary, authorization rule, or lifecycle change.
-- Database definitions in these documents summarize constraints. Drizzle schema
-  and migrations remain authoritative for executable database behavior.
+- Keep every table's column, nullability, key, constraint, foreign key, and
+  index reference in `architecture/database`; feature documents link to it.
+- Drizzle schemas and migrations remain authoritative for executable database
+  behavior, and the catalog changes in the same commit.
