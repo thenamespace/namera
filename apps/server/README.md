@@ -246,6 +246,20 @@ pnpm --filter @namera-ai/server test
 pnpm --filter @namera-ai/server typecheck:test
 ```
 
+## Container image
+
+Build the production server image from the workspace root. The root
+`Dockerfile` uses Turborepo's pruned-workspace flow and includes only the
+server's production workspace graph in the final Node.js 24 image.
+
+```sh
+docker build --tag namera-server .
+docker run --rm --publish 8080:8080 --env-file /path/to/server.env namera-server
+```
+
+Runtime configuration is supplied when the container starts; `.env` files are
+excluded from the Docker build context and are never copied into the image.
+
 Server feature tests live in `tests/` and exercise the typed in-memory HTTP API
 against the real application, repositories, transactions, authorization, and
 PGlite migrations. Shared provider substitutes come from their owning packages.

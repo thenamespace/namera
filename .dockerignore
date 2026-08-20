@@ -1,0 +1,11 @@
+.data
+.git
+.turbo
+**/.turbo
+**/dist
+**/node_modules
+**/.env*
+coverage
+out
+progress
+*.log
