@@ -1,80 +1,74 @@
-# Authentication and authorization model
+# Authentication and authorization
 
-Namera separates a human identity, an organization-scoped principal, and the
-authority to use a wallet.
+Namera has four principal types and two independent questions for every protected operation:
+
+1. **Who is calling?** Resolve a browser session, API key, OAuth access token, or trusted system context to an `auth.actor` and organization.
+2. **What may that actor do?** For human actors, evaluate role permissions. For delegated actors, evaluate OAuth/API capability plus an active session-key grant and the session key's policies.
+
+## Subsystems
+
+| Area          | Responsibility                                                                  | Documentation                           |
+| ------------- | ------------------------------------------------------------------------------- | --------------------------------------- |
+| Core identity | Users, reusable verification challenges, magic-link login, and browser sessions | [Core](core/README.md)                  |
+| Organizations | Tenant creation, actors, roles, membership, and invitations                     | [Organizations](organization/README.md) |
+| API keys      | Organization machine credentials and session-key grants                         | [API keys](core/api-keys.md)            |
+| OAuth         | MCP authorization code + PKCE and CLI device authorization                      | [OAuth](oauth/README.md)                |
+
+The canonical column-level schema is in [the database catalog](../database/README.md).
+
+## Principal resolution
 
 ```mermaid
-flowchart LR
-  User --> Session[Browser session]
-  User --> Member[Organization member]
-  Member --> Role[Organization role]
-  Member --> UserActor[User actor]
-
-  ApiCredential[API key] --> ApiActor[API-key actor]
-  OAuth[OAuth authorization] --> OAuthActor[MCP or CLI actor]
-
-  ApiActor --> Grant[Session-key grant]
-  OAuthActor --> Grant
-  Grant --> SessionKey[Active session key]
+flowchart TD
+  Request[Incoming protected request] --> Kind{Credential kind}
+  Kind -->|HttpOnly cookie| Session[Hash token; load live browser session]
+  Kind -->|x-api-key| ApiKey[Hash key; load live API key]
+  Kind -->|Bearer| OAuth[Hash access token; load live grant/client]
+  Session --> Membership[Load active membership and user actor]
+  ApiKey --> Delegated[Load machine actor and active session-key grants]
+  OAuth --> Delegated
+  Membership --> ActorContext[CurrentActor context]
+  Delegated --> ActorContext
+  ActorContext --> Permission{Endpoint authorization}
+  Permission -->|Human management route| Role[Effective role permission]
+  Permission -->|Wallet operation| Grant[Active grant for active session key]
+  Grant --> Policy[Namespace policy evaluation]
 ```
 
-## Identities
+No credential alone grants wallet authority. API keys and OAuth clients require active grants; each operation still passes the immutable policy envelope of the granted session key.
 
-- `auth.user` is a global person identified by a normalized unique email.
-- `auth.organization` is the tenant and billing boundary.
-- `auth.actor` is an organization-scoped principal of type `user`, `api-key`,
-  `mcp`, or `cli`.
-- `auth.organization_member` links a user actor and organization role. Removed
-  rows remain as history; only one active membership may exist per user and
-  organization.
-- API-key and OAuth actors are not members. Their intrinsic capabilities come
-  from credential type/scopes and their wallet authority comes from explicit
-  session-key grants.
+## Data boundaries
 
-## Authorization paths
+- `auth.user` is a human identity.
+- `auth.organization_member` is a user's relationship to one tenant.
+- `auth.actor` is the principal recorded on mutations and operations.
+- `auth.api_key` and `auth.oauth_authorization` are credentials/grants that each own a non-human actor.
+- `core.session_key_grant` links an actor to delegated wallet authority.
+- `audit.*_events` records security history; telemetry is not audit storage.
 
-### User actor
+## Credential-storage rules
 
-The `auth-token` cookie resolves an active non-expired session. Authorization
-then resolves the active organization, verifies an active membership, and loads
-effective role permissions. Handlers call `enforceActor` with the exact user
-permission required by the operation.
+- Raw browser tokens, API keys, magic-link tokens, OAuth codes, device codes, access tokens, and refresh tokens are never persisted.
+- High-entropy credentials use purpose-separated hashes.
+- Short human-entered codes use purpose-separated HMACs to prevent offline enumeration.
+- Transport returns raw material only at creation/redemption and applies `no-store` where appropriate.
+- Revocation keeps historical rows and invalidates dependent grants/tokens atomically.
 
-### API-key actor
+## Code ownership
 
-The server hashes `x-api-key`, resolves an active unexpired credential, updates
-last use, and loads active grants joined to active session keys. The key is
-organization-scoped and cannot acquire authority through member permissions.
+| Boundary                   | Location                        | Responsibility                                             |
+| -------------------------- | ------------------------------- | ---------------------------------------------------------- |
+| Schemas/models/errors/DTOs | `packages/protocol`             | Decode identity and OAuth values; define public failures.  |
+| Hash/HMAC/token generation | `packages/crypto`               | Purpose-separated credential primitives.                   |
+| Tables/repositories        | `packages/database`             | Conditional lifecycle transitions and tenant-safe queries. |
+| Workflows                  | `packages/application/src/auth` | Transactions, audit, notifications, and domain decisions.  |
+| HTTP contracts             | `packages/api/src/routes/auth`  | Typed routes only.                                         |
+| Cookies/protocol handlers  | `apps/server/src/routes/auth`   | Transport rules and authorization middleware.              |
+| Browser UI                 | `apps/dashboard/src/routes`     | Login, consent, settings, and authorization management.    |
 
-### MCP and CLI actor
+## Pending before production
 
-A bearer token resolves an active OAuth token, authorization, actor, resource,
-scope set, and active grants. MCP tokens are bound to `/mcp`; CLI tokens are
-bound to the API origin. Scopes permit a capability but do not create wallet
-access.
-
-## Permission model
-
-Owner, Admin, and Member are code-owned system roles synchronized at startup.
-Organization roles store effective permission arrays. Permission-based
-hierarchy permits management or assignment only when the target role is a
-strict subset of the acting role. Owner assignment, demotion, and removal are
-blocked from generic member and invitation workflows.
-
-## Security invariants
-
-- Raw verification tokens, session tokens, API keys, authorization codes, and
-  OAuth tokens are never stored.
-- Organization-owned foreign keys include organization identity where a
-  cross-tenant reference would be dangerous.
-- A credential, scope, permission, or grant cannot independently authorize an
-  execution. The complete actor, resource, grant, key, wallet, namespace, and
-  policy chain must be valid.
-- Frontend guards only hide unavailable controls. Server handlers are the
-  authoritative permission boundary.
-
-## Pending
-
-- External identity accounts are only a persistence foundation; no external
-  identity provider is wired.
-- Custom-role CRUD and explicit ownership transfer are not implemented.
+- Complete an endpoint-by-endpoint authorization matrix and boundary regression tests.
+- Define credential and security-history retention.
+- Add runbooks for global session revocation, compromised OAuth clients, and leaked API keys.
+- Complete OAuth interoperability and adversarial tests listed in [OAuth](oauth/README.md).

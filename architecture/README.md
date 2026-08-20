@@ -60,11 +60,11 @@ application contracts are the extension point for future chain families.
 ### Authentication and authorization
 
 - [Auth model](auth/README.md)
-- [Magic-link authentication](auth/magic-link.md)
-- [Browser sessions](auth/sessions.md)
-- [Organizations, members, roles, and invitations](auth/organizations.md)
-- [API keys](auth/api-keys.md)
-- [OAuth, MCP, and CLI authorization](auth/oauth.md)
+- [Magic-link authentication](auth/core/magic-link.md)
+- [Browser sessions](auth/core/sessions.md)
+- [Organizations, members, roles, and invitations](auth/organization/README.md)
+- [API keys](auth/core/api-keys.md)
+- [OAuth, MCP, and CLI authorization](auth/oauth/README.md)
 
 ### Wallet domain
 
