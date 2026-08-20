@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./app/__root";
-import { Route as V2RouteImport } from "./app/v2";
 import { Route as TermsRouteImport } from "./app/terms";
 import { Route as SitemapDotxmlRouteImport } from "./app/sitemap[.]xml";
 import { Route as PrivacyPolicyRouteImport } from "./app/privacy-policy";
@@ -28,11 +27,6 @@ import { Route as ApiChatRouteImport } from "./app/api/chat";
 import { Route as LlmsDotmdxDocsSplatRouteImport } from "./app/llms[.]mdx.docs.$";
 import { Route as ApiPhSplatRouteImport } from "./app/api/ph/$";
 
-const V2Route = V2RouteImport.update({
-  id: "/v2",
-  path: "/v2",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const TermsRoute = TermsRouteImport.update({
   id: "/terms",
   path: "/terms",
@@ -127,7 +121,6 @@ export interface FileRoutesByFullPath {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
-  "/v2": typeof V2Route;
   "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
@@ -146,7 +139,6 @@ export interface FileRoutesByTo {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
-  "/v2": typeof V2Route;
   "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
@@ -167,7 +159,6 @@ export interface FileRoutesById {
   "/privacy-policy": typeof PrivacyPolicyRoute;
   "/sitemap.xml": typeof SitemapDotxmlRoute;
   "/terms": typeof TermsRoute;
-  "/v2": typeof V2Route;
   "/api/chat": typeof ApiChatRoute;
   "/api/og": typeof ApiOgRoute;
   "/api/search": typeof ApiSearchRoute;
@@ -189,7 +180,6 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
-    | "/v2"
     | "/api/chat"
     | "/api/og"
     | "/api/search"
@@ -208,7 +198,6 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
-    | "/v2"
     | "/api/chat"
     | "/api/og"
     | "/api/search"
@@ -228,7 +217,6 @@ export interface FileRouteTypes {
     | "/privacy-policy"
     | "/sitemap.xml"
     | "/terms"
-    | "/v2"
     | "/api/chat"
     | "/api/og"
     | "/api/search"
@@ -249,7 +237,6 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute;
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute;
   TermsRoute: typeof TermsRoute;
-  V2Route: typeof V2Route;
   ApiChatRoute: typeof ApiChatRoute;
   ApiOgRoute: typeof ApiOgRoute;
   ApiSearchRoute: typeof ApiSearchRoute;
@@ -261,13 +248,6 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/v2": {
-      id: "/v2";
-      path: "/v2";
-      fullPath: "/v2";
-      preLoaderRoute: typeof V2RouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/terms": {
       id: "/terms";
       path: "/terms";
@@ -414,7 +394,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
-  V2Route: V2Route,
   ApiChatRoute: ApiChatRoute,
   ApiOgRoute: ApiOgRoute,
   ApiSearchRoute: ApiSearchRoute,

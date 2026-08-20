@@ -10,7 +10,7 @@ export const getBaseSeo = () => {
   const title =
     "Namera — Programmable Wallet Infrastructure for Autonomous Agents";
   const description =
-    "Namera is the policy and permission layer for autonomous agents that move money onchain.";
+    "Issue scoped session keys, attach onchain policies, and let agents execute transactions within the limits you define. Programmable wallet infrastructure built for autonomous agents.";
   const keywords = [
     "programmable wallets",
     "agent wallets",

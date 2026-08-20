@@ -32,11 +32,8 @@ export const Hero = () => {
             for autonomous agents
           </h1>
           <p className="text-muted-foreground text-sm font-normal md:text-base max-w-4xl mx-auto sm:mx-0">
-            Permissions and policy layer that gives agents and apps scoped
-            access to smart wallets.
-            <br />
-            Safe delegation for automation, multi-chain execution, and agentic
-            workflows.
+            Issue scoped session keys, attach onchain policies, and let agents
+            execute transactions within the limits you define.
           </p>
           <ButtonGroup className="max-w-full overflow-x-auto">
             <span

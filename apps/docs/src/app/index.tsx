@@ -7,7 +7,6 @@ import {
   Faqs,
   Features,
   Hero,
-  HowItWorks,
   Industries,
   Integrate,
   McpSection,
@@ -22,7 +21,6 @@ const Home = () => {
     <div className="min-h-screen bg-[#08090a]">
       <Navbar />
       <Hero />
-      <HowItWorks />
       <Products />
       <SessionKeys />
       <Features />

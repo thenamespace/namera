@@ -14,13 +14,13 @@ export const faqs = [
   },
   {
     answer:
-      "Agents don't access your wallet directly. They use session keys, secondary keys with limited permissions that you issue and control.",
+      "Agents don't access your wallet directly. They use session keys — secondary keys with limited permissions — that you issue and control.",
     key: "question-2",
     question: "How do agents access wallets?",
   },
   {
     answer:
-      "Yes. Agents can only act within the limits you define, like which contracts they can call, how much they can spend, and how often. They never have unrestricted access to your funds.",
+      "Yes. Agents can only act within the limits you define — like which contracts they can call, how much they can spend, and how often. They never have unrestricted access to your funds.",
     key: "question-3",
     question: "Are funds safe if agents can execute transactions?",
   },
