@@ -141,7 +141,7 @@ Pending or terminal invitation to create an organization membership with a chose
 | `email`                | `text`          | Yes      | —         | Normalized invitee email.                    |
 | `organization_id`      | `text`          | Yes      | —         | Inviting tenant.                             |
 | `organization_role_id` | `text`          | Yes      | —         | Role assigned on acceptance.                 |
-| `inviter_user_id`      | `text`          | Yes      | —         | User who sent the invitation.                |
+| `inviter_id`           | `text`          | Yes      | —         | User who sent the invitation.                |
 | `status`               | `text`          | Yes      | `pending` | Protocol-defined invitation lifecycle state. |
 | `expires_at`           | `timestamptz`   | Yes      | —         | Acceptance deadline.                         |
 | `created_at`           | `timestamptz`   | Yes      | `now()`   | Creation time.                               |
@@ -155,7 +155,7 @@ Pending or terminal invitation to create an organization membership with a chose
 ### Foreign keys
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
-- `inviter_user_id` → `auth.user.id`, `ON DELETE RESTRICT`.
+- `inviter_id` → `auth.user.id`, `ON DELETE RESTRICT`.
 - (`organization_role_id`, `organization_id`) → (`auth.organization_role.id`, `auth.organization_role.organization_id`), `ON DELETE RESTRICT`.
 
 ### Checks
@@ -169,7 +169,10 @@ Pending or terminal invitation to create an organization membership with a chose
 - (`organization_role_id`, `organization_id`) for role-impact queries.
 - `expires_at` for expiry scans.
 
-## Creation transaction
+## Organization creation transaction
+
+This sequence creates an organization and its first owner. It is separate from
+the invitation lifecycle documented above.
 
 ```mermaid
 sequenceDiagram

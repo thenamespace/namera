@@ -5,6 +5,8 @@ and the shared `@namera-ai/ui` component package.
 
 See [Dashboard architecture](../../architecture/frontend/dashboard.md) for the
 cross-route data flow, shared UI ownership, and implemented product surfaces.
+The workspace-level boundary is documented in
+[delivery workspace architecture](../../architecture/packages/delivery.md).
 
 Dashboard-local imports use the `@/` alias for `src/` and omit file extensions.
 Workspace package imports continue to use their package names.

@@ -7,8 +7,9 @@ policy-gated execution, and signing. It is independent of HTTP and does not
 perform API authorization checks; `apps/server` owns those checks and adapts
 HTTP requests to application methods.
 
-See the [architecture index](../../architecture/README.md) for the feature flows
-and transaction boundaries composed by this package.
+See [backend workspace architecture](../../architecture/packages/backend.md)
+for use-case ownership, transaction boundaries, and the application-to-server
+composition model.
 
 ## Structure
 

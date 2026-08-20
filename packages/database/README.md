@@ -4,8 +4,10 @@ PostgreSQL persistence for Namera using Drizzle ORM and Effect SQL. It owns the
 database schema, relations, connection layer, transaction context, and typed
 repositories.
 
-See [Database architecture](../../architecture/platform/database.md) for schema
-ownership, tenant constraints, migrations, and transaction conventions.
+See the [canonical database catalog](../../architecture/database/README.md) for
+every table column, key, foreign key, check, and index. Runtime, migration, and
+transaction conventions are in
+[database architecture](../../architecture/platform/database.md).
 
 ## Structure
 

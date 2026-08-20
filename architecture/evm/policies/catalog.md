@@ -26,13 +26,14 @@ Applies only to signatures and is the explicit signature-access grant. `allowedT
 
 Applies to executions. Native spend is the sum of `call.value` across the complete batch.
 
-| Period      | Behavior                                       | State key                        |
-| ----------- | ---------------------------------------------- | -------------------------------- |
-| `operation` | Compare this batch only; no state/reservation. | None                             |
-| `hour`      | Cumulative within UTC hour.                    | `<chain>:hour:<window-start-ms>` |
-| `day`       | Cumulative within UTC day.                     | `<chain>:day:<window-start-ms>`  |
-| `week`      | Cumulative week starting Monday.               | `<chain>:week:<window-start-ms>` |
-| `lifetime`  | Cumulative for session key lifetime.           | `<chain>:lifetime`               |
+| Period      | Behavior                                       | State key                         |
+| ----------- | ---------------------------------------------- | --------------------------------- |
+| `operation` | Compare this batch only; no state/reservation. | None                              |
+| `hour`      | Cumulative within UTC hour.                    | `<chain>:hour:<window-start-ms>`  |
+| `day`       | Cumulative within UTC day.                     | `<chain>:day:<window-start-ms>`   |
+| `week`      | Cumulative week starting Monday.               | `<chain>:week:<window-start-ms>`  |
+| `month`     | Cumulative within UTC calendar month.          | `<chain>:month:<window-start-ms>` |
+| `lifetime`  | Cumulative for session key lifetime.           | `<chain>:lifetime`                |
 
 Rules:
 

@@ -4,8 +4,8 @@ Shared contracts for the Namera backend and its clients. This package owns
 runtime Effect schemas and their inferred TypeScript types; it contains no
 database queries, HTTP handlers, provider SDKs, or application logic.
 
-See [Repository and package boundaries](../../architecture/engineering/repository.md)
-for the protocol package's dependency role.
+See [contract package architecture](../../architecture/packages/contracts.md)
+for protocol/API ownership, schema rules, and public-change sequencing.
 
 ## Structure
 

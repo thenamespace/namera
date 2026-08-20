@@ -5,7 +5,9 @@ Resend. Application workflows enqueue encrypted, provider-neutral payloads in
 PostgreSQL; the worker claims and delivers them outside the request lifecycle.
 
 See [Durable email delivery](../../architecture/notifications/email-delivery.md)
-for the outbox schema, encryption, lease, retry, and provider flow.
+for the outbox schema, encryption, lease, retry, and provider flow, and
+[delivery workspace architecture](../../architecture/packages/delivery.md) for
+the package's repository role.
 
 ## Structure
 

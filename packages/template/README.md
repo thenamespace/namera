@@ -6,7 +6,8 @@ has different runtime or publishing requirements.
 
 See [Repository and package boundaries](../../architecture/engineering/repository.md)
 and [Feature development](../../architecture/engineering/development.md) before
-introducing a new workspace.
+introducing a new workspace. The template's intended scope is summarized in
+[supporting workspace architecture](../../architecture/packages/supporting.md).
 
 ## Structure
 

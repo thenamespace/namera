@@ -5,7 +5,9 @@ The SDK uses the schema-derived `@namera-ai/api` HTTP client internally, but its
 public methods return ordinary promises and do not expose Effect programs.
 
 See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
-shared capability surface, authentication modes, and retry contract.
+shared capability surface, authentication modes, and retry contract. See
+[client workspace architecture](../../architecture/packages/clients.md) for
+SDK/CLI ownership and extension rules.
 
 ## Usage
 

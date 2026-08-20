@@ -8,7 +8,8 @@ Adding an email requires a protocol/template variable shape, closed job-payload 
 
 ## `packages/telemetry`
 
-Telemetry owns shared metric definitions and OTLP exporter/resource layers. Read `TELEMETRY.md` before changes.
+Telemetry owns shared metric definitions and OTLP exporter/resource layers. Read
+[telemetry architecture](../platform/telemetry.md) before changes.
 
 Rules:
 

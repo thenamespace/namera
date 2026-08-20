@@ -5,7 +5,9 @@ device authorization, stores refreshable credentials in the operating-system
 keyring, and uses `@namera-ai/sdk` for typed wallet operations.
 
 See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
-authorization, credential, retry, and command architecture.
+authorization, credential, retry, and command architecture. See
+[client workspace architecture](../../architecture/packages/clients.md) for
+the CLI/SDK responsibility split.
 
 ## Commands
 

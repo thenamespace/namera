@@ -5,7 +5,9 @@ package contains local-development and Google Cloud KMS implementations behind
 the same Effect `WalletKeys` service.
 
 See [Wallet-key providers](../../architecture/wallets/wallet-keys.md) for the
-provider-neutral lifecycle, signing semantics, and production boundary.
+provider-neutral lifecycle, signing semantics, and production boundary. See
+[chain and custody workspace architecture](../../architecture/packages/chain-custody.md)
+for its relationship to `crypto` and the EVM adapter.
 
 ## Structure
 

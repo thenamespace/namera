@@ -4,8 +4,9 @@ Shared cryptographic operations for Namera. It builds domain-separated hashing,
 HMAC, authenticated encryption, and random credential generation on Effect's
 platform `Crypto` service.
 
-See [Feature development](../../architecture/engineering/development.md) for
-credential-storage and secret-configuration rules.
+See [chain and custody workspace architecture](../../architecture/packages/chain-custody.md)
+for cryptographic ownership, credential-storage rules, and the boundary with
+wallet-key providers.
 
 ## Structure
 

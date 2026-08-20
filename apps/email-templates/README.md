@@ -5,7 +5,9 @@ Production delivery imports and renders those same components directly; no
 Resend hosted-template publishing step exists.
 
 See [Durable email delivery](../../architecture/notifications/email-delivery.md)
-for outbox, encryption, worker, and runtime-template architecture.
+for outbox, encryption, worker, and runtime-template architecture, and
+[delivery workspace architecture](../../architecture/packages/delivery.md) for
+the preview application's ownership boundary.
 
 ## Structure
 

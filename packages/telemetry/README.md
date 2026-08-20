@@ -9,7 +9,9 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
   metric definitions from this package.
 
 See [Telemetry architecture](../../architecture/platform/telemetry.md) for the
-repository-wide tracing, logging, metrics, and export contract.
+repository-wide tracing, logging, metrics, and export contract, and
+[delivery workspace architecture](../../architecture/packages/delivery.md) for
+this package's dependency role.
 
 ## Structure
 

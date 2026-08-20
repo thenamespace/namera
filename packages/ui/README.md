@@ -5,7 +5,9 @@ package: workspace applications compile its TypeScript and TSX directly, so it
 does not have a build output or build script.
 
 See [Dashboard architecture](../../architecture/frontend/dashboard.md) for
-shared-versus-route-local component ownership.
+shared-versus-route-local component ownership and
+[delivery workspace architecture](../../architecture/packages/delivery.md) for
+the UI package boundary.
 
 ## Structure
 

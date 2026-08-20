@@ -8,7 +8,9 @@ The server exposes the `@namera-ai/api` contract through Scalar at `/reference`
 and delegates authenticated workflows to `@namera-ai/application` services.
 
 See [Server runtime](../../architecture/platform/runtime.md) for startup, Layer
-composition, transport, worker, and deployment boundaries.
+composition, transport, worker, and deployment boundaries, and
+[backend workspace architecture](../../architecture/packages/backend.md) for
+the server/application ownership split.
 
 ## Structure
 

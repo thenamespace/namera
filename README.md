@@ -18,10 +18,12 @@ boundaries, security invariants, and feature-specific production work.
 Useful entry points:
 
 - [Repository and package boundaries](architecture/engineering/repository.md)
+- [Workspace ownership and extension guides](architecture/packages/README.md)
+- [Canonical database catalog](architecture/database/README.md)
 - [Feature development](architecture/engineering/development.md)
 - [Authentication and authorization](architecture/auth/README.md)
 - [Accounts and session keys](architecture/wallets/accounts.md)
-- [EVM policies](architecture/wallets/policies.md)
+- [EVM namespace, chains, accounts, execution, signatures, and policies](architecture/evm/README.md)
 - [Executions](architecture/operations/executions.md)
 - [Billing and entitlements](architecture/billing/README.md)
 - [Production readiness](architecture/platform/production.md)
