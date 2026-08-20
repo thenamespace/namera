@@ -1,0 +1,97 @@
+# Namera architecture
+
+This directory is the technical source of truth for Namera. It documents the
+implemented boundaries, persistence model, runtime flows, security invariants,
+and known production work. Package READMEs explain how to work inside one
+workspace; these documents explain how the workspaces compose into the product.
+
+## System model
+
+Namera is a multi-tenant programmable-wallet service. A user manages an
+organization through a browser session. The organization creates wallets and
+immutable session keys. API keys, MCP clients, and CLI installations receive
+explicit grants to session keys. An execution or signature is allowed only when
+one active grant points to one active session key whose complete policy set
+accepts the operation.
+
+```mermaid
+flowchart LR
+  User[User session] --> Management[Management API]
+  Management --> Org[Organization]
+  Org --> Wallet[Wallet]
+  Wallet --> SessionKey[Session key + policies]
+
+  ApiKey[API-key actor] --> Grant[Session-key grant]
+  MCP[MCP OAuth actor] --> Grant
+  CLI[CLI OAuth actor] --> Grant
+  Grant --> SessionKey
+
+  SessionKey --> Policy[Policy evaluation]
+  Policy --> EVM[EVM adapter]
+  EVM --> Key[WalletKeys]
+  Key --> Chain[ERC-4337 network]
+
+  Management --> Postgres[(PostgreSQL)]
+  Policy --> Postgres
+  Management --> Outbox[Email outbox]
+  Outbox --> Resend[Resend]
+  Management --> OTLP[OTLP telemetry]
+```
+
+The first supported namespace is `eip155`. Namespace-discriminated protocol and
+application contracts are the extension point for future chain families.
+
+## Knowledge-base map
+
+### Engineering
+
+- [Repository and package boundaries](engineering/repository.md)
+- [Feature development](engineering/development.md)
+- [Testing](engineering/testing.md)
+
+### Platform
+
+- [Server runtime](platform/runtime.md)
+- [Database](platform/database.md)
+- [Audit events](platform/audit.md)
+- [Telemetry](platform/telemetry.md)
+- [Production readiness](platform/production.md)
+
+### Authentication and authorization
+
+- [Auth model](auth/README.md)
+- [Magic-link authentication](auth/magic-link.md)
+- [Browser sessions](auth/sessions.md)
+- [Organizations, members, roles, and invitations](auth/organizations.md)
+- [API keys](auth/api-keys.md)
+- [OAuth, MCP, and CLI authorization](auth/oauth.md)
+
+### Wallet domain
+
+- [Accounts and smart wallets](wallets/accounts.md)
+- [Wallet-key providers](wallets/wallet-keys.md)
+- [Session keys and grants](wallets/session-keys.md)
+- [EVM policy engine](wallets/policies.md)
+
+### Operations
+
+- [Executions](operations/executions.md)
+- [Signatures and verification](operations/signatures.md)
+
+### Product services and clients
+
+- [Billing and entitlements](billing/README.md)
+- [Notifications](notifications/README.md)
+- [Durable email delivery](notifications/email-delivery.md)
+- [SDK, CLI, and MCP tools](clients/sdk-cli-mcp.md)
+- [Dashboard](frontend/dashboard.md)
+
+## Documentation contract
+
+- Document implemented behavior in the present tense.
+- Put future work only in the final `Pending` section of the owning feature.
+- Link to source boundaries instead of duplicating implementation code.
+- Update the relevant document in the same change as a contract, table,
+  transaction boundary, authorization rule, or lifecycle change.
+- Database definitions in these documents summarize constraints. Drizzle schema
+  and migrations remain authoritative for executable database behavior.
