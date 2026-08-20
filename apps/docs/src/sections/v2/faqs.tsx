@@ -5,66 +5,54 @@ import {
   AccordionTrigger,
 } from "@namera-ai/ui/components/ui/accordion";
 
-export const faqs = [
+const faqs = [
   {
     answer:
-      "Namera is a programmable wallet infrastructure that lets agents execute onchain transactions within rules you define. Instead of giving full wallet access, you define permissions upfront and let agents operate within those boundaries.",
+      "Namera is the policy and permission layer for AI agents that move money onchain. You define what an agent can spend and call; Namera issues scoped, revocable session keys and enforces those rules onchain.",
     key: "question-1",
     question: "What is Namera?",
   },
   {
     answer:
-      "Agents don't access your wallet directly. They use session keys, secondary keys with limited permissions that you issue and control.",
+      "No. Namera sits above your wallet infrastructure. Use ZeroDev, Safe, Privy, Turnkey, or Coinbase AgentKit. Namera defines what the agent is allowed to do, without replacing the wallet you already run.",
     key: "question-2",
-    question: "How do agents access wallets?",
+    question: "Does Namera replace my wallet?",
   },
   {
     answer:
-      "Yes. Agents can only act within the limits you define, like which contracts they can call, how much they can spend, and how often. They never have unrestricted access to your funds.",
+      "Yes. Namera is built to bound agentic payment rails like x402 and MPP, not compete with them. Agents pay over the rail; Namera enforces the spend limits, allowlists, and expiry on top.",
     key: "question-3",
-    question: "Are funds safe if agents can execute transactions?",
+    question: "Does it work with x402 and MPP?",
   },
   {
     answer:
-      "Policies are rules attached to a session key that define what an agent is allowed to do. They're enforced directly onchain, so they can't be bypassed or modified by the agent.",
+      "Agents never touch your primary key. They use session keys, secondary keys with scoped permissions that you issue, monitor, and revoke.",
     key: "question-4",
-    question: "What are onchain policies?",
+    question: "How do agents get access?",
   },
   {
     answer:
-      "Its access is already restricted by policies. You can revoke the session key instantly without affecting your main wallet or other agents.",
+      "Its access is already limited by policy, and you can revoke the key instantly without affecting your main wallet or any other agent. Anything outside the policy reverts onchain.",
     key: "question-5",
     question: "What happens if an agent is compromised?",
   },
   {
     answer:
-      "No. Namera is local-first and can run directly in your environment via CLI or MCP server. You don't need to manage backend infrastructure to get started.",
+      "Policies are rules attached to a session key: allowed contracts, spend caps, rate limits, and expiry. They're enforced directly onchain, so the agent can't bypass or modify them.",
     key: "question-6",
-    question: "Do I need to run infrastructure?",
+    question: "What are onchain policies?",
   },
   {
     answer:
-      "You can use the SDK for full integration, the CLI for local workflows, or connect directly to agents through the MCP server. It's designed to plug into existing developer tools and agent environments.",
+      "Use the SDK for full integration, the CLI for local workflows, or connect an agent directly through the MCP server. Namera is local-first, so you don't need to run backend infrastructure to start.",
     key: "question-7",
     question: "How do I integrate Namera?",
   },
   {
     answer:
-      "The MCP server lets AI agents connect to Namera and execute actions safely. It acts as the bridge between your agent and the wallet, enforcing permissions during execution.",
+      "Yes. Namera supports multi-chain execution through a unified interface, so agents can operate across networks without managing separate wallets.",
     key: "question-8",
-    question: "What is the MCP server?",
-  },
-  {
-    answer:
-      "Yes. You can create multiple session keys, each with its own policies, and assign them to different agents or roles.",
-    key: "question-9",
-    question: "Can I use multiple agents with different permissions?",
-  },
-  {
-    answer:
-      "Namera supports multi-chain execution through a unified interface, so you can operate across networks without managing separate wallets.",
-    key: "question-10",
-    question: "Which chains does Namera support?",
+    question: "Which chains does it support?",
   },
 ];
 
