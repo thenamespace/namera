@@ -8,6 +8,9 @@ OTLP tracing, logging, and metrics exporters with protobuf serialization.
 - Application code uses Effect tracing and logging directly and imports shared
   metric definitions from this package.
 
+See [Telemetry architecture](../../architecture/platform/telemetry.md) for the
+repository-wide tracing, logging, metrics, and export contract.
+
 ## Structure
 
 - `src/config.ts` — common telemetry and production Axiom configuration.
@@ -34,8 +37,8 @@ session IDs, user IDs, URLs, or arbitrary error messages.
 
 ## Adding telemetry
 
-Read the root [`TELEMETRY.md`](../../TELEMETRY.md) before changing
-instrumentation.
+Read [Telemetry architecture](../../architecture/platform/telemetry.md) before
+changing instrumentation.
 
 - Wrap workflow and dependency boundaries with spans through `Effect.fn`. Use
   `Effect.fnUntraced` for small helpers already explained by their parent span.

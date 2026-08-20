@@ -4,6 +4,9 @@ Browser- and Node-compatible client for API-key and OAuth-bearer access to the N
 The SDK uses the schema-derived `@namera-ai/api` HTTP client internally, but its
 public methods return ordinary promises and do not expose Effect programs.
 
+See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
+shared capability surface, authentication modes, and retry contract.
+
 ## Usage
 
 ```ts

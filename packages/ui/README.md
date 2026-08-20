@@ -4,6 +4,9 @@ Shared React components for Namera applications. This is a private, source-only
 package: workspace applications compile its TypeScript and TSX directly, so it
 does not have a build output or build script.
 
+See [Dashboard architecture](../../architecture/frontend/dashboard.md) for
+shared-versus-route-local component ownership.
+
 ## Structure
 
 - `src/index.ts` — package entry point for intentionally shared exports.

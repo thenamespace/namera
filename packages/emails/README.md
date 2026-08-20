@@ -4,6 +4,9 @@ Durable, typed email delivery through code-owned React Email templates and
 Resend. Application workflows enqueue encrypted, provider-neutral payloads in
 PostgreSQL; the worker claims and delivers them outside the request lifecycle.
 
+See [Durable email delivery](../../architecture/notifications/email-delivery.md)
+for the outbox schema, encryption, lease, retry, and provider flow.
+
 ## Structure
 
 - `src/config.ts` — Effect configuration for Resend and sender defaults.

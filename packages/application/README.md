@@ -7,6 +7,9 @@ policy-gated execution, and signing. It is independent of HTTP and does not
 perform API authorization checks; `apps/server` owns those checks and adapts
 HTTP requests to application methods.
 
+See the [architecture index](../../architecture/README.md) for the feature flows
+and transaction boundaries composed by this package.
+
 ## Structure
 
 - `src/application.ts` — the single aggregate `Application` service and live layer.
@@ -33,8 +36,6 @@ HTTP requests to application methods.
   settlement/release, lease-based background reconciliation, and scoped reads.
 - `src/wallet/` — separately composed creation, metadata update, and
   organization- or actor-scoped wallet read workflows.
-- `BILLING.md` — organization billing model and plan-versioning rules.
-- `MAGIC_LINK.md` — implementation contract for magic-link authentication.
 
 Future feature folders should add a focused operation builder to the aggregate
 service. Infrastructure capabilities remain focused `Context.Service` values
@@ -89,7 +90,9 @@ Organization creation initializes an active free billing subscription in its
 existing transaction. Quota-sensitive workflows lock the organization billing
 account, resolve the stored plan/version through `billingPlans`, check current
 usage, and create the resource before that transaction commits. Pending
-invitations reserve member capacity. See `BILLING.md` for the exact semantics.
+invitations reserve member capacity. See
+[Billing and entitlements](../../architecture/billing/README.md) for the exact
+semantics.
 
 Wallet creation performs a cheap quota precheck, creates the provider key and
 chain account, then repeats the locked quota check before atomically persisting

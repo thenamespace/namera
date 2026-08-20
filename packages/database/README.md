@@ -4,6 +4,9 @@ PostgreSQL persistence for Namera using Drizzle ORM and Effect SQL. It owns the
 database schema, relations, connection layer, transaction context, and typed
 repositories.
 
+See [Database architecture](../../architecture/platform/database.md) for schema
+ownership, tenant constraints, migrations, and transaction conventions.
+
 ## Structure
 
 - `src/config.ts` — PostgreSQL Effect configuration.
@@ -314,7 +317,7 @@ The `billing` schema keeps plan state separate from organization identity:
 
 Free subscriptions need neither provider identifiers nor artificial billing
 periods. Plan limits live in the application catalog documented in
-`packages/application/BILLING.md`; database rows store only the selected key and
+the [billing architecture](../../architecture/billing/README.md); database rows store only the selected key and
 version.
 
 The billing repository aggregate exposes account creation/lookup/locking,

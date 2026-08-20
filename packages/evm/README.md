@@ -5,6 +5,11 @@ provider RPC URLs, internal Viem client factories, wallet-key WebAuthn owners,
 smart-account construction for Kernel and Safe, execution, and EVM policy
 evaluation behind one root `Evm` service.
 
+See [EVM policy engine](../../architecture/wallets/policies.md),
+[Executions](../../architecture/operations/executions.md), and
+[Signatures](../../architecture/operations/signatures.md) for cross-package
+operation flows.
+
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.

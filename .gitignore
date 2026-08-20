@@ -195,8 +195,5 @@ broadcast/**/31337
 # Research
 research
 
-# Local feature progress
-/progress/
-policies.md
-pricing.md
+# Local research and generated pricing inputs
 script/calculate-margin.ts

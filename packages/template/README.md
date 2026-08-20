@@ -4,6 +4,10 @@ Starter for new workspace packages. It is private and uses the Node library
 TypeScript configuration by default; change those defaults when the new package
 has different runtime or publishing requirements.
 
+See [Repository and package boundaries](../../architecture/engineering/repository.md)
+and [Feature development](../../architecture/engineering/development.md) before
+introducing a new workspace.
+
 ## Structure
 
 - `src/index.ts` — public entry point.

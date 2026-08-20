@@ -7,6 +7,9 @@ of live infrastructure and application layers.
 The server exposes the `@namera-ai/api` contract through Scalar at `/reference`
 and delegates authenticated workflows to `@namera-ai/application` services.
 
+See [Server runtime](../../architecture/platform/runtime.md) for startup, Layer
+composition, transport, worker, and deployment boundaries.
+
 ## Structure
 
 - `src/config.ts` — server host, port, and browser origin configuration.
@@ -242,7 +245,8 @@ pnpm --filter @namera-ai/server typecheck:test
 Server feature tests live in `tests/` and exercise the typed in-memory HTTP API
 against the real application, repositories, transactions, authorization, and
 PGlite migrations. Shared provider substitutes come from their owning packages.
-See the root [`TESTING.md`](../../TESTING.md) before adding tests.
+See [Testing architecture](../../architecture/engineering/testing.md) before
+adding tests.
 
 Start PostgreSQL and the local Grafana LGTM stack before the development server:
 

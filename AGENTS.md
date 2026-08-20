@@ -42,26 +42,27 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   packages.
 
 Read the relevant package README before changing that package.
-Read [`TELEMETRY.md`](TELEMETRY.md) before adding or changing traces, logs,
-metrics, or browser OTLP behavior.
+Read the relevant feature document in [`architecture/`](architecture/README.md)
+before changing a cross-package flow. Read
+[`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)
+before adding or changing traces, logs, metrics, or browser OTLP behavior.
 
-## Progress tracking
+## Architecture knowledge base
 
-Feature implementation status is recorded in the repository-local `progress/`
-directory. The directory is intentionally gitignored: it preserves working
-context without turning temporary plans into permanent architecture docs.
+Stable technical architecture is recorded in [`architecture/`](architecture/README.md).
+It is the source of truth for cross-package flows, table invariants, security
+boundaries, and concrete remaining production work.
 
-- Read the relevant progress file before extending an existing feature.
-- After implementing or removing behavior, update its progress file in the same
-  change. Record only facts visible in the repository: contracts, tables,
-  repositories, application operations, routes, authorization, metrics, audit
-  events, tests, and concrete remaining work.
-- Create one focused progress file when introducing a new feature or entity.
-  Update an existing file instead of creating overlapping plans.
-- Keep stable architecture and coding rules in `AGENTS.md` and package READMEs.
-  Progress files must not become a second source of architectural truth.
-- Do not mark work complete because a schema, DTO, or placeholder exists. State
-  which boundaries are actually wired and tested.
+- Read the owning architecture document before extending an existing feature.
+- Update that document in the same change as a contract, table, repository,
+  workflow, route, authorization rule, audit event, or runtime lifecycle change.
+- Document only behavior visible in the repository. Put future work in the final
+  `Pending` section of the owning feature instead of creating temporary root
+  plans.
+- Package-local structure and commands remain in package READMEs. Repository
+  rules remain in `AGENTS.md`; do not duplicate them into feature documents.
+- A schema or placeholder alone is not an implemented feature. State which
+  boundaries are wired and tested.
 
 ## Feature flow
 
@@ -77,8 +78,8 @@ Add a backend feature in dependency order:
    as rate limiting or cookies, call `Application`, and map the result.
 6. Add frontend atoms, hooks, loader prefetching, and UI only after the contract
    exists.
-7. Update the matching local `progress/` record with the implemented boundaries,
-   observability, audit coverage, tests, and remaining work.
+7. Update the owning architecture document with the implemented boundaries,
+   observability, audit coverage, tests, and concrete remaining work.
 
 For successful mutations, decide explicitly whether an audit event is required.
 State changes and their audit rows must share one transaction. Metrics describe
@@ -240,9 +241,10 @@ follow its linked local documentation when relevant. Search
 
 ### Testing
 
-Read [`TESTING.md`](TESTING.md) before adding tests. Keep provider substitutes
-in the package that owns the service, and compose them into boundary tests in
-`apps/server/tests` instead of mocking application internals.
+Read [`architecture/engineering/testing.md`](architecture/engineering/testing.md)
+before adding tests. Keep provider substitutes in the package that owns the
+service, and compose them into boundary tests in `apps/server/tests` instead of
+mocking application internals.
 
 ## Common commands
 

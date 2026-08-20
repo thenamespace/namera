@@ -4,6 +4,9 @@ Public-facing HTTP API definition for Namera, built with Effect `HttpApi`. This
 package defines endpoint contracts, groups, middleware requirements, and OpenAPI
 metadata. It does not start a server or implement backend workflows.
 
+See [Feature development](../../architecture/engineering/development.md) for the
+contract-to-handler dependency order.
+
 ## Structure
 
 - `src/index.ts` — complete `NameraApi` definition and OpenAPI metadata.

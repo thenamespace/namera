@@ -4,6 +4,9 @@ Effect CLI client for Namera. It authorizes a local profile through OAuth 2.1
 device authorization, stores refreshable credentials in the operating-system
 keyring, and uses `@namera-ai/sdk` for typed wallet operations.
 
+See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
+authorization, credential, retry, and command architecture.
+
 ## Commands
 
 ```sh

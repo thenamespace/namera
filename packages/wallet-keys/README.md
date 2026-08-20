@@ -4,6 +4,9 @@ Provider-neutral asymmetric wallet-key lifecycle and signing for Namera. The
 package contains local-development and Google Cloud KMS implementations behind
 the same Effect `WalletKeys` service.
 
+See [Wallet-key providers](../../architecture/wallets/wallet-keys.md) for the
+provider-neutral lifecycle, signing semantics, and production boundary.
+
 ## Structure
 
 - `src/service.ts` — provider-neutral `WalletKeys` service contract.

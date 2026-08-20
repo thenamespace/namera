@@ -4,6 +4,9 @@ Preview harness for the code-owned React Email templates in `@namera-ai/emails`.
 Production delivery imports and renders those same components directly; no
 Resend hosted-template publishing step exists.
 
+See [Durable email delivery](../../architecture/notifications/email-delivery.md)
+for outbox, encryption, worker, and runtime-template architecture.
+
 ## Structure
 
 - `src/emails/` — thin preview entries that re-export templates from `@namera-ai/emails`.

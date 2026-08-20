@@ -4,6 +4,10 @@ Small shared helpers used across Namera. Put a helper here only when it is usefu
 to multiple packages and does not depend on an Effect service or application
 state.
 
+See [Repository and package boundaries](../../architecture/engineering/repository.md)
+for the dependency rule that keeps this package free of Effect services and
+application state.
+
 ## Structure
 
 - `src/index.ts` — public exports, including `Base64`.
