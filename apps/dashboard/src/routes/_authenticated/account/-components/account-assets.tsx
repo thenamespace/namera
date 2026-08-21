@@ -302,7 +302,7 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
   );
 
   return (
-    <div className="grid w-full gap-7 py-2 sm:py-5">
+    <div className="grid w-full gap-7 px-3">
       <header>
         <Typography.Heading className="text-2xl tracking-tight" level={2}>
           Assets

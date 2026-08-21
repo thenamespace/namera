@@ -118,6 +118,14 @@
     @apply rounded-sm before:rounded-sm;
   }
 
+  .popover {
+    @apply rounded-xl;
+  }
+
+  .popover__dialog {
+    @apply p-2;
+  }
+
   .table__body {
     &::before {
       content: "";

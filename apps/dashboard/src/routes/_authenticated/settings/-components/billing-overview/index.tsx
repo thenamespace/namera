@@ -5,7 +5,7 @@ import type {
   BillingResourceUsage,
   GetBillingResponse,
 } from "@namera-ai/protocol/dto";
-import { Chip, Meter, Surface, Typography } from "@namera-ai/ui";
+import { Meter, Surface, Typography } from "@namera-ai/ui";
 import { CheckIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
@@ -120,9 +120,6 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
               <Typography.Heading className="text-base" level={3} weight="medium">
                 Free plan
               </Typography.Heading>
-              <Chip color="success" size="sm" variant="tertiary">
-                Active
-              </Chip>
             </div>
             <Typography.Paragraph className="mt-1" color="muted" size="xs">
               Everything you need to build and test with Namera.
@@ -134,7 +131,7 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
           </div>
         </div>
 
-        <ul className="grid gap-x-6 gap-y-3 border-t border-border px-5 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
+        <ul className="grid gap-x-6 gap-y-2 border-t border-border px-5 py-5 sm:grid-cols-1 sm:px-6 lg:grid-cols-3">
           {billing.resources
             .filter(({ includedAmount }) => includedAmount > 0n)
             .map((resource) => {
