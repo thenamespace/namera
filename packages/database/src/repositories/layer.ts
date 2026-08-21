@@ -32,6 +32,7 @@ import {
   BillingUsageReservationRepository,
 } from "#/repositories/billing/index";
 import {
+  AddressMetadataRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
   SessionKeyRepository,
@@ -85,6 +86,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    addressMetadata: AddressMetadataRepository["Service"];
     execution: ExecutionRepository["Service"];
     executionSubmission: ExecutionSubmissionRepository["Service"];
     sessionKey: SessionKeyRepository["Service"];
@@ -141,6 +143,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const billingUsageReservation = yield* BillingUsageReservationRepository;
       const billingUsage = yield* BillingUsageRepository;
       const wallet = yield* WalletRepository;
+      const addressMetadata = yield* AddressMetadataRepository;
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
@@ -187,6 +190,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          addressMetadata,
           execution,
           executionSubmission,
           sessionKey,
@@ -210,6 +214,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        AddressMetadataRepository.layer,
         ApiKeyRepository.layer,
         OAuthAuthorizationRepository.layer,
         OAuthAuthorizationCodeRepository.layer,

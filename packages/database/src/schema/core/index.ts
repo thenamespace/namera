@@ -1,3 +1,4 @@
+export * from "./address-metadata.js";
 export * from "./common.js";
 export * from "./execution.js";
 export * from "./execution-submission.js";
