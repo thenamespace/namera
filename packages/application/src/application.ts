@@ -23,6 +23,7 @@ import {
   type OrganizationApplication,
 } from "#/auth/organization/organization";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
+import { makeDataApplication, type DataApplication } from "#/data/index";
 import { makeExecutionApplication, type ExecutionApplication } from "#/execution/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session-key/index";
@@ -36,6 +37,7 @@ export interface ApplicationService {
   readonly notification: NotificationApplication;
   readonly oauth: Effect.Success<typeof makeOAuthApplication>;
   readonly execution: ExecutionApplication;
+  readonly data: DataApplication;
   readonly organization: OrganizationApplication & {
     readonly invitation: InvitationApplication;
     readonly member: MemberApplication;
@@ -67,7 +69,8 @@ export class Application extends Context.Service<Application, ApplicationService
       const notification = yield* makeNotificationApplication;
       const oauth = yield* makeOAuthApplication;
       const billing = yield* makeBillingApplication;
-      const wallet = yield* makeWalletApplication;
+      const data = yield* makeDataApplication;
+      const wallet = yield* makeWalletApplication(data);
       const sessionKey = yield* makeSessionKeyApplication;
       const execution = yield* makeExecutionApplication;
       const signature = yield* makeSignatureApplication;
@@ -79,6 +82,7 @@ export class Application extends Context.Service<Application, ApplicationService
         notification,
         oauth,
         execution,
+        data,
         organization: { ...organization, invitation, member },
         session,
         sessionKey,

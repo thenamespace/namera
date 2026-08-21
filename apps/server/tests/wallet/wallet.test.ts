@@ -70,8 +70,13 @@ layer(TestServerLayer)("wallet routes", (it) => {
         treasury.id,
       );
       expect(
-        yield* client.wallet.listAssets({ params: { walletId: treasury.id }, query: {} }),
-      ).toEqual({ items: [], nextCursor: null, partialFailures: [] });
+        yield* client.wallet.getPortfolio({ params: { walletId: treasury.id }, query: {} }),
+      ).toMatchObject({
+        summary: { assetCount: 0, totalValueUsd: "0" },
+        items: [],
+        nextCursor: null,
+        partialFailures: [],
+      });
 
       const repository = yield* Repository;
       const events = yield* repository.audit.organization.findForOrganization(

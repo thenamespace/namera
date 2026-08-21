@@ -63,18 +63,6 @@ export class PortfolioUnavailableError extends Schema.TaggedError<PortfolioUnava
   { httpApiStatus: 502 },
 ) {}
 
-export class WalletAssetsUnavailableError extends Schema.TaggedError<WalletAssetsUnavailableError>()(
-  "WalletAssetsUnavailableError",
-  {
-    code: Schema.Literal("WALLET_ASSETS_UNAVAILABLE"),
-  },
-  { httpApiStatus: 502 },
-) {}
-
-export const WalletErrors = [
-  WalletCreationError,
-  WalletNotFoundError,
-  WalletAssetsUnavailableError,
-] as const;
+export const WalletErrors = [WalletCreationError, WalletNotFoundError] as const;
 export const WalletError = Schema.Union(WalletErrors);
 export type WalletError = typeof WalletError.Type;

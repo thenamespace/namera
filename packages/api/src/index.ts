@@ -1,6 +1,7 @@
 import { HttpApi, OpenApi } from "effect/unstable/httpapi";
 
 import {
+  AddressMetadataGroup,
   ApiKeyGroup,
   BillingGroup,
   ExecutionGroup,
@@ -11,6 +12,7 @@ import {
   NotificationGroup,
   OAuthGroup,
   OrganizationGroup,
+  PortfolioGroup,
   SessionKeyGroup,
   SessionGroup,
   SignatureGroup,
@@ -25,6 +27,7 @@ export * from "./middlewares/index.js";
 // live outside this package so every client is generated from the same schema.
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
+    AddressMetadataGroup,
     ApiKeyGroup,
     BillingGroup,
     ExecutionGroup,
@@ -33,6 +36,7 @@ export class NameraApi extends HttpApi.make("NameraAPI")
     MagicLinkGroup,
     MemberGroup,
     NotificationGroup,
+    PortfolioGroup,
     OAuthGroup,
     OrganizationGroup,
     SessionKeyGroup,

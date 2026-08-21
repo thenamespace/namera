@@ -1,21 +1,14 @@
-import { Config, Effect, Schema } from "effect";
+import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
-import { EthereumAddress } from "@namera-ai/protocol";
 
 import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
-
-const developmentPortfolioAddress = Schema.decodeSync(EthereumAddress)(
-  "0xc0d86456F6f2930b892f3DAD007CDBE32c081FE6",
-);
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
-    const environment = yield* Config.string("NODE_ENV").pipe(Config.withDefault("development"));
-
     return handlers
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
@@ -58,7 +51,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           );
         }),
       )
-      .handle("listAssets", ({ params, query }) =>
+      .handle("getPortfolio", ({ params, query }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
@@ -66,16 +59,10 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user", "api-key", "cli"],
             requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
           });
-          return yield* app.wallet.listAssets({
+          return yield* app.wallet.getPortfolio({
             ...toActorReadScope(data),
             walletId: params.walletId,
             request: query,
-            // Keep the rich preview account local to development while the
-            // portfolio UI is being designed. Production always resolves the
-            // persisted account address loaded by the application workflow.
-            ...(environment === "development"
-              ? { addressOverride: developmentPortfolioAddress }
-              : {}),
           });
         }),
       )

@@ -4,19 +4,20 @@ import type { WalletView } from "@namera-ai/database";
 import type {
   ActorId,
   BillingError,
-  EthereumAddress,
   OrganizationId,
   WalletCreationError,
   WalletId,
   WalletNotFoundError,
-  WalletAssetsUnavailableError,
+  PortfolioUnavailableError,
 } from "@namera-ai/protocol";
 import type {
   CreateWalletRequest,
-  ListWalletAssetsRequest,
-  ListWalletAssetsResponse,
+  GetWalletPortfolioRequest,
+  PortfolioResponse,
   UpdateWalletRequest,
 } from "@namera-ai/protocol/dto";
+
+import type { DataApplication } from "#/data/index";
 
 import { makeCreateWallet } from "./create.js";
 import { makeReadWallets } from "./read.js";
@@ -37,13 +38,12 @@ export interface WalletApplication {
     readonly actorId?: ActorId;
     readonly walletId: WalletId;
   }) => Effect.Effect<WalletView, WalletNotFoundError>;
-  readonly listAssets: (input: {
+  readonly getPortfolio: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;
     readonly walletId: WalletId;
-    readonly request: ListWalletAssetsRequest;
-    readonly addressOverride?: EthereumAddress;
-  }) => Effect.Effect<ListWalletAssetsResponse, WalletNotFoundError | WalletAssetsUnavailableError>;
+    readonly request: GetWalletPortfolioRequest;
+  }) => Effect.Effect<PortfolioResponse, WalletNotFoundError | PortfolioUnavailableError>;
   readonly update: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -52,10 +52,11 @@ export interface WalletApplication {
   }) => Effect.Effect<WalletView, WalletNotFoundError>;
 }
 
-export const makeWalletApplication = Effect.gen(function* () {
-  const create = yield* makeCreateWallet;
-  const read = yield* makeReadWallets;
-  const update = yield* makeUpdateWallet;
+export const makeWalletApplication = (data: DataApplication) =>
+  Effect.gen(function* () {
+    const create = yield* makeCreateWallet;
+    const read = yield* makeReadWallets(data);
+    const update = yield* makeUpdateWallet;
 
-  return { create, ...read, update } satisfies WalletApplication;
-});
+    return { create, ...read, update } satisfies WalletApplication;
+  });

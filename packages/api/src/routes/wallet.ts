@@ -2,7 +2,7 @@ import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/un
 
 import {
   BillingErrors,
-  WalletAssetsUnavailableError,
+  PortfolioUnavailableError,
   WalletCreationError,
   WalletNotFoundError,
 } from "@namera-ai/protocol";
@@ -11,8 +11,8 @@ import {
   CreateWalletResponse,
   GetWalletRequest,
   GetWalletResponse,
-  ListWalletAssetsRequest,
-  ListWalletAssetsResponse,
+  GetWalletPortfolioRequest,
+  PortfolioResponse,
   ListWalletsResponse,
   UpdateWalletRequest,
   UpdateWalletResponse,
@@ -37,12 +37,12 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
       success: GetWalletResponse,
       error: [WalletNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get a wallet in the active organization"),
-    HttpApiEndpoint.get("listAssets", "/:walletId/assets", {
+    HttpApiEndpoint.get("getPortfolio", "/:walletId/portfolio", {
       params: GetWalletRequest,
-      query: ListWalletAssetsRequest,
-      success: ListWalletAssetsResponse,
-      error: [WalletNotFoundError, WalletAssetsUnavailableError, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "List fungible assets held by a wallet"),
+      query: GetWalletPortfolioRequest,
+      success: PortfolioResponse,
+      error: [WalletNotFoundError, PortfolioUnavailableError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Get the paginated cross-chain portfolio for a wallet"),
     HttpApiEndpoint.post("update", "/:walletId/update", {
       params: GetWalletRequest,
       payload: UpdateWalletRequest,
