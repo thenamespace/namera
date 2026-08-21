@@ -22,7 +22,7 @@ const tabClassName = cn(
 );
 
 type AccountShellProps = {
-  account: WalletResponse;
+  account: WalletResponse | undefined;
   children: ReactNode;
 };
 
@@ -41,7 +41,7 @@ export function AccountShell({ account, children }: AccountShellProps) {
             /
           </span>
           <HeadingGroup.Title level={1} weight="normal" className="truncate text-base">
-            {account.metadata.name}
+            {account?.metadata.name ?? "Account"}
           </HeadingGroup.Title>
         </DashboardPage.Title>
       </DashboardPage.Header>

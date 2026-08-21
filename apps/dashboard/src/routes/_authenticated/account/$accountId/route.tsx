@@ -2,36 +2,29 @@ import { Outlet, createFileRoute, notFound } from "@tanstack/react-router";
 
 import { Schema } from "effect";
 
-import { WalletId, WalletNotFoundError } from "@namera-ai/protocol";
+import { WalletId } from "@namera-ai/protocol";
 
-import { prefetchQuery } from "@/atoms/prefetch";
+import { startPrefetchQuery } from "@/atoms/prefetch";
 import { walletAtom } from "@/atoms/wallet";
+import { useWallet } from "@/hooks/wallet";
 
 import { AccountShell } from "../-components/account-shell";
 
 export const Route = createFileRoute("/_authenticated/account/$accountId")({
-  loader: async ({ abortController, context, params }) => {
+  loader: ({ abortController, context, params }) => {
     if (!Schema.is(WalletId)(params.accountId)) throw notFound();
 
-    try {
-      const account = await prefetchQuery(
-        context.atomRegistry,
-        walletAtom(params.accountId),
-        abortController.signal,
-      );
-      return { account };
-    } catch (error) {
-      if (Schema.is(WalletNotFoundError)(error)) throw notFound();
-      throw error;
-    }
+    startPrefetchQuery(context.atomRegistry, walletAtom(params.accountId), abortController.signal);
+    return { accountId: params.accountId };
   },
   component: AccountLayout,
 });
 
 function AccountLayout() {
-  const { account } = Route.useLoaderData();
+  const { accountId } = Route.useLoaderData();
+  const account = useWallet(accountId);
   return (
-    <AccountShell account={account}>
+    <AccountShell account={account.data}>
       <Outlet />
     </AccountShell>
   );

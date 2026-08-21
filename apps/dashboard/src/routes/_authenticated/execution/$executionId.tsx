@@ -2,35 +2,33 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
 import { Schema } from "effect";
 
-import { ExecutionId, ExecutionNotFoundError } from "@namera-ai/protocol";
+import { ExecutionId } from "@namera-ai/protocol";
 
 import { executionAtom } from "@/atoms/execution";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { startPrefetchQuery } from "@/atoms/prefetch";
+import { DataLoading } from "@/components/data-loading";
 import { ExecutionDetails } from "@/components/execution-details";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
+import { useExecution } from "@/hooks/execution";
 
 export const Route = createFileRoute("/_authenticated/execution/$executionId")({
-  loader: async ({ abortController, context, params }) => {
+  loader: ({ abortController, context, params }) => {
     if (!Schema.is(ExecutionId)(params.executionId)) throw notFound();
 
-    try {
-      const execution = await prefetchQuery(
-        context.atomRegistry,
-        executionAtom(params.executionId),
-        abortController.signal,
-      );
-      return { execution };
-    } catch (error) {
-      if (Schema.is(ExecutionNotFoundError)(error)) throw notFound();
-      throw error;
-    }
+    startPrefetchQuery(
+      context.atomRegistry,
+      executionAtom(params.executionId),
+      abortController.signal,
+    );
+    return { executionId: params.executionId };
   },
   component: ExecutionPage,
 });
 
 function ExecutionPage() {
-  const { execution } = Route.useLoaderData();
+  const { executionId } = Route.useLoaderData();
+  const execution = useExecution(executionId);
 
   return (
     <DashboardPage>
@@ -48,7 +46,11 @@ function ExecutionPage() {
         </DashboardPage.Title>
       </DashboardPage.Header>
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
-        <ExecutionDetails details={execution} />
+        {execution.data ? (
+          <ExecutionDetails details={execution.data} />
+        ) : (
+          <DataLoading className="min-h-64" label="Loading execution" />
+        )}
       </DashboardPage.Content>
     </DashboardPage>
   );

@@ -4,30 +4,35 @@ import { Schema } from "effect";
 
 import { WalletId } from "@namera-ai/protocol";
 
-import { prefetchQuery } from "@/atoms/prefetch";
+import { startPrefetchQuery } from "@/atoms/prefetch";
 import { walletPortfolioAtom } from "@/atoms/wallet";
+import { DataLoading } from "@/components/data-loading";
+import { useWallet } from "@/hooks/wallet";
 
 import { AccountAssets } from "../-components/account-assets";
 import { Route as AccountRoute } from "./route";
 
 export const Route = createFileRoute("/_authenticated/account/$accountId/assets")({
-  loader: async ({ abortController, context, params }) => {
+  loader: ({ abortController, context, params }) => {
     if (!Schema.is(WalletId)(params.accountId)) throw notFound();
 
-    return {
-      portfolio: await prefetchQuery(
-        context.atomRegistry,
-        walletPortfolioAtom(params.accountId),
-        abortController.signal,
-      ),
-    };
+    startPrefetchQuery(
+      context.atomRegistry,
+      walletPortfolioAtom(params.accountId),
+      abortController.signal,
+    );
+    return { accountId: params.accountId };
   },
   component: AccountAssetsPage,
 });
 
 function AccountAssetsPage() {
-  const { account } = AccountRoute.useLoaderData();
-  const { portfolio } = Route.useLoaderData();
+  const { accountId } = AccountRoute.useLoaderData();
+  const account = useWallet(accountId);
 
-  return <AccountAssets account={account} initialPortfolio={portfolio} />;
+  return account.data ? (
+    <AccountAssets account={account.data} />
+  ) : (
+    <DataLoading className="min-h-64" label="Loading account assets" />
+  );
 }

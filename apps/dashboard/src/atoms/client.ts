@@ -25,7 +25,7 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
 
         // Authentication owns whether the protected shell may render, so the development
         // delay only applies to page data that can expose a local loading state.
-        const isSessionBootstrap = httpRequest.url.endsWith("/auth/session/me");
+        const isSessionBootstrap = new URL(httpRequest.url).pathname === "/auth/session/me";
 
         return env.environment === "development" && !isSessionBootstrap
           ? Effect.delay(request, "300 millis")

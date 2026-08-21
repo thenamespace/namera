@@ -3,7 +3,12 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { RegistryContext, scheduleTask } from "@effect/atom-react";
 import { AtomRegistry } from "effect/unstable/reactivity";
 
+import { DataLoading } from "@/components/data-loading";
 import { routeTree } from "@/routeTree.gen";
+
+function RouterPending() {
+  return <DataLoading className="min-h-[50vh]" label="Loading page" />;
+}
 
 export function getRouter() {
   const atomRegistry = AtomRegistry.make({
@@ -16,6 +21,9 @@ export function getRouter() {
       atomRegistry,
     },
     scrollRestoration: true,
+    defaultPendingComponent: RouterPending,
+    defaultPendingMinMs: 250,
+    defaultPendingMs: 150,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
     Wrap: ({ children }) => (

@@ -22,7 +22,7 @@ const tabClassName = cn(
 
 type SessionKeyShellProps = {
   children: ReactNode;
-  sessionKey: SessionKeyResponse;
+  sessionKey: SessionKeyResponse | undefined;
 };
 
 export function SessionKeyShell({ children, sessionKey }: SessionKeyShellProps) {
@@ -40,7 +40,7 @@ export function SessionKeyShell({ children, sessionKey }: SessionKeyShellProps) 
             /
           </span>
           <HeadingGroup.Title level={1} weight="normal" className="truncate text-base">
-            {sessionKey.metadata.name}
+            {sessionKey?.metadata.name ?? "Session Key"}
           </HeadingGroup.Title>
         </DashboardPage.Title>
       </DashboardPage.Header>

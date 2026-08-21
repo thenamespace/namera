@@ -1,12 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
+import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
+import { useWallets } from "@/hooks/wallet";
 
 import { CreateSessionKeyForm } from "./-components/create-session-key-form";
 
@@ -22,17 +24,16 @@ export const Route = createFileRoute("/_authenticated/session-keys/new")({
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
     const canCreate = hasPermissions(currentUser.role.permissions, sessionKeyCreatePermission);
-    const wallets = canCreate
-      ? await prefetchQuery(context.atomRegistry, walletsAtom, abortController.signal)
-      : [];
+    if (canCreate) startPrefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
 
-    return { canCreate, wallets };
+    return { canCreate };
   },
   component: CreateSessionKeyPage,
 });
 
 function CreateSessionKeyPage() {
-  const { canCreate, wallets } = Route.useLoaderData();
+  const { canCreate } = Route.useLoaderData();
+  const wallets = useWallets();
 
   return (
     <DashboardPage>
@@ -50,7 +51,11 @@ function CreateSessionKeyPage() {
                 Define scoped access to an account for agents and integrations.
               </HeadingGroup.Description>
             </HeadingGroup>
-            <CreateSessionKeyForm wallets={wallets} />
+            {wallets.data ? (
+              <CreateSessionKeyForm wallets={wallets.data} />
+            ) : (
+              <DataLoading className="min-h-64" label="Loading accounts" />
+            )}
           </>
         ) : (
           <PermissionDenied />

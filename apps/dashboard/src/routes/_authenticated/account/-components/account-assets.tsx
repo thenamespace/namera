@@ -6,6 +6,7 @@ import { Button, Card, ChartTooltip, PieChart, Tooltip, Typography } from "@name
 import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
 
 import { AssetsTable, summarizePortfolio, type AssetAllocation } from "@/components/assets-table";
+import { DataLoading } from "@/components/data-loading";
 import { ChainDisplay } from "@/components/display";
 import { useWalletPortfolio } from "@/hooks/wallet";
 
@@ -272,7 +273,7 @@ function PortfolioOverview({
 
 type AccountAssetsProps = {
   readonly account: WalletResponse;
-  readonly initialPortfolio: PortfolioResponse;
+  readonly initialPortfolio?: PortfolioResponse;
 };
 
 export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps) {
@@ -282,23 +283,23 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
   const visibleAssets = useMemo(
     () =>
       showTestnets
-        ? portfolio.items
-        : portfolio.items.filter(
+        ? (portfolio?.items ?? [])
+        : (portfolio?.items ?? []).filter(
             (asset) => getChainDataByCaip2(asset.chainId)?.environment !== "testnet",
           ),
-    [portfolio.items, showTestnets],
+    [portfolio?.items, showTestnets],
   );
   const visiblePortfolio = useMemo(
-    () => ({ ...portfolio, items: visibleAssets }),
+    () => (portfolio ? { ...portfolio, items: visibleAssets } : undefined),
     [portfolio, visibleAssets],
   );
   const unavailableNetworkCount = useMemo(
     () =>
-      portfolio.partialFailures.filter(
+      (portfolio?.partialFailures ?? []).filter(
         (failure) =>
           showTestnets || getChainDataByCaip2(failure.chainId)?.environment !== "testnet",
       ).length,
-    [portfolio.partialFailures, showTestnets],
+    [portfolio?.partialFailures, showTestnets],
   );
 
   return (
@@ -312,11 +313,15 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
         </Typography.Paragraph>
       </header>
 
-      <PortfolioOverview
-        account={account}
-        portfolio={visiblePortfolio}
-        unavailableNetworkCount={unavailableNetworkCount}
-      />
+      {visiblePortfolio ? (
+        <PortfolioOverview
+          account={account}
+          portfolio={visiblePortfolio}
+          unavailableNetworkCount={unavailableNetworkCount}
+        />
+      ) : (
+        <DataLoading className="min-h-64" label="Loading portfolio overview" />
+      )}
 
       <section aria-labelledby="asset-list" className="grid gap-4">
         <div>
@@ -327,12 +332,16 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
             Search, filter, group, and inspect enriched token balances by chain.
           </Typography>
         </div>
-        <AssetsTable
-          address={account.address}
-          assets={visibleAssets}
-          showTestnets={showTestnets}
-          onShowTestnetsChange={setShowTestnets}
-        />
+        {portfolio ? (
+          <AssetsTable
+            address={account.address}
+            assets={visibleAssets}
+            showTestnets={showTestnets}
+            onShowTestnetsChange={setShowTestnets}
+          />
+        ) : (
+          <DataLoading className="min-h-64" label="Loading asset balances" />
+        )}
       </section>
     </div>
   );
