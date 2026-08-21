@@ -56,7 +56,7 @@ function BillingPage() {
           ) : billing.isError ? (
             <PermissionDenied
               description="Billing data could not be loaded. Try refreshing this page."
-              title="Couldn’t load billing"
+              title="Couldn't load billing"
             />
           ) : (
             <DataLoading className="min-h-64" label="Loading billing" />

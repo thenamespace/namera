@@ -44,7 +44,7 @@ function CliAuthorizationsPage() {
       <DashboardPage.Header className="md:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-16">
+      <DashboardPage.Content className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-12 md:py-16">
         <HeadingGroup className="mb-8">
           <HeadingGroup.Title level={1} size="lg">
             CLI authorizations

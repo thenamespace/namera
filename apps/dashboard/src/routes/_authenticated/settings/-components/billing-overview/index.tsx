@@ -92,12 +92,12 @@ function MeterUsage({ usage }: { usage: BillingMeterUsage }) {
 
 function IncludedItem({ amount, label }: { amount: string; label: string }) {
   return (
-    <li className="flex min-w-0 items-center gap-2.5">
+    <li className="flex min-w-0 items-center gap-1.5">
       <HugeiconsIcon
         aria-hidden
         className="size-4 shrink-0 text-accent"
         icon={CheckIcon}
-        strokeWidth={2}
+        strokeWidth={2.5}
       />
       <span className="min-w-0 text-sm text-muted">
         <span className="font-medium tabular-nums text-foreground">{amount}</span> {label}

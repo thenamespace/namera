@@ -9,7 +9,6 @@ import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
 
 import { McpAuthorizationsTable } from "../-components/mcp-authorizations-table";
-import { McpInstallation } from "../-components/mcp-installation";
 
 const mcpAuthorizationReadPermission = ["mcp-authorization:read"] as const;
 const mcpAuthorizationRevokePermission = ["mcp-authorization:revoke"] as const;
@@ -45,7 +44,7 @@ function McpSettingsPage() {
       <DashboardPage.Header className="md:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-16">
+      <DashboardPage.Content className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-12 md:py-16">
         <HeadingGroup className="mb-8">
           <HeadingGroup.Title level={1} size="lg">
             MCP
@@ -54,20 +53,7 @@ function McpSettingsPage() {
             Connect AI clients to Namera and manage their delegated account access.
           </HeadingGroup.Description>
         </HeadingGroup>
-
-        <section aria-labelledby="mcp-installation-heading">
-          <McpInstallation />
-        </section>
-
-        <section className="mt-12" aria-labelledby="mcp-authorizations-heading">
-          <HeadingGroup className="mb-4">
-            <HeadingGroup.Title id="mcp-authorizations-heading">Authorizations</HeadingGroup.Title>
-            <HeadingGroup.Description>
-              Clients that have been granted access to this workspace.
-            </HeadingGroup.Description>
-          </HeadingGroup>
-          {canRead ? <McpAuthorizationsTable canRevoke={canRevoke} /> : <PermissionDenied />}
-        </section>
+        {canRead ? <McpAuthorizationsTable canRevoke={canRevoke} /> : <PermissionDenied />}
       </DashboardPage.Content>
     </DashboardPage>
   );
