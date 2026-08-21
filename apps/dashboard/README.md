@@ -173,10 +173,10 @@ bounded multi-select with network icons and derived select-all state.
   status-filtered list of authorized CLI devices. Active authorizations are
   shown by default, and actors with `cli-authorization:revoke` can revoke an
   active device's session-key grants after confirmation.
-- `/settings/workspace/billings` presents the active plan, included resource
-  and meter allowances, the organization-anniversary reset date, and live usage
-  meters from the billing API. It reads through the shared billing atom and is
-  visible to actors with `billing:read`; paid plans remain a coming-soon state.
+- `/settings/workspace/billings` presents the active plan in a compact included-
+  allowance checklist and the organization-anniversary reset date beside live
+  usage meters from the billing API. It reads through the shared billing atom
+  and is visible to actors with `billing:read`.
 
 Each settings route loader prefetches the data required by that page into the
 shared Effect atom registry and returns it as route data. Forms and tables use

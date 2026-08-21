@@ -39,13 +39,13 @@ function BillingPage() {
       <DashboardPage.Header className="md:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-16">
+      <DashboardPage.Content className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 md:py-16">
         <HeadingGroup className="mb-8">
           <HeadingGroup.Title level={1} size="lg">
             Billing
           </HeadingGroup.Title>
           <HeadingGroup.Description>
-            Review your plan limits and current workspace usage.
+            Review what is included with your plan and track your workspace usage.
           </HeadingGroup.Description>
         </HeadingGroup>
 

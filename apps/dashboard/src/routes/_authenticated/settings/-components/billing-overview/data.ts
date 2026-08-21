@@ -1,41 +1,27 @@
 import type { BillingResourceKey } from "@namera-ai/protocol/dto";
 import type { BillingMeterKey, BillingMeterUnit } from "@namera-ai/protocol/model";
-import type { IconSvgElement } from "@namera-ai/ui/icons";
-import {
-  Activity01Icon,
-  Activity02Icon,
-  FuelStationIcon,
-  ShieldUserIcon,
-  SignatureIcon,
-  UserMultiple02Icon,
-  Wallet01Icon,
-} from "@namera-ai/ui/icons";
 
 type UsageDefinition<Key extends string> = {
-  readonly description: string;
-  readonly icon: IconSvgElement;
   readonly key: Key;
   readonly label: string;
+  readonly planLabel: string;
 };
 
 export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceKey>> = [
   {
     key: "members",
     label: "Members",
-    description: "Members and pending invitations",
-    icon: UserMultiple02Icon,
+    planLabel: "members",
   },
   {
     key: "software-wallets",
     label: "Software accounts",
-    description: "Accounts secured with software keys",
-    icon: Wallet01Icon,
+    planLabel: "software accounts",
   },
   {
     key: "hsm-wallets",
     label: "HSM accounts",
-    description: "Accounts secured with managed keys",
-    icon: ShieldUserIcon,
+    planLabel: "HSM accounts",
   },
 ];
 
@@ -43,26 +29,22 @@ export const meterDefinitions: ReadonlyArray<UsageDefinition<BillingMeterKey>> =
   {
     key: "execution.mainnet",
     label: "Mainnet executions",
-    description: "Confirmed mainnet transactions",
-    icon: Activity01Icon,
+    planLabel: "mainnet executions",
   },
   {
     key: "execution.testnet",
     label: "Testnet executions",
-    description: "Confirmed testnet transactions",
-    icon: Activity02Icon,
+    planLabel: "testnet executions",
   },
   {
     key: "signature",
     label: "Signatures",
-    description: "Messages and typed data signed",
-    icon: SignatureIcon,
+    planLabel: "signatures",
   },
   {
     key: "gas-sponsorship",
     label: "Sponsored gas",
-    description: "Mainnet gas paid by Namera",
-    icon: FuelStationIcon,
+    planLabel: "in sponsored gas",
   },
 ];
 
