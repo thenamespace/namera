@@ -4,6 +4,7 @@ import {
   EvmExecutionError,
   EvmExecutionReceipt,
   EvmUserOperationStatus,
+  TransactionHash,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
 import type { UserOperationReceipt } from "viem/account-abstraction";
@@ -16,6 +17,16 @@ import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
 import type { GetEvmExecutionReceiptInput, WaitForEvmExecutionReceiptInput } from "./types.js";
+
+const AlchemyUserOperationStatus = Schema.Struct({
+  status: Schema.Literals(["unknown", "pending", "pendingBundle", "mined", "preconfirmed"]),
+  receipt: Schema.NullOr(
+    Schema.Struct({
+      success: Schema.Boolean,
+      receipt: Schema.Struct({ transactionHash: TransactionHash }),
+    }),
+  ),
+});
 
 const normalizeReceipt = Effect.fn("evm.execution.normalizeReceipt")(function* (
   chainId: GetEvmExecutionReceiptInput["chainId"],
@@ -56,7 +67,7 @@ export const makeGetEvmExecutionReceipt = (getClients: (chain: ChainData) => Exe
       try: async () => {
         try {
           return Option.some(
-            await getClients(chain).pimlicoClient.getUserOperationReceipt({
+            await getClients(chain).bundlerClient.getUserOperationReceipt({
               hash: input.userOperationHash,
             }),
           );
@@ -91,15 +102,34 @@ export const makeGetEvmUserOperationStatus = (getClients: (chain: ChainData) => 
       });
     }
 
-    const status = yield* Effect.tryPromise({
+    const response = yield* Effect.tryPromise({
       try: () =>
-        getClients(chain).pimlicoClient.getUserOperationStatus({
-          hash: input.userOperationHash,
+        getClients(chain).statusClient.request({
+          method: "rundler_getUserOperationStatus",
+          params: [input.userOperationHash],
         }),
       catch: (cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause }),
     });
+    const status = yield* Schema.decodeUnknownEffect(AlchemyUserOperationStatus)(response).pipe(
+      Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),
+    );
+    const normalized = (() => {
+      if (status.status === "unknown") {
+        return { status: "not_found", transactionHash: null } as const;
+      }
+      if (status.status === "pending" || status.status === "pendingBundle") {
+        return { status: "submitted", transactionHash: null } as const;
+      }
+      if (status.receipt === null) {
+        return { status: "submitted", transactionHash: null } as const;
+      }
+      return {
+        status: status.receipt.success ? ("included" as const) : ("failed" as const),
+        transactionHash: status.receipt.receipt.transactionHash,
+      };
+    })();
 
-    return yield* Schema.decodeUnknownEffect(EvmUserOperationStatus)(status).pipe(
+    return yield* Schema.decodeUnknownEffect(EvmUserOperationStatus)(normalized).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),
     );
   });
@@ -120,7 +150,7 @@ export const makeWaitForEvmExecutionReceipt = (
       try: async () => {
         try {
           return Option.some(
-            await getClients(chain).pimlicoClient.waitForUserOperationReceipt({
+            await getClients(chain).bundlerClient.waitForUserOperationReceipt({
               hash: input.userOperationHash,
               timeout: Math.min(Math.max(input.timeoutMilliseconds ?? 30_000, 1), 120_000),
             }),

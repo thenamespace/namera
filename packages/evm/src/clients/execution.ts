@@ -1,24 +1,102 @@
 import { Redacted } from "effect";
 
-import { createSmartAccountClient } from "permissionless";
-import type { SmartAccountClient } from "permissionless";
-import { createPimlicoClient } from "permissionless/clients/pimlico";
-import type { PimlicoClient } from "permissionless/clients/pimlico";
-import { createPublicClient, http } from "viem";
-import type { PublicClient } from "viem";
-import { entryPoint07Address } from "viem/account-abstraction";
-import type { SmartAccount } from "viem/account-abstraction";
+import { estimateFeesPerGas, type RundlerRpcSchema } from "@alchemy/aa-infra";
+import { alchemyTransport } from "@alchemy/common";
+import { createClient, createPublicClient, type PublicClient } from "viem";
+import {
+  createBundlerClient,
+  createPaymasterClient,
+  type BundlerClient,
+  type SmartAccount,
+} from "viem/account-abstraction";
 
 import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 
+type UserOperationStatusRpcSchema = {
+  Method: "rundler_getUserOperationStatus";
+  Parameters: [`0x${string}`];
+  ReturnType: unknown;
+};
+
+type AlchemyBundlerRpcSchema = [...RundlerRpcSchema, UserOperationStatusRpcSchema];
+
 export type ExecutionClients = {
   readonly publicClient: PublicClient;
-  readonly pimlicoClient: PimlicoClient<"0.7">;
+  readonly bundlerClient: BundlerClient;
+  readonly statusClient: {
+    readonly request: (parameters: {
+      readonly method: "rundler_getUserOperationStatus";
+      readonly params: [`0x${string}`];
+    }) => Promise<unknown>;
+  };
   readonly createSmartAccountClient: (
     account: SmartAccount,
-    sponsorship: "none" | "pimlico",
-  ) => SmartAccountClient;
+    sponsorship: "none" | "sponsored",
+  ) => BundlerClient;
+};
+
+const createExecutionClients = (config: EvmConfigValues, chain: ChainData): ExecutionClients => {
+  const apiKey = Redacted.value(config.alchemyApiKey);
+  const transport = alchemyTransport<AlchemyBundlerRpcSchema>({ apiKey });
+  const publicClient = createPublicClient({ chain: chain.chain, transport });
+  const statusClient = createClient<
+    typeof transport,
+    typeof chain.chain,
+    undefined,
+    AlchemyBundlerRpcSchema
+  >({ chain: chain.chain, transport });
+  const paymasterClient = createPaymasterClient({ transport });
+  const bundlerClient = createBundlerClient({
+    chain: chain.chain,
+    client: publicClient,
+    transport,
+    userOperation: {
+      estimateFeesPerGas: ({
+        account: feeAccount,
+        bundlerClient: feeBundlerClient,
+        userOperation,
+      }) =>
+        estimateFeesPerGas({
+          bundlerClient: feeBundlerClient,
+          ...(feeAccount === undefined ? {} : { account: feeAccount }),
+          ...(userOperation === undefined ? {} : { userOperation }),
+        }),
+    },
+  });
+
+  return {
+    publicClient,
+    bundlerClient,
+    statusClient,
+    createSmartAccountClient: (account: SmartAccount, sponsorship: "none" | "sponsored") =>
+      createBundlerClient({
+        account,
+        chain: chain.chain,
+        client: publicClient,
+        transport,
+        ...(sponsorship === "sponsored"
+          ? {
+              paymaster: paymasterClient,
+              paymasterContext: {
+                policyId: Redacted.value(config.alchemyGasPolicyId),
+              },
+            }
+          : {}),
+        userOperation: {
+          estimateFeesPerGas: ({
+            account: feeAccount,
+            bundlerClient: feeBundlerClient,
+            userOperation,
+          }) =>
+            estimateFeesPerGas({
+              bundlerClient: feeBundlerClient,
+              ...(feeAccount === undefined ? {} : { account: feeAccount }),
+              ...(userOperation === undefined ? {} : { userOperation }),
+            }),
+        },
+      }),
+  };
 };
 
 export const makeExecutionClients = (
@@ -26,45 +104,11 @@ export const makeExecutionClients = (
 ): ((chain: ChainData) => ExecutionClients) => {
   const clients = new Map<number, ExecutionClients>();
 
-  const create = (chain: ChainData): ExecutionClients => {
-    const pimlicoUrl = `https://api.pimlico.io/v2/${chain.chain.id}/rpc?apikey=${encodeURIComponent(Redacted.value(config.pimlicoApiKey))}`;
-    const publicClient = createPublicClient({
-      chain: chain.chain,
-      transport: http(
-        `https://${chain.alchemyChain}.g.alchemy.com/v2/${encodeURIComponent(Redacted.value(config.alchemyApiKey))}`,
-      ),
-    });
-    const pimlicoClient = createPimlicoClient({
-      chain: chain.chain,
-      transport: http(pimlicoUrl),
-      entryPoint: {
-        address: entryPoint07Address,
-        version: "0.7",
-      },
-    });
-
-    return {
-      publicClient,
-      pimlicoClient,
-      createSmartAccountClient: (account, sponsorship) =>
-        createSmartAccountClient({
-          account,
-          chain: chain.chain,
-          client: publicClient,
-          bundlerTransport: http(pimlicoUrl),
-          ...(sponsorship === "pimlico" ? { paymaster: pimlicoClient } : {}),
-          userOperation: {
-            estimateFeesPerGas: async () => (await pimlicoClient.getUserOperationGasPrice()).fast,
-          },
-        }),
-    };
-  };
-
   return (chain: ChainData) => {
     const cached = clients.get(chain.chain.id);
     if (cached !== undefined) return cached;
 
-    const created = create(chain);
+    const created = createExecutionClients(config, chain);
     clients.set(chain.chain.id, created);
     return created;
   };

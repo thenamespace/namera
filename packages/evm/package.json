@@ -39,6 +39,8 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@alchemy/aa-infra": "catalog:",
+    "@alchemy/common": "catalog:",
     "@namera-ai/protocol": "workspace:*",
     "@zerodev/sdk": "catalog:",
     "effect": "catalog:",

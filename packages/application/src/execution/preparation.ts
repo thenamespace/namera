@@ -21,7 +21,7 @@ export const makePrepareExecution = Effect.gen(function* () {
   return Effect.fn("application.execution.prepare")(function* (input: {
     readonly actor: GrantedActorData;
     readonly request: ExecuteRequest;
-    readonly sponsorship: "none" | "pimlico";
+    readonly sponsorship: "none" | "sponsored";
   }) {
     const wallet = yield* repository.core.wallet.findById(
       input.request.walletId,

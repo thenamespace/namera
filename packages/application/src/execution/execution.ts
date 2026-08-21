@@ -131,7 +131,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
 
       const { wallet, account, prepared, candidates } = yield* prepareExecution({
         ...input,
-        sponsorship: "pimlico",
+        sponsorship: "sponsored",
       });
 
       let selected: GrantedEvmSessionKey | undefined;

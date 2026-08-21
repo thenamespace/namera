@@ -40,7 +40,7 @@ export const makeSubmitEvmExecution = (getClients: (chain: ChainData) => Executi
 
     const submittedHash = yield* Effect.tryPromise({
       try: () =>
-        getClients(chain).pimlicoClient.sendUserOperation({
+        getClients(chain).bundlerClient.sendUserOperation({
           ...userOperation,
           entryPointAddress: input.signed.entryPoint,
         }),

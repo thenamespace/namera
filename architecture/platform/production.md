@@ -19,12 +19,12 @@ does not preserve removed experimental schemas.
   every production algorithm/protection combination.
 - Add reconciliation or an operator repair queue for KMS keys created before a
   failed wallet persistence transaction.
-- Smoke test every advertised Alchemy chain and Pimlico prepare/submit/receipt/
+- Smoke test every advertised Alchemy chain and Rundler/Gas Manager prepare/submit/receipt/
   reconciliation path.
 
 ### Secrets and external services
 
-- Inject PostgreSQL, independent HMAC/encryption keys, Resend, Alchemy, Pimlico,
+- Inject PostgreSQL, independent HMAC/encryption keys, Resend, Alchemy,
   Axiom, and GCP configuration from the deployment secret manager.
 - Set final HTTPS API/dashboard origins, credentialed CORS, secure cookies, and
   `NODE_ENV=production`.

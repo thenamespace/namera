@@ -1,13 +1,13 @@
 # Receipts and reconciliation
 
-Receipt operations normalize Pimlico results into protocol models and verify the returned UserOperation hash. Application reconciliation turns uncertain prepared/submitted rows into confirmed executions or safely released failures.
+Receipt operations normalize Alchemy Rundler results into protocol models and verify the returned UserOperation hash. Application reconciliation turns uncertain prepared/submitted rows into confirmed executions or safely released failures.
 
 ## Adapter receipt operations
 
 | Operation        | Behavior                                                                                           |
 | ---------------- | -------------------------------------------------------------------------------------------------- |
 | `getReceipt`     | Return `Option.none` only for recognized not-found; map other failures to `RECEIPT_LOOKUP_FAILED`. |
-| `getStatus`      | Normalize Pimlico user-operation status.                                                           |
+| `getStatus`      | Normalize Rundler unknown, pending, bundled, preconfirmed, and mined status.                       |
 | `waitForReceipt` | Bound timeout to 1–120,000 ms (default 30,000); timeout returns `Option.none`.                     |
 
 Normalized receipt includes chain ID, UserOperation/transaction/block hashes, block number, sender, nonce, EntryPoint, optional paymaster, actual gas cost/used, success, and optional failure reason.

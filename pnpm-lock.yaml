@@ -6,6 +6,12 @@ settings:
 
 catalogs:
   default:
+    '@alchemy/aa-infra':
+      specifier: 5.2.0
+      version: 5.2.0
+    '@alchemy/common':
+      specifier: 5.2.0
+      version: 5.2.0
     '@arethetypeswrong/core':
       specifier: 0.18.5
       version: 0.18.5
@@ -648,6 +654,12 @@ importers:
 
   packages/evm:
     dependencies:
+      '@alchemy/aa-infra':
+        specifier: 'catalog:'
+        version: 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
+      '@alchemy/common':
+        specifier: 'catalog:'
+        version: 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
@@ -886,6 +898,16 @@ packages:
 
   '@adraffy/ens-normalize@1.11.1':
     resolution: {integrity: sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ==}
+
+  '@alchemy/aa-infra@5.2.0':
+    resolution: {integrity: sha512-+rlC8zkzuf7pyORWKys1Goi8bFfuYe8RTqP8OL56iQm6k6rOOT+QDH37ejdTZsbyCOXIkQ2W6cTn8txTq/MmnQ==}
+    peerDependencies:
+      viem: ^2.45.0
+
+  '@alchemy/common@5.2.0':
+    resolution: {integrity: sha512-vJg3JAzs3D5ik+PKN6p/4wU27MI0cLrf3t8mD/pNHZ6M87i020zsLzWUoP/Ti83/2N4Nb/ivZCqbsfnAYGmRFA==}
+    peerDependencies:
+      viem: ^2.45.0
 
   '@andrewbranch/untar.js@1.0.4':
     resolution: {integrity: sha512-pVXSwPsLuw8IGLo2Di0EaOfsk+ntVvpkk942J/sHYIkwvtKUakEcPh7HBgZ6tuimgzKSEHgCvO4XgQ05DEbwDw==}
@@ -6605,6 +6627,9 @@ packages:
   yuku-parser@0.8.3:
     resolution: {integrity: sha512-KPQcpF9aj77ywlJBIkQWCQ9DObdxnCA8AJdUOmA5CZZx042Xt4+dvbQmPJfWxF3E+KG5dVAZ2fBKuDJ8VsKWgA==}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -6659,6 +6684,16 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.2.8)
 
   '@adraffy/ens-normalize@1.11.1': {}
+
+  '@alchemy/aa-infra@5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))':
+    dependencies:
+      '@alchemy/common': 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
+      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
+
+  '@alchemy/common@5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))':
+    dependencies:
+      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
+      zod: 3.25.76
 
   '@andrewbranch/untar.js@1.0.4': {}
 
@@ -12077,6 +12112,8 @@ snapshots:
       '@yuku-parser/binding-linux-x64-musl': 0.8.3
       '@yuku-parser/binding-win32-arm64': 0.8.3
       '@yuku-parser/binding-win32-x64': 0.8.3
+
+  zod@3.25.76: {}
 
   zod@4.4.3: {}
 

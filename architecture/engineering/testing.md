@@ -75,6 +75,6 @@ pnpm check
 - Add dashboard browser and accessibility regression tests.
 - Add packaged CLI tests for macOS Keychain, Windows Credential Manager, and
   Linux Secret Service.
-- Add opt-in live tests for GCP KMS, Alchemy, Pimlico, Resend, and Axiom.
+- Add opt-in live tests for GCP KMS, Alchemy Rundler/Gas Manager, Resend, and Axiom.
 - Rehearse migrations and concurrency-sensitive tests against the production
   PostgreSQL version.

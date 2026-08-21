@@ -17,7 +17,7 @@
 
 ## Public adapter surface
 
-The package exposes focused services rather than Viem/Pimlico clients:
+The package exposes focused services rather than Viem/Alchemy clients:
 
 | Service          | Operations                                                                |
 | ---------------- | ------------------------------------------------------------------------- |
@@ -34,7 +34,7 @@ Large provider-specific types stay inside the package. `application` dispatches 
 flowchart LR
   Protocol[protocol schemas] --> EVM[packages/evm]
   EVM --> Viem[Viem + permissionless]
-  EVM --> Providers[Alchemy + Pimlico RPC]
+  EVM --> Providers[Alchemy RPC + Rundler + Gas Manager]
   Application[packages/application] --> EVM
   Server[apps/server composition] --> EVM
   Server --> Config[Redacted provider config]

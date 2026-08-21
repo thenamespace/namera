@@ -22,7 +22,7 @@ const alchemyPriceResponse = Schema.Struct({
   ),
 });
 
-export const pimlicoSurchargeBasisPoints = 1_000;
+export const alchemySurchargeBasisPoints = 800;
 
 export const makeEvmGasPrice = (config: EvmConfigValues, httpClient: HttpClient.HttpClient) =>
   Effect.fn("evm.billing.getGasPrice")(function* () {
@@ -52,7 +52,7 @@ export const makeEvmGasPrice = (config: EvmConfigValues, httpClient: HttpClient.
       currency: "usd",
       nativeAsset: "ETH",
       nativePriceMicroUsd: decimalUsdToMicroUsd(usd.value),
-      surchargeBasisPoints: pimlicoSurchargeBasisPoints,
+      surchargeBasisPoints: alchemySurchargeBasisPoints,
       quotedAt: DateTime.makeUnsafe(usd.lastUpdatedAt),
     } satisfies EvmGasPriceQuote;
   });

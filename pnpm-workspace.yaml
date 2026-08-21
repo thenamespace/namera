@@ -58,6 +58,8 @@ catalog:
   "ua-parser-js": 1.0.41
   "vite": 8.2.1
   "vitest": 4.1.10
+  "@alchemy/aa-infra": 5.2.0
+  "@alchemy/common": 5.2.0
 
 minimumReleaseAgeExclude:
   - "effect"

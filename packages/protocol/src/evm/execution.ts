@@ -68,7 +68,7 @@ export const EvmExecutionBilling = Schema.Struct({
   executionMeter: Schema.Literals(["execution.mainnet", "execution.testnet"]),
   sponsorship: Schema.NullOr(
     Schema.Struct({
-      provider: Schema.Literal("pimlico"),
+      provider: Schema.Literal("alchemy"),
       reservationAmountMicroUsd: EvmQuantity,
       quote: EvmGasPriceQuote,
     }),
@@ -118,7 +118,7 @@ export const EvmUserOperationStatus = Schema.Struct({
   transactionHash: Schema.NullOr(TransactionHash),
 }).annotate({
   identifier: "EvmUserOperationStatus",
-  description: "The current Pimlico lifecycle status for an EVM UserOperation",
+  description: "The normalized Alchemy Rundler lifecycle status for an EVM UserOperation",
 });
 
 const EvmExecutionReceiptCommon = {

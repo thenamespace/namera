@@ -61,7 +61,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           version: 1,
           namespace: "eip155",
           chainId: receipt.chainId,
-          provider: "pimlico",
+          provider: "alchemy",
           actualGasCostWei: receipt.actualGasCost.toString(),
           transactionHash: receipt.transactionHash,
         },
@@ -98,7 +98,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
                 version: 1,
                 namespace: "eip155",
                 chainId: receipt.chainId,
-                provider: "pimlico",
+                provider: "alchemy",
                 actualGasCostWei: receipt.actualGasCost.toString(),
                 transactionHash: receipt.transactionHash,
               }

@@ -13,10 +13,10 @@ remain under [operations](../../architecture/operations/executions.md).
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
-- `src/clients/` — internal cached Alchemy public and Pimlico-native clients;
+- `src/clients/` — internal cached Alchemy public, Rundler, and Gas Manager clients;
   these are deliberately absent from the package root exports. Account-scoped
-  smart clients use Pimlico sponsorship and Pimlico's fast UserOperation gas
-  price while preparing operations.
+  smart clients use Alchemy Gas Manager sponsorship and Rundler fee estimates
+  while preparing operations.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
@@ -24,7 +24,7 @@ remain under [operations](../../architecture/operations/executions.md).
   ERC-4337 gas simulation with `simulateCalls` asset-change and native-transfer
   tracing, then exposes only the bounded protocol context to policies.
 - `src/billing/` — mainnet/testnet meter classification, Alchemy ETH/USD quote
-  decoding, conservative micro-USD arithmetic, Pimlico margin, pessimistic
+  decoding, conservative micro-USD arithmetic, Alchemy's sponsorship fee, pessimistic
   sponsorship reservation, and receipt-based actual-cost settlement.
 - `src/policy/` — exhaustive EVM policy definitions and lifecycle service. The
   registry remains declarative, generic state/reservation adapters live in
@@ -56,7 +56,7 @@ remain under [operations](../../architecture/operations/executions.md).
    coordinates persistence; the server only adapts HTTP.
 
 EVM-specific billing remains in this package. Simulation prepares without a
-paymaster. Execution prepares with Pimlico, and sponsored mainnet preparation
+paymaster. Execution prepares with Alchemy Rundler and Gas Manager, and sponsored mainnet preparation
 attaches a persisted price/cost envelope. `application` only reserves and
 settles the generic meter amounts returned here, preserving the namespace
 boundary for future Solana support.
@@ -69,10 +69,10 @@ key. The secp256k1 variant requires the exact digest that the provider signed.
 
 ## Environment
 
-| Variable              | Required | Purpose                        |
-| --------------------- | -------- | ------------------------------ |
-| `EVM_ALCHEMY_API_KEY` | Yes      | Alchemy execution RPC key.     |
-| `EVM_PIMLICO_API_KEY` | Yes      | Pimlico bundler/paymaster key. |
+| Variable                    | Required | Purpose                                      |
+| --------------------------- | -------- | -------------------------------------------- |
+| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy RPC, Rundler, and Gas Manager key.   |
+| `EVM_ALCHEMY_GAS_POLICY_ID` | Yes      | Gas Manager policy used for sponsored calls. |
 
 ## Usage
 
@@ -95,11 +95,11 @@ reconstructs the stored smart account and returns a serializable stub-signed
 UserOperation plus its normalized intent context. `sign` reconstructs and
 verifies the account again, signs the exact prepared operation, and computes
 its deterministic hash. `submit` verifies that hash before and after sending
-the exact signed payload to Pimlico. `getReceipt` and `waitForReceipt` normalize
+the exact signed payload to Alchemy Rundler. `getReceipt` and `waitForReceipt` normalize
 confirmed receipts and return `Option.none` while a receipt is unavailable or a
-bounded wait expires. `getStatus` uses Pimlico's lifecycle status method so
-reconciliation can distinguish pending operations from definitive failure.
-Pimlico has no dedicated bulk receipt action, so background processing batches
+bounded wait expires. `getStatus` uses Rundler's lifecycle status method so
+reconciliation can distinguish unknown, pending, preconfirmed, and mined operations.
+Rundler has no dedicated bulk receipt action, so background processing batches
 database claims and performs bounded concurrent lookups across their chains.
 
 `evm.policy` evaluates one complete decoded EVM policy set and owns its

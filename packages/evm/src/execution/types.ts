@@ -18,7 +18,7 @@ export type PrepareEvmExecutionInput = {
   readonly chainId: SupportedEvmChainId;
   readonly account: ReconstructEvmAccountInput;
   readonly calls: ReadonlyArray<EvmIntentCall>;
-  readonly sponsorship: "none" | "pimlico";
+  readonly sponsorship: "none" | "sponsored";
 };
 
 export type SignEvmExecutionInput = {

@@ -40,7 +40,7 @@ flowchart LR
   WalletKeys --> Provider[KMS/local custody]
   EVM --> Owner[Provider-neutral owner adapter]
   Owner --> WalletKeys
-  EVM --> RPC[Alchemy/Pimlico]
+  EVM --> RPC[Alchemy RPC/Rundler/Gas Manager]
 ```
 
 Wallet Keys does not know Kernel, Safe, calls, UserOperations, or chain IDs. EVM does not know Google IAM/private-key files or persist provider secrets.

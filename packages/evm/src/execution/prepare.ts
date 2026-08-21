@@ -96,14 +96,6 @@ export const makePrepareEvmExecution = (
           cause,
         }),
     });
-    const simulation = yield* Effect.tryPromise({
-      try: () =>
-        clients.pimlicoClient.estimateUserOperationGas({
-          ...userOperation,
-          entryPointAddress: account.entryPoint.address,
-        }),
-      catch: (cause) => new EvmExecutionError({ code: "SIMULATION_FAILED", cause }),
-    });
     const callSimulation = yield* Effect.tryPromise({
       try: () =>
         clients.publicClient.simulateCalls({
@@ -177,13 +169,13 @@ export const makePrepareEvmExecution = (
         simulation: {
           userOperation: {
             source: "eth_estimateUserOperationGas",
-            callGasLimit: simulation.callGasLimit.toString(),
-            verificationGasLimit: simulation.verificationGasLimit.toString(),
-            preVerificationGas: simulation.preVerificationGas.toString(),
+            callGasLimit: userOperation.callGasLimit.toString(),
+            verificationGasLimit: userOperation.verificationGasLimit.toString(),
+            preVerificationGas: userOperation.preVerificationGas.toString(),
             paymasterVerificationGasLimit: (
-              simulation.paymasterVerificationGasLimit ?? 0n
+              userOperation.paymasterVerificationGasLimit ?? 0n
             ).toString(),
-            paymasterPostOpGasLimit: (simulation.paymasterPostOpGasLimit ?? 0n).toString(),
+            paymasterPostOpGasLimit: (userOperation.paymasterPostOpGasLimit ?? 0n).toString(),
           },
           calls: {
             source: "viem.simulateCalls",

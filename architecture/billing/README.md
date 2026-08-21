@@ -233,9 +233,9 @@ operation releases the execution unit because Free v1 counts successful
 executions, but still settles sponsored gas from its receipt.
 
 Testnet operations never reserve sponsored-gas allowance. A mainnet operation
-only does so when the prepared UserOperation contains a Pimlico paymaster. The
+only does so when the prepared UserOperation contains an Alchemy Gas Manager paymaster. The
 EVM adapter fetches ETH/USD from Alchemy, converts it conservatively to integer
-micro-USD, applies the code-owned 10% Pimlico cost margin, and reserves the
+micro-USD, applies Alchemy's 8% mainnet sponsorship administration fee, and reserves the
 pessimistic maximum UserOperation gas envelope. Settlement uses
 `receipt.actualGasCost` with the exact persisted quote and margin. If pricing is
 unavailable, sponsored mainnet preparation fails closed before signing or
@@ -370,7 +370,7 @@ Deliberately inactive until paid plans:
   trial, grace-period, delinquency, and cancellation semantics.
 - Implement Stripe, verified raw-body webhook processing, Checkout/portal, and
   subscription reconciliation.
-- Confirm Pimlico's production cost basis and replace the code-owned margin if
+- Confirm Alchemy's production cost basis and replace the configured fee if
   provider invoices expose a more exact billable amount.
 - Add production alerts for repeated recovery failures, projection repairs,
   hard-limit denial spikes, stale reservations, and pricing outages.

@@ -33,7 +33,7 @@ sequenceDiagram
 
 ## Submission
 
-The adapter reconstructs the Viem UserOperation and independently computes `getUserOperationHash` from chain ID, EntryPoint address/version, and signed fields. It rejects a mismatch before RPC. Pimlico `sendUserOperation` must return that exact hash; a different result is `SUBMISSION_HASH_MISMATCH`.
+The adapter reconstructs the Viem UserOperation and independently computes `getUserOperationHash` from chain ID, EntryPoint address/version, and signed fields. It rejects a mismatch before RPC. Alchemy Rundler `sendUserOperation` must return that exact hash; a different result is `SUBMISSION_HASH_MISMATCH`.
 
 ## Error classification
 
@@ -61,6 +61,6 @@ gas hold; an uncertain or included failure keeps it until a receipt is available
 
 ## Pending before production
 
-- Test provider error classification against actual Pimlico/HTTP failure shapes.
+- Test provider error classification against actual Alchemy Rundler/HTTP failure shapes.
 - Add alerting for hash mismatch; it indicates a severe integration or data-integrity problem.
 - Document retry/backoff and provider idempotency behavior for repeated `sendUserOperation`.

@@ -503,7 +503,7 @@ layer(TestServerLayer)("execution routes", (it) => {
           period.id,
           "gas-sponsorship",
         ),
-      ).toMatchObject({ consumedAmount: 33_000n, reservedAmount: 0n });
+      ).toMatchObject({ consumedAmount: 32_400n, reservedAmount: 0n });
       yield* testExecution.setReceiptMode("immediate");
     }),
   );

@@ -7,7 +7,7 @@ Preparation turns decoded calls and stored smart-account data into an unsigned E
 - supported CAIP-2 chain ID;
 - reconstructed Kernel or Safe account data and owner account;
 - ordered calls containing destination, native value, and calldata;
-- sponsorship mode (`none` for simulation, `pimlico` for execution).
+- sponsorship mode (`none` for simulation, `sponsored` for execution).
 
 ## Pipeline
 
@@ -18,9 +18,9 @@ flowchart TD
   Chain -->|Yes| Reconstruct[Reconstruct smart account and verify address]
   Reconstruct --> Sponsor{Sponsorship requested?}
   Sponsor -->|No| Prepare[Prepare without paymaster]
-  Sponsor -->|Pimlico| PrepareSponsored[Prepare with Pimlico paymaster]
+  Sponsor -->|Sponsored| PrepareSponsored[Prepare with Alchemy Gas Manager]
   PrepareSponsored --> Prepare
-  Prepare --> Estimate[Pimlico estimateUserOperationGas]
+  Prepare --> Estimate[Alchemy Rundler prepareUserOperation]
   Estimate --> Calls[Viem simulateCalls]
   Calls --> Block{Latest block has hash and number?}
   Block -->|No| Failure[PREPARATION_FAILED]
@@ -28,29 +28,33 @@ flowchart TD
   Normalize --> Prepared[EvmPreparedExecution v1]
 ```
 
-`prepareUserOperation` failures classified by Viem as `UserOperationExecutionError` map to `SIMULATION_FAILED`; other construction failures map to `PREPARATION_FAILED`. Pimlico estimation or call simulation failure maps to `SIMULATION_FAILED`.
+`prepareUserOperation` failures classified by Viem as `UserOperationExecutionError` map to `SIMULATION_FAILED`; other construction failures map to `PREPARATION_FAILED`. Rundler, Gas Manager, or call-simulation failures map to `SIMULATION_FAILED`.
 
 ## Two simulations
 
-| Simulation                                     | Purpose                                                          | Context fields                                                            |
-| ---------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `eth_estimateUserOperationGas` through Pimlico | Validate ERC-4337 envelope and estimate EntryPoint/paymaster gas | call, verification, pre-verification, paymaster verification/post-op gas  |
-| `viem.simulateCalls` through public RPC        | Execute exact account calls and trace user-visible effects       | per-call status/return/gas, asset changes, native transfers, block anchor |
+| Simulation                                      | Purpose                                                          | Context fields                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `prepareUserOperation` through Alchemy Rundler  | Validate ERC-4337 envelope and estimate EntryPoint/paymaster gas | call, verification, pre-verification, paymaster verification/post-op gas  |
+| `viem.simulateCalls` through Alchemy public RPC | Execute exact account calls and trace user-visible effects       | per-call status/return/gas, asset changes, native transfers, block anchor |
 
 Both are required: EntryPoint gas estimation does not provide the same asset-transfer context, while raw call simulation does not validate the complete ERC-4337 envelope.
 
 Simulation requests explicitly prepare without a paymaster and therefore never
-consume or imply Namera-sponsored gas. Execution requests prepare with Pimlico.
+consume or imply Namera-sponsored gas. Execution requests prepare with Alchemy
+Gas Manager and pass the configured policy ID as paymaster context. Viem's
+preparation performs the paymaster stub/final-data handshake and
+`eth_estimateUserOperationGas`; Namera records those prepared gas fields rather
+than issuing a duplicate estimate.
 After preparation, the adapter classifies the chain and attaches a JSON-safe
 billing envelope:
 
 - testnet: `execution.testnet`, no gas sponsorship measurement;
 - mainnet without a paymaster: `execution.mainnet`, no gas measurement;
-- mainnet with a Pimlico paymaster: `execution.mainnet` plus a pessimistic
+- mainnet with an Alchemy paymaster: `execution.mainnet` plus a pessimistic
   sponsored-cost reservation.
 
 For sponsored mainnet execution, the adapter fetches ETH/USD from Alchemy,
-rounds the quote upward to micro-USD, applies the code-owned 10% provider margin,
+rounds the quote upward to micro-USD, applies Alchemy's 8% mainnet sponsorship fee,
 and prices the sum of call, verification, pre-verification, paymaster
 verification, and paymaster post-op gas at `maxFeePerGas`. The quote timestamp,
 price, and margin remain embedded in the signed execution so receipt settlement

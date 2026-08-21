@@ -34,7 +34,7 @@ export const makeEvmExecutionBilling = Effect.fn("evm.billing.prepareExecution")
   return {
     executionMeter,
     sponsorship: {
-      provider: "pimlico",
+      provider: "alchemy",
       reservationAmountMicroUsd: nativeWeiToMicroUsd({
         amountWei: maximumUserOperationCost(input.userOperation),
         nativePriceMicroUsd: quote.nativePriceMicroUsd,

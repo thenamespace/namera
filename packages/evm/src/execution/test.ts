@@ -65,7 +65,7 @@ export const makeTestEvmExecutionService = (
               maxFeePerGas: 0n,
               maxPriorityFeePerGas: 0n,
             },
-            paymaster: input.sponsorship === "pimlico" ? paymaster : null,
+            paymaster: input.sponsorship === "sponsored" ? paymaster : null,
           },
           simulation: {
             userOperation: {
@@ -98,7 +98,7 @@ export const makeTestEvmExecutionService = (
           maxFeePerGas: 0n,
           maxPriorityFeePerGas: 0n,
           signature: Hex.make("0x"),
-          ...(input.sponsorship === "pimlico"
+          ...(input.sponsorship === "sponsored"
             ? {
                 paymaster,
                 paymasterVerificationGasLimit: 10_000n,
@@ -109,16 +109,16 @@ export const makeTestEvmExecutionService = (
         billing: {
           executionMeter: input.chainId === "eip155:1" ? "execution.mainnet" : "execution.testnet",
           sponsorship:
-            input.sponsorship === "pimlico" && input.chainId === "eip155:1"
+            input.sponsorship === "sponsored" && input.chainId === "eip155:1"
               ? {
-                  provider: "pimlico",
+                  provider: "alchemy",
                   reservationAmountMicroUsd: 100_000n,
                   quote: {
                     provider: "alchemy",
                     currency: "usd",
                     nativeAsset: "ETH",
                     nativePriceMicroUsd: 3_000_000_000n,
-                    surchargeBasisPoints: 1_000,
+                    surchargeBasisPoints: 800,
                     quotedAt: DateTime.fromEpochSeconds(0),
                   },
                 }

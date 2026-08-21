@@ -62,13 +62,12 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const config = yield* EvmConfig;
       const httpClient = yield* HttpClient.HttpClient;
       const alchemyApiKey = encodeURIComponent(Redacted.value(config.alchemyApiKey));
-      const pimlicoApiKey = encodeURIComponent(Redacted.value(config.pimlicoApiKey));
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config, httpClient);
       const policy = makeEvmPolicyService();
       const signature = makeEvmSignatureService(makeExecutionClients(config));
 
-      const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, type: EvmRpcType) {
+      const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, _type: EvmRpcType) {
         const data = getChainDataByChainId(chainId);
         if (data === undefined) {
           return yield* new UnsupportedChainError({
@@ -77,11 +76,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
           });
         }
 
-        if (type === "public") {
-          return `https://${data.alchemyChain}.g.alchemy.com/v2/${alchemyApiKey}`;
-        }
-
-        return `https://api.pimlico.io/v2/${data.chain.id}/rpc?apikey=${pimlicoApiKey}`;
+        return `https://${data.alchemyChain}.g.alchemy.com/v2/${alchemyApiKey}`;
       });
 
       return Evm.of({

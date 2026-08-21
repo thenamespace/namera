@@ -81,7 +81,7 @@ it.effect("classifies execution meters and only prices mainnet sponsorship", () 
     ).toEqual({
       executionMeter: "execution.mainnet",
       sponsorship: {
-        provider: "pimlico",
+        provider: "alchemy",
         reservationAmountMicroUsd: 1_650_000n,
         quote,
       },

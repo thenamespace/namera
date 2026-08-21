@@ -218,7 +218,7 @@ The composition root also loads:
 - PostgreSQL configuration from `@namera-ai/database`;
 - authentication origins from `@namera-ai/application`;
 - cryptographic secrets from `@namera-ai/crypto`;
-- Alchemy and Pimlico credentials from `@namera-ai/evm`;
+- Alchemy RPC credentials and Gas Manager policy configuration from `@namera-ai/evm`;
 - local or GCP signer configuration from `@namera-ai/wallet-keys`;
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.

@@ -14,8 +14,8 @@ and execution clients until promoted into the launch registry.
 ## Launch registry
 
 Namera launches with four mainnets and their corresponding testnets. All eight
-must support Kernel `0.3.3`, Safe `1.4.1`, EntryPoint `0.7`, Alchemy RPC, and
-Pimlico bundler/paymaster operations.
+must support Kernel `0.3.3`, Safe `1.4.1`, EntryPoint `0.7`, Alchemy RPC,
+Rundler, and Gas Manager operations.
 
 | Registry key       | CAIP-2 ID         | Family   | Environment | Native currency | Decimals | Alchemy slug   |
 | ------------------ | ----------------- | -------- | ----------- | --------------- | -------: | -------------- |
@@ -57,77 +57,77 @@ to `UnsupportedChainError` before making a provider call.
 | Client                       | Provider/use                                                                                            |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Viem `PublicClient`          | Alchemy HTTP for bytecode, blocks, simulation, calls, assets, and signature verification.               |
-| Pimlico client               | ERC-4337 EntryPoint `0.7` estimation, submission, status, receipt, fast gas price, and sponsorship.     |
+| Viem `BundlerClient`         | Alchemy Rundler for EntryPoint `0.7` preparation, fee estimation, submission, status, and receipts.     |
+| Viem `PaymasterClient`       | Alchemy Gas Manager EIP-7677 sponsorship with the configured policy ID.                                 |
 | Smart-account client factory | Reconstructs a Kernel `0.3.3` or Safe `1.4.1` account against the public and bundler/paymaster clients. |
 
-Provider credentials are read from redacted `EVM_ALCHEMY_API_KEY` and
-`EVM_PIMLICO_API_KEY` configuration at the server composition root. URLs and
-secrets must not be logged.
+Provider configuration is read from redacted `EVM_ALCHEMY_API_KEY` and
+`EVM_ALCHEMY_GAS_POLICY_ID` values at the server composition root. URLs,
+credentials, and policy identifiers must not be logged.
 
 ## Future supported chains
 
 The tables below are the future expansion pool verified on 2026-08-20 by exact
-chain ID across the Alchemy, Pimlico, and ZeroDev dashboard network catalogs.
-They exclude the eight launch networks. `Yes / Yes / Yes` in the provider
-column means that the same chain ID appeared in Alchemy RPC, Pimlico
-bundler/paymaster, and ZeroDev Kernel network settings respectively.
+chain ID across the Alchemy Wallet APIs and ZeroDev dashboard network catalogs.
+They exclude the eight launch networks. `Yes / Yes` in the provider column
+means that the same chain ID appeared in Alchemy's Bundler/Gas Manager catalog
+and ZeroDev Kernel network settings respectively.
 
 Catalog sources: [Alchemy Dashboard](https://dashboard.alchemy.com/),
-[Pimlico Dashboard](https://dashboard.pimlico.io/),
 [ZeroDev Dashboard](https://dashboard.zerodev.app/), and the official Safe
 [`1.4.1` deployment registry](https://github.com/safe-global/safe-deployments/blob/main/src/assets/v1.4.1/safe.json).
 
 Dashboard presence is a discovery gate, not production certification. A chain
 must still pass Namera's capability suite before it is promoted. In particular,
-Alchemy must implement the exact simulation RPCs Namera calls, Pimlico must
-support the required EntryPoint `0.7` and paymaster operations, and the selected
-Kernel/Safe contracts must exist at the expected addresses.
+Alchemy must implement the exact simulation RPCs Namera calls plus EntryPoint
+`0.7` Rundler and Gas Manager operations, and the selected Kernel/Safe
+contracts must exist at the expected addresses.
 
 ### Future mainnets
 
-| Proposed registry key | Network         | CAIP-2 ID          | Native | Alchemy slug          | Alchemy / Pimlico / ZeroDev | Kernel `0.3.3` | Safe `1.4.1` |
-| --------------------- | --------------- | ------------------ | ------ | --------------------- | --------------------------- | -------------- | ------------ |
-| `bnb-mainnet`         | BNB Smart Chain | `eip155:56`        | BNB    | `bnb-mainnet`         | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `gnosis-mainnet`      | Gnosis          | `eip155:100`       | XDAI   | `gnosis-mainnet`      | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `unichain-mainnet`    | Unichain        | `eip155:130`       | ETH    | `unichain-mainnet`    | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `polygon-mainnet`     | Polygon         | `eip155:137`       | POL    | `polygon-mainnet`     | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `monad-mainnet`       | Monad           | `eip155:143`       | MON    | `monad-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `sonic-mainnet`       | Sonic           | `eip155:146`       | S      | `sonic-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `opbnb-mainnet`       | opBNB           | `eip155:204`       | BNB    | `opbnb-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `world-chain-mainnet` | World Chain     | `eip155:480`       | ETH    | `worldchain-mainnet`  | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `hyper-evm-mainnet`   | HyperEVM        | `eip155:999`       | HYPE   | `hyperliquid-mainnet` | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `sei-mainnet`         | Sei             | `eip155:1329`      | SEI    | `sei-mainnet`         | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `tempo-mainnet`       | Tempo           | `eip155:4217`      | USD    | `tempo-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `robinhood-mainnet`   | Robinhood Chain | `eip155:4663`      | ETH    | `robinhood-mainnet`   | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `megaeth-mainnet`     | MegaETH         | `eip155:4326`      | ETH    | `megaeth-mainnet`     | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `mantle-mainnet`      | Mantle          | `eip155:5000`      | MNT    | `mantle-mainnet`      | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `mode-mainnet`        | Mode            | `eip155:34443`     | ETH    | `mode-mainnet`        | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `celo-mainnet`        | Celo            | `eip155:42220`     | CELO   | `celo-mainnet`        | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `avalanche-mainnet`   | Avalanche       | `eip155:43114`     | AVAX   | `avax-mainnet`        | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `linea-mainnet`       | Linea           | `eip155:59144`     | ETH    | `linea-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `bob-mainnet`         | BOB             | `eip155:60808`     | ETH    | `bob-mainnet`         | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `berachain-mainnet`   | Berachain       | `eip155:80094`     | BERA   | `berachain-mainnet`   | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `blast-mainnet`       | Blast           | `eip155:81457`     | ETH    | `blast-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `scroll-mainnet`      | Scroll          | `eip155:534352`    | ETH    | `scroll-mainnet`      | Yes / Yes / Yes             | Eligible       | Eligible     |
-| `degen-mainnet`       | Degen           | `eip155:666666666` | DEGEN  | `degen-mainnet`       | Yes / Yes / Yes             | Eligible       | Eligible     |
+| Proposed registry key | Network         | CAIP-2 ID          | Native | Alchemy slug          | Alchemy / ZeroDev | Kernel `0.3.3` | Safe `1.4.1` |
+| --------------------- | --------------- | ------------------ | ------ | --------------------- | ----------------- | -------------- | ------------ |
+| `bnb-mainnet`         | BNB Smart Chain | `eip155:56`        | BNB    | `bnb-mainnet`         | Yes / Yes         | Eligible       | Eligible     |
+| `gnosis-mainnet`      | Gnosis          | `eip155:100`       | XDAI   | `gnosis-mainnet`      | Yes / Yes         | Eligible       | Eligible     |
+| `unichain-mainnet`    | Unichain        | `eip155:130`       | ETH    | `unichain-mainnet`    | Yes / Yes         | Eligible       | Eligible     |
+| `polygon-mainnet`     | Polygon         | `eip155:137`       | POL    | `polygon-mainnet`     | Yes / Yes         | Eligible       | Eligible     |
+| `monad-mainnet`       | Monad           | `eip155:143`       | MON    | `monad-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `sonic-mainnet`       | Sonic           | `eip155:146`       | S      | `sonic-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `opbnb-mainnet`       | opBNB           | `eip155:204`       | BNB    | `opbnb-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `world-chain-mainnet` | World Chain     | `eip155:480`       | ETH    | `worldchain-mainnet`  | Yes / Yes         | Eligible       | Eligible     |
+| `hyper-evm-mainnet`   | HyperEVM        | `eip155:999`       | HYPE   | `hyperliquid-mainnet` | Yes / Yes         | Eligible       | Eligible     |
+| `sei-mainnet`         | Sei             | `eip155:1329`      | SEI    | `sei-mainnet`         | Yes / Yes         | Eligible       | Eligible     |
+| `tempo-mainnet`       | Tempo           | `eip155:4217`      | USD    | `tempo-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `robinhood-mainnet`   | Robinhood Chain | `eip155:4663`      | ETH    | `robinhood-mainnet`   | Yes / Yes         | Eligible       | Eligible     |
+| `megaeth-mainnet`     | MegaETH         | `eip155:4326`      | ETH    | `megaeth-mainnet`     | Yes / Yes         | Eligible       | Eligible     |
+| `mantle-mainnet`      | Mantle          | `eip155:5000`      | MNT    | `mantle-mainnet`      | Yes / Yes         | Eligible       | Eligible     |
+| `mode-mainnet`        | Mode            | `eip155:34443`     | ETH    | `mode-mainnet`        | Yes / Yes         | Eligible       | Eligible     |
+| `celo-mainnet`        | Celo            | `eip155:42220`     | CELO   | `celo-mainnet`        | Yes / Yes         | Eligible       | Eligible     |
+| `avalanche-mainnet`   | Avalanche       | `eip155:43114`     | AVAX   | `avax-mainnet`        | Yes / Yes         | Eligible       | Eligible     |
+| `linea-mainnet`       | Linea           | `eip155:59144`     | ETH    | `linea-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `bob-mainnet`         | BOB             | `eip155:60808`     | ETH    | `bob-mainnet`         | Yes / Yes         | Eligible       | Eligible     |
+| `berachain-mainnet`   | Berachain       | `eip155:80094`     | BERA   | `berachain-mainnet`   | Yes / Yes         | Eligible       | Eligible     |
+| `blast-mainnet`       | Blast           | `eip155:81457`     | ETH    | `blast-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
+| `scroll-mainnet`      | Scroll          | `eip155:534352`    | ETH    | `scroll-mainnet`      | Yes / Yes         | Eligible       | Eligible     |
+| `degen-mainnet`       | Degen           | `eip155:666666666` | DEGEN  | `degen-mainnet`       | Yes / Yes         | Eligible       | Eligible     |
 
 ### Future testnets
 
-| Proposed registry key | Network                 | CAIP-2 ID          | Native | Alchemy slug        | Alchemy / Pimlico / ZeroDev | Kernel `0.3.3` | Safe `1.4.1`    |
-| --------------------- | ----------------------- | ------------------ | ------ | ------------------- | --------------------------- | -------------- | --------------- |
-| `bnb-testnet`         | BNB Smart Chain Testnet | `eip155:97`        | tBNB   | `bnb-testnet`       | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `sei-testnet`         | Sei Testnet             | `eip155:1328`      | SEI    | `sei-testnet`       | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `unichain-sepolia`    | Unichain Sepolia        | `eip155:1301`      | ETH    | `unichain-sepolia`  | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `mantle-sepolia`      | Mantle Sepolia          | `eip155:5003`      | MNT    | `mantle-sepolia`    | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `monad-testnet`       | Monad Testnet           | `eip155:10143`     | MON    | `monad-testnet`     | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `gnosis-chiado`       | Gnosis Chiado           | `eip155:10200`     | XDAI   | `gnosis-chiado`     | Yes / Yes / Yes             | Eligible       | **Unavailable** |
-| `tempo-moderato`      | Tempo Moderato          | `eip155:42431`     | USD    | `tempo-moderato`    | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `avalanche-fuji`      | Avalanche Fuji          | `eip155:43113`     | AVAX   | `avax-fuji`         | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `robinhood-testnet`   | Robinhood Chain Testnet | `eip155:46630`     | ETH    | `robinhood-testnet` | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `linea-sepolia`       | Linea Sepolia           | `eip155:59141`     | ETH    | `linea-sepolia`     | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `polygon-amoy`        | Polygon Amoy            | `eip155:80002`     | POL    | `polygon-amoy`      | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `blast-sepolia`       | Blast Sepolia           | `eip155:168587773` | ETH    | `blast-sepolia`     | Yes / Yes / Yes             | Eligible       | Eligible        |
-| `arc-testnet`         | Arc Testnet             | `eip155:5042002`   | USDC   | `arc-testnet`       | Yes / Yes / Yes             | Eligible       | Eligible        |
+| Proposed registry key | Network                 | CAIP-2 ID          | Native | Alchemy slug        | Alchemy / ZeroDev | Kernel `0.3.3` | Safe `1.4.1`    |
+| --------------------- | ----------------------- | ------------------ | ------ | ------------------- | ----------------- | -------------- | --------------- |
+| `bnb-testnet`         | BNB Smart Chain Testnet | `eip155:97`        | tBNB   | `bnb-testnet`       | Yes / Yes         | Eligible       | Eligible        |
+| `sei-testnet`         | Sei Testnet             | `eip155:1328`      | SEI    | `sei-testnet`       | Yes / Yes         | Eligible       | Eligible        |
+| `unichain-sepolia`    | Unichain Sepolia        | `eip155:1301`      | ETH    | `unichain-sepolia`  | Yes / Yes         | Eligible       | Eligible        |
+| `mantle-sepolia`      | Mantle Sepolia          | `eip155:5003`      | MNT    | `mantle-sepolia`    | Yes / Yes         | Eligible       | Eligible        |
+| `monad-testnet`       | Monad Testnet           | `eip155:10143`     | MON    | `monad-testnet`     | Yes / Yes         | Eligible       | Eligible        |
+| `gnosis-chiado`       | Gnosis Chiado           | `eip155:10200`     | XDAI   | `gnosis-chiado`     | Yes / Yes         | Eligible       | **Unavailable** |
+| `tempo-moderato`      | Tempo Moderato          | `eip155:42431`     | USD    | `tempo-moderato`    | Yes / Yes         | Eligible       | Eligible        |
+| `avalanche-fuji`      | Avalanche Fuji          | `eip155:43113`     | AVAX   | `avax-fuji`         | Yes / Yes         | Eligible       | Eligible        |
+| `robinhood-testnet`   | Robinhood Chain Testnet | `eip155:46630`     | ETH    | `robinhood-testnet` | Yes / Yes         | Eligible       | Eligible        |
+| `linea-sepolia`       | Linea Sepolia           | `eip155:59141`     | ETH    | `linea-sepolia`     | Yes / Yes         | Eligible       | Eligible        |
+| `polygon-amoy`        | Polygon Amoy            | `eip155:80002`     | POL    | `polygon-amoy`      | Yes / Yes         | Eligible       | Eligible        |
+| `blast-sepolia`       | Blast Sepolia           | `eip155:168587773` | ETH    | `blast-sepolia`     | Yes / Yes         | Eligible       | Eligible        |
+| `arc-testnet`         | Arc Testnet             | `eip155:5042002`   | USDC   | `arc-testnet`       | Yes / Yes         | Eligible       | Eligible        |
 
 Gnosis Chiado remains a Kernel-only candidate because Safe `1.4.1` does not
 list chain ID `10200` in its released deployment registry. It must not be added
@@ -139,8 +139,8 @@ upgraded, deployed, or explicitly disabled for that network.
 Promoting a future candidate into the runtime registry requires one focused
 change across the protocol, EVM adapter, frontend assets, and this document:
 
-1. Confirm the chain still appears under the same chain ID in Alchemy, Pimlico,
-   and ZeroDev, and confirm the required Safe version when Safe is offered.
+1. Confirm the chain still appears under the same chain ID in Alchemy Wallet
+   APIs and ZeroDev, and confirm the required Safe version when Safe is offered.
 2. Confirm Viem has accurate native-currency, RPC, testnet, and explorer
    metadata, or add a reviewed local chain definition.
 3. Add the family name, stable registry key, and CAIP-2 literal to protocol.
@@ -148,8 +148,8 @@ change across the protocol, EVM adapter, frontend assets, and this document:
    assets for a new family.
 5. Probe Alchemy `eth_simulateV1`, `eth_createAccessList`, bytecode reads,
    message verification, and typed-data verification.
-6. Probe Pimlico EntryPoint `0.7` gas estimation, fast gas price, sponsorship,
-   submission, status, and receipt behavior.
+6. Probe Alchemy EntryPoint `0.7` Rundler fee/gas estimation, Gas Manager
+   sponsorship, submission, status, and receipt behavior.
 7. Test Kernel and Safe counterfactual address derivation, reconstruction,
    signing, simulation, sponsored execution, receipt normalization, and
    ERC-1271 verification on the exact chain.
