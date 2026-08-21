@@ -1,5 +1,6 @@
 export * from "./dashboard-card";
 export * from "./copy-icon-button";
+export * from "./data-loading";
 export * from "./device-icon";
 export * from "./display";
 export * from "./heading-group";

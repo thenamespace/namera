@@ -18,13 +18,18 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
     httpClient: FetchHttpClient.layer,
     runtime: dashboardRuntime,
     transformClient: (client) =>
-      HttpClient.transformResponse(client, (response) => {
+      HttpClient.transform(client, (response, httpRequest) => {
         const request = Effect.provideService(response, FetchHttpClient.RequestInit, {
           credentials: "include",
         });
 
-        // Keep local loading transitions observable without changing production latency.
-        return env.environment === "development" ? Effect.delay(request, "300 millis") : request;
+        // Authentication owns whether the protected shell may render, so the development
+        // delay only applies to page data that can expose a local loading state.
+        const isSessionBootstrap = httpRequest.url.endsWith("/auth/session/me");
+
+        return env.environment === "development" && !isSessionBootstrap
+          ? Effect.delay(request, "300 millis")
+          : request;
       }),
   },
 ) {}
