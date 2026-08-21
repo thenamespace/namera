@@ -83,6 +83,7 @@ export const makeSignEvmExecution = (getClients: (chain: ChainData) => Execution
       chainId: input.prepared.chainId,
       entryPointVersion: input.prepared.entryPointVersion,
       entryPoint: input.prepared.entryPoint,
+      sponsorship: input.prepared.sponsorship,
       userOperation: encodedUserOperation,
       userOperationHash,
       billing: input.prepared.billing,

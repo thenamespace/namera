@@ -1,12 +1,18 @@
 import { expect, it } from "@effect/vitest";
-import { Effect, Option, Schema } from "effect";
+import { Effect, Option, Redacted, Schema } from "effect";
 
 import { Bytes32, EthereumAddress, Hex, SupportedEvmChainId } from "@namera-ai/protocol";
-import type { KernelWalletData } from "@namera-ai/protocol/model";
-import { privateKeyToAccount } from "viem/accounts";
+import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
+import type { WebAuthnAccount } from "viem/account-abstraction";
 
+import { getChainDataByCaip2 } from "../src/chains/helpers.js";
+import { makeExecutionClients } from "../src/clients/execution.js";
 import { toSimulationCalls } from "../src/execution/prepare.js";
-import { normalizeEvmUserOperation, toViemUserOperation } from "../src/execution/user-operation.js";
+import {
+  applyEvmExecutionSponsorship,
+  normalizeEvmUserOperation,
+  toViemUserOperation,
+} from "../src/execution/user-operation.js";
 import { Evm } from "../src/index.js";
 
 const chainId = Schema.decodeSync(SupportedEvmChainId)("eip155:1");
@@ -14,14 +20,23 @@ const address = EthereumAddress.make("0x1111111111111111111111111111111111111111
 const account = {
   wallet: {
     version: 1,
-    implementation: "kernel",
-    kernelVersion: "0.3.3",
+    implementation: "alchemy-modular-v2",
+    modularAccountVersion: "2.0.0",
     entryPointVersion: "0.7",
-    validatorType: "ecdsa_secp256k1",
-    accountIndex: 0n,
+    validatorType: "webauthn_p256",
+    salt: 0n,
+    entityId: 0,
     address,
-  } satisfies KernelWalletData,
-  owner: privateKeyToAccount(`0x${"1".repeat(64)}`),
+  } satisfies AlchemyModularV2WalletData,
+  owner: {
+    id: "test-owner",
+    publicKey: `0x04${"1".repeat(128)}`,
+    type: "webAuthn",
+    sign: () => Promise.reject(new Error("Not used by the deterministic execution service")),
+    signMessage: () => Promise.reject(new Error("Not used by the deterministic execution service")),
+    signTypedData: () =>
+      Promise.reject(new Error("Not used by the deterministic execution service")),
+  } satisfies WebAuthnAccount,
 };
 
 it("omits empty calldata only from auxiliary call simulation", () => {
@@ -75,6 +90,56 @@ it.effect("round trips serializable EntryPoint 0.7 UserOperations", () =>
     });
   }),
 );
+
+it("converts estimated operations into BSO submission envelopes", () => {
+  const operation = applyEvmExecutionSponsorship(
+    {
+      sender: address,
+      nonce: 1n,
+      callData: "0x",
+      callGasLimit: 2n,
+      verificationGasLimit: 3n,
+      preVerificationGas: 4n,
+      maxFeePerGas: 5n,
+      maxPriorityFeePerGas: 6n,
+      paymaster: "0x3333333333333333333333333333333333333333",
+      paymasterVerificationGasLimit: 7n,
+      paymasterPostOpGasLimit: 8n,
+      paymasterData: "0x5678",
+      signature: "0x90",
+    },
+    "alchemy-bso",
+  );
+
+  expect(operation).toMatchObject({
+    preVerificationGas: 0n,
+    maxFeePerGas: 0n,
+    maxPriorityFeePerGas: 0n,
+  });
+  expect(operation).not.toHaveProperty("paymaster");
+  expect(operation).not.toHaveProperty("paymasterData");
+  expect(operation).not.toHaveProperty("paymasterVerificationGasLimit");
+  expect(operation).not.toHaveProperty("paymasterPostOpGasLimit");
+});
+
+it("isolates the BSO policy header to sponsored submission", () => {
+  const chain = getChainDataByCaip2(chainId);
+  if (chain === undefined) throw new Error("Expected supported EVM chain");
+
+  const clients = makeExecutionClients({
+    alchemyApiKey: Redacted.make("alchemy-api-key"),
+    alchemyBsoPolicyId: Redacted.make("bso-policy-id"),
+  })(chain);
+  const sponsoredHeaders = new Headers(
+    clients.getSubmissionClient("alchemy-bso").transport.fetchOptions?.headers,
+  );
+  const regularHeaders = new Headers(
+    clients.getSubmissionClient("none").transport.fetchOptions?.headers,
+  );
+
+  expect(sponsoredHeaders.get("x-alchemy-policy-id")).toBe("bso-policy-id");
+  expect(regularHeaders.has("x-alchemy-policy-id")).toBe(false);
+});
 
 it.effect("exposes the complete deterministic execution lifecycle from the root service", () =>
   Effect.gen(function* () {

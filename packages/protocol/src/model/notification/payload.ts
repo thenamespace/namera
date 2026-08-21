@@ -67,7 +67,7 @@ export const WalletCreatedNotificationPayload = Schema.Struct({
   data: Schema.Struct({
     version: Schema.Literal(1),
     address: EthereumAddress,
-    implementation: Schema.Literals(["kernel", "safe"]),
+    implementation: Schema.Literal("alchemy-modular-v2"),
     protectionLevel: WalletKeyProtectionLevel,
   }),
 });

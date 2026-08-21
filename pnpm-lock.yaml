@@ -12,6 +12,9 @@ catalogs:
     '@alchemy/common':
       specifier: 5.2.0
       version: 5.2.0
+    '@alchemy/smart-accounts':
+      specifier: 5.2.0
+      version: 5.2.0
     '@arethetypeswrong/core':
       specifier: 0.18.5
       version: 0.18.5
@@ -84,9 +87,6 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: 6.0.5
       version: 6.0.5
-    '@zerodev/sdk':
-      specifier: 5.5.10
-      version: 5.5.10
     drizzle-kit:
       specifier: 1.0.0-rc.4
       version: 1.0.0-rc.4
@@ -660,21 +660,18 @@ importers:
       '@alchemy/common':
         specifier: 'catalog:'
         version: 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
+      '@alchemy/smart-accounts':
+        specifier: 'catalog:'
+        version: 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
-      '@zerodev/sdk':
-        specifier: 'catalog:'
-        version: 5.5.10(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
       ox:
         specifier: 'catalog:'
         version: 0.14.33(typescript@6.0.3)(zod@4.4.3)
-      permissionless:
-        specifier: 0.3.7
-        version: 0.3.7(ox@0.14.33(typescript@6.0.3)(zod@4.4.3))(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       viem:
         specifier: 'catalog:'
         version: 2.55.11(typescript@6.0.3)(zod@4.4.3)
@@ -906,6 +903,11 @@ packages:
 
   '@alchemy/common@5.2.0':
     resolution: {integrity: sha512-vJg3JAzs3D5ik+PKN6p/4wU27MI0cLrf3t8mD/pNHZ6M87i020zsLzWUoP/Ti83/2N4Nb/ivZCqbsfnAYGmRFA==}
+    peerDependencies:
+      viem: ^2.45.0
+
+  '@alchemy/smart-accounts@5.2.0':
+    resolution: {integrity: sha512-EN05esNI423pqkz4DsXptVAETc4p73/yP4nJcJguVdT+It7tOZodEgQyJ8jXpuzYjTVzckXF/cWiOsJkXLS99A==}
     peerDependencies:
       viem: ^2.45.0
 
@@ -3791,11 +3793,6 @@ packages:
   '@yuku-toolchain/types@0.8.3':
     resolution: {integrity: sha512-9LN3HYs3A9qSPVFunsxlbfwBcUgexti3TmhOzIxB/UH8zFuaHQJXTRDcN17DW6cp1GsyZtiZA7f18uIra36Jag==}
 
-  '@zerodev/sdk@5.5.10':
-    resolution: {integrity: sha512-WVyj2XR9F6zK2GdXrvappx7yo6zoJ46cWe42dOIArp3xDjFBninjA4O1O94MwohB0G+yFqtXNsEU+WxdE67SgQ==}
-    peerDependencies:
-      viem: ^2.28.0
-
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
     peerDependencies:
@@ -5511,15 +5508,6 @@ packages:
   peberminta@0.9.0:
     resolution: {integrity: sha512-XIxfHpEuSJbITd1H3EeQwpcZbTLHc+VVr8ANI9t5sit565tsI4/xK3KWTUFE2e6QiangUkh3B0jihzmGnNrRsQ==}
 
-  permissionless@0.3.7:
-    resolution: {integrity: sha512-r1UGWkVMqFzzJ0UcKEVHh6XvOm7+SfTvy7AoGA7ZlxpE96XR+zbtb+rRAA3DOQuq6/ifov5NvUyt1xf4zxbR0g==}
-    peerDependencies:
-      ox: ^0.11.3
-      viem: ^2.44.4
-    peerDependenciesMeta:
-      ox:
-        optional: true
-
   pg-cloudflare@1.4.0:
     resolution: {integrity: sha512-Vo7z/6rrQYxpNRylp4Tlob2elzbh+N/MOQbxFVWCxS7oEx6jF53GTJFxK2WWpKuBRkmiin4Mt+xofFDjx09R0A==}
 
@@ -6694,6 +6682,11 @@ snapshots:
     dependencies:
       viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
       zod: 3.25.76
+
+  '@alchemy/smart-accounts@5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))':
+    dependencies:
+      '@alchemy/common': 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
+      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
 
   '@andrewbranch/untar.js@1.0.4': {}
 
@@ -9115,11 +9108,6 @@ snapshots:
 
   '@yuku-toolchain/types@0.8.3': {}
 
-  '@zerodev/sdk@5.5.10(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))':
-    dependencies:
-      semver: 7.8.5
-      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
-
   abitype@1.2.3(typescript@6.0.3)(zod@4.4.3):
     optionalDependencies:
       typescript: 6.0.3
@@ -10888,12 +10876,6 @@ snapshots:
       resolve-protobuf-schema: 2.1.0
 
   peberminta@0.9.0: {}
-
-  permissionless@0.3.7(ox@0.14.33(typescript@6.0.3)(zod@4.4.3))(viem@2.55.11(typescript@6.0.3)(zod@4.4.3)):
-    dependencies:
-      viem: 2.55.11(typescript@6.0.3)(zod@4.4.3)
-    optionalDependencies:
-      ox: 0.14.33(typescript@6.0.3)(zod@4.4.3)
 
   pg-cloudflare@1.4.0:
     optional: true

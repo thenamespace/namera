@@ -11,7 +11,7 @@ Before calling the owner signer, the adapter reconstructs the account and compar
 - EntryPoint address and version with reconstructed account;
 - account-encoded calls with serialized `callData`;
 - context nonce with serialized nonce;
-- every gas/fee/paymaster field with serialized UserOperation.
+- every gas/fee field and sponsorship mode with the serialized UserOperation.
 
 Any mismatch returns `SIGNING_FAILED`; no signature is produced.
 
@@ -23,7 +23,7 @@ sequenceDiagram
   participant Owner as Wallet-key owner
   App->>EVM: account + prepared execution
   EVM->>Account: encodeCalls(context.calls)
-  EVM->>EVM: Compare account, EntryPoint, calls, nonce, gas, fees, paymaster
+  EVM->>EVM: Compare account, EntryPoint, calls, nonce, gas, fees, sponsorship
   EVM->>Account: signUserOperation
   Account->>Owner: Sign account-specific UserOperation payload
   Owner-->>Account: Signature
@@ -33,7 +33,15 @@ sequenceDiagram
 
 ## Submission
 
-The adapter reconstructs the Viem UserOperation and independently computes `getUserOperationHash` from chain ID, EntryPoint address/version, and signed fields. It rejects a mismatch before RPC. Alchemy Rundler `sendUserOperation` must return that exact hash; a different result is `SUBMISSION_HASH_MISMATCH`.
+The adapter reconstructs the Viem UserOperation and independently computes
+`getUserOperationHash` from chain ID, EntryPoint address/version, and signed
+fields. It rejects a mismatch before RPC. For `alchemy-bso`, the signed payload
+must contain zero `maxFeePerGas`, `maxPriorityFeePerGas`, and
+`preVerificationGas`; submission uses the dedicated Rundler transport with the
+configured `x-alchemy-policy-id` header. Unsponsored operations use the regular
+Rundler transport. Neither path calls an EIP-7677 paymaster. Rundler
+`sendUserOperation` must return the exact expected hash; a different result is
+`SUBMISSION_HASH_MISMATCH`.
 
 ## Error classification
 

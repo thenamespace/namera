@@ -1,33 +1,22 @@
 import { Schema } from "effect";
 
-import { ValidatorType } from "#/common/index";
-import { EntryPointVersion, EthereumAddress, KernelVersion, SafeVersion } from "#/evm/index";
+import { AlchemyModularAccountVersion, EntryPointVersion, EthereumAddress } from "#/evm/index";
 
-export const KernelWalletData = Schema.Struct({
+export const AlchemyModularV2WalletData = Schema.Struct({
   version: Schema.Literal(1),
   address: EthereumAddress,
-  implementation: Schema.Literal("kernel"),
-  kernelVersion: KernelVersion,
-  validatorType: ValidatorType,
+  implementation: Schema.Literal("alchemy-modular-v2"),
+  modularAccountVersion: AlchemyModularAccountVersion,
+  validatorType: Schema.Literal("webauthn_p256"),
   entryPointVersion: EntryPointVersion,
-  accountIndex: Schema.BigIntFromString,
-});
-
-export const SafeWalletData = Schema.Struct({
-  version: Schema.Literal(1),
-  address: EthereumAddress,
-  implementation: Schema.Literal("safe"),
-  validatorType: ValidatorType,
-  safeVersion: SafeVersion,
-  entryPointVersion: EntryPointVersion,
-  saltNonce: Schema.BigIntFromString,
+  salt: Schema.BigIntFromString,
+  entityId: Schema.Int,
 });
 
 export const EvmWalletData = Schema.Struct({
   namespace: Schema.Literal("eip155"),
-  data: Schema.Union([KernelWalletData, SafeWalletData]),
+  data: AlchemyModularV2WalletData,
 });
 
-export type KernelWalletData = typeof KernelWalletData.Type;
-export type SafeWalletData = typeof SafeWalletData.Type;
+export type AlchemyModularV2WalletData = typeof AlchemyModularV2WalletData.Type;
 export type EvmWalletData = typeof EvmWalletData.Type;

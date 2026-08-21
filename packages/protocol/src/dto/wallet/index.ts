@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
-import { OrganizationId, ValidatorType, WalletId } from "#/common/index";
-import { EntryPointVersion, EthereumAddress, KernelVersion, SafeVersion } from "#/evm/index";
+import { OrganizationId, WalletId } from "#/common/index";
+import { AlchemyModularAccountVersion, EntryPointVersion, EthereumAddress } from "#/evm/index";
 import {
   TimestampFields,
   WalletKeyProtectionLevel,
@@ -13,7 +13,6 @@ export const CreateEvmWalletRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   protectionLevel: WalletKeyProtectionLevel,
   metadata: WalletMetadata,
-  implementation: Schema.Literals(["kernel", "safe"]),
 }).annotate({
   identifier: "CreateEvmWalletRequest",
   description: "Create an EVM smart-account wallet",
@@ -35,39 +34,23 @@ const WalletResponseFields = {
   ...TimestampFields,
 };
 
-export const KernelWalletResponse = Schema.Struct({
+export const AlchemyModularV2WalletResponse = Schema.Struct({
   ...WalletResponseFields,
-  implementation: Schema.Literal("kernel"),
+  implementation: Schema.Literal("alchemy-modular-v2"),
   data: Schema.Struct({
     version: Schema.Literal(1),
-    kernelVersion: KernelVersion,
-    validatorType: ValidatorType,
+    modularAccountVersion: AlchemyModularAccountVersion,
+    validatorType: Schema.Literal("webauthn_p256"),
     entryPointVersion: EntryPointVersion,
-    accountIndex: Schema.BigIntFromString,
+    salt: Schema.BigIntFromString,
+    entityId: Schema.Int,
   }),
 }).annotate({
-  identifier: "KernelWalletResponse",
-  description: "A Kernel EVM smart-account wallet",
+  identifier: "AlchemyModularV2WalletResponse",
+  description: "An Alchemy Modular Account V2 wallet using P-256 WebAuthn validation",
 });
 
-export const SafeWalletResponse = Schema.Struct({
-  ...WalletResponseFields,
-  implementation: Schema.Literal("safe"),
-  data: Schema.Struct({
-    version: Schema.Literal(1),
-    safeVersion: SafeVersion,
-    validatorType: ValidatorType,
-    entryPointVersion: EntryPointVersion,
-    saltNonce: Schema.BigIntFromString,
-  }),
-}).annotate({
-  identifier: "SafeWalletResponse",
-  description: "A Safe EVM smart-account wallet",
-});
-
-export const EvmWalletResponse = Schema.Union([KernelWalletResponse, SafeWalletResponse], {
-  mode: "oneOf",
-}).annotate({
+export const EvmWalletResponse = AlchemyModularV2WalletResponse.annotate({
   identifier: "EvmWalletResponse",
   description: "An EVM smart-account wallet",
 });

@@ -89,13 +89,6 @@ function AccountGroupLabel({ group }: { group: AccountGroupRow }) {
     if (group.grouping === "status") {
       return <WalletStatusDisplay status={group.value as WalletResponse["status"]} />;
     }
-    if (group.grouping === "implementation") {
-      return (
-        <WalletImplementationDisplay
-          implementation={group.value as WalletResponse["implementation"]}
-        />
-      );
-    }
     return (
       <WalletProtectionDisplay protectionLevel={group.value as WalletResponse["protectionLevel"]} />
     );
@@ -265,13 +258,11 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
           account.address.toLowerCase().includes(normalizedQuery) ||
           account.id.toLowerCase().includes(normalizedQuery);
         const matchesStatus = filters.status.size === 0 || filters.status.has(account.status);
-        const matchesImplementation =
-          filters.implementation.size === 0 || filters.implementation.has(account.implementation);
         const matchesProtection =
           filters.protectionLevel.size === 0 ||
           filters.protectionLevel.has(account.protectionLevel);
 
-        return matchesQuery && matchesStatus && matchesImplementation && matchesProtection;
+        return matchesQuery && matchesStatus && matchesProtection;
       }),
     [accountData, filters, normalizedQuery],
   );
@@ -294,23 +285,18 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const filterCounts = useMemo<AccountFilterCounts>(() => {
     const counts: AccountFilterCounts = {
       status: { active: 0, archived: 0, frozen: 0 },
-      implementation: { kernel: 0, safe: 0 },
       protectionLevel: { hsm: 0, software: 0 },
     };
 
     for (const account of accountData) {
       counts.status[account.status] += 1;
-      counts.implementation[account.implementation] += 1;
       counts.protectionLevel[account.protectionLevel] += 1;
     }
 
     return counts;
   }, [accountData]);
   const hasFilters =
-    normalizedQuery.length > 0 ||
-    filters.status.size > 0 ||
-    filters.implementation.size > 0 ||
-    filters.protectionLevel.size > 0;
+    normalizedQuery.length > 0 || filters.status.size > 0 || filters.protectionLevel.size > 0;
   const renderEmptyState = useEventCallback(() =>
     hasFilters ? "No accounts match these filters." : "No accounts yet.",
   );

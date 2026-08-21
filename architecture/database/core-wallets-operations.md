@@ -42,18 +42,18 @@ Provider-neutral public description of a signing key. Private key material remai
 
 Programmable account visible to API clients. `namespace` selects the chain-family adapter and `data` contains its discriminated implementation details.
 
-| Column                | PostgreSQL type | Required | Default  | Description                                                                 |
-| --------------------- | --------------- | -------- | -------- | --------------------------------------------------------------------------- |
-| `id`                  | `text`          | Yes      | UUIDv7   | Public wallet identifier.                                                   |
-| `organization_id`     | `text`          | Yes      | —        | Owning tenant.                                                              |
-| `wallet_key_id`       | `text`          | Yes      | —        | Owner key used to construct and sign for the account.                       |
-| `metadata`            | `jsonb`         | Yes      | —        | User-controlled name and description.                                       |
-| `status`              | `text`          | Yes      | `active` | Wallet lifecycle state.                                                     |
-| `created_by_actor_id` | `text`          | Yes      | —        | Actor that created the wallet.                                              |
-| `namespace`           | `text`          | Yes      | —        | Chain-family namespace, currently `eip155`.                                 |
-| `data`                | `jsonb`         | Yes      | —        | Namespace/implementation-discriminated account data such as Kernel or Safe. |
-| `created_at`          | `timestamptz`   | Yes      | `now()`  | Creation time.                                                              |
-| `updated_at`          | `timestamptz`   | Yes      | `now()`  | Last update time.                                                           |
+| Column                | PostgreSQL type | Required | Default  | Description                                                                           |
+| --------------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------- |
+| `id`                  | `text`          | Yes      | UUIDv7   | Public wallet identifier.                                                             |
+| `organization_id`     | `text`          | Yes      | —        | Owning tenant.                                                                        |
+| `wallet_key_id`       | `text`          | Yes      | —        | Owner key used to construct and sign for the account.                                 |
+| `metadata`            | `jsonb`         | Yes      | —        | User-controlled name and description.                                                 |
+| `status`              | `text`          | Yes      | `active` | Wallet lifecycle state.                                                               |
+| `created_by_actor_id` | `text`          | Yes      | —        | Actor that created the wallet.                                                        |
+| `namespace`           | `text`          | Yes      | —        | Chain-family namespace, currently `eip155`.                                           |
+| `data`                | `jsonb`         | Yes      | —        | Namespace-specific account reconstruction data, currently Alchemy Modular Account V2. |
+| `created_at`          | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                        |
+| `updated_at`          | `timestamptz`   | Yes      | `now()`  | Last update time.                                                                     |
 
 ### Keys and uniqueness
 

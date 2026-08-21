@@ -132,7 +132,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
 
       const { wallet, account, prepared, candidates } = yield* prepareExecution({
         ...input,
-        sponsorship: sponsor ? "sponsored" : "none",
+        sponsorship: sponsor ? "alchemy-bso" : "none",
       });
 
       let selected: GrantedEvmSessionKey | undefined;

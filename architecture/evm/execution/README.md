@@ -80,5 +80,5 @@ Simulation shares grant/wallet/account preparation and policy logic but does not
 - Run concurrency tests across HTTP execute, retries, and reconciliation for the same submission.
 - Define synchronous wait timeouts and client polling guidance.
 - Add a durable reconciliation scheduler/worker deployment runbook.
-- Validate Alchemy quote freshness and production Gas Manager invoice variance; use
+- Validate Alchemy quote freshness and production BSO invoice variance; use
   provider-confirmed cost when that source becomes available.

@@ -23,6 +23,11 @@ const EvmSignedAuthorization = Schema.Struct({
   yParity: Schema.Literals([0, 1]),
 });
 
+export const EvmExecutionSponsorship = Schema.Literals(["none", "alchemy-bso"]).annotate({
+  identifier: "EvmExecutionSponsorship",
+  description: "Whether an execution is self-funded or sponsored by Alchemy's bundler",
+});
+
 export const EvmSerializedUserOperation = Schema.Struct({
   sender: EthereumAddress,
   nonce: EvmQuantity,
@@ -51,6 +56,7 @@ const EvmExecutionEnvelope = {
   chainId: SupportedEvmChainId,
   entryPointVersion: EntryPointVersion,
   entryPoint: EthereumAddress,
+  sponsorship: EvmExecutionSponsorship,
 };
 
 export const EvmGasPriceQuote = Schema.Struct({
@@ -69,6 +75,7 @@ export const EvmExecutionBilling = Schema.Struct({
   sponsorship: Schema.NullOr(
     Schema.Struct({
       provider: Schema.Literal("alchemy"),
+      mode: Schema.Literal("bso"),
       reservationAmountMicroUsd: EvmQuantity,
       quote: EvmGasPriceQuote,
     }),
@@ -158,6 +165,7 @@ export const EvmExecutionReceipt = Schema.Union([
 });
 
 export type EvmSerializedUserOperation = typeof EvmSerializedUserOperation.Type;
+export type EvmExecutionSponsorship = typeof EvmExecutionSponsorship.Type;
 export type EvmGasPriceQuote = typeof EvmGasPriceQuote.Type;
 export type EvmExecutionBilling = typeof EvmExecutionBilling.Type;
 export type EvmPreparedExecution = typeof EvmPreparedExecution.Type;

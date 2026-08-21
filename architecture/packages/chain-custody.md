@@ -29,7 +29,7 @@ Adding a provider requires protocol-discriminated locator data, configuration/la
 
 ## `packages/evm`
 
-EVM owns the `eip155` adapter. Detailed architecture is in [the EVM hub](../evm/README.md). It uses provider-neutral owner accounts from Wallet Keys, reconstructs Kernel/Safe accounts, and contains all Viem/permissionless/provider-specific logic.
+EVM owns the `eip155` adapter. Detailed architecture is in [the EVM hub](../evm/README.md). It uses provider-neutral owner accounts from Wallet Keys, reconstructs Alchemy Modular Account V2 accounts, and contains all Viem/Alchemy-specific logic.
 
 ### Boundary between custody and chain code
 
@@ -40,10 +40,10 @@ flowchart LR
   WalletKeys --> Provider[KMS/local custody]
   EVM --> Owner[Provider-neutral owner adapter]
   Owner --> WalletKeys
-  EVM --> RPC[Alchemy RPC/Rundler/Gas Manager]
+  EVM --> RPC[Alchemy RPC/Rundler/BSO]
 ```
 
-Wallet Keys does not know Kernel, Safe, calls, UserOperations, or chain IDs. EVM does not know Google IAM/private-key files or persist provider secrets.
+Wallet Keys does not know Modular Account V2, calls, UserOperations, or chain IDs. EVM does not know Google IAM/private-key files or persist provider secrets.
 
 ## Adding a namespace
 

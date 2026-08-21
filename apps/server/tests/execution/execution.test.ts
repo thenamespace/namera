@@ -30,7 +30,6 @@ layer(TestServerLayer)("execution routes", (it) => {
         const wallet = yield* client.wallet.create({
           payload: {
             namespace: "eip155",
-            implementation: "kernel",
             protectionLevel: "software",
             metadata: metadata("Simulation treasury"),
           },
@@ -129,7 +128,6 @@ layer(TestServerLayer)("execution routes", (it) => {
         const wallet = yield* client.wallet.create({
           payload: {
             namespace: "eip155",
-            implementation: "kernel",
             protectionLevel: "software",
             metadata: metadata("Treasury"),
           },
@@ -269,7 +267,6 @@ layer(TestServerLayer)("execution routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Restricted"),
         },
@@ -337,7 +334,6 @@ layer(TestServerLayer)("execution routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Worker treasury"),
         },
@@ -429,7 +425,6 @@ layer(TestServerLayer)("execution routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Failed worker treasury"),
         },

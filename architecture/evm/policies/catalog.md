@@ -50,13 +50,16 @@ Applies to executions. Maximum pessimistic cost is:
 ```text
 (callGasLimit
  + verificationGasLimit
- + preVerificationGas
- + paymasterVerificationGasLimit
- + paymasterPostOpGasLimit)
+ + preVerificationGas)
 * maxFeePerGas
 ```
 
-Budgets are per chain and support `hour`, `day`, `week` (Monday start), or `lifetime`, with the analogous state keys. Missing chain returns `GAS_BUDGET_CHAIN_NOT_CONFIGURED`. Per-operation maximum or cumulative `spent + reserved + maximumCost` over budget returns `GAS_BUDGET_EXCEEDED`.
+The calculation uses the regular Rundler simulation estimate retained in policy
+context, not the zero fee fields in a BSO submission payload. Budgets are per
+chain and support `hour`, `day`, `week` (Monday start), or `lifetime`, with the
+analogous state keys. Missing chain returns
+`GAS_BUDGET_CHAIN_NOT_CONFIGURED`. Per-operation maximum or cumulative
+`spent + reserved + maximumCost` over budget returns `GAS_BUDGET_EXCEEDED`.
 
 Settlement charges `actualGasCost` and removes the full pessimistic reservation. It rejects a result whose actual cost exceeds the reservation because that would violate the authorization assumption.
 
@@ -74,4 +77,5 @@ Settlement charges `actualGasCost` and removes the full pessimistic reservation.
 
 - Confirm period boundaries and timezone presentation in dashboard documentation.
 - Add externally documented examples for every denial code.
-- Decide whether paymaster-sponsored actual cost should count network gas, sponsor cost, or product-priced units for future billing/policies.
+- Reconcile Alchemy BSO service-fee invoice variance against the persisted quote
+  and product-priced units before enabling paid gas overage.

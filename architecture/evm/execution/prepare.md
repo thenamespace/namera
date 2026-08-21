@@ -5,10 +5,10 @@ Preparation turns decoded calls and stored smart-account data into an unsigned E
 ## Inputs
 
 - supported CAIP-2 chain ID;
-- reconstructed Kernel or Safe account data and owner account;
+- reconstructed Alchemy Modular Account V2 data and P-256 owner account;
 - ordered calls containing destination, native value, and calldata;
 - sponsorship mode (`none` for simulation or self-funded execution,
-  `sponsored` for the default execution path).
+  `alchemy-bso` for the default execution path).
 
 ## Pipeline
 
@@ -17,53 +17,53 @@ flowchart TD
   Input[chain, account, calls] --> Chain{Supported CAIP-2 chain?}
   Chain -->|No| Unsupported[UnsupportedChainError]
   Chain -->|Yes| Reconstruct[Reconstruct smart account and verify address]
-  Reconstruct --> Sponsor{Sponsorship requested?}
-  Sponsor -->|No| Prepare[Prepare without paymaster]
-  Sponsor -->|Sponsored| PrepareSponsored[Prepare with Alchemy Gas Manager]
-  PrepareSponsored --> Prepare
+  Reconstruct --> Prepare[Prepare regular UserOperation]
   Prepare --> Estimate[Alchemy Rundler prepareUserOperation]
   Estimate --> Calls[Viem simulateCalls]
   Calls --> Block{Latest block has hash and number?}
   Block -->|No| Failure[PREPARATION_FAILED]
-  Block -->|Yes| Normalize[Normalize/encode UserOperation and context]
+  Block -->|Yes| Sponsor{Alchemy BSO?}
+  Sponsor -->|No| Normalize[Normalize estimated operation and context]
+  Sponsor -->|Yes| BSO[Zero fee caps and preVerificationGas]
+  BSO --> Normalize
   Normalize --> Prepared[EvmPreparedExecution v1]
 ```
 
-`prepareUserOperation` failures classified by Viem as `UserOperationExecutionError` map to `SIMULATION_FAILED`; other construction failures map to `PREPARATION_FAILED`. Rundler, Gas Manager, or call-simulation failures map to `SIMULATION_FAILED`.
+`prepareUserOperation` failures classified by Viem as `UserOperationExecutionError` map to `SIMULATION_FAILED`; other construction failures map to `PREPARATION_FAILED`. Rundler or call-simulation failures map to `SIMULATION_FAILED`.
 
 ## Two simulations
 
-| Simulation                                      | Purpose                                                          | Context fields                                                            |
-| ----------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `prepareUserOperation` through Alchemy Rundler  | Validate ERC-4337 envelope and estimate EntryPoint/paymaster gas | call, verification, pre-verification, paymaster verification/post-op gas  |
-| `viem.simulateCalls` through Alchemy public RPC | Execute exact account calls and trace user-visible effects       | per-call status/return/gas, asset changes, native transfers, block anchor |
+| Simulation                                      | Purpose                                                    | Context fields                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `prepareUserOperation` through Alchemy Rundler  | Validate the ERC-4337 envelope and estimate execution gas  | call, verification, pre-verification gas and fee caps                     |
+| `viem.simulateCalls` through Alchemy public RPC | Execute exact account calls and trace user-visible effects | per-call status/return/gas, asset changes, native transfers, block anchor |
 
 Both are required: EntryPoint gas estimation does not provide the same asset-transfer context, while raw call simulation does not validate the complete ERC-4337 envelope.
 
-Simulation requests explicitly prepare without a paymaster and therefore never
-consume or imply Namera-sponsored gas. Execution requests prepare with Alchemy
-Gas Manager by default and pass the configured policy ID as paymaster context.
-An execution with `sponsor: false` follows the same no-paymaster preparation path
-as simulation, then continues through policy reservation, signing, submission,
-and execution metering. Viem's
-preparation performs the paymaster stub/final-data handshake and
-`eth_estimateUserOperationGas`; Namera records those prepared gas fields rather
-than issuing a duplicate estimate.
+All requests prepare and estimate a regular UserOperation without an EIP-7677
+paymaster. Simulation and `sponsor: false` retain that estimated operation. The
+default sponsored execution path records the estimates for policy and billing,
+then creates the exact BSO payload by setting `maxFeePerGas`,
+`maxPriorityFeePerGas`, and `preVerificationGas` to `0`. The BSO policy ID is not
+part of the UserOperation; submission sends it only in the
+`x-alchemy-policy-id` header. There is no paymaster stub/final-data handshake.
 After preparation, the adapter classifies the chain and attaches a JSON-safe
 billing envelope:
 
 - testnet: `execution.testnet`, no gas sponsorship measurement;
-- mainnet without a paymaster: `execution.mainnet`, no gas measurement;
-- mainnet with an Alchemy paymaster: `execution.mainnet` plus a pessimistic
+- unsponsored mainnet: `execution.mainnet`, no gas measurement;
+- BSO-sponsored mainnet: `execution.mainnet` plus a pessimistic
   sponsored-cost reservation.
 
 For sponsored mainnet execution, the adapter fetches ETH/USD from Alchemy,
 rounds the quote upward to micro-USD, applies Alchemy's 8% mainnet sponsorship fee,
-and prices the sum of call, verification, pre-verification, paymaster
-verification, and paymaster post-op gas at `maxFeePerGas`. The quote timestamp,
-price, and margin remain embedded in the signed execution so receipt settlement
-uses the same cost basis. Pricing failure is a preparation failure; application
-code never reimplements these EVM rules.
+and prices the sum of the estimated call, verification, and pre-verification gas
+at the estimated `maxFeePerGas`. Those pre-BSO estimates remain in the simulation
+context even though the signed BSO payload contains zero fee caps and
+pre-verification gas. The quote timestamp, price, and margin remain embedded in
+the signed execution so receipt settlement uses the same cost basis. Pricing
+failure is a preparation failure; application code never reimplements these EVM
+rules.
 
 ## Call normalization
 
@@ -78,7 +78,7 @@ The version-1 `EvmIntentContext` includes:
 - namespace, chain ID, and reconstructed account address;
 - block number, hash, and timestamp;
 - ordered calls with bigint values normalized for schema encoding;
-- nonce, complete gas envelope, fee caps, and paymaster;
+- nonce, submitted gas envelope and fee caps, plus the separate pre-BSO estimate;
 - both simulation sources and normalized results.
 
 Policies consume this context. Period windows use the simulated block timestamp rather than server wall-clock time; gas budgets use the pessimistic prepared gas/fee envelope; native-spend limits inspect exact call values.

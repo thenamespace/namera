@@ -53,8 +53,9 @@ from multiple session keys. Billing enforcement and stateful reservations occur
 inside the same transaction. Parallel requests cannot consume the same final
 capacity.
 
-Gas sponsorship defaults to enabled. An explicit `sponsor: false` prepares and
-submits a self-funded UserOperation without an Alchemy paymaster. Both modes
+Gas sponsorship defaults to enabled and uses Alchemy Bundler Sponsored
+Operations (BSO). An explicit `sponsor: false` submits a self-funded
+UserOperation through regular Rundler without the BSO policy header. Both modes
 reserve and settle one mainnet or testnet execution unit. Only a sponsored
 mainnet operation reserves and settles the `gas-sponsorship` balance; testnet and
 unsponsored mainnet operations never consume that balance.
@@ -73,7 +74,7 @@ the same logical request.
 ## Signing invariants
 
 Before owner signing, the EVM adapter verifies that account, EntryPoint, calls,
-nonce, gas, fee, and paymaster data match the prepared policy context. Submission
+nonce, gas, fee, and sponsorship mode match the prepared policy context. Submission
 verifies canonical and returned UserOperation hashes. Provider rejection is
 distinguished from an uncertain transport outcome so uncertain submissions are
 not incorrectly released.

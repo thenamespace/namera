@@ -24,7 +24,6 @@ layer(TestServerLayer)("signature routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Signing account"),
         },
@@ -213,7 +212,6 @@ layer(TestServerLayer)("signature routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "safe",
           protectionLevel: "software",
           metadata: metadata("Verification account"),
         },
@@ -221,7 +219,6 @@ layer(TestServerLayer)("signature routes", (it) => {
       const ungrantedWallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Ungranted account"),
         },
@@ -302,7 +299,6 @@ layer(TestServerLayer)("signature routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Restricted account"),
         },

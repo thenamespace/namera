@@ -58,7 +58,7 @@ export const ExecuteEvmRequest = Schema.Struct({
   ...EvmExecutionRequestFields,
   sponsor: Schema.optionalKey(Schema.Boolean).annotate({
     description:
-      "Whether Namera should sponsor gas through Alchemy Gas Manager. Defaults to true. Set false to pay gas from the smart account without consuming sponsored-gas credits.",
+      "Whether Namera should sponsor gas through Alchemy Bundler Sponsored Operations. Defaults to true. Set false to pay gas from the smart account without consuming sponsored-gas credits.",
   }),
 }).annotate({
   identifier: "ExecuteEvmRequest",

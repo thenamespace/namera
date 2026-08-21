@@ -16,7 +16,7 @@ import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
 import type { PrepareEvmExecutionInput } from "./types.js";
-import { normalizeEvmUserOperation } from "./user-operation.js";
+import { applyEvmExecutionSponsorship, normalizeEvmUserOperation } from "./user-operation.js";
 
 const nativeTransferEmitter = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const transferEventSelector = toEventSelector("Transfer(address,address,uint256)");
@@ -84,8 +84,8 @@ export const makePrepareEvmExecution = (
 
     const clients = getClients(chain);
     const account = yield* reconstructEvmAccount(input.account, clients.publicClient);
-    const smartAccountClient = clients.createSmartAccountClient(account, input.sponsorship);
-    const userOperation = yield* Effect.tryPromise({
+    const smartAccountClient = clients.createSmartAccountClient(account);
+    const estimatedUserOperation = yield* Effect.tryPromise({
       try: () => smartAccountClient.prepareUserOperation({ account, calls: input.calls }),
       catch: (cause) =>
         new EvmExecutionError({
@@ -96,6 +96,7 @@ export const makePrepareEvmExecution = (
           cause,
         }),
     });
+    const userOperation = applyEvmExecutionSponsorship(estimatedUserOperation, input.sponsorship);
     const callSimulation = yield* Effect.tryPromise({
       try: () =>
         clients.publicClient.simulateCalls({
@@ -113,6 +114,8 @@ export const makePrepareEvmExecution = (
         cause: new Error("The latest block is missing its hash or number"),
       });
     }
+    const normalizedEstimatedUserOperation =
+      yield* normalizeEvmUserOperation(estimatedUserOperation);
     const normalizedUserOperation = yield* normalizeEvmUserOperation(userOperation);
     const encodedUserOperation = yield* Schema.encodeEffect(EvmSerializedUserOperation)(
       normalizedUserOperation,
@@ -121,7 +124,8 @@ export const makePrepareEvmExecution = (
     );
     const billing = yield* makeEvmExecutionBilling({
       chain,
-      userOperation: normalizedUserOperation,
+      sponsorship: input.sponsorship,
+      estimatedUserOperation: normalizedEstimatedUserOperation,
       getGasPrice,
     }).pipe(
       Effect.mapError((cause) =>
@@ -137,6 +141,7 @@ export const makePrepareEvmExecution = (
       chainId: chain.chainId,
       entryPointVersion: account.entryPoint.version,
       entryPoint: account.entryPoint.address,
+      sponsorship: input.sponsorship,
       context: {
         version: 1,
         namespace: "eip155",
@@ -169,13 +174,11 @@ export const makePrepareEvmExecution = (
         simulation: {
           userOperation: {
             source: "eth_estimateUserOperationGas",
-            callGasLimit: userOperation.callGasLimit.toString(),
-            verificationGasLimit: userOperation.verificationGasLimit.toString(),
-            preVerificationGas: userOperation.preVerificationGas.toString(),
-            paymasterVerificationGasLimit: (
-              userOperation.paymasterVerificationGasLimit ?? 0n
-            ).toString(),
-            paymasterPostOpGasLimit: (userOperation.paymasterPostOpGasLimit ?? 0n).toString(),
+            callGasLimit: estimatedUserOperation.callGasLimit.toString(),
+            verificationGasLimit: estimatedUserOperation.verificationGasLimit.toString(),
+            preVerificationGas: estimatedUserOperation.preVerificationGas.toString(),
+            maxFeePerGas: estimatedUserOperation.maxFeePerGas.toString(),
+            maxPriorityFeePerGas: estimatedUserOperation.maxPriorityFeePerGas.toString(),
           },
           calls: {
             source: "viem.simulateCalls",

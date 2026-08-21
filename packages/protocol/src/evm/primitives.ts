@@ -38,8 +38,7 @@ export const UserOperationHash = Bytes32.pipe(Schema.brand("UserOperationHash"))
 });
 
 export const EntryPointVersion = Schema.Literal("0.7");
-export const KernelVersion = Schema.Literal("0.3.3");
-export const SafeVersion = Schema.Literal("1.4.1");
+export const AlchemyModularAccountVersion = Schema.Literal("2.0.0");
 
 export type Hex = typeof Hex.Type;
 export type EthereumAddress = typeof EthereumAddress.Type;
@@ -47,5 +46,4 @@ export type Bytes32 = typeof Bytes32.Type;
 export type TransactionHash = typeof TransactionHash.Type;
 export type UserOperationHash = typeof UserOperationHash.Type;
 export type EntryPointVersion = typeof EntryPointVersion.Type;
-export type KernelVersion = typeof KernelVersion.Type;
-export type SafeVersion = typeof SafeVersion.Type;
+export type AlchemyModularAccountVersion = typeof AlchemyModularAccountVersion.Type;

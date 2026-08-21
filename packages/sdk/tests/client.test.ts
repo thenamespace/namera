@@ -110,8 +110,8 @@ describe("NameraClient", () => {
             callGasLimit: "1",
             verificationGasLimit: "1",
             preVerificationGas: "1",
-            paymasterVerificationGasLimit: "0",
-            paymasterPostOpGasLimit: "0",
+            maxFeePerGas: "1",
+            maxPriorityFeePerGas: "1",
           },
           calls: {
             source: "viem.simulateCalls",

@@ -28,7 +28,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Treasury"),
         },
@@ -176,7 +175,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Policy limits"),
         },
@@ -219,7 +217,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "safe",
           protectionLevel: "software",
           metadata: metadata("Operations"),
         },
@@ -291,7 +288,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const grantedWallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Granted wallet"),
         },
@@ -299,7 +295,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const hiddenWallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "safe",
           protectionLevel: "software",
           metadata: metadata("Hidden wallet"),
         },
@@ -378,7 +373,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Expired wallet"),
         },
@@ -415,7 +409,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Revocation wallet"),
         },
@@ -539,7 +532,6 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Permission wallet"),
         },

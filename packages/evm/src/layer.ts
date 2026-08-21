@@ -26,7 +26,7 @@ import { makeEvmSignatureService } from "./signing/sign.js";
 import type { DigestEvmSignature, SignEvm, VerifyEvm } from "./signing/types.js";
 import { makeEvmTestService, TestEvmExecution, type EvmTestOptions } from "./test.js";
 
-export type EvmRpcType = "public" | "bundler" | "paymaster";
+export type EvmRpcType = "public" | "bundler";
 
 const failTestReceipt = (receipt: EvmExecutionReceipt): FailedEvmExecutionReceipt => ({
   ...receipt,
@@ -35,9 +35,9 @@ const failTestReceipt = (receipt: EvmExecutionReceipt): FailedEvmExecutionReceip
 });
 
 export interface EvmService {
-  readonly createAccount: <const Props extends CreateAccountProps>(
-    props: Props,
-  ) => Effect.Effect<CreateAccountResult<Props>, EvmAccountCreationError | UnsupportedChainError>;
+  readonly createAccount: (
+    props: CreateAccountProps,
+  ) => Effect.Effect<CreateAccountResult, EvmAccountCreationError | UnsupportedChainError>;
   readonly getRpcUrl: (
     chainId: number,
     type: EvmRpcType,

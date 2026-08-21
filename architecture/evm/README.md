@@ -1,6 +1,6 @@
 # EVM namespace adapter
 
-`packages/evm` owns everything specific to the `eip155` namespace: supported chains, Kernel/Safe smart-account construction, provider clients, ERC-4337 preparation/signing/submission/receipt normalization, ERC-1271-compatible signatures, and EVM policy handlers. It does not own organization authorization, billing, persistence transactions, or HTTP transport.
+`packages/evm` owns everything specific to the `eip155` namespace: supported chains, Alchemy Modular Account V2 construction, provider clients, ERC-4337 preparation/signing/submission/receipt normalization, ERC-1271-compatible signatures, and EVM policy handlers. It does not own organization authorization, billing, persistence transactions, or HTTP transport.
 
 ## Documentation
 
@@ -21,7 +21,7 @@ The package exposes focused services rather than Viem/Alchemy clients:
 
 | Service          | Operations                                                                |
 | ---------------- | ------------------------------------------------------------------------- |
-| Account creation | Create protocol `KernelWalletData` or `SafeWalletData`.                   |
+| Account creation | Create protocol `AlchemyModularV2WalletData` with P-256 validation.       |
 | Execution        | `prepare`, `sign`, `submit`, `getReceipt`, `getStatus`, `waitForReceipt`. |
 | Signature        | `digest`, `sign`, `verify`.                                               |
 | Policy           | deterministic evaluation, state seeds, reserve, settle, release.          |
@@ -33,8 +33,8 @@ Large provider-specific types stay inside the package. `application` dispatches 
 ```mermaid
 flowchart LR
   Protocol[protocol schemas] --> EVM[packages/evm]
-  EVM --> Viem[Viem + permissionless]
-  EVM --> Providers[Alchemy RPC + Rundler + Gas Manager]
+  EVM --> Viem[Viem + Alchemy smart accounts]
+  EVM --> Providers[Alchemy RPC + Rundler + BSO]
   Application[packages/application] --> EVM
   Server[apps/server composition] --> EVM
   Server --> Config[Redacted provider config]

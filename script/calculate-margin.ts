@@ -33,7 +33,7 @@ type Plan = {
   readonly includedSignatures: number;
   /** Customer-facing signature overage block. Null means a hard cap. */
   readonly signatureOverage: OveragePrice | null;
-  /** Maximum Alchemy Gas Manager invoice Namera funds during the period. */
+  /** Maximum Alchemy BSO invoice Namera funds during the period. */
   readonly includedSponsoredGasUsd: number;
   /** Fraction of executions signed with HSM keys, from 0 (none) to 1 (all). */
   readonly hsmExecutionShare: number;
@@ -90,10 +90,8 @@ type MarginAssumptions = {
   /** Conservative compute-unit budget for each Alchemy-backed execution phase. */
   readonly alchemyExecutionComputeUnits: {
     readonly rundlerFeeEstimate: number;
-    readonly paymasterStub: number;
     readonly userOperationGasEstimate: number;
-    readonly paymasterData: number;
-    readonly submission: number;
+    readonly bsoSubmission: number;
     readonly lifecyclePolling: number;
     readonly publicRpcPreparation: number;
   };
@@ -209,10 +207,8 @@ const pricing = {
 const assumptions = {
   alchemyExecutionComputeUnits: {
     rundlerFeeEstimate: 10,
-    paymasterStub: 250,
     userOperationGasEstimate: 500,
-    paymasterData: 1_000,
-    submission: 1_000,
+    bsoSubmission: 3_000,
     lifecyclePolling: 100,
     publicRpcPreparation: 240,
   },
@@ -230,10 +226,8 @@ const alchemyComputeUnitLabels: Readonly<
   Record<keyof MarginAssumptions["alchemyExecutionComputeUnits"], string>
 > = {
   rundlerFeeEstimate: "Rundler fee estimate",
-  paymasterStub: "Gas Manager paymaster stub",
   userOperationGasEstimate: "UserOperation gas estimate",
-  paymasterData: "Gas Manager final paymaster data",
-  submission: "UserOperation submission",
+  bsoSubmission: "BSO UserOperation submission",
   lifecyclePolling: "Lifecycle receipt/status polling",
   publicRpcPreparation: "Account reconstruction and call simulation",
 };
@@ -365,7 +359,7 @@ const getIncludedExecutions = (plan: Plan) =>
   plan.includedMainnetExecutions + plan.includedTestnetExecutions;
 
 const getPlanCosts = (plan: Plan): PlanCosts => ({
-  // Alchemy CUs pay for public RPC, Rundler, and Gas Manager infrastructure.
+  // Alchemy CUs pay for public RPC, Rundler, and BSO submission infrastructure.
   // The actual sponsored-gas invoice is capped independently below.
   alchemy: getIncludedExecutions(plan) * alchemyExecutionCost,
   gcpKeys:
@@ -602,7 +596,7 @@ ${renderMarkdownTable(
   overageRows,
 )}
 
-Execution overage pays for Alchemy RPC, Rundler, Gas Manager compute units, and GCP signing. Sponsored gas is charged against the separate dollar balance and is not included here.
+Execution overage pays for Alchemy RPC, Rundler BSO compute units, and GCP signing. Sponsored gas is charged against the separate dollar balance and is not included here.
 
 ## Signature overage economics
 

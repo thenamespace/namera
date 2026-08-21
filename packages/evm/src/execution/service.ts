@@ -17,8 +17,8 @@ export const makeEvmExecutionService = (
   config: EvmConfigValues,
   httpClient: HttpClient.HttpClient,
 ): EvmExecutionService => {
-  // One service instance shares the cached Alchemy public, bundler, paymaster,
-  // and account clients
+  // One service instance shares cached Alchemy public, regular bundler, BSO
+  // submission, and account clients
   // across every phase while keeping their large Viem types package-internal.
   const clients = makeExecutionClients(config);
 

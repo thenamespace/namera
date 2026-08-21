@@ -2,10 +2,33 @@ import { Effect, Schema } from "effect";
 
 import {
   EvmExecutionError,
+  type EvmExecutionSponsorship,
   EvmSerializedUserOperation,
   type EvmSerializedUserOperation as EvmSerializedUserOperationType,
 } from "@namera-ai/protocol";
 import type { UserOperation } from "viem/account-abstraction";
+
+export const applyEvmExecutionSponsorship = (
+  userOperation: UserOperation<"0.7">,
+  sponsorship: EvmExecutionSponsorship,
+): UserOperation<"0.7"> => {
+  if (sponsorship === "none") return userOperation;
+
+  const {
+    paymaster: _paymaster,
+    paymasterData: _paymasterData,
+    paymasterPostOpGasLimit: _paymasterPostOpGasLimit,
+    paymasterVerificationGasLimit: _paymasterVerificationGasLimit,
+    ...operation
+  } = userOperation;
+
+  return {
+    ...operation,
+    maxFeePerGas: 0n,
+    maxPriorityFeePerGas: 0n,
+    preVerificationGas: 0n,
+  };
+};
 
 export const toViemUserOperation = (
   userOperation: EvmSerializedUserOperationType,

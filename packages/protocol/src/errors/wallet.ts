@@ -3,7 +3,7 @@ import { Schema } from "effect";
 export class EvmAccountCreationError extends Schema.TaggedError<EvmAccountCreationError>()(
   "EvmAccountCreationError",
   {
-    implementation: Schema.Literals(["kernel", "safe"]),
+    implementation: Schema.Literal("alchemy-modular-v2"),
     cause: Schema.Defect(),
   },
 ) {}

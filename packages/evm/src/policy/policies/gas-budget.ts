@@ -25,13 +25,8 @@ const getApplicableBudgets = (policy: EvmGasBudgetPolicy, context: EvmIntentCont
   policy.budgets.filter((budget) => budget.chainId === context.chainId);
 
 const getMaximumGasCost = (context: EvmIntentContext) => {
-  const gas = context.userOperation.gas;
-  const maximumGas =
-    gas.callGasLimit +
-    gas.verificationGasLimit +
-    gas.preVerificationGas +
-    gas.paymasterVerificationGasLimit +
-    gas.paymasterPostOpGasLimit;
+  const gas = context.simulation.userOperation;
+  const maximumGas = gas.callGasLimit + gas.verificationGasLimit + gas.preVerificationGas;
   return maximumGas * gas.maxFeePerGas;
 };
 

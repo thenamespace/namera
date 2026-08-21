@@ -2,21 +2,20 @@
 
 EVM chain adapter infrastructure for Namera. It owns supported-chain metadata,
 provider RPC URLs, internal Viem client factories, wallet-key WebAuthn owners,
-smart-account construction for Kernel and Safe, execution, and EVM policy
+Alchemy Modular Account V2 construction, execution, and EVM policy
 evaluation behind one root `Evm` service.
 
 See the [EVM architecture hub](../../architecture/evm/README.md) for supported
-chains, Kernel/Safe reconstruction, preparation, signing/submission,
+chains, Modular Account V2 reconstruction, preparation, signing/submission,
 reconciliation, signatures, and policy internals. Cross-package product flows
 remain under [operations](../../architecture/operations/executions.md).
 
 ## Structure
 
 - `src/chains/` — supported Viem chains, CAIP-2 metadata, and lookups.
-- `src/clients/` — internal cached Alchemy public, Rundler, and Gas Manager clients;
-  these are deliberately absent from the package root exports. Account-scoped
-  smart clients use Alchemy Gas Manager sponsorship and Rundler fee estimates
-  while preparing operations.
+- `src/clients/` — internal cached Alchemy public and Rundler clients; these are
+  deliberately absent from the package root exports. Sponsored submission uses
+  an isolated Rundler transport carrying the configured BSO policy header.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
@@ -55,10 +54,14 @@ remain under [operations](../../architecture/operations/executions.md).
    evaluation here. The application package selects the wallet/grants and
    coordinates persistence; the server only adapts HTTP.
 
-EVM-specific billing remains in this package. Simulation always prepares without
-a paymaster. Execution uses Alchemy Gas Manager by default, while an explicit
-unsponsored request prepares a self-funded UserOperation without paymaster
-context. Sponsored mainnet preparation attaches a persisted price/cost envelope.
+EVM-specific billing remains in this package. Preparation always estimates a
+regular UserOperation without a paymaster. Sponsored execution then converts the
+operation to Alchemy Bundler Sponsored Operations (BSO) by setting
+`maxFeePerGas`, `maxPriorityFeePerGas`, and `preVerificationGas` to zero and
+submitting through the policy-header transport. An explicit unsponsored request
+keeps the estimated fee fields and uses the regular Rundler transport. Sponsored
+mainnet preparation attaches a persisted price/cost envelope derived from the
+pre-BSO estimates.
 `application` only reserves and settles the generic meter amounts returned here,
 preserving the namespace boundary for future Solana support.
 
@@ -70,10 +73,10 @@ key. The secp256k1 variant requires the exact digest that the provider signed.
 
 ## Environment
 
-| Variable                    | Required | Purpose                                      |
-| --------------------------- | -------- | -------------------------------------------- |
-| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy RPC, Rundler, and Gas Manager key.   |
-| `EVM_ALCHEMY_GAS_POLICY_ID` | Yes      | Gas Manager policy used for sponsored calls. |
+| Variable                    | Required | Purpose                                                |
+| --------------------------- | -------- | ------------------------------------------------------ |
+| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy public RPC and Rundler credential.             |
+| `EVM_ALCHEMY_BSO_POLICY_ID` | Yes      | Policy sent as `x-alchemy-policy-id` for BSO requests. |
 
 ## Usage
 
@@ -87,7 +90,7 @@ const program = Effect.gen(function* () {
 }).pipe(Effect.provide(Evm.layer));
 ```
 
-`getRpcUrl` supports `public`, `bundler`, and `paymaster` endpoints. Full Viem
+`getRpcUrl` supports `public` and `bundler` endpoints. Full Viem
 clients are created inside wallet and execution operations without exposing
 their generic types to package consumers.
 
@@ -127,15 +130,15 @@ Each registry definition also declares whether its type is singleton or
 repeatable. The registry materializes persisted policy IDs and applicability,
 so application workflows do not branch on policy names.
 
-`evm.sign` reconstructs the stored Kernel or Safe account on the requested
+`evm.sign` reconstructs the stored Alchemy Modular Account V2 on the requested
 supported chain and delegates either UTF-8 message signing or EIP-712 typed-data
 signing to the smart account. Callers provide the provider-neutral account
 reconstruction input; database access and grant selection remain in
 `application`.
 
 `evm.verifySignature` reconstructs the same account and verifies the original
-message or typed data through the chain public client. Deployed Kernel and Safe
-accounts use ERC-1271. Counterfactual accounts supply their deterministic
+message or typed data through the chain public client. Deployed accounts use
+ERC-1271. Counterfactual accounts supply their deterministic
 factory and initialization data to Viem's ERC-6492 deployless verifier. Invalid
 signatures return `false`; account, chain, and RPC failures remain typed adapter
 errors. Verification never invokes the wallet-key signer.

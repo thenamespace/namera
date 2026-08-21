@@ -18,55 +18,57 @@ import { TestEmails, TestServerLayer } from "../layers/index.js";
 const metadata = (name: string) => ({ version: 1 as const, name });
 
 layer(TestServerLayer)("wallet routes", (it) => {
-  it.effect("creates, lists, and reads Kernel and Safe wallets", () =>
+  it.effect("creates, lists, and reads Alchemy Modular V2 wallets", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("wallet-owner@example.com"));
 
-      const kernel = yield* client.wallet.create({
+      const treasury = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Treasury"),
         },
       });
-      const safe = yield* client.wallet.create({
+      const operations = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "safe",
           protectionLevel: "software",
           metadata: metadata("Operations"),
         },
       });
 
-      expect(kernel).toMatchObject({
+      expect(treasury).toMatchObject({
         organizationId: owner.actor.organization.id,
         namespace: "eip155",
-        implementation: "kernel",
+        implementation: "alchemy-modular-v2",
         protectionLevel: "software",
         data: {
-          kernelVersion: "0.3.3",
+          modularAccountVersion: "2.0.0",
           entryPointVersion: "0.7",
           validatorType: "webauthn_p256",
-          accountIndex: 0n,
+          salt: 0n,
+          entityId: 0,
         },
       });
-      expect(safe).toMatchObject({
+      expect(operations).toMatchObject({
         namespace: "eip155",
-        implementation: "safe",
+        implementation: "alchemy-modular-v2",
         data: {
-          safeVersion: "1.4.1",
+          modularAccountVersion: "2.0.0",
           entryPointVersion: "0.7",
-          saltNonce: 0n,
+          salt: 0n,
+          entityId: 0,
         },
       });
       expect((yield* client.wallet.list()).map((wallet) => wallet.id)).toEqual([
-        safe.id,
-        kernel.id,
+        operations.id,
+        treasury.id,
       ]);
-      expect((yield* client.wallet.get({ params: { walletId: kernel.id } })).id).toBe(kernel.id);
+      expect((yield* client.wallet.get({ params: { walletId: treasury.id } })).id).toBe(
+        treasury.id,
+      );
 
       const repository = yield* Repository;
       const events = yield* repository.audit.organization.findForOrganization(
@@ -75,7 +77,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const walletEvents = events.filter((event) => event.event === "wallet.created");
       const walletKeyEvents = events.filter((event) => event.event === "wallet_key.created");
       expect(walletEvents.map((event) => event.resourceId)).toEqual(
-        expect.arrayContaining([kernel.id, safe.id]),
+        expect.arrayContaining([treasury.id, operations.id]),
       );
       expect(walletKeyEvents).toHaveLength(2);
       expect(walletEvents.map((event) => event.correlationId).toSorted()).toEqual(
@@ -88,7 +90,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       ).toHaveLength(2);
       expect(
         yield* repository.jobs.email.findByIdempotencyKey(
-          `notification:wallet.created:${kernel.id}:${owner.actor.user.id}:email`,
+          `notification:wallet.created:${treasury.id}:${owner.actor.user.id}:email`,
         ),
       ).toMatchObject({ type: "wallet-created", status: "pending" });
 
@@ -105,9 +107,9 @@ layer(TestServerLayer)("wallet routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         walletName: "Operations",
-        address: "0x2222222222222222222222222222222222222222",
-        addressUrl: "https://etherscan.io/address/0x2222222222222222222222222222222222222222",
-        implementation: "safe",
+        address: "0x3333333333333333333333333333333333333333",
+        addressUrl: "https://etherscan.io/address/0x3333333333333333333333333333333333333333",
+        implementation: "alchemy-modular-v2",
         protectionLevel: "software",
       });
     }),
@@ -131,7 +133,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("No email"),
         },
@@ -160,7 +161,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Readable"),
         },
@@ -174,7 +174,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
           .create({
             payload: {
               namespace: "eip155",
-              implementation: "safe",
               protectionLevel: "software",
               metadata: metadata("Forbidden"),
             },
@@ -214,7 +213,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
-            implementation: "kernel",
             protectionLevel: "hsm",
             metadata: metadata("HSM"),
           },
@@ -226,7 +224,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
         yield* client.wallet.create({
           payload: {
             namespace: "eip155",
-            implementation: "kernel",
             protectionLevel: "software",
             metadata: metadata(`Wallet ${index}`),
           },
@@ -236,7 +233,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
-            implementation: "safe",
             protectionLevel: "software",
             metadata: metadata("Over limit"),
           },
@@ -257,7 +253,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "kernel",
           protectionLevel: "software",
           metadata: metadata("Original account"),
         },
@@ -303,7 +298,6 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          implementation: "safe",
           protectionLevel: "software",
           metadata: metadata("Owner account"),
         },

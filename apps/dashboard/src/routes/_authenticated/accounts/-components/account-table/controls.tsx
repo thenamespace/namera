@@ -13,7 +13,6 @@ import { AccountFilterMenu, type AccountFilterCounts, type AccountFilters } from
 const groupingOptions = [
   { id: "none", label: "No grouping" },
   { id: "status", label: "Status" },
-  { id: "implementation", label: "Implementation" },
   { id: "protectionLevel", label: "Protection" },
 ] as const;
 

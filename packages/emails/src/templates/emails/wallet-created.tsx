@@ -14,13 +14,12 @@ export type WalletCreatedEmailProps = WalletCreatedEmailVariables;
 export const WalletCreatedEmail = ({
   address,
   addressUrl,
-  implementation,
   organizationName,
   protectionLevel,
   walletName,
 }: WalletCreatedEmailProps) => {
   const addressDisplay = formatEvmAddress(address);
-  const implementationName = implementation === "kernel" ? "Kernel" : "Safe";
+  const implementationName = "Alchemy Modular V2";
   const protectionLevelName = protectionLevel === "hsm" ? "HSM" : "Software";
 
   return (
@@ -57,7 +56,7 @@ export const WalletCreatedEmail = ({
 WalletCreatedEmail.PreviewProps = {
   address: "0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
   addressUrl: "https://etherscan.io/address/0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
-  implementation: "kernel",
+  implementation: "alchemy-modular-v2",
   organizationName: "Atlas Labs",
   protectionLevel: "software",
   walletName: "Treasury",

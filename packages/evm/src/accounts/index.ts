@@ -1,31 +1,19 @@
 import { Effect } from "effect";
 
-import type { KernelWalletData, SafeWalletData } from "@namera-ai/protocol/model";
+import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
 
 import type { EvmConfigValues } from "../config.js";
-import { createKernelAccount, type CreateKernelAccountProps } from "./kernel.js";
-import { createSafeAccount, type CreateSafeAccountProps } from "./safe.js";
-
-export type CreateAccountProps =
-  | ({ readonly implementation: "kernel" } & CreateKernelAccountProps)
-  | ({ readonly implementation: "safe" } & CreateSafeAccountProps);
-
-export type CreateAccountResult<Props extends CreateAccountProps> = Props extends {
-  readonly implementation: "kernel";
-}
-  ? KernelWalletData
-  : Props extends { readonly implementation: "safe" }
-    ? SafeWalletData
-    : never;
+import {
+  createAlchemyModularV2Account,
+  type CreateAlchemyModularV2AccountProps,
+} from "./alchemy-modular-v2.js";
+export type CreateAccountProps = CreateAlchemyModularV2AccountProps;
+export type CreateAccountResult = AlchemyModularV2WalletData;
 
 export const makeCreateAccount = (config: EvmConfigValues) =>
-  Effect.fn("evm.createAccount")(function* <const Props extends CreateAccountProps>(props: Props) {
-    if (props.implementation === "kernel") {
-      return (yield* createKernelAccount(props, config)) as CreateAccountResult<Props>;
-    }
-
-    return (yield* createSafeAccount(props, config)) as CreateAccountResult<Props>;
-  });
+  Effect.fn("evm.createAccount")((props: CreateAccountProps) =>
+    createAlchemyModularV2Account(props, config),
+  );
 
 export * from "./webauthn.js";
 export type { ReconstructEvmAccountInput } from "./types.js";

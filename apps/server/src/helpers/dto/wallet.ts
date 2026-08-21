@@ -14,29 +14,16 @@ export const toWalletResponse = (input: WalletView): WalletResponse => {
     updatedAt: input.wallet.updatedAt,
   } as const;
 
-  if (input.wallet.data.implementation === "kernel") {
-    return {
-      ...common,
-      implementation: "kernel",
-      data: {
-        version: input.wallet.data.version,
-        kernelVersion: input.wallet.data.kernelVersion,
-        validatorType: input.wallet.data.validatorType,
-        entryPointVersion: input.wallet.data.entryPointVersion,
-        accountIndex: input.wallet.data.accountIndex,
-      },
-    };
-  }
-
   return {
     ...common,
-    implementation: "safe",
+    implementation: "alchemy-modular-v2",
     data: {
       version: input.wallet.data.version,
-      safeVersion: input.wallet.data.safeVersion,
+      modularAccountVersion: input.wallet.data.modularAccountVersion,
       validatorType: input.wallet.data.validatorType,
       entryPointVersion: input.wallet.data.entryPointVersion,
-      saltNonce: input.wallet.data.saltNonce,
+      salt: input.wallet.data.salt,
+      entityId: input.wallet.data.entityId,
     },
   };
 };

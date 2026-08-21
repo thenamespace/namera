@@ -9,7 +9,7 @@ namespace-specific smart-account address, and one provider-managed owner key.
 The canonical per-column definitions, keys, foreign keys, checks, and indexes
 for `core.wallet_key` and `core.wallet` are in the
 [core database catalog](../database/core-wallets-operations.md). Public EVM
-responses expose address and Kernel/Safe account configuration; provider key
+responses expose address and Modular Account V2 reconstruction data; provider key
 locators remain private. Smart-account versions, reconstruction, and
 counterfactual behavior are documented in [EVM accounts](../evm/accounts/README.md).
 
@@ -24,11 +24,11 @@ sequenceDiagram
   participant EVM
   participant Tx as PostgreSQL transaction
 
-  Admin->>App: namespace + implementation + protection + metadata
+  Admin->>App: namespace + protection + metadata
   App->>Billing: cheap capacity precheck
   App->>Keys: create provider key
   Keys-->>App: public material + opaque provider data
-  App->>EVM: construct Kernel or Safe account
+  App->>EVM: construct Alchemy Modular Account V2
   EVM-->>App: verified smart-account address and data
   App->>Tx: lock billing account and recheck capacity
   App->>Tx: persist wallet key + wallet + audit + notifications + email jobs
@@ -37,12 +37,12 @@ sequenceDiagram
 
 Remote key and account creation happens before the transaction. The second
 locked billing check prevents concurrent requests from exceeding plan capacity.
-EntryPoint version, implementation version, account index, salt nonce, and P-256
-signing policy are server-owned constants rather than public input.
+EntryPoint version, implementation version, entity ID, salt, and P-256 signing
+policy are server-owned constants rather than public input.
 
 ## EVM implementations
 
-- Kernel and Safe use EntryPoint 0.7.
+- Alchemy Modular Account V2 uses EntryPoint 0.7 and the WebAuthn P-256 validation module.
 - Account creation and reconstruction share the same constructors.
 - Reconstruction derives the smart-account address and rejects persisted data
   when it does not match the stored address.

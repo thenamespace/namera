@@ -233,19 +233,21 @@ operation releases the execution unit because Free v1 counts successful
 executions, but still settles sponsored gas from its receipt.
 
 Testnet operations never reserve sponsored-gas allowance. A mainnet operation
-only does so when the caller enables sponsorship and the prepared UserOperation
-contains an Alchemy Gas Manager
-paymaster. The EVM adapter fetches ETH/USD from Alchemy, converts it
+only does so when the caller enables Alchemy Bundler Sponsored Operations (BSO).
+The signed execution persists that explicit sponsorship mode; BSO receipts do
+not need to contain a paymaster address. The EVM adapter fetches ETH/USD from
+Alchemy, converts it
 conservatively to integer micro-USD, applies Alchemy's 8% mainnet sponsorship
 administration fee, and reserves the pessimistic maximum UserOperation gas
-envelope. Settlement uses
-`receipt.actualGasCost` with the exact persisted quote and margin. If pricing is
-unavailable, sponsored mainnet preparation fails closed before signing or
-submission.
+envelope from the regular pre-BSO simulation estimate. Settlement uses
+`receipt.actualGasCost` with the exact persisted quote and margin even when the
+receipt paymaster is null. If pricing is unavailable, sponsored mainnet
+preparation fails closed before signing or submission.
 
 Execution sponsorship defaults to enabled. An explicit `sponsor: false`
 mainnet request still reserves and settles one `execution.mainnet` unit but
-prepares without a paymaster and never creates a `gas-sponsorship` reservation.
+submits through regular Rundler without the BSO policy header and never creates
+a `gas-sponsorship` reservation.
 
 ### Signatures
 

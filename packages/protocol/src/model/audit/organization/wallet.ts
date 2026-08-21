@@ -1,21 +1,14 @@
 import { Schema } from "effect";
 
 import { WalletId, WalletKeyId } from "#/common/index";
-import { EthereumAddress, EntryPointVersion, KernelVersion, SafeVersion } from "#/evm/index";
+import { AlchemyModularAccountVersion, EthereumAddress, EntryPointVersion } from "#/evm/index";
 import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
 
-export const WalletImplementation = Schema.Union([
-  Schema.Struct({
-    implementation: Schema.Literal("kernel"),
-    implementationVersion: KernelVersion,
-    entryPointVersion: EntryPointVersion,
-  }),
-  Schema.Struct({
-    implementation: Schema.Literal("safe"),
-    implementationVersion: SafeVersion,
-    entryPointVersion: EntryPointVersion,
-  }),
-]);
+export const WalletImplementation = Schema.Struct({
+  implementation: Schema.Literal("alchemy-modular-v2"),
+  implementationVersion: AlchemyModularAccountVersion,
+  entryPointVersion: EntryPointVersion,
+});
 
 export const WalletCreatedEventData = Schema.Struct({
   event: Schema.Literal("wallet.created"),

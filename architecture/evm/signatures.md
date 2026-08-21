@@ -18,7 +18,7 @@ sequenceDiagram
   participant App as Signature application
   participant EVM as EVM signature adapter
   participant RPC as Public client
-  participant Account as Reconstructed Kernel/Safe
+  participant Account as Reconstructed Modular Account V2
   participant Owner as Wallet-key signer
   App->>EVM: chain, account data, message or typed data
   EVM->>EVM: Resolve supported chain

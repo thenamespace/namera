@@ -16,7 +16,6 @@ export const makeTestEvmExecutionService = (
 ): EvmExecutionService => {
   const entryPoint = EthereumAddress.make(entryPoint07Address);
   const userOperationHash = UserOperationHash.make(`0x${"1".repeat(64)}`);
-  const paymaster = EthereumAddress.make("0x3333333333333333333333333333333333333333");
   const receipt = {
     version: 1,
     namespace: "eip155",
@@ -28,7 +27,7 @@ export const makeTestEvmExecutionService = (
     sender: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
     nonce: 0n,
     entryPoint,
-    paymaster,
+    paymaster: null,
     actualGasCost: 10_000_000_000_000n,
     actualGasUsed: 100_000n,
     success: true,
@@ -43,6 +42,7 @@ export const makeTestEvmExecutionService = (
         chainId: input.chainId,
         entryPointVersion: "0.7",
         entryPoint,
+        sponsorship: input.sponsorship,
         context: {
           version: 1,
           namespace: "eip155",
@@ -65,7 +65,7 @@ export const makeTestEvmExecutionService = (
               maxFeePerGas: 0n,
               maxPriorityFeePerGas: 0n,
             },
-            paymaster: input.sponsorship === "sponsored" ? paymaster : null,
+            paymaster: null,
           },
           simulation: {
             userOperation: {
@@ -73,8 +73,8 @@ export const makeTestEvmExecutionService = (
               callGasLimit: 0n,
               verificationGasLimit: 0n,
               preVerificationGas: 0n,
-              paymasterVerificationGasLimit: 0n,
-              paymasterPostOpGasLimit: 0n,
+              maxFeePerGas: 1_000_000_000n,
+              maxPriorityFeePerGas: 1n,
             },
             calls: {
               source: "viem.simulateCalls",
@@ -98,20 +98,14 @@ export const makeTestEvmExecutionService = (
           maxFeePerGas: 0n,
           maxPriorityFeePerGas: 0n,
           signature: Hex.make("0x"),
-          ...(input.sponsorship === "sponsored"
-            ? {
-                paymaster,
-                paymasterVerificationGasLimit: 10_000n,
-                paymasterPostOpGasLimit: 10_000n,
-              }
-            : {}),
         },
         billing: {
           executionMeter: input.chainId === "eip155:1" ? "execution.mainnet" : "execution.testnet",
           sponsorship:
-            input.sponsorship === "sponsored" && input.chainId === "eip155:1"
+            input.sponsorship === "alchemy-bso" && input.chainId === "eip155:1"
               ? {
                   provider: "alchemy",
+                  mode: "bso",
                   reservationAmountMicroUsd: 100_000n,
                   quote: {
                     provider: "alchemy",
@@ -133,6 +127,7 @@ export const makeTestEvmExecutionService = (
         chainId: input.prepared.chainId,
         entryPointVersion: input.prepared.entryPointVersion,
         entryPoint: input.prepared.entryPoint,
+        sponsorship: input.prepared.sponsorship,
         userOperation: {
           ...input.prepared.userOperation,
           signature: Hex.make(`0x${"4".repeat(128)}`),

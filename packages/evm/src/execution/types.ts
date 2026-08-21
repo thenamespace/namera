@@ -3,6 +3,7 @@ import type { Effect, Option } from "effect";
 import type {
   EvmExecutionError,
   EvmExecutionReceipt,
+  EvmExecutionSponsorship,
   EvmPreparedExecution,
   EvmSignedExecution,
   EvmSubmittedExecution,
@@ -18,7 +19,7 @@ export type PrepareEvmExecutionInput = {
   readonly chainId: SupportedEvmChainId;
   readonly account: ReconstructEvmAccountInput;
   readonly calls: ReadonlyArray<EvmIntentCall>;
-  readonly sponsorship: "none" | "sponsored";
+  readonly sponsorship: EvmExecutionSponsorship;
 };
 
 export type SignEvmExecutionInput = {

@@ -37,7 +37,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   }) {
     const creationResults = Metric.withAttributes(walletCreationResults, {
       namespace: input.request.namespace,
-      implementation: input.request.implementation,
+      implementation: "alchemy-modular-v2",
       protection_level: input.request.protectionLevel,
     });
 
@@ -81,56 +81,26 @@ export const makeCreateWallet = Effect.gen(function* () {
       sign: (payload) =>
         Effect.runPromise(walletKeys.signMessage({ ...createdKey, message: payload })),
     });
-    const account =
-      input.request.implementation === "kernel"
-        ? yield* evm
-            .createAccount({
-              implementation: "kernel",
-              chainId: walletPolicy.eip155.derivationChainId,
-              entryPointVersion: walletPolicy.eip155.kernel.entryPointVersion,
-              kernelVersion: walletPolicy.eip155.kernel.kernelVersion,
-              accountIndex: walletPolicy.eip155.kernel.accountIndex,
-              owner,
-            })
-            .pipe(
-              Effect.tapError(() =>
-                Metric.update(
-                  Metric.withAttributes(creationResults, { result: "account_failed" }),
-                  1,
-                ),
-              ),
-              Effect.mapError(
-                () =>
-                  new WalletCreationError({
-                    code: "ACCOUNT_CREATION_FAILED",
-                    namespace: input.request.namespace,
-                  }),
-              ),
-            )
-        : yield* evm
-            .createAccount({
-              implementation: "safe",
-              chainId: walletPolicy.eip155.derivationChainId,
-              entryPointVersion: walletPolicy.eip155.safe.entryPointVersion,
-              safeVersion: walletPolicy.eip155.safe.safeVersion,
-              saltNonce: walletPolicy.eip155.safe.saltNonce,
-              owner,
-            })
-            .pipe(
-              Effect.tapError(() =>
-                Metric.update(
-                  Metric.withAttributes(creationResults, { result: "account_failed" }),
-                  1,
-                ),
-              ),
-              Effect.mapError(
-                () =>
-                  new WalletCreationError({
-                    code: "ACCOUNT_CREATION_FAILED",
-                    namespace: input.request.namespace,
-                  }),
-              ),
-            );
+    const account = yield* evm
+      .createAccount({
+        chainId: walletPolicy.eip155.derivationChainId,
+        entryPointVersion: walletPolicy.eip155.alchemyModularV2.entryPointVersion,
+        salt: walletPolicy.eip155.alchemyModularV2.salt,
+        entityId: walletPolicy.eip155.alchemyModularV2.entityId,
+        owner,
+      })
+      .pipe(
+        Effect.tapError(() =>
+          Metric.update(Metric.withAttributes(creationResults, { result: "account_failed" }), 1),
+        ),
+        Effect.mapError(
+          () =>
+            new WalletCreationError({
+              code: "ACCOUNT_CREATION_FAILED",
+              namespace: input.request.namespace,
+            }),
+        ),
+      );
 
     const derivationChain = getChainDataByChainId(walletPolicy.eip155.derivationChainId);
     const blockExplorerUrl = derivationChain?.chain.blockExplorers?.default.url;
@@ -167,18 +137,11 @@ export const makeCreateWallet = Effect.gen(function* () {
             namespace: input.request.namespace,
             data: account,
           });
-          const accountEvent =
-            account.implementation === "kernel"
-              ? {
-                  implementation: account.implementation,
-                  implementationVersion: account.kernelVersion,
-                  entryPointVersion: account.entryPointVersion,
-                }
-              : {
-                  implementation: account.implementation,
-                  implementationVersion: account.safeVersion,
-                  entryPointVersion: account.entryPointVersion,
-                };
+          const accountEvent = {
+            implementation: account.implementation,
+            implementationVersion: account.modularAccountVersion,
+            entryPointVersion: account.entryPointVersion,
+          } as const;
           const walletKeyEvent = yield* audit.organization({
             organizationId: input.organizationId,
             actorId: input.actorId,
@@ -280,7 +243,7 @@ export const makeCreateWallet = Effect.gen(function* () {
     yield* Effect.logInfo("wallet.created").pipe(
       Effect.annotateLogs({
         namespace: input.request.namespace,
-        implementation: input.request.implementation,
+        implementation: "alchemy-modular-v2",
         protection_level: input.request.protectionLevel,
       }),
     );

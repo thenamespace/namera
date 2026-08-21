@@ -59,10 +59,11 @@ reserve policy state, sign or submit calls, create records, or consume billing
 usage.
 
 `POST /executions` accepts an optional `sponsor` boolean that defaults to
-`true`. Setting it to `false` submits a self-funded UserOperation without an
-Alchemy paymaster. Confirmed sponsored and unsponsored requests both consume the
-appropriate execution meter; only sponsored mainnet requests reserve and settle
-the sponsored-gas meter.
+`true`. Sponsored requests use Alchemy Bundler Sponsored Operations (BSO);
+setting it to `false` submits the estimated UserOperation through regular
+Rundler without the BSO policy header. Confirmed sponsored and unsponsored
+requests both consume the appropriate execution meter; only sponsored mainnet
+requests reserve and settle the sponsored-gas meter.
 
 `POST /signatures` is available to granted machine actors. It requires an
 `Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
@@ -224,7 +225,7 @@ The composition root also loads:
 - PostgreSQL configuration from `@namera-ai/database`;
 - authentication origins from `@namera-ai/application`;
 - cryptographic secrets from `@namera-ai/crypto`;
-- Alchemy RPC credentials and Gas Manager policy configuration from `@namera-ai/evm`;
+- Alchemy RPC credentials and BSO policy configuration from `@namera-ai/evm`;
 - local or GCP signer configuration from `@namera-ai/wallet-keys`;
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.

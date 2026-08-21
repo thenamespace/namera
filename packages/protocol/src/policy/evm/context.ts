@@ -41,8 +41,8 @@ export const EvmUserOperationSimulation = Schema.Struct({
   callGasLimit: NonNegativeEvmQuantity,
   verificationGasLimit: NonNegativeEvmQuantity,
   preVerificationGas: NonNegativeEvmQuantity,
-  paymasterVerificationGasLimit: NonNegativeEvmQuantity,
-  paymasterPostOpGasLimit: NonNegativeEvmQuantity,
+  maxFeePerGas: NonNegativeEvmQuantity,
+  maxPriorityFeePerGas: NonNegativeEvmQuantity,
 });
 
 export const EvmSimulatedCallResult = Schema.Union([

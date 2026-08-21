@@ -25,7 +25,7 @@ export const makePrepareExecution = Effect.gen(function* () {
   return Effect.fn("application.execution.prepare")(function* (input: {
     readonly actor: GrantedActorData;
     readonly request: ExecuteRequest | SimulateExecutionRequest;
-    readonly sponsorship: "none" | "sponsored";
+    readonly sponsorship: "none" | "alchemy-bso";
   }) {
     const wallet = yield* repository.core.wallet.findById(
       input.request.walletId,

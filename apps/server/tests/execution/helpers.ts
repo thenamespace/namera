@@ -13,7 +13,6 @@ export const createExecutionFixture = Effect.fn("test.execution.createFixture")(
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      implementation: "kernel",
       protectionLevel: "software",
       metadata: metadata(`Treasury ${suffix}`),
     },

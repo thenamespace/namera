@@ -84,8 +84,8 @@ const makeContext = (
       callGasLimit: 1n,
       verificationGasLimit: 1n,
       preVerificationGas: 1n,
-      paymasterVerificationGasLimit: 0n,
-      paymasterPostOpGasLimit: 0n,
+      maxFeePerGas: 1n,
+      maxPriorityFeePerGas: 1n,
     },
     calls: {
       source: "viem.simulateCalls",
@@ -190,14 +190,13 @@ it.effect("reserves pessimistic gas cost and settles actual gas cost across ever
     const baseContext = makeContext(0n, timestamp);
     const gasContext = {
       ...baseContext,
-      userOperation: {
-        ...baseContext.userOperation,
-        gas: {
+      simulation: {
+        ...baseContext.simulation,
+        userOperation: {
+          source: "eth_estimateUserOperationGas" as const,
           callGasLimit: 2n,
           verificationGasLimit: 3n,
           preVerificationGas: 5n,
-          paymasterVerificationGasLimit: 7n,
-          paymasterPostOpGasLimit: 11n,
           maxFeePerGas: 2n,
           maxPriorityFeePerGas: 1n,
         },
@@ -223,13 +222,13 @@ it.effect("reserves pessimistic gas cost and settles actual gas cost across ever
         policyId: gasBudgetPolicyId,
         stateKey: dailyStateKey,
         stateVersion: 1,
-        data: { version: 1, spent: "0", reserved: "56" },
+        data: { version: 1, spent: "0", reserved: "20" },
       },
       {
         policyId: gasBudgetPolicyId,
         stateKey: `${chainId}:lifetime`,
         stateVersion: 1,
-        data: { version: 1, spent: "0", reserved: "56" },
+        data: { version: 1, spent: "0", reserved: "20" },
       },
     ]);
 
@@ -237,11 +236,11 @@ it.effect("reserves pessimistic gas cost and settles actual gas cost across ever
       policies: [generousPolicy],
       states: reserved.stateChanges,
       reservations: reserved.reservations,
-      result: { ...receipt, actualGasCost: 41n },
+      result: { ...receipt, actualGasCost: 15n },
     });
     expect(settled.map(({ data }) => data)).toEqual([
-      { version: 1, spent: "41", reserved: "0" },
-      { version: 1, spent: "41", reserved: "0" },
+      { version: 1, spent: "15", reserved: "0" },
+      { version: 1, spent: "15", reserved: "0" },
     ]);
 
     const released = yield* evm.policy.release({

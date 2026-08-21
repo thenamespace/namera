@@ -61,7 +61,7 @@ export const WalletCreatedEmailVariables = Schema.Struct({
   organizationName: NonEmptyString,
   address: NonEmptyString,
   addressUrl: NonEmptyString,
-  implementation: Schema.Literals(["kernel", "safe"]),
+  implementation: Schema.Literal("alchemy-modular-v2"),
   protectionLevel: Schema.Literals(["software", "hsm"]),
 });
 

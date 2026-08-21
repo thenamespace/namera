@@ -41,11 +41,10 @@
   "dependencies": {
     "@alchemy/aa-infra": "catalog:",
     "@alchemy/common": "catalog:",
+    "@alchemy/smart-accounts": "catalog:",
     "@namera-ai/protocol": "workspace:*",
-    "@zerodev/sdk": "catalog:",
     "effect": "catalog:",
     "ox": "catalog:",
-    "permissionless": "0.3.7",
     "viem": "catalog:"
   },
   "devDependencies": {

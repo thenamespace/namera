@@ -33,7 +33,7 @@ sequenceDiagram
   App->>App: find active account/grant/session-key candidates
   App->>Policy: time, chain, and explicit signature capability evaluation
   App->>Tx: insert reserved operation + reserve anniversary-period signature unit
-  App->>EVM: reconstruct Kernel/Safe and sign
+  App->>EVM: reconstruct Alchemy Modular Account V2 and sign
   alt success
     App->>Tx: mark succeeded + audit + settle policy reservations
     App-->>Client: signature bytes + safe operation details

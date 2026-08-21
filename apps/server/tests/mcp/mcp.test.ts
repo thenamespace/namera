@@ -56,7 +56,6 @@ const authorize = Effect.fnUntraced(function* (options?: { readonly execute?: bo
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      implementation: "kernel",
       protectionLevel: "software",
       metadata: { version: 1, name: "MCP wallet" },
     },

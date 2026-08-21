@@ -40,10 +40,12 @@ export const makeSubmitEvmExecution = (getClients: (chain: ChainData) => Executi
 
     const submittedHash = yield* Effect.tryPromise({
       try: () =>
-        getClients(chain).bundlerClient.sendUserOperation({
-          ...userOperation,
-          entryPointAddress: input.signed.entryPoint,
-        }),
+        getClients(chain)
+          .getSubmissionClient(input.signed.sponsorship)
+          .sendUserOperation({
+            ...userOperation,
+            entryPointAddress: input.signed.entryPoint,
+          }),
       catch: (cause) => {
         const rpcError =
           cause instanceof BaseError &&

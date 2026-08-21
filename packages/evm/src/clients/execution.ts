@@ -5,7 +5,6 @@ import { alchemyTransport } from "@alchemy/common";
 import { createClient, createPublicClient, type PublicClient } from "viem";
 import {
   createBundlerClient,
-  createPaymasterClient,
   type BundlerClient,
   type SmartAccount,
 } from "viem/account-abstraction";
@@ -30,15 +29,26 @@ export type ExecutionClients = {
       readonly params: [`0x${string}`];
     }) => Promise<unknown>;
   };
-  readonly createSmartAccountClient: (
-    account: SmartAccount,
-    sponsorship: "none" | "sponsored",
-  ) => BundlerClient;
+  readonly createSmartAccountClient: (account: SmartAccount) => BundlerClient;
+  readonly getSubmissionClient: (sponsorship: "none" | "alchemy-bso") => BundlerClient;
 };
 
 const createExecutionClients = (config: EvmConfigValues, chain: ChainData): ExecutionClients => {
   const apiKey = Redacted.value(config.alchemyApiKey);
-  const transport = alchemyTransport<AlchemyBundlerRpcSchema>({ apiKey });
+  const rpcUrl = `https://${chain.alchemyChain}.g.alchemy.com/v2`;
+  const transport = alchemyTransport<AlchemyBundlerRpcSchema>({
+    apiKey,
+    url: rpcUrl,
+  });
+  const sponsoredTransport = alchemyTransport<AlchemyBundlerRpcSchema>({
+    apiKey,
+    fetchOptions: {
+      headers: {
+        "x-alchemy-policy-id": Redacted.value(config.alchemyBsoPolicyId),
+      },
+    },
+    url: rpcUrl,
+  });
   const publicClient = createPublicClient({ chain: chain.chain, transport });
   const statusClient = createClient<
     typeof transport,
@@ -46,11 +56,27 @@ const createExecutionClients = (config: EvmConfigValues, chain: ChainData): Exec
     undefined,
     AlchemyBundlerRpcSchema
   >({ chain: chain.chain, transport });
-  const paymasterClient = createPaymasterClient({ transport });
   const bundlerClient = createBundlerClient({
     chain: chain.chain,
     client: publicClient,
     transport,
+    userOperation: {
+      estimateFeesPerGas: ({
+        account: feeAccount,
+        bundlerClient: feeBundlerClient,
+        userOperation,
+      }) =>
+        estimateFeesPerGas({
+          bundlerClient: feeBundlerClient,
+          ...(feeAccount === undefined ? {} : { account: feeAccount }),
+          ...(userOperation === undefined ? {} : { userOperation }),
+        }),
+    },
+  });
+  const sponsoredBundlerClient = createBundlerClient({
+    chain: chain.chain,
+    client: publicClient,
+    transport: sponsoredTransport,
     userOperation: {
       estimateFeesPerGas: ({
         account: feeAccount,
@@ -69,20 +95,14 @@ const createExecutionClients = (config: EvmConfigValues, chain: ChainData): Exec
     publicClient,
     bundlerClient,
     statusClient,
-    createSmartAccountClient: (account: SmartAccount, sponsorship: "none" | "sponsored") =>
+    getSubmissionClient: (sponsorship) =>
+      sponsorship === "alchemy-bso" ? sponsoredBundlerClient : bundlerClient,
+    createSmartAccountClient: (account: SmartAccount) =>
       createBundlerClient({
         account,
         chain: chain.chain,
         client: publicClient,
         transport,
-        ...(sponsorship === "sponsored"
-          ? {
-              paymaster: paymasterClient,
-              paymasterContext: {
-                policyId: Redacted.value(config.alchemyGasPolicyId),
-              },
-            }
-          : {}),
         userOperation: {
           estimateFeesPerGas: ({
             account: feeAccount,

@@ -10,7 +10,11 @@ Receipt operations normalize Alchemy Rundler results into protocol models and ve
 | `getStatus`      | Normalize Rundler unknown, pending, bundled, preconfirmed, and mined status.                       |
 | `waitForReceipt` | Bound timeout to 1–120,000 ms (default 30,000); timeout returns `Option.none`.                     |
 
-Normalized receipt includes chain ID, UserOperation/transaction/block hashes, block number, sender, nonce, EntryPoint, optional paymaster, actual gas cost/used, success, and optional failure reason.
+Normalized receipt includes chain ID, UserOperation/transaction/block hashes,
+block number, sender, nonce, EntryPoint, optional provider-reported paymaster,
+actual gas cost/used, success, and optional failure reason. BSO receipts normally
+report no paymaster; sponsorship is determined from the persisted signed
+execution envelope rather than receipt paymaster presence.
 
 ## Settlement transaction
 

@@ -39,32 +39,17 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
 
   return {
     billing: { settleGasSponsorship: settleEvmGasSponsorship },
-    createAccount: Effect.fn("evm.test.createAccount")(
-      <const Props extends CreateAccountProps>(props: Props) => {
-        if (props.implementation === "kernel") {
-          return Effect.succeed({
-            version: 1,
-            implementation: "kernel",
-            kernelVersion: props.kernelVersion,
-            entryPointVersion: props.entryPointVersion,
-            validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
-            accountIndex: props.accountIndex,
-            address: Schema.decodeSync(EthereumAddress)(
-              "0x1111111111111111111111111111111111111111",
-            ),
-          } as CreateAccountResult<Props>);
-        }
-
-        return Effect.succeed({
-          version: 1,
-          implementation: "safe",
-          safeVersion: props.safeVersion,
-          entryPointVersion: props.entryPointVersion,
-          validatorType: props.owner.type === "webAuthn" ? "webauthn_p256" : "ecdsa_secp256k1",
-          saltNonce: props.saltNonce,
-          address: Schema.decodeSync(EthereumAddress)("0x2222222222222222222222222222222222222222"),
-        } as CreateAccountResult<Props>);
-      },
+    createAccount: Effect.fn("evm.test.createAccount")((props: CreateAccountProps) =>
+      Effect.succeed({
+        version: 1,
+        implementation: "alchemy-modular-v2",
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: props.entryPointVersion,
+        validatorType: "webauthn_p256",
+        salt: props.salt,
+        entityId: props.entityId,
+        address: Schema.decodeSync(EthereumAddress)("0x3333333333333333333333333333333333333333"),
+      } satisfies CreateAccountResult),
     ),
     getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
       if (getChainDataByChainId(chainId) === undefined) {

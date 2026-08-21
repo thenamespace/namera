@@ -1,83 +1,112 @@
-# EVM smart accounts
+# Alchemy Modular Account V2
 
-Namera currently supports Kernel and Safe ERC-4337 accounts with EntryPoint `0.7`. Account identity is deterministic from owner key plus implementation-specific derivation input. The database stores public reconstruction data; the owner key remains in `wallet-keys` custody.
+Namera supports one EVM smart-account implementation: Alchemy Modular Account
+V2 with a P-256 WebAuthn validator and EntryPoint `0.7`. Keeping one account
+model gives creation, reconstruction, signing, simulation, sponsorship, and
+verification a single tested path.
 
-## Supported implementations
+The database stores only the public data needed to reconstruct the account. The
+P-256 private key and provider locator remain owned by `wallet-keys`.
 
-| Implementation | Version | Derivation input       | Stored protocol data                                                                |
-| -------------- | ------- | ---------------------- | ----------------------------------------------------------------------------------- |
-| Kernel         | `0.3.3` | `accountIndex: bigint` | version, implementation, Kernel/EntryPoint versions, validator type, index, address |
-| Safe           | `1.4.1` | `saltNonce: bigint`    | version, implementation, Safe/EntryPoint versions, validator type, nonce, address   |
+## Stored account data
 
-Both use EntryPoint `0.7` and one owner. Validator type is `webauthn_p256` for a WebAuthn owner and `ecdsa_secp256k1` for a local ECDSA owner. Kernel WebAuthn creation uses the configured Kernel passkey validator address in the adapter.
+| Field                   | Required | Description                                                             |
+| ----------------------- | -------- | ----------------------------------------------------------------------- |
+| `version`               | Yes      | Namera wallet-data schema version. Currently `1`.                       |
+| `implementation`        | Yes      | Constant discriminator: `alchemy-modular-v2`.                           |
+| `modularAccountVersion` | Yes      | Alchemy Modular Account contract version. Currently `2.0.0`.            |
+| `entryPointVersion`     | Yes      | ERC-4337 EntryPoint version. Currently `0.7`.                           |
+| `validatorType`         | Yes      | Constant validator discriminator: `webauthn_p256`.                      |
+| `salt`                  | Yes      | Deterministic salt used by the Modular Account factory.                 |
+| `entityId`              | Yes      | Validation entity identifier encoded into signatures and factory calls. |
+| `address`               | Yes      | Counterfactual or deployed smart-account address.                       |
+
+The public create-wallet DTO does not expose an implementation selector. EVM
+wallet creation always chooses this implementation and generates the derivation
+data internally.
 
 ## Creation flow
 
 ```mermaid
 sequenceDiagram
   participant App as Wallet application
-  participant Keys as WalletKeys service
-  participant EVM as EVM account adapter
-  participant RPC as Alchemy public client
-  participant DB as PostgreSQL transaction
-  App->>App: Validate organization, plan, implementation, chain
-  App->>Keys: Create provider-neutral owner key
-  Keys-->>App: Public key + provider locator
-  App->>EVM: Implementation, chain, owner, derivation input
-  EVM->>EVM: Resolve supported chain and construct account
-  EVM->>RPC: Provider reads required by account construction
-  EVM-->>App: Protocol wallet data with deterministic address
-  App->>DB: Recheck locked billing/resource limit
-  App->>DB: Insert wallet key, wallet, audit, notification
+  participant Keys as WalletKeys
+  participant EVM as EVM adapter
+  participant Alchemy as Alchemy RPC
+  participant DB as PostgreSQL
+  App->>App: Validate organization and locked plan limits
+  App->>Keys: Create P-256 owner key
+  Keys-->>App: Public key and provider locator
+  App->>EVM: Create Modular Account V2
+  EVM->>Alchemy: Resolve deterministic counterfactual account
+  Alchemy-->>EVM: Account construction reads
+  EVM-->>App: Address and public reconstruction data
+  App->>DB: Recheck locked wallet entitlement
+  App->>DB: Insert key, wallet, audit event, notification, email job
   DB-->>App: Commit
 ```
 
-Remote key/account construction occurs before the final transaction. The wallet application repeats the locked billing check inside that transaction so concurrent creation cannot exceed the plan.
+Remote key creation and account construction happen before the final database
+transaction. The wallet application repeats the locked billing check inside
+that transaction so concurrent requests cannot exceed the plan.
 
 ## Reconstruction invariant
 
-Execution and signing never trust stored address alone. `reconstructEvmAccount` rebuilds Kernel/Safe using stored versions/derivation data plus the owner account, then compares the reconstructed address to the stored address using checksum-aware equality.
+Execution and signing never trust the stored address by itself. The adapter
+rebuilds the Modular Account from its stored salt, entity ID, and P-256 owner,
+then compares the derived address with the persisted address using checksum-aware
+equality.
 
 ```mermaid
 flowchart LR
-  Stored[Stored Kernel/Safe data] --> Build[Rebuild smart account]
-  Owner[Wallet-key signing account] --> Build
-  Public[Chain public client] --> Build
-  Build --> Compare{Derived address equals stored?}
-  Compare -->|Yes| Account[Usable smart account]
+  Stored[Stored Modular Account data] --> Build[Rebuild account]
+  Owner[P-256 WebAuthn account] --> Build
+  Client[Alchemy public and bundler clients] --> Build
+  Build --> Compare{Derived address matches?}
+  Compare -->|Yes| Ready[Usable smart account]
   Compare -->|No| Error[ACCOUNT_ADDRESS_MISMATCH]
 ```
 
-This detects corrupt/mismatched implementation versions, derivation inputs, owner keys, or addresses before signing.
+The comparison detects mismatched owner keys, derivation inputs, account data,
+or addresses before Namera signs an operation.
 
-## WebAuthn owner adapter
+## P-256 owner adapter
 
-`createWalletKeyWebAuthnAccount` adapts a provider P-256 signer to Viem's `WebAuthnAccount`:
+`createWalletKeyWebAuthnAccount` adapts the provider-neutral P-256 signer to the
+WebAuthn account expected by the Alchemy SDK:
 
-1. create a WebAuthn sign payload for the requested hash and configured origin/RP ID;
-2. ask the provider-neutral wallet key service to sign the payload bytes;
-3. convert DER P-256 signature to EVM signature representation;
-4. construct serialized WebAuthn response metadata;
-5. expose `sign`, `signMessage`, and `signTypedData` methods.
+1. create a WebAuthn sign payload for the requested hash and configured origin
+   and RP ID;
+2. ask `WalletKeys` to sign the payload bytes;
+3. decode the provider's DER P-256 signature;
+4. construct the serialized WebAuthn response metadata;
+5. expose `sign`, `signMessage`, and `signTypedData` without exposing private
+   key material.
 
-This file does not persist raw private keys or provider credentials.
+## Counterfactual behavior
 
-## Counterfactual accounts
+New accounts may be undeployed. Preparation includes factory data when needed,
+and the first successful UserOperation deploys the account. Signature
+verification supplies factory data when bytecode is absent so ERC-6492/ERC-1271
+verification can validate a counterfactual account.
 
-Accounts may be undeployed. Preparation can still encode/send a UserOperation with factory data. Signature verification requests factory/factoryData when `getCode` returns empty so Viem can verify the counterfactual ERC-1271 signature path.
+## Adding another account implementation
 
-## Adding an implementation
+Adding an implementation is deliberately a product and compatibility decision,
+not just a DTO option. It requires:
 
-1. Add a discriminated wallet-data schema and creation DTO in protocol.
-2. Add an implementation creator returning only protocol data.
-3. Extend the `CreateAccountProps` and reconstruction union.
-4. Reconstruct with the correct EntryPoint/version/owner and verify stored address.
-5. Confirm encoding, UserOperation signing, counterfactual factory args, ERC-1271 verification, and receipt behavior.
-6. Add audit/display mapping and dashboard selectors.
-7. Add provider-boundary tests for both deployed and counterfactual states.
+1. a discriminated protocol persistence schema;
+2. creator and reconstruction adapters owned by `evm`;
+3. deterministic-address and corruption checks;
+4. execution, BSO, signature, and ERC-1271 parity tests on every supported
+   chain;
+5. application audit and notification mapping;
+6. dashboard creation and display support.
 
 ## Pending before production
 
-- Decide whether multi-owner/multisig Safe accounts are in scope; current schema assumes one owner key.
-- Add implementation migration/version policy before supporting upgrades.
-- Run counterfactual/deployed parity tests for both validator types.
+- Retain provider-boundary tests for deployed and counterfactual accounts on all
+  launch networks.
+- Define a reviewed account-upgrade policy before accepting new Modular Account
+  versions.
+- Add a bounded provider/chain disable control for operational incidents.

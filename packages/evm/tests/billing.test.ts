@@ -60,10 +60,6 @@ it.effect("classifies execution meters and only prices mainnet sponsorship", () 
       preVerificationGas: 100_000n,
       maxFeePerGas: 1_000_000_000n,
       maxPriorityFeePerGas: 1n,
-      paymaster: address,
-      paymasterVerificationGasLimit: 100_000n,
-      paymasterPostOpGasLimit: 100_000n,
-      paymasterData: Hex.make("0x"),
       signature: Hex.make("0x"),
     });
     const mainnet = getChainDataByCaip2(Schema.decodeSync(SupportedEvmChainId)("eip155:1"));
@@ -75,23 +71,35 @@ it.effect("classifies execution meters and only prices mainnet sponsorship", () 
     expect(
       yield* makeEvmExecutionBilling({
         chain: mainnet,
-        userOperation: operation,
+        sponsorship: "alchemy-bso",
+        estimatedUserOperation: operation,
         getGasPrice: () => Effect.succeed(quote),
       }),
     ).toEqual({
       executionMeter: "execution.mainnet",
       sponsorship: {
         provider: "alchemy",
-        reservationAmountMicroUsd: 1_650_000n,
+        mode: "bso",
+        reservationAmountMicroUsd: 990_000n,
         quote,
       },
     });
     expect(
       yield* makeEvmExecutionBilling({
         chain: testnet,
-        userOperation: operation,
+        sponsorship: "alchemy-bso",
+        estimatedUserOperation: operation,
         getGasPrice: () => Effect.die("Testnet pricing should not be requested"),
       }),
     ).toEqual({ executionMeter: "execution.testnet", sponsorship: null });
+
+    expect(
+      yield* makeEvmExecutionBilling({
+        chain: mainnet,
+        sponsorship: "none",
+        estimatedUserOperation: operation,
+        getGasPrice: () => Effect.die("Self-funded pricing should not be requested"),
+      }),
+    ).toEqual({ executionMeter: "execution.mainnet", sponsorship: null });
   }),
 );
