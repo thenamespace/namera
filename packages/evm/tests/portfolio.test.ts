@@ -120,3 +120,50 @@ it.effect("maps non-success provider responses to a typed availability error", (
     }),
   ).pipe(Effect.map((error) => expect(error.code).toBe("PROVIDER_UNAVAILABLE")));
 });
+
+it.effect("accepts null provider errors and restores native currency metadata", () => {
+  const client = HttpClient.make((request) =>
+    Effect.succeed(
+      HttpClientResponse.fromWeb(
+        request,
+        new Response(
+          JSON.stringify({
+            data: {
+              tokens: [
+                {
+                  address: "0x1111111111111111111111111111111111111111",
+                  network: "eth-mainnet",
+                  tokenAddress: null,
+                  tokenBalance: "0x0de0b6b3a7640000",
+                  tokenMetadata: { decimals: null, logo: null, name: null, symbol: null },
+                  tokenPrices: [
+                    {
+                      currency: "usd",
+                      value: "3200.50",
+                      lastUpdatedAt: "2026-08-21T08:00:00Z",
+                    },
+                  ],
+                },
+              ],
+            },
+            error: null,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    ),
+  );
+  const portfolio = makeAlchemyPortfolioService(config, client);
+
+  return Effect.gen(function* () {
+    const result = yield* portfolio.getAssets({
+      address: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
+    });
+
+    expect(result.items[0]).toMatchObject({
+      formattedBalance: "1",
+      metadata: { decimals: 18, name: "Ether", symbol: "ETH" },
+    });
+    expect(result.partialFailures).toEqual([]);
+  });
+});

@@ -34,15 +34,17 @@ const AlchemyPortfolioResponse = Schema.Struct({
         tokenPrices: Schema.optionalKey(Schema.NullOr(Schema.Array(AlchemyTokenPrice))),
       }),
     ),
-    pageKey: Schema.optionalKey(Schema.String),
+    pageKey: Schema.optionalKey(Schema.NullOr(Schema.String)),
   }),
   error: Schema.optionalKey(
-    Schema.Struct({
-      message: Schema.String,
-      partialErrors: Schema.Array(
-        Schema.Struct({ network: Schema.String, message: Schema.String }),
-      ),
-    }),
+    Schema.NullOr(
+      Schema.Struct({
+        message: Schema.String,
+        partialErrors: Schema.Array(
+          Schema.Struct({ network: Schema.String, message: Schema.String }),
+        ),
+      }),
+    ),
   ),
 });
 
@@ -63,24 +65,26 @@ const normalizeAlchemyPortfolio = Effect.fn("evm.portfolio.normalizeAlchemyPortf
     if (chain === undefined || BigInt(token.tokenBalance) === 0n) return [];
 
     const metadata = token.tokenMetadata ?? undefined;
-    const decimals = metadata?.decimals;
+    const isNative = token.tokenAddress === null;
+    const decimals = metadata?.decimals ?? (isNative ? chain.chain.nativeCurrency.decimals : null);
     const usdPrice = token.tokenPrices?.find((price) => price.currency.toLowerCase() === "usd");
 
     return [
       {
         namespace: "eip155",
         chainId: chain.chainId,
-        type: token.tokenAddress === null ? "native" : "erc20",
+        type: isNative ? "native" : "erc20",
         tokenAddress: token.tokenAddress,
         rawBalance: token.tokenBalance,
         formattedBalance:
-          decimals === undefined || decimals === null
-            ? null
-            : formatUnits(BigInt(token.tokenBalance), decimals),
+          decimals === null ? null : formatUnits(BigInt(token.tokenBalance), decimals),
         metadata: {
-          name: nonEmptyOrNull(metadata?.name),
-          symbol: nonEmptyOrNull(metadata?.symbol),
-          decimals: decimals ?? null,
+          name:
+            nonEmptyOrNull(metadata?.name) ?? (isNative ? chain.chain.nativeCurrency.name : null),
+          symbol:
+            nonEmptyOrNull(metadata?.symbol) ??
+            (isNative ? chain.chain.nativeCurrency.symbol : null),
+          decimals,
           logoUrl: nonEmptyOrNull(metadata?.logo),
         },
         usdPrice:
