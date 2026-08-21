@@ -34,8 +34,12 @@ remain under [operations](../../architecture/operations/executions.md).
 - `src/signing/` — smart-account message and EIP-712 signing and verification
   exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
   supported.
-- `src/portfolio/` — Alchemy Portfolio API integration for all-chain native and
-  ERC-20 balances, metadata, prices, pagination, and partial-failure mapping.
+- `src/blockscout/` — authenticated Blockscout PRO transport and provider-only
+  response schemas.
+- `src/address-metadata/` — provider-neutral Blockscout address, contract,
+  token, tag, and trust normalization.
+- `src/portfolio/` — Blockscout all-chain native and ERC-20 balances, prices,
+  pagination, scam filtering, and partial-failure mapping.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -77,10 +81,11 @@ key. The secp256k1 variant requires the exact digest that the provider signed.
 
 ## Environment
 
-| Variable                    | Required | Purpose                                                |
-| --------------------------- | -------- | ------------------------------------------------------ |
-| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy public RPC and Rundler credential.             |
-| `EVM_ALCHEMY_BSO_POLICY_ID` | Yes      | Policy sent as `x-alchemy-policy-id` for BSO requests. |
+| Variable                    | Required | Purpose                                                 |
+| --------------------------- | -------- | ------------------------------------------------------- |
+| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy public RPC and Rundler credential.              |
+| `EVM_ALCHEMY_BSO_POLICY_ID` | Yes      | Policy sent as `x-alchemy-policy-id` for BSO requests.  |
+| `BLOCKSCOUT_API_KEY`        | Yes      | Blockscout portfolio and address enrichment credential. |
 
 ## Usage
 

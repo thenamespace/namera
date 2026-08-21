@@ -40,6 +40,9 @@ export interface AddressMetadataApplication {
     readonly chainId: SupportedEvmChainId;
     readonly query: string;
   }) => Effect.Effect<ReadonlyArray<EvmAddressMetadataData>>;
+  readonly store: (
+    values: ReadonlyArray<EvmAddressMetadataData>,
+  ) => Effect.Effect<ReadonlyArray<EvmAddressMetadataData>>;
 }
 
 export const makeAddressMetadataApplication = Effect.gen(function* () {
@@ -61,6 +64,42 @@ export const makeAddressMetadataApplication = Effect.gen(function* () {
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
+
+  const store = Effect.fn("application.addressMetadata.store")(function* (
+    values: ReadonlyArray<EvmAddressMetadataData>,
+  ) {
+    if (values.length === 0) return [];
+    const keys = values.map((value) => ({
+      namespace: value.namespace,
+      chainId: value.chainId,
+      address: value.address,
+    }));
+    const existing = yield* repository.core.addressMetadata
+      .findMany(keys)
+      .pipe(Effect.catchTag("DatabaseError", Effect.die));
+    const existingByKey = new Map(
+      existing.map((row) => [keyOf(row.chainId, row.address), row.data]),
+    );
+    const updates = values.filter((value) => {
+      const current = existingByKey.get(keyOf(value.chainId, value.address));
+      return (
+        current === undefined ||
+        value.tags.length > current.tags.length ||
+        (current.tags.length === 0 &&
+          current.trust.isSourceVerified === null &&
+          current.trust.reputation !== value.trust.reputation)
+      );
+    });
+    const persisted = yield* persist(updates);
+    const dataByKey = new Map([
+      ...existingByKey,
+      ...persisted.map((row) => [keyOf(row.chainId, row.address), row.data] as const),
+    ]);
+    return values.flatMap((value) => {
+      const data = dataByKey.get(keyOf(value.chainId, value.address));
+      return data === undefined ? [] : [data];
+    });
+  });
 
   const resolve = Effect.fn("application.addressMetadata.resolve")(function* (input: {
     readonly addresses: ReadonlyArray<{
@@ -158,5 +197,5 @@ export const makeAddressMetadataApplication = Effect.gen(function* () {
     ).slice(0, 20);
   });
 
-  return { get, resolve, search } satisfies AddressMetadataApplication;
+  return { get, resolve, search, store } satisfies AddressMetadataApplication;
 });

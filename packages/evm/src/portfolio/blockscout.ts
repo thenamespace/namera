@@ -1,14 +1,26 @@
-import { DateTime, Effect, Result } from "effect";
+import { DateTime, Effect, Option, Result, Schema } from "effect";
 import type { HttpClient } from "effect/unstable/http";
 
-import { EvmPortfolioError, Hex, type SupportedEvmChainId } from "@namera-ai/protocol";
+import {
+  EthereumAddress,
+  EvmPortfolioError,
+  Hex,
+  type SupportedEvmChainId,
+} from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
+import type { EvmAddressMetadataData } from "@namera-ai/protocol/model";
 import { formatUnits, toHex } from "viem";
 
+import {
+  getBlockscoutMetadataTags,
+  hasCredibleBlockscoutTag,
+  normalizeBlockscoutTags,
+} from "../address-metadata/normalize.js";
 import { makeBlockscoutClient } from "../blockscout/client.js";
 import {
   BlockscoutAddress,
   BlockscoutAddressTokens,
+  BlockscoutMetadata,
   type BlockscoutToken,
 } from "../blockscout/schemas.js";
 import { chains } from "../chains/data.js";
@@ -32,6 +44,90 @@ const usdPrice = (value: string | null | undefined, updatedAt: DateTime.Utc) => 
   return normalized === null ? null : { value: normalized, updatedAt };
 };
 
+const iconUrl = (value: string | null | undefined): string | null => {
+  const candidate = nonEmpty(value);
+  if (candidate === null) return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const tokenAddressMetadata = (
+  chainId: SupportedEvmChainId,
+  address: EthereumAddress,
+  token: BlockscoutToken,
+  updatedAt: DateTime.Utc,
+): EvmAddressMetadataData => {
+  const reputation = token.reputation?.toLowerCase();
+  const isScam = reputation === "scam";
+  const hasMarketData = nonEmpty(token.exchange_rate) !== null;
+  const name = nonEmpty(token.name);
+  const symbol = nonEmpty(token.symbol);
+  const logoUrl = iconUrl(token.icon_url);
+
+  return {
+    schemaVersion: 1,
+    namespace: "eip155",
+    chainId,
+    address,
+    kind: "fungible-token",
+    identity: { displayName: name ?? symbol, description: null, iconUrl: logoUrl },
+    trust: {
+      reputation: isScam ? "scam" : "neutral",
+      isScam,
+      isSourceVerified: null,
+      signals: hasMarketData ? ["blockscout", "token-market"] : ["blockscout"],
+    },
+    tags: [],
+    token: {
+      standard: "erc20",
+      name,
+      symbol,
+      decimals: decimals(token),
+      logoUrl,
+    },
+    contract: {
+      name,
+      proxyType: null,
+      implementationAddress: null,
+      implementationName: null,
+    },
+    provenance: { provider: "blockscout", observedAt: updatedAt },
+  };
+};
+
+const applyMetadataTags = (
+  asset: PortfolioAsset,
+  metadata: BlockscoutMetadata | null,
+): PortfolioAsset => {
+  if (asset.addressMetadata === null || asset.tokenAddress === null) return asset;
+  const rawTags = getBlockscoutMetadataTags(metadata, asset.tokenAddress);
+  if (rawTags.length === 0) return asset;
+  const tags = normalizeBlockscoutTags(rawTags);
+  const displayName = tags.find((tag) => tag.type === "name")?.name;
+  return {
+    ...asset,
+    addressMetadata: {
+      ...asset.addressMetadata,
+      identity: {
+        ...asset.addressMetadata.identity,
+        displayName: displayName ?? asset.addressMetadata.identity.displayName,
+      },
+      trust: {
+        ...asset.addressMetadata.trust,
+        reputation: hasCredibleBlockscoutTag(rawTags)
+          ? "credible"
+          : asset.addressMetadata.trust.reputation,
+        signals: [...asset.addressMetadata.trust.signals, "metadata-tag"],
+      },
+      tags,
+    },
+  };
+};
+
 const tokenAsset = (
   chainId: SupportedEvmChainId,
   token: BlockscoutToken,
@@ -39,21 +135,25 @@ const tokenAsset = (
   updatedAt: DateTime.Utc,
 ): PortfolioAsset | null => {
   if (balance === 0n || token.reputation === "scam") return null;
+  const tokenAddress = Schema.decodeUnknownOption(EthereumAddress)(
+    token.address_hash.toLowerCase(),
+  );
+  if (Option.isNone(tokenAddress)) return null;
   const chainDecimals = decimals(token);
   return {
     namespace: "eip155",
     chainId,
     type: "erc20",
-    tokenAddress: token.address_hash.toLowerCase() as PortfolioAsset["tokenAddress"],
+    tokenAddress: tokenAddress.value,
     rawBalance: Hex.make(toHex(balance)),
     formattedBalance: chainDecimals === null ? null : formatUnits(balance, chainDecimals),
     metadata: {
       name: nonEmpty(token.name),
       symbol: nonEmpty(token.symbol),
       decimals: chainDecimals,
-      logoUrl: nonEmpty(token.icon_url),
+      logoUrl: iconUrl(token.icon_url),
     },
-    addressMetadata: null,
+    addressMetadata: tokenAddressMetadata(chainId, tokenAddress.value, token, updatedAt),
     usdPrice: usdPrice(token.exchange_rate, updatedAt),
   };
 };
@@ -121,7 +221,21 @@ export const makeBlockscoutPortfolioService = (
       next = page.next_page_params;
     } while (next !== undefined && next !== null);
 
-    return items;
+    const tokenAddresses = items.flatMap((asset) =>
+      asset.tokenAddress === null ? [] : [asset.tokenAddress],
+    );
+    const metadata =
+      tokenAddresses.length === 0
+        ? null
+        : yield* client
+            .getMetadata("address-metadata", BlockscoutMetadata, {
+              addresses: tokenAddresses.join(","),
+              chainId: String(chain.chain.id),
+              tagsLimit: "20",
+            })
+            .pipe(Effect.catch(() => Effect.succeed(null)));
+
+    return items.map((asset) => applyMetadataTags(asset, metadata));
   });
 
   const getAssets = Effect.fn("evm.portfolio.getAssets")(function* (input: GetEvmPortfolioInput) {
@@ -129,7 +243,7 @@ export const makeBlockscoutPortfolioService = (
     const results = yield* Effect.forEach(
       chainIds,
       (chainId) => Effect.result(getChainAssets(input.address, chainId)),
-      { concurrency: 4 },
+      { concurrency: 2 },
     );
     const items = results.flatMap((result) => (Result.isSuccess(result) ? result.success : []));
     const partialFailures = results.flatMap((result, index) => {

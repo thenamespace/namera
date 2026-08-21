@@ -121,10 +121,15 @@ operations use only the global limit.
 Session-key revocation is limited to 60 attempts per active organization per
 hour. It revokes the key and every active grant in one application transaction.
 
-`GET /wallets/:walletId/assets` requires the same scoped `wallet:read` access as
-the wallet detail route. It returns paginated native and ERC-20 assets across
-all supported EVM chains and preserves provider partial failures in the success
-response. The Alchemy credential never crosses the EVM adapter boundary.
+`GET /wallets/:walletId/portfolio` requires the same scoped `wallet:read` access
+as the wallet detail route. `POST /portfolios/assets/query` exposes the same
+provider-neutral portfolio for an explicit namespace-qualified address. Both
+return paginated native and ERC-20 assets across supported EVM chains and
+preserve per-chain Blockscout failures in the success response.
+
+Address enrichment uses `GET /address-metadata/:namespace/:chainId/:address`,
+`POST /address-metadata/resolve`, and `GET /address-metadata/search`. The
+Blockscout credential and provider payloads remain inside the EVM adapter.
 
 Smart-account signatures are limited to 120 requests per API key per minute.
 Smart-account signature verification is limited separately to 240 requests per

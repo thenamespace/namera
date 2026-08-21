@@ -10,7 +10,7 @@ import type {
   BlockscoutToken,
 } from "../blockscout/schemas.js";
 
-type MetadataTag = NonNullable<BlockscoutMetadata["addresses"][string]["tags"]>[number];
+export type MetadataTag = NonNullable<BlockscoutMetadata["addresses"][string]["tags"]>[number];
 
 const nonEmpty = (value: string | null | undefined): string | null => {
   const normalized = value?.trim();
@@ -48,8 +48,21 @@ const tagType = (value: string): AddressMetadataTag["type"] => {
   }
 };
 
-const normalizeTags = (tags: ReadonlyArray<MetadataTag>): ReadonlyArray<AddressMetadataTag> =>
+export const normalizeBlockscoutTags = (
+  tags: ReadonlyArray<MetadataTag>,
+): ReadonlyArray<AddressMetadataTag> =>
   tags.map((tag) => ({ type: tagType(tag.tagType), slug: tag.slug, name: tag.name }));
+
+export const getBlockscoutMetadataTags = (
+  metadata: BlockscoutMetadata | null,
+  address: EthereumAddress,
+): ReadonlyArray<MetadataTag> =>
+  Object.entries(metadata?.addresses ?? {}).find(
+    ([candidate]) => candidate.toLowerCase() === address.toLowerCase(),
+  )?.[1].tags ?? [];
+
+export const hasCredibleBlockscoutTag = (tags: ReadonlyArray<MetadataTag>): boolean =>
+  tags.some((tag) => /verified|official|credible/i.test(`${tag.slug} ${tag.name}`));
 
 const tokenStandard = (token: BlockscoutToken): "erc20" | "erc721" | "erc1155" | "other" => {
   switch (token.type?.toUpperCase()) {
@@ -77,23 +90,18 @@ export const normalizeBlockscoutAddress = (input: {
   readonly metadata: BlockscoutMetadata | null;
   readonly observedAt: DateTime.Utc;
 }): EvmAddressMetadataData => {
-  const metadataEntry = Object.entries(input.metadata?.addresses ?? {}).find(
-    ([address]) => address.toLowerCase() === input.address.toLowerCase(),
-  )?.[1];
-  const rawTags = metadataEntry?.tags ?? [];
-  const tags = normalizeTags(rawTags);
+  const rawTags = getBlockscoutMetadataTags(input.metadata, input.address);
+  const tags = normalizeBlockscoutTags(rawTags);
   const token = input.detail.token ?? null;
   const standard = token === null ? null : tokenStandard(token);
   const implementation = input.detail.implementations?.[0];
   const implementationAddress =
-    implementation === undefined ? null : decodeAddress(implementation.address);
+    implementation === undefined ? null : decodeAddress(implementation.address_hash);
   const isScam = input.detail.is_scam === true || input.detail.reputation === "scam";
-  const hasCredibleTag = rawTags.some((tag) =>
-    /verified|official|credible/i.test(`${tag.slug} ${tag.name}`),
-  );
+  const hasCredibleTag = hasCredibleBlockscoutTag(rawTags);
   const reputation = isScam
     ? "scam"
-    : hasCredibleTag || input.detail.reputation === "ok"
+    : hasCredibleTag
       ? "credible"
       : input.detail.reputation === "suspicious"
         ? "suspicious"

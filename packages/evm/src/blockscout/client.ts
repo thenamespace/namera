@@ -1,4 +1,4 @@
-import { Effect, Redacted, Schema } from "effect";
+import { Duration, Effect, Redacted, Schema } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 import type { HttpClient } from "effect/unstable/http";
 
@@ -32,6 +32,8 @@ export const makeBlockscoutClient = (
           ? response.json
           : Effect.fail(new Error(`Blockscout returned HTTP ${response.status}`)),
       ),
+      Effect.timeout(Duration.seconds(15)),
+      Effect.retry({ times: 2 }),
       Effect.mapError(
         (cause) => new EvmDataProviderError({ operation, code: "PROVIDER_UNAVAILABLE", cause }),
       ),

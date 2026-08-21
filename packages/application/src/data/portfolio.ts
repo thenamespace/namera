@@ -43,13 +43,12 @@ export const makePortfolioApplication = Effect.fn("application.portfolio.make")(
       .pipe(
         Effect.mapError(() => new PortfolioUnavailableError({ code: "PORTFOLIO_UNAVAILABLE" })),
       );
-    const tokenRefs = snapshot.items.flatMap((asset) =>
-      asset.tokenAddress === null
-        ? []
-        : [{ namespace: "eip155" as const, chainId: asset.chainId, address: asset.tokenAddress }],
-    );
     const metadata = yield* addressMetadata
-      .resolve({ addresses: tokenRefs })
+      .store(
+        snapshot.items.flatMap((asset) =>
+          asset.addressMetadata === null ? [] : [asset.addressMetadata],
+        ),
+      )
       .pipe(Effect.catch(() => Effect.succeed([])));
     const metadataByKey = new Map(
       metadata.map((item) => [`${item.chainId}:${item.address.toLowerCase()}`, item]),

@@ -25,7 +25,7 @@ export const BlockscoutAddress = Schema.Struct({
   implementations: Schema.optionalKey(
     Schema.Array(
       Schema.Struct({
-        address: Schema.String,
+        address_hash: Schema.String,
         name: NullableString,
       }),
     ),

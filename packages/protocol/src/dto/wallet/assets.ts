@@ -97,16 +97,6 @@ export const PortfolioResponse = Schema.Struct({
   description: "A paginated all-chain fungible portfolio",
 });
 
-// Compatibility names for consumers moving from the former wallet-assets route.
-export const WalletAssetCursor = PortfolioCursor;
-export const ListWalletAssetsRequest = GetWalletPortfolioRequest;
-export const WalletAssetMetadata = PortfolioAssetMetadata;
-export const WalletAssetUsdPrice = PortfolioAssetUsdPrice;
-export const EvmWalletAsset = EvmPortfolioAsset;
-export const WalletAsset = PortfolioAsset;
-export const WalletAssetPartialFailure = PortfolioPartialFailure;
-export const ListWalletAssetsResponse = PortfolioResponse;
-
 export type PortfolioCursor = typeof PortfolioCursor.Type;
 export type QueryPortfolioRequest = typeof QueryPortfolioRequest.Type;
 export type GetWalletPortfolioRequest = typeof GetWalletPortfolioRequest.Type;
@@ -118,11 +108,3 @@ export type PortfolioChainSummary = typeof PortfolioChainSummary.Type;
 export type PortfolioSummary = typeof PortfolioSummary.Type;
 export type PortfolioPartialFailure = typeof PortfolioPartialFailure.Type;
 export type PortfolioResponse = typeof PortfolioResponse.Type;
-export type WalletAssetCursor = PortfolioCursor;
-export type ListWalletAssetsRequest = GetWalletPortfolioRequest;
-export type WalletAssetMetadata = PortfolioAssetMetadata;
-export type WalletAssetUsdPrice = PortfolioAssetUsdPrice;
-export type EvmWalletAsset = EvmPortfolioAsset;
-export type WalletAsset = PortfolioAsset;
-export type WalletAssetPartialFailure = PortfolioPartialFailure;
-export type ListWalletAssetsResponse = PortfolioResponse;

@@ -60,8 +60,8 @@ session keys. Metadata updates require `wallet:update`; same-value replacements
 are no-ops without duplicate audit, notification, or metrics.
 
 Routes are `POST /wallets`, `GET /wallets`, `GET /wallets/:walletId`,
-`GET /wallets/:walletId/assets`, and `POST /wallets/:walletId/update`. The
-asset route returns paginated native/ERC-20 holdings across every supported
+`GET /wallets/:walletId/portfolio`, and `POST /wallets/:walletId/update`. The
+portfolio route returns paginated native/ERC-20 holdings across every supported
 chain; see [fungible wallet portfolio](../evm/portfolio.md).
 
 ## Pending
