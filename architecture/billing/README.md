@@ -233,10 +233,11 @@ operation releases the execution unit because Free v1 counts successful
 executions, but still settles sponsored gas from its receipt.
 
 Testnet operations never reserve sponsored-gas allowance. A mainnet operation
-only does so when the prepared UserOperation contains an Alchemy Gas Manager paymaster. The
-EVM adapter fetches ETH/USD from Alchemy, converts it conservatively to integer
-micro-USD, applies Alchemy's 8% mainnet sponsorship administration fee, and reserves the
-pessimistic maximum UserOperation gas envelope. Settlement uses
+only does so when the prepared UserOperation contains an Alchemy Gas Manager
+paymaster. The EVM adapter fetches ETH/USD from Alchemy, converts it
+conservatively to integer micro-USD, applies Alchemy's 8% mainnet sponsorship
+administration fee, and reserves the pessimistic maximum UserOperation gas
+envelope. Settlement uses
 `receipt.actualGasCost` with the exact persisted quote and margin. If pricing is
 unavailable, sponsored mainnet preparation fails closed before signing or
 submission.

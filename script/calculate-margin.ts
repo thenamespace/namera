@@ -23,15 +23,17 @@ type Plan = {
   readonly softwareWallets: number;
   /** Maximum active GCP HSM-backed wallets included in the plan. */
   readonly hsmWallets: number;
-  /** Successful logical executions included in each monthly billing period. */
-  readonly includedExecutions: number;
-  /** Customer-facing execution overage block. Null means a hard cap. */
-  readonly executionOverage: OveragePrice | null;
+  /** Successful mainnet executions included in each monthly billing period. */
+  readonly includedMainnetExecutions: number;
+  /** Successful testnet executions included in each monthly billing period. */
+  readonly includedTestnetExecutions: number;
+  /** Customer-facing mainnet execution overage block. Null means a hard cap. */
+  readonly mainnetExecutionOverage: OveragePrice | null;
   /** Successful wallet signatures included in each monthly billing period. */
   readonly includedSignatures: number;
   /** Customer-facing signature overage block. Null means a hard cap. */
   readonly signatureOverage: OveragePrice | null;
-  /** Maximum Pimlico gas invoice Namera funds during the period. */
+  /** Maximum Alchemy Gas Manager invoice Namera funds during the period. */
   readonly includedSponsoredGasUsd: number;
   /** Fraction of executions signed with HSM keys, from 0 (none) to 1 (all). */
   readonly hsmExecutionShare: number;
@@ -40,29 +42,13 @@ type Plan = {
 };
 
 type VendorPricing = {
-  readonly pimlico: {
-    /** Credits shared by the complete Pimlico account each month. */
-    readonly includedCreditsPerMonth: number;
-    /** Size of one purchasable block of additional Pimlico credits. */
-    readonly additionalCredits: number;
-    /** USD price of one additional-credit block. */
-    readonly additionalCreditsPrice: number;
-    /** Estimated total Pimlico credits consumed by a standard UserOperation. */
-    readonly standardUserOperationCredits: number;
-    /** Estimated total Pimlico credits consumed by a sponsored UserOperation. */
-    readonly sponsoredUserOperationCredits: number;
-    /** Pimlico surcharge applied to the raw mainnet gas it sponsors. */
-    readonly sponsoredGasSurchargeRate: number;
-  };
   readonly alchemy: {
     /** Compute units shared by the complete Alchemy account for free each month. */
     readonly includedComputeUnitsPerMonth: number;
-    /** Monthly CU boundary after which Alchemy's volume rate starts. */
-    readonly firstTierComputeUnits: number;
     /** USD charged per million CUs before the volume boundary. */
     readonly firstTierPricePerMillion: number;
-    /** USD charged per million CUs after the volume boundary. */
-    readonly volumePricePerMillion: number;
+    /** Alchemy administration fee applied to sponsored mainnet gas. */
+    readonly sponsoredGasAdminRate: number;
   };
   readonly gcp: {
     /** USD per active software EC key version for a full month. */
@@ -101,13 +87,21 @@ type VendorPricing = {
 };
 
 type MarginAssumptions = {
-  /** Estimated Alchemy compute units consumed by one logical execution. */
-  readonly alchemyComputeUnitsPerExecution: number;
+  /** Conservative compute-unit budget for each Alchemy-backed execution phase. */
+  readonly alchemyExecutionComputeUnits: {
+    readonly rundlerFeeEstimate: number;
+    readonly paymasterStub: number;
+    readonly userOperationGasEstimate: number;
+    readonly paymasterData: number;
+    readonly submission: number;
+    readonly lifecyclePolling: number;
+    readonly publicRpcPreparation: number;
+  };
   /** Estimated transactional emails sent for each member every month. */
   readonly emailsPerMemberPerMonth: number;
   /** USD monthly price charged for one additional active HSM wallet. */
   readonly additionalHsmWalletPrice: number;
-  /** Markup on Pimlico's complete sponsored-gas invoice, expressed as a decimal. */
+  /** Markup on Alchemy's complete sponsored-gas invoice, expressed as a decimal. */
   readonly sponsoredGasCustomerMarkupRate: number;
   /** Raw gas costs in USD used to render sponsorship sensitivity examples. */
   readonly sponsoredGasExamples: ReadonlyArray<number>;
@@ -126,7 +120,6 @@ type Column = {
 };
 
 type PlanCosts = {
-  readonly pimlico: number;
   readonly alchemy: number;
   readonly gcpKeys: number;
   readonly executionSigning: number;
@@ -144,11 +137,12 @@ const plans: ReadonlyArray<Plan> = [
     members: 5,
     softwareWallets: 5,
     hsmWallets: 0,
-    includedExecutions: 500,
-    executionOverage: null,
+    includedMainnetExecutions: 100,
+    includedTestnetExecutions: 10_000,
+    mainnetExecutionOverage: null,
     includedSignatures: 10_000,
     signatureOverage: null,
-    includedSponsoredGasUsd: 3,
+    includedSponsoredGasUsd: 5,
     hsmExecutionShare: 0,
     hsmSignatureShare: 0,
   },
@@ -158,8 +152,9 @@ const plans: ReadonlyArray<Plan> = [
     members: 20,
     softwareWallets: 20,
     hsmWallets: 1,
-    includedExecutions: 2_000,
-    executionOverage: { operations: 1_000, price: 20 },
+    includedMainnetExecutions: 2_000,
+    includedTestnetExecutions: 10_000,
+    mainnetExecutionOverage: { operations: 1_000, price: 3 },
     includedSignatures: 50_000,
     signatureOverage: { operations: 10_000, price: 1 },
     includedSponsoredGasUsd: 5,
@@ -172,8 +167,9 @@ const plans: ReadonlyArray<Plan> = [
     members: 100,
     softwareWallets: 100,
     hsmWallets: 5,
-    includedExecutions: 10_000,
-    executionOverage: { operations: 1_000, price: 20 },
+    includedMainnetExecutions: 10_000,
+    includedTestnetExecutions: 50_000,
+    mainnetExecutionOverage: { operations: 1_000, price: 3 },
     includedSignatures: 250_000,
     signatureOverage: { operations: 10_000, price: 1 },
     includedSponsoredGasUsd: 15,
@@ -183,19 +179,10 @@ const plans: ReadonlyArray<Plan> = [
 ];
 
 const pricing = {
-  pimlico: {
-    includedCreditsPerMonth: 10_000_000,
-    additionalCredits: 100_000,
-    additionalCreditsPrice: 1,
-    standardUserOperationCredits: 750,
-    sponsoredUserOperationCredits: 1_050,
-    sponsoredGasSurchargeRate: 0.1,
-  },
   alchemy: {
     includedComputeUnitsPerMonth: 30_000_000,
-    firstTierComputeUnits: 300_000_000,
     firstTierPricePerMillion: 0.45,
-    volumePricePerMillion: 0.4,
+    sponsoredGasAdminRate: 0.08,
   },
   gcp: {
     softwareKeyVersionPerMonth: 0.06,
@@ -220,7 +207,15 @@ const pricing = {
 } as const satisfies VendorPricing;
 
 const assumptions = {
-  alchemyComputeUnitsPerExecution: 500,
+  alchemyExecutionComputeUnits: {
+    rundlerFeeEstimate: 10,
+    paymasterStub: 250,
+    userOperationGasEstimate: 500,
+    paymasterData: 1_000,
+    submission: 1_000,
+    lifecyclePolling: 100,
+    publicRpcPreparation: 240,
+  },
   emailsPerMemberPerMonth: 10,
   additionalHsmWalletPrice: 7,
   sponsoredGasCustomerMarkupRate: 0.25,
@@ -230,6 +225,18 @@ const assumptions = {
     maximum: 0.5,
   },
 } as const satisfies MarginAssumptions;
+
+const alchemyComputeUnitLabels: Readonly<
+  Record<keyof MarginAssumptions["alchemyExecutionComputeUnits"], string>
+> = {
+  rundlerFeeEstimate: "Rundler fee estimate",
+  paymasterStub: "Gas Manager paymaster stub",
+  userOperationGasEstimate: "UserOperation gas estimate",
+  paymasterData: "Gas Manager final paymaster data",
+  submission: "UserOperation submission",
+  lifecyclePolling: "Lifecycle receipt/status polling",
+  publicRpcPreparation: "Account reconstruction and call simulation",
+};
 
 // @ts-expect-error safe to ignore
 const colorsEnabled = Boolean(process.stdout.isTTY) && process.env.NO_COLOR === undefined;
@@ -312,12 +319,13 @@ const requireOverage = (name: string, overage: OveragePrice | null) => {
 
 for (const plan of plans) {
   requireNonNegative(`${plan.name}.monthlyPrice`, plan.monthlyPrice);
-  requireNonNegative(`${plan.name}.includedExecutions`, plan.includedExecutions);
+  requireNonNegative(`${plan.name}.includedMainnetExecutions`, plan.includedMainnetExecutions);
+  requireNonNegative(`${plan.name}.includedTestnetExecutions`, plan.includedTestnetExecutions);
   requireNonNegative(`${plan.name}.includedSignatures`, plan.includedSignatures);
   requireNonNegative(`${plan.name}.includedSponsoredGasUsd`, plan.includedSponsoredGasUsd);
   requireShare(`${plan.name}.hsmExecutionShare`, plan.hsmExecutionShare);
   requireShare(`${plan.name}.hsmSignatureShare`, plan.hsmSignatureShare);
-  requireOverage(`${plan.name}.executionOverage`, plan.executionOverage);
+  requireOverage(`${plan.name}.mainnetExecutionOverage`, plan.mainnetExecutionOverage);
   requireOverage(`${plan.name}.signatureOverage`, plan.signatureOverage);
 }
 
@@ -327,14 +335,17 @@ if (assumptions.targetPaidMargin.minimum > assumptions.targetPaidMargin.maximum)
   throw new Error("targetPaidMargin.minimum must not exceed targetPaidMargin.maximum");
 }
 
-const pimlicoCreditPrice =
-  pricing.pimlico.additionalCreditsPrice / pricing.pimlico.additionalCredits;
-const standardPimlicoExecutionCost =
-  pricing.pimlico.standardUserOperationCredits * pimlicoCreditPrice;
-const sponsoredPimlicoExecutionCost =
-  pricing.pimlico.sponsoredUserOperationCredits * pimlicoCreditPrice;
+const alchemyComputeUnitsPerExecution = Object.values(
+  assumptions.alchemyExecutionComputeUnits,
+).reduce((total, computeUnits) => total + computeUnits, 0);
+const alchemyComputeUnitRows = Object.entries(assumptions.alchemyExecutionComputeUnits).map(
+  ([key, computeUnits]) => [
+    alchemyComputeUnitLabels[key as keyof MarginAssumptions["alchemyExecutionComputeUnits"]],
+    integer(computeUnits),
+  ],
+);
 const alchemyComputeUnitPrice = pricing.alchemy.firstTierPricePerMillion / 1_000_000;
-const alchemyExecutionCost = assumptions.alchemyComputeUnitsPerExecution * alchemyComputeUnitPrice;
+const alchemyExecutionCost = alchemyComputeUnitsPerExecution * alchemyComputeUnitPrice;
 const softwareKmsOperationCost =
   pricing.gcp.softwareOperationsPrice / pricing.gcp.softwareOperations;
 const hsmKmsOperationCost = pricing.gcp.hsmOperationsPrice / pricing.gcp.hsmOperations;
@@ -350,15 +361,17 @@ const getOverageUnitPrice = (overage: OveragePrice) => overage.price / overage.o
 const formatOverage = (overage: OveragePrice | null) =>
   overage === null ? "Hard cap" : `${usd(overage.price)} / ${integer(overage.operations)}`;
 
+const getIncludedExecutions = (plan: Plan) =>
+  plan.includedMainnetExecutions + plan.includedTestnetExecutions;
+
 const getPlanCosts = (plan: Plan): PlanCosts => ({
-  // Sponsored UserOperation credits pay for Pimlico infrastructure. The actual gas
-  // invoice is capped independently by includedSponsoredGasUsd below.
-  pimlico: plan.includedExecutions * sponsoredPimlicoExecutionCost,
-  alchemy: plan.includedExecutions * alchemyExecutionCost,
+  // Alchemy CUs pay for public RPC, Rundler, and Gas Manager infrastructure.
+  // The actual sponsored-gas invoice is capped independently below.
+  alchemy: getIncludedExecutions(plan) * alchemyExecutionCost,
   gcpKeys:
     plan.softwareWallets * pricing.gcp.softwareKeyVersionPerMonth +
     plan.hsmWallets * pricing.gcp.hsmKeyVersionPerMonth,
-  executionSigning: plan.includedExecutions * getSigningCost(plan.hsmExecutionShare),
+  executionSigning: getIncludedExecutions(plan) * getSigningCost(plan.hsmExecutionShare),
   signatureSigning: plan.includedSignatures * getSigningCost(plan.hsmSignatureShare),
   sponsoredGas: plan.includedSponsoredGasUsd,
   resend: plan.members * assumptions.emailsPerMemberPerMonth * resendEmailCost,
@@ -421,8 +434,9 @@ const buildMarkdownReport = () => {
       integer(plan.members),
       integer(plan.softwareWallets),
       integer(plan.hsmWallets),
-      integer(plan.includedExecutions),
-      formatOverage(plan.executionOverage),
+      integer(plan.includedMainnetExecutions),
+      integer(plan.includedTestnetExecutions),
+      formatOverage(plan.mainnetExecutionOverage),
       integer(plan.includedSignatures),
       formatOverage(plan.signatureOverage),
       usd(plan.includedSponsoredGasUsd),
@@ -436,7 +450,6 @@ const buildMarkdownReport = () => {
     const costs = getPlanCosts(plan);
     return [
       plan.name,
-      usd(costs.pimlico),
       usd(costs.alchemy),
       usd(costs.gcpKeys),
       usd(costs.executionSigning),
@@ -450,20 +463,20 @@ const buildMarkdownReport = () => {
 
   const overageRows = plans
     .filter(
-      (plan): plan is Plan & { readonly executionOverage: OveragePrice } =>
-        plan.executionOverage !== null,
+      (plan): plan is Plan & { readonly mainnetExecutionOverage: OveragePrice } =>
+        plan.mainnetExecutionOverage !== null,
     )
     .map((plan) => {
-      const price = getOverageUnitPrice(plan.executionOverage);
+      const price = getOverageUnitPrice(plan.mainnetExecutionOverage);
       const kms = getSigningCost(plan.hsmExecutionShare);
       const stripe = price * stripeRate;
-      const cost = sponsoredPimlicoExecutionCost + kms + stripe;
+      const cost = alchemyExecutionCost + kms + stripe;
       const contribution = price - cost;
       return [
         plan.name,
-        formatOverage(plan.executionOverage),
+        formatOverage(plan.mainnetExecutionOverage),
         usd(price, 6),
-        usd(sponsoredPimlicoExecutionCost, 6),
+        usd(alchemyExecutionCost, 6),
         usd(kms, 6),
         usd(stripe, 6),
         usd(contribution, 6),
@@ -497,7 +510,7 @@ const buildMarkdownReport = () => {
     assumptions.additionalHsmWalletPrice - pricing.gcp.hsmKeyVersionPerMonth - hsmStripe;
 
   const sponsoredGasRows = assumptions.sponsoredGasExamples.map((rawGas) => {
-    const providerCost = rawGas * (1 + pricing.pimlico.sponsoredGasSurchargeRate);
+    const providerCost = rawGas * (1 + pricing.alchemy.sponsoredGasAdminRate);
     const customerCharge = providerCost * (1 + assumptions.sponsoredGasCustomerMarkupRate);
     const stripe = customerCharge * stripeRate;
     const contribution = customerCharge - providerCost - stripe;
@@ -526,8 +539,9 @@ ${renderMarkdownTable(
     "Members",
     "Software wallets",
     "HSM wallets",
-    "Executions",
-    "Execution overage",
+    "Mainnet executions",
+    "Testnet executions",
+    "Mainnet overage",
     "Signatures",
     "Signature overage",
     "Sponsored gas",
@@ -544,19 +558,9 @@ ${renderMarkdownTable(
   ["Cost", "Rate", "Source input"],
   [
     [
-      "Pimlico standard UserOperation",
-      usd(standardPimlicoExecutionCost, 6),
-      `${integer(pricing.pimlico.standardUserOperationCredits)} credits`,
-    ],
-    [
-      "Pimlico sponsored UserOperation",
-      usd(sponsoredPimlicoExecutionCost, 6),
-      `${integer(pricing.pimlico.sponsoredUserOperationCredits)} credits plus gas`,
-    ],
-    [
       "Alchemy per execution",
       usd(alchemyExecutionCost, 6),
-      `${integer(assumptions.alchemyComputeUnitsPerExecution)} CU`,
+      `${integer(alchemyComputeUnitsPerExecution)} CU`,
     ],
     ["GCP software key", usd(pricing.gcp.softwareKeyVersionPerMonth), "Active key-month"],
     ["GCP HSM key", usd(pricing.gcp.hsmKeyVersionPerMonth), "Active key-month"],
@@ -567,12 +571,18 @@ ${renderMarkdownTable(
   ],
 )}
 
+## Alchemy execution compute-unit model
+
+${renderMarkdownTable(
+  ["Execution phase", "Compute units"],
+  [...alchemyComputeUnitRows, ["Total", integer(alchemyComputeUnitsPerExecution)]],
+)}
+
 ## Cost breakdown by plan
 
 ${renderMarkdownTable(
   [
     "Plan",
-    "Pimlico",
     "Alchemy",
     "GCP keys",
     "Execution signing",
@@ -588,11 +598,11 @@ ${renderMarkdownTable(
 ## Execution overage economics
 
 ${renderMarkdownTable(
-  ["Plan", "Overage block", "Unit price", "Pimlico", "KMS", "Stripe", "Contribution", "Margin"],
+  ["Plan", "Overage block", "Unit price", "Alchemy", "KMS", "Stripe", "Contribution", "Margin"],
   overageRows,
 )}
 
-Execution overage pays for Pimlico's sponsored UserOperation credits and GCP signing. Sponsored gas is charged against the separate dollar balance and is not included here. Alchemy remains in the full-plan cost breakdown as shared RPC overhead.
+Execution overage pays for Alchemy RPC, Rundler, Gas Manager compute units, and GCP signing. Sponsored gas is charged against the separate dollar balance and is not included here.
 
 ## Signature overage economics
 
@@ -618,10 +628,10 @@ ${renderMarkdownTable(
 
 ## Sponsored gas pass-through examples
 
-These examples apply the configured Pimlico surcharge and customer markup. The normal execution charge remains separate.
+These examples apply Alchemy's sponsorship administration fee and the configured customer markup. The normal execution charge remains separate.
 
 ${renderMarkdownTable(
-  ["Raw gas", "Pimlico gas invoice", "Customer charge", "Stripe", "Contribution", "Margin"],
+  ["Raw gas", "Alchemy gas invoice", "Customer charge", "Stripe", "Contribution", "Margin"],
   sponsoredGasRows,
 )}
 
@@ -631,22 +641,10 @@ ${renderMarkdownTable(
   ["Provider", "Account-wide allowance", "Approximate equivalent"],
   [
     [
-      "Pimlico",
-      `${integer(pricing.pimlico.includedCreditsPerMonth)} credits`,
-      `${integer(
-        Math.floor(
-          pricing.pimlico.includedCreditsPerMonth / pricing.pimlico.sponsoredUserOperationCredits,
-        ),
-      )} sponsored UserOperations`,
-    ],
-    [
       "Alchemy",
       `${integer(pricing.alchemy.includedComputeUnitsPerMonth)} CU`,
       `${integer(
-        Math.floor(
-          pricing.alchemy.includedComputeUnitsPerMonth /
-            assumptions.alchemyComputeUnitsPerExecution,
-        ),
+        Math.floor(pricing.alchemy.includedComputeUnitsPerMonth / alchemyComputeUnitsPerExecution),
       )} modeled executions`,
     ],
     [
@@ -681,8 +679,9 @@ console.log(
       { header: "Members", align: "right" },
       { header: "Software", align: "right" },
       { header: "HSM", align: "right" },
-      { header: "Executions", align: "right" },
-      { header: "Exec. overage", align: "right" },
+      { header: "Mainnet", align: "right" },
+      { header: "Testnet", align: "right" },
+      { header: "Mainnet overage", align: "right" },
       { header: "Signatures", align: "right" },
       { header: "Sig. overage", align: "right" },
       { header: "Gas cap", align: "right" },
@@ -693,8 +692,9 @@ console.log(
       integer(plan.members),
       integer(plan.softwareWallets),
       integer(plan.hsmWallets),
-      integer(plan.includedExecutions),
-      formatOverage(plan.executionOverage),
+      integer(plan.includedMainnetExecutions),
+      integer(plan.includedTestnetExecutions),
+      formatOverage(plan.mainnetExecutionOverage),
       integer(plan.includedSignatures),
       formatOverage(plan.signatureOverage),
       usd(plan.includedSponsoredGasUsd),
@@ -708,19 +708,9 @@ console.log(
     [{ header: "Cost" }, { header: "Rate", align: "right" }, { header: "Source input" }],
     [
       [
-        "Pimlico standard UserOperation",
-        usd(standardPimlicoExecutionCost, 6),
-        `${integer(pricing.pimlico.standardUserOperationCredits)} credits`,
-      ],
-      [
-        "Pimlico sponsored UserOperation",
-        usd(sponsoredPimlicoExecutionCost, 6),
-        `${integer(pricing.pimlico.sponsoredUserOperationCredits)} credits + gas`,
-      ],
-      [
         "Alchemy per execution",
         usd(alchemyExecutionCost, 6),
-        `${integer(assumptions.alchemyComputeUnitsPerExecution)} CU`,
+        `${integer(alchemyComputeUnitsPerExecution)} CU`,
       ],
       ["GCP software key", usd(pricing.gcp.softwareKeyVersionPerMonth), "per active month"],
       ["GCP HSM key", usd(pricing.gcp.hsmKeyVersionPerMonth), "per active month"],
@@ -729,6 +719,14 @@ console.log(
       ["Resend email", usd(resendEmailCost, 6), "marginal overage rate"],
       ["Stripe", percentage(stripeRate), "payment + Billing + conversion"],
     ],
+  ),
+);
+
+section("Alchemy execution compute-unit model");
+console.log(
+  renderTable(
+    [{ header: "Execution phase" }, { header: "Compute units", align: "right" }],
+    [...alchemyComputeUnitRows, [ansi.bold("Total"), integer(alchemyComputeUnitsPerExecution)]],
   ),
 );
 
@@ -764,7 +762,6 @@ console.log(
   renderTable(
     [
       { header: "Plan" },
-      { header: "Pimlico", align: "right" },
       { header: "Alchemy", align: "right" },
       { header: "GCP keys", align: "right" },
       { header: "Exec sign", align: "right" },
@@ -778,7 +775,6 @@ console.log(
       const costs = getPlanCosts(plan);
       return [
         plan.name,
-        usd(costs.pimlico),
         usd(costs.alchemy),
         usd(costs.gcpKeys),
         usd(costs.executionSigning),
@@ -794,8 +790,8 @@ console.log(
 
 section("Execution overage economics");
 const plansWithOverage = plans.filter(
-  (plan): plan is Plan & { readonly executionOverage: OveragePrice } =>
-    plan.executionOverage !== null,
+  (plan): plan is Plan & { readonly mainnetExecutionOverage: OveragePrice } =>
+    plan.mainnetExecutionOverage !== null,
 );
 console.log(
   renderTable(
@@ -803,23 +799,23 @@ console.log(
       { header: "Plan" },
       { header: "Overage block", align: "right" },
       { header: "Unit price", align: "right" },
-      { header: "Pimlico", align: "right" },
+      { header: "Alchemy", align: "right" },
       { header: "KMS", align: "right" },
       { header: "Stripe", align: "right" },
       { header: "Profit", align: "right" },
       { header: "Margin", align: "right" },
     ],
     plansWithOverage.map((plan) => {
-      const price = getOverageUnitPrice(plan.executionOverage);
+      const price = getOverageUnitPrice(plan.mainnetExecutionOverage);
       const kms = getSigningCost(plan.hsmExecutionShare);
       const stripe = price * stripeRate;
-      const cost = sponsoredPimlicoExecutionCost + kms + stripe;
+      const cost = alchemyExecutionCost + kms + stripe;
       const profit = price - cost;
       return [
         plan.name,
-        formatOverage(plan.executionOverage),
+        formatOverage(plan.mainnetExecutionOverage),
         usd(price, 6),
-        usd(sponsoredPimlicoExecutionCost, 6),
+        usd(alchemyExecutionCost, 6),
         usd(kms, 6),
         usd(stripe, 6),
         profit >= 0 ? ansi.green(usd(profit, 6)) : ansi.red(usd(profit, 6)),
@@ -830,7 +826,7 @@ console.log(
 );
 console.log(
   ansi.dim(
-    "Execution overage covers Pimlico sponsored-UserOperation credits and signing only; gas uses the separate dollar balance.",
+    "Execution overage covers Alchemy infrastructure and signing only; gas uses the separate dollar balance.",
   ),
 );
 
@@ -899,14 +895,14 @@ console.log(
   renderTable(
     [
       { header: "Raw gas", align: "right" },
-      { header: "Pimlico gas invoice", align: "right" },
+      { header: "Alchemy gas invoice", align: "right" },
       { header: "Customer charge", align: "right" },
       { header: "Stripe", align: "right" },
       { header: "Contribution", align: "right" },
       { header: "Margin", align: "right" },
     ],
     assumptions.sponsoredGasExamples.map((rawGas) => {
-      const providerCost = rawGas * (1 + pricing.pimlico.sponsoredGasSurchargeRate);
+      const providerCost = rawGas * (1 + pricing.alchemy.sponsoredGasAdminRate);
       const customerCharge = providerCost * (1 + assumptions.sponsoredGasCustomerMarkupRate);
       const stripe = customerCharge * stripeRate;
       const contribution = customerCharge - providerCost - stripe;
@@ -932,21 +928,11 @@ console.log(
     ],
     [
       [
-        "Pimlico",
-        `${integer(pricing.pimlico.includedCreditsPerMonth)} credits`,
-        `${integer(
-          Math.floor(
-            pricing.pimlico.includedCreditsPerMonth / pricing.pimlico.sponsoredUserOperationCredits,
-          ),
-        )} sponsored UserOperations`,
-      ],
-      [
         "Alchemy",
         `${integer(pricing.alchemy.includedComputeUnitsPerMonth)} CU`,
         `${integer(
           Math.floor(
-            pricing.alchemy.includedComputeUnitsPerMonth /
-              assumptions.alchemyComputeUnitsPerExecution,
+            pricing.alchemy.includedComputeUnitsPerMonth / alchemyComputeUnitsPerExecution,
           ),
         )} modeled executions`,
       ],
