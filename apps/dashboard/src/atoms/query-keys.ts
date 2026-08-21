@@ -54,6 +54,9 @@ export const QueryKeys = {
     details: ["execution:details"] as const,
     detail: (executionId: ExecutionId) => [`execution:detail:${executionId}`] as const,
   },
+  billing: {
+    current: ["billing:current"] as const,
+  },
   sessionKey: {
     all: ["session-key:all"] as const,
     lists: ["session-key:lists"] as const,
@@ -117,6 +120,7 @@ export type QueryKey =
   | (typeof QueryKeys.execution.lists)[number]
   | (typeof QueryKeys.execution.details)[number]
   | ReturnType<typeof QueryKeys.execution.detail>[number]
+  | (typeof QueryKeys.billing.current)[number]
   | (typeof QueryKeys.sessionKey.all)[number]
   | (typeof QueryKeys.sessionKey.lists)[number]
   | (typeof QueryKeys.sessionKey.organizationLists)[number]

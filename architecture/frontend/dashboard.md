@@ -87,7 +87,8 @@ contracts; detail pages load expanded relations.
 - session-key list/create/revoke and Overview/Policies/Executions shell;
 - activity list and expanded execution detail;
 - profile, notification preferences, sessions/security, workspace, members and
-  invitations, API keys, MCP authorizations, and CLI authorizations;
+  invitations, API keys, MCP authorizations, CLI authorizations, and billing
+  usage;
 - MCP and CLI authorization consent with account-grouped active session-key
   selection.
 
@@ -101,7 +102,7 @@ credentials never enter the bundle.
 
 - Build account usage and session-key scoped execution views after backend query
   support.
-- Build notification inbox, billing, audit history, and remaining overview/
+- Build notification inbox, audit history, and remaining overview/
   asset/identity/template product surfaces as their backend contracts stabilize.
 - Add browser interaction and accessibility regression tests.
 - Measure route/chunk splitting before optimizing large bundles.

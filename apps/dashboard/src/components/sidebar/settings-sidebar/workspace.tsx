@@ -65,13 +65,13 @@ export const workspaceGroupItems: SidebarGroupItemsProps = {
       },
     },
     {
-      id: "billings",
+      id: "billing",
       icon: CreditCardIcon,
-      label: "Billings",
-      textValue: "Billings",
+      label: "Billing",
+      textValue: "Billing",
       href: "/settings/workspace/billings",
       tooltip: {
-        text: "Billings",
+        text: "Billing",
       },
     },
   ],
