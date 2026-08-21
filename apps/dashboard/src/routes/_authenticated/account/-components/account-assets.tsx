@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 
-import type { WalletResponse, ListWalletAssetsResponse } from "@namera-ai/protocol/dto";
+import type { PortfolioResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import { Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
 
 import { AssetsTable, summarizePortfolio, type AssetAllocation } from "@/components/assets-table";
 import { ChainDisplay } from "@/components/display";
-import { useWalletAssets } from "@/hooks/wallet";
+import { useWalletPortfolio } from "@/hooks/wallet";
 
 type PieTooltipProps = {
   readonly active?: boolean;
@@ -127,7 +127,7 @@ function PortfolioOverview({
   portfolio,
 }: {
   account: WalletResponse;
-  portfolio: ListWalletAssetsResponse;
+  portfolio: PortfolioResponse;
 }) {
   const summary = useMemo(
     () => summarizePortfolio(portfolio.items, account.address),
@@ -135,14 +135,15 @@ function PortfolioOverview({
   );
   const networkCount = new Set(portfolio.items.map((asset) => asset.chainId)).size;
   const coverage = summary.rows.length === 0 ? 0 : summary.pricedAssetCount / summary.rows.length;
+  const enrichedCount = portfolio.items.filter((asset) => asset.addressMetadata !== null).length;
 
   return (
     <section
       aria-labelledby="portfolio-overview"
-      className="grid gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.85fr)]"
+      className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)]"
     >
       <Card className="overflow-hidden rounded-xl border shadow-sm">
-        <Card.Content className="grid min-h-72 gap-8 p-5 sm:p-6">
+        <Card.Content className="grid min-h-60 gap-6 p-5">
           <div>
             <Typography className="text-sm!" color="muted">
               Total portfolio value
@@ -166,7 +167,7 @@ function PortfolioOverview({
                 Chain allocation
               </Typography>
               <Typography className="text-xs!" color="muted">
-                Snapshot
+                Live balances
               </Typography>
             </div>
             <ChainAllocation
@@ -197,7 +198,7 @@ function PortfolioOverview({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 border-t pt-4">
+          <div className="grid grid-cols-4 gap-4 border-t pt-4">
             <div>
               <div className="text-sm font-medium tabular-nums">{summary.rows.length}</div>
               <div className="mt-0.5 text-xs text-muted">Assets</div>
@@ -209,6 +210,10 @@ function PortfolioOverview({
             <div>
               <div className="text-sm font-medium tabular-nums">{percent.format(coverage)}</div>
               <div className="mt-0.5 text-xs text-muted">Price coverage</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium tabular-nums">{enrichedCount}</div>
+              <div className="mt-0.5 text-xs text-muted">Enriched</div>
             </div>
           </div>
         </Card.Content>
@@ -258,21 +263,21 @@ function PortfolioOverview({
 
 type AccountAssetsProps = {
   readonly account: WalletResponse;
-  readonly initialPortfolio: ListWalletAssetsResponse;
+  readonly initialPortfolio: PortfolioResponse;
 };
 
 export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps) {
-  const assets = useWalletAssets(account.id);
+  const assets = useWalletPortfolio(account.id);
   const portfolio = assets.data ?? initialPortfolio;
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 py-2 sm:px-2 sm:py-5">
+    <div className="mx-auto grid w-full max-w-5xl gap-7 py-2 sm:px-2 sm:py-5">
       <header>
         <Typography.Heading className="text-2xl tracking-tight" level={2}>
           Assets
         </Typography.Heading>
         <Typography.Paragraph className="mt-1 max-w-2xl text-muted" size="sm">
-          Fungible balances and current USD prices across every supported EVM network.
+          Trusted token metadata, balances, and USD values across every supported EVM network.
         </Typography.Paragraph>
       </header>
 
@@ -297,7 +302,7 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
             Asset balances
           </Typography.Heading>
           <Typography className="mt-1 text-xs!" color="muted">
-            Search, filter, group, and inspect token balances by chain.
+            Search, filter, group, and inspect enriched token balances by chain.
           </Typography>
         </div>
         <AssetsTable address={account.address} assets={portfolio.items} />

@@ -6,7 +6,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const config = defineConfig({
-  resolve: { tsconfigPaths: true },
+  resolve: { conditions: ["namera-source"], tsconfigPaths: true },
   plugins: [
     devtools(),
     tailwindcss(),

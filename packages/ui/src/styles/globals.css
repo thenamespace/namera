@@ -62,11 +62,11 @@
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 
-  --chart-1: oklch(from var(--accent) calc(l - 0.24) c h);
-  --chart-2: oklch(from var(--accent) calc(l - 0.12) c h);
-  --chart-3: var(--accent);
-  --chart-4: oklch(from var(--accent) calc(l + 0.12) c h);
-  --chart-5: oklch(from var(--accent) calc(l + 0.24) c h);
+  --chart-1: oklch(68% 0.15 278);
+  --chart-2: oklch(72% 0.12 235);
+  --chart-3: oklch(72% 0.11 174);
+  --chart-4: oklch(77% 0.12 82);
+  --chart-5: oklch(70% 0.13 322);
 }
 
 @layer components {

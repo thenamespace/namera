@@ -5,7 +5,7 @@ import { Schema } from "effect";
 import { WalletId } from "@namera-ai/protocol";
 
 import { prefetchQuery } from "@/atoms/prefetch";
-import { walletAssetsAtom } from "@/atoms/wallet";
+import { walletPortfolioAtom } from "@/atoms/wallet";
 
 import { AccountAssets } from "../-components/account-assets";
 import { Route as AccountRoute } from "./route";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/account/$accountId/assets"
     return {
       portfolio: await prefetchQuery(
         context.atomRegistry,
-        walletAssetsAtom(params.accountId),
+        walletPortfolioAtom(params.accountId),
         abortController.signal,
       ),
     };

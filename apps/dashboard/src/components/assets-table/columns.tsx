@@ -1,4 +1,5 @@
 import { Avatar, Typography, type DataGridColumn } from "@namera-ai/ui";
+import { CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import type { TableOption } from "@/components/common/table";
 import { ChainDisplay } from "@/components/display";
@@ -13,7 +14,15 @@ import {
   type AssetTableRow,
 } from "./data";
 
-export const assetColumnIds = ["balance", "price", "value", "chain", "type", "contract"] as const;
+export const assetColumnIds = [
+  "balance",
+  "price",
+  "value",
+  "chain",
+  "trust",
+  "type",
+  "contract",
+] as const;
 export const assetGroupingOptions = [
   { id: "none", label: "No grouping" },
   { id: "chain", label: "Chain" },
@@ -35,23 +44,54 @@ export const getAssetChildren = (row: AssetGridRow) =>
 
 function TokenDisplay({ asset }: { asset: AssetTableRow }) {
   const symbol = getAssetSymbol(asset);
+  const logoUrl = asset.addressMetadata?.identity.iconUrl ?? asset.metadata.logoUrl;
+  const isVerified = asset.addressMetadata?.trust.isSourceVerified === true;
   return (
     <div className="flex min-w-0 items-center gap-2.5">
       <Avatar className="shrink-0" size="sm">
-        {asset.metadata.logoUrl === null ? null : (
-          <Avatar.Image alt="" src={asset.metadata.logoUrl} />
-        )}
+        {logoUrl === null ? null : <Avatar.Image alt="" src={logoUrl} />}
         <Avatar.Fallback>{symbol.slice(0, 2).toUpperCase()}</Avatar.Fallback>
       </Avatar>
       <div className="min-w-0">
-        <Typography className="truncate text-sm!" weight="medium">
-          {getAssetName(asset)}
-        </Typography>
+        <div className="flex items-center gap-1.5">
+          <Typography className="truncate text-sm!" weight="medium">
+            {getAssetName(asset)}
+          </Typography>
+          {isVerified ? (
+            <HugeiconsIcon
+              aria-label="Source verified"
+              className="size-3.5 shrink-0 text-accent"
+              icon={CheckmarkCircle02Icon}
+            />
+          ) : null}
+        </div>
         <Typography className="truncate text-xs!" color="muted">
           {symbol}
         </Typography>
       </div>
     </div>
+  );
+}
+
+function TrustDisplay({ asset }: { readonly asset: AssetTableRow }) {
+  const reputation = asset.addressMetadata?.trust.reputation ?? "unknown";
+  const label =
+    reputation === "credible"
+      ? "Trusted"
+      : reputation === "scam"
+        ? "Scam"
+        : reputation === "suspicious"
+          ? "Suspicious"
+          : reputation === "neutral"
+            ? "Known"
+            : "Unverified";
+  return (
+    <span
+      className="inline-flex rounded-md bg-tertiary px-2 py-0.5 text-xs text-muted"
+      data-reputation={reputation}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -137,6 +177,14 @@ export const assetColumns: ReadonlyArray<DataGridColumn<AssetGridRow>> = [
   },
   {
     allowsSorting: true,
+    cell: (row) => (isAssetGroup(row) ? null : <TrustDisplay asset={row} />),
+    header: "Trust",
+    id: "trust",
+    minWidth: 100,
+    width: 115,
+  },
+  {
+    allowsSorting: true,
     cell: (row) =>
       isAssetGroup(row) ? null : (
         <span className="text-sm capitalize text-muted">
@@ -187,6 +235,11 @@ export const assetSorters: Readonly<
   value: (left, right) => nullableNumber(left.valueUsd) - nullableNumber(right.valueUsd),
   chain: (left, right) => collator.compare(left.chainId, right.chainId),
   type: (left, right) => collator.compare(left.type, right.type),
+  trust: (left, right) =>
+    collator.compare(
+      left.addressMetadata?.trust.reputation ?? "unknown",
+      right.addressMetadata?.trust.reputation ?? "unknown",
+    ),
 };
 
 export const assetConfigurableColumns: ReadonlyArray<TableOption> = assetColumns

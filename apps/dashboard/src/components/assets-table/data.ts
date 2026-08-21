@@ -1,6 +1,6 @@
 import { getChainDataByCaip2 } from "@namera-ai/evm";
 import type { EthereumAddress } from "@namera-ai/protocol";
-import type { WalletAsset } from "@namera-ai/protocol/dto";
+import type { PortfolioAsset } from "@namera-ai/protocol/dto";
 
 export const portfolioChartColors = [
   "var(--chart-3)",
@@ -10,7 +10,7 @@ export const portfolioChartColors = [
   "var(--chart-5)",
 ] as const;
 
-export type AssetTableRow = WalletAsset & {
+export type AssetTableRow = PortfolioAsset & {
   readonly id: string;
   readonly ownerAddress: EthereumAddress;
   readonly priceUsd: number | null;
@@ -77,13 +77,16 @@ export const formatBalance = (value: string | null): string => {
   return balanceFormatter.format(parsed);
 };
 
-export const getAssetName = (asset: WalletAsset): string =>
+export const getAssetName = (asset: PortfolioAsset): string =>
+  asset.addressMetadata?.identity.displayName ??
   asset.metadata.name ??
   asset.metadata.symbol ??
   (asset.type === "native" ? "Native token" : "Unknown token");
 
-export const getAssetSymbol = (asset: WalletAsset): string =>
-  asset.metadata.symbol ?? (asset.type === "native" ? "Native" : "Token");
+export const getAssetSymbol = (asset: PortfolioAsset): string =>
+  asset.addressMetadata?.token?.symbol ??
+  asset.metadata.symbol ??
+  (asset.type === "native" ? "Native" : "Token");
 
 export const getAssetExplorerUrl = (row: AssetTableRow): string | undefined => {
   const explorer = getChainDataByCaip2(row.chainId)?.chain.blockExplorers?.default.url?.replace(
@@ -117,7 +120,7 @@ const collapseAllocations = (
 };
 
 export const summarizePortfolio = (
-  assets: ReadonlyArray<WalletAsset>,
+  assets: ReadonlyArray<PortfolioAsset>,
   ownerAddress: EthereumAddress,
 ): PortfolioSummary => {
   const assetValues = new Map<string, { name: string; value: number }>();
@@ -146,17 +149,10 @@ export const summarizePortfolio = (
     }
 
     return {
-      chainId: asset.chainId,
-      formattedBalance: asset.formattedBalance,
+      ...asset,
       id,
-      metadata: asset.metadata,
-      namespace: asset.namespace,
       ownerAddress,
       priceUsd,
-      rawBalance: asset.rawBalance,
-      tokenAddress: asset.tokenAddress,
-      type: asset.type,
-      usdPrice: asset.usdPrice,
       valueUsd,
     };
   });
