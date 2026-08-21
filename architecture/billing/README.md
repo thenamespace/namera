@@ -59,11 +59,11 @@ are also hard limits because Free has no overage path.
 | Software wallets     |        5 |          5 | resource  |
 | HSM wallets          |        0 |          0 | resource  |
 | Mainnet executions   |      100 |        100 | operation |
-| Testnet executions   |   10,000 |     10,000 | operation |
+| Testnet executions   |    1,000 |      1,000 | operation |
 | Signatures           |   10,000 |     10,000 | operation |
-| Sponsored gas        |    $5.00 |      $5.00 | micro-USD |
+| Sponsored gas        |    $3.00 |      $3.00 | micro-USD |
 
-The gas meter stores `$5.00` as `5,000,000` micro-USD. Meter versions and units
+The gas meter stores `$3.00` as `3,000,000` micro-USD. Meter versions and units
 are part of the registry and are snapshotted into each period balance.
 
 ### Subscription component keys

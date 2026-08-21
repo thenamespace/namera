@@ -26,8 +26,8 @@ const freeMeters = {
     key: "execution.testnet",
     version: 1,
     unit: "operation",
-    includedAmount: 10_000n,
-    hardLimitAmount: 10_000n,
+    includedAmount: 1_000n,
+    hardLimitAmount: 1_000n,
   },
   signature: {
     key: "signature",
@@ -40,8 +40,8 @@ const freeMeters = {
     key: "gas-sponsorship",
     version: 1,
     unit: "micro-usd",
-    includedAmount: 5_000_000n,
-    hardLimitAmount: 5_000_000n,
+    includedAmount: 3_000_000n,
+    hardLimitAmount: 3_000_000n,
   },
 } as const satisfies Readonly<Record<BillingMeterKey, BillingMeterDefinition>>;
 
