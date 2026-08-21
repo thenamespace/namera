@@ -13,8 +13,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
-import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedIdentityRouteImport } from './routes/_authenticated/identity'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
@@ -68,14 +68,14 @@ const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAssetsRoute = AuthenticatedAssetsRouteImport.update({
-  id: '/assets',
-  path: '/assets',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedIdentityRoute = AuthenticatedIdentityRouteImport.update({
   id: '/identity',
   path: '/identity',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMcpRoute = AuthenticatedMcpRouteImport.update({
@@ -277,8 +277,8 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/activity': typeof AuthenticatedActivityRoute
-  '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -315,8 +315,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRoute
-  '/assets': typeof AuthenticatedAssetsRoute
   '/identity': typeof AuthenticatedIdentityRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -355,8 +355,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
-  '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/identity': typeof AuthenticatedIdentityRoute
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -398,8 +398,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/activity'
-    | '/assets'
     | '/identity'
+    | '/inbox'
     | '/mcp'
     | '/templates'
     | '/auth/verify'
@@ -436,8 +436,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/activity'
-    | '/assets'
     | '/identity'
+    | '/inbox'
     | '/mcp'
     | '/templates'
     | '/auth/verify'
@@ -475,8 +475,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/activity'
-    | '/_authenticated/assets'
     | '/_authenticated/identity'
+    | '/_authenticated/inbox'
     | '/_authenticated/mcp'
     | '/_authenticated/templates'
     | '/auth/verify'
@@ -548,18 +548,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/assets': {
-      id: '/_authenticated/assets'
-      path: '/assets'
-      fullPath: '/assets'
-      preLoaderRoute: typeof AuthenticatedAssetsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/identity': {
       id: '/_authenticated/identity'
       path: '/identity'
       fullPath: '/identity'
       preLoaderRoute: typeof AuthenticatedIdentityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mcp': {
@@ -849,8 +849,8 @@ const AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
-  AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedIdentityRoute: typeof AuthenticatedIdentityRoute
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -878,8 +878,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
-  AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedIdentityRoute: AuthenticatedIdentityRoute,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

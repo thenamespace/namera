@@ -5,9 +5,14 @@ import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
+import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { useRevokeMcpAuthorization } from "@/hooks/auth";
-import { copyTextWithFeedback } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+
+const showAuthorizationIdCopied = () =>
+  showSuccessToast({ title: "Authorization ID copied to clipboard" });
+const showAuthorizationIdCopyError = () =>
+  showErrorToast(undefined, { title: "Couldn’t copy authorization ID" });
 
 type McpAuthorizationActionsProps = {
   authorization: OAuthAuthorizationResponse;
@@ -34,13 +39,6 @@ export function McpAuthorizationActions({
     },
   });
   const handleAction = useEventCallback((key: Key) => {
-    if (key === "copy") {
-      void copyTextWithFeedback(authorization.id, {
-        success: { title: "Authorization ID copied" },
-        error: { title: "Couldn’t copy authorization ID" },
-      });
-      return;
-    }
     if (key === "revoke") setIsOpen(true);
   });
   const handleRevoke = useEventCallback(() => {
@@ -60,9 +58,13 @@ export function McpAuthorizationActions({
         </Button>
         <Dropdown.Popover className="min-w-48">
           <Dropdown.Menu onAction={handleAction}>
-            <Dropdown.Item id="copy" textValue="Copy authorization ID">
-              <Label>Copy authorization ID</Label>
-            </Dropdown.Item>
+            <CopyDropdownItem
+              id="copy"
+              label="Copy authorization ID"
+              value={authorization.id}
+              onCopyError={showAuthorizationIdCopyError}
+              onCopySuccess={showAuthorizationIdCopied}
+            />
             {canRevoke && authorization.status === "active" ? (
               <Dropdown.Item id="revoke" textValue="Revoke access" variant="danger">
                 <Label>Revoke access</Label>

@@ -1,4 +1,4 @@
-import { DashboardSquare01Icon, EthereumEllipseIcon } from "@namera-ai/ui/icons";
+import { DashboardSquare01Icon, InboxIcon } from "@namera-ai/ui/icons";
 
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
@@ -18,13 +18,13 @@ export const primaryGroupItems: SidebarGroupItemsProps = {
       },
     },
     {
-      id: "assets",
-      icon: EthereumEllipseIcon,
-      label: "Assets",
-      textValue: "Assets",
-      href: "/assets",
+      id: "inbox",
+      icon: InboxIcon,
+      label: "Inbox",
+      textValue: "Inbox",
+      href: "/inbox",
       tooltip: {
-        text: "assets",
+        text: "inbox",
       },
     },
   ],

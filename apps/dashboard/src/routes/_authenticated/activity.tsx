@@ -3,6 +3,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { executionsAtom } from "@/atoms/execution";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { sessionKeysAtom } from "@/atoms/session-key";
+import { walletsAtom } from "@/atoms/wallet";
 import { ExecutionsTable } from "@/components/executions-table";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -17,6 +19,8 @@ export const Route = createFileRoute("/_authenticated/activity")({
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
     startPrefetchQuery(context.atomRegistry, executionsAtom, abortController.signal);
+    startPrefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
+    startPrefetchQuery(context.atomRegistry, sessionKeysAtom, abortController.signal);
   },
   component: ActivityPage,
 });
@@ -24,19 +28,14 @@ export const Route = createFileRoute("/_authenticated/activity")({
 function ActivityPage() {
   return (
     <DashboardPage>
-      <DashboardPage.Header className="md:hidden">
-        <DashboardPage.Title />
-      </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 md:py-16">
-        <HeadingGroup className="mb-8">
-          <HeadingGroup.Title level={1} size="lg">
+      <DashboardPage.Header>
+        <DashboardPage.Title>
+          <HeadingGroup.Title className="text-base" level={1} weight="normal">
             Activity
           </HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Review confirmed transactions across every account and delegated client.
-          </HeadingGroup.Description>
-        </HeadingGroup>
-
+        </DashboardPage.Title>
+      </DashboardPage.Header>
+      <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
         <ExecutionsTable />
       </DashboardPage.Content>
     </DashboardPage>

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 
+import { chains as supportedEvmChains } from "@namera-ai/evm";
 import type { ExecutionListItemResponse, ListExecutionsResponse } from "@namera-ai/protocol/dto";
+import type { ActorType } from "@namera-ai/protocol/model";
 import {
   DataGrid,
   SearchField,
@@ -24,7 +26,6 @@ import {
   TableFilterControl,
   TableViewOptions,
   toTableSelection,
-  uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
 import { DataLoading } from "@/components/data-loading";
@@ -33,8 +34,11 @@ import {
   ExecutionActorDisplay,
   MetadataDisplay,
   NamespaceDisplay,
+  actorDisplay,
 } from "@/components/display";
 import { useExecutions } from "@/hooks/execution";
+import { useSessionKeys } from "@/hooks/session-key";
+import { useWallets } from "@/hooks/wallet";
 
 import {
   executionColumnIds,
@@ -59,6 +63,8 @@ type ExecutionsTableProps = {
 
 export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   const executions = useExecutions();
+  const wallets = useWallets();
+  const organizationSessionKeys = useSessionKeys();
   const items = executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
   const isInitialLoading =
     executions.isLoading && executions.data === undefined && initialExecutions === undefined;
@@ -80,50 +86,82 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
 
   const accountOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.wallet.id);
-    return [...uniqueTableValues(items, (item) => item.wallet.id).values()].map((item) => ({
-      id: item.wallet.id,
-      label: item.wallet.metadata.name,
-      content: <MetadataDisplay fallbackName="Unnamed account" metadata={item.wallet.metadata} />,
-      count: counts.get(item.wallet.id) ?? 0,
+    const available = new Map<
+      ExecutionListItemResponse["wallet"]["id"],
+      Pick<ExecutionListItemResponse["wallet"], "id" | "metadata">
+    >();
+    for (const wallet of wallets.data ?? []) available.set(wallet.id, wallet);
+    for (const item of items) available.set(item.wallet.id, item.wallet);
+
+    return [...available.values()].map((wallet) => ({
+      id: wallet.id,
+      label: wallet.metadata.name,
+      content: <MetadataDisplay fallbackName="Unnamed account" metadata={wallet.metadata} />,
+      count: counts.get(wallet.id) ?? 0,
     }));
-  }, [items]);
+  }, [items, wallets.data]);
   const namespaceOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.details.namespace);
-    return [...uniqueTableValues(items, (item) => item.details.namespace).values()].map((item) => ({
-      id: item.details.namespace,
-      label: item.details.namespace,
-      content: <NamespaceDisplay namespace={item.details.namespace} />,
-      count: counts.get(item.details.namespace) ?? 0,
+    const availableNamespaces = new Set<ExecutionListItemResponse["details"]["namespace"]>([
+      "eip155",
+      ...counts.keys(),
+    ]);
+    return [...availableNamespaces].map((namespace) => ({
+      id: namespace,
+      label: namespace,
+      content: <NamespaceDisplay namespace={namespace} />,
+      count: counts.get(namespace) ?? 0,
     }));
   }, [items]);
   const chainOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.details.chainId);
-    return [...uniqueTableValues(items, (item) => item.details.chainId).values()].map((item) => ({
-      id: item.details.chainId,
-      label: getExecutionChain(item)?.chain.name ?? item.details.chainId,
-      content: <ChainDisplay chainId={item.details.chainId} />,
-      count: counts.get(item.details.chainId) ?? 0,
+    const available = new Map(
+      Object.values(supportedEvmChains).map((chain) => [chain.chainId, chain.chain.name] as const),
+    );
+    for (const item of items) {
+      available.set(
+        item.details.chainId,
+        getExecutionChain(item)?.chain.name ?? item.details.chainId,
+      );
+    }
+
+    return [...available].map(([chainId, label]) => ({
+      id: chainId,
+      label,
+      content: <ChainDisplay chainId={chainId} />,
+      count: counts.get(chainId) ?? 0,
     }));
   }, [items]);
   const sessionKeyOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.sessionKey.id);
-    return [...uniqueTableValues(items, (item) => item.sessionKey.id).values()].map((item) => ({
-      id: item.sessionKey.id,
-      label: item.sessionKey.metadata.name,
+    const available = new Map<
+      ExecutionListItemResponse["sessionKey"]["id"],
+      Pick<ExecutionListItemResponse["sessionKey"], "id" | "metadata">
+    >();
+    for (const sessionKey of organizationSessionKeys.data ?? []) {
+      available.set(sessionKey.id, sessionKey);
+    }
+    for (const item of items) available.set(item.sessionKey.id, item.sessionKey);
+
+    return [...available.values()].map((sessionKey) => ({
+      id: sessionKey.id,
+      label: sessionKey.metadata.name,
       content: (
-        <MetadataDisplay fallbackName="Unnamed session key" metadata={item.sessionKey.metadata} />
+        <MetadataDisplay fallbackName="Unnamed session key" metadata={sessionKey.metadata} />
       ),
-      count: counts.get(item.sessionKey.id) ?? 0,
+      count: counts.get(sessionKey.id) ?? 0,
     }));
-  }, [items]);
+  }, [items, organizationSessionKeys.data]);
   const actorOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.actorType);
-    return [...uniqueTableValues(items, (item) => item.actorType).values()].map((item) => ({
-      id: item.actorType,
-      label: getActorLabel(item),
-      content: <ExecutionActorDisplay type={item.actorType} />,
-      count: counts.get(item.actorType) ?? 0,
-    }));
+    return (Object.entries(actorDisplay) as ReadonlyArray<[ActorType, { label: string }]>).map(
+      ([type, display]) => ({
+        id: type,
+        label: display.label,
+        content: <ExecutionActorDisplay type={type} />,
+        count: counts.get(type) ?? 0,
+      }),
+    );
   }, [items]);
 
   const filtered = useMemo(

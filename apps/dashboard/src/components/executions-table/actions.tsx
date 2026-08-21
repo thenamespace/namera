@@ -6,20 +6,28 @@ import type { ExecutionListItemResponse } from "@namera-ai/protocol/dto";
 import { Button, Dropdown, Label } from "@namera-ai/ui";
 import {
   ArrowUpRight01Icon,
-  Copy01Icon,
   HugeiconsIcon,
   MoreHorizontalIcon,
   ViewIcon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { copyTextWithFeedback } from "@/lib/clipboard";
+import { CopyDropdownItem } from "@/components/copy-icon-button";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { getTransactionUrl } from "./data";
 
 type ExecutionActionsProps = {
   execution: ExecutionListItemResponse;
 };
+
+const showTransactionHashCopied = () =>
+  showSuccessToast({ title: "Transaction hash copied to clipboard" });
+const showExecutionIdCopied = () => showSuccessToast({ title: "Execution ID copied to clipboard" });
+const showTransactionHashCopyError = () =>
+  showErrorToast(undefined, { title: "Couldn't copy transaction hash" });
+const showExecutionIdCopyError = () =>
+  showErrorToast(undefined, { title: "Couldn't copy execution ID" });
 
 export function ExecutionActions({ execution }: ExecutionActionsProps) {
   const navigate = useNavigate();
@@ -38,19 +46,6 @@ export function ExecutionActions({ execution }: ExecutionActionsProps) {
       window.open(transactionUrl, "_blank", "noopener,noreferrer");
       return;
     }
-
-    const copy =
-      key === "copy-transaction-hash"
-        ? { label: "Transaction hash", value: transactionHash }
-        : key === "copy-execution-id"
-          ? { label: "Execution ID", value: execution.details.id }
-          : undefined;
-    if (copy === undefined) return;
-
-    void copyTextWithFeedback(copy.value, {
-      success: { title: `${copy.label} copied` },
-      error: { title: `Couldn't copy ${copy.label.toLowerCase()}` },
-    });
   });
 
   return (
@@ -75,14 +70,20 @@ export function ExecutionActions({ execution }: ExecutionActionsProps) {
               <Label>View transaction</Label>
             </Dropdown.Item>
           )}
-          <Dropdown.Item id="copy-transaction-hash" textValue="Copy transaction hash">
-            <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
-            <Label>Copy transaction hash</Label>
-          </Dropdown.Item>
-          <Dropdown.Item id="copy-execution-id" textValue="Copy execution ID">
-            <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
-            <Label>Copy execution ID</Label>
-          </Dropdown.Item>
+          <CopyDropdownItem
+            id="copy-transaction-hash"
+            label="Copy transaction hash"
+            value={transactionHash}
+            onCopyError={showTransactionHashCopyError}
+            onCopySuccess={showTransactionHashCopied}
+          />
+          <CopyDropdownItem
+            id="copy-execution-id"
+            label="Copy execution ID"
+            value={execution.details.id}
+            onCopyError={showExecutionIdCopyError}
+            onCopySuccess={showExecutionIdCopied}
+          />
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>

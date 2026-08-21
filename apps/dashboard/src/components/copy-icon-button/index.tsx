@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Button, cn, Tooltip } from "@namera-ai/ui";
+import { Button, cn, Dropdown, Label, Tooltip } from "@namera-ai/ui";
 import { CheckIcon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEventCallback } from "usehooks-ts";
@@ -15,22 +15,31 @@ type CopyIconButtonProps = {
   onCopySuccess?: () => void;
 };
 
+type CopyDropdownItemProps = {
+  id: string;
+  label: string;
+  value: string;
+  onCopyError?: () => void;
+  onCopySuccess?: () => void;
+};
+
 const copiedDuration = 3500;
 const visibleIcon = { filter: "blur(0px)", opacity: 1, scale: 1 } as const;
 const hiddenIcon = { filter: "blur(3px)", opacity: 0, scale: 0.85 } as const;
 const motionTransition = { duration: 0.16, ease: "easeOut" } as const;
 const reducedTransition = { duration: 0 } as const;
 
-export function CopyIconButton({
-  label,
+function useCopyFeedback({
   value,
-  className,
   onCopyError,
   onCopySuccess,
-}: CopyIconButtonProps) {
+}: {
+  value: string;
+  onCopyError: (() => void) | undefined;
+  onCopySuccess: (() => void) | undefined;
+}) {
   const [isCopied, setIsCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shouldReduceMotion = useReducedMotion();
   const copy = useEventCallback(() => {
     void (async () => {
       const copied = await writeClipboardText(value);
@@ -52,6 +61,37 @@ export function CopyIconButton({
     [],
   );
 
+  return { copy, isCopied };
+}
+
+function CopyFeedbackIcon({ isCopied, className }: { isCopied: boolean; className?: string }) {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <AnimatePresence initial={false} mode="wait">
+      <motion.span
+        animate={visibleIcon}
+        className={cn("flex items-center justify-center", className)}
+        exit={shouldReduceMotion ? visibleIcon : hiddenIcon}
+        initial={shouldReduceMotion ? false : hiddenIcon}
+        key={isCopied ? "copied" : "copy"}
+        transition={shouldReduceMotion ? reducedTransition : motionTransition}
+      >
+        <HugeiconsIcon icon={isCopied ? CheckIcon : Copy01Icon} />
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+export function CopyIconButton({
+  label,
+  value,
+  className,
+  onCopyError,
+  onCopySuccess,
+}: CopyIconButtonProps) {
+  const { copy, isCopied } = useCopyFeedback({ value, onCopyError, onCopySuccess });
+
   return (
     <Tooltip delay={300}>
       <Tooltip.Trigger>
@@ -64,18 +104,7 @@ export function CopyIconButton({
           variant="tertiary"
           onPress={copy}
         >
-          <AnimatePresence initial={false} mode="wait">
-            <motion.span
-              animate={visibleIcon}
-              className="flex items-center justify-center"
-              exit={shouldReduceMotion ? visibleIcon : hiddenIcon}
-              initial={shouldReduceMotion ? false : hiddenIcon}
-              key={isCopied ? "copied" : "copy"}
-              transition={shouldReduceMotion ? reducedTransition : motionTransition}
-            >
-              <HugeiconsIcon icon={isCopied ? CheckIcon : Copy01Icon} />
-            </motion.span>
-          </AnimatePresence>
+          <CopyFeedbackIcon isCopied={isCopied} />
         </Button>
       </Tooltip.Trigger>
       <Tooltip.Content showArrow>
@@ -86,4 +115,24 @@ export function CopyIconButton({
   );
 }
 
-export type { CopyIconButtonProps };
+export function CopyDropdownItem({
+  id,
+  label,
+  value,
+  onCopyError,
+  onCopySuccess,
+}: CopyDropdownItemProps) {
+  const { copy, isCopied } = useCopyFeedback({ value, onCopyError, onCopySuccess });
+
+  return (
+    <Dropdown.Item id={id} shouldCloseOnSelect={false} textValue={label} onAction={copy}>
+      <CopyFeedbackIcon
+        className={isCopied ? "size-4 text-success" : "size-4 text-muted"}
+        isCopied={isCopied}
+      />
+      <Label>{label}</Label>
+    </Dropdown.Item>
+  );
+}
+
+export type { CopyDropdownItemProps, CopyIconButtonProps };

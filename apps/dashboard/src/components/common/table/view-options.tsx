@@ -174,7 +174,7 @@ export function TableViewOptions({
                         variant="secondary"
                         onSelectionChange={handleSortColumnChange}
                       >
-                        <Select.Trigger className="h-7 min-w-28 px-2 text-xs">
+                        <Select.Trigger className="h-7 min-w-36 px-2 text-xs">
                           <Select.Value />
                           <Select.Indicator />
                         </Select.Trigger>

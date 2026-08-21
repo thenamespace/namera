@@ -31,7 +31,7 @@ import { useWallets } from "@/hooks/wallet";
 import { AccountActions } from "./actions";
 import { AccountsTableControls, type AccountGrouping } from "./controls";
 import {
-  createEmptyAccountFilters,
+  createDefaultAccountFilters,
   type AccountFilterCounts,
   type AccountFilters,
 } from "./filter-menu";
@@ -244,7 +244,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const accountData = accounts.data ?? initialAccounts ?? emptyAccounts;
   const isInitialLoading = accounts.isLoading && accounts.data === undefined && !initialAccounts;
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<AccountFilters>(createEmptyAccountFilters);
+  const [filters, setFilters] = useState<AccountFilters>(createDefaultAccountFilters);
   const [grouping, setGrouping] = useState<AccountGrouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>(defaultSort);
   const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
@@ -298,10 +298,8 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
 
     return counts;
   }, [accountData]);
-  const hasFilters =
-    normalizedQuery.length > 0 || filters.status.size > 0 || filters.protectionLevel.size > 0;
   const renderEmptyState = useEventCallback(() =>
-    hasFilters ? "No accounts match these filters." : "No accounts yet.",
+    accountData.length === 0 ? "No accounts yet." : "No accounts match these filters.",
   );
   const resetView = useEventCallback(() => {
     setGrouping("none");

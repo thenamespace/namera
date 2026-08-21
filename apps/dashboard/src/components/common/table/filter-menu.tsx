@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Button, Checkbox, Dropdown, Label, type DataGridSelection } from "@namera-ai/ui";
-import { FilterHorizontalIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { FilterHorizontalIcon, FilterRemoveIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 type TableFilterOption = {
@@ -122,6 +122,7 @@ export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuP
           ))}
 
           <Dropdown.Item id="clear" isDisabled={activeFilterCount === 0} textValue="Clear filters">
+            <HugeiconsIcon className="size-4 text-muted" icon={FilterRemoveIcon} />
             <Label>Clear filters</Label>
           </Dropdown.Item>
         </Dropdown.Menu>

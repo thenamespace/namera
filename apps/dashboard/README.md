@@ -71,7 +71,8 @@ browser location with the returned relative path.
 
 Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`. The settings page renders
-the supported email preference topics; inbox UI is not implemented yet.
+the supported email preference topics. `/inbox` owns the empty dashboard shell
+reserved for the later notification feed.
 
 Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key
@@ -84,6 +85,9 @@ header action derive visibility from `wallet:create`; the server remains the
 authoritative permission boundary. EVM address displays resolve mainnet ENS names
 and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
+The account list starts with Active as its baseline status view; frozen and
+archived accounts remain available through the status facet without counting the
+baseline as a customized filter.
 
 `/account/$accountId` redirects to its overview and owns a shared account-detail
 shell with Overview, Assets, Session Keys, and Usage navigation. The overview prefetches
@@ -133,6 +137,9 @@ actor. The same component is ready for future account- and session-key-scoped
 history once those backend query boundaries exist. Execution and session-key
 tables keep columns, cells, sorting, and grouping row contracts separate from
 their query, filtering, and view state.
+Activity facet choices come from organization wallet/session-key queries and the
+supported EVM chain and actor registries, so filtering remains useful before the
+organization has a confirmed execution.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.

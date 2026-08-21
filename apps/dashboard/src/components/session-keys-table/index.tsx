@@ -45,6 +45,7 @@ import {
 } from "./columns";
 
 const emptySessionKeys: ReadonlyArray<SessionKeyResponse> = [];
+const defaultSessionKeyStatuses: ReadonlySet<SessionKeyResponse["status"]> = new Set(["active"]);
 
 type SessionKeysTableProps = { initialSessionKeys?: ListSessionKeysForOrganizationResponse };
 
@@ -99,7 +100,7 @@ function SessionKeysTableContent({
 }: SessionKeysTableContentProps) {
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<SessionKeyResponse["status"]>>(
-    new Set(["active"]),
+    new Set(defaultSessionKeyStatuses),
   );
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
@@ -188,6 +189,7 @@ function SessionKeysTableContent({
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultSessionKeyStatuses,
         selectedKeys: statuses,
         options: sessionKeyStatusOptions.map((value) => ({
           id: value,
@@ -228,10 +230,8 @@ function SessionKeysTableContent({
     ],
     [accountOptions, accounts, namespaceOptions, namespaces, statusCounts, statuses],
   );
-  const hasFilters =
-    normalizedQuery.length > 0 || statuses.size > 0 || accounts.size > 0 || namespaces.size > 0;
   const renderEmptyState = useEventCallback(() =>
-    hasFilters ? "No session keys match these filters." : "No session keys yet.",
+    data.length === 0 ? "No session keys yet." : "No session keys match these filters.",
   );
   const resetView = useEventCallback(() => {
     setGrouping("none");
@@ -240,7 +240,7 @@ function SessionKeysTableContent({
   });
   const clearFilters = useEventCallback(() => {
     setQuery("");
-    setStatuses(new Set());
+    setStatuses(new Set(defaultSessionKeyStatuses));
     setAccounts(new Set());
     setNamespaces(new Set());
   });

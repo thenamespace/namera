@@ -4,16 +4,20 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
-import { Copy01Icon, HugeiconsIcon, Key01Icon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
+import { HugeiconsIcon, Key01Icon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
+import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { hasPermissions } from "@/components/permission";
 import { useCurrentUser } from "@/hooks/auth";
 import { useRevokeSessionKey } from "@/hooks/session-key";
-import { copyTextWithFeedback } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const sessionKeyRevokePermission = ["session-key:revoke"] as const;
+const showSessionKeyIdCopied = () =>
+  showSuccessToast({ title: "Session key ID copied to clipboard" });
+const showSessionKeyIdCopyError = () =>
+  showErrorToast(undefined, { title: "Couldn't copy session key ID" });
 
 type SessionKeyActionsProps = {
   sessionKey: SessionKeyResponse;
@@ -53,14 +57,6 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
       return;
     }
 
-    if (key === "copy-id") {
-      void copyTextWithFeedback(sessionKey.id, {
-        success: { title: "Session key ID copied" },
-        error: { title: "Couldn't copy session key ID" },
-      });
-      return;
-    }
-
     if (key === "revoke") setIsRevokeOpen(true);
   });
   const handleRevoke = useEventCallback(() => {
@@ -86,10 +82,13 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
                 <Label>Open session key</Label>
               </Dropdown.Item>
             ) : null}
-            <Dropdown.Item id="copy-id" textValue="Copy session key ID">
-              <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
-              <Label>Copy session key ID</Label>
-            </Dropdown.Item>
+            <CopyDropdownItem
+              id="copy-id"
+              label="Copy session key ID"
+              value={sessionKey.id}
+              onCopyError={showSessionKeyIdCopyError}
+              onCopySuccess={showSessionKeyIdCopied}
+            />
             {showRevoke ? (
               <Dropdown.Item id="revoke" textValue="Revoke session key" variant="danger">
                 <HugeiconsIcon className="size-4" icon={Key01Icon} />

@@ -6,6 +6,7 @@ import { WalletProtectionDisplay, WalletStatusDisplay } from "@/components/displ
 
 const statusOptions = ["active", "frozen", "archived"] as const;
 const protectionOptions = ["software", "hsm"] as const;
+const defaultStatuses: ReadonlySet<WalletResponse["status"]> = new Set(["active"]);
 
 type AccountFilters = {
   status: ReadonlySet<WalletResponse["status"]>;
@@ -23,9 +24,9 @@ type AccountFilterMenuProps = {
   onChange: (filters: AccountFilters) => void;
 };
 
-function createEmptyAccountFilters(): AccountFilters {
+function createDefaultAccountFilters(): AccountFilters {
   return {
-    status: new Set(),
+    status: new Set(defaultStatuses),
     protectionLevel: new Set(),
   };
 }
@@ -53,6 +54,7 @@ export function AccountFilterMenu({
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultStatuses,
         selectedKeys: filters.status,
         options: statusOptions.map((value) => ({
           id: value,
@@ -78,9 +80,9 @@ export function AccountFilterMenu({
           onChange({ ...filters, protectionLevel: toTableSelection(keys, protectionOptions) }),
       },
     ],
-    onClear: () => onChange(createEmptyAccountFilters()),
+    onClear: () => onChange(createDefaultAccountFilters()),
   };
 }
 
 export type { AccountFilterCounts, AccountFilterMenuProps, AccountFilters };
-export { createEmptyAccountFilters };
+export { createDefaultAccountFilters };

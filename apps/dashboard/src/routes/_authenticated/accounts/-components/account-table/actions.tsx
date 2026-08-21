@@ -4,14 +4,19 @@ import type { WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Dropdown, Label } from "@namera-ai/ui";
 import {
   ArrowUpRight01Icon,
-  Copy01Icon,
   HugeiconsIcon,
   MoreHorizontalIcon,
   Wallet01Icon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { copyTextWithFeedback } from "@/lib/clipboard";
+import { CopyDropdownItem } from "@/components/copy-icon-button";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+
+const showWalletIdCopied = () => showSuccessToast({ title: "Wallet ID copied to clipboard" });
+const showWalletAddressCopied = () =>
+  showSuccessToast({ title: "Wallet address copied to clipboard" });
+const showCopyError = () => showErrorToast(undefined, { title: "Couldn't copy to clipboard" });
 
 type AccountActionsProps = {
   account: WalletResponse;
@@ -19,28 +24,12 @@ type AccountActionsProps = {
 
 export function AccountActions({ account }: AccountActionsProps) {
   const navigate = useNavigate();
-  const copyValue = useEventCallback((value: string, title: string) => {
-    void copyTextWithFeedback(value, {
-      success: { title },
-      error: { title: "Couldn't copy to clipboard" },
-    });
-  });
   const handleAction = useEventCallback((key: string | number) => {
     if (key === "open-account") {
       void navigate({
         to: "/account/$accountId/overview",
         params: { accountId: account.id },
       });
-      return;
-    }
-
-    if (key === "copy-id") {
-      copyValue(account.id, "Wallet ID copied to clipboard");
-      return;
-    }
-
-    if (key === "copy-address") {
-      copyValue(account.address, "Wallet address copied to clipboard");
       return;
     }
 
@@ -70,14 +59,20 @@ export function AccountActions({ account }: AccountActionsProps) {
               <HugeiconsIcon className="size-4 text-muted" icon={Wallet01Icon} />
               <Label>Open account</Label>
             </Dropdown.Item>
-            <Dropdown.Item id="copy-id" textValue="Copy wallet ID">
-              <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
-              <Label>Copy wallet ID</Label>
-            </Dropdown.Item>
-            <Dropdown.Item id="copy-address" textValue="Copy wallet address">
-              <HugeiconsIcon className="size-4 text-muted" icon={Copy01Icon} />
-              <Label>Copy wallet address</Label>
-            </Dropdown.Item>
+            <CopyDropdownItem
+              id="copy-id"
+              label="Copy wallet ID"
+              value={account.id}
+              onCopyError={showCopyError}
+              onCopySuccess={showWalletIdCopied}
+            />
+            <CopyDropdownItem
+              id="copy-address"
+              label="Copy wallet address"
+              value={account.address}
+              onCopyError={showCopyError}
+              onCopySuccess={showWalletAddressCopied}
+            />
           </Dropdown.Section>
           <Dropdown.Section>
             <Dropdown.Item id="open-wallet" textValue="View wallet on Etherscan">
