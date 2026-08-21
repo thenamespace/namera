@@ -14,6 +14,8 @@ import {
   WalletStatus,
 } from "#/model/index";
 
+export * from "./assets.js";
+
 export const CreateEvmWalletRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   protectionLevel: WalletKeyProtectionLevel,

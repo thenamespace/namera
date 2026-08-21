@@ -1,11 +1,18 @@
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi";
 
-import { BillingErrors, WalletCreationError, WalletNotFoundError } from "@namera-ai/protocol";
+import {
+  BillingErrors,
+  WalletAssetsUnavailableError,
+  WalletCreationError,
+  WalletNotFoundError,
+} from "@namera-ai/protocol";
 import {
   CreateWalletRequest,
   CreateWalletResponse,
   GetWalletRequest,
   GetWalletResponse,
+  ListWalletAssetsRequest,
+  ListWalletAssetsResponse,
   ListWalletsResponse,
   UpdateWalletRequest,
   UpdateWalletResponse,
@@ -30,6 +37,12 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
       success: GetWalletResponse,
       error: [WalletNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get a wallet in the active organization"),
+    HttpApiEndpoint.get("listAssets", "/:walletId/assets", {
+      params: GetWalletRequest,
+      query: ListWalletAssetsRequest,
+      success: ListWalletAssetsResponse,
+      error: [WalletNotFoundError, WalletAssetsUnavailableError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "List fungible assets held by a wallet"),
     HttpApiEndpoint.post("update", "/:walletId/update", {
       params: GetWalletRequest,
       payload: UpdateWalletRequest,

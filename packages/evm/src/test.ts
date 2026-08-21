@@ -9,6 +9,7 @@ import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import type { EvmService } from "./layer.js";
 import { makeEvmPolicyService } from "./policy/service.js";
+import type { EvmPortfolioService } from "./portfolio/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 
 export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
@@ -76,6 +77,11 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
     }),
     execution: makeTestEvmExecutionService(execution),
     policy: makeEvmPolicyService(),
+    portfolio: {
+      getAssets: Effect.fn("evm.portfolio.test.getAssets")(() =>
+        Effect.succeed({ items: [], nextCursor: null, partialFailures: [] }),
+      ),
+    } satisfies EvmPortfolioService,
     digestSignature: digestEvmSignature,
     sign: Effect.fn("evm.signature.test.sign")(() => Effect.succeed(Hex.make("0x1234"))),
     verifySignature: Effect.fn("evm.signature.test.verify")((input) =>

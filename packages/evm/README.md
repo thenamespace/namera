@@ -34,6 +34,8 @@ remain under [operations](../../architecture/operations/executions.md).
 - `src/signing/` — smart-account message and EIP-712 signing and verification
   exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
   supported.
+- `src/portfolio/` — Alchemy Portfolio API integration for all-chain native and
+  ERC-20 balances, metadata, prices, pagination, and partial-failure mapping.
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -144,6 +146,11 @@ ERC-1271. Counterfactual accounts supply their deterministic
 factory and initialization data to Viem's ERC-6492 deployless verifier. Invalid
 signatures return `false`; account, chain, and RPC failures remain typed adapter
 errors. Verification never invokes the wallet-key signer.
+
+`evm.portfolio.getAssets` queries every chain in the launch registry through
+Alchemy Tokens By Wallet. It returns exact raw and formatted balances, nullable
+metadata and USD prices, an opaque next cursor, and CAIP-2 partial failures.
+Provider response types and network slugs remain internal to this package.
 
 Preparation records the standardized `eth_estimateUserOperationGas` result in
 the policy context. This verifies EntryPoint validation and execution before

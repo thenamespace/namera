@@ -69,6 +69,9 @@ layer(TestServerLayer)("wallet routes", (it) => {
       expect((yield* client.wallet.get({ params: { walletId: treasury.id } })).id).toBe(
         treasury.id,
       );
+      expect(
+        yield* client.wallet.listAssets({ params: { walletId: treasury.id }, query: {} }),
+      ).toEqual({ items: [], nextCursor: null, partialFailures: [] });
 
       const repository = yield* Repository;
       const events = yield* repository.audit.organization.findForOrganization(

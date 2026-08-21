@@ -21,6 +21,8 @@ import { makeEvmExecutionService } from "./execution/service.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
+import { makeAlchemyPortfolioService } from "./portfolio/alchemy.js";
+import type { EvmPortfolioService } from "./portfolio/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
 import type { DigestEvmSignature, SignEvm, VerifyEvm } from "./signing/types.js";
@@ -47,6 +49,7 @@ export interface EvmService {
     readonly settleGasSponsorship: typeof settleEvmGasSponsorship;
   };
   readonly policy: EvmPolicyService;
+  readonly portfolio: EvmPortfolioService;
   readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
   readonly verifySignature: VerifyEvm;
@@ -65,6 +68,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config, httpClient);
       const policy = makeEvmPolicyService();
+      const portfolio = makeAlchemyPortfolioService(config, httpClient);
       const signature = makeEvmSignatureService(makeExecutionClients(config));
 
       const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, _type: EvmRpcType) {
@@ -86,6 +90,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         getRpcUrl,
         execution,
         policy,
+        portfolio,
         sign: signature.sign,
         verifySignature: signature.verify,
       });

@@ -11,6 +11,11 @@ export type {
   WaitForEvmExecutionReceiptInput,
 } from "./execution/types.js";
 export * from "./layer.js";
+export type {
+  EvmPortfolioService,
+  GetEvmPortfolio,
+  GetEvmPortfolioInput,
+} from "./portfolio/types.js";
 export {
   findEvmPolicyCardinalityViolation,
   getEvmPolicyDefinition,

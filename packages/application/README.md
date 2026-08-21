@@ -36,8 +36,8 @@ composition model.
   builders composed behind one application surface.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
-- `src/wallet/` — separately composed creation, metadata update, and
-  organization- or actor-scoped wallet read workflows.
+- `src/wallet/` — separately composed creation, metadata update,
+  organization- or actor-scoped reads, and EVM portfolio coordination.
 
 Future feature folders should add a focused operation builder to the aggregate
 service. Infrastructure capabilities remain focused `Context.Service` values

@@ -52,6 +52,21 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           );
         }),
       )
+      .handle("listAssets", ({ params, query }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user", "api-key", "cli"],
+            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
+          });
+          return yield* app.wallet.listAssets({
+            ...toActorReadScope(data),
+            walletId: params.walletId,
+            request: query,
+          });
+        }),
+      )
       .handle("update", ({ params, payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

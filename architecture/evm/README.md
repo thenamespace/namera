@@ -11,6 +11,7 @@
   - [Sign and submit](execution/sign-submit.md)
   - [Receipts and reconciliation](execution/receipts.md)
 - [Signatures and ERC-1271 verification](signatures.md)
+- [Fungible wallet portfolio](portfolio.md)
 - [Policy engine](policies/README.md)
   - [Policy catalog](policies/catalog.md)
   - [State and reservations](policies/state-reservations.md)
@@ -24,6 +25,7 @@ The package exposes focused services rather than Viem/Alchemy clients:
 | Account creation | Create protocol `AlchemyModularV2WalletData` with P-256 validation.       |
 | Execution        | `prepare`, `sign`, `submit`, `getReceipt`, `getStatus`, `waitForReceipt`. |
 | Signature        | `digest`, `sign`, `verify`.                                               |
+| Portfolio        | Multi-chain native/ERC-20 assets with metadata and USD prices.            |
 | Policy           | deterministic evaluation, state seeds, reserve, settle, release.          |
 
 Large provider-specific types stay inside the package. `application` dispatches by namespace and receives protocol models/errors.

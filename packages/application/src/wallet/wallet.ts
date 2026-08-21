@@ -8,8 +8,14 @@ import type {
   WalletCreationError,
   WalletId,
   WalletNotFoundError,
+  WalletAssetsUnavailableError,
 } from "@namera-ai/protocol";
-import type { CreateWalletRequest, UpdateWalletRequest } from "@namera-ai/protocol/dto";
+import type {
+  CreateWalletRequest,
+  ListWalletAssetsRequest,
+  ListWalletAssetsResponse,
+  UpdateWalletRequest,
+} from "@namera-ai/protocol/dto";
 
 import { makeCreateWallet } from "./create.js";
 import { makeReadWallets } from "./read.js";
@@ -30,6 +36,12 @@ export interface WalletApplication {
     readonly actorId?: ActorId;
     readonly walletId: WalletId;
   }) => Effect.Effect<WalletView, WalletNotFoundError>;
+  readonly listAssets: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId?: ActorId;
+    readonly walletId: WalletId;
+    readonly request: ListWalletAssetsRequest;
+  }) => Effect.Effect<ListWalletAssetsResponse, WalletNotFoundError | WalletAssetsUnavailableError>;
   readonly update: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;

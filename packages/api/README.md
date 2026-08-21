@@ -21,7 +21,8 @@ sequence.
 - `src/routes/auth/oauth.ts` — authenticated browser/device consent and
   MCP/CLI authorization management endpoints. OAuth wire endpoints remain raw
   server routes.
-- `src/routes/wallet.ts` — create, list, get, and update organization wallet metadata.
+- `src/routes/wallet.ts` — create, list, get, update organization wallet metadata,
+  and list paginated all-chain fungible assets.
 - `src/routes/session-key.ts` — create, get, list, and revoke organization session keys.
 - `src/routes/api-key.ts` — create, get, list, and revoke organization API keys
   with their authorized session keys.
