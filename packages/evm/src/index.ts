@@ -1,4 +1,9 @@
 export * from "./accounts/index.js";
+export type {
+  EvmAddressMetadataService,
+  ResolveEvmAddressMetadataInput,
+  SearchEvmAddressMetadataInput,
+} from "./address-metadata/index.js";
 export * from "./billing/index.js";
 export * from "./chains/index.js";
 export * from "./config.js";
@@ -13,6 +18,7 @@ export type {
 export * from "./layer.js";
 export type {
   EvmPortfolioService,
+  EvmPortfolioSnapshot,
   GetEvmPortfolio,
   GetEvmPortfolioInput,
 } from "./portfolio/types.js";

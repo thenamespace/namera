@@ -3,6 +3,7 @@ import { Context, Effect, Layer, Ref, Schema } from "effect";
 import { EthereumAddress, Hex, UnsupportedChainError } from "@namera-ai/protocol";
 
 import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
+import type { EvmAddressMetadataService } from "./address-metadata/types.js";
 import { settleEvmGasSponsorship } from "./billing/execution.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeTestEvmExecutionService } from "./execution/test.js";
@@ -77,9 +78,13 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
     }),
     execution: makeTestEvmExecutionService(execution),
     policy: makeEvmPolicyService(),
+    addressMetadata: {
+      resolve: Effect.fn("evm.addressMetadata.test.resolve")(() => Effect.succeed([])),
+      search: Effect.fn("evm.addressMetadata.test.search")(() => Effect.succeed([])),
+    } satisfies EvmAddressMetadataService,
     portfolio: {
       getAssets: Effect.fn("evm.portfolio.test.getAssets")(() =>
-        Effect.succeed({ items: [], nextCursor: null, partialFailures: [] }),
+        Effect.succeed({ items: [], partialFailures: [] }),
       ),
     } satisfies EvmPortfolioService,
     digestSignature: digestEvmSignature,

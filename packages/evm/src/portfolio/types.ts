@@ -1,16 +1,21 @@
 import type { Effect } from "effect";
 
-import type { EvmPortfolioError, EthereumAddress } from "@namera-ai/protocol";
-import type { ListWalletAssetsResponse, WalletAssetCursor } from "@namera-ai/protocol/dto";
+import type { EvmPortfolioError, EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol";
+import type { PortfolioAsset, PortfolioPartialFailure } from "@namera-ai/protocol/dto";
 
 export interface GetEvmPortfolioInput {
   readonly address: EthereumAddress;
-  readonly cursor?: WalletAssetCursor;
+  readonly chainIds?: ReadonlyArray<SupportedEvmChainId>;
+}
+
+export interface EvmPortfolioSnapshot {
+  readonly items: ReadonlyArray<PortfolioAsset>;
+  readonly partialFailures: ReadonlyArray<PortfolioPartialFailure>;
 }
 
 export type GetEvmPortfolio = (
   input: GetEvmPortfolioInput,
-) => Effect.Effect<ListWalletAssetsResponse, EvmPortfolioError>;
+) => Effect.Effect<EvmPortfolioSnapshot, EvmPortfolioError>;
 
 export interface EvmPortfolioService {
   readonly getAssets: GetEvmPortfolio;

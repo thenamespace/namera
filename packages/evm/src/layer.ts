@@ -13,6 +13,8 @@ import {
   type CreateAccountResult,
   makeCreateAccount,
 } from "./accounts/index.js";
+import { makeEvmAddressMetadataService } from "./address-metadata/service.js";
+import type { EvmAddressMetadataService } from "./address-metadata/types.js";
 import { settleEvmGasSponsorship } from "./billing/execution.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeExecutionClients } from "./clients/execution.js";
@@ -21,7 +23,7 @@ import { makeEvmExecutionService } from "./execution/service.js";
 import type { EvmExecutionService } from "./execution/types.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
-import { makeAlchemyPortfolioService } from "./portfolio/alchemy.js";
+import { makeBlockscoutPortfolioService } from "./portfolio/blockscout.js";
 import type { EvmPortfolioService } from "./portfolio/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
@@ -49,6 +51,7 @@ export interface EvmService {
     readonly settleGasSponsorship: typeof settleEvmGasSponsorship;
   };
   readonly policy: EvmPolicyService;
+  readonly addressMetadata: EvmAddressMetadataService;
   readonly portfolio: EvmPortfolioService;
   readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
@@ -68,7 +71,8 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config, httpClient);
       const policy = makeEvmPolicyService();
-      const portfolio = makeAlchemyPortfolioService(config, httpClient);
+      const addressMetadata = makeEvmAddressMetadataService(config, httpClient);
+      const portfolio = makeBlockscoutPortfolioService(config, httpClient);
       const signature = makeEvmSignatureService(makeExecutionClients(config));
 
       const getRpcUrl = Effect.fn("evm.getRpcUrl")(function* (chainId: number, _type: EvmRpcType) {
@@ -90,6 +94,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         getRpcUrl,
         execution,
         policy,
+        addressMetadata,
         portfolio,
         sign: signature.sign,
         verifySignature: signature.verify,

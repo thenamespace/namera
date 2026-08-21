@@ -40,7 +40,12 @@ export class EvmPortfolioError extends Schema.TaggedError<EvmPortfolioError>()(
 export class EvmDataProviderError extends Schema.TaggedError<EvmDataProviderError>()(
   "EvmDataProviderError",
   {
-    operation: Schema.Literals(["address-detail", "address-metadata", "address-search"]),
+    operation: Schema.Literals([
+      "address-detail",
+      "address-metadata",
+      "address-search",
+      "portfolio",
+    ]),
     code: Schema.Literals(["PROVIDER_UNAVAILABLE", "INVALID_PROVIDER_RESPONSE"]),
     cause: Schema.Defect(),
   },
