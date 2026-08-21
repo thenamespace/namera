@@ -5,7 +5,6 @@ import { DateTime } from "effect";
 import type { GetInvitationResponse } from "@namera-ai/protocol/dto";
 import {
   Button,
-  Chip,
   DataGrid,
   SearchField,
   Typography,
@@ -25,13 +24,23 @@ import {
   type TableOption,
 } from "@/components/common/table";
 import { DataLoading } from "@/components/data-loading";
-import { DateDisplay, EmailDisplay, OrganizationRoleDisplay } from "@/components/display";
-import { useCancelInvitation, useOrganizationInvitations } from "@/hooks/auth";
+import {
+  DateDisplay,
+  EmailDisplay,
+  InvitationStatusDisplay,
+  OrganizationRoleDisplay,
+} from "@/components/display";
+import {
+  useAssignableOrganizationRoles,
+  useCancelInvitation,
+  useOrganizationInvitations,
+} from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 const statusOptions = ["pending", "accepted", "rejected", "canceled", "expired"] as const;
 type InvitationStatus = GetInvitationResponse["invitation"]["status"];
+const defaultStatuses: ReadonlySet<InvitationStatus> = new Set(["pending"]);
 const columnIds = ["role", "status", "expiresAt"] as const;
 const groupingOptions = [
   { id: "none", label: "No grouping" },
@@ -49,14 +58,6 @@ type GroupRow = {
 };
 type Row = GetInvitationResponse | GroupRow;
 const isGroup = (row: Row): row is GroupRow => "kind" in row;
-
-function InvitationStatusDisplay({ status }: { status: InvitationStatus }) {
-  return (
-    <Chip color={status === "pending" ? "warning" : "default"} size="sm" variant="soft">
-      <Chip.Label className="capitalize font-normal">{status}</Chip.Label>
-    </Chip>
-  );
-}
 
 function CancelInvitationButton({ invitation }: { invitation: GetInvitationResponse }) {
   const cancelInvitation = useCancelInvitation({
@@ -170,11 +171,12 @@ type InvitationsTableProps = {
 
 export function InvitationsTable({ canCancel, initialInvitations }: InvitationsTableProps) {
   const invitations = useOrganizationInvitations();
+  const organizationRoles = useAssignableOrganizationRoles();
   const data = invitations.data ?? initialInvitations ?? emptyInvitations;
   const isInitialLoading =
     invitations.isLoading && invitations.data === undefined && initialInvitations === undefined;
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<InvitationStatus>>(new Set(["pending"]));
+  const [statuses, setStatuses] = useState<ReadonlySet<InvitationStatus>>(defaultStatuses);
   const [roles, setRoles] = useState<ReadonlySet<string>>(new Set());
   const [grouping, setGrouping] = useState<Grouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
@@ -200,14 +202,18 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
   const roleOptions = useMemo(
     () =>
       [
-        ...new Map(data.map((item) => [item.organizationRole.id, item.organizationRole])).values(),
+        ...new Map(
+          [...(organizationRoles.data ?? []), ...data.map((item) => item.organizationRole)].map(
+            (role) => [role.id, role],
+          ),
+        ).values(),
       ].map((role) => ({
         id: role.id,
         label: role.metadata.name,
         content: <OrganizationRoleDisplay role={role} />,
         count: data.filter((item) => item.organizationRole.id === role.id).length,
       })),
-    [data],
+    [data, organizationRoles.data],
   );
   const normalizedQuery = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -263,6 +269,7 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultStatuses,
         selectedKeys: statuses,
         options: statusOptions.map((status) => ({
           id: status,
@@ -295,12 +302,10 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
     setVisibleColumns(new Set(columnIds));
   });
   const renderEmptyState = useEventCallback(() =>
-    normalizedQuery.length > 0 || statuses.size > 0 || roles.size > 0
-      ? "No invitations match these filters."
-      : "No invitations yet.",
+    data.length === 0 ? "No invitations yet." : "No invitations match these filters.",
   );
   const clearFilters = useEventCallback(() => {
-    setStatuses(new Set());
+    setStatuses(defaultStatuses);
     setRoles(new Set());
   });
   const handleGroupingChange = useEventCallback((value: string) => {

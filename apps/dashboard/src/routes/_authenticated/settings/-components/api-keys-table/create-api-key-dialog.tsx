@@ -159,7 +159,7 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
             ) : (
               <form id="create-api-key-form" noValidate onSubmit={handleSubmit}>
                 <Modal.Body className="grid gap-5">
-                  <Typography color="muted">
+                  <Typography className="text-sm" color="muted">
                     Grant an API key access to one or more active session keys.
                   </Typography>
                   <FieldGroup>

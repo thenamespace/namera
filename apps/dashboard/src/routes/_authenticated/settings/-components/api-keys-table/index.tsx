@@ -8,7 +8,6 @@ import type {
   ListSessionKeysForOrganizationResponse,
 } from "@namera-ai/protocol/dto";
 import {
-  Chip,
   DataGrid,
   SearchField,
   Typography,
@@ -16,7 +15,13 @@ import {
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
-import { Activity01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import {
+  Activity01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+  HugeiconsIcon,
+} from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import {
@@ -28,7 +33,7 @@ import {
   type TableOption,
 } from "@/components/common/table";
 import { DataLoading } from "@/components/data-loading";
-import { DateDisplay, MetadataDisplay } from "@/components/display";
+import { DateDisplay, MetadataDisplay, StatusDisplay } from "@/components/display";
 import { useApiKeys } from "@/hooks/api-key";
 
 import { ApiKeyActions } from "./api-key-actions";
@@ -37,6 +42,7 @@ import { CreateApiKeyDialog } from "./create-api-key-dialog";
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const statusOptions = ["active", "expired", "revoked"] as const;
 type ApiKeyStatus = (typeof statusOptions)[number];
+const defaultStatuses: ReadonlySet<ApiKeyStatus> = new Set(["active"]);
 const columnIds = [
   "keyStart",
   "creator",
@@ -67,11 +73,16 @@ const getStatus = (apiKey: ApiKeyResponse): ApiKeyStatus => {
   return "active";
 };
 
-function StatusDisplay({ status }: { status: ApiKeyStatus }) {
+function ApiKeyStatusDisplay({ status }: { status: ApiKeyStatus }) {
+  const presentation =
+    status === "active"
+      ? { icon: CheckmarkCircle02Icon, label: "Active", tone: "success" as const }
+      : status === "expired"
+        ? { icon: Clock01Icon, label: "Expired", tone: "muted" as const }
+        : { icon: CancelCircleIcon, label: "Revoked", tone: "danger" as const };
+
   return (
-    <Chip color={status === "active" ? "success" : "default"} size="sm" variant="soft">
-      <Chip.Label className="capitalize font-normal">{status}</Chip.Label>
-    </Chip>
+    <StatusDisplay icon={presentation.icon} label={presentation.label} tone={presentation.tone} />
   );
 }
 
@@ -81,7 +92,7 @@ const createColumns = (canRevoke: boolean): ReadonlyArray<DataGridColumn<Row>> =
     cell: (row) =>
       isGroup(row) ? (
         <span className="flex items-center gap-2">
-          <StatusDisplay status={row.status} />
+          <ApiKeyStatusDisplay status={row.status} />
           <span className="text-xs tabular-nums text-muted">{row.children.length}</span>
         </span>
       ) : (
@@ -132,7 +143,7 @@ const createColumns = (canRevoke: boolean): ReadonlyArray<DataGridColumn<Row>> =
   },
   {
     allowsSorting: true,
-    cell: (row) => (isGroup(row) ? null : <StatusDisplay status={getStatus(row)} />),
+    cell: (row) => (isGroup(row) ? null : <ApiKeyStatusDisplay status={getStatus(row)} />),
     header: "Status",
     id: "status",
     minWidth: 100,
@@ -210,7 +221,7 @@ export function ApiKeysTable({
   const data = apiKeys.data ?? initialApiKeys ?? emptyApiKeys;
   const isInitialLoading = apiKeys.isLoading && apiKeys.data === undefined && !initialApiKeys;
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<ApiKeyStatus>>(new Set(["active"]));
+  const [statuses, setStatuses] = useState<ReadonlySet<ApiKeyStatus>>(defaultStatuses);
   const [grouping, setGrouping] = useState<Grouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "createdAt",
@@ -275,11 +286,12 @@ export function ApiKeysTable({
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultStatuses,
         selectedKeys: statuses,
         options: statusOptions.map((status) => ({
           id: status,
           label: `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
-          content: <StatusDisplay status={status} />,
+          content: <ApiKeyStatusDisplay status={status} />,
           count: data.filter((item) => getStatus(item) === status).length,
         })),
         onSelectionChange: (keys) => setStatuses(toTableSelection(keys, statusOptions)),
@@ -288,16 +300,14 @@ export function ApiKeysTable({
     [data, statuses],
   );
   const renderEmptyState = useEventCallback(() =>
-    normalizedQuery.length > 0 || statuses.size > 0
-      ? "No API keys match these filters."
-      : "No API keys yet.",
+    data.length === 0 ? "No API keys yet." : "No API keys match these filters.",
   );
   const resetView = useEventCallback(() => {
     setGrouping("none");
     setSort({ column: "createdAt", direction: "descending" });
     setVisibleColumns(new Set(columnIds));
   });
-  const clearFilters = useEventCallback(() => setStatuses(new Set()));
+  const clearFilters = useEventCallback(() => setStatuses(defaultStatuses));
   const handleGroupingChange = useEventCallback((value: string) => {
     setGrouping(value as Grouping);
   });

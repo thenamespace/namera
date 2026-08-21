@@ -12,6 +12,7 @@ type TableFilterOption = {
 };
 
 type TableFilterFacet = {
+  defaultSelectedKeys?: ReadonlySet<string>;
   icon: ReactNode;
   id: string;
   label: string;
@@ -19,6 +20,12 @@ type TableFilterFacet = {
   selectedKeys: ReadonlySet<string>;
   onSelectionChange: (selection: DataGridSelection) => void;
 };
+
+const emptySelection = new Set<string>();
+
+function selectionsMatch(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+  return left.size === right.size && [...left].every((key) => right.has(key));
+}
 
 type TableFilterMenuProps = {
   ariaLabel: string;
@@ -53,7 +60,9 @@ function TableFilterCheckbox({ isSelected, label }: { isSelected: boolean; label
 }
 
 export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuProps) {
-  const activeFilterCount = facets.reduce((count, facet) => count + facet.selectedKeys.size, 0);
+  const activeFilterCount = facets.filter(
+    (facet) => !selectionsMatch(facet.selectedKeys, facet.defaultSelectedKeys ?? emptySelection),
+  ).length;
   const handleRootAction = useEventCallback((key: string | number) => {
     if (key === "clear") onClear();
   });

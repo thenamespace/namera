@@ -1,5 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 
+import { DateTime } from "effect";
+
 import type { ListSessionsResponse } from "@namera-ai/protocol/dto";
 import { Button, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
@@ -40,6 +42,11 @@ export function SecuritySessions({ currentSessionId, initialSessions }: Security
   });
   const sessions = useSessions();
   const sessionData = sessions.data ?? initialSessions ?? [];
+  const sortedSessionData = sessionData.toSorted((left, right) => {
+    if (left.id === currentSessionId) return -1;
+    if (right.id === currentSessionId) return 1;
+    return DateTime.toEpochMillis(right.createdAt) - DateTime.toEpochMillis(left.createdAt);
+  });
   const isInitialLoading =
     sessions.isLoading && sessions.data === undefined && initialSessions === undefined;
   const otherSessionCount = sessionData.filter((session) => session.id !== currentSessionId).length;
@@ -79,7 +86,7 @@ export function SecuritySessions({ currentSessionId, initialSessions }: Security
         <DataLoading className="min-h-64" label="Loading sessions" />
       ) : (
         <ul className="space-y-2">
-          {sessionData.map((session) => (
+          {sortedSessionData.map((session) => (
             <li key={session.id}>
               <SessionCard
                 isCurrent={session.id === currentSessionId}

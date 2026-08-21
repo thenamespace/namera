@@ -1,15 +1,22 @@
 import type { GetOrganizationRoleResponse } from "@namera-ai/protocol/dto";
-import { Chip } from "@namera-ai/ui";
+import { CrownIcon, UserIcon, UserShield01Icon } from "@namera-ai/ui/icons";
+
+import { StatusDisplay } from "./status-display";
 
 type OrganizationRoleDisplayProps = {
   role: GetOrganizationRoleResponse;
 };
 
 export function OrganizationRoleDisplay({ role }: OrganizationRoleDisplayProps) {
+  const presentation =
+    role.key === "owner"
+      ? { icon: CrownIcon, tone: "accent" as const }
+      : role.key === "admin"
+        ? { icon: UserShield01Icon, tone: "warning" as const }
+        : { icon: UserIcon, tone: "muted" as const };
+
   return (
-    <Chip color={role.key === "owner" ? "accent" : "default"} size="sm" variant="soft">
-      <Chip.Label className="font-normal">{role.metadata.name}</Chip.Label>
-    </Chip>
+    <StatusDisplay icon={presentation.icon} label={role.metadata.name} tone={presentation.tone} />
   );
 }
 

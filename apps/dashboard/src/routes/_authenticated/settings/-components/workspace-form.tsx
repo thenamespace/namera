@@ -43,7 +43,7 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
         title: "Couldn’t save workspace",
         description: "Your latest changes were not saved.",
       }),
-    onSuccess: () => showSuccessToast({ title: "Workspace saved" }),
+    onSuccess: () => showSuccessToast({ title: "Workspace updated successfully" }),
   });
   const form = useForm<UpdateOrganizationRequest>({
     defaultValues: { metadata: organization.metadata },

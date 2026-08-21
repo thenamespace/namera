@@ -104,6 +104,7 @@ export function CreateWorkspaceForm() {
                       autoComplete="organization"
                       fullWidth
                       placeholder="Enter workspace name"
+                      variant="secondary"
                     />
                   </Field>
                 </DashboardCardRow>

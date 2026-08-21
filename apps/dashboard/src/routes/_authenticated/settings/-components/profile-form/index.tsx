@@ -1,4 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import { useEffect } from "react";
+
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
@@ -34,19 +36,24 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
         title: "Couldn’t save profile",
         description: "Your latest changes were not saved.",
       }),
-    onSuccess: () => showSuccessToast({ title: "Profile saved" }),
+    onSuccess: () => showSuccessToast({ title: "Profile updated successfully" }),
   });
   const form = useForm<UpdateUserRequest>({
     defaultValues: { metadata: user.metadata },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
   });
-  useAutoSave({
+  const { resetBaseline } = useAutoSave({
     form,
     onSave: async (payload) => {
       await updateUser.mutateAsync({ payload });
       return payload;
     },
   });
+  useEffect(() => {
+    const nextValue = { metadata: user.metadata };
+    form.reset(nextValue);
+    resetBaseline(nextValue);
+  }, [form, resetBaseline, user]);
   const handleSubmit = form.handleSubmit((payload) => updateUser.mutate({ payload }));
 
   return (

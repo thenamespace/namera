@@ -9,7 +9,7 @@ type EmailDisplayProps = {
 export function EmailDisplay({ email }: EmailDisplayProps) {
   const copyEmail = useCallback(() => {
     void copyTextWithFeedback(email, {
-      success: { title: "Email copied" },
+      success: { title: "Email copied to clipboard" },
       error: { title: "Couldn’t copy email" },
     });
   }, [email]);

@@ -80,7 +80,7 @@ export function InviteMemberDialog({
       </Button>
 
       <Modal.Backdrop>
-        <Modal.Container size="md">
+        <Modal.Container size="lg">
           <Modal.Dialog>
             <form id="invite-member-form" noValidate onSubmit={handleSubmit}>
               <Modal.CloseTrigger />
@@ -88,7 +88,9 @@ export function InviteMemberDialog({
                 <Modal.Heading>Invite member</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="grid gap-5">
-                <Typography color="muted">Send an invitation to join this organization.</Typography>
+                <Typography className="text-sm" color="muted">
+                  Send an invitation to join this organization.
+                </Typography>
                 <FieldGroup>
                   <Controller
                     control={form.control}
@@ -138,12 +140,7 @@ export function InviteMemberDialog({
                             <ListBox items={inviteRoles}>
                               {(item) => (
                                 <ListBox.Item id={item.id} textValue={item.metadata.name}>
-                                  <div className="grid gap-0.5">
-                                    <Typography>{item.metadata.name}</Typography>
-                                    <Typography className="text-xs" color="muted">
-                                      {item.metadata.description}
-                                    </Typography>
-                                  </div>
+                                  {item.metadata.name}
                                 </ListBox.Item>
                               )}
                             </ListBox>

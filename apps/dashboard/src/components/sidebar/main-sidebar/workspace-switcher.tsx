@@ -5,12 +5,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button, Dropdown, IconPreview, Label } from "@namera-ai/ui";
 import {
   ArrowDown01Icon,
+  Add01Icon,
   HugeiconsIcon,
   LogoutSquare01Icon,
   Tick02Icon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
+import { HotkeyHint } from "@/components/hotkey-hint";
 import {
   useCurrentUser,
   useLogout,
@@ -20,6 +22,7 @@ import {
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const defaultWorkspaceLogo = { type: "emoji", value: "🏢" } as const;
+const settingsHotkeySequence = ["G", "S"] as const;
 
 export function WorkspaceSwitcher() {
   const navigate = useNavigate();
@@ -95,6 +98,9 @@ export function WorkspaceSwitcher() {
         <Dropdown.Menu onAction={handleAction}>
           <Dropdown.Item id="settings" textValue="Settings">
             <Label>Settings</Label>
+            <span className="ml-auto">
+              <HotkeyHint sequence={settingsHotkeySequence} />
+            </span>
           </Dropdown.Item>
           <Dropdown.Item id="members" textValue="Invite and manage members">
             <Label>Invite & manage members</Label>
@@ -107,6 +113,7 @@ export function WorkspaceSwitcher() {
             <Dropdown.Popover>
               <Dropdown.Menu onAction={handleAction}>
                 <Dropdown.Item id="new-workspace" textValue="Create workspace">
+                  <HugeiconsIcon className="size-4 text-muted" icon={Add01Icon} />
                   <Label>Create workspace</Label>
                 </Dropdown.Item>
                 {(organizations.data ?? []).map(({ organization }) => (
@@ -133,6 +140,9 @@ export function WorkspaceSwitcher() {
               <HugeiconsIcon className="size-5 text-danger" icon={LogoutSquare01Icon} />
               Logout
             </Label>
+            <span className="ml-auto">
+              <HotkeyHint hotkey="Shift+Q" />
+            </span>
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown.Popover>

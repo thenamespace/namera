@@ -36,6 +36,7 @@ import { McpAuthorizationActions } from "./actions";
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const statusOptions = ["active", "revoked"] as const;
 type AuthorizationStatus = (typeof statusOptions)[number];
+const defaultStatuses: ReadonlySet<AuthorizationStatus> = new Set(["active"]);
 const getRowId = (authorization: OAuthAuthorizationResponse) => authorization.id;
 
 const createColumns = (canRevoke: boolean): DataGridColumn<OAuthAuthorizationResponse>[] => [
@@ -152,7 +153,7 @@ export function McpAuthorizationsTable({
   const isInitialLoading =
     authorizations.isLoading && authorizations.data === undefined && !initialAuthorizations;
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(new Set(["active"]));
+  const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(defaultStatuses);
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "createdAt",
     direction: "descending",
@@ -185,6 +186,7 @@ export function McpAuthorizationsTable({
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultStatuses,
         selectedKeys: statuses,
         options: statusOptions.map((status) => ({
           id: status,
@@ -197,11 +199,9 @@ export function McpAuthorizationsTable({
     ],
     [data, statuses],
   );
-  const clearFilters = useEventCallback(() => setStatuses(new Set()));
+  const clearFilters = useEventCallback(() => setStatuses(defaultStatuses));
   const renderEmptyState = useEventCallback(() =>
-    normalizedQuery.length > 0 || statuses.size > 0
-      ? "No MCP authorizations match these filters."
-      : "No MCP authorizations yet.",
+    data.length === 0 ? "No MCP authorizations yet." : "No MCP authorizations match these filters.",
   );
 
   return (

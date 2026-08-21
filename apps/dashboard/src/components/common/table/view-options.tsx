@@ -224,7 +224,7 @@ export function TableViewOptions({
                 </div>
                 <Separator />
                 <div className="flex justify-end p-2.5">
-                  <Button size="sm" onPress={onReset}>
+                  <Button size="sm" variant="tertiary" onPress={onReset}>
                     Reset view
                   </Button>
                 </div>

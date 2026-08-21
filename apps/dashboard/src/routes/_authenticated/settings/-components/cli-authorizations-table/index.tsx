@@ -36,6 +36,7 @@ import { CliAuthorizationActions } from "./actions";
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const statusOptions = ["active", "revoked"] as const;
 type AuthorizationStatus = (typeof statusOptions)[number];
+const defaultStatuses: ReadonlySet<AuthorizationStatus> = new Set(["active"]);
 
 const getRowId = (authorization: OAuthAuthorizationResponse) => authorization.id;
 const getDeviceName = (authorization: OAuthAuthorizationResponse) =>
@@ -175,7 +176,7 @@ export function CliAuthorizationsTable({
   const isInitialLoading =
     authorizations.isLoading && authorizations.data === undefined && !initialAuthorizations;
   const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(new Set(["active"]));
+  const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(defaultStatuses);
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "createdAt",
     direction: "descending",
@@ -212,6 +213,7 @@ export function CliAuthorizationsTable({
         id: "status",
         label: "Status",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Activity01Icon} />,
+        defaultSelectedKeys: defaultStatuses,
         selectedKeys: statuses,
         options: statusOptions.map((status) => ({
           id: status,
@@ -224,7 +226,7 @@ export function CliAuthorizationsTable({
     ],
     [data, statuses],
   );
-  const clearFilters = useEventCallback(() => setStatuses(new Set()));
+  const clearFilters = useEventCallback(() => setStatuses(defaultStatuses));
   const renderEmptyState = useEventCallback(() => {
     if (data.length === 0) return "No CLI authorizations yet.";
     return normalizedQuery.length > 0 || statuses.size > 0

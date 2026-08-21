@@ -4,6 +4,7 @@ import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
+import { useCurrentUser } from "@/hooks/auth";
 
 import { ProfileForm } from "./-components/profile-form";
 
@@ -21,7 +22,9 @@ export const Route = createFileRoute("/_authenticated/settings/profile")({
 });
 
 function ProfilePage() {
-  const user = Route.useLoaderData();
+  const initialUser = Route.useLoaderData();
+  const currentUser = useCurrentUser();
+  const user = currentUser.data?.user ?? initialUser;
 
   return (
     <DashboardPage>

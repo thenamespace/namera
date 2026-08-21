@@ -4,6 +4,7 @@ export * from "./data-loading";
 export * from "./device-icon";
 export * from "./display";
 export * from "./heading-group";
+export * from "./hotkey-hint";
 export * from "./permission";
 export * from "./permission-denied";
 export * from "./policy/evm";

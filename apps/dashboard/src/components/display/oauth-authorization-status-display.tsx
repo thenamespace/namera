@@ -1,5 +1,7 @@
 import type { OAuthAuthorizationStatus } from "@namera-ai/protocol/model";
-import { Chip } from "@namera-ai/ui";
+import { CancelCircleIcon, CheckmarkCircle02Icon } from "@namera-ai/ui/icons";
+
+import { StatusDisplay } from "./status-display";
 
 type OAuthAuthorizationStatusDisplayProps = {
   status: OAuthAuthorizationStatus;
@@ -7,9 +9,11 @@ type OAuthAuthorizationStatusDisplayProps = {
 
 export function OAuthAuthorizationStatusDisplay({ status }: OAuthAuthorizationStatusDisplayProps) {
   return (
-    <Chip color={status === "active" ? "success" : "default"} size="sm" variant="soft">
-      <Chip.Label className="font-normal capitalize">{status}</Chip.Label>
-    </Chip>
+    <StatusDisplay
+      icon={status === "active" ? CheckmarkCircle02Icon : CancelCircleIcon}
+      label={status === "active" ? "Active" : "Revoked"}
+      tone={status === "active" ? "success" : "danger"}
+    />
   );
 }
 
