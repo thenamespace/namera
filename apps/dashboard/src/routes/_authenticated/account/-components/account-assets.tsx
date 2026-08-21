@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import { getChainDataByCaip2 } from "@namera-ai/evm";
 import type { PortfolioResponse, WalletResponse } from "@namera-ai/protocol/dto";
-import { Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
+import { Button, Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
+import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
 
 import { AssetsTable, summarizePortfolio, type AssetAllocation } from "@/components/assets-table";
 import { ChainDisplay } from "@/components/display";
@@ -11,7 +13,7 @@ type PieTooltipProps = {
   readonly active?: boolean;
   readonly payload?: ReadonlyArray<{
     readonly name?: string;
-    readonly payload?: { readonly color?: string };
+    readonly payload?: AssetAllocation;
     readonly value?: number | string;
   }>;
 };
@@ -24,22 +26,34 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 const percent = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1, style: "percent" });
 
-function PortfolioPieTooltip({ active, payload }: PieTooltipProps) {
+function PortfolioPieTooltip({
+  active,
+  payload,
+  total,
+}: PieTooltipProps & { readonly total: number }) {
   const item = payload?.[0];
   if (active !== true || item === undefined) return null;
 
+  const value = Number(item.value ?? 0);
+
   return (
     <ChartTooltip>
+      <ChartTooltip.Header>{item.name}</ChartTooltip.Header>
       <ChartTooltip.Item>
         <ChartTooltip.Indicator color={item.payload?.color ?? "var(--chart-3)"} />
-        <ChartTooltip.Label>{item.name}</ChartTooltip.Label>
-        <ChartTooltip.Value>{currency.format(Number(item.value ?? 0))}</ChartTooltip.Value>
+        <ChartTooltip.Label>Value</ChartTooltip.Label>
+        <ChartTooltip.Value>{currency.format(value)}</ChartTooltip.Value>
+      </ChartTooltip.Item>
+      <ChartTooltip.Item>
+        <ChartTooltip.Indicator color="var(--muted)" />
+        <ChartTooltip.Label>Portfolio share</ChartTooltip.Label>
+        <ChartTooltip.Value>
+          {total === 0 ? "0%" : percent.format(value / total)}
+        </ChartTooltip.Value>
       </ChartTooltip.Item>
     </ChartTooltip>
   );
 }
-
-const portfolioPieTooltip = <PortfolioPieTooltip />;
 
 function AllocationDot({ color }: { readonly color: string }) {
   const style = useMemo(() => ({ backgroundColor: color }), [color]);
@@ -68,34 +82,23 @@ function AllocationSegment({
       />
       <Tooltip.Content showArrow>
         <Tooltip.Arrow />
-        <div className="grid gap-0.5">
-          <span>{item.name}</span>
-          <span className="tabular-nums text-muted">{currency.format(item.value)}</span>
-        </div>
+        <ChartTooltip className="border-0 bg-transparent p-0 shadow-none">
+          <ChartTooltip.Header>{item.name}</ChartTooltip.Header>
+          <ChartTooltip.Item>
+            <ChartTooltip.Indicator color={item.color} />
+            <ChartTooltip.Label>Value</ChartTooltip.Label>
+            <ChartTooltip.Value>{currency.format(item.value)}</ChartTooltip.Value>
+          </ChartTooltip.Item>
+          <ChartTooltip.Item>
+            <ChartTooltip.Indicator color="var(--muted)" />
+            <ChartTooltip.Label>Portfolio share</ChartTooltip.Label>
+            <ChartTooltip.Value>
+              {total === 0 ? "0%" : percent.format(item.value / total)}
+            </ChartTooltip.Value>
+          </ChartTooltip.Item>
+        </ChartTooltip>
       </Tooltip.Content>
     </Tooltip>
-  );
-}
-
-function AllocationLegend({
-  allocations,
-  total,
-}: {
-  allocations: ReadonlyArray<AssetAllocation>;
-  total: number;
-}) {
-  return (
-    <div className="grid gap-2">
-      {allocations.map((item) => (
-        <div className="flex min-w-0 items-center gap-2" key={item.id}>
-          <AllocationDot color={item.color} />
-          <span className="min-w-0 flex-1 truncate text-xs text-muted">{item.name}</span>
-          <span className="text-xs tabular-nums text-foreground">
-            {total === 0 ? "0%" : percent.format(item.value / total)}
-          </span>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -125,29 +128,55 @@ function ChainAllocation({
 function PortfolioOverview({
   account,
   portfolio,
+  unavailableNetworkCount,
 }: {
   account: WalletResponse;
   portfolio: PortfolioResponse;
+  unavailableNetworkCount: number;
 }) {
   const summary = useMemo(
     () => summarizePortfolio(portfolio.items, account.address),
     [account.address, portfolio.items],
   );
-  const networkCount = new Set(portfolio.items.map((asset) => asset.chainId)).size;
-  const coverage = summary.rows.length === 0 ? 0 : summary.pricedAssetCount / summary.rows.length;
-  const enrichedCount = portfolio.items.filter((asset) => asset.addressMetadata !== null).length;
+  const pieTooltip = useMemo(
+    () => <PortfolioPieTooltip total={summary.pricedTotalUsd} />,
+    [summary.pricedTotalUsd],
+  );
 
   return (
     <section
       aria-labelledby="portfolio-overview"
-      className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)]"
+      className="grid gap-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(16rem,0.7fr)]"
     >
       <Card className="overflow-hidden rounded-xl border shadow-sm">
         <Card.Content className="grid min-h-60 gap-6 p-5">
           <div>
-            <Typography className="text-sm!" color="muted">
-              Total portfolio value
-            </Typography>
+            <div className="flex items-center gap-1.5">
+              <Typography className="text-sm!" color="muted">
+                Total portfolio value
+              </Typography>
+              {unavailableNetworkCount === 0 ? null : (
+                <Tooltip delay={200}>
+                  <Tooltip.Trigger>
+                    <Button
+                      isIconOnly
+                      aria-label="Portfolio freshness information"
+                      className="size-5 min-h-5 text-muted"
+                      size="sm"
+                      variant="tertiary"
+                    >
+                      <HugeiconsIcon className="size-3.5" icon={InformationCircleIcon} />
+                    </Button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content className="max-w-64" showArrow>
+                    <Tooltip.Arrow />
+                    Showing available balances. Data could not be refreshed for{" "}
+                    {unavailableNetworkCount}{" "}
+                    {unavailableNetworkCount === 1 ? "network" : "networks"}.
+                  </Tooltip.Content>
+                </Tooltip>
+              )}
+            </div>
             <Typography.Heading
               className="mt-2 text-4xl tracking-tight tabular-nums"
               id="portfolio-overview"
@@ -197,25 +226,6 @@ function PortfolioOverview({
               })}
             </div>
           </div>
-
-          <div className="grid grid-cols-4 gap-4 border-t pt-4">
-            <div>
-              <div className="text-sm font-medium tabular-nums">{summary.rows.length}</div>
-              <div className="mt-0.5 text-xs text-muted">Assets</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium tabular-nums">{networkCount}</div>
-              <div className="mt-0.5 text-xs text-muted">Networks</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium tabular-nums">{percent.format(coverage)}</div>
-              <div className="mt-0.5 text-xs text-muted">Price coverage</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium tabular-nums">{enrichedCount}</div>
-              <div className="mt-0.5 text-xs text-muted">Enriched</div>
-            </div>
-          </div>
         </Card.Content>
       </Card>
 
@@ -224,7 +234,7 @@ function PortfolioOverview({
           <Card.Title className="text-sm">Asset allocation</Card.Title>
           <Card.Description className="text-xs">Share of priced portfolio value</Card.Description>
         </Card.Header>
-        <Card.Content className="grid grid-cols-[10rem_minmax(0,1fr)] items-center gap-5 p-5 pt-2 lg:grid-cols-1">
+        <Card.Content className="grid place-items-center p-5 pt-2">
           <div className="relative mx-auto size-40">
             {summary.assetAllocations.length === 0 ? (
               <div className="absolute inset-3 rounded-full border-12 border-secondary" />
@@ -246,7 +256,7 @@ function PortfolioOverview({
                     <PieChart.Cell fill={item.color} key={item.id} />
                   ))}
                 </PieChart.Pie>
-                <PieChart.Tooltip content={portfolioPieTooltip} />
+                <PieChart.Tooltip content={pieTooltip} />
               </PieChart>
             )}
             <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
@@ -254,7 +264,6 @@ function PortfolioOverview({
               <span className="text-[11px] text-muted">priced assets</span>
             </div>
           </div>
-          <AllocationLegend allocations={summary.assetAllocations} total={summary.pricedTotalUsd} />
         </Card.Content>
       </Card>
     </section>
@@ -269,9 +278,31 @@ type AccountAssetsProps = {
 export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps) {
   const assets = useWalletPortfolio(account.id);
   const portfolio = assets.data ?? initialPortfolio;
+  const [showTestnets, setShowTestnets] = useState(false);
+  const visibleAssets = useMemo(
+    () =>
+      showTestnets
+        ? portfolio.items
+        : portfolio.items.filter(
+            (asset) => getChainDataByCaip2(asset.chainId)?.environment !== "testnet",
+          ),
+    [portfolio.items, showTestnets],
+  );
+  const visiblePortfolio = useMemo(
+    () => ({ ...portfolio, items: visibleAssets }),
+    [portfolio, visibleAssets],
+  );
+  const unavailableNetworkCount = useMemo(
+    () =>
+      portfolio.partialFailures.filter(
+        (failure) =>
+          showTestnets || getChainDataByCaip2(failure.chainId)?.environment !== "testnet",
+      ).length,
+    [portfolio.partialFailures, showTestnets],
+  );
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-7 py-2 sm:px-2 sm:py-5">
+    <div className="grid w-full gap-7 py-2 sm:py-5">
       <header>
         <Typography.Heading className="text-2xl tracking-tight" level={2}>
           Assets
@@ -281,20 +312,11 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
         </Typography.Paragraph>
       </header>
 
-      <PortfolioOverview account={account} portfolio={portfolio} />
-
-      {portfolio.partialFailures.length === 0 ? null : (
-        <output className="block rounded-lg border bg-secondary px-4 py-3">
-          <Typography className="text-sm!" weight="medium">
-            Some networks could not be refreshed
-          </Typography>
-          <Typography className="mt-1 text-xs!" color="muted">
-            Showing available balances. Data is temporarily unavailable for{" "}
-            {portfolio.partialFailures.length}{" "}
-            {portfolio.partialFailures.length === 1 ? "network" : "networks"}.
-          </Typography>
-        </output>
-      )}
+      <PortfolioOverview
+        account={account}
+        portfolio={visiblePortfolio}
+        unavailableNetworkCount={unavailableNetworkCount}
+      />
 
       <section aria-labelledby="asset-list" className="grid gap-4">
         <div>
@@ -305,7 +327,12 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
             Search, filter, group, and inspect enriched token balances by chain.
           </Typography>
         </div>
-        <AssetsTable address={account.address} assets={portfolio.items} />
+        <AssetsTable
+          address={account.address}
+          assets={visibleAssets}
+          showTestnets={showTestnets}
+          onShowTestnetsChange={setShowTestnets}
+        />
       </section>
     </div>
   );

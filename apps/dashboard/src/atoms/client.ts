@@ -18,10 +18,13 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
     httpClient: FetchHttpClient.layer,
     runtime: dashboardRuntime,
     transformClient: (client) =>
-      HttpClient.transformResponse(client, (response) =>
-        Effect.provideService(response, FetchHttpClient.RequestInit, {
+      HttpClient.transformResponse(client, (response) => {
+        const request = Effect.provideService(response, FetchHttpClient.RequestInit, {
           credentials: "include",
-        }),
-      ),
+        });
+
+        // Keep local loading transitions observable without changing production latency.
+        return env.environment === "development" ? Effect.delay(request, "300 millis") : request;
+      }),
   },
 ) {}

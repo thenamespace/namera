@@ -88,17 +88,6 @@ export const getAssetSymbol = (asset: PortfolioAsset): string =>
   asset.metadata.symbol ??
   (asset.type === "native" ? "Native" : "Token");
 
-export const getAssetExplorerUrl = (row: AssetTableRow): string | undefined => {
-  const explorer = getChainDataByCaip2(row.chainId)?.chain.blockExplorers?.default.url?.replace(
-    /\/$/,
-    "",
-  );
-  if (explorer === undefined) return undefined;
-  return row.tokenAddress === null
-    ? `${explorer}/address/${row.ownerAddress}`
-    : `${explorer}/token/${row.tokenAddress}`;
-};
-
 const collapseAllocations = (
   values: ReadonlyMap<string, { readonly name: string; readonly value: number }>,
 ): ReadonlyArray<AssetAllocation> => {

@@ -3,13 +3,7 @@ import { useMemo, useState } from "react";
 import { getChainDataByCaip2 } from "@namera-ai/evm";
 import type { EthereumAddress } from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
-import {
-  Button,
-  DataGrid,
-  SearchField,
-  type DataGridSelection,
-  type DataGridSortDescriptor,
-} from "@namera-ai/ui";
+import { Button, DataGrid, SearchField, type DataGridSortDescriptor } from "@namera-ai/ui";
 import { ChainIcon, Coins01Icon, HugeiconsIcon, Tag01Icon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
@@ -17,34 +11,29 @@ import {
   countTableValues,
   TableControls,
   TableFilterControl,
-  TableViewOptions,
   toTableSelection,
   uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
 import { ChainDisplay } from "@/components/display";
 
-import {
-  assetColumnIds,
-  assetColumns,
-  assetConfigurableColumns,
-  assetFixedColumnOptions,
-  assetGroupingOptions,
-  assetSorters,
-  assetSortableColumns,
-  getAssetChildren,
-  getAssetRowId,
-  type AssetGridRow,
-  type AssetGrouping,
-} from "./columns";
+import { AssetViewOptions } from "./asset-view-options";
+import { assetColumns, assetSorters, getAssetRowId, type AssetGridRow } from "./columns";
 import { getAssetName, getAssetSymbol, summarizePortfolio } from "./data";
 
 type AssetsTableProps = {
   readonly address: EthereumAddress;
   readonly assets: ReadonlyArray<PortfolioAsset>;
+  readonly showTestnets: boolean;
+  readonly onShowTestnetsChange: (showTestnets: boolean) => void;
 };
 
-export function AssetsTable({ address, assets }: AssetsTableProps) {
+export function AssetsTable({
+  address,
+  assets,
+  showTestnets,
+  onShowTestnetsChange,
+}: AssetsTableProps) {
   const portfolio = useMemo(() => summarizePortfolio(assets, address), [address, assets]);
   const [query, setQuery] = useState("");
   const [chains, setChains] = useState<ReadonlySet<string>>(new Set());
@@ -52,14 +41,10 @@ export function AssetsTable({ address, assets }: AssetsTableProps) {
   const [pricing, setPricing] = useState<ReadonlySet<string>>(new Set());
   const [trust, setTrust] = useState<ReadonlySet<string>>(new Set(["credible", "unknown"]));
   const [page, setPage] = useState(1);
-  const [grouping, setGrouping] = useState<AssetGrouping>("none");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "value",
     direction: "descending",
   });
-  const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
-    new Set(["balance", "price", "value", "chain", "trust"]),
-  );
   const normalizedQuery = query.trim().toLowerCase();
 
   const chainOptions = useMemo(() => {
@@ -127,32 +112,10 @@ export function AssetsTable({ address, assets }: AssetsTableProps) {
   }, [filtered, sort]);
   const pageCount = Math.max(1, Math.ceil(sorted.length / 10));
   const effectivePage = Math.min(page, pageCount);
-  const paginated = useMemo(
+  const rows = useMemo<AssetGridRow[]>(
     () => sorted.slice((effectivePage - 1) * 10, effectivePage * 10),
     [effectivePage, sorted],
   );
-  const rows = useMemo<AssetGridRow[]>(() => {
-    if (grouping === "none") return paginated;
-    const grouped = new Map<string, typeof sorted>();
-    for (const row of paginated)
-      grouped.set(row.chainId, [...(grouped.get(row.chainId) ?? []), row]);
-    return [...grouped.entries()].map(([value, children]) => ({
-      children,
-      id: `group:chain:${value}`,
-      kind: "group",
-      value,
-    }));
-  }, [grouping, paginated]);
-  const displayedColumns = useMemo(() => {
-    const visible = visibleColumns === "all" ? new Set(assetColumnIds) : visibleColumns;
-    return assetColumns.filter(
-      (column) =>
-        column.id === "asset" ||
-        column.id === "value" ||
-        column.id === "actions" ||
-        visible.has(column.id as never),
-    );
-  }, [visibleColumns]);
 
   const facets = useMemo<ReadonlyArray<TableFilterFacet>>(
     () => [
@@ -229,17 +192,9 @@ export function AssetsTable({ address, assets }: AssetsTableProps) {
     setTrust(new Set());
     setPage(1);
   });
-  const resetView = useEventCallback(() => {
-    setGrouping("none");
-    setSort({ column: "value", direction: "descending" });
-    setVisibleColumns(new Set(["balance", "price", "value", "chain", "trust"]));
-  });
   const renderEmptyState = useEventCallback(() =>
     hasFilters ? "No assets match these filters." : "No fungible assets found.",
   );
-  const handleGroupingChange = useEventCallback((value: string) => {
-    setGrouping(value as AssetGrouping);
-  });
   const showPreviousPage = useEventCallback(() => {
     setPage((current) => Math.max(1, current - 1));
   });
@@ -269,35 +224,22 @@ export function AssetsTable({ address, assets }: AssetsTableProps) {
               facets={facets}
               onClear={clearFilters}
             />
-            <TableViewOptions
-              ariaLabel="Configure asset table view"
-              columnOptions={assetConfigurableColumns}
-              fixedColumnOptions={assetFixedColumnOptions}
-              grouping={grouping}
-              groupingOptions={assetGroupingOptions}
-              sort={sort}
-              sortableColumns={assetSortableColumns}
-              visibleColumns={visibleColumns}
-              onGroupingChange={handleGroupingChange}
-              onReset={resetView}
-              onSortChange={setSort}
-              onVisibleColumnsChange={setVisibleColumns}
+            <AssetViewOptions
+              showTestnets={showTestnets}
+              onShowTestnetsChange={onShowTestnetsChange}
             />
           </TableControls>
         </div>
       </div>
       <DataGrid
         aria-label="Account assets"
-        columns={displayedColumns}
+        columns={assetColumns}
         data={rows}
-        defaultExpandedKeys="all"
         getRowId={getAssetRowId}
-        key={grouping}
         renderEmptyState={renderEmptyState}
         sortDescriptor={sort}
         variant="secondary"
         onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren: getAssetChildren })}
       />
       <div className="flex items-center justify-between gap-4 px-1">
         <span className="text-xs tabular-nums text-muted">
