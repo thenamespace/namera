@@ -10,6 +10,7 @@ const executeParams = JSON.stringify({
   namespace: "eip155",
   walletId: "01a01924-9b93-754b-a6a2-cbdb597757cf",
   chainId: "eip155:11155111",
+  sponsor: false,
   calls: [
     {
       to: "0x0000000000000000000000000000000000000001",
@@ -30,6 +31,7 @@ describe("CLI input and output", () => {
     );
 
     expect(request.calls[0]?.value).toBe(100000000000000n);
+    expect(request.sponsor).toBe(false);
   });
 
   it("rejects malformed inline params through the command schema", async () => {

@@ -116,9 +116,10 @@ export const makeExecutionApplication = Effect.gen(function* () {
       readonly idempotencyKey: string;
       readonly request: ExecuteRequest;
     }) {
+      const sponsor = input.request.sponsor ?? true;
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.executionRequest,
-        value: JSON.stringify(encodeRequest(input.request)),
+        value: JSON.stringify(encodeRequest({ ...input.request, sponsor })),
       });
       const prior = yield* repository.core.executionSubmission.findByActorAndIdempotencyKey(
         input.actor.organizationId,
@@ -131,7 +132,7 @@ export const makeExecutionApplication = Effect.gen(function* () {
 
       const { wallet, account, prepared, candidates } = yield* prepareExecution({
         ...input,
-        sponsorship: "sponsored",
+        sponsorship: sponsor ? "sponsored" : "none",
       });
 
       let selected: GrantedEvmSessionKey | undefined;

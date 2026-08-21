@@ -34,7 +34,7 @@ sequenceDiagram
   loop Candidates in deterministic order
     App->>EVM: Stateless policy evaluation
     alt candidate may authorize
-      App->>DB: Transaction: reserve execution/gas meters; lock policy state
+      App->>DB: Transaction: reserve execution and applicable sponsored-gas meter; lock policy state
       App->>EVM: Plan stateful reservation
       App->>DB: Insert submission, state changes, reservations
     end

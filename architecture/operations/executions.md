@@ -24,7 +24,7 @@ sequenceDiagram
   participant Tx as PostgreSQL transaction
   participant Bundler
 
-  Client->>App: wallet + chain + calls + internal idempotency key
+  Client->>App: wallet + chain + calls + optional sponsor + internal idempotency key
   App->>App: hash request and resolve prior actor/key attempt
   App->>EVM: reconstruct account, prepare UserOperation, estimate and simulate calls
   App->>App: resolve active granted session-key candidates
@@ -53,12 +53,22 @@ from multiple session keys. Billing enforcement and stateful reservations occur
 inside the same transaction. Parallel requests cannot consume the same final
 capacity.
 
+Gas sponsorship defaults to enabled. An explicit `sponsor: false` prepares and
+submits a self-funded UserOperation without an Alchemy paymaster. Both modes
+reserve and settle one mainnet or testnet execution unit. Only a sponsored
+mainnet operation reserves and settles the `gas-sponsorship` balance; testnet and
+unsponsored mainnet operations never consume that balance.
+
 ## Idempotency
 
 SDK, CLI, and MCP generate an internal UUIDv7 key and reuse it across transient
 retries. End users do not provide the key. A repeated actor/key with the same
 request hash returns current failed/submitted/confirmed state; a different hash
 returns `IDEMPOTENCY_CONFLICT`.
+
+The application canonicalizes an omitted `sponsor` value to `true` before
+hashing, so an automatic retry that explicitly serializes the default remains
+the same logical request.
 
 ## Signing invariants
 

@@ -3,7 +3,11 @@ import { Effect } from "effect";
 import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import { ExecutionError } from "@namera-ai/protocol";
-import type { ExecuteRequest, GrantedActorData } from "@namera-ai/protocol/dto";
+import type {
+  ExecuteRequest,
+  GrantedActorData,
+  SimulateExecutionRequest,
+} from "@namera-ai/protocol/dto";
 import type { EvmSessionKey, SessionKeyGrant } from "@namera-ai/protocol/model";
 
 import { makeLoadEvmAccount } from "#/wallet/account";
@@ -20,7 +24,7 @@ export const makePrepareExecution = Effect.gen(function* () {
 
   return Effect.fn("application.execution.prepare")(function* (input: {
     readonly actor: GrantedActorData;
-    readonly request: ExecuteRequest;
+    readonly request: ExecuteRequest | SimulateExecutionRequest;
     readonly sponsorship: "none" | "sponsored";
   }) {
     const wallet = yield* repository.core.wallet.findById(

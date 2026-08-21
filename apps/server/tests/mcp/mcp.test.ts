@@ -369,6 +369,7 @@ layer(TestServerLayer)("MCP route", (it) => {
                 walletId: wallet.id,
                 chainId: "eip155:1",
                 calls: [{ to: wallet.address, value: "1", data: "0x" }],
+                sponsor: false,
               },
             },
           },

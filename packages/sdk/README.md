@@ -79,7 +79,9 @@ at the root because they are cross-resource signature capabilities rather than
 collections. Verification is read-only and does not consume signature usage.
 
 Simulation is read-only and reports call success separately from session-key
-policy eligibility. Execution and signing methods generate an idempotency key internally before
+policy eligibility. `executions.execute` sponsors gas by default; callers may set
+`sponsor: false` to pay gas from the smart account without consuming sponsored-gas
+credits. Both modes consume execution usage. Execution and signing methods generate an idempotency key internally before
 the first request. The same key is reused for up to three retries with bounded
 exponential backoff when the failure is a network interruption, HTTP 408, or
 HTTP 5xx response. Validation, authorization, policy, rate-limit, billing, and

@@ -55,6 +55,7 @@ const makePrompts = () => ({
     ),
   integer: (message: string, options?: { readonly min?: number; readonly default?: number }) =>
     Prompt.run(Prompt.integer({ message, ...options })),
+  confirm: (message: string, initial = false) => Prompt.run(Prompt.confirm({ message, initial })),
   signatureType: Prompt.run(
     Prompt.select({
       message: "Signature type",

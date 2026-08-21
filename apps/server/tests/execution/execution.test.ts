@@ -186,6 +186,24 @@ layer(TestServerLayer)("execution routes", (it) => {
         const replay = yield* client.execution.execute(request);
         if (replay.status !== "confirmed") return yield* Effect.die("Expected a receipt");
         expect(replay.executionId).toBe(result.executionId);
+        const explicitSponsoredReplay = yield* client.execution.execute({
+          ...request,
+          payload: { ...request.payload, sponsor: true },
+        });
+        if (explicitSponsoredReplay.status !== "confirmed") {
+          return yield* Effect.die("Expected a receipt");
+        }
+        expect(explicitSponsoredReplay.executionId).toBe(result.executionId);
+
+        const unsponsored = yield* client.execution.execute({
+          headers: { "idempotency-key": "execution-unsponsored" },
+          payload: {
+            ...request.payload,
+            sponsor: false,
+            calls: [{ to: wallet.address, value: 0n, data: "0x" }],
+          },
+        });
+        expect(unsponsored.status).toBe("confirmed");
 
         const repository = yield* Repository;
         expect(
@@ -212,11 +230,11 @@ layer(TestServerLayer)("execution routes", (it) => {
         yield* setAuthToken(owner.cookie.value);
         const billing = yield* client.billing.get();
         expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
-          1n,
+          2n,
         );
-        expect(
-          billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount,
-        ).toBeGreaterThan(0n);
+        expect(billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount).toBe(
+          32_400n,
+        );
         expect(
           (yield* repository.audit.organization.findForOrganization(
             owner.actor.organization.id,

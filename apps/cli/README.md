@@ -19,7 +19,7 @@ namera wallet get <wallet-id>
 namera session-key list [--wallet <wallet-id>]
 namera session-key get <session-key-id>
 namera execution simulate
-namera execution execute --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","calls":[...]}'
+namera execution execute --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","calls":[...],"sponsor":false}'
 namera execution status <submission-id>
 namera execution list [--cursor <execution-id>]
 namera sign
@@ -45,6 +45,8 @@ namera --help
 Execution, simulation, signing, and verification prompt for their request fields by default. Pass
 the same public request shape inline with `--params '<json>'` for non-interactive use; the CLI
 decodes both paths through the public protocol schema and does not read request files.
+Interactive execution asks whether Namera should sponsor gas and defaults to yes.
+Inline execution params may set `sponsor` to `false`; omission remains sponsored.
 
 `--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
 colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact

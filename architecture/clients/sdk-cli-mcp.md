@@ -43,16 +43,16 @@ not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
 
 The `/mcp` transport exposes a deliberately compact tool set:
 
-| Tool                                   | Purpose                                                                             |
-| -------------------------------------- | ----------------------------------------------------------------------------------- |
-| `list_wallets`, `get_wallet`           | Discover exact wallet IDs, addresses, namespaces, and metadata reachable by grants. |
-| `list_session_keys`, `get_session_key` | Discover valid session-key IDs and policies, optionally scoped by wallet.           |
-| `simulate_transaction`                 | Preview calls and policy eligibility without signing or persistence.                |
-| `execute_transaction`                  | Submit a policy-approved call batch using wallet ID, not session-key ID.            |
-| `get_transaction_status`               | Poll an actor-owned submission.                                                     |
-| `get_executions`                       | Read compact confirmed history.                                                     |
-| `sign`                                 | Create a policy-approved message or typed-data signature.                           |
-| `verify_signature`                     | Verify ERC-1271/ERC-6492 smart-account signatures.                                  |
+| Tool                                   | Purpose                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| `list_wallets`, `get_wallet`           | Discover exact wallet IDs, addresses, namespaces, and metadata reachable by grants.  |
+| `list_session_keys`, `get_session_key` | Discover valid session-key IDs and policies, optionally scoped by wallet.            |
+| `simulate_transaction`                 | Preview calls and policy eligibility without signing or persistence.                 |
+| `execute_transaction`                  | Submit a policy-approved call batch, sponsored by default with a self-funded option. |
+| `get_transaction_status`               | Poll an actor-owned submission.                                                      |
+| `get_executions`                       | Read compact confirmed history.                                                      |
+| `sign`                                 | Create a policy-approved message or typed-data signature.                            |
+| `verify_signature`                     | Verify ERC-1271/ERC-6492 smart-account signatures.                                   |
 
 Descriptions and field annotations distinguish wallet, session key, address,
 chain, transaction hash, execution ID, amount, and calldata. Inputs and
@@ -62,7 +62,8 @@ structured content; defects and arbitrary provider text are not returned.
 
 Read tools require `mcp:read`; execution/signing require `mcp:execute` plus an
 active grant and passing policies. The tool adapter generates internal
-idempotency keys.
+idempotency keys. `execute_transaction.sponsor` defaults to `true`; setting it
+to `false` avoids sponsored-gas usage but does not avoid execution usage.
 
 ## Pending
 

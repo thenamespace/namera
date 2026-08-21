@@ -141,6 +141,25 @@ describe("NameraClient", () => {
     expect((init.headers as Record<string, string>)["idempotency-key"]).toBeUndefined();
   });
 
+  it("encodes an explicit unsponsored execution request", async () => {
+    const fetch = vi.fn<NameraFetch>().mockResolvedValue(jsonResponse(submittedExecution));
+    const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
+
+    await client.executions.execute({
+      namespace: "eip155",
+      walletId,
+      chainId: "eip155:1",
+      calls: [{ to: address, value: 0n, data: "0x" }],
+      sponsor: false,
+    });
+
+    const [, init] = fetch.mock.calls[0] ?? [];
+    if (init === undefined) throw new Error("Expected a fetch request");
+    expect(JSON.parse(new TextDecoder().decode(init.body as Uint8Array))).toMatchObject({
+      sponsor: false,
+    });
+  });
+
   it("reuses one generated idempotency key across transient retries", async () => {
     const fetch = vi
       .fn<NameraFetch>()

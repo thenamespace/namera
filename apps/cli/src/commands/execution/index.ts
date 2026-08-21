@@ -2,14 +2,19 @@ import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
-import { ExecuteRequest, type ExecuteRequest as ExecuteRequestType } from "@namera-ai/protocol/dto";
+import {
+  ExecuteRequest,
+  type ExecuteRequest as ExecuteRequestType,
+  SimulateExecutionRequest,
+  type SimulateExecutionRequest as SimulateExecutionRequestType,
+} from "@namera-ai/protocol/dto";
 
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
 import { CliPrompts } from "#/services/prompts";
 
-const promptExecutionRequest = Effect.fn("cli.execution.promptRequest")(function* () {
+const promptTransactionRequest = Effect.fn("cli.execution.promptTransactionRequest")(function* () {
   const prompts = yield* CliPrompts;
   const namespace = yield* prompts.namespace;
   const walletId = yield* prompts.walletId();
@@ -28,7 +33,15 @@ const promptExecutionRequest = Effect.fn("cli.execution.promptRequest")(function
       }),
   );
 
-  return { namespace, walletId, chainId, calls } satisfies ExecuteRequestType;
+  return { namespace, walletId, chainId, calls } satisfies SimulateExecutionRequestType;
+});
+
+const promptExecutionRequest = Effect.fn("cli.execution.promptExecutionRequest")(function* () {
+  const prompts = yield* CliPrompts;
+  const request = yield* promptTransactionRequest();
+  const sponsor = yield* prompts.confirm("Sponsor gas with Namera?", true);
+
+  return { ...request, sponsor } satisfies ExecuteRequestType;
 });
 
 const execute = Command.make(
@@ -45,7 +58,11 @@ const simulate = Command.make(
   "simulate",
   { params: paramsFlag, profile: profileFlag },
   Effect.fn(function* ({ params, profile }) {
-    const request = yield* resolveParams(params, ExecuteRequest, promptExecutionRequest());
+    const request = yield* resolveParams(
+      params,
+      SimulateExecutionRequest,
+      promptTransactionRequest(),
+    );
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.executions.simulate(request)));
   }),

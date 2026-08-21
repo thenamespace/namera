@@ -6,10 +6,11 @@ import {
   ExecuteResponse,
   GetExecutionSubmissionResponse,
   ListExecutionsResponse,
+  McpExecuteTransactionRequest,
   McpGetExecutionsRequest,
   McpGetTransactionStatusRequest,
+  McpSimulateTransactionRequest,
   McpToolError,
-  McpTransactionRequest,
   SimulateExecutionResponse,
 } from "@namera-ai/protocol/dto";
 
@@ -19,8 +20,8 @@ import { executionHints, readOnlyHints, registerMcpTool, simulationHints } from 
 
 const ExecuteTransaction = Tool.make("execute_transaction", {
   description:
-    "Sign and submit the exact EVM calls from a delegated Namera wallet. Call simulate_transaction first and proceed only when allowed and callsSucceeded are both true. Use walletId from list_wallets, never a wallet address or session-key ID. Namera selects an eligible session key automatically. This operation can transfer assets and repeated tool calls can submit more than one transaction.",
-  parameters: McpTransactionRequest,
+    "Sign and submit the exact EVM calls from a delegated Namera wallet. Call simulate_transaction first and proceed only when allowed and callsSucceeded are both true. Use walletId from list_wallets, never a wallet address or session-key ID. Namera selects an eligible session key automatically. Gas sponsorship defaults to enabled; set sponsor to false only when the smart account should pay gas. Every confirmed transaction consumes execution usage, while only sponsored mainnet transactions consume sponsored-gas credits. This operation can transfer assets and repeated tool calls can submit more than one transaction.",
+  parameters: McpExecuteTransactionRequest,
   success: Schema.Struct({
     execution: Schema.optionalKey(ExecuteResponse),
     error: Schema.optionalKey(McpToolError),
@@ -30,7 +31,7 @@ const ExecuteTransaction = Tool.make("execute_transaction", {
 const SimulateTransaction = Tool.make("simulate_transaction", {
   description:
     "Simulate exact EVM calls and evaluate every eligible delegated session key policy without signing, submitting, reserving policy usage, or consuming billing usage. Use walletId from list_wallets, never a wallet address or session-key ID. Execute only when allowed and callsSucceeded are both true.",
-  parameters: McpTransactionRequest,
+  parameters: McpSimulateTransactionRequest,
   success: Schema.Struct({
     simulation: Schema.optionalKey(SimulateExecutionResponse),
     error: Schema.optionalKey(McpToolError),

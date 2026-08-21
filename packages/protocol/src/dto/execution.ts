@@ -45,13 +45,21 @@ const EvmExecutionCallRequest = Schema.Struct({
   data: Hex,
 });
 
-export const ExecuteEvmRequest = Schema.Struct({
+const EvmExecutionRequestFields = {
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   chainId: SupportedEvmChainId,
   calls: Schema.Array(EvmExecutionCallRequest).check(
     Schema.isMinLength(1, { message: "At least one call is required" }),
   ),
+};
+
+export const ExecuteEvmRequest = Schema.Struct({
+  ...EvmExecutionRequestFields,
+  sponsor: Schema.optionalKey(Schema.Boolean).annotate({
+    description:
+      "Whether Namera should sponsor gas through Alchemy Gas Manager. Defaults to true. Set false to pay gas from the smart account without consuming sponsored-gas credits.",
+  }),
 }).annotate({
   identifier: "ExecuteEvmRequest",
   description: "Execute EVM calls through an API key's authorized session keys",
@@ -65,7 +73,14 @@ export const ExecuteRequestHeaders = Schema.Struct({
   "idempotency-key": NonEmptyString,
 }).annotate({ identifier: "ExecuteRequestHeaders" });
 
-export const SimulateExecutionRequest = ExecuteRequest.annotate({
+export const SimulateEvmExecutionRequest = Schema.Struct(EvmExecutionRequestFields).annotate({
+  identifier: "SimulateEvmExecutionRequest",
+  description: "Simulate EVM calls without signing, submitting, or sponsoring gas",
+});
+
+export const SimulateExecutionRequest = Schema.Union([SimulateEvmExecutionRequest], {
+  mode: "oneOf",
+}).annotate({
   identifier: "SimulateExecutionRequest",
   description: "Simulate an execution and evaluate the current delegated session-key policies",
 });
@@ -299,6 +314,7 @@ export const ListExecutionsResponse = Schema.Struct({
 export type ExecuteEvmRequest = typeof ExecuteEvmRequest.Type;
 export type ExecuteRequest = typeof ExecuteRequest.Type;
 export type ExecuteRequestHeaders = typeof ExecuteRequestHeaders.Type;
+export type SimulateEvmExecutionRequest = typeof SimulateEvmExecutionRequest.Type;
 export type SimulateExecutionRequest = typeof SimulateExecutionRequest.Type;
 export type ExecutionSimulationPolicyDenial = typeof ExecutionSimulationPolicyDenial.Type;
 export type AllowedExecutionSimulationResponse = typeof AllowedExecutionSimulationResponse.Type;

@@ -55,11 +55,12 @@ remain under [operations](../../architecture/operations/executions.md).
    evaluation here. The application package selects the wallet/grants and
    coordinates persistence; the server only adapts HTTP.
 
-EVM-specific billing remains in this package. Simulation prepares without a
-paymaster. Execution prepares with Alchemy Rundler and Gas Manager, and sponsored mainnet preparation
-attaches a persisted price/cost envelope. `application` only reserves and
-settles the generic meter amounts returned here, preserving the namespace
-boundary for future Solana support.
+EVM-specific billing remains in this package. Simulation always prepares without
+a paymaster. Execution uses Alchemy Gas Manager by default, while an explicit
+unsponsored request prepares a self-funded UserOperation without paymaster
+context. Sponsored mainnet preparation attaches a persisted price/cost envelope.
+`application` only reserves and settles the generic meter amounts returned here,
+preserving the namespace boundary for future Solana support.
 
 Provider ECDSA signatures are DER encoded. Use
 `derSignatureToEvmSignature` to produce the validator representation:

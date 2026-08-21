@@ -118,6 +118,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   point-in-time session-key policy eligibility. Allowed responses identify the
   selected session key; denied responses identify each candidate session key's
   first deterministic policy ID and bounded denial code.
+- Execution requests expose an optional `sponsor` flag. Omission is canonically
+  equivalent to `true`; `false` requests a self-funded UserOperation. Both modes
+  consume execution usage, while only sponsored mainnet operations consume the
+  sponsored-gas meter.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, the standardized bundler
   gas-estimation result, and normalized `simulateCalls` outcomes. The latter

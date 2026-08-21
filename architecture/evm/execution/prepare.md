@@ -7,7 +7,8 @@ Preparation turns decoded calls and stored smart-account data into an unsigned E
 - supported CAIP-2 chain ID;
 - reconstructed Kernel or Safe account data and owner account;
 - ordered calls containing destination, native value, and calldata;
-- sponsorship mode (`none` for simulation, `sponsored` for execution).
+- sponsorship mode (`none` for simulation or self-funded execution,
+  `sponsored` for the default execution path).
 
 ## Pipeline
 
@@ -41,7 +42,10 @@ Both are required: EntryPoint gas estimation does not provide the same asset-tra
 
 Simulation requests explicitly prepare without a paymaster and therefore never
 consume or imply Namera-sponsored gas. Execution requests prepare with Alchemy
-Gas Manager and pass the configured policy ID as paymaster context. Viem's
+Gas Manager by default and pass the configured policy ID as paymaster context.
+An execution with `sponsor: false` follows the same no-paymaster preparation path
+as simulation, then continues through policy reservation, signing, submission,
+and execution metering. Viem's
 preparation performs the paymaster stub/final-data handshake and
 `eth_estimateUserOperationGas`; Namera records those prepared gas fields rather
 than issuing a duplicate estimate.

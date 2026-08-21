@@ -70,10 +70,22 @@ export const McpGetSessionKeyRequest = Schema.Struct({
   sessionKeyId: McpSessionKeyId,
 }).annotate({ identifier: "McpGetSessionKeyRequest" });
 
-export const McpTransactionRequest = Schema.Struct(McpTransactionFields).annotate({
-  identifier: "McpTransactionRequest",
+export const McpExecuteTransactionRequest = Schema.Struct({
+  ...McpTransactionFields,
+  sponsor: Schema.optionalKey(Schema.Boolean).annotate({
+    description:
+      "Whether Namera should sponsor gas. Defaults to true. Set false only when the smart account should pay gas without consuming Namera sponsored-gas credits.",
+  }),
+}).annotate({
+  identifier: "McpExecuteTransactionRequest",
   description:
     "An exact EVM transaction for a Namera wallet. The session key is selected automatically and must not be supplied.",
+});
+
+export const McpSimulateTransactionRequest = Schema.Struct(McpTransactionFields).annotate({
+  identifier: "McpSimulateTransactionRequest",
+  description:
+    "An exact EVM transaction to simulate without signing, submitting, or sponsoring gas.",
 });
 
 const McpSignatureFields = {
