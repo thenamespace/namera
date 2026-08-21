@@ -39,18 +39,31 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
 
   return {
     billing: { settleGasSponsorship: settleEvmGasSponsorship },
-    createAccount: Effect.fn("evm.test.createAccount")((props: CreateAccountProps) =>
-      Effect.succeed({
+    createAccount: Effect.fn("evm.test.createAccount")((props: CreateAccountProps) => {
+      const common = {
         version: 1,
         implementation: "alchemy-modular-v2",
         modularAccountVersion: "2.0.0",
         entryPointVersion: props.entryPointVersion,
-        validatorType: "webauthn_p256",
-        salt: props.salt,
-        entityId: props.entityId,
         address: Schema.decodeSync(EthereumAddress)("0x3333333333333333333333333333333333333333"),
-      } satisfies CreateAccountResult),
-    ),
+      } as const;
+
+      return Effect.succeed(
+        "salt" in props
+          ? ({
+              ...common,
+              validatorType: "webauthn_p256",
+              salt: props.salt,
+              entityId: props.entityId,
+            } satisfies CreateAccountResult)
+          : ({
+              ...common,
+              validatorType: "ecdsa_secp256k1",
+              accountMode: "7702",
+              delegationVersion: props.delegationVersion,
+            } satisfies CreateAccountResult),
+      );
+    }),
     getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
       if (getChainDataByChainId(chainId) === undefined) {
         return yield* new UnsupportedChainError({

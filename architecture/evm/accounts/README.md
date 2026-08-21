@@ -1,25 +1,34 @@
 # Alchemy Modular Account V2
 
 Namera supports one EVM smart-account implementation: Alchemy Modular Account
-V2 with a P-256 WebAuthn validator and EntryPoint `0.7`. Keeping one account
-model gives creation, reconstruction, signing, simulation, sponsorship, and
-verification a single tested path.
+V2 with EntryPoint `0.7`. Its account boundary accepts two discriminated owner
+modes:
 
-The database stores only the public data needed to reconstruct the account. The
-P-256 private key and provider locator remain owned by `wallet-keys`.
+- `webauthn_p256` uses Namera's counterfactual WebAuthn factory integration;
+- `ecdsa_secp256k1` uses Alchemy's Semi-Modular Account in EIP-7702 mode.
+
+The public create-wallet workflow still creates only P-256 accounts. The
+secp256k1 construction, persistence, response, and reconstruction contracts are
+in place so a later product slice can expose 7702 creation without changing the
+execution and signing boundaries.
+
+The database stores only the public data needed to reconstruct the account.
+Private keys and provider locators remain owned by `wallet-keys`.
 
 ## Stored account data
 
-| Field                   | Required | Description                                                             |
-| ----------------------- | -------- | ----------------------------------------------------------------------- |
-| `version`               | Yes      | Namera wallet-data schema version. Currently `1`.                       |
-| `implementation`        | Yes      | Constant discriminator: `alchemy-modular-v2`.                           |
-| `modularAccountVersion` | Yes      | Alchemy Modular Account contract version. Currently `2.0.0`.            |
-| `entryPointVersion`     | Yes      | ERC-4337 EntryPoint version. Currently `0.7`.                           |
-| `validatorType`         | Yes      | Constant validator discriminator: `webauthn_p256`.                      |
-| `salt`                  | Yes      | Deterministic salt used by the Modular Account factory.                 |
-| `entityId`              | Yes      | Validation entity identifier encoded into signatures and factory calls. |
-| `address`               | Yes      | Counterfactual or deployed smart-account address.                       |
+| Field                   | Required | Owner mode | Description                                                               |
+| ----------------------- | -------- | ---------- | ------------------------------------------------------------------------- |
+| `version`               | Yes      | Both       | Namera wallet-data schema version. Currently `1`.                         |
+| `implementation`        | Yes      | Both       | Constant discriminator: `alchemy-modular-v2`.                             |
+| `modularAccountVersion` | Yes      | Both       | Alchemy Modular Account contract family version. Currently `2.0.0`.       |
+| `entryPointVersion`     | Yes      | Both       | ERC-4337 EntryPoint version. Currently `0.7`.                             |
+| `validatorType`         | Yes      | Both       | Union discriminator: `webauthn_p256` or `ecdsa_secp256k1`.                |
+| `salt`                  | Yes      | P-256      | Deterministic salt used by the WebAuthn Modular Account factory.          |
+| `entityId`              | Yes      | P-256      | Validation entity encoded into WebAuthn signatures and factory calls.     |
+| `accountMode`           | Yes      | secp256k1  | Constant `7702`; prevents confusing delegated EOAs with factory accounts. |
+| `delegationVersion`     | Yes      | secp256k1  | Alchemy 7702 delegation version used to reconstruct the account.          |
+| `address`               | Yes      | Both       | Counterfactual account or delegated EOA address.                          |
 
 The public create-wallet DTO does not expose an implementation selector. EVM
 wallet creation always chooses this implementation and generates the derivation
@@ -52,15 +61,17 @@ that transaction so concurrent requests cannot exceed the plan.
 
 ## Reconstruction invariant
 
-Execution and signing never trust the stored address by itself. The adapter
-rebuilds the Modular Account from its stored salt, entity ID, and P-256 owner,
-then compares the derived address with the persisted address using checksum-aware
-equality.
+Execution and signing never trust the stored address by itself. Reconstruction
+first requires the persisted validator discriminator to match the supplied
+owner adapter. It then rebuilds either the factory account from its salt and
+entity ID or the 7702 account from its secp256k1 owner and delegation version.
+The derived address is compared with the persisted address using
+checksum-aware equality.
 
 ```mermaid
 flowchart LR
   Stored[Stored Modular Account data] --> Build[Rebuild account]
-  Owner[P-256 WebAuthn account] --> Build
+  Owner[Matching P-256 or secp256k1 owner] --> Build
   Client[Alchemy public and bundler clients] --> Build
   Build --> Compare{Derived address matches?}
   Compare -->|Yes| Ready[Usable smart account]
@@ -83,12 +94,31 @@ WebAuthn account expected by the Alchemy SDK:
 5. expose `sign`, `signMessage`, and `signTypedData` without exposing private
    key material.
 
+## secp256k1 owner adapter
+
+`createWalletKeySecp256k1Account` adapts a provider-neutral digest signer into
+the Viem local account required by Alchemy's 7702 mode:
+
+1. derive the EOA address from the stored uncompressed secp256k1 public key;
+2. ask `WalletKeys` to sign exact Keccak-256 digests;
+3. normalize DER signatures to low-S Ethereum signatures and recover parity
+   against the stored public key;
+4. implement message, typed-data, and EIP-7702 authorization signing;
+5. deliberately reject direct EOA transaction signing because Namera submits
+   operations through the smart-account execution path.
+
+The 7702 constructor delegates the owner's EOA to the explicitly persisted
+Alchemy delegation version. It has no factory arguments, and the account
+address must equal the owner address.
+
 ## Counterfactual behavior
 
-New accounts may be undeployed. Preparation includes factory data when needed,
+P-256 accounts may be undeployed. Preparation includes factory data when needed,
 and the first successful UserOperation deploys the account. Signature
 verification supplies factory data when bytecode is absent so ERC-6492/ERC-1271
-verification can validate a counterfactual account.
+verification can validate a counterfactual account. A 7702 account has no
+factory arguments; its authorization delegates the existing EOA to the selected
+Semi-Modular Account implementation.
 
 ## Adding another account implementation
 
@@ -107,6 +137,8 @@ not just a DTO option. It requires:
 
 - Retain provider-boundary tests for deployed and counterfactual accounts on all
   launch networks.
+- Expose secp256k1/7702 account creation through the product DTO and dashboard
+  only after its key-protection and migration UX is defined.
 - Define a reviewed account-upgrade policy before accepting new Modular Account
   versions.
 - Add a bounded provider/chain disable control for operational incidents.

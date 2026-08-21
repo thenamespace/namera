@@ -29,14 +29,18 @@ const account = {
     address,
   } satisfies AlchemyModularV2WalletData,
   owner: {
-    id: "test-owner",
-    publicKey: `0x04${"1".repeat(128)}`,
-    type: "webAuthn",
-    sign: () => Promise.reject(new Error("Not used by the deterministic execution service")),
-    signMessage: () => Promise.reject(new Error("Not used by the deterministic execution service")),
-    signTypedData: () =>
-      Promise.reject(new Error("Not used by the deterministic execution service")),
-  } satisfies WebAuthnAccount,
+    validatorType: "webauthn_p256" as const,
+    account: {
+      id: "test-owner",
+      publicKey: `0x04${"1".repeat(128)}`,
+      type: "webAuthn",
+      sign: () => Promise.reject(new Error("Not used by the deterministic execution service")),
+      signMessage: () =>
+        Promise.reject(new Error("Not used by the deterministic execution service")),
+      signTypedData: () =>
+        Promise.reject(new Error("Not used by the deterministic execution service")),
+    } satisfies WebAuthnAccount,
+  },
 };
 
 it("omits empty calldata only from auxiliary call simulation", () => {

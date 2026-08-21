@@ -14,6 +14,21 @@ export const toWalletResponse = (input: WalletView): WalletResponse => {
     updatedAt: input.wallet.updatedAt,
   } as const;
 
+  if (input.wallet.data.validatorType === "webauthn_p256") {
+    return {
+      ...common,
+      implementation: "alchemy-modular-v2",
+      data: {
+        version: input.wallet.data.version,
+        modularAccountVersion: input.wallet.data.modularAccountVersion,
+        validatorType: input.wallet.data.validatorType,
+        entryPointVersion: input.wallet.data.entryPointVersion,
+        salt: input.wallet.data.salt,
+        entityId: input.wallet.data.entityId,
+      },
+    };
+  }
+
   return {
     ...common,
     implementation: "alchemy-modular-v2",
@@ -22,8 +37,8 @@ export const toWalletResponse = (input: WalletView): WalletResponse => {
       modularAccountVersion: input.wallet.data.modularAccountVersion,
       validatorType: input.wallet.data.validatorType,
       entryPointVersion: input.wallet.data.entryPointVersion,
-      salt: input.wallet.data.salt,
-      entityId: input.wallet.data.entityId,
+      accountMode: input.wallet.data.accountMode,
+      delegationVersion: input.wallet.data.delegationVersion,
     },
   };
 };

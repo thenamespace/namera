@@ -1,7 +1,7 @@
 import { Effect, Redacted } from "effect";
 
-import { toModularAccountV2Base } from "@alchemy/smart-accounts";
-import type { EntryPointVersion } from "@namera-ai/protocol";
+import { toModularAccountV2, toModularAccountV2Base } from "@alchemy/smart-accounts";
+import type { AlchemyModularAccount7702Version, EntryPointVersion } from "@namera-ai/protocol";
 import {
   EthereumAddress,
   EvmAccountCreationError,
@@ -38,6 +38,7 @@ import {
 import { getChainDataByChainId } from "../chains/helpers.js";
 import { createPublicClient } from "../clients/helpers.js";
 import type { EvmConfigValues } from "../config.js";
+import type { AlchemyModularV2Owner } from "./types.js";
 
 const modularAccountV2FactoryAddress =
   "0x55010E571dCf07e254994bfc88b9C1C8FAe31960" satisfies Address;
@@ -164,18 +165,29 @@ const makeOwnerAdapter = (owner: WebAuthnAccount): LocalAccount<"namera-webauthn
   },
 });
 
-export type CreateAlchemyModularV2AccountProps = {
-  readonly chainId: number;
+type MakeWebAuthnAlchemyModularV2AccountProps = {
   readonly entryPointVersion: EntryPointVersion;
+  readonly owner: Extract<AlchemyModularV2Owner, { validatorType: "webauthn_p256" }>;
   readonly salt: bigint;
   readonly entityId: number;
-  readonly owner: WebAuthnAccount;
 };
 
-type MakeAlchemyModularV2AccountProps = Omit<CreateAlchemyModularV2AccountProps, "chainId">;
+type Make7702AlchemyModularV2AccountProps = {
+  readonly entryPointVersion: EntryPointVersion;
+  readonly owner: Extract<AlchemyModularV2Owner, { validatorType: "ecdsa_secp256k1" }>;
+  readonly delegationVersion: AlchemyModularAccount7702Version;
+};
 
-export const makeAlchemyModularV2Account = async (
-  props: MakeAlchemyModularV2AccountProps,
+type MakeAlchemyModularV2AccountProps =
+  | MakeWebAuthnAlchemyModularV2AccountProps
+  | Make7702AlchemyModularV2AccountProps;
+
+export type CreateAlchemyModularV2AccountProps =
+  | (MakeWebAuthnAlchemyModularV2AccountProps & { readonly chainId: number })
+  | (Make7702AlchemyModularV2AccountProps & { readonly chainId: number });
+
+const makeWebAuthnAlchemyModularV2Account = async (
+  props: MakeWebAuthnAlchemyModularV2AccountProps,
   publicClient: PublicClient,
 ): Promise<SmartAccount> => {
   if (publicClient.chain === undefined) {
@@ -183,7 +195,8 @@ export const makeAlchemyModularV2Account = async (
   }
 
   const chainClient = publicClient as PublicClient<Transport, Chain>;
-  const { x, y } = getPublicKeyCoordinates(props.owner.publicKey);
+  const webAuthnOwner = props.owner.account;
+  const { x, y } = getPublicKeyCoordinates(webAuthnOwner.publicKey);
   const factoryData = encodeFunctionData({
     abi: webAuthnFactoryAbi,
     functionName: "createWebAuthnAccount",
@@ -195,7 +208,7 @@ export const makeAlchemyModularV2Account = async (
     functionName: "getAddressWebAuthn",
     args: [x, y, props.salt, props.entityId],
   });
-  const owner = makeOwnerAdapter(props.owner);
+  const owner = makeOwnerAdapter(webAuthnOwner);
   const base = await toModularAccountV2Base({
     client: chainClient,
     owner,
@@ -217,7 +230,7 @@ export const makeAlchemyModularV2Account = async (
         entryPointVersion: base.entryPoint.version,
         userOperation: { ...userOperation, sender: accountAddress },
       });
-      const signed = await props.owner.signMessage({ message: { raw: hash } });
+      const signed = await webAuthnOwner.signMessage({ message: { raw: hash } });
       return packUserOperationSignature(encodeWebAuthnSignature(signed));
     },
     signMessage: async ({ message }: { message: SignableMessage }) => {
@@ -226,7 +239,7 @@ export const makeAlchemyModularV2Account = async (
         chainId: chainClient.chain.id,
         hash: hashMessage(message),
       });
-      const signed = await props.owner.signTypedData(typedData);
+      const signed = await webAuthnOwner.signTypedData(typedData);
       return packErc1271Signature(props.entityId, encodeWebAuthnSignature(signed));
     },
     signTypedData: async (typedData: TypedDataDefinition) => {
@@ -235,10 +248,30 @@ export const makeAlchemyModularV2Account = async (
         chainId: chainClient.chain.id,
         hash: hashTypedData(typedData),
       });
-      const signed = await props.owner.signTypedData(replaySafe);
+      const signed = await webAuthnOwner.signTypedData(replaySafe);
       return packErc1271Signature(props.entityId, encodeWebAuthnSignature(signed));
     },
   } as SmartAccount;
+};
+
+export const makeAlchemyModularV2Account = async (
+  props: MakeAlchemyModularV2AccountProps,
+  publicClient: PublicClient,
+): Promise<SmartAccount> => {
+  if ("salt" in props) {
+    return makeWebAuthnAlchemyModularV2Account(props, publicClient);
+  }
+
+  if (publicClient.chain === undefined) {
+    throw new Error("Alchemy Modular Account V2 requires a chain-aware public client");
+  }
+
+  return toModularAccountV2({
+    client: publicClient as PublicClient<Transport, Chain>,
+    owner: props.owner.account,
+    mode: "7702",
+    version: props.delegationVersion,
+  });
 };
 
 export const createAlchemyModularV2Account = Effect.fn("evm.createAlchemyModularV2Account")(
@@ -258,14 +291,27 @@ export const createAlchemyModularV2Account = Effect.fn("evm.createAlchemyModular
         new EvmAccountCreationError({ implementation: "alchemy-modular-v2", cause }),
     });
 
+    if ("salt" in props) {
+      return {
+        version: 1,
+        implementation: "alchemy-modular-v2",
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: props.entryPointVersion,
+        validatorType: "webauthn_p256",
+        salt: props.salt,
+        entityId: props.entityId,
+        address: EthereumAddress.make(account.address),
+      } satisfies AlchemyModularV2WalletData;
+    }
+
     return {
       version: 1,
       implementation: "alchemy-modular-v2",
       modularAccountVersion: "2.0.0",
       entryPointVersion: props.entryPointVersion,
-      validatorType: "webauthn_p256",
-      salt: props.salt,
-      entityId: props.entityId,
+      validatorType: "ecdsa_secp256k1",
+      accountMode: "7702",
+      delegationVersion: props.delegationVersion,
       address: EthereumAddress.make(account.address),
     } satisfies AlchemyModularV2WalletData;
   },

@@ -16,4 +16,5 @@ export const makeCreateAccount = (config: EvmConfigValues) =>
   );
 
 export * from "./webauthn.js";
-export type { ReconstructEvmAccountInput } from "./types.js";
+export * from "./secp256k1.js";
+export type { AlchemyModularV2Owner, ReconstructEvmAccountInput } from "./types.js";

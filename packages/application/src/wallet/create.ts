@@ -87,7 +87,7 @@ export const makeCreateWallet = Effect.gen(function* () {
         entryPointVersion: walletPolicy.eip155.alchemyModularV2.entryPointVersion,
         salt: walletPolicy.eip155.alchemyModularV2.salt,
         entityId: walletPolicy.eip155.alchemyModularV2.entityId,
-        owner,
+        owner: { validatorType: "webauthn_p256", account: owner },
       })
       .pipe(
         Effect.tapError(() =>

@@ -1,7 +1,12 @@
 import { Schema } from "effect";
 
 import { OrganizationId, WalletId } from "#/common/index";
-import { AlchemyModularAccountVersion, EntryPointVersion, EthereumAddress } from "#/evm/index";
+import {
+  AlchemyModularAccount7702Version,
+  AlchemyModularAccountVersion,
+  EntryPointVersion,
+  EthereumAddress,
+} from "#/evm/index";
 import {
   TimestampFields,
   WalletKeyProtectionLevel,
@@ -34,9 +39,13 @@ const WalletResponseFields = {
   ...TimestampFields,
 };
 
-export const AlchemyModularV2WalletResponse = Schema.Struct({
+const AlchemyModularV2ResponseFields = {
   ...WalletResponseFields,
   implementation: Schema.Literal("alchemy-modular-v2"),
+};
+
+export const AlchemyModularV2WebAuthnWalletResponse = Schema.Struct({
+  ...AlchemyModularV2ResponseFields,
   data: Schema.Struct({
     version: Schema.Literal(1),
     modularAccountVersion: AlchemyModularAccountVersion,
@@ -46,8 +55,31 @@ export const AlchemyModularV2WalletResponse = Schema.Struct({
     entityId: Schema.Int,
   }),
 }).annotate({
-  identifier: "AlchemyModularV2WalletResponse",
+  identifier: "AlchemyModularV2WebAuthnWalletResponse",
   description: "An Alchemy Modular Account V2 wallet using P-256 WebAuthn validation",
+});
+
+export const AlchemyModularV2Eip7702WalletResponse = Schema.Struct({
+  ...AlchemyModularV2ResponseFields,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    modularAccountVersion: AlchemyModularAccountVersion,
+    validatorType: Schema.Literal("ecdsa_secp256k1"),
+    entryPointVersion: EntryPointVersion,
+    accountMode: Schema.Literal("7702"),
+    delegationVersion: AlchemyModularAccount7702Version,
+  }),
+}).annotate({
+  identifier: "AlchemyModularV2Eip7702WalletResponse",
+  description: "An Alchemy Modular Account V2 wallet using secp256k1 EIP-7702 validation",
+});
+
+export const AlchemyModularV2WalletResponse = Schema.Union([
+  AlchemyModularV2WebAuthnWalletResponse,
+  AlchemyModularV2Eip7702WalletResponse,
+]).annotate({
+  identifier: "AlchemyModularV2WalletResponse",
+  description: "An Alchemy Modular Account V2 wallet",
 });
 
 export const EvmWalletResponse = AlchemyModularV2WalletResponse.annotate({

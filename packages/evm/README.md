@@ -1,9 +1,9 @@
 # @namera-ai/evm
 
 EVM chain adapter infrastructure for Namera. It owns supported-chain metadata,
-provider RPC URLs, internal Viem client factories, wallet-key WebAuthn owners,
-Alchemy Modular Account V2 construction, execution, and EVM policy
-evaluation behind one root `Evm` service.
+provider RPC URLs, internal Viem client factories, wallet-key P-256 and
+secp256k1 owners, Alchemy Modular Account V2 construction, execution, and EVM
+policy evaluation behind one root `Evm` service.
 
 See the [EVM architecture hub](../../architecture/evm/README.md) for supported
 chains, Modular Account V2 reconstruction, preparation, signing/submission,
@@ -17,7 +17,9 @@ remain under [operations](../../architecture/operations/executions.md).
   deliberately absent from the package root exports. Sponsored submission uses
   an isolated Rundler transport carrying the configured BSO policy header.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
-  wallet-key owner construction.
+  wallet-key owner construction. Its discriminated owner boundary supports the
+  current P-256 WebAuthn account and secp256k1 EIP-7702 accounts without leaking
+  key-provider details into Alchemy account code.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
   receipt operations exposed through `evm.execution`. Preparation combines
   ERC-4337 gas simulation with `simulateCalls` asset-change and native-transfer

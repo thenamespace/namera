@@ -1,17 +1,38 @@
 import { Schema } from "effect";
 
-import { AlchemyModularAccountVersion, EntryPointVersion, EthereumAddress } from "#/evm/index";
+import {
+  AlchemyModularAccount7702Version,
+  AlchemyModularAccountVersion,
+  EntryPointVersion,
+  EthereumAddress,
+} from "#/evm/index";
 
-export const AlchemyModularV2WalletData = Schema.Struct({
+const AlchemyModularV2WalletDataFields = {
   version: Schema.Literal(1),
   address: EthereumAddress,
   implementation: Schema.Literal("alchemy-modular-v2"),
   modularAccountVersion: AlchemyModularAccountVersion,
-  validatorType: Schema.Literal("webauthn_p256"),
   entryPointVersion: EntryPointVersion,
+};
+
+export const AlchemyModularV2WebAuthnWalletData = Schema.Struct({
+  ...AlchemyModularV2WalletDataFields,
+  validatorType: Schema.Literal("webauthn_p256"),
   salt: Schema.BigIntFromString,
   entityId: Schema.Int,
 });
+
+export const AlchemyModularV2Eip7702WalletData = Schema.Struct({
+  ...AlchemyModularV2WalletDataFields,
+  validatorType: Schema.Literal("ecdsa_secp256k1"),
+  accountMode: Schema.Literal("7702"),
+  delegationVersion: AlchemyModularAccount7702Version,
+});
+
+export const AlchemyModularV2WalletData = Schema.Union([
+  AlchemyModularV2WebAuthnWalletData,
+  AlchemyModularV2Eip7702WalletData,
+]);
 
 export const EvmWalletData = Schema.Struct({
   namespace: Schema.Literal("eip155"),
@@ -19,4 +40,6 @@ export const EvmWalletData = Schema.Struct({
 });
 
 export type AlchemyModularV2WalletData = typeof AlchemyModularV2WalletData.Type;
+export type AlchemyModularV2WebAuthnWalletData = typeof AlchemyModularV2WebAuthnWalletData.Type;
+export type AlchemyModularV2Eip7702WalletData = typeof AlchemyModularV2Eip7702WalletData.Type;
 export type EvmWalletData = typeof EvmWalletData.Type;
