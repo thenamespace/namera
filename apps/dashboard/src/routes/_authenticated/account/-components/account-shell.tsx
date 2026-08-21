@@ -10,6 +10,7 @@ import { DashboardPage } from "@/components/page";
 
 const accountSections = [
   { label: "Overview", to: "/account/$accountId/overview" },
+  { label: "Assets", to: "/account/$accountId/assets" },
   { label: "Session Keys", to: "/account/$accountId/session-keys" },
   { label: "Usage", to: "/account/$accountId/usage" },
 ] as const;

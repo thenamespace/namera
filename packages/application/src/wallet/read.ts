@@ -4,6 +4,7 @@ import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import {
   WalletAssetsUnavailableError,
+  type EthereumAddress,
   WalletNotFoundError,
   type ActorId,
   type OrganizationId,
@@ -50,12 +51,13 @@ export const makeReadWallets = Effect.gen(function* () {
     readonly actorId?: ActorId;
     readonly walletId: WalletId;
     readonly request: ListWalletAssetsRequest;
+    readonly addressOverride?: EthereumAddress;
   }) {
     const wallet = yield* get(input);
 
     return yield* evm.portfolio
       .getAssets({
-        address: wallet.wallet.data.address,
+        address: input.addressOverride ?? wallet.wallet.data.address,
         ...input.request,
       })
       .pipe(

@@ -56,6 +56,24 @@ fails the whole route with `WalletAssetsUnavailableError` (HTTP 502).
 Zero balances are omitted. The route does not calculate a portfolio total
 because the response can be paginated or partial; consumers may calculate a
 display total only after collecting all pages and accounting for failures.
+Successful Alchemy responses may encode both `error` and the terminal `pageKey`
+as `null`; the adapter normalizes those provider values before exposing the
+provider-neutral response. When Alchemy omits native-token metadata, the adapter
+uses the registered Viem chain's native currency name, symbol, and decimals so
+the balance remains displayable.
+
+## Dashboard consumer
+
+`/account/:walletId/assets` fetches all cursor pages before deriving totals. Its
+snapshot summary includes only assets with both a formatted balance and a USD
+quote, explicitly reports the number of priced assets, and keeps any partial
+network failures visible. The page shows chain and asset allocation summaries
+above a reusable asset table that supports search, sorting, chain grouping,
+focused filters, configurable columns, contract copying, and explorer links.
+
+The current API is a point-in-time balance source. The dashboard does not invent
+historical performance from that snapshot; a time-series chart requires a
+separate persisted history or provider contract.
 
 ## Provider request
 

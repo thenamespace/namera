@@ -86,11 +86,15 @@ and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
 
 `/account/$accountId` redirects to its overview and owns a shared account-detail
-shell with Overview, Session Keys, and Usage navigation. The overview prefetches
+shell with Overview, Assets, Session Keys, and Usage navigation. The overview prefetches
 the wallet detail into the shared atom registry and presents its metadata,
 semantic status, namespace, implementation, protection, identifiers,
 and creation date through reusable display components. Account names and row
 actions in `/accounts` link to the overview.
+The Assets tab prefetches every page of the account's fungible portfolio into the
+shared atom registry. It presents priced portfolio totals and allocation summaries,
+then renders the provider-neutral balances through a reusable searchable,
+filterable, sortable, and chain-groupable asset table with explorer actions.
 The Session Keys tab prefetches the wallet-scoped session-key list and renders it
 through the same table used by the organization session-key page. Usage currently
 retains the detail shell with focused placeholder content for its later

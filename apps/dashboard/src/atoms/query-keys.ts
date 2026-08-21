@@ -47,6 +47,7 @@ export const QueryKeys = {
     lists: ["wallet:lists"] as const,
     details: ["wallet:details"] as const,
     detail: (walletId: WalletId) => [`wallet:detail:${walletId}`] as const,
+    assets: (walletId: WalletId) => [`wallet:assets:${walletId}`] as const,
   },
   execution: {
     all: ["execution:all"] as const,
@@ -116,6 +117,7 @@ export type QueryKey =
   | (typeof QueryKeys.wallet.lists)[number]
   | (typeof QueryKeys.wallet.details)[number]
   | ReturnType<typeof QueryKeys.wallet.detail>[number]
+  | ReturnType<typeof QueryKeys.wallet.assets>[number]
   | (typeof QueryKeys.execution.all)[number]
   | (typeof QueryKeys.execution.lists)[number]
   | (typeof QueryKeys.execution.details)[number]

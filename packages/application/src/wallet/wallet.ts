@@ -4,6 +4,7 @@ import type { WalletView } from "@namera-ai/database";
 import type {
   ActorId,
   BillingError,
+  EthereumAddress,
   OrganizationId,
   WalletCreationError,
   WalletId,
@@ -41,6 +42,7 @@ export interface WalletApplication {
     readonly actorId?: ActorId;
     readonly walletId: WalletId;
     readonly request: ListWalletAssetsRequest;
+    readonly addressOverride?: EthereumAddress;
   }) => Effect.Effect<ListWalletAssetsResponse, WalletNotFoundError | WalletAssetsUnavailableError>;
   readonly update: (input: {
     readonly organizationId: OrganizationId;

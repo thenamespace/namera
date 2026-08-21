@@ -34,6 +34,7 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
 import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authenticated/workspace/new'
 import { Route as AuthenticatedAccountAccountIdIndexRouteImport } from './routes/_authenticated/account/$accountId/index'
+import { Route as AuthenticatedAccountAccountIdAssetsRouteImport } from './routes/_authenticated/account/$accountId/assets'
 import { Route as AuthenticatedAccountAccountIdOverviewRouteImport } from './routes/_authenticated/account/$accountId/overview'
 import { Route as AuthenticatedAccountAccountIdSessionKeysRouteImport } from './routes/_authenticated/account/$accountId/session-keys'
 import { Route as AuthenticatedAccountAccountIdUsageRouteImport } from './routes/_authenticated/account/$accountId/usage'
@@ -187,6 +188,12 @@ const AuthenticatedAccountAccountIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
   } as any)
+const AuthenticatedAccountAccountIdAssetsRoute =
+  AuthenticatedAccountAccountIdAssetsRouteImport.update({
+    id: '/assets',
+    path: '/assets',
+    getParentRoute: () => AuthenticatedAccountAccountIdRouteRoute,
+  } as any)
 const AuthenticatedAccountAccountIdOverviewRoute =
   AuthenticatedAccountAccountIdOverviewRouteImport.update({
     id: '/overview',
@@ -290,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
@@ -326,6 +334,7 @@ export interface FileRoutesByTo {
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
+  '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
@@ -367,6 +376,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/_authenticated/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/_authenticated/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/_authenticated/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/_authenticated/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts/'
     | '/session-keys/'
+    | '/account/$accountId/assets'
     | '/account/$accountId/overview'
     | '/account/$accountId/session-keys'
     | '/account/$accountId/usage'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/workspace/new'
     | '/accounts'
     | '/session-keys'
+    | '/account/$accountId/assets'
     | '/account/$accountId/overview'
     | '/account/$accountId/session-keys'
     | '/account/$accountId/usage'
@@ -484,6 +496,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
     | '/_authenticated/session-keys/'
+    | '/_authenticated/account/$accountId/assets'
     | '/_authenticated/account/$accountId/overview'
     | '/_authenticated/account/$accountId/session-keys'
     | '/_authenticated/account/$accountId/usage'
@@ -682,6 +695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountAccountIdIndexRouteImport
       parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
     }
+    '/_authenticated/account/$accountId/assets': {
+      id: '/_authenticated/account/$accountId/assets'
+      path: '/assets'
+      fullPath: '/account/$accountId/assets'
+      preLoaderRoute: typeof AuthenticatedAccountAccountIdAssetsRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountIdRouteRoute
+    }
     '/_authenticated/account/$accountId/overview': {
       id: '/_authenticated/account/$accountId/overview'
       path: '/overview'
@@ -777,6 +797,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAccountAccountIdRouteRouteChildren {
+  AuthenticatedAccountAccountIdAssetsRoute: typeof AuthenticatedAccountAccountIdAssetsRoute
   AuthenticatedAccountAccountIdOverviewRoute: typeof AuthenticatedAccountAccountIdOverviewRoute
   AuthenticatedAccountAccountIdSessionKeysRoute: typeof AuthenticatedAccountAccountIdSessionKeysRoute
   AuthenticatedAccountAccountIdUsageRoute: typeof AuthenticatedAccountAccountIdUsageRoute
@@ -785,6 +806,8 @@ interface AuthenticatedAccountAccountIdRouteRouteChildren {
 
 const AuthenticatedAccountAccountIdRouteRouteChildren: AuthenticatedAccountAccountIdRouteRouteChildren =
   {
+    AuthenticatedAccountAccountIdAssetsRoute:
+      AuthenticatedAccountAccountIdAssetsRoute,
     AuthenticatedAccountAccountIdOverviewRoute:
       AuthenticatedAccountAccountIdOverviewRoute,
     AuthenticatedAccountAccountIdSessionKeysRoute:

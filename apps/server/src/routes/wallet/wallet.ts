@@ -1,14 +1,20 @@
-import { Effect } from "effect";
+import { Config, Effect, Schema } from "effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
+import { EthereumAddress } from "@namera-ai/protocol";
 
 import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
+
+const developmentPortfolioAddress = Schema.decodeSync(EthereumAddress)(
+  "0xc0d86456F6f2930b892f3DAD007CDBE32c081FE6",
+);
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const environment = yield* Config.string("NODE_ENV").pipe(Config.withDefault("development"));
 
     return handlers
       .handle("create", ({ payload }) =>
@@ -64,6 +70,12 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             ...toActorReadScope(data),
             walletId: params.walletId,
             request: query,
+            // Keep the rich preview account local to development while the
+            // portfolio UI is being designed. Production always resolves the
+            // persisted account address loaded by the application workflow.
+            ...(environment === "development"
+              ? { addressOverride: developmentPortfolioAddress }
+              : {}),
           });
         }),
       )
