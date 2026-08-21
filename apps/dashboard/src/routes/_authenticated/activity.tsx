@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { currentUserAtom } from "@/atoms/auth/session";
 import { executionsAtom } from "@/atoms/execution";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { ExecutionsTable } from "@/components/executions-table";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -16,20 +16,12 @@ export const Route = createFileRoute("/_authenticated/activity")({
     );
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
-    const executions = await prefetchQuery(
-      context.atomRegistry,
-      executionsAtom,
-      abortController.signal,
-    );
-
-    return { executions };
+    startPrefetchQuery(context.atomRegistry, executionsAtom, abortController.signal);
   },
   component: ActivityPage,
 });
 
 function ActivityPage() {
-  const { executions } = Route.useLoaderData();
-
   return (
     <DashboardPage>
       <DashboardPage.Header className="md:hidden">
@@ -45,7 +37,7 @@ function ActivityPage() {
           </HeadingGroup.Description>
         </HeadingGroup>
 
-        <ExecutionsTable initialExecutions={executions} />
+        <ExecutionsTable />
       </DashboardPage.Content>
     </DashboardPage>
   );

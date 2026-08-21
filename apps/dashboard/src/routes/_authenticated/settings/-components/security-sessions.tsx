@@ -4,6 +4,7 @@ import type { ListSessionsResponse } from "@namera-ai/protocol/dto";
 import { Button, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
+import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { useLogout, useRevokeOtherSessions, useSessions } from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -12,7 +13,7 @@ import { SessionCard } from "./session-card";
 
 type SecuritySessionsProps = {
   currentSessionId: ListSessionsResponse[number]["id"];
-  initialSessions: ListSessionsResponse;
+  initialSessions?: ListSessionsResponse;
 };
 
 export function SecuritySessions({ currentSessionId, initialSessions }: SecuritySessionsProps) {
@@ -38,7 +39,9 @@ export function SecuritySessions({ currentSessionId, initialSessions }: Security
       }),
   });
   const sessions = useSessions();
-  const sessionData = sessions.data ?? initialSessions;
+  const sessionData = sessions.data ?? initialSessions ?? [];
+  const isInitialLoading =
+    sessions.isLoading && sessions.data === undefined && initialSessions === undefined;
   const otherSessionCount = sessionData.filter((session) => session.id !== currentSessionId).length;
 
   const handleLogout = useEventCallback(() => {
@@ -69,22 +72,25 @@ export function SecuritySessions({ currentSessionId, initialSessions }: Security
           </Button>
         ) : null}
       </div>
-      {sessions.isLoading ? <Typography color="muted">Loading sessions…</Typography> : null}
       {sessions.isError ? (
         <Typography className="text-danger">Couldn’t load your sessions.</Typography>
       ) : null}
-      <ul className="space-y-2">
-        {sessionData.map((session) => (
-          <li key={session.id}>
-            <SessionCard
-              isCurrent={session.id === currentSessionId}
-              isLoggingOut={logout.isPending}
-              onLogout={session.id === currentSessionId ? handleLogout : undefined}
-              session={session}
-            />
-          </li>
-        ))}
-      </ul>
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading sessions" />
+      ) : (
+        <ul className="space-y-2">
+          {sessionData.map((session) => (
+            <li key={session.id}>
+              <SessionCard
+                isCurrent={session.id === currentSessionId}
+                isLoggingOut={logout.isPending}
+                onLogout={session.id === currentSessionId ? handleLogout : undefined}
+                session={session}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

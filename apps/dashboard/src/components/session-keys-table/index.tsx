@@ -25,6 +25,7 @@ import {
   uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/components/display";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
 
@@ -43,22 +44,26 @@ import {
   type SessionKeyTableRow,
 } from "./columns";
 
-type SessionKeysTableProps = { initialSessionKeys: ListSessionKeysForOrganizationResponse };
+const emptySessionKeys: ReadonlyArray<SessionKeyResponse> = [];
+
+type SessionKeysTableProps = { initialSessionKeys?: ListSessionKeysForOrganizationResponse };
 
 export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) {
   const sessionKeys = useSessionKeys();
   return (
     <SessionKeysTableContent
       ariaLabel="Organization session keys"
-      data={sessionKeys.data ?? initialSessionKeys}
+      data={sessionKeys.data ?? initialSessionKeys ?? emptySessionKeys}
       isError={sessionKeys.isError}
-      isLoading={sessionKeys.isLoading}
+      isInitialLoading={
+        sessionKeys.isLoading && sessionKeys.data === undefined && initialSessionKeys === undefined
+      }
     />
   );
 }
 
 type WalletSessionKeysTableProps = {
-  initialSessionKeys: ListSessionKeysForWalletResponse;
+  initialSessionKeys?: ListSessionKeysForWalletResponse;
   walletId: WalletId;
 };
 
@@ -70,9 +75,11 @@ export function WalletSessionKeysTable({
   return (
     <SessionKeysTableContent
       ariaLabel="Account session keys"
-      data={sessionKeys.data ?? initialSessionKeys}
+      data={sessionKeys.data ?? initialSessionKeys ?? emptySessionKeys}
       isError={sessionKeys.isError}
-      isLoading={sessionKeys.isLoading}
+      isInitialLoading={
+        sessionKeys.isLoading && sessionKeys.data === undefined && initialSessionKeys === undefined
+      }
     />
   );
 }
@@ -81,14 +88,14 @@ type SessionKeysTableContentProps = {
   ariaLabel: string;
   data: ReadonlyArray<SessionKeyResponse>;
   isError: boolean;
-  isLoading: boolean;
+  isInitialLoading: boolean;
 };
 
 function SessionKeysTableContent({
   ariaLabel,
   data,
   isError,
-  isLoading,
+  isInitialLoading,
 }: SessionKeysTableContentProps) {
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<SessionKeyResponse["status"]>>(
@@ -281,23 +288,26 @@ function SessionKeysTableContent({
         </div>
       </div>
 
-      {isLoading ? <Typography color="muted">Loading session keys…</Typography> : null}
       {isError ? (
         <Typography className="text-danger">Couldn’t load session keys.</Typography>
       ) : null}
-      <DataGrid
-        aria-label={ariaLabel}
-        columns={displayedColumns}
-        data={rows}
-        defaultExpandedKeys="all"
-        getRowId={getSessionKeyRowId}
-        key={grouping}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren: getSessionKeyChildren })}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading session keys" />
+      ) : (
+        <DataGrid
+          aria-label={ariaLabel}
+          columns={displayedColumns}
+          data={rows}
+          defaultExpandedKeys="all"
+          getRowId={getSessionKeyRowId}
+          key={grouping}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+          {...(grouping === "none" ? {} : { getChildren: getSessionKeyChildren })}
+        />
+      )}
     </div>
   );
 }

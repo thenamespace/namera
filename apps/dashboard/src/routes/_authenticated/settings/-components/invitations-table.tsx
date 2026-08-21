@@ -24,6 +24,7 @@ import {
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import { DateDisplay, EmailDisplay, OrganizationRoleDisplay } from "@/components/display";
 import { useCancelInvitation, useOrganizationInvitations } from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -160,15 +161,18 @@ const sorters: Record<
 const getRowId = (row: Row) => (isGroup(row) ? row.id : row.invitation.id);
 const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
 const fixedColumnOptions = [{ id: "email", label: "Email" }] as const;
+const emptyInvitations: ReadonlyArray<GetInvitationResponse> = [];
 
 type InvitationsTableProps = {
   canCancel: boolean;
-  initialInvitations: ReadonlyArray<GetInvitationResponse>;
+  initialInvitations?: ReadonlyArray<GetInvitationResponse>;
 };
 
 export function InvitationsTable({ canCancel, initialInvitations }: InvitationsTableProps) {
   const invitations = useOrganizationInvitations();
-  const data = invitations.data ?? initialInvitations;
+  const data = invitations.data ?? initialInvitations ?? emptyInvitations;
+  const isInitialLoading =
+    invitations.isLoading && invitations.data === undefined && initialInvitations === undefined;
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<InvitationStatus>>(new Set(["pending"]));
   const [roles, setRoles] = useState<ReadonlySet<string>>(new Set());
@@ -342,23 +346,26 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
           </TableControls>
         </div>
       </div>
-      {invitations.isLoading ? <Typography color="muted">Loading invitations…</Typography> : null}
       {invitations.isError ? (
         <Typography className="text-danger">Couldn’t load organization invitations.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="Organization invitations"
-        columns={displayedColumns}
-        data={rows}
-        defaultExpandedKeys="all"
-        getRowId={getRowId}
-        key={grouping}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren })}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading invitations" />
+      ) : (
+        <DataGrid
+          aria-label="Organization invitations"
+          columns={displayedColumns}
+          data={rows}
+          defaultExpandedKeys="all"
+          getRowId={getRowId}
+          key={grouping}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+          {...(grouping === "none" ? {} : { getChildren })}
+        />
+      )}
     </div>
   );
 }

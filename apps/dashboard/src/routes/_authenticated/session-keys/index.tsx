@@ -4,7 +4,7 @@ import { buttonVariants, cn } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { sessionKeysAtom } from "@/atoms/session-key";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -22,22 +22,17 @@ export const Route = createFileRoute("/_authenticated/session-keys/")({
     );
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
-    const sessionKeys = await prefetchQuery(
-      context.atomRegistry,
-      sessionKeysAtom,
-      abortController.signal,
-    );
+    startPrefetchQuery(context.atomRegistry, sessionKeysAtom, abortController.signal);
 
     return {
       canCreate: hasPermissions(currentUser.role.permissions, sessionKeyCreatePermission),
-      sessionKeys,
     };
   },
   component: SessionKeysPage,
 });
 
 function SessionKeysPage() {
-  const { canCreate, sessionKeys } = Route.useLoaderData();
+  const { canCreate } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -60,7 +55,7 @@ function SessionKeysPage() {
         </DashboardPage.Side>
       </DashboardPage.Header>
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
-        <SessionKeysTable initialSessionKeys={sessionKeys} />
+        <SessionKeysTable />
       </DashboardPage.Content>
     </DashboardPage>
   );

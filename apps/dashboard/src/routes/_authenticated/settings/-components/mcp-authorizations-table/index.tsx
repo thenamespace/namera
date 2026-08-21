@@ -22,6 +22,7 @@ import {
   toTableSelection,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
   MetadataDisplay,
@@ -138,15 +139,18 @@ const sorters: Record<
 
 type McpAuthorizationsTableProps = {
   canRevoke: boolean;
-  initialAuthorizations: ListOAuthAuthorizationsResponse;
+  initialAuthorizations?: ListOAuthAuthorizationsResponse;
 };
+const emptyAuthorizations: ListOAuthAuthorizationsResponse = [];
 
 export function McpAuthorizationsTable({
   canRevoke,
   initialAuthorizations,
 }: McpAuthorizationsTableProps) {
   const authorizations = useMcpAuthorizations();
-  const data = authorizations.data ?? initialAuthorizations;
+  const data = authorizations.data ?? initialAuthorizations ?? emptyAuthorizations;
+  const isInitialLoading =
+    authorizations.isLoading && authorizations.data === undefined && !initialAuthorizations;
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(new Set(["active"]));
   const [sort, setSort] = useState<DataGridSortDescriptor>({
@@ -225,22 +229,23 @@ export function McpAuthorizationsTable({
           </TableControls>
         </div>
       </div>
-      {authorizations.isLoading ? (
-        <Typography color="muted">Loading MCP authorizations…</Typography>
-      ) : null}
       {authorizations.isError ? (
         <Typography className="text-danger">Couldn’t load MCP authorizations.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="MCP authorizations"
-        columns={columns}
-        data={rows}
-        getRowId={getRowId}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading MCP authorizations" />
+      ) : (
+        <DataGrid
+          aria-label="MCP authorizations"
+          columns={columns}
+          data={rows}
+          getRowId={getRowId}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+        />
+      )}
     </div>
   );
 }

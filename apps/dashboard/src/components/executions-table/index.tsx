@@ -27,6 +27,7 @@ import {
   uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import {
   ChainDisplay,
   ExecutionActorDisplay,
@@ -50,13 +51,17 @@ import {
 } from "./columns";
 import { getActorLabel, getExecutionChain } from "./data";
 
+const emptyExecutions: ReadonlyArray<ExecutionListItemResponse> = [];
+
 type ExecutionsTableProps = {
-  initialExecutions: ListExecutionsResponse;
+  initialExecutions?: ListExecutionsResponse;
 };
 
 export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   const executions = useExecutions();
-  const items = (executions.data ?? initialExecutions).items;
+  const items = executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
+  const isInitialLoading =
+    executions.isLoading && executions.data === undefined && initialExecutions === undefined;
   const [query, setQuery] = useState("");
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
@@ -345,23 +350,26 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
         </div>
       </div>
 
-      {executions.isLoading ? <Typography color="muted">Loading executions…</Typography> : null}
       {executions.isError ? (
         <Typography className="text-danger">Couldn’t load executions.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="Confirmed executions"
-        columns={displayedColumns}
-        data={rows}
-        defaultExpandedKeys="all"
-        getRowId={getExecutionRowId}
-        key={grouping}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren: getExecutionChildren })}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading executions" />
+      ) : (
+        <DataGrid
+          aria-label="Confirmed executions"
+          columns={displayedColumns}
+          data={rows}
+          defaultExpandedKeys="all"
+          getRowId={getExecutionRowId}
+          key={grouping}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+          {...(grouping === "none" ? {} : { getChildren: getExecutionChildren })}
+        />
+      )}
     </div>
   );
 }

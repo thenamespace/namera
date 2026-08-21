@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { cliAuthorizationsAtom } from "@/atoms/auth/oauth";
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
@@ -27,17 +27,17 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/cli-aut
       currentUser.role.permissions,
       cliAuthorizationRevokePermission,
     );
-    const authorizations = canRead
-      ? await prefetchQuery(context.atomRegistry, cliAuthorizationsAtom, abortController.signal)
-      : [];
+    if (canRead) {
+      startPrefetchQuery(context.atomRegistry, cliAuthorizationsAtom, abortController.signal);
+    }
 
-    return { authorizations, canRead, canRevoke };
+    return { canRead, canRevoke };
   },
   component: CliAuthorizationsPage,
 });
 
 function CliAuthorizationsPage() {
-  const { authorizations, canRead, canRevoke } = Route.useLoaderData();
+  const { canRead, canRevoke } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -53,11 +53,7 @@ function CliAuthorizationsPage() {
             Review and revoke terminal sessions connected to this workspace.
           </HeadingGroup.Description>
         </HeadingGroup>
-        {canRead ? (
-          <CliAuthorizationsTable canRevoke={canRevoke} initialAuthorizations={authorizations} />
-        ) : (
-          <PermissionDenied />
-        )}
+        {canRead ? <CliAuthorizationsTable canRevoke={canRevoke} /> : <PermissionDenied />}
       </DashboardPage.Content>
     </DashboardPage>
   );

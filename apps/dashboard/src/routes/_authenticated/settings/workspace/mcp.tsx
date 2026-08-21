@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { mcpAuthorizationsAtom } from "@/atoms/auth/oauth";
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
@@ -28,17 +28,17 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/mcp")({
       currentUser.role.permissions,
       mcpAuthorizationRevokePermission,
     );
-    const authorizations = canRead
-      ? await prefetchQuery(context.atomRegistry, mcpAuthorizationsAtom, abortController.signal)
-      : [];
+    if (canRead) {
+      startPrefetchQuery(context.atomRegistry, mcpAuthorizationsAtom, abortController.signal);
+    }
 
-    return { authorizations, canRead, canRevoke };
+    return { canRead, canRevoke };
   },
   component: McpSettingsPage,
 });
 
 function McpSettingsPage() {
-  const { authorizations, canRead, canRevoke } = Route.useLoaderData();
+  const { canRead, canRevoke } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -66,11 +66,7 @@ function McpSettingsPage() {
               Clients that have been granted access to this workspace.
             </HeadingGroup.Description>
           </HeadingGroup>
-          {canRead ? (
-            <McpAuthorizationsTable canRevoke={canRevoke} initialAuthorizations={authorizations} />
-          ) : (
-            <PermissionDenied />
-          )}
+          {canRead ? <McpAuthorizationsTable canRevoke={canRevoke} /> : <PermissionDenied />}
         </section>
       </DashboardPage.Content>
     </DashboardPage>

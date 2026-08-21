@@ -2,11 +2,13 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { currentUserAtom } from "@/atoms/auth/session";
 import { billingAtom } from "@/atoms/billing";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
+import { useBilling } from "@/hooks/billing";
 
 import { BillingOverview } from "../-components/billing-overview";
 
@@ -22,17 +24,16 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/billing
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
 
     const canRead = hasPermissions(currentUser.role.permissions, billingReadPermission);
-    const billing = canRead
-      ? await prefetchQuery(context.atomRegistry, billingAtom, abortController.signal)
-      : null;
+    if (canRead) startPrefetchQuery(context.atomRegistry, billingAtom, abortController.signal);
 
-    return { billing, canRead };
+    return { canRead };
   },
   component: BillingPage,
 });
 
 function BillingPage() {
-  const { billing, canRead } = Route.useLoaderData();
+  const { canRead } = Route.useLoaderData();
+  const billing = useBilling();
 
   return (
     <DashboardPage>
@@ -49,8 +50,17 @@ function BillingPage() {
           </HeadingGroup.Description>
         </HeadingGroup>
 
-        {canRead && billing !== null ? (
-          <BillingOverview initialBilling={billing} />
+        {canRead ? (
+          billing.data ? (
+            <BillingOverview initialBilling={billing.data} />
+          ) : billing.isError ? (
+            <PermissionDenied
+              description="Billing data could not be loaded. Try refreshing this page."
+              title="Couldn’t load billing"
+            />
+          ) : (
+            <DataLoading className="min-h-64" label="Loading billing" />
+          )
         ) : (
           <PermissionDenied />
         )}

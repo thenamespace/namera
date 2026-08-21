@@ -27,6 +27,7 @@ import {
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import { DateDisplay, MetadataDisplay } from "@/components/display";
 import { useApiKeys } from "@/hooks/api-key";
 
@@ -189,12 +190,14 @@ const sorters: Record<string, (left: ApiKeyResponse, right: ApiKeyResponse) => n
 const getRowId = (row: Row) => row.id;
 const getChildren = (row: Row) => (isGroup(row) ? [...row.children] : undefined);
 const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
+const emptyApiKeys: ListApiKeysResponse = [];
+const emptySessionKeys: ListSessionKeysForOrganizationResponse = [];
 
 type ApiKeysTableProps = {
   canCreate: boolean;
   canRevoke: boolean;
-  initialApiKeys: ListApiKeysResponse;
-  initialSessionKeys: ListSessionKeysForOrganizationResponse;
+  initialApiKeys?: ListApiKeysResponse;
+  initialSessionKeys?: ListSessionKeysForOrganizationResponse;
 };
 
 export function ApiKeysTable({
@@ -204,7 +207,8 @@ export function ApiKeysTable({
   initialSessionKeys,
 }: ApiKeysTableProps) {
   const apiKeys = useApiKeys();
-  const data = apiKeys.data ?? initialApiKeys;
+  const data = apiKeys.data ?? initialApiKeys ?? emptyApiKeys;
+  const isInitialLoading = apiKeys.isLoading && apiKeys.data === undefined && !initialApiKeys;
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<ApiKeyStatus>>(new Set(["active"]));
   const [grouping, setGrouping] = useState<Grouping>("none");
@@ -335,26 +339,31 @@ export function ApiKeysTable({
               onVisibleColumnsChange={setVisibleColumns}
             />
           </TableControls>
-          {canCreate ? <CreateApiKeyDialog initialSessionKeys={initialSessionKeys} /> : null}
+          {canCreate ? (
+            <CreateApiKeyDialog initialSessionKeys={initialSessionKeys ?? emptySessionKeys} />
+          ) : null}
         </div>
       </div>
-      {apiKeys.isLoading ? <Typography color="muted">Loading API keys…</Typography> : null}
       {apiKeys.isError ? (
         <Typography className="text-danger">Couldn’t load API keys.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="Organization API keys"
-        columns={displayedColumns}
-        data={rows}
-        defaultExpandedKeys="all"
-        getRowId={getRowId}
-        key={grouping}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren })}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading API keys" />
+      ) : (
+        <DataGrid
+          aria-label="Organization API keys"
+          columns={displayedColumns}
+          data={rows}
+          defaultExpandedKeys="all"
+          getRowId={getRowId}
+          key={grouping}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+          {...(grouping === "none" ? {} : { getChildren })}
+        />
+      )}
     </div>
   );
 }

@@ -2,10 +2,12 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { organizationAtom } from "@/atoms/auth/organization";
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
+import { useOrganization } from "@/hooks/auth";
 
 import { WorkspaceForm } from "../-components/workspace-form";
 
@@ -19,21 +21,22 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/")({
       abortController.signal,
     );
     if (currentUser === null) throw redirect({ to: "/auth", replace: true });
-    const organization = await prefetchQuery(
+    startPrefetchQuery(
       context.atomRegistry,
       organizationAtom(currentUser.organization.id),
       abortController.signal,
     );
     return {
       canUpdate: hasPermissions(currentUser.role.permissions, organizationUpdatePermission),
-      organization,
+      organizationId: currentUser.organization.id,
     };
   },
   component: WorkspacePage,
 });
 
 function WorkspacePage() {
-  const { canUpdate, organization } = Route.useLoaderData();
+  const { canUpdate, organizationId } = Route.useLoaderData();
+  const organization = useOrganization(organizationId);
 
   return (
     <DashboardPage>
@@ -46,7 +49,11 @@ function WorkspacePage() {
             Workspace
           </HeadingGroup.Title>
         </HeadingGroup>
-        <WorkspaceForm canUpdate={canUpdate} organization={organization} />
+        {organization.data ? (
+          <WorkspaceForm canUpdate={canUpdate} organization={organization.data} />
+        ) : (
+          <DataLoading className="min-h-64" label="Loading workspace" />
+        )}
       </DashboardPage.Content>
     </DashboardPage>
   );

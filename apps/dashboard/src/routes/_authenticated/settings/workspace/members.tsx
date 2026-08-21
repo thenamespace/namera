@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { organizationInvitationsAtom } from "@/atoms/auth/invitation";
 import { assignableOrganizationRolesAtom, organizationMembersAtom } from "@/atoms/auth/member";
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
@@ -33,24 +33,19 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/members
     const canManageMembers = memberManagePermissions.some((permission) =>
       currentUser.role.permissions.includes(permission),
     );
-    const [members, assignableRoles, invitations] = await Promise.all([
-      prefetchQuery(context.atomRegistry, organizationMembersAtom, abortController.signal),
-      canReadRoles
-        ? prefetchQuery(
-            context.atomRegistry,
-            assignableOrganizationRolesAtom,
-            abortController.signal,
-          )
-        : Promise.resolve([]),
-      canReadInvitations
-        ? prefetchQuery(context.atomRegistry, organizationInvitationsAtom, abortController.signal)
-        : Promise.resolve([]),
-    ]);
+    startPrefetchQuery(context.atomRegistry, organizationMembersAtom, abortController.signal);
+    if (canReadRoles) {
+      startPrefetchQuery(
+        context.atomRegistry,
+        assignableOrganizationRolesAtom,
+        abortController.signal,
+      );
+    }
+    if (canReadInvitations) {
+      startPrefetchQuery(context.atomRegistry, organizationInvitationsAtom, abortController.signal);
+    }
     return {
       currentUser,
-      members,
-      assignableRoles,
-      invitations,
       canReadInvitations,
       canReadRoles,
       canManageMembers,
@@ -60,15 +55,7 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/members
 });
 
 function MembersPage() {
-  const {
-    assignableRoles,
-    canManageMembers,
-    canReadInvitations,
-    canReadRoles,
-    currentUser,
-    invitations,
-    members,
-  } = Route.useLoaderData();
+  const { canManageMembers, canReadInvitations, canReadRoles, currentUser } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -81,12 +68,7 @@ function MembersPage() {
             Members
           </HeadingGroup.Title>
         </HeadingGroup>
-        <MembersTable
-          canManageMembers={canManageMembers}
-          canReadRoles={canReadRoles}
-          initialMembers={members}
-          initialRoles={assignableRoles}
-        />
+        <MembersTable canManageMembers={canManageMembers} canReadRoles={canReadRoles} />
         {canReadInvitations ? (
           <>
             <HeadingGroup className="mb-4 mt-12">
@@ -97,7 +79,6 @@ function MembersPage() {
             </HeadingGroup>
             <InvitationsTable
               canCancel={hasPermissions(currentUser.role.permissions, invitationCancelPermission)}
-              initialInvitations={invitations}
             />
           </>
         ) : null}

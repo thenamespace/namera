@@ -18,6 +18,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import { TableViewOptions, type TableOption } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
   EmailDisplay,
@@ -110,20 +111,22 @@ const getMemberId = ({ organizationMember }: GetOrganizationMemberResponse) =>
 
 const renderEmptyState = () => "No members found.";
 const invitationCreatePermission = ["invitation:create"] as const;
+const emptyMembers: ListOrganizationMemberResponse = [];
 const emptyRoles: ReadonlyArray<GetOrganizationRoleResponse> = [];
 const fixedColumnOptions = [{ id: "name", label: "Name" }] as const;
 
 type MembersTableProps = {
   canManageMembers: boolean;
   canReadRoles: boolean;
-  initialMembers: ListOrganizationMemberResponse;
-  initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
+  initialMembers?: ListOrganizationMemberResponse;
+  initialRoles?: ReadonlyArray<GetOrganizationRoleResponse>;
 };
 
 type MembersTableContentProps = {
   canManageMembers: boolean;
   memberData: ListOrganizationMemberResponse;
   members: ReturnType<typeof useOrganizationMembers>;
+  membersInitialLoading: boolean;
   roleData: ReadonlyArray<GetOrganizationRoleResponse>;
   rolesError: boolean;
   rolesLoading: boolean;
@@ -131,15 +134,23 @@ type MembersTableContentProps = {
 
 export function MembersTable(props: MembersTableProps) {
   const members = useOrganizationMembers();
-  const memberData = members.data ?? props.initialMembers;
+  const memberData = members.data ?? props.initialMembers ?? emptyMembers;
+  const membersInitialLoading =
+    members.isLoading && members.data === undefined && props.initialMembers === undefined;
 
   return props.canReadRoles ? (
-    <MembersTableWithRoles {...props} memberData={memberData} members={members} />
+    <MembersTableWithRoles
+      {...props}
+      memberData={memberData}
+      members={members}
+      membersInitialLoading={membersInitialLoading}
+    />
   ) : (
     <MembersTableContent
       canManageMembers={props.canManageMembers}
       memberData={memberData}
       members={members}
+      membersInitialLoading={membersInitialLoading}
       roleData={emptyRoles}
       rolesError={false}
       rolesLoading={false}
@@ -149,9 +160,10 @@ export function MembersTable(props: MembersTableProps) {
 
 type MembersTableWithRolesProps = {
   canManageMembers: boolean;
-  initialRoles: ReadonlyArray<GetOrganizationRoleResponse>;
+  initialRoles?: ReadonlyArray<GetOrganizationRoleResponse>;
   memberData: ListOrganizationMemberResponse;
   members: ReturnType<typeof useOrganizationMembers>;
+  membersInitialLoading: boolean;
 };
 
 function MembersTableWithRoles({
@@ -159,18 +171,20 @@ function MembersTableWithRoles({
   initialRoles,
   memberData,
   members,
+  membersInitialLoading,
 }: MembersTableWithRolesProps) {
   const roles = useAssignableOrganizationRoles();
-  const roleData = roles.data ?? initialRoles;
+  const roleData = roles.data ?? initialRoles ?? emptyRoles;
 
   return (
     <MembersTableContent
       canManageMembers={canManageMembers}
       memberData={memberData}
       members={members}
+      membersInitialLoading={membersInitialLoading}
       roleData={roleData}
       rolesError={roles.isError}
-      rolesLoading={roles.isLoading}
+      rolesLoading={roles.isLoading && roles.data === undefined && initialRoles === undefined}
     />
   );
 }
@@ -179,6 +193,7 @@ function MembersTableContent({
   canManageMembers,
   memberData,
   members,
+  membersInitialLoading,
   roleData,
   rolesError,
   rolesLoading,
@@ -270,22 +285,23 @@ function MembersTableContent({
         </div>
       </div>
 
-      {members.isLoading || rolesLoading ? (
-        <Typography color="muted">Loading members…</Typography>
-      ) : null}
       {members.isError || rolesError ? (
         <Typography className="text-danger">Couldn’t load organization members.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="Organization members"
-        columns={displayedColumns}
-        data={sortedMembers}
-        getRowId={getMemberId}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-      />
+      {membersInitialLoading || rolesLoading ? (
+        <DataLoading className="min-h-64" label="Loading members" />
+      ) : (
+        <DataGrid
+          aria-label="Organization members"
+          columns={displayedColumns}
+          data={sortedMembers}
+          getRowId={getMemberId}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+        />
+      )}
     </div>
   );
 }

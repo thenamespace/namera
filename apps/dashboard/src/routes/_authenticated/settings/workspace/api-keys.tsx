@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { apiKeysAtom } from "@/atoms/api-key";
 import { currentUserAtom } from "@/atoms/auth/session";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { sessionKeysAtom } from "@/atoms/session-key";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -27,22 +27,17 @@ export const Route = createFileRoute("/_authenticated/settings/workspace/api-key
     const canRead = hasPermissions(currentUser.role.permissions, apiKeyReadPermission);
     const canCreate = hasPermissions(currentUser.role.permissions, apiKeyCreatePermission);
     const canRevoke = hasPermissions(currentUser.role.permissions, apiKeyRevokePermission);
-    const [apiKeys, sessionKeys] = await Promise.all([
-      canRead
-        ? prefetchQuery(context.atomRegistry, apiKeysAtom, abortController.signal)
-        : Promise.resolve([]),
-      canCreate
-        ? prefetchQuery(context.atomRegistry, sessionKeysAtom, abortController.signal)
-        : Promise.resolve([]),
-    ]);
+    if (canRead) startPrefetchQuery(context.atomRegistry, apiKeysAtom, abortController.signal);
+    if (canCreate)
+      startPrefetchQuery(context.atomRegistry, sessionKeysAtom, abortController.signal);
 
-    return { apiKeys, canCreate, canRead, canRevoke, sessionKeys };
+    return { canCreate, canRead, canRevoke };
   },
   component: ApiKeysPage,
 });
 
 function ApiKeysPage() {
-  const { apiKeys, canCreate, canRead, canRevoke, sessionKeys } = Route.useLoaderData();
+  const { canCreate, canRead, canRevoke } = Route.useLoaderData();
 
   return (
     <DashboardPage>
@@ -59,12 +54,7 @@ function ApiKeysPage() {
           </HeadingGroup.Description>
         </HeadingGroup>
         {canRead ? (
-          <ApiKeysTable
-            canCreate={canCreate}
-            canRevoke={canRevoke}
-            initialApiKeys={apiKeys}
-            initialSessionKeys={sessionKeys}
-          />
+          <ApiKeysTable canCreate={canCreate} canRevoke={canRevoke} />
         ) : (
           <PermissionDenied />
         )}

@@ -23,6 +23,7 @@ import {
   toTableSelection,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
   MetadataDisplay,
@@ -161,15 +162,18 @@ const sorters: Record<
 
 type CliAuthorizationsTableProps = {
   canRevoke: boolean;
-  initialAuthorizations: ListOAuthAuthorizationsResponse;
+  initialAuthorizations?: ListOAuthAuthorizationsResponse;
 };
+const emptyAuthorizations: ListOAuthAuthorizationsResponse = [];
 
 export function CliAuthorizationsTable({
   canRevoke,
   initialAuthorizations,
 }: CliAuthorizationsTableProps) {
   const authorizations = useCliAuthorizations();
-  const data = authorizations.data ?? initialAuthorizations;
+  const data = authorizations.data ?? initialAuthorizations ?? emptyAuthorizations;
+  const isInitialLoading =
+    authorizations.isLoading && authorizations.data === undefined && !initialAuthorizations;
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<AuthorizationStatus>>(new Set(["active"]));
   const [sort, setSort] = useState<DataGridSortDescriptor>({
@@ -253,22 +257,23 @@ export function CliAuthorizationsTable({
           </TableControls>
         </div>
       </div>
-      {authorizations.isLoading ? (
-        <Typography color="muted">Loading CLI authorizations…</Typography>
-      ) : null}
       {authorizations.isError ? (
         <Typography className="text-danger">Couldn’t load CLI authorizations.</Typography>
       ) : null}
-      <DataGrid
-        aria-label="CLI authorizations"
-        columns={columns}
-        data={rows}
-        getRowId={getRowId}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading CLI authorizations" />
+      ) : (
+        <DataGrid
+          aria-label="CLI authorizations"
+          columns={columns}
+          data={rows}
+          getRowId={getRowId}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+        />
+      )}
     </div>
   );
 }

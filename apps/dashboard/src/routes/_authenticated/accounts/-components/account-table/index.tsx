@@ -16,6 +16,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import type { TableOption } from "@/components/common/table";
+import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
   EvmAddressDisplay,
@@ -39,6 +40,7 @@ const accountCollator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",
 });
+const emptyAccounts: ListWalletsResponse = [];
 
 const defaultSort: DataGridSortDescriptor = {
   column: "createdAt",
@@ -234,12 +236,13 @@ function groupAccounts(
 }
 
 type AccountsTableProps = {
-  initialAccounts: ListWalletsResponse;
+  initialAccounts?: ListWalletsResponse;
 };
 
 export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const accounts = useWallets();
-  const accountData = accounts.data ?? initialAccounts;
+  const accountData = accounts.data ?? initialAccounts ?? emptyAccounts;
+  const isInitialLoading = accounts.isLoading && accounts.data === undefined && !initialAccounts;
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<AccountFilters>(createEmptyAccountFilters);
   const [grouping, setGrouping] = useState<AccountGrouping>("none");
@@ -340,25 +343,28 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         </div>
       </div>
 
-      {accounts.isLoading ? <Typography color="muted">Loading accounts…</Typography> : null}
       {accounts.isError ? (
         <Typography className="text-danger">Couldn’t load accounts.</Typography>
       ) : null}
 
-      <DataGrid
-        aria-label="Organization accounts"
-        className="accounts-data-grid"
-        columns={displayedColumns}
-        data={tableRows}
-        defaultExpandedKeys="all"
-        getRowId={getAccountRowId}
-        key={grouping}
-        renderEmptyState={renderEmptyState}
-        sortDescriptor={sort}
-        variant="secondary"
-        onSortChange={setSort}
-        {...(grouping === "none" ? {} : { getChildren: getAccountChildren })}
-      />
+      {isInitialLoading ? (
+        <DataLoading className="min-h-64" label="Loading accounts" />
+      ) : (
+        <DataGrid
+          aria-label="Organization accounts"
+          className="accounts-data-grid"
+          columns={displayedColumns}
+          data={tableRows}
+          defaultExpandedKeys="all"
+          getRowId={getAccountRowId}
+          key={grouping}
+          renderEmptyState={renderEmptyState}
+          sortDescriptor={sort}
+          variant="secondary"
+          onSortChange={setSort}
+          {...(grouping === "none" ? {} : { getChildren: getAccountChildren })}
+        />
+      )}
     </div>
   );
 }
