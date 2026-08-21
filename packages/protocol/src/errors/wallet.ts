@@ -37,6 +37,27 @@ export class EvmPortfolioError extends Schema.TaggedError<EvmPortfolioError>()(
   },
 ) {}
 
+export class EvmDataProviderError extends Schema.TaggedError<EvmDataProviderError>()(
+  "EvmDataProviderError",
+  {
+    operation: Schema.Literals(["address-detail", "address-metadata", "address-search"]),
+    code: Schema.Literals(["PROVIDER_UNAVAILABLE", "INVALID_PROVIDER_RESPONSE"]),
+    cause: Schema.Defect(),
+  },
+) {}
+
+export class AddressMetadataUnavailableError extends Schema.TaggedError<AddressMetadataUnavailableError>()(
+  "AddressMetadataUnavailableError",
+  { code: Schema.Literal("ADDRESS_METADATA_UNAVAILABLE") },
+  { httpApiStatus: 502 },
+) {}
+
+export class PortfolioUnavailableError extends Schema.TaggedError<PortfolioUnavailableError>()(
+  "PortfolioUnavailableError",
+  { code: Schema.Literal("PORTFOLIO_UNAVAILABLE") },
+  { httpApiStatus: 502 },
+) {}
+
 export class WalletAssetsUnavailableError extends Schema.TaggedError<WalletAssetsUnavailableError>()(
   "WalletAssetsUnavailableError",
   {
