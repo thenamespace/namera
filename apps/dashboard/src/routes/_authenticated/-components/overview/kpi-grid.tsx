@@ -1,9 +1,11 @@
 import { type ReactNode, useMemo } from "react";
 
 import type { DashboardOverviewActivitySeries } from "@namera-ai/protocol/dto";
-import { KPI, Typography } from "@namera-ai/ui";
+import { Chip, KPI, Typography } from "@namera-ai/ui";
 import {
   Activity02Icon,
+  ArrowDown01Icon,
+  ArrowUp01Icon,
   HugeiconsIcon,
   Key01Icon,
   SignatureIcon,
@@ -20,18 +22,18 @@ type ResourceKPIProps = {
 
 function ResourceKPI({ active, icon, title, total, value }: ResourceKPIProps) {
   return (
-    <KPI className="min-h-24 border p-3">
-      <KPI.Header className="gap-1!">
-        <KPI.Icon className="size-5 text-muted">
+    <KPI className="h-24 border p-3">
+      <KPI.Header className="gap-1.5!">
+        <KPI.Icon status="success">
           <HugeiconsIcon icon={icon} />
         </KPI.Icon>
         <KPI.Title>{title}</KPI.Title>
-        <Typography.Paragraph className="ml-auto" color="muted" size="xs">
-          {total === 0 ? "No resources" : `${active} active`}
-        </Typography.Paragraph>
       </KPI.Header>
-      <KPI.Content className="mt-2 content-start">
-        <KPI.Value notation="compact" value={value} />
+      <KPI.Content className="mt-auto items-end pt-3">
+        <KPI.Value className="text-2xl! leading-none!" notation="compact" value={value} />
+        <Chip color={active > 0 ? "success" : "default"} size="sm" variant="soft">
+          <Chip.Label>{total === 0 ? "No resources" : `${active} active`}</Chip.Label>
+        </Chip>
       </KPI.Content>
     </KPI>
   );
@@ -60,7 +62,7 @@ function operationTrend(
 }
 
 function OperationKPI({ color, icon, series, title, total, valueKey }: OperationKPIProps) {
-  const { change, current } = operationTrend(series, valueKey);
+  const { change } = operationTrend(series, valueKey);
   const roundedChange = Math.round(Math.abs(change));
   const chartData = useMemo(
     () => series.points.map((point) => ({ value: point[valueKey] })),
@@ -68,28 +70,42 @@ function OperationKPI({ color, icon, series, title, total, valueKey }: Operation
   );
 
   return (
-    <KPI className="min-h-24 border p-3">
-      <KPI.Header className="gap-1!">
+    <KPI className="h-24 border p-3">
+      <KPI.Header className="gap-1.5!">
         <KPI.Icon className="size-5 text-muted">
           <HugeiconsIcon icon={icon} />
         </KPI.Icon>
         <KPI.Title>{title}</KPI.Title>
-        <Typography.Paragraph className="ml-auto" color="muted" size="xs">
-          {current.toLocaleString()} · 7d
-        </Typography.Paragraph>
       </KPI.Header>
-      <KPI.Content className="mt-2 grid-cols-[auto_minmax(48px,1fr)_auto]! gap-2">
-        <KPI.Value notation="compact" value={total} />
+      <KPI.Content className="mt-auto grid-cols-[minmax(90px,0.8fr)_minmax(0,1.2fr)]! items-end gap-2 pt-2">
+        <div className="space-y-1.5">
+          <KPI.Value className="text-2xl! leading-none!" notation="compact" value={total} />
+          <div className="flex items-center gap-1">
+            {change === 0 ? null : (
+              <HugeiconsIcon
+                className={change > 0 ? "size-3.5 text-success" : "size-3.5 text-danger"}
+                icon={change > 0 ? ArrowUp01Icon : ArrowDown01Icon}
+              />
+            )}
+            <Typography.Paragraph
+              className={change > 0 ? "text-success!" : change < 0 ? "text-danger!" : "text-muted!"}
+              size="xs"
+              weight="medium"
+            >
+              {roundedChange}%
+            </Typography.Paragraph>
+            <Typography.Paragraph className="whitespace-nowrap" color="muted" size="xs">
+              last 7d
+            </Typography.Paragraph>
+          </div>
+        </div>
         <KPI.Chart
           className="min-w-0"
           color={color}
           data={chartData}
-          height={30}
-          strokeWidth={1.5}
+          height={36}
+          strokeWidth={1.75}
         />
-        <KPI.Trend trend={change > 0 ? "up" : change < 0 ? "down" : "neutral"}>
-          {roundedChange}%
-        </KPI.Trend>
       </KPI.Content>
     </KPI>
   );
@@ -124,7 +140,7 @@ export function OverviewKPIGrid({
         icon={Key01Icon}
         title="Session keys"
         total={sessionKeys.total}
-        value={sessionKeys.active}
+        value={sessionKeys.total}
       />
       <OperationKPI
         color="var(--chart-1)"
