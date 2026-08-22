@@ -3,6 +3,7 @@ export * from "./address-metadata.js";
 export * from "./execution.js";
 export * from "./api-key.js";
 export * from "./billing.js";
+export * from "./dashboard.js";
 export * from "./portfolio.js";
 export * from "./wallet.js";
 export * from "./session-key.js";

@@ -68,6 +68,17 @@ metrics are operational signals and may reflect an attempted transition that
 is later rolled back by a wider domain transaction. The billing worker logs
 only nonzero aggregate run counts and one bounded failure event.
 
+### Dashboard signals
+
+| Metric                                    | Bounded attributes | Meaning                                  |
+| ----------------------------------------- | ------------------ | ---------------------------------------- |
+| `namera.dashboard.overview.reads`         | —                  | Successful organization overview reads.  |
+| `namera.dashboard.overview.read.duration` | —                  | End-to-end overview aggregation latency. |
+
+The overview is a read projection assembled from billing, resource, operation,
+and recent-execution queries. It emits no identifiers or organization-specific
+labels.
+
 ## Runtime variables
 
 | Variable                      | Use                                |

@@ -28,6 +28,8 @@ composition model.
 - `src/auth/data.ts` — code-owned authentication policy and defaults.
 - `src/billing/` — code-owned plan registry, anniversary periods, generic
   transactional metering, and recovery/reconciliation orchestration.
+- `src/dashboard/` — read-only organization overview composition across
+  resources, billing meters, operation activity, and recent executions.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — separately composed creation, revocation, relation-view,
   and organization- or actor-scoped read workflows plus canonical policy hashing.

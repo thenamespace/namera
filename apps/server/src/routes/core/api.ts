@@ -19,6 +19,7 @@ import {
 } from "#/routes/auth/index";
 import { BillingRoutes } from "#/routes/billing/index";
 import { HealthRoutes } from "#/routes/core/health";
+import { DashboardRoutes } from "#/routes/dashboard/index";
 import { AddressMetadataRoutes, PortfolioRoutes } from "#/routes/data/index";
 import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
@@ -27,6 +28,7 @@ const ApiHandlers = Layer.mergeAll(
   AddressMetadataRoutes,
   ApiKeyRoutes,
   BillingRoutes,
+  DashboardRoutes,
   HealthRoutes,
   ExecutionRoutes,
   SessionKeyRoutes,

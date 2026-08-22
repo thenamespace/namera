@@ -2,6 +2,7 @@ export * from "./auth.js";
 export * from "./billing.js";
 export * from "./api-key.js";
 export * from "./common.js";
+export * from "./dashboard.js";
 export * from "./email.js";
 export * from "./execution.js";
 export * from "./magic-link.js";
