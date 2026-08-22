@@ -126,6 +126,10 @@
     @apply p-2;
   }
 
+  .kpi {
+    @apply rounded-lg;
+  }
+
   .table__body {
     &::before {
       content: "";
