@@ -83,6 +83,8 @@ return compact row contracts; detail pages load expanded relations.
 
 ## Implemented product routes
 
+- organization overview with a compact resource summary, namespace usage,
+  rolling operation activity, derived attention states, and recent executions;
 - magic-link sign-in and invitation recipient review;
 - accounts list/create and account Overview/Session Keys/Usage views;
 - session-key list/create/revoke and Overview/Policies/Usage views;
@@ -99,9 +101,24 @@ The shared atom runtime installs the dashboard OTLP Layer. The browser exports
 only through server `/t/*` endpoints with a dashboard service identity; provider
 credentials never enter the bundle.
 
+## Organization overview
+
+The authenticated index route prefetches `GET /dashboard/overview` into the
+router-owned atom registry, while its component subscribes to the same atom so
+the page shell remains visible during refreshes. The response keeps global
+resource totals at the root and places operation usage and activity inside a
+namespace-discriminated array. The current `eip155` projection can therefore be
+extended with a Solana member without changing the page-level contract.
+
+The server derives attention items and their destinations. The dashboard only
+chooses their visual severity and does not duplicate billing thresholds. In
+development, `/?preview=true` swaps the fetched projection for schema-decoded
+fixture data so empty local organizations can be used for visual QA. The query
+parameter has no effect in production builds.
+
 ## Pending
 
-- Build notification inbox, audit history, and remaining overview/
-  asset/identity/template product surfaces as their backend contracts stabilize.
+- Build notification inbox, audit history, and remaining asset/identity/template
+  product surfaces as their backend contracts stabilize.
 - Add browser interaction and accessibility regression tests.
 - Measure route/chunk splitting before optimizing large bundles.
