@@ -17,9 +17,9 @@ export type IconPreviewProps = {
 
 const PREVIEW_SIZE_CLASSES: Record<IconPreviewSize, string> = {
   xs: "size-5 rounded-sm text-xs",
-  sm: "size-8 rounded-md text-sm",
-  md: "size-10 rounded-lg text-base",
-  lg: "size-12 rounded-xl text-lg",
+  sm: "size-8 rounded-sm text-sm",
+  md: "size-10 rounded-md text-base",
+  lg: "size-12 rounded-lg text-lg",
 };
 
 const ICON_SIZE_CLASSES: Record<IconPreviewSize, string> = {

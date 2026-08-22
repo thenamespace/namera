@@ -30,7 +30,7 @@ function ActivityPage() {
     <DashboardPage>
       <DashboardPage.Header>
         <DashboardPage.Title>
-          <HeadingGroup.Title className="text-base" level={1} weight="normal">
+          <HeadingGroup.Title className="text-sm" level={1} weight="normal">
             Activity
           </HeadingGroup.Title>
         </DashboardPage.Title>

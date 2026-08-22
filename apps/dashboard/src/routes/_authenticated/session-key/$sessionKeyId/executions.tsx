@@ -1,7 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-
-import { SessionKeyExecutionsPlaceholder } from "../-components/session-key-section-placeholder";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/session-key/$sessionKeyId/executions")({
-  component: SessionKeyExecutionsPlaceholder,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/session-key/$sessionKeyId/usage",
+      params,
+      replace: true,
+    });
+  },
 });

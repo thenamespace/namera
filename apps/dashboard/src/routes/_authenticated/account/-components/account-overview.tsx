@@ -39,7 +39,8 @@ function TechnicalValue({ children }: { children: ReactNode }) {
 
 const showAccountIdCopyError = () =>
   showErrorToast(undefined, { title: "Couldn't copy account ID" });
-const showAccountIdCopySuccess = () => showSuccessToast({ title: "Account ID copied" });
+const showAccountIdCopySuccess = () =>
+  showSuccessToast({ title: "Account ID copied to clipboard" });
 
 type AccountOverviewProps = {
   account: WalletResponse;
@@ -54,13 +55,14 @@ export function AccountOverview({ account }: AccountOverviewProps) {
           size="lg"
           value={account.metadata.logo ?? fallbackAccountIcon}
         />
-        <Typography.Heading className="mt-5 max-w-full truncate text-3xl tracking-tight" level={2}>
+        <Typography.Heading className="mt-3 max-w-full truncate text-3xl tracking-tight" level={2}>
           {account.metadata.name}
         </Typography.Heading>
-        <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
-          {account.metadata.description ??
-            "A programmable smart account for controlled onchain operations."}
-        </Typography.Paragraph>
+        {account.metadata.description ? (
+          <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
+            {account.metadata.description}
+          </Typography.Paragraph>
+        ) : null}
       </header>
 
       <section aria-labelledby="account-properties" className="mt-10 max-w-2xl">

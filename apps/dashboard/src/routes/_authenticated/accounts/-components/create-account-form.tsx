@@ -17,6 +17,7 @@ import {
   FieldLabel,
   IconPicker,
   Input,
+  TextArea,
   Typography,
   cn,
   inputVariants,
@@ -111,6 +112,33 @@ export function CreateAccountForm() {
                       fullWidth
                       variant="secondary"
                       placeholder="Enter account name"
+                    />
+                  </Field>
+                </DashboardCardRow>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="metadata.description"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="create-account-description">Description</FieldLabel>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </div>
+                    <TextArea
+                      {...field}
+                      id="create-account-description"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                      fullWidth
+                      placeholder="Describe how this account will be used"
+                      rows={3}
+                      value={field.value ?? ""}
+                      variant="secondary"
+                      onChange={(event) => field.onChange(event.target.value || undefined)}
                     />
                   </Field>
                 </DashboardCardRow>

@@ -76,15 +76,16 @@ are the default for revocable resources; lifecycle history remains available in
 status filters. Columns stretch to full width with minimum sizes and are not
 resizable. Pinned action columns contain navigation and copy/revoke actions.
 
-Execution and session-key tables are reusable across organization and future
-account/key-scoped routes. List endpoints intentionally return compact row
-contracts; detail pages load expanded relations.
+Execution and session-key tables are reusable across organization, account, and
+session-key scoped routes. Scoped usage pages prefetch server-filtered history
+and remove redundant filter/grouping facets. List endpoints intentionally
+return compact row contracts; detail pages load expanded relations.
 
 ## Implemented product routes
 
 - magic-link sign-in and invitation recipient review;
-- accounts list/create and account Overview/Session Keys/Usage shell;
-- session-key list/create/revoke and Overview/Policies/Executions shell;
+- accounts list/create and account Overview/Session Keys/Usage views;
+- session-key list/create/revoke and Overview/Policies/Usage views;
 - activity list and expanded execution detail;
 - profile, notification preferences, sessions/security, workspace, members and
   invitations, API keys, MCP authorizations, CLI authorizations, and billing
@@ -100,8 +101,6 @@ credentials never enter the bundle.
 
 ## Pending
 
-- Build account usage and session-key scoped execution views after backend query
-  support.
 - Build notification inbox, audit history, and remaining overview/
   asset/identity/template product surfaces as their backend contracts stabilize.
 - Add browser interaction and accessibility regression tests.

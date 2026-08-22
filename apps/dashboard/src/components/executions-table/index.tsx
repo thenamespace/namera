@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { chains as supportedEvmChains } from "@namera-ai/evm";
+import type { SessionKeyId, WalletId } from "@namera-ai/protocol";
 import type { ExecutionListItemResponse, ListExecutionsResponse } from "@namera-ai/protocol/dto";
 import type { ActorType } from "@namera-ai/protocol/model";
 import {
@@ -36,7 +37,7 @@ import {
   NamespaceDisplay,
   actorDisplay,
 } from "@/components/display";
-import { useExecutions } from "@/hooks/execution";
+import { useExecutions, useSessionKeyExecutions, useWalletExecutions } from "@/hooks/execution";
 import { useSessionKeys } from "@/hooks/session-key";
 import { useWallets } from "@/hooks/wallet";
 
@@ -61,8 +62,29 @@ type ExecutionsTableProps = {
   initialExecutions?: ListExecutionsResponse;
 };
 
-export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
-  const executions = useExecutions();
+type ScopedExecutionsTableProps = {
+  initialExecutions?: ListExecutionsResponse;
+};
+
+type ExecutionsQueryState = {
+  readonly data: ListExecutionsResponse | undefined;
+  readonly isError: boolean;
+  readonly isLoading: boolean;
+};
+
+type ExecutionTableScope = "organization" | "wallet" | "session-key";
+
+type ExecutionsTableContentProps = {
+  executions: ExecutionsQueryState;
+  initialExecutions?: ListExecutionsResponse;
+  scope: ExecutionTableScope;
+};
+
+function ExecutionsTableContent({
+  executions,
+  initialExecutions,
+  scope,
+}: ExecutionsTableContentProps) {
   const wallets = useWallets();
   const organizationSessionKeys = useSessionKeys();
   const items = executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
@@ -83,6 +105,8 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
     new Set(executionColumnIds),
   );
   const normalizedQuery = query.trim().toLowerCase();
+  const fixedColumnId =
+    scope === "organization" ? "account" : scope === "wallet" ? "sessionKey" : "namespace";
 
   const accountOptions = useMemo(() => {
     const counts = countTableValues(items, (item) => item.wallet.id);
@@ -229,15 +253,29 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   }, [grouping, sorted]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set(executionColumnIds) : visibleColumns;
-    return executionColumns.filter(
+    const columns = executionColumns.filter(
       (column) =>
-        column.id === "account" || column.id === "actions" || visible.has(column.id as never),
+        !(scope !== "organization" && column.id === "account") &&
+        !(scope === "session-key" && column.id === "sessionKey") &&
+        (column.id === fixedColumnId || column.id === "actions" || visible.has(column.id as never)),
     );
-  }, [visibleColumns]);
+    const fixedColumnIndex = columns.findIndex((column) => column.id === fixedColumnId);
+    const fixedColumn = columns[fixedColumnIndex];
+    if (fixedColumn === undefined) return columns;
 
-  const facets = useMemo<ReadonlyArray<TableFilterFacet>>(
-    () => [
-      {
+    return columns.toSpliced(fixedColumnIndex, 1, {
+      ...fixedColumn,
+      isRowHeader: true,
+      pinned: "start" as const,
+      width: "1fr" as const,
+    });
+  }, [fixedColumnId, scope, visibleColumns]);
+
+  const facets = useMemo<ReadonlyArray<TableFilterFacet>>(() => {
+    const availableFacets: TableFilterFacet[] = [];
+
+    if (scope === "organization") {
+      availableFacets.push({
         id: "account",
         label: "Account",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Wallet01Icon} />,
@@ -250,8 +288,11 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
               accountOptions.map((option) => option.id),
             ),
           ),
-      },
-      {
+      });
+    }
+
+    if (scope !== "session-key") {
+      availableFacets.push({
         id: "session-key",
         label: "Session key",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Key01Icon} />,
@@ -264,7 +305,10 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
               sessionKeyOptions.map((option) => option.id),
             ),
           ),
-      },
+      });
+    }
+
+    availableFacets.push(
       {
         id: "namespace",
         label: "Namespace",
@@ -307,19 +351,56 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
             ),
           ),
       },
-    ],
-    [
-      accountOptions,
-      accounts,
-      actorOptions,
-      actors,
-      chainOptions,
-      chains,
-      namespaceOptions,
-      namespaces,
-      sessionKeyOptions,
-      sessionKeys,
-    ],
+    );
+
+    return availableFacets;
+  }, [
+    accountOptions,
+    accounts,
+    actorOptions,
+    actors,
+    chainOptions,
+    chains,
+    namespaceOptions,
+    namespaces,
+    sessionKeyOptions,
+    sessionKeys,
+    scope,
+  ]);
+  const groupingOptions = useMemo(
+    () =>
+      executionGroupingOptions.filter(
+        (option) =>
+          (scope === "organization" || option.id !== "account") &&
+          (scope !== "session-key" || option.id !== "sessionKey"),
+      ),
+    [scope],
+  );
+  const columnOptions = useMemo(
+    () =>
+      executionConfigurableColumns.filter(
+        (option) =>
+          (scope === "organization" || option.id !== "account") &&
+          (scope !== "session-key" || option.id !== "sessionKey") &&
+          option.id !== fixedColumnId,
+      ),
+    [fixedColumnId, scope],
+  );
+  const fixedColumnOptions = useMemo(
+    () =>
+      scope === "organization"
+        ? executionFixedColumnOptions
+        : [{ id: fixedColumnId, label: scope === "wallet" ? "Session key" : "Namespace" }],
+    [fixedColumnId, scope],
+  );
+  const sortableColumns = useMemo(
+    () =>
+      executionSortableColumns.filter(
+        (option) =>
+          (scope === "organization" || option.id !== "account") &&
+          (scope !== "session-key" || option.id !== "sessionKey"),
+      ),
+    [scope],
   );
   const hasFilters =
     normalizedQuery.length > 0 ||
@@ -372,12 +453,12 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
             />
             <TableViewOptions
               ariaLabel="Configure execution table view"
-              columnOptions={executionConfigurableColumns}
-              fixedColumnOptions={executionFixedColumnOptions}
+              columnOptions={columnOptions}
+              fixedColumnOptions={fixedColumnOptions}
               grouping={grouping}
-              groupingOptions={executionGroupingOptions}
+              groupingOptions={groupingOptions}
               sort={sort}
-              sortableColumns={executionSortableColumns}
+              sortableColumns={sortableColumns}
               visibleColumns={visibleColumns}
               onGroupingChange={handleGroupingChange}
               onReset={resetView}
@@ -412,4 +493,43 @@ export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
   );
 }
 
-export type { ExecutionsTableProps };
+export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
+  const executions = useExecutions();
+  return (
+    <ExecutionsTableContent
+      executions={executions}
+      scope="organization"
+      {...(initialExecutions === undefined ? {} : { initialExecutions })}
+    />
+  );
+}
+
+export function WalletExecutionsTable({
+  walletId,
+  initialExecutions,
+}: ScopedExecutionsTableProps & { walletId: WalletId }) {
+  const executions = useWalletExecutions(walletId);
+  return (
+    <ExecutionsTableContent
+      executions={executions}
+      scope="wallet"
+      {...(initialExecutions === undefined ? {} : { initialExecutions })}
+    />
+  );
+}
+
+export function SessionKeyExecutionsTable({
+  sessionKeyId,
+  initialExecutions,
+}: ScopedExecutionsTableProps & { sessionKeyId: SessionKeyId }) {
+  const executions = useSessionKeyExecutions(sessionKeyId);
+  return (
+    <ExecutionsTableContent
+      executions={executions}
+      scope="session-key"
+      {...(initialExecutions === undefined ? {} : { initialExecutions })}
+    />
+  );
+}
+
+export type { ExecutionsTableProps, ScopedExecutionsTableProps };

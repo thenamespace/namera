@@ -68,4 +68,3 @@ active grants. Routes expose create/get/list/wallet-list/revoke boundaries under
 - Add retention behavior for expired/revoked keys and historical grants.
 - Per-grant editing is intentionally unsupported; revoke/replace the parent
   credential or authorization instead.
-- Add account- and session-key-scoped execution history queries.

@@ -38,7 +38,7 @@ function SessionKeysPage() {
     <DashboardPage>
       <DashboardPage.Header>
         <DashboardPage.Title>
-          <HeadingGroup.Title level={1} weight="normal" className="text-base">
+          <HeadingGroup.Title level={1} weight="normal" className="text-sm">
             Session Keys
           </HeadingGroup.Title>
         </DashboardPage.Title>

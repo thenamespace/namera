@@ -40,7 +40,7 @@ function ExecutionPage() {
           <span aria-hidden className="text-muted">
             /
           </span>
-          <HeadingGroup.Title className="truncate text-base" level={1} weight="normal">
+          <HeadingGroup.Title className="truncate text-sm" level={1} weight="normal">
             Execution
           </HeadingGroup.Title>
         </DashboardPage.Title>

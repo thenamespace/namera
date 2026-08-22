@@ -40,7 +40,7 @@ export function AccountShell({ account, children }: AccountShellProps) {
           <span aria-hidden className="text-muted">
             /
           </span>
-          <HeadingGroup.Title level={1} weight="normal" className="truncate text-base">
+          <HeadingGroup.Title level={1} weight="normal" className="truncate text-sm">
             {account?.metadata.name ?? "Account"}
           </HeadingGroup.Title>
         </DashboardPage.Title>

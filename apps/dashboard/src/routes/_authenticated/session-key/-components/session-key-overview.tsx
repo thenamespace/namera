@@ -58,15 +58,16 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
             value={sessionKey.metadata.logo ?? fallbackSessionKeyIcon}
           />
           <Typography.Heading
-            className="mt-5 max-w-full truncate text-3xl tracking-tight"
+            className="mt-3 max-w-full truncate text-3xl tracking-tight"
             level={2}
           >
             {sessionKey.metadata.name}
           </Typography.Heading>
-          <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
-            {sessionKey.metadata.description ??
-              "Scoped access for agents and integrations operating this account."}
-          </Typography.Paragraph>
+          {sessionKey.metadata.description ? (
+            <Typography.Paragraph className="mt-2 max-w-2xl text-muted" size="sm">
+              {sessionKey.metadata.description}
+            </Typography.Paragraph>
+          ) : null}
         </div>
         <SessionKeyActions sessionKey={sessionKey} showOpenAction={false} />
       </header>

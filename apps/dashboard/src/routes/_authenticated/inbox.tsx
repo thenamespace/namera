@@ -12,7 +12,7 @@ function InboxPage() {
     <DashboardPage>
       <DashboardPage.Header>
         <DashboardPage.Title>
-          <HeadingGroup.Title className="text-base" level={1} weight="normal">
+          <HeadingGroup.Title className="text-sm" level={1} weight="normal">
             Inbox
           </HeadingGroup.Title>
         </DashboardPage.Title>

@@ -57,7 +57,8 @@ requirements and [wallet-key providers](wallet-keys.md) for custody boundaries.
 User actors list/get wallets in the active organization with `wallet:read`.
 Machine actors see only wallets reachable through active grants to active
 session keys. Metadata updates require `wallet:update`; same-value replacements
-are no-ops without duplicate audit, notification, or metrics.
+are no-ops without duplicate audit, notification, or metrics. Account creation
+accepts an optional presentation description alongside its name and logo.
 
 Routes are `POST /wallets`, `GET /wallets`, `GET /wallets/:walletId`,
 `GET /wallets/:walletId/portfolio`, and `POST /wallets/:walletId/update`. The

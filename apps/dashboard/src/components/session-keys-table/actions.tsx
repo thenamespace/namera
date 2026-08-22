@@ -4,7 +4,12 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
-import { HugeiconsIcon, Key01Icon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
+import {
+  CancelCircleIcon,
+  HugeiconsIcon,
+  Key01Icon,
+  MoreHorizontalIcon,
+} from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import { CopyDropdownItem } from "@/components/copy-icon-button";
@@ -91,7 +96,7 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
             />
             {showRevoke ? (
               <Dropdown.Item id="revoke" textValue="Revoke session key" variant="danger">
-                <HugeiconsIcon className="size-4" icon={Key01Icon} />
+                <HugeiconsIcon className="size-4 text-danger" icon={CancelCircleIcon} />
                 <Label>Revoke session key</Label>
               </Dropdown.Item>
             ) : null}

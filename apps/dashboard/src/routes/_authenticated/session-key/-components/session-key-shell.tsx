@@ -11,7 +11,7 @@ import { DashboardPage } from "@/components/page";
 const sessionKeySections = [
   { label: "Overview", to: "/session-key/$sessionKeyId/overview" },
   { label: "Policies", to: "/session-key/$sessionKeyId/policies" },
-  { label: "Executions", to: "/session-key/$sessionKeyId/executions" },
+  { label: "Usage", to: "/session-key/$sessionKeyId/usage" },
 ] as const;
 const exactActiveOptions = { exact: true } as const;
 const activeTabProps = { className: "bg-surface text-foreground" } as const;
@@ -39,7 +39,7 @@ export function SessionKeyShell({ children, sessionKey }: SessionKeyShellProps) 
           <span aria-hidden className="text-muted">
             /
           </span>
-          <HeadingGroup.Title level={1} weight="normal" className="truncate text-base">
+          <HeadingGroup.Title level={1} weight="normal" className="truncate text-sm">
             {sessionKey?.metadata.name ?? "Session Key"}
           </HeadingGroup.Title>
         </DashboardPage.Title>
