@@ -5,7 +5,7 @@ import { AreaChart, ChartTooltip } from "@namera-ai/ui";
 
 const dayLabel = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 const monthLabel = new Intl.DateTimeFormat(undefined, { month: "short", year: "2-digit" });
-const chartMargin = { bottom: 0, left: -24, right: 8, top: 8 } as const;
+const chartMargin = { bottom: 0, left: 0, right: 12, top: 8 } as const;
 const axisTick = { fill: "var(--muted)", fontSize: 11 } as const;
 const chartCursor = { stroke: "var(--border)", strokeWidth: 1 } as const;
 const chartGridDash = "3 3";

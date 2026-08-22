@@ -61,19 +61,9 @@ function ActivityWidget({
           ))}
         </Segment>
       </Widget.Header>
-      <Widget.Content className="px-4 pb-2 pt-4 sm:px-5">
+      <Widget.Content className="px-5 pb-5 pt-4 sm:px-6">
         <ActivityChart series={activity[view]} />
       </Widget.Content>
-      <Widget.Footer className="justify-between">
-        <Widget.Legend>
-          <Widget.LegendItem color="var(--chart-1)">Executions</Widget.LegendItem>
-          <Widget.LegendItem color="var(--chart-2)">Signatures</Widget.LegendItem>
-        </Widget.Legend>
-        <Typography.Paragraph color="muted" size="xs">
-          {activity[view].points.length}{" "}
-          {view === "daily" ? "days" : view === "weekly" ? "weeks" : "months"}
-        </Typography.Paragraph>
-      </Widget.Footer>
     </Widget>
   );
 }

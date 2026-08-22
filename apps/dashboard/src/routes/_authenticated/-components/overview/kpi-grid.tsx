@@ -16,32 +16,23 @@ type ResourceKPIProps = {
   title: string;
   total: number;
   value: number;
-  valueLabel: string;
 };
 
-function ResourceKPI({ active, icon, title, total, value, valueLabel }: ResourceKPIProps) {
-  const activePercentage = total === 0 ? 0 : (active / total) * 100;
-
+function ResourceKPI({ active, icon, title, total, value }: ResourceKPIProps) {
   return (
-    <KPI className="min-h-32 border p-3">
-      <KPI.Header>
-        <KPI.Icon>
+    <KPI className="min-h-24 border p-3">
+      <KPI.Header className="gap-1!">
+        <KPI.Icon className="size-5 text-muted">
           <HugeiconsIcon icon={icon} />
         </KPI.Icon>
         <KPI.Title>{title}</KPI.Title>
+        <Typography.Paragraph className="ml-auto" color="muted" size="xs">
+          {total === 0 ? "No resources" : `${active} active`}
+        </Typography.Paragraph>
       </KPI.Header>
-      <KPI.Content className="mt-1 content-start">
+      <KPI.Content className="mt-2 content-start">
         <KPI.Value notation="compact" value={value} />
-        <KPI.Progress aria-label={`${active} of ${total} active`} value={activePercentage} />
       </KPI.Content>
-      <KPI.Footer className="mt-auto flex items-center justify-between pt-1.5">
-        <Typography.Paragraph color="muted" size="xs">
-          {valueLabel}
-        </Typography.Paragraph>
-        <Typography.Paragraph color="muted" size="xs">
-          {total === 0 ? "No resources yet" : `${active} active`}
-        </Typography.Paragraph>
-      </KPI.Footer>
     </KPI>
   );
 }
@@ -77,28 +68,29 @@ function OperationKPI({ color, icon, series, title, total, valueKey }: Operation
   );
 
   return (
-    <KPI className="min-h-32 border p-3">
-      <KPI.Header>
-        <KPI.Icon>
+    <KPI className="min-h-24 border p-3">
+      <KPI.Header className="gap-1!">
+        <KPI.Icon className="size-5 text-muted">
           <HugeiconsIcon icon={icon} />
         </KPI.Icon>
         <KPI.Title>{title}</KPI.Title>
+        <Typography.Paragraph className="ml-auto" color="muted" size="xs">
+          {current.toLocaleString()} · 7d
+        </Typography.Paragraph>
       </KPI.Header>
-      <KPI.Content className="mt-1">
+      <KPI.Content className="mt-2 grid-cols-[auto_minmax(48px,1fr)_auto]! gap-2">
         <KPI.Value notation="compact" value={total} />
+        <KPI.Chart
+          className="min-w-0"
+          color={color}
+          data={chartData}
+          height={30}
+          strokeWidth={1.5}
+        />
         <KPI.Trend trend={change > 0 ? "up" : change < 0 ? "down" : "neutral"}>
           {roundedChange}%
         </KPI.Trend>
       </KPI.Content>
-      <KPI.Chart className="mt-0.5" color={color} data={chartData} height={30} strokeWidth={1.5} />
-      <KPI.Footer className="flex items-center justify-between pt-1.5">
-        <Typography.Paragraph color="muted" size="xs">
-          {current.toLocaleString()} in the last 7 days
-        </Typography.Paragraph>
-        <Typography.Paragraph color="muted" size="xs">
-          All time
-        </Typography.Paragraph>
-      </KPI.Footer>
     </KPI>
   );
 }
@@ -126,7 +118,6 @@ export function OverviewKPIGrid({
         title="Accounts"
         total={accounts.total}
         value={accounts.total}
-        valueLabel="Total accounts"
       />
       <ResourceKPI
         active={sessionKeys.active}
@@ -134,7 +125,6 @@ export function OverviewKPIGrid({
         title="Session keys"
         total={sessionKeys.total}
         value={sessionKeys.active}
-        valueLabel="Active keys"
       />
       <OperationKPI
         color="var(--chart-1)"

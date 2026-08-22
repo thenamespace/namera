@@ -11,13 +11,6 @@ const sourceColors = {
   cli: "var(--chart-3)",
   user: "var(--chart-4)",
 } as const satisfies Record<ActorType, string>;
-const sourceDotStyles = Object.fromEntries(
-  Object.entries(sourceColors).map(([actorType, backgroundColor]) => [
-    actorType,
-    { backgroundColor },
-  ]),
-) as Record<ActorType, { backgroundColor: string }>;
-
 type ExecutionSource = {
   actorType: ActorType;
   count: number;
@@ -52,7 +45,7 @@ export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
           <Widget.Description>Where confirmed executions originate</Widget.Description>
         </div>
       </Widget.Header>
-      <Widget.Content className="px-4 py-4 sm:px-5">
+      <Widget.Content className="px-5 pb-5 pt-3 sm:px-6">
         {total === 0 ? (
           <div className="flex min-h-64 items-center justify-center">
             <Typography.Paragraph color="muted" size="sm">
@@ -60,9 +53,9 @@ export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
             </Typography.Paragraph>
           </div>
         ) : (
-          <div className="grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(132px,0.8fr)] items-center gap-3">
-            <div className="relative min-w-0">
-              <PieChart aria-label="Executions by actor type" height={220}>
+          <div className="flex min-h-64 flex-col">
+            <div className="relative min-w-0 flex-1">
+              <PieChart aria-label="Executions by actor type" height={190}>
                 <PieChart.Pie
                   cornerRadius={4}
                   data={chartData}
@@ -90,18 +83,18 @@ export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
                 </Typography.Paragraph>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t pt-4">
               {sources.map((source) => (
-                <div className="space-y-1" key={source.actorType}>
-                  <ExecutionActorDisplay type={source.actorType} />
-                  <div className="flex items-center gap-2 pl-6">
-                    <span
-                      aria-hidden
-                      className="size-1.5 rounded-full"
-                      style={sourceDotStyles[source.actorType]}
-                    />
+                <div
+                  className="flex min-w-0 items-center justify-between gap-2"
+                  key={source.actorType}
+                >
+                  <div className="min-w-0">
+                    <ExecutionActorDisplay type={source.actorType} />
+                  </div>
+                  <div className="shrink-0">
                     <Typography.Paragraph color="muted" size="xs">
-                      {source.count.toLocaleString()} · {Math.round((source.count / total) * 100)}%
+                      {Math.round((source.count / total) * 100)}%
                     </Typography.Paragraph>
                   </div>
                 </div>
