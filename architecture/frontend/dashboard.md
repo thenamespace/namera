@@ -106,15 +106,21 @@ credentials never enter the bundle.
 The authenticated index route prefetches `GET /dashboard/overview` into the
 router-owned atom registry, while its component subscribes to the same atom so
 the page shell remains visible during refreshes. The response keeps global
-resource totals at the root and places operation totals and activity inside a
-namespace-discriminated array. Each namespace provides daily, weekly, and
-monthly series; `eip155` currently returns 14 daily, 12 weekly, and 12 monthly
-buckets. A future Solana member can be added without changing the page-level
-contract.
+resource totals at the root and places operation totals, activity, and execution
+source distribution inside a namespace-discriminated array. Each namespace
+provides daily, weekly, and monthly series; `eip155` currently returns 14 daily,
+12 weekly, and 12 monthly buckets plus confirmed execution counts grouped by
+bounded actor type. A future Solana member can be added without changing the
+page-level contract.
 
-The overview deliberately excludes plan limits, remaining quotas, attention
-states, and execution rows. Its operation KPIs are all-time recorded totals;
-limits and period consumption belong to Billing, while recent activity
+The overview deliberately excludes plan limits, remaining quotas, and attention
+states. Four independent KPI cards summarize accounts, active session keys,
+all-time executions, and all-time signatures. Actual active-resource ratios and
+recent operation trends provide context without representing billing quotas.
+The primary chart compares executions and signatures at the selected
+granularity, while the execution-source chart shows the API key, MCP, CLI, and
+member composition for confirmed executions. Limits and period consumption
+belong to Billing, while recent activity
 subscribes to the same executions atom as the Activity page and renders the
 shared execution table in a five-row summary mode. In development,
 `/?preview=true` swaps both projections for schema-decoded fixture data so empty

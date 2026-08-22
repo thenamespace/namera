@@ -30,7 +30,8 @@ composition model.
   transactional metering, and recovery/reconciliation orchestration.
 - `src/dashboard/` — read-only organization overview composition across
   resource and all-time operation totals, plus daily activity aggregated into
-  daily, weekly, and monthly namespace projections.
+  daily, weekly, and monthly namespace projections and confirmed execution
+  actor-source counts.
 - `src/notification/` — notification policy, transactional creation, inbox, and preferences.
 - `src/session-key/` — separately composed creation, revocation, relation-view,
   and organization- or actor-scoped read workflows plus canonical policy hashing.

@@ -15,7 +15,8 @@ sequence.
 - `src/routes/billing.ts` — read-only active-organization billing and entitlements.
 - `src/routes/dashboard.ts` — active-organization operational overview with
   global resource totals and namespace-discriminated operation totals and
-  daily, weekly, and monthly activity projections.
+  daily, weekly, and monthly activity projections plus execution actor-source
+  distribution.
 - `src/routes/auth/core/` — core authentication endpoints such as magic links,
   sessions, and users.
 - `src/routes/auth/organization/` — organization, membership, and invitation

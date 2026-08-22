@@ -63,6 +63,7 @@ export function ActivityChart({ series }: ActivityChartProps) {
         stroke="var(--chart-2)"
         strokeWidth={1.5}
         type="monotone"
+        isAnimationActive={false}
       />
       <AreaChart.Area
         dataKey="executions"
@@ -72,6 +73,7 @@ export function ActivityChart({ series }: ActivityChartProps) {
         stroke="var(--chart-1)"
         strokeWidth={1.5}
         type="monotone"
+        isAnimationActive={false}
       />
     </AreaChart>
   );

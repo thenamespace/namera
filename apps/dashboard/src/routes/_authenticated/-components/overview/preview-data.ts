@@ -15,6 +15,11 @@ export const dashboardOverviewPreview = Schema.decodeSync(GetDashboardOverviewRe
     {
       namespace: "eip155",
       totals: { executions: "511", signatures: "724" },
+      executionSources: [
+        { actorType: "mcp", count: 314 },
+        { actorType: "api-key", count: 129 },
+        { actorType: "cli", count: 68 },
+      ],
       activity: {
         daily: {
           granularity: "day",

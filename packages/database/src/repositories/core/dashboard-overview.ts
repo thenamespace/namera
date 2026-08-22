@@ -1,11 +1,19 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
+import type { ActorType } from "@namera-ai/protocol/model";
 import { and, eq, gte, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { execution, sessionKey, signatureOperation, wallet } from "#/schema/index";
+import {
+  actor,
+  execution,
+  executionSubmission,
+  sessionKey,
+  signatureOperation,
+  wallet,
+} from "#/schema/index";
 
 export interface DashboardResourceSummary {
   readonly accounts: {
@@ -31,6 +39,12 @@ export interface DashboardOperationCount {
   readonly count: number;
 }
 
+export interface DashboardExecutionSourceCount {
+  readonly namespace: "eip155";
+  readonly actorType: ActorType;
+  readonly count: number;
+}
+
 export interface DashboardOverviewRepositoryService {
   readonly getResources: (
     organizationId: OrganizationId,
@@ -42,6 +56,9 @@ export interface DashboardOverviewRepositoryService {
     organizationId: OrganizationId,
     since: DateTime.Utc,
   ) => Effect.Effect<ReadonlyArray<DashboardActivityCount>, DatabaseError>;
+  readonly getExecutionSources: (
+    organizationId: OrganizationId,
+  ) => Effect.Effect<ReadonlyArray<DashboardExecutionSourceCount>, DatabaseError>;
 }
 
 const decodeCount = (value: unknown) =>
@@ -193,6 +210,41 @@ export class DashboardOverviewRepository extends Context.Service<
             })),
           ];
         }, mapRepositoryError),
+        getExecutionSources: Effect.fn("database.dashboardOverviewRepository.getExecutionSources")(
+          function* (organizationId) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select({
+                namespace: execution.namespace,
+                actorType: actor.type,
+                count: sql<number>`count(*)::int`,
+              })
+              .from(execution)
+              .innerJoin(
+                executionSubmission,
+                and(
+                  eq(execution.executionSubmissionId, executionSubmission.id),
+                  eq(execution.organizationId, executionSubmission.organizationId),
+                ),
+              )
+              .innerJoin(
+                actor,
+                and(
+                  eq(executionSubmission.actorId, actor.id),
+                  eq(execution.organizationId, actor.organizationId),
+                ),
+              )
+              .where(eq(execution.organizationId, organizationId))
+              .groupBy(execution.namespace, actor.type);
+
+            return rows.map((row) => ({
+              namespace: row.namespace,
+              actorType: row.actorType,
+              count: decodeCount(row.count),
+            }));
+          },
+          mapRepositoryError,
+        ),
       });
     }),
   );

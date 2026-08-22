@@ -34,7 +34,7 @@ function OverviewPage() {
           </HeadingGroup.Title>
         </DashboardPage.Title>
       </DashboardPage.Header>
-      <DashboardPage.Content className="w-full px-4 py-5 sm:px-6">
+      <DashboardPage.Content className="w-full px-5 py-6 sm:px-7 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Overview preview={preview} />
         </div>

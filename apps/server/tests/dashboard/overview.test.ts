@@ -31,6 +31,7 @@ layer(TestServerLayer)("dashboard overview route", (it) => {
       expect(empty.namespaces[0]).toMatchObject({
         namespace: "eip155",
         totals: { executions: 0n, signatures: 0n },
+        executionSources: [],
       });
       expect(empty.namespaces[0]?.activity.daily.points).toHaveLength(14);
       expect(empty.namespaces[0]?.activity.weekly.points).toHaveLength(12);
@@ -49,6 +50,9 @@ layer(TestServerLayer)("dashboard overview route", (it) => {
         sessionKeys: { total: 1, active: 1 },
       });
       expect(overview.namespaces[0]?.totals.executions).toBe(1n);
+      expect(overview.namespaces[0]?.executionSources).toEqual([
+        { actorType: "api-key", count: 1 },
+      ]);
       for (const series of Object.values(overview.namespaces[0]?.activity ?? {})) {
         expect(series.points.reduce((total, point) => total + point.executions, 0)).toBe(1);
       }

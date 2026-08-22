@@ -69,11 +69,12 @@ export const makeDashboardOverviewApplication = () =>
         const since = DateTime.subtract(DateTime.startOf(now, "month"), {
           months: activityWindows.month - 1,
         });
-        const [resources, totals, counts] = yield* Effect.all(
+        const [resources, totals, counts, executionSources] = yield* Effect.all(
           [
             repository.core.dashboardOverview.getResources(organizationId),
             repository.core.dashboardOverview.getOperationTotals(organizationId),
             repository.core.dashboardOverview.getActivity(organizationId, since),
+            repository.core.dashboardOverview.getExecutionSources(organizationId),
           ],
           { concurrency: "unbounded" },
         );
@@ -102,6 +103,9 @@ export const makeDashboardOverviewApplication = () =>
                 weekly: activitySeries(now, counts, "week"),
                 monthly: activitySeries(now, counts, "month"),
               },
+              executionSources: executionSources
+                .filter((source) => source.namespace === "eip155")
+                .map(({ actorType, count }) => ({ actorType, count })),
             },
           ],
         } satisfies GetDashboardOverviewResponse;

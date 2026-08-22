@@ -6,7 +6,7 @@ import type {
   DashboardOverviewActivitySeries,
   GetDashboardOverviewResponse,
 } from "@namera-ai/protocol/dto";
-import { KPI, KPIGroup, Segment, Surface, Typography, Widget } from "@namera-ai/ui";
+import { Segment, Surface, Typography, Widget } from "@namera-ai/ui";
 
 import { DataLoading } from "@/components/data-loading";
 import { ExecutionsTable } from "@/components/executions-table";
@@ -14,6 +14,8 @@ import { HeadingGroup } from "@/components/heading-group";
 import { useDashboardOverview } from "@/hooks/dashboard";
 
 import { ActivityChart } from "./activity-chart";
+import { ExecutionSourcesChart } from "./execution-sources-chart";
+import { OverviewKPIGrid } from "./kpi-grid";
 import { dashboardExecutionsPreview, dashboardOverviewPreview } from "./preview-data";
 
 type OverviewProps = {
@@ -28,19 +30,6 @@ const activityOptions = [
   { id: "monthly", label: "Monthly" },
 ] as const;
 
-function OverviewKPI({ label, value }: { label: string; value: number }) {
-  return (
-    <KPI>
-      <KPI.Header>
-        <KPI.Title>{label}</KPI.Title>
-      </KPI.Header>
-      <KPI.Content>
-        <KPI.Value notation="compact" value={value} />
-      </KPI.Content>
-    </KPI>
-  );
-}
-
 function ActivityWidget({
   activity,
 }: {
@@ -54,7 +43,10 @@ function ActivityWidget({
   return (
     <Widget>
       <Widget.Header>
-        <Widget.Title>Activity</Widget.Title>
+        <div className="flex flex-col gap-0.5">
+          <Widget.Title>Operations activity</Widget.Title>
+          <Widget.Description>Confirmed executions and signatures over time</Widget.Description>
+        </div>
         <Segment
           aria-label="Activity aggregation"
           selectedKey={view}
@@ -69,7 +61,7 @@ function ActivityWidget({
           ))}
         </Segment>
       </Widget.Header>
-      <Widget.Content className="px-4 pb-2 pt-3 sm:px-5">
+      <Widget.Content className="px-4 pb-2 pt-4 sm:px-5">
         <ActivityChart series={activity[view]} />
       </Widget.Content>
       <Widget.Footer className="justify-between">
@@ -97,21 +89,22 @@ function OverviewContent({
   if (evm === undefined) return null;
 
   return (
-    <div className="space-y-6">
-      <KPIGroup className="max-md:grid max-md:grid-cols-2">
-        <OverviewKPI label="Accounts" value={overview.resources.accounts.total} />
-        <KPIGroup.Separator className="max-md:hidden" />
-        <OverviewKPI label="Active session keys" value={overview.resources.sessionKeys.active} />
-        <KPIGroup.Separator className="max-md:hidden" />
-        <OverviewKPI label="Executions" value={Number(evm.totals.executions)} />
-        <KPIGroup.Separator className="max-md:hidden" />
-        <OverviewKPI label="Signatures" value={Number(evm.totals.signatures)} />
-      </KPIGroup>
+    <div className="space-y-5">
+      <OverviewKPIGrid
+        accounts={overview.resources.accounts}
+        dailyActivity={evm.activity.daily}
+        executions={Number(evm.totals.executions)}
+        sessionKeys={overview.resources.sessionKeys}
+        signatures={Number(evm.totals.signatures)}
+      />
 
-      <ActivityWidget activity={evm.activity} />
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
+        <ActivityWidget activity={evm.activity} />
+        <ExecutionSourcesChart sources={evm.executionSources} />
+      </div>
 
       <section aria-labelledby="recent-activity-heading">
-        <div className="mb-3 flex items-center justify-between gap-4">
+        <div className="mb-3 flex items-center justify-between gap-4 px-0.5">
           <HeadingGroup.Title id="recent-activity-heading">Recent activity</HeadingGroup.Title>
           <Link
             className="text-xs text-muted transition-colors hover:text-foreground"

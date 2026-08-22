@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 import { OrganizationId } from "#/common/index";
+import { ActorType } from "#/model/auth/actor";
 
 const NonNegativeAmount = Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n));
 const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
@@ -27,6 +28,12 @@ export const EvmDashboardOverview = Schema.Struct({
     weekly: DashboardOverviewActivitySeries,
     monthly: DashboardOverviewActivitySeries,
   }),
+  executionSources: Schema.Array(
+    Schema.Struct({
+      actorType: ActorType,
+      count: NonNegativeInt,
+    }),
+  ),
 }).annotate({ identifier: "EvmDashboardOverview" });
 
 export const DashboardNamespaceOverview = Schema.Union([EvmDashboardOverview], {
