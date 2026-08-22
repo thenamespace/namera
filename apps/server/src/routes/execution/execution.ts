@@ -102,6 +102,8 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const result = yield* app.execution.list({
             ...toActorReadScope(data),
             ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+            ...(query.walletId === undefined ? {} : { walletId: query.walletId }),
+            ...(query.sessionKeyId === undefined ? {} : { sessionKeyId: query.sessionKeyId }),
           });
           return {
             items: result.items.map(toExecutionListItemResponse),

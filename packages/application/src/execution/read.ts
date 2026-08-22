@@ -12,6 +12,8 @@ import {
   type ExecutionId,
   type ExecutionSubmissionId,
   type OrganizationId,
+  type SessionKeyId,
+  type WalletId,
 } from "@namera-ai/protocol";
 import type { GetExecutionSubmissionResponse } from "@namera-ai/protocol/dto";
 import type {
@@ -72,6 +74,8 @@ export interface ExecutionReadApplication {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;
     readonly cursor?: ExecutionId;
+    readonly walletId?: WalletId;
+    readonly sessionKeyId?: SessionKeyId;
   }) => Effect.Effect<ExecutionListResult>;
 }
 
@@ -196,17 +200,23 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
       readonly organizationId: OrganizationId;
       readonly actorId?: ActorId;
       readonly cursor?: ExecutionId;
+      readonly walletId?: WalletId;
+      readonly sessionKeyId?: SessionKeyId;
     }) {
       const rows = yield* input.actorId === undefined
         ? repository.core.execution.findForOrganization({
             organizationId: input.organizationId,
             ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+            ...(input.walletId === undefined ? {} : { walletId: input.walletId }),
+            ...(input.sessionKeyId === undefined ? {} : { sessionKeyId: input.sessionKeyId }),
             limit: executionPageSize + 1,
           })
         : repository.core.execution.findForActor({
             organizationId: input.organizationId,
             actorId: input.actorId,
             ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+            ...(input.walletId === undefined ? {} : { walletId: input.walletId }),
+            ...(input.sessionKeyId === undefined ? {} : { sessionKeyId: input.sessionKeyId }),
             limit: executionPageSize + 1,
           });
       const items = rows.slice(0, executionPageSize);

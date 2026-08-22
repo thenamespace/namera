@@ -7,6 +7,8 @@ import {
   type ExecutionId,
   type ExecutionSubmissionId,
   type OrganizationId,
+  type SessionKeyId,
+  type WalletId,
 } from "@namera-ai/protocol";
 import {
   Execution,
@@ -55,6 +57,8 @@ export interface ExecutionRepositoryService {
   readonly findForOrganization: (input: {
     readonly organizationId: OrganizationId;
     readonly cursor?: ExecutionId;
+    readonly walletId?: WalletId;
+    readonly sessionKeyId?: SessionKeyId;
     readonly limit: number;
   }) => Effect.Effect<ReadonlyArray<ExecutionListView>, DatabaseError>;
   readonly findByIdForActor: (
@@ -71,6 +75,8 @@ export interface ExecutionRepositoryService {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly cursor?: ExecutionId;
+    readonly walletId?: WalletId;
+    readonly sessionKeyId?: SessionKeyId;
     readonly limit: number;
   }) => Effect.Effect<ReadonlyArray<ExecutionListView>, DatabaseError>;
 }
@@ -146,6 +152,55 @@ export class ExecutionRepository extends Context.Service<
         return rows[0] === undefined ? undefined : decodeExecutionDetailsView(rows[0]);
       });
 
+      const findListCursor = Effect.fnUntraced(function* (input: {
+        readonly organizationId: OrganizationId;
+        readonly actorId?: ActorId;
+        readonly cursor?: ExecutionId;
+        readonly walletId?: WalletId;
+        readonly sessionKeyId?: SessionKeyId;
+      }) {
+        if (input.cursor === undefined) return undefined;
+
+        const db = yield* transactionOrDatabase(database);
+        const rows = yield* db
+          .select({ execution })
+          .from(execution)
+          .innerJoin(
+            executionSubmission,
+            and(
+              eq(executionSubmission.id, execution.executionSubmissionId),
+              eq(executionSubmission.organizationId, execution.organizationId),
+            ),
+          )
+          .innerJoin(
+            sessionKeyGrant,
+            and(
+              eq(sessionKeyGrant.id, execution.sessionKeyGrantId),
+              eq(sessionKeyGrant.organizationId, execution.organizationId),
+            ),
+          )
+          .innerJoin(
+            sessionKey,
+            and(
+              eq(sessionKey.id, sessionKeyGrant.sessionKeyId),
+              eq(sessionKey.organizationId, execution.organizationId),
+            ),
+          )
+          .where(
+            and(
+              eq(execution.id, input.cursor),
+              eq(execution.organizationId, input.organizationId),
+              input.actorId === undefined
+                ? undefined
+                : eq(executionSubmission.actorId, input.actorId),
+              input.walletId === undefined ? undefined : eq(sessionKey.walletId, input.walletId),
+              input.sessionKeyId === undefined ? undefined : eq(sessionKey.id, input.sessionKeyId),
+            ),
+          )
+          .limit(1);
+        return rows[0]?.execution;
+      });
+
       return ExecutionRepository.of({
         insert: Effect.fn("database.executionRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
@@ -194,15 +249,7 @@ export class ExecutionRepository extends Context.Service<
         findForOrganization: Effect.fn("database.executionRepository.findForOrganization")(
           function* (input) {
             const db = yield* transactionOrDatabase(database);
-            const cursor =
-              input.cursor === undefined
-                ? undefined
-                : yield* db.query.execution.findFirst({
-                    where: {
-                      id: { eq: input.cursor },
-                      organizationId: { eq: input.organizationId },
-                    },
-                  });
+            const cursor = yield* findListCursor(input);
             if (input.cursor !== undefined && cursor === undefined) return [];
 
             const rows = yield* db
@@ -246,6 +293,12 @@ export class ExecutionRepository extends Context.Service<
               .where(
                 and(
                   eq(execution.organizationId, input.organizationId),
+                  input.walletId === undefined
+                    ? undefined
+                    : eq(sessionKey.walletId, input.walletId),
+                  input.sessionKeyId === undefined
+                    ? undefined
+                    : eq(sessionKey.id, input.sessionKeyId),
                   cursor === undefined
                     ? undefined
                     : or(
@@ -296,28 +349,7 @@ export class ExecutionRepository extends Context.Service<
         ),
         findForActor: Effect.fn("database.executionRepository.findForActor")(function* (input) {
           const db = yield* transactionOrDatabase(database);
-          const cursorRows =
-            input.cursor === undefined
-              ? []
-              : yield* db
-                  .select({ execution })
-                  .from(execution)
-                  .innerJoin(
-                    executionSubmission,
-                    and(
-                      eq(executionSubmission.id, execution.executionSubmissionId),
-                      eq(executionSubmission.organizationId, execution.organizationId),
-                    ),
-                  )
-                  .where(
-                    and(
-                      eq(execution.id, input.cursor),
-                      eq(execution.organizationId, input.organizationId),
-                      eq(executionSubmission.actorId, input.actorId),
-                    ),
-                  )
-                  .limit(1);
-          const cursor = cursorRows[0]?.execution;
+          const cursor = yield* findListCursor(input);
           if (input.cursor !== undefined && cursor === undefined) return [];
 
           const rows = yield* db
@@ -362,6 +394,10 @@ export class ExecutionRepository extends Context.Service<
               and(
                 eq(execution.organizationId, input.organizationId),
                 eq(executionSubmission.actorId, input.actorId),
+                input.walletId === undefined ? undefined : eq(sessionKey.walletId, input.walletId),
+                input.sessionKeyId === undefined
+                  ? undefined
+                  : eq(sessionKey.id, input.sessionKeyId),
                 cursor === undefined
                   ? undefined
                   : or(

@@ -100,6 +100,9 @@ insert submissions, reserve state, bill usage, audit, notify, or sign.
 - Confirmed history is newest-first with stable cursor pagination and a compact
   projection: execution identity, chain/transaction/date, compact wallet and
   session-key identity, and actor type.
+- History accepts optional wallet and session-key scopes. Repository queries
+  apply these together with organization and optional machine-actor ownership,
+  including when validating a pagination cursor.
 - Detail reads expand typed receipt/calls plus a safe discriminated actor:
   member, API key, or OAuth authorization/client.
 - User actors with `execution:read` see organization history. Machine actors see
@@ -107,5 +110,4 @@ insert submissions, reserve state, bill usage, audit, notify, or sign.
 
 ## Pending
 
-- Add wallet- and session-key-scoped history query parameters or routes.
 - Add stale-submission/reservation age alerts and an operator recovery view.

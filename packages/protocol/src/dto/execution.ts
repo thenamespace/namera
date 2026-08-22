@@ -304,6 +304,8 @@ export const GetExecutionResponse = ExecutionDetailsResponse.annotate({
 
 export const ListExecutionsRequest = Schema.Struct({
   cursor: Schema.optionalKey(ExecutionId),
+  walletId: Schema.optionalKey(WalletId),
+  sessionKeyId: Schema.optionalKey(SessionKeyId),
 }).annotate({ identifier: "ListExecutionsRequest" });
 
 export const ListExecutionsResponse = Schema.Struct({

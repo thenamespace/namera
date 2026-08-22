@@ -1,4 +1,9 @@
-import type { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
+import type {
+  ExecutionId,
+  ExecutionSubmissionId,
+  SessionKeyId,
+  WalletId,
+} from "@namera-ai/protocol";
 import {
   type ExecuteRequest as ExecuteRequestType,
   type SimulateExecutionRequest,
@@ -9,6 +14,8 @@ import type { NameraTransport } from "#/transport";
 
 export type ListExecutionsOptions = {
   readonly cursor?: ExecutionId;
+  readonly walletId?: WalletId;
+  readonly sessionKeyId?: SessionKeyId;
 };
 
 export class ExecutionClient {
@@ -38,7 +45,11 @@ export class ExecutionClient {
   list(options: ListExecutionsOptions = {}) {
     return this.transport.request(
       this.transport.client.execution.list({
-        query: options.cursor === undefined ? {} : { cursor: options.cursor },
+        query: {
+          ...(options.cursor === undefined ? {} : { cursor: options.cursor }),
+          ...(options.walletId === undefined ? {} : { walletId: options.walletId }),
+          ...(options.sessionKeyId === undefined ? {} : { sessionKeyId: options.sessionKeyId }),
+        },
       }),
     );
   }

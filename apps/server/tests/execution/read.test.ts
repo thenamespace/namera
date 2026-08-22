@@ -118,6 +118,28 @@ layer(TestServerLayer)("execution read routes", (it) => {
         apiKey: { id: fixture.apiKey.apiKey.id, metadata: { name: "Agent list" } },
       });
 
+      const emptyScope = yield* createExecutionFixture(client, "empty-scope");
+      const walletPage = yield* client.execution.list({
+        query: { walletId: fixture.wallet.id },
+      });
+      expect(walletPage.items).toHaveLength(50);
+      expect(walletPage.items.every((item) => item.wallet.id === fixture.wallet.id)).toBe(true);
+      const sessionKeyPage = yield* client.execution.list({
+        query: { sessionKeyId: fixture.sessionKey.id },
+      });
+      expect(sessionKeyPage.items).toHaveLength(50);
+      expect(
+        sessionKeyPage.items.every((item) => item.sessionKey.id === fixture.sessionKey.id),
+      ).toBe(true);
+      expect(
+        yield* client.execution.list({
+          query: {
+            walletId: fixture.wallet.id,
+            sessionKeyId: emptyScope.sessionKey.id,
+          },
+        }),
+      ).toMatchObject({ items: [], nextCursor: null });
+
       const firstPage = yield* client.execution.list({ query: {} });
       expect(firstPage.items).toHaveLength(50);
       expect(firstPage.items[0]).toMatchObject({
