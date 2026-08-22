@@ -130,6 +130,10 @@
     @apply rounded-lg;
   }
 
+  .widget {
+    @apply rounded-lg;
+  }
+
   .table__body {
     &::before {
       content: "";

@@ -42,8 +42,8 @@ function ActivityWidget({
 
   return (
     <Widget>
-      <Widget.Header>
-        <div className="flex flex-col gap-0.5">
+      <Widget.Header className="pt-4 pb-8">
+        <div className="flex flex-col">
           <Widget.Title>Operations activity</Widget.Title>
           <Widget.Description>Confirmed executions and signatures over time</Widget.Description>
         </div>
@@ -61,7 +61,7 @@ function ActivityWidget({
           ))}
         </Segment>
       </Widget.Header>
-      <Widget.Content className="px-5 pb-5 pt-4 sm:px-6">
+      <Widget.Content className="p-0 border-none">
         <ActivityChart series={activity[view]} />
       </Widget.Content>
     </Widget>

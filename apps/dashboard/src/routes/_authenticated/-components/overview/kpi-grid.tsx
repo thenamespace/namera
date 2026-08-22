@@ -22,14 +22,14 @@ type ResourceKPIProps = {
 
 function ResourceKPI({ active, icon, title, total, value }: ResourceKPIProps) {
   return (
-    <KPI className="h-24 border p-3">
-      <KPI.Header className="gap-1.5!">
-        <KPI.Icon status="success">
-          <HugeiconsIcon icon={icon} />
+    <KPI className="h-28 border p-3">
+      <KPI.Header className="gap-0!">
+        <KPI.Icon>
+          <HugeiconsIcon icon={icon} className="text-muted" />
         </KPI.Icon>
         <KPI.Title>{title}</KPI.Title>
       </KPI.Header>
-      <KPI.Content className="mt-auto items-end pt-3">
+      <KPI.Content className="mt-auto items-end px-2 py-2">
         <KPI.Value className="text-2xl! leading-none!" notation="compact" value={value} />
         <Chip color={active > 0 ? "success" : "default"} size="sm" variant="soft">
           <Chip.Label>{total === 0 ? "No resources" : `${active} active`}</Chip.Label>
@@ -70,7 +70,7 @@ function OperationKPI({ color, icon, series, title, total, valueKey }: Operation
   );
 
   return (
-    <KPI className="h-24 border p-3">
+    <KPI className="h-28 border p-3">
       <KPI.Header className="gap-1.5!">
         <KPI.Icon className="size-5 text-muted">
           <HugeiconsIcon icon={icon} />

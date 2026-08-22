@@ -39,7 +39,7 @@ export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
 
   return (
     <Widget className="h-full">
-      <Widget.Header>
+      <Widget.Header className="pt-4 pb-8">
         <div className="flex flex-col gap-0.5">
           <Widget.Title>Execution sources</Widget.Title>
           <Widget.Description>Where confirmed executions originate</Widget.Description>
@@ -83,23 +83,13 @@ export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
                 </Typography.Paragraph>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t pt-4">
+            <Widget.Legend className="flex-wrap justify-center pt-8">
               {sources.map((source) => (
-                <div
-                  className="flex min-w-0 items-center justify-between gap-2"
-                  key={source.actorType}
-                >
-                  <div className="min-w-0">
-                    <ExecutionActorDisplay type={source.actorType} />
-                  </div>
-                  <div className="shrink-0">
-                    <Typography.Paragraph color="muted" size="xs">
-                      {Math.round((source.count / total) * 100)}%
-                    </Typography.Paragraph>
-                  </div>
-                </div>
+                <Widget.LegendItem color={sourceColors[source.actorType]} key={source.actorType}>
+                  <ExecutionActorDisplay type={source.actorType} />
+                </Widget.LegendItem>
               ))}
-            </div>
+            </Widget.Legend>
           </div>
         )}
       </Widget.Content>
