@@ -78,7 +78,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const wallet = yield* makeWalletApplication(data);
       const sessionKey = yield* makeSessionKeyApplication;
       const execution = yield* makeExecutionApplication;
-      const dashboardOverview = yield* makeDashboardOverviewApplication(billing, execution);
+      const dashboardOverview = yield* makeDashboardOverviewApplication();
       const signature = yield* makeSignatureApplication;
 
       return Application.of({

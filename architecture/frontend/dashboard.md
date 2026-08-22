@@ -83,8 +83,8 @@ return compact row contracts; detail pages load expanded relations.
 
 ## Implemented product routes
 
-- organization overview with a compact resource summary, namespace usage,
-  rolling operation activity, derived attention states, and recent executions;
+- organization overview with compact resource KPIs, namespace operation totals,
+  configurable activity trends, and a shared recent-executions summary;
 - magic-link sign-in and invitation recipient review;
 - accounts list/create and account Overview/Session Keys/Usage views;
 - session-key list/create/revoke and Overview/Policies/Usage views;
@@ -106,15 +106,20 @@ credentials never enter the bundle.
 The authenticated index route prefetches `GET /dashboard/overview` into the
 router-owned atom registry, while its component subscribes to the same atom so
 the page shell remains visible during refreshes. The response keeps global
-resource totals at the root and places operation usage and activity inside a
-namespace-discriminated array. The current `eip155` projection can therefore be
-extended with a Solana member without changing the page-level contract.
+resource totals at the root and places operation totals and activity inside a
+namespace-discriminated array. Each namespace provides daily, weekly, and
+monthly series; `eip155` currently returns 14 daily, 12 weekly, and 12 monthly
+buckets. A future Solana member can be added without changing the page-level
+contract.
 
-The server derives attention items and their destinations. The dashboard only
-chooses their visual severity and does not duplicate billing thresholds. In
-development, `/?preview=true` swaps the fetched projection for schema-decoded
-fixture data so empty local organizations can be used for visual QA. The query
-parameter has no effect in production builds.
+The overview deliberately excludes plan limits, remaining quotas, attention
+states, and execution rows. Its operation KPIs are all-time recorded totals;
+limits and period consumption belong to Billing, while recent activity
+subscribes to the same executions atom as the Activity page and renders the
+shared execution table in a five-row summary mode. In development,
+`/?preview=true` swaps both projections for schema-decoded fixture data so empty
+local organizations can be used for visual QA. The query parameter has no
+effect in production builds.
 
 ## Pending
 

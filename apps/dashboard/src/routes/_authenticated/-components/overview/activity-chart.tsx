@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 
-import type { DashboardOverviewActivityPoint } from "@namera-ai/protocol/dto";
+import type { DashboardOverviewActivitySeries } from "@namera-ai/protocol/dto";
 import { AreaChart, ChartTooltip } from "@namera-ai/ui";
 
-const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+const dayLabel = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+const monthLabel = new Intl.DateTimeFormat(undefined, { month: "short", year: "2-digit" });
 const chartMargin = { bottom: 0, left: -24, right: 8, top: 8 } as const;
 const axisTick = { fill: "var(--muted)", fontSize: 11 } as const;
 const chartCursor = { stroke: "var(--border)", strokeWidth: 1 } as const;
@@ -13,26 +14,28 @@ const tooltipContent = (
   <ChartTooltip.Content indicator="line" labelFormatter={formatTooltipLabel} />
 );
 
+const formatPeriod = (date: string, granularity: DashboardOverviewActivitySeries["granularity"]) =>
+  (granularity === "month" ? monthLabel : dayLabel).format(new Date(`${date}T00:00:00.000Z`));
+
 type ActivityChartProps = {
-  series: ReadonlyArray<DashboardOverviewActivityPoint>;
+  series: DashboardOverviewActivitySeries;
 };
 
 export function ActivityChart({ series }: ActivityChartProps) {
   const chartData = useMemo(
     () =>
-      series.map((point) => ({
+      series.points.map((point) => ({
         ...point,
-        label: shortDate.format(new Date(`${point.date}T00:00:00.000Z`)),
+        label: formatPeriod(point.date, series.granularity),
       })),
     [series],
   );
 
   return (
     <AreaChart
-      aria-label="Executions and signatures over the last 30 days"
-      className="mt-5"
+      aria-label={`Executions and signatures by ${series.granularity}`}
       data={chartData}
-      height={250}
+      height={280}
       margin={chartMargin}
     >
       <AreaChart.Grid stroke="var(--border)" strokeDasharray={chartGridDash} vertical={false} />
@@ -55,9 +58,8 @@ export function ActivityChart({ series }: ActivityChartProps) {
       <AreaChart.Area
         dataKey="signatures"
         fill="var(--chart-2)"
-        fillOpacity={0.08}
+        fillOpacity={0.06}
         name="Signatures"
-        stackId="operations"
         stroke="var(--chart-2)"
         strokeWidth={1.5}
         type="monotone"
@@ -65,9 +67,8 @@ export function ActivityChart({ series }: ActivityChartProps) {
       <AreaChart.Area
         dataKey="executions"
         fill="var(--chart-1)"
-        fillOpacity={0.16}
+        fillOpacity={0.12}
         name="Executions"
-        stackId="operations"
         stroke="var(--chart-1)"
         strokeWidth={1.5}
         type="monotone"

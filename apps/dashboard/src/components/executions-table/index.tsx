@@ -59,7 +59,9 @@ import { getActorLabel, getExecutionChain } from "./data";
 const emptyExecutions: ReadonlyArray<ExecutionListItemResponse> = [];
 
 type ExecutionsTableProps = {
+  dataOverride?: ListExecutionsResponse;
   initialExecutions?: ListExecutionsResponse;
+  variant?: "default" | "summary";
 };
 
 type ScopedExecutionsTableProps = {
@@ -75,21 +77,29 @@ type ExecutionsQueryState = {
 type ExecutionTableScope = "organization" | "wallet" | "session-key";
 
 type ExecutionsTableContentProps = {
+  dataOverride?: ListExecutionsResponse;
   executions: ExecutionsQueryState;
   initialExecutions?: ListExecutionsResponse;
   scope: ExecutionTableScope;
+  variant?: "default" | "summary";
 };
 
 function ExecutionsTableContent({
+  dataOverride,
   executions,
   initialExecutions,
   scope,
+  variant = "default",
 }: ExecutionsTableContentProps) {
   const wallets = useWallets();
   const organizationSessionKeys = useSessionKeys();
-  const items = executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
+  const items =
+    dataOverride?.items ?? executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
   const isInitialLoading =
-    executions.isLoading && executions.data === undefined && initialExecutions === undefined;
+    executions.isLoading &&
+    dataOverride === undefined &&
+    executions.data === undefined &&
+    initialExecutions === undefined;
   const [query, setQuery] = useState("");
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
@@ -226,7 +236,7 @@ function ExecutionsTableContent({
     return filtered.toSorted((left, right) => sorter(left, right) * direction);
   }, [filtered, sort]);
   const rows = useMemo<ExecutionTableRow[]>(() => {
-    if (grouping === "none") return sorted;
+    if (grouping === "none") return variant === "summary" ? sorted.slice(0, 5) : sorted;
     const grouped = new Map<string, ExecutionListItemResponse[]>();
 
     for (const item of sorted) {
@@ -250,7 +260,7 @@ function ExecutionsTableContent({
       kind: "group",
       value,
     }));
-  }, [grouping, sorted]);
+  }, [grouping, sorted, variant]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set(executionColumnIds) : visibleColumns;
     const columns = executionColumns.filter(
@@ -431,43 +441,45 @@ function ExecutionsTableContent({
 
   return (
     <div className="grid gap-5">
-      <div className="flex items-center gap-3">
-        <SearchField
-          aria-label="Filter executions by wallet, session key, chain, actor, hash, or ID"
-          className="w-full sm:max-w-80"
-          value={query}
-          onChange={setQuery}
-        >
-          <SearchField.Group>
-            <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Filter executions…" />
-            <SearchField.ClearButton aria-label="Clear execution search" />
-          </SearchField.Group>
-        </SearchField>
-        <div className="ml-auto">
-          <TableControls>
-            <TableFilterControl
-              ariaLabel="Apply execution filters"
-              facets={facets}
-              onClear={clearFilters}
-            />
-            <TableViewOptions
-              ariaLabel="Configure execution table view"
-              columnOptions={columnOptions}
-              fixedColumnOptions={fixedColumnOptions}
-              grouping={grouping}
-              groupingOptions={groupingOptions}
-              sort={sort}
-              sortableColumns={sortableColumns}
-              visibleColumns={visibleColumns}
-              onGroupingChange={handleGroupingChange}
-              onReset={resetView}
-              onSortChange={setSort}
-              onVisibleColumnsChange={setVisibleColumns}
-            />
-          </TableControls>
+      {variant === "default" ? (
+        <div className="flex items-center gap-3">
+          <SearchField
+            aria-label="Filter executions by wallet, session key, chain, actor, hash, or ID"
+            className="w-full sm:max-w-80"
+            value={query}
+            onChange={setQuery}
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Filter executions…" />
+              <SearchField.ClearButton aria-label="Clear execution search" />
+            </SearchField.Group>
+          </SearchField>
+          <div className="ml-auto">
+            <TableControls>
+              <TableFilterControl
+                ariaLabel="Apply execution filters"
+                facets={facets}
+                onClear={clearFilters}
+              />
+              <TableViewOptions
+                ariaLabel="Configure execution table view"
+                columnOptions={columnOptions}
+                fixedColumnOptions={fixedColumnOptions}
+                grouping={grouping}
+                groupingOptions={groupingOptions}
+                sort={sort}
+                sortableColumns={sortableColumns}
+                visibleColumns={visibleColumns}
+                onGroupingChange={handleGroupingChange}
+                onReset={resetView}
+                onSortChange={setSort}
+                onVisibleColumnsChange={setVisibleColumns}
+              />
+            </TableControls>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {executions.isError ? (
         <Typography className="text-danger">Couldn’t load executions.</Typography>
@@ -493,13 +505,19 @@ function ExecutionsTableContent({
   );
 }
 
-export function ExecutionsTable({ initialExecutions }: ExecutionsTableProps) {
+export function ExecutionsTable({
+  dataOverride,
+  initialExecutions,
+  variant,
+}: ExecutionsTableProps) {
   const executions = useExecutions();
   return (
     <ExecutionsTableContent
+      {...(dataOverride === undefined ? {} : { dataOverride })}
       executions={executions}
       scope="organization"
       {...(initialExecutions === undefined ? {} : { initialExecutions })}
+      {...(variant === undefined ? {} : { variant })}
     />
   );
 }

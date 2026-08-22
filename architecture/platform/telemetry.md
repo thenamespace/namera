@@ -75,8 +75,8 @@ only nonzero aggregate run counts and one bounded failure event.
 | `namera.dashboard.overview.reads`         | —                  | Successful organization overview reads.  |
 | `namera.dashboard.overview.read.duration` | —                  | End-to-end overview aggregation latency. |
 
-The overview is a read projection assembled from billing, resource, operation,
-and recent-execution queries. It emits no identifiers or organization-specific
+The overview is a read projection assembled from resource, operation-total, and
+operation-activity queries. It emits no identifiers or organization-specific
 labels.
 
 ## Runtime variables

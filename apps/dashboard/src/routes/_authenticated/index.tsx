@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { dashboardOverviewAtom } from "@/atoms/dashboard";
+import { executionsAtom } from "@/atoms/execution";
 import { startPrefetchQuery } from "@/atoms/prefetch";
+import { sessionKeysAtom } from "@/atoms/session-key";
+import { walletsAtom } from "@/atoms/wallet";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
@@ -12,6 +15,9 @@ export const Route = createFileRoute("/_authenticated/")({
     search.preview === true || search.preview === "true" ? { preview: true } : {},
   loader: ({ abortController, context }) => {
     startPrefetchQuery(context.atomRegistry, dashboardOverviewAtom, abortController.signal);
+    startPrefetchQuery(context.atomRegistry, executionsAtom, abortController.signal);
+    startPrefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
+    startPrefetchQuery(context.atomRegistry, sessionKeysAtom, abortController.signal);
   },
   component: OverviewPage,
 });
@@ -28,16 +34,8 @@ function OverviewPage() {
           </HeadingGroup.Title>
         </DashboardPage.Title>
       </DashboardPage.Header>
-      <DashboardPage.Content className="w-full px-4 py-6 sm:px-6 lg:py-8">
+      <DashboardPage.Content className="w-full px-4 py-5 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <HeadingGroup className="mb-6">
-            <HeadingGroup.Title className="text-xl" level={2}>
-              Workspace overview
-            </HeadingGroup.Title>
-            <HeadingGroup.Description>
-              Operational health, usage, and recent activity across your workspace.
-            </HeadingGroup.Description>
-          </HeadingGroup>
           <Overview preview={preview} />
         </div>
       </DashboardPage.Content>

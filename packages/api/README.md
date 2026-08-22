@@ -14,7 +14,8 @@ sequence.
 - `src/routes/health.ts` — health endpoint group.
 - `src/routes/billing.ts` — read-only active-organization billing and entitlements.
 - `src/routes/dashboard.ts` — active-organization operational overview with
-  namespace-discriminated usage and activity projections.
+  global resource totals and namespace-discriminated operation totals and
+  daily, weekly, and monthly activity projections.
 - `src/routes/auth/core/` — core authentication endpoints such as magic links,
   sessions, and users.
 - `src/routes/auth/organization/` — organization, membership, and invitation

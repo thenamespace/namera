@@ -23,18 +23,18 @@ layer(TestServerLayer)("dashboard overview route", (it) => {
       expect(empty).toMatchObject({
         organizationId: owner.actor.organization.id,
         resources: {
-          accounts: { total: 0, active: 0, included: 5, withoutActiveSessionKeys: 0 },
+          accounts: { total: 0, active: 0 },
           sessionKeys: { total: 0, active: 0 },
         },
-        recentExecutions: [],
-        attention: [],
       });
       expect(empty.namespaces).toHaveLength(1);
       expect(empty.namespaces[0]).toMatchObject({
         namespace: "eip155",
-        activity: { windowDays: 30 },
+        totals: { executions: 0n, signatures: 0n },
       });
-      expect(empty.namespaces[0]?.activity.series).toHaveLength(30);
+      expect(empty.namespaces[0]?.activity.daily.points).toHaveLength(14);
+      expect(empty.namespaces[0]?.activity.weekly.points).toHaveLength(12);
+      expect(empty.namespaces[0]?.activity.monthly.points).toHaveLength(12);
 
       const fixture = yield* createExecutionFixture(client, "overview");
       yield* setAuthToken();
@@ -45,21 +45,13 @@ layer(TestServerLayer)("dashboard overview route", (it) => {
 
       const overview = yield* client.dashboard.getOverview();
       expect(overview.resources).toMatchObject({
-        accounts: { total: 1, active: 1, included: 5, withoutActiveSessionKeys: 0 },
+        accounts: { total: 1, active: 1 },
         sessionKeys: { total: 1, active: 1 },
       });
-      expect(overview.recentExecutions).toHaveLength(1);
-      expect(overview.recentExecutions[0]).toMatchObject({
-        wallet: { id: fixture.wallet.id },
-        sessionKey: { id: fixture.sessionKey.id },
-        details: { namespace: "eip155" },
-      });
-      expect(
-        overview.namespaces[0]?.activity.series.reduce(
-          (total, point) => total + point.executions,
-          0,
-        ),
-      ).toBe(1);
+      expect(overview.namespaces[0]?.totals.executions).toBe(1n);
+      for (const series of Object.values(overview.namespaces[0]?.activity ?? {})) {
+        expect(series.points.reduce((total, point) => total + point.executions, 0)).toBe(1);
+      }
     }),
   );
 });
