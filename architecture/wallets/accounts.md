@@ -52,7 +52,7 @@ IP-rate-limited convenience check and returns the normalized label, full
 `<label>.namera.id` name, and availability. It is not an allocation guarantee;
 wallet creation rechecks availability and maps provider races to HTTP 409 before
 creating the subname with its owner and Ethereum address set to the account.
-Development uses the Namespace Sepolia API while production uses mainnet.
+Development and production both use the Namespace mainnet API.
 
 ## EVM implementations
 

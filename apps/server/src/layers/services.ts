@@ -45,19 +45,13 @@ const EvmLive = Layer.unwrap(
   ),
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));
 
-const EnsLive = Layer.unwrap(
-  Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
-    environment === "development" ? Ens.devLayer : Ens.layer,
-  ),
-);
-
 export const ServicesLive = Layer.mergeAll(
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,
   WalletKeysLive,
   EvmLive,
-  EnsLive,
+  Ens.layer,
 );
 
 export const ApplicationLive = Application.layer;

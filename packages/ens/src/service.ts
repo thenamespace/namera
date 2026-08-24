@@ -122,25 +122,21 @@ export const makeEnsService = (client: OffchainClient): EnsService => ({
 });
 
 export class Ens extends Context.Service<Ens, EnsService>()("@namera-ai/ens/Ens") {
-  static readonly #makeLayer = (mode: "mainnet" | "sepolia") =>
-    Layer.effect(
-      this,
-      Effect.gen(function* () {
-        const config = yield* EnsConfig;
-        const client = yield* Effect.try({
-          try: () =>
-            createOffchainClient({
-              mode,
-              timeout: 10_000,
-              defaultApiKey: Redacted.value(config.apiKey),
-            }),
-          catch: (cause) => toEnsError("configure", cause),
-        });
+  static readonly layer = Layer.effect(
+    this,
+    Effect.gen(function* () {
+      const config = yield* EnsConfig;
+      const client = yield* Effect.try({
+        try: () =>
+          createOffchainClient({
+            mode: "mainnet",
+            timeout: 10_000,
+            defaultApiKey: Redacted.value(config.apiKey),
+          }),
+        catch: (cause) => toEnsError("configure", cause),
+      });
 
-        return Ens.of(makeEnsService(client));
-      }),
-    );
-
-  static readonly layer = this.#makeLayer("mainnet");
-  static readonly devLayer = this.#makeLayer("sepolia");
+      return Ens.of(makeEnsService(client));
+    }),
+  );
 }
