@@ -55,9 +55,17 @@ count, mark-read/archive mutations, preference reads, and scoped overrides.
 Preference mutations append user audit events and skip duplicate side effects
 for no-op values.
 
+The dashboard inbox consumes the same paginated notification DTOs. It keeps a
+compact notification rail beside a typed detail view, marks a notification read
+when it is selected, and supports mark-all-read and archive mutations. Search,
+read state, and notification-category filters are applied to the loaded cursor
+pages without changing persisted recipient state. Each notification payload is
+rendered by its own detail component so links, identifiers, and domain displays
+remain type-safe as new occurrence types are added. On narrow screens, the rail
+and detail become a list-to-detail navigation flow.
+
 ## Pending
 
-- Build the dashboard inbox UI.
 - Add email-delivery webhook, bounce, and suppression handling when required by
   operational volume.
 - Verify preference resolution and delivery in production.

@@ -71,8 +71,10 @@ browser location with the returned relative path.
 
 Notification inbox and preference atoms/hooks are available under
 `src/atoms/notification` and `src/hooks/notification`. The settings page renders
-the supported email preference topics. `/inbox` owns the empty dashboard shell
-reserved for the later notification feed.
+the supported email preference topics. `/inbox` renders the cursor-paginated
+notification feed as a searchable, filterable rail with typed rich detail
+views, read-state mutations, mark-all-read, archive actions, and a responsive
+list-to-detail layout.
 
 Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key
