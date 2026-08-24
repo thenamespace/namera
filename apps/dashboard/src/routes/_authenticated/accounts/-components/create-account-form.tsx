@@ -207,7 +207,7 @@ export function CreateAccountForm() {
                           autoComplete="off"
                           placeholder="treasury"
                         />
-                        <InputGroup.Suffix>.namera.eth</InputGroup.Suffix>
+                        <InputGroup.Suffix className="pr-3">.namera.eth</InputGroup.Suffix>
                       </InputGroup>
                       {normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
                         <Spinner className="size-4 shrink-0" />
