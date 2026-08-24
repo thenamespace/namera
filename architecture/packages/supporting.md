@@ -14,6 +14,20 @@ Before adding a helper:
 
 One-off domain logic belongs beside its domain operation. Repeated domain logic belongs in a domain helper module, not automatically in global utils.
 
+## `packages/ens`
+
+ENS owns the provider boundary for Namera offchain identities. Its live Effect
+layer constructs Namespace's offchain manager with the redacted
+`NAMERA_ID_OFFCHAIN_API_KEY`, while the service exposes subname lifecycle,
+queries, and address/text/data record operations as typed Effects. Provider
+failures are translated to stable `EnsError` reasons before they leave the
+package.
+
+Account creation orchestration does not belong here. A future application
+workflow may call this service after creating an account and decide how ENS
+failures affect account persistence, retries, audit history, and user-facing
+responses.
+
 ## `packages/template`
 
 Template is the workspace starter for a new package. It owns no product runtime behavior. When creating a package, copy/update its manifest, TypeScript/Klarity/build configuration, source entry, README, tests, and Turborepo integration while preserving the `namera-source` development condition and unbundled source strategy.

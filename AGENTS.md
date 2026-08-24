@@ -26,6 +26,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   background delivery, and the Resend provider adapter.
 - [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
   wallet-key creation and signing through local files or Google Cloud KMS.
+- [`packages/ens`](packages/ens/README.md) — Namespace-backed offchain ENS
+  subname and record management.
 - [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
   clients, smart-account construction, execution, signing, and policy logic.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters

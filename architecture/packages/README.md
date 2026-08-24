@@ -25,6 +25,7 @@ This section explains how to work across every app and package. Package READMEs 
 | `packages/database`    | Package | Drizzle schema, PostgreSQL layer, repositories                    | Business workflow or public DTO mapping    |
 | `packages/crypto`      | Package | Purpose-separated crypto primitives/service                       | Domain workflows                           |
 | `packages/wallet-keys` | Package | Provider-neutral key creation/signing and provider adapters       | Chain-specific account logic               |
+| `packages/ens`         | Package | Offchain ENS subname and record provider boundary                 | Account workflow orchestration             |
 | `packages/evm`         | Package | EVM chains/accounts/execution/signatures/policies                 | Organization/billing/HTTP concerns         |
 | `packages/emails`      | Package | Typed encrypted outbox, templates, worker, provider               | Product transaction decisions              |
 | `packages/telemetry`   | Package | OTLP layers and metric definitions                                | Audit history or arbitrary cardinality     |

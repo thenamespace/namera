@@ -45,6 +45,7 @@ workspace. Repository-wide agent rules are in [AGENTS.md](AGENTS.md).
 | `packages/api`         | Public Effect HttpApi contract.                                                 |
 | `packages/evm`         | Chains, smart accounts, execution, signing, verification, and policies.         |
 | `packages/wallet-keys` | Local and Google Cloud KMS key lifecycle.                                       |
+| `packages/ens`         | Namespace-backed offchain ENS subname and record management.                    |
 | `packages/emails`      | Encrypted durable email outbox and React Email delivery.                        |
 | `packages/crypto`      | Purpose-separated hashing, HMAC, encryption, and credentials.                   |
 | `packages/telemetry`   | OTLP exporters and shared bounded metrics.                                      |
