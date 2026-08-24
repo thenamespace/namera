@@ -60,6 +60,7 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@adraffy/ens-normalize": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ export * from "./application.js";
 export * from "./billing/index.js";
 export * from "./dashboard/index.js";
 export * from "./execution/index.js";
+export * from "./ens/index.js";
 export * from "./notification/index.js";
 export * from "./session-key/index.js";
 export * from "./signature/index.js";

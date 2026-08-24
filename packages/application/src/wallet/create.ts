@@ -1,8 +1,11 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
+import { ChainName, Ens } from "@namera-ai/ens";
 import { Evm, createWalletKeyWebAuthnAccount, getChainDataByChainId } from "@namera-ai/evm";
 import {
+  EnsNameUnavailableError,
+  EnsUnavailableError,
   WalletCreationError,
   WalletKeyId,
   type ActorId,
@@ -16,6 +19,7 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { enforceWalletLimit, lockOrganizationBilling } from "#/billing/index";
+import { ensPolicy, toEnsName } from "#/ens/data";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
@@ -25,6 +29,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   const audit = yield* Audit;
   const authConfig = yield* AuthConfig;
   const evm = yield* Evm;
+  const ens = yield* Ens;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const walletKeys = yield* WalletKeys;
@@ -49,6 +54,17 @@ export const makeCreateWallet = Effect.gen(function* () {
       ),
       Effect.catchTag("DatabaseError", Effect.die),
     );
+
+    const ensName = toEnsName(input.request.ensLabel);
+    const availability = yield* ens
+      .isSubnameAvailable(ensName)
+      .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
+    if (!availability.isAvailable) {
+      return yield* new EnsNameUnavailableError({
+        code: "ENS_NAME_UNAVAILABLE",
+        label: input.request.ensLabel,
+      });
+    }
 
     const walletKeyId = Schema.decodeSync(WalletKeyId)(generateUniqueId());
     // Provider key creation cannot join the PostgreSQL transaction, so billing
@@ -108,6 +124,24 @@ export const makeCreateWallet = Effect.gen(function* () {
       return yield* Effect.die("Wallet derivation chain block explorer is missing");
     }
     const addressUrl = `${blockExplorerUrl.replace(/\/$/, "")}/address/${account.address}`;
+
+    yield* ens
+      .createSubname({
+        parentName: ensPolicy.parentName,
+        label: input.request.ensLabel,
+        owner: account.address,
+        addresses: [{ chain: ChainName.Ethereum, value: account.address }],
+      })
+      .pipe(
+        Effect.mapError((error) =>
+          error.reason === "ALREADY_EXISTS"
+            ? new EnsNameUnavailableError({
+                code: "ENS_NAME_UNAVAILABLE",
+                label: input.request.ensLabel,
+              })
+            : new EnsUnavailableError({ code: "ENS_UNAVAILABLE" }),
+        ),
+      );
 
     const result = yield* transaction
       .run(
@@ -220,6 +254,18 @@ export const makeCreateWallet = Effect.gen(function* () {
         }),
       )
       .pipe(
+        Effect.tapError(() =>
+          ens.deleteSubname(ensName).pipe(
+            Effect.catch((error) =>
+              Effect.logWarning("wallet.ens_compensation_failed").pipe(
+                Effect.annotateLogs({
+                  ens_name: ensName,
+                  ens_error_reason: error.reason,
+                }),
+              ),
+            ),
+          ),
+        ),
         Effect.tapErrorTag("BillingError", () =>
           Metric.update(Metric.withAttributes(creationResults, { result: "limit_exceeded" }), 1),
         ),

@@ -1,6 +1,7 @@
 export * from "./health.js";
 export * from "./address-metadata.js";
 export * from "./execution.js";
+export * from "./ens.js";
 export * from "./api-key.js";
 export * from "./billing.js";
 export * from "./dashboard.js";

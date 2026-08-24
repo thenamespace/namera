@@ -5,6 +5,7 @@ import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Database, DatabaseMigration, Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
+import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
@@ -44,12 +45,19 @@ const EvmLive = Layer.unwrap(
   ),
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));
 
+const EnsLive = Layer.unwrap(
+  Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
+    environment === "development" ? Ens.devLayer : Ens.layer,
+  ),
+);
+
 export const ServicesLive = Layer.mergeAll(
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,
   WalletKeysLive,
   EvmLive,
+  EnsLive,
 );
 
 export const ApplicationLive = Application.layer;

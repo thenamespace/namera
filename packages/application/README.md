@@ -40,6 +40,7 @@ composition model.
   builders composed behind one application surface.
 - `src/execution/` — synchronous execution orchestration, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
+- `src/ens/` — Namera ENS naming policy and public availability composition.
 - `src/wallet/` — separately composed creation, metadata update,
   organization- or actor-scoped reads, and EVM portfolio coordination.
 
@@ -105,10 +106,12 @@ rules; application only coordinates their results with persistence. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 
-Wallet creation performs a cheap quota precheck, creates the provider key and
-chain account, then repeats the locked quota check before atomically persisting
+Wallet creation performs a cheap quota precheck, authoritatively checks the
+ENSIP-normalized `<label>.namera.id` name, creates the provider key, chain account,
+and resolving Namespace subname, then repeats the locked quota check before atomically persisting
 the key, wallet, audit events, notification recipients, and durable email jobs.
-Provider key deletion is intentionally not part of the current service, so a
+If the persistence transaction fails, the application best-effort deletes the
+new subname. Provider key deletion is intentionally not part of the current service, so a
 failed final transaction may leave an unreferenced provider key for later
 operational reconciliation.
 

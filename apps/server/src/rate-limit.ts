@@ -28,6 +28,13 @@ export const rateLimitPolicy = {
       algorithm: "fixed-window",
     },
   },
+  ens: {
+    availabilityByIp: {
+      limit: 120,
+      window: Duration.minutes(1),
+      algorithm: "token-bucket",
+    },
+  },
   invitation: {
     createByOrganization: {
       limit: 30,

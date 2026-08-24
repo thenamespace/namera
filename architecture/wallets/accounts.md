@@ -22,16 +22,22 @@ sequenceDiagram
   participant Billing
   participant Keys as WalletKeys
   participant EVM
+  participant ENS as Namespace ENS
   participant Tx as PostgreSQL transaction
 
-  Admin->>App: namespace + protection + metadata
+  Admin->>App: namespace + protection + metadata + ENS label
   App->>Billing: cheap capacity precheck
+  App->>ENS: authoritative label availability check
   App->>Keys: create provider key
   Keys-->>App: public material + opaque provider data
   App->>EVM: construct Alchemy Modular Account V2
   EVM-->>App: verified smart-account address and data
+  App->>ENS: create label.namera.id resolving to account
   App->>Tx: lock billing account and recheck capacity
   App->>Tx: persist wallet key + wallet + audit + notifications + email jobs
+  alt transaction fails
+    App->>ENS: best-effort delete newly created subname
+  end
   Tx-->>Admin: public wallet DTO
 ```
 
@@ -39,6 +45,14 @@ Remote key and account creation happens before the transaction. The second
 locked billing check prevents concurrent requests from exceeding plan capacity.
 EntryPoint version, implementation version, entity ID, salt, and P-256 signing
 policy are server-owned constants rather than public input.
+
+The label is decoded with ENSIP normalization and must contain 4–63 characters
+without a domain suffix. `GET /ens/availability?label=...` is an unauthenticated,
+IP-rate-limited convenience check and returns the normalized label, full
+`<label>.namera.id` name, and availability. It is not an allocation guarantee;
+wallet creation rechecks availability and maps provider races to HTTP 409 before
+creating the subname with its owner and Ethereum address set to the account.
+Development uses the Namespace Sepolia API while production uses mainnet.
 
 ## EVM implementations
 
@@ -69,6 +83,8 @@ chain; see [fungible wallet portfolio](../evm/portfolio.md).
 
 - Add compensation/reconciliation for an external provider key created before a
   failed account-construction or persistence boundary.
+- Persist the assigned ENS name locally if account views need it without a
+  provider lookup.
 - Define freeze/archive semantics before adding those lifecycle operations.
 - Add another namespace only through a new discriminated chain adapter rather
   than EVM conditionals in application workflows.

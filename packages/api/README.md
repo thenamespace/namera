@@ -33,6 +33,7 @@ sequence.
 - `src/routes/execution.ts` — read-only execution simulation, API-key execution,
   actor-owned submission status, and member-authorized confirmed execution
   history with expanded account, session-key, and initiating-actor list items.
+- `src/routes/ens.ts` — public ENSIP-normalized Namera subname availability.
 - `src/routes/signature.ts` — machine-actor smart-account message and typed-data
   signing and read-only verification.
 - `src/middlewares/` — middleware contracts such as authorization context.

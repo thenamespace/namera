@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { OrganizationId, WalletId } from "#/common/index";
+import { EnsLabel, OrganizationId, WalletId } from "#/common/index";
 import {
   AlchemyModularAccount7702Version,
   AlchemyModularAccountVersion,
@@ -18,6 +18,7 @@ export * from "./assets.js";
 
 export const CreateEvmWalletRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
+  ensLabel: EnsLabel,
   protectionLevel: WalletKeyProtectionLevel,
   metadata: WalletMetadata,
 }).annotate({
@@ -123,6 +124,7 @@ export const ListWalletsResponse = Schema.Array(WalletResponse).annotate({
 
 export type CreateEvmWalletRequest = typeof CreateEvmWalletRequest.Type;
 export type CreateWalletRequest = typeof CreateWalletRequest.Type;
+export type CreateWalletRequestEncoded = typeof CreateWalletRequest.Encoded;
 export type EvmWalletResponse = typeof EvmWalletResponse.Type;
 export type WalletResponse = typeof WalletResponse.Type;
 export type CreateWalletResponse = typeof CreateWalletResponse.Type;

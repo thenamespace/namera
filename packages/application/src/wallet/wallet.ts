@@ -4,6 +4,8 @@ import type { WalletView } from "@namera-ai/database";
 import type {
   ActorId,
   BillingError,
+  EnsNameUnavailableError,
+  EnsUnavailableError,
   OrganizationId,
   WalletCreationError,
   WalletId,
@@ -28,7 +30,10 @@ export interface WalletApplication {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly request: CreateWalletRequest;
-  }) => Effect.Effect<WalletView, BillingError | WalletCreationError>;
+  }) => Effect.Effect<
+    WalletView,
+    BillingError | EnsNameUnavailableError | EnsUnavailableError | WalletCreationError
+  >;
   readonly list: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;

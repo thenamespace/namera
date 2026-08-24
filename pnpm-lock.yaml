@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@adraffy/ens-normalize':
+      specifier: 1.11.1
+      version: 1.11.1
     '@alchemy/aa-infra':
       specifier: 5.2.0
       version: 5.2.0
@@ -429,6 +432,9 @@ importers:
       '@namera-ai/emails':
         specifier: workspace:*
         version: link:../../packages/emails
+      '@namera-ai/ens':
+        specifier: workspace:*
+        version: link:../../packages/ens
       '@namera-ai/evm':
         specifier: workspace:*
         version: link:../../packages/evm
@@ -497,6 +503,9 @@ importers:
       '@namera-ai/emails':
         specifier: workspace:*
         version: link:../emails
+      '@namera-ai/ens':
+        specifier: workspace:*
+        version: link:../ens
       '@namera-ai/evm':
         specifier: workspace:*
         version: link:../evm
@@ -722,6 +731,9 @@ importers:
 
   packages/protocol:
     dependencies:
+      '@adraffy/ens-normalize':
+        specifier: 'catalog:'
+        version: 1.11.1
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105

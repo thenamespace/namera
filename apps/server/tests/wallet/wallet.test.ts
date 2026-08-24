@@ -27,6 +27,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const treasury = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("Treasury"),
         },
@@ -34,6 +35,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const operations = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("Operations"),
         },
@@ -141,6 +143,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("No email"),
         },
@@ -169,6 +172,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("Readable"),
         },
@@ -182,6 +186,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
           .create({
             payload: {
               namespace: "eip155",
+              ensLabel: globalThis.crypto.randomUUID(),
               protectionLevel: "software",
               metadata: metadata("Forbidden"),
             },
@@ -221,6 +226,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
+            ensLabel: globalThis.crypto.randomUUID(),
             protectionLevel: "hsm",
             metadata: metadata("HSM"),
           },
@@ -232,6 +238,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         yield* client.wallet.create({
           payload: {
             namespace: "eip155",
+            ensLabel: globalThis.crypto.randomUUID(),
             protectionLevel: "software",
             metadata: metadata(`Wallet ${index}`),
           },
@@ -241,6 +248,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
+            ensLabel: globalThis.crypto.randomUUID(),
             protectionLevel: "software",
             metadata: metadata("Over limit"),
           },
@@ -261,6 +269,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("Original account"),
         },
@@ -306,6 +315,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
+          ensLabel: globalThis.crypto.randomUUID(),
           protectionLevel: "software",
           metadata: metadata("Owner account"),
         },

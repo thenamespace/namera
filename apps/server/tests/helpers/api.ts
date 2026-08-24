@@ -4,7 +4,7 @@ import type { HttpApiClient } from "effect/unstable/httpapi";
 
 import { NameraApi } from "@namera-ai/api";
 
-import { TestAuthToken, TestDatabase, TestEmails } from "../layers/index.js";
+import { TestAuthToken, TestDatabase, TestEmails, TestEns } from "../layers/index.js";
 import { handledApi } from "./http-api-test.js";
 
 export type TestApiClient = HttpApiClient.ForApi<typeof NameraApi>;
@@ -15,11 +15,13 @@ export const resetTestState = Effect.fn("server.resetTestState")(function* () {
   const database = yield* TestDatabase;
   const emails = yield* TestEmails;
   const authToken = yield* TestAuthToken;
+  const ens = yield* TestEns;
 
   yield* database.reset;
   yield* emails.clear;
   yield* authToken.clear;
   yield* authToken.clearApiKey;
+  yield* ens.reset;
 });
 
 export const setApiKey = Effect.fn("server.setApiKey")(function* (apiKey?: string) {

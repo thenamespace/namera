@@ -28,6 +28,7 @@ import {
   type DashboardOverviewApplication,
 } from "#/dashboard/index";
 import { makeDataApplication, type DataApplication } from "#/data/index";
+import { makeEnsApplication, type EnsApplication } from "#/ens/index";
 import { makeExecutionApplication, type ExecutionApplication } from "#/execution/index";
 import { makeNotificationApplication, type NotificationApplication } from "#/notification/index";
 import { makeSessionKeyApplication, type SessionKeyApplication } from "#/session-key/index";
@@ -41,6 +42,7 @@ export interface ApplicationService {
   readonly notification: NotificationApplication;
   readonly oauth: Effect.Success<typeof makeOAuthApplication>;
   readonly execution: ExecutionApplication;
+  readonly ens: EnsApplication;
   readonly data: DataApplication;
   readonly dashboardOverview: DashboardOverviewApplication;
   readonly organization: OrganizationApplication & {
@@ -78,6 +80,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const wallet = yield* makeWalletApplication(data);
       const sessionKey = yield* makeSessionKeyApplication;
       const execution = yield* makeExecutionApplication;
+      const ens = yield* makeEnsApplication;
       const dashboardOverview = yield* makeDashboardOverviewApplication();
       const signature = yield* makeSignatureApplication;
 
@@ -88,6 +91,7 @@ export class Application extends Context.Service<Application, ApplicationService
         notification,
         oauth,
         execution,
+        ens,
         data,
         dashboardOverview,
         organization: { ...organization, invitation, member },

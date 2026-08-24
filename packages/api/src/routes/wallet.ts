@@ -2,6 +2,8 @@ import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/un
 
 import {
   BillingErrors,
+  EnsNameUnavailableError,
+  EnsUnavailableError,
   PortfolioUnavailableError,
   WalletCreationError,
   WalletNotFoundError,
@@ -26,7 +28,13 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
     HttpApiEndpoint.post("create", "/", {
       payload: CreateWalletRequest,
       success: CreateWalletResponse.pipe(HttpApiSchema.status("Created")),
-      error: [WalletCreationError, ...BillingErrors, ...CommonErrors],
+      error: [
+        WalletCreationError,
+        EnsNameUnavailableError,
+        EnsUnavailableError,
+        ...BillingErrors,
+        ...CommonErrors,
+      ],
     }).annotate(OpenApi.Summary, "Create a wallet"),
     HttpApiEndpoint.get("list", "/", {
       success: ListWalletsResponse,

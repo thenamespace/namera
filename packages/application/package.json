@@ -39,6 +39,7 @@
     "@namera-ai/crypto": "workspace:*",
     "@namera-ai/database": "workspace:*",
     "@namera-ai/emails": "workspace:*",
+    "@namera-ai/ens": "workspace:*",
     "@namera-ai/evm": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",

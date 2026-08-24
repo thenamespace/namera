@@ -22,6 +22,7 @@ the server/application ownership split.
   are separate modules composed by one route layer.
 - `src/routes/wallet/` — wallet and session-key handlers.
 - `src/routes/execution/` — execution and signature handlers.
+- `src/routes/ens.ts` — public, IP-rate-limited ENS label availability.
 - `src/routes/billing/`, `src/routes/mcp/`, and `src/routes/proxy/` — focused
   billing, MCP, RPC, and telemetry transport boundaries.
 - `src/helpers/` — actor enforcement, cookie helpers, and domain-separated DTO

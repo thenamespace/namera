@@ -21,6 +21,21 @@ export class WalletCreationError extends Schema.TaggedError<WalletCreationError>
   { httpApiStatus: 500 },
 ) {}
 
+export class EnsNameUnavailableError extends Schema.TaggedError<EnsNameUnavailableError>()(
+  "EnsNameUnavailableError",
+  {
+    code: Schema.Literal("ENS_NAME_UNAVAILABLE"),
+    label: Schema.String,
+  },
+  { httpApiStatus: 409 },
+) {}
+
+export class EnsUnavailableError extends Schema.TaggedError<EnsUnavailableError>()(
+  "EnsUnavailableError",
+  { code: Schema.Literal("ENS_UNAVAILABLE") },
+  { httpApiStatus: 502 },
+) {}
+
 export class WalletNotFoundError extends Schema.TaggedError<WalletNotFoundError>()(
   "WalletError",
   {
@@ -63,6 +78,11 @@ export class PortfolioUnavailableError extends Schema.TaggedError<PortfolioUnava
   { httpApiStatus: 502 },
 ) {}
 
-export const WalletErrors = [WalletCreationError, WalletNotFoundError] as const;
+export const WalletErrors = [
+  WalletCreationError,
+  EnsNameUnavailableError,
+  EnsUnavailableError,
+  WalletNotFoundError,
+] as const;
 export const WalletError = Schema.Union(WalletErrors);
 export type WalletError = typeof WalletError.Type;

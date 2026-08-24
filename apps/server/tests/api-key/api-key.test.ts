@@ -27,6 +27,7 @@ const createSessionKey = Effect.fn("server.test.createApiKeySessionKey")(functio
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
+      ensLabel: globalThis.crypto.randomUUID(),
       protectionLevel: "software",
       metadata: metadata(`${name} wallet`),
     },

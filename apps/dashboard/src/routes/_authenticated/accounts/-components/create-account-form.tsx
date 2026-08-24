@@ -1,12 +1,16 @@
+import { useEffect } from "react";
+
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useNavigate } from "@tanstack/react-router";
 
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { EnsLabel } from "@namera-ai/protocol";
 import {
   CreateWalletRequest,
   type CreateWalletRequest as CreateWalletRequestType,
+  type CreateWalletRequestEncoded,
 } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
@@ -17,26 +21,37 @@ import {
   FieldLabel,
   IconPicker,
   Input,
+  InputGroup,
+  Spinner,
   TextArea,
   Typography,
   cn,
   inputVariants,
 } from "@namera-ai/ui";
-import { AlchemyIcon, ChainIcon } from "@namera-ai/ui/icons";
-import { Controller, useForm } from "react-hook-form";
+import {
+  AlchemyIcon,
+  CancelCircleIcon,
+  ChainIcon,
+  CheckmarkCircle02Icon,
+  HugeiconsIcon,
+} from "@namera-ai/ui/icons";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useDebounceValue } from "usehooks-ts";
 
 import {
   DashboardCardContent,
   DashboardCardRoot,
   DashboardCardRow,
 } from "@/components/dashboard-card";
+import { useEnsNameAvailability } from "@/hooks/ens";
 import { useCreateWallet } from "@/hooks/wallet";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "💳" };
-const defaultValues: CreateWalletRequestType = {
+const defaultValues: CreateWalletRequestEncoded = {
   namespace: "eip155",
+  ensLabel: "",
   protectionLevel: "software",
   metadata: {
     version: 1,
@@ -47,6 +62,12 @@ const defaultValues: CreateWalletRequestType = {
 
 export function CreateAccountForm() {
   const navigate = useNavigate();
+  const ensAvailability = useEnsNameAvailability();
+  const {
+    cancel: cancelEnsAvailability,
+    mutate: checkEnsAvailability,
+    reset: resetEnsAvailability,
+  } = ensAvailability;
   const createWallet = useCreateWallet({
     onError: (error) =>
       showErrorToast(error, {
@@ -61,11 +82,33 @@ export function CreateAccountForm() {
       void navigate({ to: "/accounts", replace: true });
     },
   });
-  const form = useForm<CreateWalletRequestType>({
+  const form = useForm<CreateWalletRequestEncoded, unknown, CreateWalletRequestType>({
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateWalletRequest)),
   });
+  const ensLabel = useWatch({ control: form.control, name: "ensLabel" });
+  const [debouncedEnsLabel] = useDebounceValue(ensLabel, 350);
+  const decodedEnsLabel = Schema.decodeUnknownOption(EnsLabel)(ensLabel);
+  const normalizedEnsLabel = Option.getOrUndefined(decodedEnsLabel);
+  const currentAvailability =
+    ensAvailability.data?.label === normalizedEnsLabel ? ensAvailability.data : undefined;
+  const isCurrentLabelAvailable =
+    normalizedEnsLabel !== undefined && currentAvailability?.available === true;
+
+  useEffect(() => {
+    cancelEnsAvailability();
+    resetEnsAvailability();
+  }, [cancelEnsAvailability, ensLabel, resetEnsAvailability]);
+
+  useEffect(() => {
+    const decoded = Schema.decodeUnknownOption(EnsLabel)(debouncedEnsLabel);
+    if (Option.isSome(decoded)) {
+      checkEnsAvailability({ query: { label: decoded.value } });
+    }
+  }, [checkEnsAvailability, debouncedEnsLabel]);
+
   const handleSubmit = form.handleSubmit((payload) => {
+    if (!isCurrentLabelAvailable) return;
     createWallet.mutate({ payload });
   });
 
@@ -113,6 +156,70 @@ export function CreateAccountForm() {
                       variant="secondary"
                       placeholder="Enter account name"
                     />
+                  </Field>
+                </DashboardCardRow>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="ensLabel"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="create-account-ens-label">ENS name</FieldLabel>
+                      {fieldState.invalid ? (
+                        <FieldError errors={[fieldState.error]} />
+                      ) : normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
+                        <Typography className="text-xs! text-muted">
+                          Checking availability…
+                        </Typography>
+                      ) : currentAvailability !== undefined ? (
+                        <Typography
+                          className={
+                            currentAvailability.available
+                              ? "text-xs! text-success"
+                              : "text-xs! text-danger"
+                          }
+                        >
+                          {currentAvailability.available ? "Available" : "Already taken"}
+                        </Typography>
+                      ) : ensAvailability.isError ? (
+                        <Typography className="text-xs! text-danger">
+                          Couldn’t check availability
+                        </Typography>
+                      ) : null}
+                    </div>
+                    <InputGroup fullWidth variant="secondary">
+                      <InputGroup.Input
+                        {...field}
+                        id="create-account-ens-label"
+                        aria-invalid={fieldState.invalid}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        placeholder="treasury"
+                      />
+                      <InputGroup.Suffix className="gap-1.5">
+                        <span>.namera.id</span>
+                        {normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
+                          <Spinner className="size-3.5" />
+                        ) : currentAvailability !== undefined ? (
+                          <HugeiconsIcon
+                            className={
+                              currentAvailability.available
+                                ? "size-3.5 text-success"
+                                : "size-3.5 text-danger"
+                            }
+                            icon={
+                              currentAvailability.available
+                                ? CheckmarkCircle02Icon
+                                : CancelCircleIcon
+                            }
+                          />
+                        ) : null}
+                      </InputGroup.Suffix>
+                    </InputGroup>
                   </Field>
                 </DashboardCardRow>
               )}
@@ -178,7 +285,7 @@ export function CreateAccountForm() {
         className="mt-4"
         form="create-account-form"
         fullWidth
-        isDisabled={createWallet.isPending}
+        isDisabled={createWallet.isPending || !isCurrentLabelAvailable}
         type="submit"
       >
         {createWallet.isPending ? "Creating…" : "Create account"}

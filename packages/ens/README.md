@@ -43,6 +43,11 @@ const program = Effect.gen(function* () {
 program.pipe(Effect.provide(Ens.layer));
 ```
 
+`Ens.layer` uses Namespace mainnet. `Ens.devLayer` uses the SDK's Sepolia mode,
+and `EnsTestLayer` provides an in-memory deterministic substitute with resettable
+availability state for boundary tests. Runtime environment selection belongs to
+the server composition root.
+
 ## Commands
 
 ```sh
