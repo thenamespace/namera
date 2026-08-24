@@ -163,70 +163,6 @@ export function CreateAccountForm() {
 
             <Controller
               control={form.control}
-              name="ensLabel"
-              render={({ field, fieldState }) => (
-                <DashboardCardRow className="sm:items-start">
-                  <Field className="contents" data-invalid={fieldState.invalid}>
-                    <div className="grid min-w-0 gap-1">
-                      <FieldLabel htmlFor="create-account-ens-label">ENS name</FieldLabel>
-                      {fieldState.invalid ? (
-                        <FieldError errors={[fieldState.error]} />
-                      ) : normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
-                        <Typography className="text-xs! text-muted">
-                          Checking availability…
-                        </Typography>
-                      ) : currentAvailability !== undefined ? (
-                        <Typography
-                          className={
-                            currentAvailability.available
-                              ? "text-xs! text-success"
-                              : "text-xs! text-danger"
-                          }
-                        >
-                          {currentAvailability.available ? "Available" : "Already taken"}
-                        </Typography>
-                      ) : ensAvailability.isError ? (
-                        <Typography className="text-xs! text-danger">
-                          Couldn’t check availability
-                        </Typography>
-                      ) : null}
-                    </div>
-                    <InputGroup fullWidth variant="secondary">
-                      <InputGroup.Input
-                        {...field}
-                        id="create-account-ens-label"
-                        aria-invalid={fieldState.invalid}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        placeholder="treasury"
-                      />
-                      <InputGroup.Suffix className="gap-1.5">
-                        <span>.namera.id</span>
-                        {normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
-                          <Spinner className="size-3.5" />
-                        ) : currentAvailability !== undefined ? (
-                          <HugeiconsIcon
-                            className={
-                              currentAvailability.available
-                                ? "size-3.5 text-success"
-                                : "size-3.5 text-danger"
-                            }
-                            icon={
-                              currentAvailability.available
-                                ? CheckmarkCircle02Icon
-                                : CancelCircleIcon
-                            }
-                          />
-                        ) : null}
-                      </InputGroup.Suffix>
-                    </InputGroup>
-                  </Field>
-                </DashboardCardRow>
-              )}
-            />
-
-            <Controller
-              control={form.control}
               name="metadata.description"
               render={({ field, fieldState }) => (
                 <DashboardCardRow className="sm:items-start">
@@ -247,6 +183,62 @@ export function CreateAccountForm() {
                       variant="secondary"
                       onChange={(event) => field.onChange(event.target.value || undefined)}
                     />
+                  </Field>
+                </DashboardCardRow>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="ensLabel"
+              render={({ field, fieldState }) => (
+                <DashboardCardRow className="sm:items-start">
+                  <Field className="contents" data-invalid={fieldState.invalid}>
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel htmlFor="create-account-ens-label">ENS name</FieldLabel>
+                      {fieldState.invalid ? (
+                        <FieldError errors={[fieldState.error]} />
+                      ) : normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
+                        <div className="flex items-center gap-1.5 text-muted">
+                          <Spinner className="size-3.5" />
+                          <Typography className="text-xs!">Checking availability…</Typography>
+                        </div>
+                      ) : currentAvailability !== undefined ? (
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5",
+                            currentAvailability.available ? "text-success" : "text-danger",
+                          )}
+                        >
+                          <HugeiconsIcon
+                            className="size-3.5"
+                            icon={
+                              currentAvailability.available
+                                ? CheckmarkCircle02Icon
+                                : CancelCircleIcon
+                            }
+                          />
+                          <Typography className="text-xs!">
+                            {currentAvailability.available ? "Available" : "Already taken"}
+                          </Typography>
+                        </div>
+                      ) : ensAvailability.isError ? (
+                        <Typography className="text-xs! text-danger">
+                          Couldn’t check availability
+                        </Typography>
+                      ) : null}
+                    </div>
+                    <InputGroup fullWidth variant="secondary">
+                      <InputGroup.Input
+                        {...field}
+                        id="create-account-ens-label"
+                        aria-invalid={fieldState.invalid}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        placeholder="treasury"
+                      />
+                      <InputGroup.Suffix>.namera.id</InputGroup.Suffix>
+                    </InputGroup>
                   </Field>
                 </DashboardCardRow>
               )}
