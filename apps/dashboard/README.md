@@ -86,7 +86,7 @@ filterable, non-resizable DataGrid with configurable visible columns. `/accounts
 creates a software-protected EVM smart account using the shared wallet DTO while
 presenting wallet terminology as "account" in the UI. Its ENS input validates and
 normalizes a label, debounces public availability checks, renders the fixed
-`.namera.id` suffix, and only enables creation for the currently confirmed label.
+`.namera.eth` suffix, and only enables creation for the currently confirmed label.
 The route and the Accounts
 header action derive visibility from `wallet:create`; the server remains the
 authoritative permission boundary. EVM address displays resolve mainnet ENS names

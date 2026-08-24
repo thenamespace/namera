@@ -28,7 +28,7 @@ const program = Effect.gen(function* () {
   const ens = yield* Ens;
 
   yield* ens.createSubname({
-    parentName: "namera.id",
+    parentName: "namera.eth",
     label: "alice",
     owner: "0x0000000000000000000000000000000000000000",
     addresses: [

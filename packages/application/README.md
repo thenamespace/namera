@@ -107,7 +107,7 @@ rules; application only coordinates their results with persistence. See
 semantics.
 
 Wallet creation performs a cheap quota precheck, authoritatively checks the
-ENSIP-normalized `<label>.namera.id` name, creates the provider key, chain account,
+ENSIP-normalized `<label>.namera.eth` name, creates the provider key, chain account,
 and resolving Namespace subname, then repeats the locked quota check before atomically persisting
 the key, wallet, audit events, notification recipients, and durable email jobs.
 If the persistence transaction fails, the application best-effort deletes the

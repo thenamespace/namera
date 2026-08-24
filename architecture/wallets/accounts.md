@@ -32,7 +32,7 @@ sequenceDiagram
   Keys-->>App: public material + opaque provider data
   App->>EVM: construct Alchemy Modular Account V2
   EVM-->>App: verified smart-account address and data
-  App->>ENS: create label.namera.id resolving to account
+  App->>ENS: create label.namera.eth resolving to account
   App->>Tx: lock billing account and recheck capacity
   App->>Tx: persist wallet key + wallet + audit + notifications + email jobs
   alt transaction fails
@@ -49,7 +49,7 @@ policy are server-owned constants rather than public input.
 The label is decoded with ENSIP normalization and must contain 4–63 characters
 without a domain suffix. `GET /ens/availability?label=...` is an unauthenticated,
 IP-rate-limited convenience check and returns the normalized label, full
-`<label>.namera.id` name, and availability. It is not an allocation guarantee;
+`<label>.namera.eth` name, and availability. It is not an allocation guarantee;
 wallet creation rechecks availability and maps provider races to HTTP 409 before
 creating the subname with its owner and Ethereum address set to the account.
 Development and production both use the Namespace mainnet API.

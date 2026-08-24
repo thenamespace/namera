@@ -13,8 +13,8 @@ describe("toEnsError", () => {
   it.each([
     [new AuthenticationError(), "AUTHENTICATION_FAILED"],
     [new ValidationError("invalid subname"), "VALIDATION_FAILED"],
-    [new SubnameNotFoundError("alice.namera.id"), "NOT_FOUND"],
-    [new SubnameAlreadyExistsError("alice.namera.id"), "ALREADY_EXISTS"],
+    [new SubnameNotFoundError("alice.namera.eth"), "NOT_FOUND"],
+    [new SubnameAlreadyExistsError("alice.namera.eth"), "ALREADY_EXISTS"],
     [new RateLimitError(), "RATE_LIMITED"],
     [new Error("network unavailable"), "REQUEST_FAILED"],
   ] as const)("maps provider failures to %s", (cause, reason) => {
