@@ -18,7 +18,7 @@ One-off domain logic belongs beside its domain operation. Repeated domain logic 
 
 ENS owns the provider boundary for Namera offchain identities. Its live Effect
 layer constructs Namespace's offchain manager with the redacted
-`NAMERA_ID_OFFCHAIN_API_KEY`, while the service exposes subname lifecycle,
+`NAMERA_ENS_API_KEY`, while the service exposes subname lifecycle,
 queries, and address/text/data record operations as typed Effects. Provider
 failures are translated to stable `EnsError` reasons before they leave the
 package.

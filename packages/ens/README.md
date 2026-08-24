@@ -6,9 +6,9 @@ provider's Promise API and errors into a typed Effect boundary.
 
 ## Configuration
 
-| Variable                     | Required | Description                                       |
-| ---------------------------- | -------- | ------------------------------------------------- |
-| `NAMERA_ID_OFFCHAIN_API_KEY` | Yes      | Namespace address-based offchain manager API key. |
+| Variable             | Required | Description                                       |
+| -------------------- | -------- | ------------------------------------------------- |
+| `NAMERA_ENS_API_KEY` | Yes      | Namespace address-based offchain manager API key. |
 
 The API key is loaded as a redacted Effect configuration value and is never
 accepted by individual operations.
