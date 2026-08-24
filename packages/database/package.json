@@ -34,7 +34,10 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "test:watch": "NODE_OPTIONS=--conditions=namera-source vitest",
     "typecheck": "tsc -p tsconfig.json --pretty false",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env --conditions=namera-source src/migrations/run.ts",
     "db:studio": "drizzle-kit studio"
@@ -42,6 +45,7 @@
   "dependencies": {
     "@effect/sql-pg": "catalog:",
     "@effect/sql-pglite": "catalog:",
+    "@electric-sql/pglite": "catalog:",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/utils": "workspace:*",
     "drizzle-orm": "catalog:",
@@ -50,12 +54,14 @@
   },
   "devDependencies": {
     "@effect/platform-node": "catalog:",
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@types/pg": "8.20.4",
     "drizzle-kit": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

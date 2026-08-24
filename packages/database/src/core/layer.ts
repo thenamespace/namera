@@ -2,6 +2,7 @@ import { PgClient } from "@effect/sql-pg";
 import { PgliteClient } from "@effect/sql-pglite";
 import { Config, Context, Effect, Layer } from "effect";
 
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import * as PgliteDrizzle from "drizzle-orm/effect-pglite";
 import * as PgDrizzle from "drizzle-orm/effect-postgres";
 import { types as pgTypes } from "pg";
@@ -38,5 +39,11 @@ export class Database extends Context.Service<Database, DatabaseService>()(
   static readonly testLayer = Layer.effect(
     Database,
     PgliteDrizzle.makeWithDefaults({ relations }),
-  ).pipe(Layer.provide(PgliteClient.layer()));
+  ).pipe(
+    Layer.provide(
+      PgliteClient.layer({
+        extensions: { pg_trgm },
+      }),
+    ),
+  );
 }

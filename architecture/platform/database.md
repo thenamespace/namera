@@ -67,10 +67,13 @@ decoding; application workflows own authorization and business decisions.
 ## Migration and test lifecycle
 
 The server applies the full migration chain before role synchronization and
-worker startup. Tests use the same migrations with PGlite and delete tables in
-foreign-key order between cases. The pre-production database is disposable;
-current migrations optimize for a clean initial deployment rather than legacy
-backfills.
+worker startup. Tests use the same migrations with PGlite, load the bundled
+`pg_trgm` extension required by address-metadata search indexes, and delete
+tables in foreign-key order between cases. PGlite verifies migration and normal
+repository compatibility; PostgreSQL remains required for advisory locks,
+concurrency, and query-plan verification. The pre-production database is
+disposable; current migrations optimize for a clean initial deployment rather
+than legacy backfills.
 
 ## Pending
 

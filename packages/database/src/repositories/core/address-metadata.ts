@@ -96,7 +96,7 @@ export class AddressMetadataRepository extends Context.Service<
         }, mapRepositoryError),
         search: Effect.fn("database.addressMetadataRepository.search")(function* (input) {
           const db = yield* transactionOrDatabase(database);
-          const pattern = `%${input.query}%`;
+          const pattern = `%${input.query.toLowerCase()}%`;
           const rows = yield* db
             .select()
             .from(addressMetadata)
@@ -106,8 +106,11 @@ export class AddressMetadataRepository extends Context.Service<
                 eq(addressMetadata.chainId, input.chainId),
                 or(
                   ilike(addressMetadata.address, pattern),
-                  ilike(sql<string>`${addressMetadata.data} #>> '{identity,displayName}'`, pattern),
-                  ilike(sql<string>`${addressMetadata.data} #>> '{token,symbol}'`, pattern),
+                  ilike(
+                    sql<string>`lower(${addressMetadata.data} #>> '{identity,displayName}')`,
+                    pattern,
+                  ),
+                  ilike(sql<string>`lower(${addressMetadata.data} #>> '{token,symbol}')`, pattern),
                 ),
               ),
             )

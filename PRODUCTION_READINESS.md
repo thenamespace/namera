@@ -35,13 +35,13 @@ enterprise administration are outside this release.
 
 Snapshot from 2026-08-24:
 
-- [x] `pnpm check` passes all 58 formatting, linting, type-checking, test
+- [x] `pnpm check` passes all 59 formatting, linting, type-checking, test
       type-checking, and build tasks.
 - [x] Production dashboard and Node server builds complete.
 - [x] `pnpm audit --prod --audit-level high` reports no known vulnerabilities.
-- [ ] `pnpm test` passes. The current run fails while applying
-      `CREATE EXTENSION pg_trgm` to PGlite; 24 server suites fail during setup and
-      118 route tests are skipped.
+- [ ] `pnpm test` passes. PGlite now loads `pg_trgm` and all 27 server suites
+      initialize; 123 of 124 server tests pass. The remaining dashboard overview
+      activity-series assertion must be corrected.
 - [ ] Dashboard browser tests exist. There are currently no dashboard test or
       specification files.
 - [ ] Repository CI exists. No checked-in CI workflow currently runs the
@@ -78,9 +78,8 @@ Exit criteria:
 
 Owner: engineering.
 
-- [ ] **Blocker:** Fix the server integration test database so `pg_trgm` is
-      available, or run extension-dependent integration tests against PostgreSQL
-      17 instead of PGlite.
+- [x] Load PGlite's bundled `pg_trgm` extension and verify the address-metadata
+      trigram indexes through the database migration suite.
 - [ ] **Blocker:** Require `pnpm check` and `pnpm test` to pass without skipped
       launch-critical suites.
 - [ ] Add CI jobs for formatting, linting, source type checking, test type
