@@ -196,49 +196,33 @@ export function CreateAccountForm() {
                   <Field className="contents" data-invalid={fieldState.invalid}>
                     <div className="grid min-w-0 gap-1">
                       <FieldLabel htmlFor="create-account-ens-label">ENS name</FieldLabel>
-                      {fieldState.invalid ? (
-                        <FieldError errors={[fieldState.error]} />
-                      ) : normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
-                        <div className="flex items-center gap-1.5 text-muted">
-                          <Spinner className="size-3.5" />
-                          <Typography className="text-xs!">Checking availability…</Typography>
-                        </div>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <InputGroup className="min-w-0 flex-1" fullWidth variant="secondary">
+                        <InputGroup.Input
+                          {...field}
+                          id="create-account-ens-label"
+                          aria-invalid={fieldState.invalid}
+                          autoCapitalize="none"
+                          autoComplete="off"
+                          placeholder="treasury"
+                        />
+                        <InputGroup.Suffix>.namera.id</InputGroup.Suffix>
+                      </InputGroup>
+                      {normalizedEnsLabel !== undefined && ensAvailability.isPending ? (
+                        <Spinner className="size-4 shrink-0" />
                       ) : currentAvailability !== undefined ? (
-                        <div
+                        <HugeiconsIcon
                           className={cn(
-                            "flex items-center gap-1.5",
+                            "size-4 shrink-0",
                             currentAvailability.available ? "text-success" : "text-danger",
                           )}
-                        >
-                          <HugeiconsIcon
-                            className="size-3.5"
-                            icon={
-                              currentAvailability.available
-                                ? CheckmarkCircle02Icon
-                                : CancelCircleIcon
-                            }
-                          />
-                          <Typography className="text-xs!">
-                            {currentAvailability.available ? "Available" : "Already taken"}
-                          </Typography>
-                        </div>
-                      ) : ensAvailability.isError ? (
-                        <Typography className="text-xs! text-danger">
-                          Couldn’t check availability
-                        </Typography>
+                          icon={
+                            currentAvailability.available ? CheckmarkCircle02Icon : CancelCircleIcon
+                          }
+                        />
                       ) : null}
                     </div>
-                    <InputGroup fullWidth variant="secondary">
-                      <InputGroup.Input
-                        {...field}
-                        id="create-account-ens-label"
-                        aria-invalid={fieldState.invalid}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        placeholder="treasury"
-                      />
-                      <InputGroup.Suffix>.namera.id</InputGroup.Suffix>
-                    </InputGroup>
                   </Field>
                 </DashboardCardRow>
               )}
