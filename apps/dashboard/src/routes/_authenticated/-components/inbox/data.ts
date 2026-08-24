@@ -19,8 +19,6 @@ export type InboxNotificationGroup = "access" | "accounts" | "activity" | "secur
 export type InboxNotificationPresentation = {
   readonly group: InboxNotificationGroup;
   readonly icon: IconSvgElement;
-  readonly iconClassName: string;
-  readonly iconSurfaceClassName: string;
   readonly preview: string;
   readonly title: string;
 };
@@ -36,96 +34,72 @@ export const notificationPresentation = {
   "auth.new-sign-in": {
     group: "security",
     icon: SecurityIcon,
-    iconClassName: "text-warning",
-    iconSurfaceClassName: "bg-warning/10",
     title: "New sign-in detected",
     preview: "A new browser session signed in to your account.",
   },
   "organization.invitation.received": {
     group: "access",
     icon: UserMultiple02Icon,
-    iconClassName: "text-accent",
-    iconSurfaceClassName: "bg-accent/10",
     title: "Workspace invitation",
     preview: "You were invited to join a Namera workspace.",
   },
   "wallet.created": {
     group: "accounts",
     icon: Wallet01Icon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "Account created",
     preview: "Your smart account is ready to use.",
   },
   "session_key.created": {
     group: "access",
     icon: Key01Icon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "Session key created",
     preview: "A new policy-bound session key can access an account.",
   },
   "session_key.revoked": {
     group: "access",
     icon: Key01Icon,
-    iconClassName: "text-danger",
-    iconSurfaceClassName: "bg-danger/10",
     title: "Session key revoked",
     preview: "A session key and its active grants were revoked.",
   },
   "api_key.created": {
     group: "access",
     icon: ApiIcon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "API key created",
     preview: "A new API key was granted access to session keys.",
   },
   "api_key.revoked": {
     group: "access",
     icon: ApiIcon,
-    iconClassName: "text-danger",
-    iconSurfaceClassName: "bg-danger/10",
     title: "API key revoked",
     preview: "An API key and its session-key grants were revoked.",
   },
   "execution.confirmed": {
     group: "activity",
     icon: Activity01Icon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "Execution confirmed",
     preview: "An account operation was confirmed onchain.",
   },
   "mcp_authorization.approved": {
     group: "access",
     icon: BotIcon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "MCP access approved",
     preview: "An MCP client can now use the selected session keys.",
   },
   "mcp_authorization.revoked": {
     group: "access",
     icon: BotIcon,
-    iconClassName: "text-danger",
-    iconSurfaceClassName: "bg-danger/10",
     title: "MCP access revoked",
     preview: "An MCP client's active session-key grants were revoked.",
   },
   "cli_authorization.approved": {
     group: "access",
     icon: TerminalIcon,
-    iconClassName: "text-success",
-    iconSurfaceClassName: "bg-success/10",
     title: "CLI access approved",
     preview: "A CLI device can now use the selected session keys.",
   },
   "cli_authorization.revoked": {
     group: "access",
     icon: TerminalIcon,
-    iconClassName: "text-danger",
-    iconSurfaceClassName: "bg-danger/10",
     title: "CLI access revoked",
     preview: "A CLI device's active session-key grants were revoked.",
   },

@@ -18,13 +18,12 @@ export function NotificationIcon({
   return (
     <span
       className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-lg",
-        presentation.iconSurfaceClassName,
+        "grid size-8 shrink-0 place-items-center rounded-lg bg-foreground/10 text-foreground",
         className,
       )}
     >
       <HugeiconsIcon
-        className={cn("size-4", presentation.iconClassName, iconClassName)}
+        className={cn("size-4", iconClassName)}
         icon={presentation.icon}
         strokeWidth={1.8}
       />
