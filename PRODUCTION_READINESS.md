@@ -39,9 +39,7 @@ Snapshot from 2026-08-24:
       type-checking, and build tasks.
 - [x] Production dashboard and Node server builds complete.
 - [x] `pnpm audit --prod --audit-level high` reports no known vulnerabilities.
-- [ ] `pnpm test` passes. PGlite now loads `pg_trgm` and all 27 server suites
-      initialize; 123 of 124 server tests pass. The remaining dashboard overview
-      activity-series assertion must be corrected.
+- [x] `pnpm test` passes, including all 27 server suites and 124 server tests.
 - [ ] Dashboard browser tests exist. There are currently no dashboard test or
       specification files.
 - [ ] Repository CI exists. No checked-in CI workflow currently runs the
@@ -80,7 +78,7 @@ Owner: engineering.
 
 - [x] Load PGlite's bundled `pg_trgm` extension and verify the address-metadata
       trigram indexes through the database migration suite.
-- [ ] **Blocker:** Require `pnpm check` and `pnpm test` to pass without skipped
+- [x] Require `pnpm check` and `pnpm test` to pass without skipped
       launch-critical suites.
 - [ ] Add CI jobs for formatting, linting, source type checking, test type
       checking, unit/integration tests, and production builds.

@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { Clock, Effect } from "effect";
+import { TestClock } from "effect/testing";
 
 import { createExecutionFixture, executeFixture } from "../execution/helpers.js";
 import {
@@ -15,6 +16,9 @@ import { TestServerLayer } from "../layers/index.js";
 layer(TestServerLayer)("dashboard overview route", (it) => {
   it.effect("returns a namespace-aware organization snapshot", () =>
     Effect.gen(function* () {
+      // Persisted operation timestamps use the database clock, so the overview
+      // window must not remain at the test clock's Unix-epoch default.
+      yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("dashboard-overview@example.com"));
