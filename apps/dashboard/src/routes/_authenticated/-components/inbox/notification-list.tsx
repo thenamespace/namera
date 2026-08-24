@@ -41,13 +41,13 @@ function NotificationListItem({
         type="button"
         onClick={selectItem}
       >
-        <NotificationIcon type={item.notification.type} />
+        <NotificationIcon className="size-9" type={item.notification.type} />
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
+          <div className="flex h-5 items-start gap-2">
             <span
               className={cn(
-                "min-w-0 flex-1 truncate text-sm",
+                "min-w-0 flex-1 truncate text-sm leading-5",
                 item.readAt === null ? "font-medium text-foreground" : "text-muted",
               )}
             >
@@ -57,7 +57,7 @@ function NotificationListItem({
               {formatNotificationTime(item.receivedAt)}
             </time>
           </div>
-          <p className="mt-1 line-clamp-2 text-xs leading-4 text-muted">{presentation.preview}</p>
+          <p className="truncate text-xs leading-4 text-muted">{presentation.preview}</p>
         </div>
 
         {item.readAt === null ? (
