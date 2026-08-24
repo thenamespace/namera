@@ -946,6 +946,6 @@ console.log(
   )}\n`,
 );
 
-const markdownReportUrl = new URL("../progress/pricing.md", import.meta.url);
+const markdownReportUrl = new URL("../architecture/billing/pricing.md", import.meta.url);
 writeFileSync(markdownReportUrl, buildMarkdownReport());
-console.log(ansi.dim("Saved Markdown report to progress/pricing.md"));
+console.log(ansi.dim("Saved Markdown report to architecture/billing/pricing.md"));

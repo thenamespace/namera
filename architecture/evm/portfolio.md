@@ -3,7 +3,9 @@
 Namera uses Blockscout PRO for provider-neutral address identity and fungible
 portfolio reads. Alchemy remains responsible for RPC, Modular Account V2,
 simulation, signing, Bundler submission, and sponsorship; its Portfolio API is
-not used.
+not used. The consumed and planned provider endpoint catalog, upstream shapes,
+normalization rules, and security requirements are documented in the
+[Blockscout provider integration](blockscout-data-enrichment.md).
 
 ## Public API
 

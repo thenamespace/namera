@@ -110,4 +110,7 @@ insert submissions, reserve state, bill usage, audit, notify, or sign.
 
 ## Pending
 
+- Validate self-funded Modular Account V2 execution against live Alchemy
+  Rundler on every supported mainnet and testnet.
+- Add product guidance for funding smart accounts before unsponsored execution.
 - Add stale-submission/reservation age alerts and an operator recovery view.

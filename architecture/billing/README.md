@@ -365,12 +365,16 @@ subscription, and item state. Checkout redirects never grant product access.
 - normalized authenticated `GET /billing` response;
 - bounded billing metrics and server/EVM tests for lifecycle, limit, rollover,
   recovery, repair, chain classification, and monetary rounding.
+- pricing calculator and generated margin report that separate execution
+  infrastructure, signing, sponsored gas, provider allowances, and overage
+  contribution margins;
+- permission-aware dashboard billing page with the current Free plan,
+  anniversary date, resource capacity, and settled/reserved meter usage.
 
 Deliberately inactive until paid plans:
 
 - provider delivery worker;
-- Stripe customer, Checkout, portal, price mapping, and webhook processing;
-- billing dashboard UI.
+- Stripe customer, Checkout, portal, price mapping, and webhook processing.
 
 ## Pending before production
 

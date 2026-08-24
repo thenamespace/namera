@@ -58,9 +58,6 @@ boundaries, and concrete remaining production work.
 - Read the owning architecture document before extending an existing feature.
 - Update that document in the same change as a contract, table, repository,
   workflow, route, authorization rule, audit event, or runtime lifecycle change.
-- Document only behavior visible in the repository. Put future work in the final
-  `Pending` section of the owning feature instead of creating temporary root
-  plans.
 - Package-local structure and commands remain in package READMEs. Repository
   rules remain in `AGENTS.md`; do not duplicate them into feature documents.
 - A schema or placeholder alone is not an implemented feature. State which
