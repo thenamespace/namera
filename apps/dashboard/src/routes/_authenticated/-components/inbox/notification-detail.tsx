@@ -7,7 +7,7 @@ import { DateTime } from "effect";
 import { getChainDataByCaip2 } from "@namera-ai/evm";
 import type { NotificationResponse } from "@namera-ai/protocol/dto";
 import type { NotificationType } from "@namera-ai/protocol/model";
-import { buttonVariants, cn, Surface, Typography } from "@namera-ai/ui";
+import { buttonVariants, Surface, Typography } from "@namera-ai/ui";
 import { ArrowUpRight01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { CopyIconButton } from "@/components/copy-icon-button";
@@ -20,6 +20,7 @@ import {
 } from "@/components/display";
 
 import { notificationPresentation } from "./data";
+import { NotificationIcon } from "./notification-icon";
 
 type NotificationOf<Type extends NotificationType> = Extract<
   NotificationResponse,
@@ -78,12 +79,11 @@ function NotificationDetailLayout({ children, description, item }: NotificationD
   return (
     <article className="mx-auto flex w-full max-w-2xl flex-col px-5 py-10 sm:px-8 sm:py-14">
       <header className="flex items-start gap-4">
-        <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-secondary">
-          <HugeiconsIcon
-            className={cn("size-5", presentation.iconClassName)}
-            icon={presentation.icon}
-          />
-        </div>
+        <NotificationIcon
+          className="size-11 rounded-xl"
+          iconClassName="size-5"
+          type={item.notification.type}
+        />
         <div className="min-w-0 flex-1 pt-0.5">
           <Typography.Heading className="text-xl tracking-tight" level={2}>
             {presentation.title}

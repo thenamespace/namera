@@ -6,6 +6,7 @@ import { Button, cn, Spinner, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon, InboxIcon } from "@namera-ai/ui/icons";
 
 import { formatNotificationTime, notificationPresentation } from "./data";
+import { NotificationIcon } from "./notification-icon";
 
 type NotificationListProps = {
   readonly canLoadMore: boolean;
@@ -40,12 +41,7 @@ function NotificationListItem({
         type="button"
         onClick={selectItem}
       >
-        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-tertiary">
-          <HugeiconsIcon
-            className={cn("size-4", presentation.iconClassName)}
-            icon={presentation.icon}
-          />
-        </div>
+        <NotificationIcon type={item.notification.type} />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">

@@ -57,12 +57,14 @@ for no-op values.
 
 The dashboard inbox consumes the same paginated notification DTOs. It keeps a
 compact notification rail beside a typed detail view, marks a notification read
-when it is selected, and supports mark-all-read and archive mutations. Search,
-read state, and notification-category filters are applied to the loaded cursor
-pages without changing persisted recipient state. Each notification payload is
-rendered by its own detail component so links, identifiers, and domain displays
-remain type-safe as new occurrence types are added. On narrow screens, the rail
-and detail become a list-to-detail navigation flow.
+when it is selected, and supports mark-all-read and archive mutations. The
+default view sorts newest first and includes the last seven days. Search,
+ordering, date range, read state, recipient scope, category, and exact
+notification-type filters are applied to the loaded cursor pages without
+changing persisted recipient state. Each notification payload is rendered by
+its own detail component so links, identifiers, and domain displays remain
+type-safe as new occurrence types are added. On narrow screens, the rail and
+detail become a list-to-detail navigation flow.
 
 ## Pending
 

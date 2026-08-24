@@ -2,30 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { NotificationId } from "@namera-ai/protocol";
 import type { ListNotificationsResponse, NotificationResponse } from "@namera-ai/protocol/dto";
-import {
-  Button,
-  SearchField,
-  Sidebar,
-  Spinner,
-  Tooltip,
-  Typography,
-  type DataGridSelection,
-} from "@namera-ai/ui";
+import { Button, SearchField, Sidebar, Spinner, Tooltip, Typography } from "@namera-ai/ui";
 import {
   ArchiveIcon,
   CheckmarkCircle02Icon,
   ChevronLeftIcon,
   HugeiconsIcon,
   InboxIcon,
-  NotificationSquareIcon,
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import {
-  TableFilterControl,
-  toTableSelection,
-  type TableFilterFacet,
-} from "@/components/common/table";
+import { TableFilterControl } from "@/components/common/table";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -38,19 +25,9 @@ import {
 } from "@/hooks/notification";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-import {
-  inboxGroupOptions,
-  notificationPresentation,
-  notificationSearchText,
-  type InboxNotificationGroup,
-} from "./data";
+import { useInboxFilters } from "./filters";
 import { NotificationDetail } from "./notification-detail";
 import { NotificationList } from "./notification-list";
-
-const statusOptions = [
-  { id: "unread", label: "Unread" },
-  { id: "read", label: "Read" },
-] as const;
 
 function NotificationPageLoader({
   cursor,
@@ -159,9 +136,6 @@ export function Inbox() {
     ReadonlyMap<NotificationId, ListNotificationsResponse>
   >(new Map());
   const [selectedId, setSelectedId] = useState<NotificationId | null>(null);
-  const [query, setQuery] = useState("");
-  const [statuses, setStatuses] = useState<ReadonlySet<string>>(new Set());
-  const [groups, setGroups] = useState<ReadonlySet<string>>(new Set());
   const [readOverrides, setReadOverrides] = useState<ReadonlySet<NotificationId>>(new Set());
   const [archivedOverrides, setArchivedOverrides] = useState<ReadonlySet<NotificationId>>(
     new Set(),
@@ -228,21 +202,7 @@ export function Inbox() {
     readOverrides,
   ]);
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) => {
-        const status = item.readAt === null ? "unread" : "read";
-        const group = notificationPresentation[item.notification.type].group;
-        return (
-          (normalizedQuery.length === 0 ||
-            notificationSearchText(item).includes(normalizedQuery)) &&
-          (statuses.size === 0 || statuses.has(status)) &&
-          (groups.size === 0 || groups.has(group))
-        );
-      }),
-    [groups, items, normalizedQuery, statuses],
-  );
+  const { clearFilters, filteredItems, filterFacets, query, setQuery } = useInboxFilters(items);
 
   const selected = filteredItems.find((item) => item.notification.id === selectedId);
   const unreadCount = allReadOverride
@@ -255,78 +215,6 @@ export function Inbox() {
   const nextCursor = lastPage?.nextCursor;
   const isLoadingMore = additionalCursors.some((cursor) => !additionalPages.has(cursor));
 
-  const filterFacets = useMemo<ReadonlyArray<TableFilterFacet>>(() => {
-    const statusCounts = new Map<string, number>([
-      ["unread", items.filter((item) => item.readAt === null).length],
-      ["read", items.filter((item) => item.readAt !== null).length],
-    ]);
-    const groupCounts = new Map<InboxNotificationGroup, number>();
-    for (const item of items) {
-      const group = notificationPresentation[item.notification.type].group;
-      groupCounts.set(group, (groupCounts.get(group) ?? 0) + 1);
-    }
-
-    return [
-      {
-        id: "status",
-        label: "Status",
-        icon: <HugeiconsIcon className="size-4 text-muted" icon={NotificationSquareIcon} />,
-        selectedKeys: statuses,
-        options: statusOptions.map((option) => ({
-          ...option,
-          count: statusCounts.get(option.id) ?? 0,
-          content: (
-            <span className="flex items-center gap-2 text-sm">
-              <span
-                className={
-                  option.id === "unread"
-                    ? "size-2 rounded-full bg-accent"
-                    : "size-2 rounded-full border border-muted"
-                }
-              />
-              {option.label}
-            </span>
-          ),
-        })),
-        onSelectionChange: (selection: DataGridSelection) =>
-          setStatuses(
-            toTableSelection(
-              selection,
-              statusOptions.map((option) => option.id),
-            ),
-          ),
-      },
-      {
-        id: "category",
-        label: "Category",
-        icon: <HugeiconsIcon className="size-4 text-muted" icon={InboxIcon} />,
-        selectedKeys: groups,
-        options: inboxGroupOptions.map((option) => ({
-          id: option.id,
-          label: option.label,
-          count: groupCounts.get(option.id) ?? 0,
-          content: (
-            <span className="flex items-center gap-2 text-sm">
-              <HugeiconsIcon className="size-4 text-muted" icon={option.icon} />
-              {option.label}
-            </span>
-          ),
-        })),
-        onSelectionChange: (selection: DataGridSelection) =>
-          setGroups(
-            toTableSelection(
-              selection,
-              inboxGroupOptions.map((option) => option.id),
-            ),
-          ),
-      },
-    ];
-  }, [groups, items, statuses]);
-
-  const clearFilters = useEventCallback(() => {
-    setStatuses(new Set());
-    setGroups(new Set());
-  });
   const selectNotification = useEventCallback((item: NotificationResponse) => {
     setSelectedId(item.notification.id);
     if (item.readAt !== null || readOverrides.has(item.notification.id) || allReadOverride) return;

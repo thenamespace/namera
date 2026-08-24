@@ -13,10 +13,12 @@ type TableFilterOption = {
 
 type TableFilterFacet = {
   defaultSelectedKeys?: ReadonlySet<string>;
+  disallowEmptySelection?: boolean;
   icon: ReactNode;
   id: string;
   label: string;
   options: ReadonlyArray<TableFilterOption>;
+  selectionMode?: "multiple" | "single";
   selectedKeys: ReadonlySet<string>;
   onSelectionChange: (selection: DataGridSelection) => void;
 };
@@ -99,7 +101,10 @@ export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuP
               <Dropdown.Popover className="min-w-64">
                 <Dropdown.Menu
                   selectedKeys={facet.selectedKeys}
-                  selectionMode="multiple"
+                  selectionMode={facet.selectionMode ?? "multiple"}
+                  {...(facet.disallowEmptySelection === undefined
+                    ? {}
+                    : { disallowEmptySelection: facet.disallowEmptySelection })}
                   onSelectionChange={facet.onSelectionChange}
                 >
                   {facet.options.map((option) => (

@@ -74,7 +74,9 @@ Notification inbox and preference atoms/hooks are available under
 the supported email preference topics. `/inbox` renders the cursor-paginated
 notification feed as a searchable, filterable rail with typed rich detail
 views, read-state mutations, mark-all-read, archive actions, and a responsive
-list-to-detail layout.
+list-to-detail layout. Its default view is newest-first over the last seven days;
+the loaded cursor pages can additionally be filtered by status, recipient scope,
+category, and exact notification type.
 
 Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key

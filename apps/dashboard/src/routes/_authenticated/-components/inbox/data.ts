@@ -20,6 +20,7 @@ export type InboxNotificationPresentation = {
   readonly group: InboxNotificationGroup;
   readonly icon: IconSvgElement;
   readonly iconClassName: string;
+  readonly iconSurfaceClassName: string;
   readonly preview: string;
   readonly title: string;
 };
@@ -36,6 +37,7 @@ export const notificationPresentation = {
     group: "security",
     icon: SecurityIcon,
     iconClassName: "text-warning",
+    iconSurfaceClassName: "bg-warning/10",
     title: "New sign-in detected",
     preview: "A new browser session signed in to your account.",
   },
@@ -43,6 +45,7 @@ export const notificationPresentation = {
     group: "access",
     icon: UserMultiple02Icon,
     iconClassName: "text-accent",
+    iconSurfaceClassName: "bg-accent/10",
     title: "Workspace invitation",
     preview: "You were invited to join a Namera workspace.",
   },
@@ -50,6 +53,7 @@ export const notificationPresentation = {
     group: "accounts",
     icon: Wallet01Icon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "Account created",
     preview: "Your smart account is ready to use.",
   },
@@ -57,6 +61,7 @@ export const notificationPresentation = {
     group: "access",
     icon: Key01Icon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "Session key created",
     preview: "A new policy-bound session key can access an account.",
   },
@@ -64,6 +69,7 @@ export const notificationPresentation = {
     group: "access",
     icon: Key01Icon,
     iconClassName: "text-danger",
+    iconSurfaceClassName: "bg-danger/10",
     title: "Session key revoked",
     preview: "A session key and its active grants were revoked.",
   },
@@ -71,6 +77,7 @@ export const notificationPresentation = {
     group: "access",
     icon: ApiIcon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "API key created",
     preview: "A new API key was granted access to session keys.",
   },
@@ -78,6 +85,7 @@ export const notificationPresentation = {
     group: "access",
     icon: ApiIcon,
     iconClassName: "text-danger",
+    iconSurfaceClassName: "bg-danger/10",
     title: "API key revoked",
     preview: "An API key and its session-key grants were revoked.",
   },
@@ -85,6 +93,7 @@ export const notificationPresentation = {
     group: "activity",
     icon: Activity01Icon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "Execution confirmed",
     preview: "An account operation was confirmed onchain.",
   },
@@ -92,6 +101,7 @@ export const notificationPresentation = {
     group: "access",
     icon: BotIcon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "MCP access approved",
     preview: "An MCP client can now use the selected session keys.",
   },
@@ -99,6 +109,7 @@ export const notificationPresentation = {
     group: "access",
     icon: BotIcon,
     iconClassName: "text-danger",
+    iconSurfaceClassName: "bg-danger/10",
     title: "MCP access revoked",
     preview: "An MCP client's active session-key grants were revoked.",
   },
@@ -106,6 +117,7 @@ export const notificationPresentation = {
     group: "access",
     icon: TerminalIcon,
     iconClassName: "text-success",
+    iconSurfaceClassName: "bg-success/10",
     title: "CLI access approved",
     preview: "A CLI device can now use the selected session keys.",
   },
@@ -113,6 +125,7 @@ export const notificationPresentation = {
     group: "access",
     icon: TerminalIcon,
     iconClassName: "text-danger",
+    iconSurfaceClassName: "bg-danger/10",
     title: "CLI access revoked",
     preview: "A CLI device's active session-key grants were revoked.",
   },
