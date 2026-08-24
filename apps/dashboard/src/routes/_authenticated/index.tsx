@@ -11,8 +11,6 @@ import { DashboardPage } from "@/components/page";
 import { Overview } from "./-components/overview";
 
 export const Route = createFileRoute("/_authenticated/")({
-  validateSearch: (search): { preview?: boolean } =>
-    search.preview === true || search.preview === "true" ? { preview: true } : {},
   loader: ({ abortController, context }) => {
     startPrefetchQuery(context.atomRegistry, dashboardOverviewAtom, abortController.signal);
     startPrefetchQuery(context.atomRegistry, executionsAtom, abortController.signal);
@@ -23,8 +21,6 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function OverviewPage() {
-  const { preview = false } = Route.useSearch();
-
   return (
     <DashboardPage>
       <DashboardPage.Header>
@@ -35,7 +31,7 @@ function OverviewPage() {
         </DashboardPage.Title>
       </DashboardPage.Header>
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
-        <Overview preview={preview} />
+        <Overview />
       </DashboardPage.Content>
     </DashboardPage>
   );

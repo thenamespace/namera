@@ -122,10 +122,8 @@ granularity, while the execution-source chart shows the API key, MCP, CLI, and
 member composition for confirmed executions. Limits and period consumption
 belong to Billing, while recent activity
 subscribes to the same executions atom as the Activity page and renders the
-shared execution table in a five-row summary mode. In development,
-`/?preview=true` swaps both projections for schema-decoded fixture data so empty
-local organizations can be used for visual QA. The query parameter has no
-effect in production builds.
+shared execution table in a five-row summary mode. The overview always renders
+the active organization's live projections.
 
 ## Pending
 

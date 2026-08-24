@@ -16,11 +16,6 @@ import { useDashboardOverview } from "@/hooks/dashboard";
 import { ActivityChart } from "./activity-chart";
 import { ExecutionSourcesChart } from "./execution-sources-chart";
 import { OverviewKPIGrid } from "./kpi-grid";
-import { dashboardExecutionsPreview, dashboardOverviewPreview } from "./preview-data";
-
-type OverviewProps = {
-  preview: boolean;
-};
 
 type ActivityView = "daily" | "weekly" | "monthly";
 
@@ -68,13 +63,7 @@ function ActivityWidget({
   );
 }
 
-function OverviewContent({
-  overview,
-  preview,
-}: {
-  overview: GetDashboardOverviewResponse;
-  preview: boolean;
-}) {
+function OverviewContent({ overview }: { overview: GetDashboardOverviewResponse }) {
   const evm = overview.namespaces.find((namespace) => namespace.namespace === "eip155");
   if (evm === undefined) return null;
 
@@ -103,20 +92,16 @@ function OverviewContent({
             View all
           </Link>
         </div>
-        <ExecutionsTable
-          variant="summary"
-          {...(import.meta.env.DEV && preview ? { dataOverride: dashboardExecutionsPreview } : {})}
-        />
+        <ExecutionsTable variant="summary" />
       </section>
     </div>
   );
 }
 
-export function Overview({ preview }: OverviewProps) {
+export function Overview() {
   const query = useDashboardOverview();
-  const overview = import.meta.env.DEV && preview ? dashboardOverviewPreview : query.data;
 
-  if (overview !== undefined) return <OverviewContent overview={overview} preview={preview} />;
+  if (query.data !== undefined) return <OverviewContent overview={query.data} />;
   if (query.isLoading) return <DataLoading className="min-h-96" label="Loading overview" />;
   return (
     <Surface className="rounded-xl border px-5 py-10 text-center" variant="secondary">

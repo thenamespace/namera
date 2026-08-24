@@ -59,7 +59,6 @@ import { getActorLabel, getExecutionChain } from "./data";
 const emptyExecutions: ReadonlyArray<ExecutionListItemResponse> = [];
 
 type ExecutionsTableProps = {
-  dataOverride?: ListExecutionsResponse;
   initialExecutions?: ListExecutionsResponse;
   variant?: "default" | "summary";
 };
@@ -77,7 +76,6 @@ type ExecutionsQueryState = {
 type ExecutionTableScope = "organization" | "wallet" | "session-key";
 
 type ExecutionsTableContentProps = {
-  dataOverride?: ListExecutionsResponse;
   executions: ExecutionsQueryState;
   initialExecutions?: ListExecutionsResponse;
   scope: ExecutionTableScope;
@@ -85,7 +83,6 @@ type ExecutionsTableContentProps = {
 };
 
 function ExecutionsTableContent({
-  dataOverride,
   executions,
   initialExecutions,
   scope,
@@ -93,13 +90,9 @@ function ExecutionsTableContent({
 }: ExecutionsTableContentProps) {
   const wallets = useWallets();
   const organizationSessionKeys = useSessionKeys();
-  const items =
-    dataOverride?.items ?? executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
+  const items = executions.data?.items ?? initialExecutions?.items ?? emptyExecutions;
   const isInitialLoading =
-    executions.isLoading &&
-    dataOverride === undefined &&
-    executions.data === undefined &&
-    initialExecutions === undefined;
+    executions.isLoading && executions.data === undefined && initialExecutions === undefined;
   const [query, setQuery] = useState("");
   const [accounts, setAccounts] = useState<ReadonlySet<string>>(new Set());
   const [namespaces, setNamespaces] = useState<ReadonlySet<string>>(new Set());
@@ -505,15 +498,10 @@ function ExecutionsTableContent({
   );
 }
 
-export function ExecutionsTable({
-  dataOverride,
-  initialExecutions,
-  variant,
-}: ExecutionsTableProps) {
+export function ExecutionsTable({ initialExecutions, variant }: ExecutionsTableProps) {
   const executions = useExecutions();
   return (
     <ExecutionsTableContent
-      {...(dataOverride === undefined ? {} : { dataOverride })}
       executions={executions}
       scope="organization"
       {...(initialExecutions === undefined ? {} : { initialExecutions })}
