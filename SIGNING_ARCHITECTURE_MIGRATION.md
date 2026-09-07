@@ -283,31 +283,31 @@ Required constraints:
 
 Add this table because Modular Account V2 validation state is chain-specific.
 
-| Column                          | Required | Description                                                                            |
-| ------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `id`                            | Yes      | Installation identity.                                                                 |
-| `organization_id`               | Yes      | Tenant boundary.                                                                       |
-| `session_key_id`                | Yes      | Logical session key.                                                                   |
-| `wallet_id`                     | Yes      | Redundant tenant-safe wallet binding used by constraints and queries.                  |
-| `namespace`                     | Yes      | `eip155`.                                                                              |
-| `chain_id`                      | Yes      | CAIP-2 chain identifier.                                                               |
-| `validator_module`              | Yes      | Installed validation module address and version discriminator.                         |
-| `entity_id`                     | Yes      | Non-root Modular Account validation entity ID.                                         |
-| `is_global`                     | Yes      | Must be false for beta.                                                                |
-| `is_user_op_validation`         | Yes      | True for operational sessions.                                                         |
-| `is_signature_validation`       | Yes      | True only for explicitly signature-enabled sessions.                                   |
-| `selectors`                     | Yes      | Account selectors available to the validation, normally execute and executeBatch only. |
-| `compiled_policy`               | Yes      | Versioned namespace-owned JSONB encoding of installed hooks and initialization data.   |
-| `configuration_hash`            | Yes      | Hash binding signer, validator configuration, hooks, and logical policy hash.          |
-| `install_user_operation_hash`   | No       | Installation UserOperation when submitted.                                             |
-| `install_transaction_hash`      | No       | Confirmed installation transaction.                                                    |
-| `uninstall_user_operation_hash` | No       | Revocation UserOperation when submitted.                                               |
-| `uninstall_transaction_hash`    | No       | Confirmed revocation transaction.                                                      |
-| `status`                        | Yes      | `pending`, `submitted`, `installed`, `revoking`, `revoked`, or `failed`.               |
-| `installed_at`                  | No       | Confirmation timestamp.                                                                |
-| `revoked_at`                    | No       | Confirmation timestamp.                                                                |
-| `created_at`                    | Yes      | Creation timestamp.                                                                    |
-| `updated_at`                    | Yes      | Lifecycle timestamp.                                                                   |
+| Column                          | Required | Description                                                                                   |
+| ------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| `id`                            | Yes      | Installation identity.                                                                        |
+| `organization_id`               | Yes      | Tenant boundary.                                                                              |
+| `session_key_id`                | Yes      | Logical session key.                                                                          |
+| `wallet_id`                     | Yes      | Redundant tenant-safe wallet binding used by constraints and queries.                         |
+| `namespace`                     | Yes      | `eip155`.                                                                                     |
+| `chain_id`                      | Yes      | CAIP-2 chain identifier.                                                                      |
+| `validator_module`              | Yes      | Installed validation module address and version discriminator.                                |
+| `entity_id`                     | Yes      | Non-root Modular Account validation entity ID.                                                |
+| `is_global`                     | Yes      | False for restricted grants; true only for explicit root permission with a high-risk warning. |
+| `is_user_op_validation`         | Yes      | True for operational sessions.                                                                |
+| `is_signature_validation`       | Yes      | True only for explicitly signature-enabled sessions.                                          |
+| `selectors`                     | Yes      | Account selectors available to the validation, normally execute and executeBatch only.        |
+| `compiled_policy`               | Yes      | Versioned namespace-owned JSONB encoding of installed hooks and initialization data.          |
+| `configuration_hash`            | Yes      | Hash binding signer, validator configuration, hooks, and logical policy hash.                 |
+| `install_user_operation_hash`   | No       | Installation UserOperation when submitted.                                                    |
+| `install_transaction_hash`      | No       | Confirmed installation transaction.                                                           |
+| `uninstall_user_operation_hash` | No       | Revocation UserOperation when submitted.                                                      |
+| `uninstall_transaction_hash`    | No       | Confirmed revocation transaction.                                                             |
+| `status`                        | Yes      | `pending`, `submitted`, `installed`, `revoking`, `revoked`, or `failed`.                      |
+| `installed_at`                  | No       | Confirmation timestamp.                                                                       |
+| `revoked_at`                    | No       | Confirmation timestamp.                                                                       |
+| `created_at`                    | Yes      | Creation timestamp.                                                                           |
+| `updated_at`                    | Yes      | Lifecycle timestamp.                                                                          |
 
 Required constraints and indexes:
 
@@ -315,7 +315,7 @@ Required constraints and indexes:
 - Unique (`organization_id`, `wallet_id`, `chain_id`, `entity_id`).
 - Composite FK (`session_key_id`, `wallet_id`, `organization_id`) to session key.
 - Check: `entity_id` is not the root entity, currently zero.
-- Check: `is_global = false` for beta product configuration.
+- Root permission must be explicit and exclusive; restricted grants must not set global validation.
 - Partial index (`organization_id`, `wallet_id`, `chain_id`) where status is installed.
 - Index (`status`, `updated_at`) for installation/revocation reconciliation.
 

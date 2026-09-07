@@ -54,6 +54,11 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   sessionKey: {
+    // A logical session has one independently confirmed installation per chain.
+    installations: r.many.sessionKeyInstallation({
+      from: [r.sessionKey.id, r.sessionKey.organizationId],
+      to: [r.sessionKeyInstallation.sessionKeyId, r.sessionKeyInstallation.organizationId],
+    }),
     // Each session key belongs to one organization.
     organization: r.one.organization({
       from: r.sessionKey.organizationId,
@@ -98,6 +103,18 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     signatureOperations: r.many.signatureOperation({
       from: [r.sessionKey.id, r.sessionKey.organizationId],
       to: [r.signatureOperation.sessionKeyId, r.signatureOperation.organizationId],
+    }),
+  },
+  sessionKeyInstallation: {
+    // Composite ownership binds the installation to the exact wallet and tenant.
+    sessionKey: r.one.sessionKey({
+      from: [
+        r.sessionKeyInstallation.sessionKeyId,
+        r.sessionKeyInstallation.walletId,
+        r.sessionKeyInstallation.organizationId,
+      ],
+      to: [r.sessionKey.id, r.sessionKey.walletId, r.sessionKey.organizationId],
+      optional: false,
     }),
   },
   sessionKeyGrant: {

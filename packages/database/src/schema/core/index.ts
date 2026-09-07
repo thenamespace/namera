@@ -6,6 +6,7 @@ export * from "./session-key-grant.js";
 export * from "./session-key-policy-reservation.js";
 export * from "./session-key-policy-state.js";
 export * from "./session-key.js";
+export * from "./session-key-installation.js";
 export * from "./signing-key.js";
 export * from "./signature-operation.js";
 export * from "./wallet-key.js";

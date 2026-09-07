@@ -37,6 +37,7 @@ import {
   ExecutionRepository,
   ExecutionSubmissionRepository,
   SessionKeyRepository,
+  SessionKeyInstallationRepository,
   SessionKeyGrantRepository,
   SessionKeyPolicyReservationRepository,
   SessionKeyPolicyStateRepository,
@@ -93,6 +94,7 @@ export interface RepositoryService {
     execution: ExecutionRepository["Service"];
     executionSubmission: ExecutionSubmissionRepository["Service"];
     sessionKey: SessionKeyRepository["Service"];
+    sessionKeyInstallation: SessionKeyInstallationRepository["Service"];
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
     sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
     sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
@@ -151,6 +153,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const dashboardOverview = yield* DashboardOverviewRepository;
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
+      const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
       const execution = yield* ExecutionRepository;
       const executionSubmission = yield* ExecutionSubmissionRepository;
@@ -201,6 +204,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           execution,
           executionSubmission,
           sessionKey,
+          sessionKeyInstallation,
           sessionKeyGrant,
           sessionKeyPolicyReservation,
           sessionKeyPolicyState,
@@ -254,6 +258,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         BillingUsageReservationRepository.layer,
         BillingUsageRepository.layer,
         SessionKeyRepository.layer,
+        SessionKeyInstallationRepository.layer,
         SessionKeyGrantRepository.layer,
         ExecutionRepository.layer,
         ExecutionSubmissionRepository.layer,

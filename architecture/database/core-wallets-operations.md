@@ -169,6 +169,58 @@ Immutable policy envelope granting bounded authority over one wallet. Revocation
 - (`created_by_actor_id`, `organization_id`).
 - (`revoked_by_actor_id`, `organization_id`).
 
+## `core.session_key_installation`
+
+Per-chain onchain delegation state. This persistence foundation is implemented;
+owner-approval routes, signing-key binding and recovery workers are not yet wired.
+Compiler output is immutable through the repository; changing permissions needs
+a new session/validation entity. No private key material is stored here.
+
+| Field                           | Required | Description                                                                                                  |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `id`                            | Yes      | UUIDv7 installation identity.                                                                                |
+| `organization_id`               | Yes      | Tenant scope, bound through the session FK.                                                                  |
+| `session_key_id`                | Yes      | Logical session.                                                                                             |
+| `wallet_id`                     | Yes      | Exact wallet owning that session.                                                                            |
+| `namespace`                     | Yes      | Currently `eip155`.                                                                                          |
+| `chain_id`                      | Yes      | CAIP-2 chain identifier.                                                                                     |
+| `entity_id`                     | Yes      | Non-root validation entity in the provider-supported range.                                                  |
+| `configuration_hash`            | Yes      | Digest binding the immutable compiled authorization.                                                         |
+| `data`                          | Yes      | Version 1 EVM authorization, validator address, global flag, install/uninstall calldata and hook identities. |
+| `status`                        | Yes      | `pending`, `submitted`, `installed`, `revoking`, `revoked`, `failed`; defaults to pending.                   |
+| `install_user_operation_hash`   | No       | Exact submitted installation operation.                                                                      |
+| `install_transaction_hash`      | No       | Confirmed installation transaction.                                                                          |
+| `uninstall_user_operation_hash` | No       | Exact submitted revocation operation.                                                                        |
+| `uninstall_transaction_hash`    | No       | Confirmed revocation transaction.                                                                            |
+| `installed_at`                  | No       | Installation confirmation time.                                                                              |
+| `revoked_at`                    | No       | Revocation confirmation time, not merely API-grant revocation.                                               |
+| `created_at`                    | Yes      | Insert timestamp.                                                                                            |
+| `updated_at`                    | Yes      | Last lifecycle update.                                                                                       |
+
+### Keys, constraints and indexes
+
+- Primary key `id`; unique `(id, organization_id)`.
+- Unique `(organization_id, session_key_id, chain_id)`.
+- Unique `(organization_id, wallet_id, chain_id, entity_id)`, including terminal
+  rows: validation entities are not recycled while old signed operations may exist.
+- Restricting composite FK `(session_key_id, wallet_id, organization_id)` to the
+  exact session/wallet/organization tuple.
+- Namespace/chain check: `eip155` and positive decimal CAIP-2 suffix.
+- Entity range `1..2147483646`; JSON authorization entity must equal the indexed
+  entity column, with missing JSON identity explicitly rejected.
+- Closed status check; submitted states require an install UserOperation hash;
+  installed/revoking/revoked require an installation receipt and timestamp;
+  revoked also requires the uninstall hashes and timestamp.
+- Lookup index `(organization_id, wallet_id, chain_id, status)`.
+- Recovery lookup index `(status, updated_at)`; worker claiming is not yet implemented.
+
+The repository uses conditional updates and matches the stored UserOperation
+hash before confirming an installation or revocation. Duplicate/stale transitions
+return no row. It does not verify chain receipts: the EVM adapter and application
+must do that before calling these methods, and compose audit/grant changes in the
+same transaction. PGlite integration tests exercise ownership constraints,
+receipt prerequisites, replayed transitions and organization-scoped lookups.
+
 ## `core.session_key_grant`
 
 Connects an actor to a session key. API-key and OAuth principals can only use delegated authority through an active grant; the session-key record alone is not actor authorization.

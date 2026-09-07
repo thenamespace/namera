@@ -261,6 +261,13 @@ wide result and filter it in application memory.
 
 ## Session-key persistence
 
+`core.session_key_installation` records per-chain compiled authorization and
+receipt-bound installation/revocation state. The repository exposes scoped reads
+and conditional transitions, not generic mutation of installed permissions.
+Tenant-safe ownership and unique wallet/chain/entity constraints protect the
+binding. This is a persistence foundation: session creation/approval and worker
+integration remain part of the self-custody migration.
+
 `core.session_key` belongs to one wallet and stores its namespace, immutable
 metadata, namespace-specific typed `policies` array, and policy hash. Revocation
 is a lifecycle change; policies are not updated in place. Its repository exposes

@@ -16,6 +16,19 @@ layers. Tests do not mock each application function independently.
 Application behavior exercised through the server boundary is not duplicated in
 a second application-only suite.
 
+Organize suites by boundary within their owning package: `tests/unit/` for pure
+domain rules, `tests/integration/` for real service/persistence/HTTP boundaries,
+and `tests/e2e/` for packaged or browser journeys. Keep feature folders within
+these groups and shared fixture code in `tests/fixtures/`. Contract tests that
+require Anvil belong under integration and remain opt-in. Relocate existing
+suites as they are audited; do not delete security regressions merely to reduce
+the test count. Remove tests only when they duplicate behavior already covered
+at the appropriate boundary or test code that no longer exists.
+
+Vitest must resolve workspace dependencies using the `namera-source` condition
+in both normal and SSR resolution. Inline workspace packages where needed; a
+test must not silently validate stale `dist` files after a schema change.
+
 ## Test composition
 
 Provider packages expose deterministic test Layers beside the live service.
