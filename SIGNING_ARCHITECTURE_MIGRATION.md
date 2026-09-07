@@ -321,6 +321,13 @@ Required constraints and indexes:
 
 ### Tables retained
 
+Owner-approved installation/removal attempts additionally use
+`core.session_key_operation`. This ledger is separate from the per-chain result:
+unsigned attempts may expire and be replaced, but signed attempts retain their
+exact operation and reconciliation lease until a receipt resolves them. See the
+[implemented table and transition contract](architecture/database/core-wallets-operations.md#coresession_key_operation).
+The table/repository are implemented; approval-route and worker wiring remain pending.
+
 Keep these tables and adapt their joins to the new session/signing relationships:
 
 - `session_key_grant` for actor authorization;

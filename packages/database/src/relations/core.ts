@@ -106,6 +106,11 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   sessionKeyInstallation: {
+    // Installation and revocation can have several historical approval attempts.
+    operations: r.many.sessionKeyOperation({
+      from: [r.sessionKeyInstallation.id, r.sessionKeyInstallation.organizationId],
+      to: [r.sessionKeyOperation.installationId, r.sessionKeyOperation.organizationId],
+    }),
     // Composite ownership binds the installation to the exact wallet and tenant.
     sessionKey: r.one.sessionKey({
       from: [
@@ -114,6 +119,30 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
         r.sessionKeyInstallation.organizationId,
       ],
       to: [r.sessionKey.id, r.sessionKey.walletId, r.sessionKey.organizationId],
+      optional: false,
+    }),
+  },
+  sessionKeyOperation: {
+    // The approval attempt is bound to one installation on exactly one chain.
+    installation: r.one.sessionKeyInstallation({
+      from: [
+        r.sessionKeyOperation.installationId,
+        r.sessionKeyOperation.walletId,
+        r.sessionKeyOperation.chainId,
+        r.sessionKeyOperation.organizationId,
+      ],
+      to: [
+        r.sessionKeyInstallation.id,
+        r.sessionKeyInstallation.walletId,
+        r.sessionKeyInstallation.chainId,
+        r.sessionKeyInstallation.organizationId,
+      ],
+      optional: false,
+    }),
+    // Only the initiating actor may complete its browser approval.
+    actor: r.one.actor({
+      from: [r.sessionKeyOperation.actorId, r.sessionKeyOperation.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
       optional: false,
     }),
   },

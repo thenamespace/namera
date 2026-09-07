@@ -261,6 +261,13 @@ wide result and filter it in application memory.
 
 ## Session-key persistence
 
+`core.session_key_operation` retains immutable owner-prepared installation and
+removal attempts, signed payloads and reconciliation leases. An expired unsigned
+approval can be retried; a signed attempt stays recoverable until a chain receipt
+resolves it. The repository guards actor/request binding, one-time acceptance,
+payload equality and lease ownership. Application approval and worker wiring
+remain pending.
+
 `core.session_key_installation` records per-chain compiled authorization and
 receipt-bound installation/revocation state. The repository exposes scoped reads
 and conditional transitions, not generic mutation of installed permissions.

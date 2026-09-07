@@ -8,7 +8,9 @@ account. Direct installation has been exercised through the deployed contracts
 on a local Sepolia fork instead of assuming compatibility with that API.
 
 This compiler is currently an internal primitive. Per-chain installation storage
-and conditional lifecycle transitions exist in the database repository. Owner
+and conditional lifecycle transitions exist in the database repository. A
+separate session operation ledger retains owner-prepared attempts and signatures
+for retry/recovery without overwriting installation history. Owner
 approval routes, dashboard and SDK session execution are not wired yet.
 
 ## Contract

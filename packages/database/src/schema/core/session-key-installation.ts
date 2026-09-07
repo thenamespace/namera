@@ -48,6 +48,12 @@ export const sessionKeyInstallation = coreSchema.table(
   },
   (table) => [
     unique("session_installation_id_org_unique").on(table.id, table.organizationId),
+    unique("session_installation_id_wallet_chain_org_unique").on(
+      table.id,
+      table.walletId,
+      table.chainId,
+      table.organizationId,
+    ),
     unique("session_installation_session_chain_unique").on(
       table.organizationId,
       table.sessionKeyId,

@@ -229,6 +229,75 @@ must do that before calling these methods, and compose audit/grant changes in th
 same transaction. PGlite integration tests exercise ownership constraints,
 receipt prerequisites, replayed transitions and organization-scoped lookups.
 
+## `core.session_key_operation`
+
+One owner-approved installation or removal attempt. Installation state describes
+what is onchain; this ledger retains the exact prepared/signed operation needed
+to recover an interrupted attempt. Expired unsigned attempts can be retried
+without overwriting history. It contains public signatures, never private keys.
+
+| Field              | Required | Description                                                                                                               |
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `id`               | Yes      | UUIDv7 operation identity.                                                                                                |
+| `organization_id`  | Yes      | Tenant scope.                                                                                                             |
+| `actor_id`         | Yes      | Actor initiating the owner approval.                                                                                      |
+| `installation_id`  | Yes      | Exact per-chain installation being changed.                                                                               |
+| `wallet_id`        | Yes      | Wallet bound through the installation FK; serializes owner approvals.                                                     |
+| `chain_id`         | Yes      | CAIP-2 chain, bound to the installation and prepared payload.                                                             |
+| `kind`             | Yes      | `install` or `uninstall`.                                                                                                 |
+| `idempotency_key`  | Yes      | Client retry identity scoped to actor and organization.                                                                   |
+| `request_hash`     | Yes      | Immutable semantic request digest checked during completion.                                                              |
+| `status`           | Yes      | `awaiting-signature`, `signed`, `submitted`, `confirmed`, `failed`, `expired`.                                            |
+| `data`             | Yes      | Version 1 prepared EVM operation plus nullable exact signed envelope. Uses a canonical JSON codec for context timestamps. |
+| `expires_at`       | Yes      | Last instant at which an unsigned owner approval may be accepted; not an onchain signature expiry.                        |
+| `lease_token`      | No       | Current request/worker ownership token.                                                                                   |
+| `lease_expires_at` | No       | Lease deadline, or next reconciliation time when no token is held.                                                        |
+| `transaction_hash` | No       | Receipt transaction for confirmed or reverted operations.                                                                 |
+| `finished_at`      | No       | Confirmation, receipt failure, or unsigned expiry timestamp.                                                              |
+| `created_at`       | Yes      | Insertion timestamp.                                                                                                      |
+| `updated_at`       | Yes      | Last lifecycle transition.                                                                                                |
+
+### Keys, constraints and indexes
+
+- Primary key `id`; unique `(id, organization_id)`.
+- Unique `(organization_id, actor_id, idempotency_key)`.
+- Restricting `(actor_id, organization_id)` FK to the initiating actor.
+- Restricting `(installation_id, wallet_id, chain_id, organization_id)` FK to installation;
+  installation has a matching unique tuple.
+- Partial unique `(wallet_id, chain_id)` while awaiting signature, signed or
+  submitted. Owner approvals on one wallet/chain are serialized to avoid root
+  nonce competition; different chains remain independent. Terminal attempts
+  remain historical records.
+- Closed kind/status checks; prepared JSON chain must equal `chain_id`.
+- Awaiting/expired states require a null signed envelope; other states require
+  one. The signed operation may differ only in its signature and computed hash:
+  all unsigned fields, chain/EntryPoint, sponsorship and billing data must match
+  the prepared JSON. Cryptographic hash/signature verification remains EVM-owned.
+- Confirmed/failed states require a transaction hash. Terminal states require
+  `finished_at`; nonterminal states cannot carry either terminal field.
+- Only signed/submitted states can carry lease fields; a token requires a deadline.
+- Recovery index `(status, lease_expires_at)`; unsigned-expiry partial index on
+  `expires_at`; history index `(organization_id, installation_id, created_at)`.
+
+### Repository lifecycle
+
+Signature acceptance atomically requires the initiating actor, request hash,
+awaiting status and `now < expires_at`. It persists the signed payload and leases
+the initial submission before any broadcast. Duplicate completion returns no row.
+The application must verify the passkey first and compose counter advancement,
+approval consumption, billing and audit changes in the same transaction.
+
+Reconciliation claims signed/submitted rows with `FOR UPDATE SKIP LOCKED`.
+Submit, receipt finalization and rescheduling require the current token and a
+still-live lease. Receipt finalization also matches the signed UserOperation
+hash. Only a chain receipt can mark a signed attempt failed here: an RPC timeout
+or rejection does not invalidate a root signature that may still be broadcast.
+Unsigned expiry never touches signed attempts, even after `expires_at` passes.
+
+PGlite tests cover JSON round trips, idempotency, constraints, rollback, replay,
+expiry and lease transitions. Application/HTTP/worker wiring and real PostgreSQL
+concurrency tests remain pending.
+
 ## `core.session_key_grant`
 
 Connects an actor to a session key. API-key and OAuth principals can only use delegated authority through an active grant; the session-key record alone is not actor authorization.
