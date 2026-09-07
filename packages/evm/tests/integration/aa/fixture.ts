@@ -1,5 +1,6 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 
+import { EthereumAddress } from "@namera-ai/protocol";
 import * as P256 from "ox/P256";
 import * as Signature from "ox/Signature";
 import {
@@ -25,13 +26,18 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
 import { makeAlchemyModularV2Account } from "../../../src/accounts/alchemy-modular-v2.js";
-import { createWalletKeyWebAuthnAccount } from "../../../src/accounts/webauthn.js";
+import type { ReconstructEvmAccountInput } from "../../../src/accounts/types.js";
+import {
+  createPublicKeyWebAuthnAccount,
+  createWalletKeyWebAuthnAccount,
+} from "../../../src/accounts/webauthn.js";
 
 export const makeAnvilFixture = async (
   url: string,
 ): Promise<{
   readonly account: SmartAccount;
   readonly owner: WebAuthnAccount;
+  readonly reconstruction: ReconstructEvmAccountInput;
   readonly publicClient: PublicClient<Transport, Chain>;
   readonly submit: (
     signer: SmartAccount,
@@ -127,6 +133,22 @@ export const makeAnvilFixture = async (
   return {
     account,
     owner,
+    reconstruction: {
+      wallet: {
+        version: 1,
+        address: EthereumAddress.make(account.address),
+        implementation: "alchemy-modular-v2",
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: "0.7",
+        validatorType: "webauthn_p256",
+        salt: 0n,
+        entityId: 0,
+      },
+      owner: {
+        validatorType: "webauthn_p256",
+        account: createPublicKeyWebAuthnAccount(owner.publicKey),
+      },
+    },
     publicClient,
     submit,
     advanceTime: async (seconds) => {

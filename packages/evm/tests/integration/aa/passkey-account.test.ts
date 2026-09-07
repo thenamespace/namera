@@ -6,7 +6,6 @@ import { parseEventLogs, parseEther, hashMessage } from "viem";
 import { entryPoint07Abi } from "viem/account-abstraction";
 import { describe, expect, it } from "vitest";
 
-import { createPublicKeyWebAuthnAccount } from "../../../src/accounts/webauthn.js";
 import { makeEvmOwnerApproval } from "../../../src/execution/owner-approval.js";
 import type { SignEvmExecutionInput } from "../../../src/execution/types.js";
 import { normalizeEvmUserOperation } from "../../../src/execution/user-operation.js";
@@ -18,7 +17,8 @@ const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
 describe.skipIf(anvilUrl === undefined)("real Modular Account V2 on a Sepolia Anvil fork", () => {
   it("deploys a P-256 account with a detached owner approval and rejects another operation's approval", async () => {
     if (anvilUrl === undefined) throw new Error("NAMERA_TEST_ANVIL_URL is required");
-    const { account, owner, publicClient, submit } = await makeAnvilFixture(anvilUrl);
+    const { account, owner, reconstruction, publicClient, submit } =
+      await makeAnvilFixture(anvilUrl);
     const approval = makeEvmOwnerApproval(() => ({ publicClient }));
     const recipient = "0x0000000000000000000000000000000000001234";
     const before = await publicClient.getBalance({ address: recipient });
@@ -26,22 +26,7 @@ describe.skipIf(anvilUrl === undefined)("real Modular Account V2 on a Sepolia An
     const calls = [{ to: EthereumAddress.make(recipient), value: amount, data: Hex.make("0x") }];
     const receipt = await submit(account, await account.encodeCalls(calls), async (operation) => {
       const input: SignEvmExecutionInput = {
-        account: {
-          wallet: {
-            version: 1,
-            address: EthereumAddress.make(account.address),
-            implementation: "alchemy-modular-v2",
-            modularAccountVersion: "2.0.0",
-            entryPointVersion: "0.7",
-            validatorType: "webauthn_p256",
-            salt: 0n,
-            entityId: 0,
-          },
-          owner: {
-            validatorType: "webauthn_p256",
-            account: createPublicKeyWebAuthnAccount(owner.publicKey),
-          },
-        },
+        account: reconstruction,
         prepared: preparedExecutionFixture(
           await Effect.runPromise(normalizeEvmUserOperation(operation)),
           calls,

@@ -7,7 +7,15 @@ counterfactual WebAuthn factory account was rejected as an undelegated 7702
 account. Direct installation has been exercised through the deployed contracts
 on a local Sepolia fork instead of assuming compatibility with that API.
 
-This compiler is currently an internal primitive. Per-chain installation storage
+The compiler is exposed through `evm.sessions.compile`. It reconstructs and
+checks the stored account on the selected chain without invoking its owner
+signer, then maps the compiler output to `EvmSessionInstallationData`.
+`evm.sessions.prepareOperation` prepares a single zero-value self-call using
+that stored installation/removal calldata through the normal execution pipeline.
+Only scoped persisted compiler output may enter this method; public requests
+must not supply arbitrary owner calls or replacement installation data.
+
+Per-chain installation storage
 and conditional lifecycle transitions exist in the database repository. A
 separate session operation ledger retains owner-prepared attempts and signatures
 for retry/recovery without overwriting installation history. Owner
@@ -71,7 +79,9 @@ They do not mock validation or run transactions on the source chain.
 
 Coverage includes P-256 deployment with high-S authenticator output, session
 installation, native allowance, target denial, start/expiry enforcement and
-revocation. This lane does not verify hosted bundling or BSO sponsorship.
+revocation. The adapter compilation path also rejects mismatched reconstructed
+addresses and unsafe account-target grants. It uses a public-key-only owner.
+This lane does not verify hosted bundling or BSO sponsorship.
 Installation and removal are also exercised as self-targeted calls through the
 root account's normal `encodeCalls` path. The owner-approval workflow can use
 normal execution preparation instead of a separate gas-estimation pipeline.

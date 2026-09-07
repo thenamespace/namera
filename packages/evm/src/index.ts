@@ -18,6 +18,11 @@ export type {
 } from "./execution/types.js";
 export * from "./layer.js";
 export type {
+  CompileEvmSessionInput,
+  PrepareEvmSessionOperationInput,
+  EvmSessionService,
+} from "./sessions/types.js";
+export type {
   EvmPortfolioService,
   EvmPortfolioSnapshot,
   GetEvmPortfolio,

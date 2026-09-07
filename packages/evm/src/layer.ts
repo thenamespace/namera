@@ -25,6 +25,8 @@ import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
 import { makeBlockscoutPortfolioService } from "./portfolio/blockscout.js";
 import type { EvmPortfolioService } from "./portfolio/types.js";
+import { makeEvmSessionService } from "./sessions/service.js";
+import type { EvmSessionService } from "./sessions/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
 import type { DigestEvmSignature, SignEvm, VerifyEvm } from "./signing/types.js";
@@ -47,6 +49,7 @@ export interface EvmService {
     type: EvmRpcType,
   ) => Effect.Effect<string, UnsupportedChainError>;
   readonly execution: EvmExecutionService;
+  readonly sessions: EvmSessionService;
   readonly billing: {
     readonly settleGasSponsorship: typeof settleEvmGasSponsorship;
   };
@@ -93,6 +96,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         digestSignature: digestEvmSignature,
         getRpcUrl,
         execution,
+        sessions: makeEvmSessionService(makeExecutionClients(config), execution),
         policy,
         addressMetadata,
         portfolio,

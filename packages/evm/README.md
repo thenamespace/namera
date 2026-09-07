@@ -31,6 +31,8 @@ remain under [operations](../../architecture/operations/executions.md).
   registry remains declarative, generic state/reservation adapters live in
   `operations.ts`, and individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
+- `src/sessions/` — onchain permission compilation and root-approved
+  installation/removal preparation through `evm.sessions`.
 - `src/signing/` — smart-account message and EIP-712 signing and verification
   exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
   supported.
@@ -123,6 +125,14 @@ application still owns one-time approval storage, credential verification and
 atomic consumption. Both signing paths share prepared-account checks and signed
 envelope construction; see [sign/submit](../../architecture/evm/execution/sign-submit.md).
 
+`evm.sessions.compile` reconstructs the stored account using its public owner,
+checks the address, and returns the protocol installation data for persistence.
+`prepareOperation` selects the stored install or uninstall calldata and prepares
+one zero-value self-call through the ordinary execution pipeline. It never
+signs or broadcasts. Application owns installation state, approval consumption,
+and billing; callers must load installation data from scoped persistence, not
+accept compiler output or owner calls from an HTTP request.
+
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive
@@ -160,8 +170,8 @@ factory and initialization data to Viem's ERC-6492 deployless verifier. Invalid
 signatures return `false`; account, chain, and RPC failures remain typed adapter
 errors. Verification never invokes the wallet-key signer.
 
-`evm.portfolio.getAssets` queries every chain in the launch registry through
-Alchemy Tokens By Wallet. It returns exact raw and formatted balances, nullable
+`evm.portfolio.getAssets` queries chains in the launch registry through
+Blockscout. It returns exact raw and formatted balances, nullable
 metadata and USD prices, an opaque next cursor, and CAIP-2 partial failures.
 Provider response types and network slugs remain internal to this package.
 

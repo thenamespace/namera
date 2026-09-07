@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 
 import {
   AllowlistModule,
@@ -6,7 +6,7 @@ import {
   isModularAccountV2,
   toModularAccountV2Base,
 } from "@alchemy/smart-accounts";
-import { EvmSessionAuthorization } from "@namera-ai/protocol/evm";
+import { EthereumAddress, EvmSessionAuthorization } from "@namera-ai/protocol/evm";
 import { createClient, http, parseEther, parseEventLogs } from "viem";
 import { entryPoint07Abi } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -14,6 +14,7 @@ import { sepolia } from "viem/chains";
 import { describe, expect, it } from "vitest";
 
 import { compileEvmSession } from "../../../src/sessions/compile.js";
+import { makeEvmSessionService } from "../../../src/sessions/service.js";
 import { makeAnvilFixture } from "./fixture.js";
 
 const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
@@ -21,9 +22,11 @@ const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
 describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => {
   it("installs a local session, enforces its native budget and revokes it", async () => {
     if (anvilUrl === undefined) throw new Error("NAMERA_TEST_ANVIL_URL is required");
-    const { account, publicClient, submit } = await makeAnvilFixture(anvilUrl);
+    const { account, reconstruction, publicClient, submit } = await makeAnvilFixture(anvilUrl);
     if (!isModularAccountV2(account)) throw new Error("Expected a Modular Account V2");
-    const client = createClient({ account, chain: sepolia, transport: http(anvilUrl) });
+    const service = makeEvmSessionService(() => ({ publicClient }), {
+      prepare: () => Effect.die(new Error("Compilation must not prepare or sign an operation")),
+    });
     const key = privateKeyToAccount(generatePrivateKey());
     const recipient = "0x0000000000000000000000000000000000002345";
     const allowance = parseEther("0.002");
@@ -39,7 +42,37 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
         { type: "contract-access", address: recipient },
       ],
     });
-    const compiled = await compileEvmSession(client, authorization);
+    const input = { account: reconstruction, chainId: "eip155:11155111", authorization } as const;
+    const mismatched = await Effect.runPromise(
+      service
+        .compile({
+          ...input,
+          account: {
+            ...reconstruction,
+            wallet: { ...reconstruction.wallet, address: EthereumAddress.make(recipient) },
+          },
+        })
+        .pipe(Effect.flip),
+    );
+    expect(mismatched).toMatchObject({
+      _tag: "EvmExecutionError",
+      code: "ACCOUNT_ADDRESS_MISMATCH",
+    });
+    const unsafe = await Effect.runPromise(
+      service
+        .compile({
+          ...input,
+          authorization: {
+            ...authorization,
+            permissions: [
+              { type: "contract-access", address: EthereumAddress.make(account.address) },
+            ],
+          },
+        })
+        .pipe(Effect.flip),
+    );
+    expect(unsafe).toMatchObject({ _tag: "EvmExecutionError", code: "PREPARATION_FAILED" });
+    const compiled = await Effect.runPromise(service.compile(input));
     const installation = await submit(
       account,
       await account.encodeCalls([{ to: account.address, data: compiled.installCallData }]),

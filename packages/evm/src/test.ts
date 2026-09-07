@@ -1,6 +1,11 @@
 import { Context, Effect, Layer, Ref, Schema } from "effect";
 
-import { EthereumAddress, Hex, UnsupportedChainError } from "@namera-ai/protocol";
+import {
+  EthereumAddress,
+  EvmExecutionError,
+  Hex,
+  UnsupportedChainError,
+} from "@namera-ai/protocol";
 
 import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
 import type { EvmAddressMetadataService } from "./address-metadata/types.js";
@@ -77,6 +82,24 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
       return `https://example.test/${chainId}/${type}`;
     }),
     execution: makeTestEvmExecutionService(execution),
+    sessions: {
+      compile: Effect.fn("evm.sessions.test.compile")(() =>
+        Effect.fail(
+          new EvmExecutionError({
+            code: "PREPARATION_FAILED",
+            cause: new Error("Session compilation requires an explicit test adapter"),
+          }),
+        ),
+      ),
+      prepareOperation: Effect.fn("evm.sessions.test.prepareOperation")(() =>
+        Effect.fail(
+          new EvmExecutionError({
+            code: "PREPARATION_FAILED",
+            cause: new Error("Session preparation requires an explicit test adapter"),
+          }),
+        ),
+      ),
+    },
     policy: makeEvmPolicyService(),
     addressMetadata: {
       resolve: Effect.fn("evm.addressMetadata.test.resolve")(() => Effect.succeed([])),
