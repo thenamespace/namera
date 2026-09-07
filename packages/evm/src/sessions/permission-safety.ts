@@ -31,7 +31,8 @@ const controlSelectors = new Set([
         entry.stateMutability !== "pure",
     )
     .map((entry) => toFunctionSelector(entry)),
-  toFunctionSelector("setSigner(uint32,address)"),
+  toFunctionSelector("transferSigner(uint32,address)"),
+  toFunctionSelector("transferSigner(uint32,uint256,uint256)"),
   EXECUTE_USER_OP_SELECTOR.toLowerCase(),
 ]);
 

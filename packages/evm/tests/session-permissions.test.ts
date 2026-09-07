@@ -13,6 +13,19 @@ const decode = Schema.decodeUnknownSync(EvmSessionPermissions);
 
 describe("onchain session permission contracts", () => {
   it("prevents restricted sessions from rewriting module-owned permissions", () => {
+    for (const signature of [
+      "transferSigner(uint32,address)",
+      "transferSigner(uint32,uint256,uint256)",
+    ]) {
+      expect(() =>
+        assertSafeSessionPermissions(
+          address,
+          decode([
+            { type: "functions-on-all-contracts", functions: [toFunctionSelector(signature)] },
+          ]),
+        ),
+      ).toThrow();
+    }
     expect(() =>
       assertSafeSessionPermissions(
         address,
