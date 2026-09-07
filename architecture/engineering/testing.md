@@ -20,8 +20,8 @@ Organize suites by boundary within their owning package: `tests/unit/` for pure
 domain rules, `tests/integration/` for real service/persistence/HTTP boundaries,
 and `tests/e2e/` for packaged or browser journeys. Keep feature folders within
 these groups and shared fixture code in `tests/fixtures/`. Contract tests that
-require Anvil belong under integration and remain opt-in. Relocate existing
-suites as they are audited; do not delete security regressions merely to reduce
+require Anvil belong under integration and remain opt-in. Existing suites use
+these boundaries; do not delete security regressions merely to reduce
 the test count. Remove tests only when they duplicate behavior already covered
 at the appropriate boundary or test code that no longer exists.
 

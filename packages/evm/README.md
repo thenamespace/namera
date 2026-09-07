@@ -171,7 +171,7 @@ deterministic execution lifecycle.
 With Anvil running a Sepolia fork on loopback (chain ID `11155111`):
 
 ```sh
-NAMERA_TEST_ANVIL_URL=http://127.0.0.1:18545 pnpm --filter @namera-ai/evm test tests/aa
+NAMERA_TEST_ANVIL_URL=http://127.0.0.1:18545 pnpm --filter @namera-ai/evm test tests/integration/aa
 ```
 
 These opt-in tests require a loopback URL and verify the RPC identifies as Anvil

@@ -61,7 +61,7 @@ and [ModuleManagerInternals](https://github.com/alchemyplatform/modular-account/
 
 ## Verification
 
-Opt-in tests under `packages/evm/tests/aa` use an explicitly configured local
+Opt-in tests under `packages/evm/tests/integration/aa` use an explicitly configured local
 Anvil endpoint and verify its client identity before funding ephemeral test
 keys. They execute EntryPoint 0.7 `handleOps` against forked Alchemy contracts.
 They do not mock validation or run transactions on the source chain.

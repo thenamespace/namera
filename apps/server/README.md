@@ -287,9 +287,9 @@ docker run --rm --publish 8080:8080 --env-file /path/to/server.env namera-server
 Runtime configuration is supplied when the container starts; `.env` files are
 excluded from the Docker build context and are never copied into the image.
 
-Server feature tests live in `tests/` and exercise the typed in-memory HTTP API
+Server feature tests live in `tests/integration/` and exercise the typed in-memory HTTP API
 against the real application, repositories, transactions, authorization, and
-PGlite migrations. Shared provider substitutes come from their owning packages.
+PGlite migrations. Shared setup lives in `tests/fixtures/`; provider substitutes come from their owning packages.
 See [Testing architecture](../../architecture/engineering/testing.md) before
 adding tests.
 
