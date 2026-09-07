@@ -7,7 +7,8 @@ counterfactual WebAuthn factory account was rejected as an undelegated 7702
 account. Direct installation has been exercised through the deployed contracts
 on a local Sepolia fork instead of assuming compatibility with that API.
 
-This compiler is currently an internal primitive. Database lifecycle, owner
+This compiler is currently an internal primitive. Per-chain installation storage
+and conditional lifecycle transitions exist in the database repository. Owner
 approval routes, dashboard and SDK session execution are not wired yet.
 
 ## Contract
@@ -69,10 +70,13 @@ They do not mock validation or run transactions on the source chain.
 Coverage includes P-256 deployment with high-S authenticator output, session
 installation, native allowance, target denial, start/expiry enforcement and
 revocation. This lane does not verify hosted bundling or BSO sponsorship.
+Installation and removal are also exercised as self-targeted calls through the
+root account's normal `encodeCalls` path. The owner-approval workflow can use
+normal execution preparation instead of a separate gas-estimation pipeline.
 
 ## Pending
 
-- Persist per-chain installation state and immutable compiler inputs.
+- Connect persisted per-chain installation state to owner approval and receipt recovery.
 - Bind owner approvals to exact installation/removal operations.
 - Add real-contract tests for all permission types and signature capability.
 - Wire application, routes, browser approval and local session signing.

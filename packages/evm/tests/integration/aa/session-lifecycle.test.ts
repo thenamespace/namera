@@ -40,7 +40,10 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
       ],
     });
     const compiled = await compileEvmSession(client, authorization);
-    const installation = await submit(account, compiled.installCallData);
+    const installation = await submit(
+      account,
+      await account.encodeCalls([{ to: account.address, data: compiled.installCallData }]),
+    );
     expect(installation.status).toBe("success");
     expect(
       await publicClient.readContract({
@@ -91,7 +94,10 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
     ).toBe(false);
     expect(await publicClient.getBalance({ address: recipient })).toBe(before + allowance);
 
-    const revoked = await submit(account, compiled.uninstallCallData);
+    const revoked = await submit(
+      account,
+      await account.encodeCalls([{ to: account.address, data: compiled.uninstallCallData }]),
+    );
     expect(
       parseEventLogs({
         abi: entryPoint07Abi,
