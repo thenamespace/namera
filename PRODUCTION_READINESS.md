@@ -22,6 +22,12 @@ The beta otherwise remains limited to the Free plan and the account, session
 key, policy, execution, signature, authorization, portfolio, billing, inbox,
 and workspace features already exposed by the dashboard.
 
+Wallet owners are user-held passkeys only. Session keys are user-held secp256k1
+keys with onchain authorization and optional additional API policies. Managed
+providers remain in code but are disabled in the beta product. The SDK, CLI,
+encrypted local keystore and loopback HTTP `namera mcp start` are beta gates;
+the hosted MCP transport is removed while its OAuth service remains.
+
 ## Current baseline
 
 Verified on 2026-08-24:
@@ -163,8 +169,9 @@ not required for the beta.
 
 - [ ] Authentication and workspace: sign in, create/switch workspace, update
       profile/workspace, invite a member, accept the invitation, and sign out.
-- [ ] Wallet lifecycle: create an ENS-labelled wallet, load overview/assets,
-      create a session key with policies, revoke it, and verify the UI updates.
+- [ ] Wallet lifecycle: create a passkey wallet, load overview/assets, generate
+      and export an encrypted local session key, approve its onchain policies,
+      import it in the CLI, revoke it and verify per-chain state updates.
 - [ ] Operation lifecycle: simulate and execute sponsored and unsponsored calls,
       sign and verify, inspect activity/detail pages, and render a policy denial.
 - [ ] Credentials and delegation: create/revoke an API key, approve/revoke MCP

@@ -16,7 +16,7 @@ The target model is:
 - Root keys create the account, install and revoke session validations, and perform recovery or account administration.
 - Every routine execution or smart-account signature must use a cryptographic onchain session key.
 - Every session key references its own signing key. Initial session signing uses secp256k1.
-- Session-key policy is one immutable logical policy envelope. The policy registry declares which parts are enforced by the wallet, by Namera, or by both.
+- Session-key policy is one immutable list. Each instance selects `api` or `onchain` enforcement; the registry declares the modes supported by that type. There is no third `both` mode.
 - Namera uses AND semantics: Namera policy evaluation must allow the operation and the onchain account must validate it.
 - API keys, CLI OAuth authorizations, MCP OAuth authorizations, actors, and `session_key_grant` remain the actor-authorization layer.
 - Local keys are generated and retained on the user's device. The server stores only normalized public material.
@@ -30,7 +30,7 @@ Initial launch configuration:
   sessionKeyCustody: ["local"],
   sessionKeyAlgorithms: ["secp256k1"],
   managedSigningEnabled: false,
-  remoteMcpMutationEnabled: false
+  hostedMcpEnabled: false
 }
 ```
 
@@ -336,10 +336,12 @@ Execution and signature records should continue referencing both the selected gr
 
 ### One logical policy envelope
 
-Do not expose two independently editable lists named “onchain policies” and “API policies.” They will drift and produce confusing contradictions. Store one logical policy envelope on the session key. The EVM policy registry owns an enforcement plan for each policy type.
+Store one immutable list, allowing users to mix API and onchain policies. Each
+instance selects one enforcement layer. The EVM registry validates support for
+that layer and owns its evaluator or compiler.
 
 ```ts
-type PolicyEnforcement = "onchain" | "api" | "both";
+type PolicyEnforcement = "onchain" | "api";
 
 type PolicyDefinition = {
   id: PolicyId;
@@ -350,7 +352,11 @@ type PolicyDefinition = {
 };
 ```
 
-`enforcement` must be validated against registry capabilities. A caller cannot claim `onchain` when no equivalent onchain module exists. For fixed product semantics, the registry may derive enforcement rather than accepting it from the request.
+`enforcement` must be validated against registry capabilities. A caller cannot
+claim `onchain` when no supported module exists. Singleton cardinality is scoped
+by policy type and enforcement layer. Two explicitly configured instances may
+restrict both layers with different budgets. Preflighting an onchain restriction
+through the API does not change its authoritative enforcement layer.
 
 The session creation workflow performs two outputs from the same decoded policy set:
 
@@ -378,13 +384,17 @@ An onchain module accepting an operation does not override an API denial. An API
 
 | Existing policy          | Target enforcement               | Notes                                                                                                                                                                                                                |
 | ------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `evm.time-window`        | Both                             | Install an onchain time-range hook and retain API evaluation for early deterministic errors and signature workflows.                                                                                                 |
-| `evm.chain-allowlist`    | Both                             | Only create installations on allowed chains; retain API checking. The set of installed chains is the onchain execution boundary.                                                                                     |
+| `evm.time-window`        | API or onchain                   | API timestamp checks and onchain time-range hooks are separate instances. Every session has an onchain expiration.                                                                                                   |
+| `evm.chain-allowlist`    | API                              | Installation networks define onchain availability; this policy may further restrict Namera requests.                                                                                                                 |
 | `evm.native-spend-limit` | API, with optional onchain floor | Current day/week/month reset semantics do not necessarily match a cumulative onchain native-token hook. Compile only a semantically safe lifetime ceiling; do not label unlike semantics as equivalent.              |
 | `evm.gas-budget`         | API                              | Fiat/period gas accounting, sponsorship reservation, and settlement remain in Namera. A paymaster guard may restrict which paymaster is usable but is not a budget equivalent.                                       |
 | `evm.signature`          | API plus validator capability    | The policy controls message versus typed-data access in Namera. `is_signature_validation` is enabled only when the session may produce ERC-1271 signatures; it does not by itself distinguish semantic payload type. |
 
-Add explicit registry metadata for `apiSupport`, `onchainCompiler`, and `equivalence`. A policy compiled to a weaker but useful onchain ceiling must be marked `defense-in-depth`, not `equivalent`.
+Use registry metadata for supported enforcement and the corresponding evaluator
+or compiler. Never silently translate a periodic API budget into a cumulative
+onchain allowance. Alchemy access permissions grant the union of allowed targets
+and selectors; limits and validation hooks constrain that grant. Do not describe
+multiple access grants as an intersection of target allowlists.
 
 ### Signature warning
 
@@ -516,7 +526,7 @@ Until onchain uninstall confirms, the local private key may still work through a
 
 Add a passkey registration ceremony rather than accepting an unverified public key:
 
-- `POST /wallets/creation-intents` creates a short-lived, actor-bound challenge.
+- `POST /wallets/passkey/registration-options` creates a short-lived, actor-bound challenge.
 - `POST /wallets` completes either a local passkey creation intent or, when enabled, a managed creation request.
 
 The public wallet response should expose:
@@ -638,23 +648,30 @@ Suggested commands:
 - `namera session-key doctor <id>` verifies local public key against server metadata.
 - `namera session-key revoke <id>` performs root-authorized onchain revocation.
 - `namera session-key remove-local <id>` deletes local material only after a clear warning and confirmation.
-- an explicit encrypted backup/export command may be added later; loss of local material otherwise means creating a replacement and revoking the old session.
+- `namera session-key import` opens a hidden paste prompt for a versioned encrypted bundle generated by the dashboard; it verifies the decrypted public key against the server before storing it.
+
+The browser generates local session material in memory. It registers only the
+public key, produces an authenticated-encrypted backup, requires the user to
+save it before activation, and completes owner approval without leaving the
+dashboard. Never put a raw private key or decryption password in command-line
+arguments. Base64 is not encryption. Import availability is local machine state,
+not a server-side claim that a key remains present.
 
 ### MCP
 
 The current MCP endpoint is hosted in `apps/server`; it cannot read the CLI keystore. Add a local MCP runtime that supports both local and future Namera-managed session keys through the same tools:
 
 ```sh
-namera mcp serve
+namera mcp start
 ```
 
 The runtime has two distinct authentication boundaries:
 
 ```text
 Agent host
-   │ MCP over stdio
+   │ MCP over loopback HTTP + OAuth
    ▼
-namera mcp serve
+namera mcp start
    │ OAuth access token
    ▼
 Namera API
@@ -665,16 +682,11 @@ Namera API
 
 #### Agent host to local MCP
 
-The initial local MCP uses stdio. The agent host launches the process directly:
-
-```json
-{
-  "command": "namera",
-  "args": ["mcp", "serve"]
-}
-```
-
-Do not add an OAuth exchange between the host and its stdio child process. MCP OAuth protects HTTP transports; a stdio process receives its Namera profile and credential-store location from its local process environment. If a future local HTTP transport is added, bind it only to loopback and implement the applicable MCP HTTP authorization and DNS-rebinding protections.
+The local MCP uses Streamable HTTP bound only to loopback. It exposes protected
+resource metadata and `WWW-Authenticate` discovery for Namera's OAuth server.
+Validate Host, Origin, access-token resource/audience, authorization and session
+binding. An arbitrary website or network peer must not be able to invoke the
+unlocked keystore. Do not trust a client merely because the connection is local.
 
 #### Local MCP to Namera
 
@@ -751,23 +763,22 @@ Do not silently change from a preferred local session to managed custody. The tr
 
 The MCP model continues to call wallet-level tools such as `execute_transaction` and `sign`; it does not choose custody, pass a file path, submit private material, or handle raw signing payloads.
 
-#### Local and hosted MCP products
+#### Local MCP product
 
 For beta:
 
 - local MCP may execute and sign with local sessions and is already compatible with the future managed branch;
-- remote hosted MCP may list, read, simulate, verify, and inspect status;
-- remote hosted MCP mutation returns a stable `LOCAL_SIGNER_REQUIRED` error unless a future managed session is enabled.
+- remove the hosted `/mcp` transport and its tool handlers from the API;
+- retain the OAuth server, consent UI, grants and revocation used by local MCP;
+- retain ordinary API routes for all data and operation workflows.
 
 A cloud ChatGPT connector cannot directly access a file on the user's computer. Supporting autonomous remote mutation later requires a user-side online signing bridge, customer-hosted signer, or reviewed managed mode.
 
 The intended product split is therefore:
 
-| MCP runtime                   | Local session    | Managed session   | Availability requirement      |
-| ----------------------------- | ---------------- | ----------------- | ----------------------------- |
-| `namera mcp serve` over stdio | Yes              | Yes, when enabled | User process running          |
-| Hosted Namera MCP             | No direct access | Yes, when enabled | Namera service running        |
-| Hosted MCP plus signer bridge | Yes              | Yes               | User-controlled signer online |
+| MCP runtime                           | Local session | Managed session   | Availability requirement                   |
+| ------------------------------------- | ------------- | ----------------- | ------------------------------------------ |
+| `namera mcp start` over loopback HTTP | Yes           | Yes, when enabled | User process running and keystore unlocked |
 
 Add stable MCP error mapping for `LOCAL_SIGNER_REQUIRED`, `LOCAL_SIGNER_NOT_FOUND`, `SIGNING_REQUEST_EXPIRED`, `SESSION_KEY_NOT_INSTALLED`, `SIGNATURE_REJECTED`, and `MANAGED_SIGNING_DISABLED`. Tool errors must remain actionable without disclosing keystore paths, provider references, signatures, or arbitrary internal failures.
 
@@ -847,7 +858,7 @@ The dashboard owns:
 4. Bind WebAuthn challenges and local-signing preparations to actor, organization, expiry and one-time consumption.
 5. Rate-limit preparation, completion and passkey ceremonies separately.
 6. Keep private/provider metadata out of public responses and logs.
-7. Change hosted MCP mutation behavior for local sessions.
+7. Remove hosted MCP transport; preserve OAuth authorization and ordinary API routes.
 
 ### `packages/sdk`
 
@@ -861,7 +872,7 @@ The dashboard owns:
 
 1. Add the encrypted local keystore service and key lifecycle commands.
 2. Teach interactive execution and signing to resolve a local session automatically.
-3. Add `namera mcp serve` or a dedicated local MCP entry point.
+3. Add `namera mcp start` with loopback HTTP, OAuth, SDK and keystore integration.
 4. Keep output redaction and quiet/pretty/JSON/NDJSON behavior consistent.
 5. Add a diagnostic command that checks local key presence, public-key equality, actor grant, chain installation and session status without signing.
 
@@ -974,7 +985,7 @@ Audit rows and their corresponding database state transitions must share one tra
 - SDK retries reuse the logical idempotency key without creating duplicate submissions.
 - CLI keystore round-trip, wrong-password, corruption, atomic-write and permission tests.
 - Local MCP executes without exposing signing payloads to tool arguments or results.
-- Hosted MCP returns `LOCAL_SIGNER_REQUIRED` for mutation and continues to support reads and simulation.
+- Hosted MCP is absent; local HTTP MCP verifies OAuth, host/origin and grant boundaries for every tool.
 
 ## Implementation order
 
@@ -989,7 +1000,7 @@ Implement in dependency order and keep every slice buildable:
 7. **SDK signer abstraction:** transparent high-level execute with explicit lower-level prepare/complete APIs.
 8. **CLI keystore:** local session generation, encrypted persistence, selection, diagnostics and deletion.
 9. **Two-phase signatures:** explicit signature-enabled installations, SDK/CLI orchestration and ERC-1271 tests.
-10. **Local MCP runtime:** reuse the SDK and CLI keystore; make hosted mutation behavior explicit.
+10. **Local MCP runtime:** loopback HTTP `namera mcp start`, SDK and CLI keystore; remove hosted MCP while retaining OAuth.
 11. **Dashboard and documentation cleanup:** custody-aware tables, policy enforcement display, lifecycle states, architecture docs and production-readiness checklist.
 12. **Beta security gate:** threat-model review, BVI counsel review of the implemented flow, provider/live-chain tests and launch capability verification.
 
@@ -1018,7 +1029,7 @@ The migration is complete for beta when:
 - Onchain and API enforcement are displayed separately and evaluated with AND semantics.
 - Revocation blocks Namera immediately and reports onchain completion truthfully.
 - Local MCP can execute through the same local signer without sending key material to the model or server.
-- Hosted MCP cannot mutate a local-custody wallet.
+- No hosted MCP transport remains in the API.
 - GCP KMS code remains tested but all managed creation and signing paths are rejected by production launch configuration.
 - Billing, sponsorship, idempotency, recovery workers, reconciliation, audit, notifications and telemetry pass their focused tests.
 
@@ -1028,7 +1039,6 @@ The migration is complete for beta when:
 - P-256 session signer support.
 - Customer-operated remote signer bridges.
 - Managed session and managed root launch policy.
-- Whether encrypted keystore backup/export is supported.
 - Custom onchain policy modules beyond Alchemy's supported validators and hooks.
 - Whether a future Namera co-signer is desirable; this requires a fresh custody, availability and legal analysis.
 
@@ -1041,7 +1051,7 @@ The migration is complete for beta when:
 - [ ] Implement two-phase prepare, local sign, and complete workflows for executions and signatures.
 - [ ] Update EVM account construction, session installation, execution, signing, and verification for the new model.
 - [ ] Update database schemas, repositories, billing, audit events, notifications, telemetry, and recovery workers.
-- [ ] Update the public API, SDK, CLI, local MCP, hosted MCP behavior, and dashboard flows.
+- [ ] Update the public API, SDK, CLI, local HTTP MCP and dashboard; remove hosted MCP transport.
 - [ ] Add encrypted local session-key storage and OAuth-backed local MCP operation without exposing key material to the model.
 - [ ] Remove routine root-key signing and all legacy assumptions that session keys are policy-only API grants.
 - [ ] Add focused security, concurrency, lifecycle, provider, CLI, MCP, API, and dashboard tests.
