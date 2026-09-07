@@ -44,7 +44,7 @@ import { createPublicKeyWebAuthnAccount } from "./webauthn.js";
 
 const modularAccountV2FactoryAddress =
   "0x55010E571dCf07e254994bfc88b9C1C8FAe31960" satisfies Address;
-const webAuthnValidationModuleAddress =
+export const webAuthnValidationModuleAddress =
   "0x0000000000001D9d34E07D9834274dF9ae575217" satisfies Address;
 
 const webAuthnFactoryAbi = [

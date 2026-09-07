@@ -1,16 +1,19 @@
+import { Schema } from "effect";
+
 import {
-  PermissionBuilder,
-  installValidationActions,
+  AllowlistModule,
+  DefaultModuleAddress,
   isModularAccountV2,
-  SingleSignerValidationModule,
   toModularAccountV2Base,
 } from "@alchemy/smart-accounts";
-import { createClient, encodeAbiParameters, http, parseEther, parseEventLogs, toHex } from "viem";
+import { EvmSessionAuthorization } from "@namera-ai/protocol/evm";
+import { createClient, http, parseEther, parseEventLogs } from "viem";
 import { entryPoint07Abi } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import { describe, expect, it } from "vitest";
 
+import { compileEvmSession } from "../../src/sessions/compile.js";
 import { makeAnvilFixture } from "./fixture.js";
 
 const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
@@ -24,20 +27,29 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
     const key = privateKeyToAccount(generatePrivateKey());
     const recipient = "0x0000000000000000000000000000000000002345";
     const allowance = parseEther("0.002");
-    const builder = new PermissionBuilder({
-      client,
-      key: { type: "secp256k1", publicKey: key.address },
+    const now = Number((await publicClient.getBlock()).timestamp);
+    const authorization = Schema.decodeUnknownSync(EvmSessionAuthorization)({
+      version: 1,
       entityId: 1,
-      nonce: 0n,
-    }).addPermissions({
+      signerAddress: key.address,
+      validAfter: now - 60,
+      validUntil: now + 3600,
       permissions: [
-        { type: "native-token-transfer", data: { allowance: toHex(allowance) } },
-        { type: "contract-access", data: { address: recipient } },
+        { type: "native-token-transfer", allowance: allowance.toString() },
+        { type: "contract-access", address: recipient },
       ],
     });
-    const installation = await submit(account, await builder.compileRaw());
+    const compiled = await compileEvmSession(client, authorization);
+    const installation = await submit(account, compiled.installCallData);
     expect(installation.status).toBe("success");
-    const compiled = await builder.compileInstallArgs();
+    expect(
+      await publicClient.readContract({
+        address: DefaultModuleAddress.ALLOWLIST,
+        abi: AllowlistModule.abi,
+        functionName: "addressAllowlist",
+        args: [1, recipient, account.address],
+      }),
+    ).toEqual([true, false, false]);
     const session = await toModularAccountV2Base({
       client: publicClient,
       owner: key,
@@ -46,6 +58,14 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
       getFactoryArgs: async () => ({}),
     });
     const before = await publicClient.getBalance({ address: recipient });
+    await expect(
+      submit(
+        session,
+        await session.encodeCalls([
+          { to: "0x0000000000000000000000000000000000009999", value: 0n },
+        ]),
+      ),
+    ).rejects.toThrow();
     const successful = await submit(
       session,
       await session.encodeCalls([{ to: recipient, value: allowance }]),
@@ -71,15 +91,7 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
     ).toBe(false);
     expect(await publicClient.getBalance({ address: recipient })).toBe(before + allowance);
 
-    const uninstall = await installValidationActions(client).encodeUninstallValidation({
-      moduleAddress: compiled.validationConfig.moduleAddress,
-      entityId: 1,
-      uninstallData: SingleSignerValidationModule.encodeOnUninstallData({ entityId: 1 }),
-      hookUninstallDatas: compiled.hooks.map(({ hookConfig }) =>
-        encodeAbiParameters([{ type: "uint32" }], [hookConfig.entityId]),
-      ),
-    });
-    const revoked = await submit(account, uninstall);
+    const revoked = await submit(account, compiled.uninstallCallData);
     expect(
       parseEventLogs({
         abi: entryPoint07Abi,
@@ -87,8 +99,57 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
         logs: revoked.logs,
       })[0]?.args.success,
     ).toBe(true);
+    expect(
+      await publicClient.readContract({
+        address: DefaultModuleAddress.ALLOWLIST,
+        abi: AllowlistModule.abi,
+        functionName: "addressAllowlist",
+        args: [1, recipient, account.address],
+      }),
+    ).toEqual([false, false, false]);
     await expect(
       submit(session, await session.encodeCalls([{ to: recipient, value: 0n }])),
     ).rejects.toThrow();
+  }, 60_000);
+
+  it("rejects a local signer before activation and after onchain expiry", async () => {
+    if (anvilUrl === undefined) throw new Error("NAMERA_TEST_ANVIL_URL is required");
+    const { account, publicClient, submit, advanceTime } = await makeAnvilFixture(anvilUrl);
+    const client = createClient({ account, chain: sepolia, transport: http(anvilUrl) });
+    const key = privateKeyToAccount(generatePrivateKey());
+    const recipient = "0x0000000000000000000000000000000000003456";
+    const now = Number((await publicClient.getBlock()).timestamp);
+    const compiled = await compileEvmSession(
+      client,
+      Schema.decodeUnknownSync(EvmSessionAuthorization)({
+        version: 1,
+        entityId: 2,
+        signerAddress: key.address,
+        validAfter: now + 300,
+        validUntil: now + 600,
+        permissions: [{ type: "contract-access", address: recipient }],
+      }),
+    );
+    await submit(account, compiled.installCallData);
+    const session = await toModularAccountV2Base({
+      client: publicClient,
+      owner: key,
+      accountAddress: account.address,
+      signerEntity: { entityId: 2, isGlobalValidation: false },
+      getFactoryArgs: async () => ({}),
+    });
+    const callData = await session.encodeCalls([{ to: recipient, value: 0n }]);
+    await expect(submit(session, callData)).rejects.toThrow();
+    await advanceTime(301);
+    const receipt = await submit(session, callData);
+    expect(
+      parseEventLogs({
+        abi: entryPoint07Abi,
+        eventName: "UserOperationEvent",
+        logs: receipt.logs,
+      })[0]?.args.success,
+    ).toBe(true);
+    await advanceTime(301);
+    await expect(submit(session, callData)).rejects.toThrow();
   }, 60_000);
 });

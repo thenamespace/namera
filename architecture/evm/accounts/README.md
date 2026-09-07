@@ -1,5 +1,8 @@
 # Alchemy Modular Account V2
 
+See [onchain sessions](onchain-sessions.md) for the local-signer permission
+compiler and its contract-test coverage.
+
 Namera supports one EVM smart-account implementation: Alchemy Modular Account
 V2 with EntryPoint `0.7`. Its account boundary accepts two discriminated owner
 modes:

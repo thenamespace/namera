@@ -32,6 +32,7 @@ export const makeAnvilFixture = async (
   readonly account: SmartAccount;
   readonly publicClient: PublicClient<Transport, Chain>;
   readonly submit: (signer: SmartAccount, callData: Hex) => Promise<TransactionReceipt>;
+  readonly advanceTime: (seconds: number) => Promise<void>;
 }> => {
   const endpoint = new URL(url);
   if (
@@ -111,5 +112,13 @@ export const makeAnvilFixture = async (
     });
     return await publicClient.waitForTransactionReceipt({ hash });
   };
-  return { account, publicClient, submit };
+  return {
+    account,
+    publicClient,
+    submit,
+    advanceTime: async (seconds) => {
+      await testClient.increaseTime({ seconds });
+      await testClient.mine({ blocks: 1 });
+    },
+  };
 };
