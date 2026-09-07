@@ -109,6 +109,11 @@ challenge, RP ID, origin, organization, and user, revoking the prior pending
 ceremony for the same tenant/user tuple in the same transaction. The response
 contains the verification ID, browser-ready options, and expiry.
 
+Each ceremony uses a fresh WebAuthn user handle, independent of the Namera user
+ID. Reusing the same RP/user handle for multiple wallets can cause an
+authenticator to replace the earlier wallet's discoverable credential. Tenant
+and user authorization remain bound by the server-side verification record.
+
 Wallet creation loads the stored ceremony, checks every tenant/user/lifecycle
 binding and expiry, verifies it through the passkey capability, and atomically
 consumes it with the signing-key, wallet, audit, notification, and email writes.

@@ -78,6 +78,7 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
       const second = yield* client.wallet.createPasskeyRegistrationOptions();
       expect(second.verificationId).not.toBe(first.verificationId);
       expect(second.options.challenge).not.toBe(first.options.challenge);
+      expect(second.options.user.id).not.toBe(first.options.user.id);
       const replaced = yield* repository.auth.verification.findById(first.verificationId);
       expect(replaced?.revokedAt).not.toBeNull();
     }),

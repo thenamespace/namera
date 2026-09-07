@@ -14,6 +14,7 @@ import {
   PasskeyRegistrationOptions,
   type PasskeyRegistrationOptionsResponse,
 } from "@namera-ai/protocol/dto";
+import { generateUniqueId } from "@namera-ai/utils";
 
 import { AuthConfig } from "#/auth/config";
 
@@ -40,7 +41,8 @@ export const makePasskeyRegistrationApplication = Effect.gen(function* () {
           .generateRegistrationOptions({
             rpName: config.passkey.relyingPartyName,
             rpId: config.dashboardPublicOrigin.hostname,
-            userId: input.userId,
+            // A repeated RP/user handle can replace an earlier wallet's resident credential.
+            userId: generateUniqueId(),
             userName: input.userName,
             userDisplayName: input.userDisplayName,
             timeoutMs: Duration.toMillis(config.passkey.timeToLive),
