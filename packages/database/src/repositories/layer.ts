@@ -40,6 +40,7 @@ import {
   SessionKeyGrantRepository,
   SessionKeyPolicyReservationRepository,
   SessionKeyPolicyStateRepository,
+  SigningKeyRepository,
   SignatureOperationRepository,
   WalletKeyRepository,
   WalletRepository,
@@ -95,6 +96,7 @@ export interface RepositoryService {
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
     sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
     sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
+    signingKey: SigningKeyRepository["Service"];
     signatureOperation: SignatureOperationRepository["Service"];
     wallet: WalletRepository["Service"];
     walletKey: WalletKeyRepository["Service"];
@@ -154,6 +156,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const executionSubmission = yield* ExecutionSubmissionRepository;
       const sessionKeyPolicyReservation = yield* SessionKeyPolicyReservationRepository;
       const sessionKeyPolicyState = yield* SessionKeyPolicyStateRepository;
+      const signingKey = yield* SigningKeyRepository;
       const signatureOperation = yield* SignatureOperationRepository;
 
       return Repository.of({
@@ -201,6 +204,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           sessionKeyGrant,
           sessionKeyPolicyReservation,
           sessionKeyPolicyState,
+          signingKey,
           signatureOperation,
           wallet,
           walletKey,
@@ -255,6 +259,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         ExecutionSubmissionRepository.layer,
         SessionKeyPolicyReservationRepository.layer,
         SessionKeyPolicyStateRepository.layer,
+        SigningKeyRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
         WalletKeyRepository.layer,

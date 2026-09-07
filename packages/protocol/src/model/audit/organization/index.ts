@@ -33,7 +33,7 @@ import { SessionKeyCreatedEventData, SessionKeyRevokedEventData } from "./sessio
 import { SignatureCreatedEventData } from "./signature.js";
 import {
   WalletCreatedEventData,
-  WalletKeyCreatedEventData,
+  SigningKeyCreatedEventData,
   WalletUpdatedEventData,
 } from "./wallet.js";
 
@@ -50,7 +50,7 @@ export const MemberCreatedEvent = organizationEvent(MemberCreatedEventData);
 export const MemberRoleUpdatedEvent = organizationEvent(MemberRoleUpdatedEventData);
 export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
-export const WalletKeyCreatedEvent = organizationEvent(WalletKeyCreatedEventData);
+export const SigningKeyCreatedEvent = organizationEvent(SigningKeyCreatedEventData);
 export const WalletUpdatedEvent = organizationEvent(WalletUpdatedEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 export const SessionKeyRevokedEvent = organizationEvent(SessionKeyRevokedEventData);
@@ -76,7 +76,7 @@ export const OrganizationEvent = Schema.Union([
   MemberRoleUpdatedEvent,
   MemberRemovedEvent,
   WalletCreatedEvent,
-  WalletKeyCreatedEvent,
+  SigningKeyCreatedEvent,
   WalletUpdatedEvent,
   SessionKeyCreatedEvent,
   SessionKeyRevokedEvent,

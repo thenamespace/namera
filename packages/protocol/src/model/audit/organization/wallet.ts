@@ -1,8 +1,8 @@
 import { Schema } from "effect";
 
-import { WalletId, WalletKeyId } from "#/common/index";
+import { SigningKeyId, WalletId } from "#/common/index";
 import { AlchemyModularAccountVersion, EthereumAddress, EntryPointVersion } from "#/evm/index";
-import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
+import { SigningKeyCustody } from "#/model/core/signing-key";
 
 export const WalletImplementation = Schema.Struct({
   implementation: Schema.Literal("alchemy-modular-v2"),
@@ -16,10 +16,10 @@ export const WalletCreatedEventData = Schema.Struct({
   resourceId: WalletId,
   data: Schema.Struct({
     version: Schema.Literal(1),
-    walletKeyId: WalletKeyId,
+    signingKeyId: SigningKeyId,
     namespace: Schema.Literal("eip155"),
     address: EthereumAddress,
-    protectionLevel: WalletKeyProtectionLevel,
+    custody: SigningKeyCustody,
     account: WalletImplementation,
   }),
 });
@@ -34,13 +34,13 @@ export const WalletUpdatedEventData = Schema.Struct({
   }),
 });
 
-export const WalletKeyCreatedEventData = Schema.Struct({
-  event: Schema.Literal("wallet_key.created"),
-  resourceType: Schema.Literal("wallet-key"),
-  resourceId: WalletKeyId,
+export const SigningKeyCreatedEventData = Schema.Struct({
+  event: Schema.Literal("signing_key.created"),
+  resourceType: Schema.Literal("signing-key"),
+  resourceId: SigningKeyId,
   data: Schema.Struct({
     version: Schema.Literal(1),
-    protectionLevel: WalletKeyProtectionLevel,
+    custody: SigningKeyCustody,
   }),
 });
 

@@ -40,3 +40,7 @@ export const walletPortfolioAtom = Atom.family((walletId: WalletId) =>
 );
 
 export const createWalletMutation = NameraClient.mutation("wallet", "create");
+export const createPasskeyRegistrationOptionsMutation = NameraClient.mutation(
+  "wallet",
+  "createPasskeyRegistrationOptions",
+);

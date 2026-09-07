@@ -8,6 +8,7 @@ import { Repository, TestDatabase, TransactionService } from "@namera-ai/databas
 import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { EnsTestLayer } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
+import { Passkeys } from "@namera-ai/passkeys";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
@@ -53,6 +54,7 @@ const TestServicesLayer = Layer.mergeAll(
   EnsTestLayer,
   Evm.testLayer,
   WalletKeys.testLayer,
+  Passkeys.testLayer,
 ).pipe(
   Layer.provideMerge(EmailService.testLayer),
   Layer.provideMerge(TestPersistenceLayer),

@@ -5,20 +5,20 @@ import type { ActorId, DatabaseError, OrganizationId, WalletId } from "@namera-a
 import {
   Wallet,
   WalletInsert,
-  WalletKey,
+  SigningKey,
   type WalletMetadata,
   type Wallet as WalletModel,
-  type WalletKey as WalletKeyModel,
+  type SigningKey as SigningKeyModel,
 } from "@namera-ai/protocol/model";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { sessionKey, sessionKeyGrant, wallet, walletKey } from "#/schema/index";
+import { sessionKey, sessionKeyGrant, signingKey, wallet } from "#/schema/index";
 
 export interface WalletView {
   readonly wallet: WalletModel;
-  readonly walletKey: WalletKeyModel;
+  readonly signingKey: SigningKeyModel;
 }
 
 export interface WalletRepositoryService {
@@ -48,10 +48,10 @@ export interface WalletRepositoryService {
 
 const decodeWalletView = (row: {
   readonly wallet: unknown;
-  readonly walletKey: unknown;
+  readonly signingKey: unknown;
 }): WalletView => ({
   wallet: Schema.decodeSync(Wallet)(row.wallet as any),
-  walletKey: Schema.decodeSync(WalletKey)(row.walletKey as any),
+  signingKey: Schema.decodeSync(SigningKey)(row.signingKey as any),
 });
 
 export class WalletRepository extends Context.Service<WalletRepository, WalletRepositoryService>()(
@@ -79,20 +79,20 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
               id: { eq: id },
               organizationId: { eq: organizationId },
             },
-            with: { walletKey: true },
+            with: { signingKey: true },
           });
           if (row === undefined) return undefined;
-          const { walletKey: key, ...walletRow } = row;
-          return decodeWalletView({ wallet: walletRow, walletKey: key });
+          const { signingKey: key, ...walletRow } = row;
+          return decodeWalletView({ wallet: walletRow, signingKey: key });
         }, mapRepositoryError),
         findForOrganization: Effect.fn("database.walletRepository.findForOrganization")(function* (
           organizationId,
         ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
-            .select({ wallet, walletKey })
+            .select({ wallet, signingKey })
             .from(wallet)
-            .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+            .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
             .where(eq(wallet.organizationId, organizationId))
             .orderBy(desc(wallet.createdAt), desc(wallet.id));
           return rows.map(decodeWalletView);
@@ -104,9 +104,9 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
         ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
-            .select({ wallet, walletKey })
+            .select({ wallet, signingKey })
             .from(wallet)
-            .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+            .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
             .innerJoin(
               sessionKey,
               and(
@@ -141,9 +141,9 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
 
           // A wallet is visible to a machine actor only through at least one live session-key grant.
           const rows = yield* db
-            .select({ wallet, walletKey })
+            .select({ wallet, signingKey })
             .from(wallet)
-            .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+            .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
             .innerJoin(
               sessionKey,
               and(
@@ -188,14 +188,15 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
             .returning();
           const updated = rows[0];
           if (updated === undefined) return undefined;
-          const key = yield* db.query.walletKey.findFirst({
+          const key = yield* db.query.signingKey.findFirst({
             where: {
-              id: { eq: updated.walletKeyId },
+              id: { eq: updated.signingKeyId },
               organizationId: { eq: organizationId },
             },
           });
-          if (key === undefined) return yield* Effect.die("Updated wallet key relation is missing");
-          return decodeWalletView({ wallet: updated, walletKey: key });
+          if (key === undefined)
+            return yield* Effect.die("Updated wallet signing-key relation is missing");
+          return decodeWalletView({ wallet: updated, signingKey: key });
         }, mapRepositoryError),
       });
     }),

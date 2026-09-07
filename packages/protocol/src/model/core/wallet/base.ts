@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { ActorId, OrganizationId, WalletId, WalletKeyId } from "#/common/index";
+import { ActorId, OrganizationId, SigningKeyId, WalletId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName, TimestampFields } from "#/model/common";
 
 export const WalletStatus = Schema.Literals(["active", "frozen", "archived"]);
@@ -14,7 +14,7 @@ export const WalletMetadata = Schema.Struct({
 export const WalletCommon = Schema.Struct({
   id: WalletId,
   organizationId: OrganizationId,
-  walletKeyId: WalletKeyId,
+  signingKeyId: SigningKeyId,
   metadata: WalletMetadata,
   status: WalletStatus,
   createdByActorId: ActorId,

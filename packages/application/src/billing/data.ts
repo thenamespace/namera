@@ -12,6 +12,7 @@ const freeResourceLimits = {
   maxMembers: 5,
   maxSoftwareWallets: 5,
   maxHsmWallets: 0,
+  maxLocalWallets: 50,
 } as const;
 
 const freeMeters = {

@@ -16,7 +16,7 @@ import {
   EvmAddressDisplay,
   NamespaceDisplay,
   WalletImplementationDisplay,
-  WalletProtectionDisplay,
+  WalletOwnerDisplay,
 } from "@/components/display";
 
 import { notificationPresentation } from "./data";
@@ -197,7 +197,7 @@ export function WalletCreatedNotificationDetail({
 }) {
   return (
     <NotificationDetailLayout
-      description="Your smart account was created successfully and is ready for session keys, signatures, and policy-controlled executions."
+      description="Your smart account was created successfully and is ready for session key setup."
       item={item}
     >
       <DetailList>
@@ -207,8 +207,15 @@ export function WalletCreatedNotificationDetail({
         <DetailRow label="Implementation">
           <WalletImplementationDisplay implementation={item.notification.data.implementation} />
         </DetailRow>
-        <DetailRow label="Protection">
-          <WalletProtectionDisplay protectionLevel={item.notification.data.protectionLevel} />
+        <DetailRow label="Ownership">
+          <WalletOwnerDisplay
+            custody={item.notification.data.custody}
+            protectionLevel={
+              item.notification.data.custody === "namera-managed"
+                ? item.notification.data.protectionLevel
+                : undefined
+            }
+          />
         </DetailRow>
       </DetailList>
       <NotificationDetailActions>

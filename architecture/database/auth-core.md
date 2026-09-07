@@ -76,16 +76,19 @@ Reserved external-provider account binding. It is not the programmable-wallet `c
 
 ## `auth.verification`
 
-Reusable, single-use verification challenge. `purpose` and typed `data` determine the workflow; the stored token and code are non-reversible digests.
+Reusable, single-use verification challenge. `purpose` and typed `data`
+determine the workflow. Magic links store only non-reversible credential
+digests; passkey registration stores its public challenge and tenant binding in
+`data`.
 
 | Column        | PostgreSQL type | Required | Default | Description                                                  |
 | ------------- | --------------- | -------- | ------- | ------------------------------------------------------------ |
 | `id`          | `text`          | Yes      | UUIDv7  | Challenge identifier.                                        |
 | `purpose`     | `text`          | Yes      | —       | Protocol `VerificationPurpose` discriminator.                |
-| `identifier`  | `text`          | Yes      | —       | Normalized challenged identity, currently an email.          |
+| `identifier`  | `text`          | Yes      | —       | Normalized purpose-specific identity or tenant/user tuple.   |
 | `data`        | `jsonb`         | Yes      | —       | Purpose-discriminated challenge context.                     |
-| `token_hash`  | `text`          | Yes      | —       | Digest of the high-entropy link token.                       |
-| `code_hmac`   | `text`          | Yes      | —       | Keyed digest of the short verification code.                 |
+| `token_hash`  | `text`          | No       | `NULL`  | Magic-link high-entropy token digest.                        |
+| `code_hmac`   | `text`          | No       | `NULL`  | Magic-link short-code keyed digest.                          |
 | `attempts`    | `integer`       | Yes      | `0`     | Failed/consumed code-attempt counter used for abuse control. |
 | `expires_at`  | `timestamptz`   | Yes      | —       | Hard challenge expiry.                                       |
 | `consumed_at` | `timestamptz`   | No       | `NULL`  | Successful single-use consumption time.                      |
@@ -107,6 +110,8 @@ Reusable, single-use verification challenge. `purpose` and typed `data` determin
 
 - Identifier normalization: `identifier = lower(btrim(identifier))`.
 - Attempt count: `attempts >= 0`.
+- `magic-link-signin` requires `token_hash` and `code_hmac`.
+- `passkey-registration` requires both magic-link credential columns to be null.
 
 ### Indexes
 
@@ -115,7 +120,9 @@ Reusable, single-use verification challenge. `purpose` and typed `data` determin
 
 ### Security invariants
 
-- Raw token and code values never enter the database.
+- Raw magic-link token and code values never enter the database.
+- Passkey challenge data is public but is bound to the exact RP ID, origin,
+  organization, and user that must be checked when the ceremony completes.
 - Consumption must atomically enforce live status, expiry, and attempt policy.
 - A new challenge supersedes or conflicts with an existing live challenge for the same purpose and identifier.
 

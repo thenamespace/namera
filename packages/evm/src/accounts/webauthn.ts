@@ -66,3 +66,16 @@ export const createWalletKeyWebAuthnAccount = (
     type: "webAuthn",
   };
 };
+
+const signingUnavailable = (): never => {
+  throw new Error("A public-key-only WebAuthn owner cannot sign");
+};
+
+export const createPublicKeyWebAuthnAccount = (publicKey: ViemHex): WebAuthnAccount => ({
+  id: "wallet-owner",
+  publicKey,
+  sign: signingUnavailable,
+  signMessage: signingUnavailable,
+  signTypedData: signingUnavailable,
+  type: "webAuthn",
+});

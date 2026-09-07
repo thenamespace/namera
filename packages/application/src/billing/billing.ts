@@ -74,6 +74,15 @@ export const makeBillingApplication = Effect.gen(function* () {
               BigInt(usage.hsmWallets),
             ),
           },
+          {
+            key: "local-wallets" as const,
+            includedAmount: BigInt(plan.resources.maxLocalWallets),
+            usedAmount: BigInt(usage.localWallets),
+            remainingAmount: remaining(
+              BigInt(plan.resources.maxLocalWallets),
+              BigInt(usage.localWallets),
+            ),
+          },
         ],
         meters: balances.map((balance) => ({
           key: balance.meterKey,

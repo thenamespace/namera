@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { EnsLabel, OrganizationId, WalletId } from "#/common/index";
+import { OrganizationId, SigningKeyId, VerificationId, WalletId } from "#/common/index";
 import {
   AlchemyModularAccount7702Version,
   AlchemyModularAccountVersion,
@@ -9,17 +9,35 @@ import {
 } from "#/evm/index";
 import {
   TimestampFields,
+  SigningKeyAlgorithm,
   WalletKeyProtectionLevel,
   WalletMetadata,
   WalletStatus,
 } from "#/model/index";
 
+import { PasskeyRegistrationResponse } from "./passkey.js";
+
 export * from "./assets.js";
+export * from "./passkey.js";
+
+export const CreateWalletOwnerRequest = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("namera-managed"),
+    protectionLevel: WalletKeyProtectionLevel,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("passkey"),
+    verificationId: VerificationId,
+    response: PasskeyRegistrationResponse,
+  }),
+]).annotate({
+  identifier: "CreateWalletOwnerRequest",
+  description: "The managed or user-controlled signing key that will own the wallet",
+});
 
 export const CreateEvmWalletRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
-  ensLabel: EnsLabel,
-  protectionLevel: WalletKeyProtectionLevel,
+  owner: CreateWalletOwnerRequest,
   metadata: WalletMetadata,
 }).annotate({
   identifier: "CreateEvmWalletRequest",
@@ -28,7 +46,24 @@ export const CreateEvmWalletRequest = Schema.Struct({
 
 export const CreateWalletRequest = CreateEvmWalletRequest.annotate({
   identifier: "CreateWalletRequest",
-  description: "Create a wallet for the requested namespace, key protection, and implementation",
+  description: "Create a wallet with a managed key or a user-controlled passkey",
+});
+
+export const WalletOwnerResponse = Schema.Union([
+  Schema.Struct({
+    signingKeyId: SigningKeyId,
+    custody: Schema.Literal("local"),
+    algorithm: SigningKeyAlgorithm,
+  }),
+  Schema.Struct({
+    signingKeyId: SigningKeyId,
+    custody: Schema.Literal("namera-managed"),
+    algorithm: SigningKeyAlgorithm,
+    protectionLevel: WalletKeyProtectionLevel,
+  }),
+]).annotate({
+  identifier: "WalletOwnerResponse",
+  description: "Safe signing-key ownership details for a wallet",
 });
 
 const WalletResponseFields = {
@@ -38,7 +73,7 @@ const WalletResponseFields = {
   status: WalletStatus,
   namespace: Schema.Literal("eip155"),
   address: EthereumAddress,
-  protectionLevel: WalletKeyProtectionLevel,
+  owner: WalletOwnerResponse,
   ...TimestampFields,
 };
 
@@ -123,10 +158,12 @@ export const ListWalletsResponse = Schema.Array(WalletResponse).annotate({
 });
 
 export type CreateEvmWalletRequest = typeof CreateEvmWalletRequest.Type;
+export type CreateWalletOwnerRequest = typeof CreateWalletOwnerRequest.Type;
 export type CreateWalletRequest = typeof CreateWalletRequest.Type;
 export type CreateWalletRequestEncoded = typeof CreateWalletRequest.Encoded;
 export type EvmWalletResponse = typeof EvmWalletResponse.Type;
 export type WalletResponse = typeof WalletResponse.Type;
+export type WalletOwnerResponse = typeof WalletOwnerResponse.Type;
 export type CreateWalletResponse = typeof CreateWalletResponse.Type;
 export type GetWalletRequest = typeof GetWalletRequest.Type;
 export type GetWalletResponse = typeof GetWalletResponse.Type;

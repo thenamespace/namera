@@ -7,14 +7,14 @@ before the HTTP port opens.
 
 ## Logical schemas
 
-| Schema         | Tables                                                                                                                        | Responsibility                                                          |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys          | Identity, tenants, management authorization, and delegated credentials. |
-| `core`         | wallet keys, wallets, session keys, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                 |
-| `billing`      | accounts, subscriptions, provider events                                                                                      | Organization entitlements and future provider synchronization.          |
-| `notification` | notifications, recipients, preferences                                                                                        | Immutable occurrences, inbox state, and delivery preferences.           |
-| `jobs`         | email jobs                                                                                                                    | Encrypted transactional email outbox.                                   |
-| `audit`        | user events, organization events                                                                                              | Append-only typed history.                                              |
+| Schema         | Tables                                                                                                                                             | Responsibility                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys                               | Identity, tenants, management authorization, and delegated credentials. |
+| `core`         | signing keys, legacy wallet keys, wallets, session keys, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                 |
+| `billing`      | accounts, subscriptions, provider events                                                                                                           | Organization entitlements and future provider synchronization.          |
+| `notification` | notifications, recipients, preferences                                                                                                             | Immutable occurrences, inbox state, and delivery preferences.           |
+| `jobs`         | email jobs                                                                                                                                         | Encrypted transactional email outbox.                                   |
+| `audit`        | user events, organization events                                                                                                                   | Append-only typed history.                                              |
 
 ## Tenant integrity
 
@@ -25,7 +25,7 @@ links. Examples include:
 
 - member actor and role references;
 - API-key creator and revoker actors;
-- wallet to wallet key;
+- wallet to root signing key;
 - session key to wallet and creator;
 - grants to actor and session key;
 - execution/signature operations to actors, grants, keys, and wallets;

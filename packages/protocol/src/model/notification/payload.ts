@@ -64,12 +64,21 @@ export const WalletCreatedNotificationPayload = Schema.Struct({
   type: WalletCreatedNotificationType,
   resourceType: Schema.Literal("wallet"),
   resourceId: WalletId,
-  data: Schema.Struct({
-    version: Schema.Literal(1),
-    address: EthereumAddress,
-    implementation: Schema.Literal("alchemy-modular-v2"),
-    protectionLevel: WalletKeyProtectionLevel,
-  }),
+  data: Schema.Union([
+    Schema.Struct({
+      version: Schema.Literal(1),
+      address: EthereumAddress,
+      implementation: Schema.Literal("alchemy-modular-v2"),
+      custody: Schema.Literal("local"),
+    }),
+    Schema.Struct({
+      version: Schema.Literal(1),
+      address: EthereumAddress,
+      implementation: Schema.Literal("alchemy-modular-v2"),
+      custody: Schema.Literal("namera-managed"),
+      protectionLevel: WalletKeyProtectionLevel,
+    }),
+  ]),
 });
 
 export const SessionKeyCreatedNotificationPayload = Schema.Struct({

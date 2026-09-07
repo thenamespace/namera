@@ -42,6 +42,7 @@ A plan definition is expected to describe:
 - recurring base price;
 - included and overage-priced software wallets;
 - included and overage-priced HSM wallets;
+- non-billable local-wallet entitlement;
 - included and overage-priced mainnet executions;
 - a generous hard-capped testnet execution allowance;
 - included and overage-priced signatures;
@@ -58,6 +59,7 @@ are also hard limits because Free has no overage path.
 | Organization members |        5 |          5 | resource  |
 | Software wallets     |        5 |          5 | resource  |
 | HSM wallets          |        0 |          0 | resource  |
+| User-owned wallets   |       50 |         50 | resource  |
 | Mainnet executions   |      100 |        100 | operation |
 | Testnet executions   |    1,000 |      1,000 | operation |
 | Signatures           |   10,000 |     10,000 | operation |
@@ -258,11 +260,13 @@ releases it. Verification is read-only and never consumes billing usage.
 
 ### Resource limits
 
-Members (including pending invitations), software wallets, and HSM wallets are
-current-resource entitlements rather than period meters. Their workflows use
-the stored plan version and organization billing lock. Wallet provider work may
-happen before persistence, but the locked capacity check is repeated in the
-final transaction.
+Members (including pending invitations), managed software wallets, managed HSM
+wallets, and user-owned wallets are current-resource entitlements rather than
+period meters. Local wallets have a Free v1 cap of 50 but are not billable and
+have no overage component. Their workflows use the stored plan version and
+organization billing lock. Managed provider work may happen before persistence,
+but the custody-specific locked capacity check is repeated in the final
+transaction.
 
 ## Immutable usage and corrections
 

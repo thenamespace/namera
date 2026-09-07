@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, WalletKeyId } from "#/common/index";
+import { OrganizationId, SigningKeyId, WalletKeyId } from "#/common/index";
 import { Hex } from "#/evm/index";
 import { TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
@@ -27,12 +27,12 @@ export const WalletKeyData = Schema.Union([LocalWalletKeyData, GcpWalletKeyData]
 
 export const CreateWalletKeyInput = Schema.Union([
   Schema.Struct({
-    id: WalletKeyId,
+    id: SigningKeyId,
     algorithm: Schema.Literals(["p256", "ed25519"]),
     protectionLevel: WalletKeyProtectionLevel,
   }),
   Schema.Struct({
-    id: WalletKeyId,
+    id: SigningKeyId,
     algorithm: Schema.Literal("secp256k1"),
     protectionLevel: Schema.Literal("hsm"),
   }),

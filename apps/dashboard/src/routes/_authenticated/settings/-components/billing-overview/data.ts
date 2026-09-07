@@ -23,6 +23,11 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
     label: "HSM accounts",
     planLabel: "HSM accounts",
   },
+  {
+    key: "local-wallets",
+    label: "User-owned accounts",
+    planLabel: "user-owned accounts",
+  },
 ];
 
 export const meterDefinitions: ReadonlyArray<UsageDefinition<BillingMeterKey>> = [

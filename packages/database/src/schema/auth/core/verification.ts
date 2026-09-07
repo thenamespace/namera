@@ -1,4 +1,4 @@
-import type { Email, VerificationId } from "@namera-ai/protocol";
+import type { VerificationId } from "@namera-ai/protocol";
 import type { VerificationData, VerificationPurpose } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
 import { check, index, integer, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
@@ -12,10 +12,10 @@ export const verification = authSchema.table(
   {
     id: text("id").primaryKey().$defaultFn(generateUniqueId).$type<VerificationId>(),
     purpose: text("purpose").notNull().$type<VerificationPurpose>(),
-    identifier: text("identifier").notNull().$type<Email>(),
+    identifier: text("identifier").notNull(),
     data: jsonb("data").notNull().$type<VerificationData>(),
-    tokenHash: text("token_hash").notNull(),
-    codeHmac: text("code_hmac").notNull(),
+    tokenHash: text("token_hash"),
+    codeHmac: text("code_hmac"),
     attempts: integer("attempts").notNull().default(0),
     expiresAt: createTimestampField("expires_at").notNull(),
     consumedAt: createTimestampField("consumed_at"),
@@ -32,6 +32,18 @@ export const verification = authSchema.table(
     check(
       "verification_identifier_normalized_check",
       sql`${table.identifier} = lower(btrim(${table.identifier}))`,
+    ),
+    check(
+      "verification_purpose_fields_check",
+      sql`(
+        ${table.purpose} = 'magic-link-signin'
+        AND ${table.tokenHash} IS NOT NULL
+        AND ${table.codeHmac} IS NOT NULL
+      ) OR (
+        ${table.purpose} = 'passkey-registration'
+        AND ${table.tokenHash} IS NULL
+        AND ${table.codeHmac} IS NULL
+      )`,
     ),
     check("verification_attempts_nonnegative_check", sql`${table.attempts} >= 0`),
   ],

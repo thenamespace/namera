@@ -30,6 +30,7 @@ export const SystemRoleId = createBrandedId("SystemRoleId");
 
 // Core Tables
 export const WalletKeyId = createBrandedId("WalletKeyId");
+export const SigningKeyId = createBrandedId("SigningKeyId");
 export const WalletId = createBrandedId("WalletId");
 export const SessionKeyId = createBrandedId("SessionKeyId");
 export const SessionKeyGrantId = createBrandedId("SessionKeyGrantId");
@@ -79,6 +80,7 @@ export type OrganizationRoleId = typeof OrganizationRoleId.Type;
 export type InvitationId = typeof InvitationId.Type;
 export type SystemRoleId = typeof SystemRoleId.Type;
 export type WalletKeyId = typeof WalletKeyId.Type;
+export type SigningKeyId = typeof SigningKeyId.Type;
 export type WalletId = typeof WalletId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
 export type SessionKeyGrantId = typeof SessionKeyGrantId.Type;

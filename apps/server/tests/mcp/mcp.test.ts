@@ -56,8 +56,7 @@ const authorize = Effect.fnUntraced(function* (options?: { readonly execute?: bo
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      ensLabel: globalThis.crypto.randomUUID(),
-      protectionLevel: "software",
+      owner: { type: "namera-managed", protectionLevel: "software" },
       metadata: { version: 1, name: "MCP wallet" },
     },
   });

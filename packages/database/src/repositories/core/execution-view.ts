@@ -13,7 +13,7 @@ import {
   SessionKeyMetadata,
   Wallet,
   WalletMetadata,
-  WalletKey,
+  SigningKey,
   type Actor as ActorModel,
   type Execution as ExecutionModel,
   type SessionKey as SessionKeyModel,
@@ -94,14 +94,14 @@ export const decodeExecutionDetailsView = (row: {
   readonly actor: unknown;
   readonly sessionKey: unknown;
   readonly wallet: unknown;
-  readonly walletKey: unknown;
+  readonly signingKey: unknown;
 }): ExecutionDetailsView => ({
   execution: Schema.decodeSync(Execution)(row.execution as any),
   actor: Schema.decodeSync(Actor)(row.actor as any),
   sessionKey: Schema.decodeSync(SessionKey)(row.sessionKey as any),
   wallet: {
     wallet: Schema.decodeSync(Wallet)(row.wallet as any),
-    walletKey: Schema.decodeSync(WalletKey)(row.walletKey as any),
+    signingKey: Schema.decodeSync(SigningKey)(row.signingKey as any),
   },
 });
 

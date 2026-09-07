@@ -4,6 +4,7 @@ export const BillingLimit = Schema.Literals([
   "members",
   "softwareWallets",
   "hsmWallets",
+  "localWallets",
   "execution.mainnet",
   "execution.testnet",
   "signature",

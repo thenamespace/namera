@@ -83,7 +83,7 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 const program = Effect.gen(function* () {
   const walletKeys = yield* WalletKeys;
   return yield* walletKeys.create({
-    id: walletKeyId,
+    id: signingKeyId,
     algorithm: "p256",
     protectionLevel: "software",
   });

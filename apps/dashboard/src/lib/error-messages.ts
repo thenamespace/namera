@@ -80,7 +80,9 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
           ? "HSM account"
           : limit === "softwareWallets"
             ? "software account"
-            : "execution";
+            : limit === "localWallets"
+              ? "user-owned account"
+              : "execution";
 
     return {
       title: "Plan limit reached",

@@ -6,19 +6,19 @@ import { join } from "node:path";
 import { expect, it } from "@effect/vitest";
 import { ConfigProvider, Effect, Layer, Schema } from "effect";
 
-import { WalletKeyId } from "@namera-ai/protocol";
+import { SigningKeyId } from "@namera-ai/protocol";
 import type { CreateWalletKeyInput } from "@namera-ai/protocol/model";
 import { p256 } from "@noble/curves/p256";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { WalletKeys } from "../src/index.js";
 
-const walletKeyIds = {
-  p256: Schema.decodeSync(WalletKeyId)("0198a6f0-0000-7000-8000-000000000001"),
-  ed25519: Schema.decodeSync(WalletKeyId)("0198a6f0-0000-7000-8000-000000000002"),
-  secp256k1: Schema.decodeSync(WalletKeyId)("0198a6f0-0000-7000-8000-000000000003"),
-  disabled: Schema.decodeSync(WalletKeyId)("0198a6f0-0000-7000-8000-000000000004"),
-  destroyed: Schema.decodeSync(WalletKeyId)("0198a6f0-0000-7000-8000-000000000005"),
+const signingKeyIds = {
+  p256: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000001"),
+  ed25519: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000002"),
+  secp256k1: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000003"),
+  disabled: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000004"),
+  destroyed: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000005"),
 } as const;
 
 const withLocalWalletKeys = <A, E>(
@@ -66,9 +66,9 @@ it.effect("creates keys and signs messages with each supported algorithm", () =>
       const walletKeys = yield* WalletKeys;
       const message = new TextEncoder().encode("namera local wallet key lifecycle");
       const inputs = [
-        { id: walletKeyIds.p256, algorithm: "p256", protectionLevel: "software" },
-        { id: walletKeyIds.ed25519, algorithm: "ed25519", protectionLevel: "software" },
-        { id: walletKeyIds.secp256k1, algorithm: "secp256k1", protectionLevel: "hsm" },
+        { id: signingKeyIds.p256, algorithm: "p256", protectionLevel: "software" },
+        { id: signingKeyIds.ed25519, algorithm: "ed25519", protectionLevel: "software" },
+        { id: signingKeyIds.secp256k1, algorithm: "secp256k1", protectionLevel: "hsm" },
       ] as const;
 
       for (const input of inputs) {
@@ -101,9 +101,9 @@ it.effect("signs caller-provided hashes without hashing them again", () =>
       const walletKeys = yield* WalletKeys;
       const hash = createHash("sha256").update("already hashed").digest();
       const inputs = [
-        { id: walletKeyIds.p256, algorithm: "p256", protectionLevel: "software", curve: p256 },
+        { id: signingKeyIds.p256, algorithm: "p256", protectionLevel: "software", curve: p256 },
         {
-          id: walletKeyIds.secp256k1,
+          id: signingKeyIds.secp256k1,
           algorithm: "secp256k1",
           protectionLevel: "hsm",
           curve: secp256k1,
@@ -136,7 +136,7 @@ it.effect("rejects signing after a local key is disabled", () =>
     Effect.gen(function* () {
       const walletKeys = yield* WalletKeys;
       const key = yield* createLocalKey({
-        id: walletKeyIds.disabled,
+        id: signingKeyIds.disabled,
         algorithm: "p256",
         protectionLevel: "software",
       });
@@ -161,7 +161,7 @@ it.effect("destroys local key material", () =>
     Effect.gen(function* () {
       const walletKeys = yield* WalletKeys;
       const key = yield* createLocalKey({
-        id: walletKeyIds.destroyed,
+        id: signingKeyIds.destroyed,
         algorithm: "ed25519",
         protectionLevel: "software",
       });

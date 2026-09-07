@@ -28,6 +28,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   wallet-key creation and signing through local files or Google Cloud KMS.
 - [`packages/ens`](packages/ens/README.md) — Namespace-backed offchain ENS
   subname and record management.
+- [`packages/passkeys`](packages/passkeys/README.md) — provider-neutral
+  WebAuthn ceremony generation and verification.
 - [`packages/evm`](packages/evm/README.md) — supported EVM chains, provider
   clients, smart-account construction, execution, signing, and policy logic.
 - [`packages/telemetry`](packages/telemetry/README.md) — Effect OTLP exporters
@@ -90,13 +92,14 @@ not duplicate secrets or arbitrary payloads.
 
 ```text
 apps/server      -> api, application, crypto, database, emails, telemetry, evm, wallet-keys
-application      -> crypto, database, emails, evm, telemetry, protocol, utils, wallet-keys
+application      -> crypto, database, emails, evm, passkeys, telemetry, protocol, utils, wallet-keys
 api              -> protocol
 crypto           -> protocol, utils
 database         -> protocol, utils
 emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-keys      -> protocol
+passkeys         -> utils
 apps/dashboard   -> api, protocol, telemetry, ui
 email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit

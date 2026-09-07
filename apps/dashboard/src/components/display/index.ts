@@ -12,5 +12,5 @@ export * from "./organization-role-display";
 export * from "./session-key-status-display";
 export * from "./status-display";
 export * from "./wallet-implementation-display";
-export * from "./wallet-protection-display";
+export * from "./wallet-owner-display";
 export * from "./wallet-status-display";

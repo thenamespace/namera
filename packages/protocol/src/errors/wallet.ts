@@ -21,13 +21,24 @@ export class WalletCreationError extends Schema.TaggedError<WalletCreationError>
   { httpApiStatus: 500 },
 ) {}
 
-export class EnsNameUnavailableError extends Schema.TaggedError<EnsNameUnavailableError>()(
-  "EnsNameUnavailableError",
+export class PasskeyRegistrationError extends Schema.TaggedError<PasskeyRegistrationError>()(
+  "PasskeyRegistrationError",
   {
-    code: Schema.Literal("ENS_NAME_UNAVAILABLE"),
-    label: Schema.String,
+    code: Schema.Literal("REGISTRATION_OPTIONS_UNAVAILABLE"),
   },
-  { httpApiStatus: 409 },
+  { httpApiStatus: 500 },
+) {}
+
+export class PasskeyVerificationError extends Schema.TaggedError<PasskeyVerificationError>()(
+  "PasskeyVerificationError",
+  {
+    code: Schema.Literals([
+      "REGISTRATION_NOT_FOUND",
+      "REGISTRATION_EXPIRED",
+      "REGISTRATION_INVALID",
+    ]),
+  },
+  { httpApiStatus: 400 },
 ) {}
 
 export class EnsUnavailableError extends Schema.TaggedError<EnsUnavailableError>()(
@@ -80,7 +91,8 @@ export class PortfolioUnavailableError extends Schema.TaggedError<PortfolioUnava
 
 export const WalletErrors = [
   WalletCreationError,
-  EnsNameUnavailableError,
+  PasskeyRegistrationError,
+  PasskeyVerificationError,
   EnsUnavailableError,
   WalletNotFoundError,
 ] as const;

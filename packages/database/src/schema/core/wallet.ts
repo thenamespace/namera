@@ -1,4 +1,4 @@
-import type { ActorId, OrganizationId, WalletId, WalletKeyId } from "@namera-ai/protocol";
+import type { ActorId, OrganizationId, SigningKeyId, WalletId } from "@namera-ai/protocol";
 import type { Wallet, WalletEncoded } from "@namera-ai/protocol/model";
 import { foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
 
@@ -7,7 +7,7 @@ import { generateUniqueId, timestamps } from "#/schema/common";
 import { actor } from "../auth/actor.js";
 import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
-import { walletKey } from "./wallet-key.js";
+import { signingKey } from "./signing-key.js";
 
 export const wallet = coreSchema.table(
   "wallet",
@@ -17,7 +17,7 @@ export const wallet = coreSchema.table(
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "restrict" }),
-    walletKeyId: text("wallet_key_id").notNull().$type<WalletKeyId>(),
+    signingKeyId: text("signing_key_id").notNull().$type<SigningKeyId>(),
     metadata: jsonb("metadata").notNull().$type<Wallet["metadata"]>(),
     status: text("status").notNull().default("active").$type<Wallet["status"]>(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
@@ -28,9 +28,9 @@ export const wallet = coreSchema.table(
   (table) => [
     unique("wallet_id_organization_unique").on(table.id, table.organizationId),
     foreignKey({
-      name: "wallet_key_organization_fk",
-      columns: [table.walletKeyId, table.organizationId],
-      foreignColumns: [walletKey.id, walletKey.organizationId],
+      name: "wallet_signing_key_organization_fk",
+      columns: [table.signingKeyId, table.organizationId],
+      foreignColumns: [signingKey.id, signingKey.organizationId],
     }).onDelete("restrict"),
     foreignKey({
       name: "wallet_creator_organization_fk",
@@ -38,7 +38,7 @@ export const wallet = coreSchema.table(
       foreignColumns: [actor.id, actor.organizationId],
     }).onDelete("restrict"),
     index("wallet_organization_status_idx").on(table.organizationId, table.status),
-    index("wallet_wallet_key_idx").on(table.walletKeyId),
+    index("wallet_signing_key_idx").on(table.signingKeyId),
     index("wallet_created_by_actor_idx").on(table.createdByActorId),
   ],
 );

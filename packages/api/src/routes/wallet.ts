@@ -2,9 +2,9 @@ import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/un
 
 import {
   BillingErrors,
-  EnsNameUnavailableError,
-  EnsUnavailableError,
   PortfolioUnavailableError,
+  PasskeyRegistrationError,
+  PasskeyVerificationError,
   WalletCreationError,
   WalletNotFoundError,
 } from "@namera-ai/protocol";
@@ -15,6 +15,7 @@ import {
   GetWalletResponse,
   GetWalletPortfolioRequest,
   PortfolioResponse,
+  PasskeyRegistrationOptionsResponse,
   ListWalletsResponse,
   UpdateWalletRequest,
   UpdateWalletResponse,
@@ -25,16 +26,14 @@ import { Authorization } from "#/middlewares/index";
 
 export class WalletGroup extends HttpApiGroup.make("wallet")
   .add(
+    HttpApiEndpoint.post("createPasskeyRegistrationOptions", "/passkey/registration-options", {
+      success: PasskeyRegistrationOptionsResponse,
+      error: [PasskeyRegistrationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Create passkey registration options for a wallet"),
     HttpApiEndpoint.post("create", "/", {
       payload: CreateWalletRequest,
       success: CreateWalletResponse.pipe(HttpApiSchema.status("Created")),
-      error: [
-        WalletCreationError,
-        EnsNameUnavailableError,
-        EnsUnavailableError,
-        ...BillingErrors,
-        ...CommonErrors,
-      ],
+      error: [WalletCreationError, PasskeyVerificationError, ...BillingErrors, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Create a wallet"),
     HttpApiEndpoint.get("list", "/", {
       success: ListWalletsResponse,

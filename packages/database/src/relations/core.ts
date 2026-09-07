@@ -3,17 +3,25 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const coreRelations = defineRelationsPart(schema, (r) => ({
+  signingKey: {
+    // Each signing key belongs to one organization.
+    organization: r.one.organization({
+      from: r.signingKey.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // One wallet-root signing key can control many namespace wallets.
+    wallets: r.many.wallet({
+      from: [r.signingKey.id, r.signingKey.organizationId],
+      to: [r.wallet.signingKeyId, r.wallet.organizationId],
+    }),
+  },
   walletKey: {
     // Each wallet key belongs to one organization.
     organization: r.one.organization({
       from: r.walletKey.organizationId,
       to: r.organization.id,
       optional: false,
-    }),
-    // One wallet key can control many wallets in the same organization.
-    wallets: r.many.wallet({
-      from: [r.walletKey.id, r.walletKey.organizationId],
-      to: [r.wallet.walletKeyId, r.wallet.organizationId],
     }),
   },
   wallet: {
@@ -23,10 +31,10 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       to: r.organization.id,
       optional: false,
     }),
-    // Each wallet is controlled by one wallet key.
-    walletKey: r.one.walletKey({
-      from: [r.wallet.walletKeyId, r.wallet.organizationId],
-      to: [r.walletKey.id, r.walletKey.organizationId],
+    // Each wallet is controlled by one signing key.
+    signingKey: r.one.signingKey({
+      from: [r.wallet.signingKeyId, r.wallet.organizationId],
+      to: [r.signingKey.id, r.signingKey.organizationId],
       optional: false,
     }),
     // Each wallet records its creating actor.

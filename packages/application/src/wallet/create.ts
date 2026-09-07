@@ -1,109 +1,158 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import { ChainName, Ens } from "@namera-ai/ens";
-import { Evm, createWalletKeyWebAuthnAccount, getChainDataByChainId } from "@namera-ai/evm";
+import { Evm, getChainDataByChainId } from "@namera-ai/evm";
 import {
-  EnsNameUnavailableError,
-  EnsUnavailableError,
+  Hex,
+  PasskeyVerificationError,
+  SigningKeyId,
   WalletCreationError,
-  WalletKeyId,
   type ActorId,
   type OrganizationId,
+  type UserId,
 } from "@namera-ai/protocol";
 import type { CreateWalletRequest } from "@namera-ai/protocol/dto";
+import type { SigningKeyInsert } from "@namera-ai/protocol/model";
 import { walletCreationDuration, walletCreationResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { Audit } from "#/audit/layer";
-import { AuthConfig } from "#/auth/config";
-import { enforceWalletLimit, lockOrganizationBilling } from "#/billing/index";
-import { ensPolicy, toEnsName } from "#/ens/data";
+import {
+  enforceLocalWalletLimit,
+  enforceWalletLimit,
+  lockOrganizationBilling,
+} from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
 import { walletPolicy } from "./data.js";
+import { makeVerifyPasskeyRegistration } from "./passkey-registration.js";
 
 export const makeCreateWallet = Effect.gen(function* () {
   const audit = yield* Audit;
-  const authConfig = yield* AuthConfig;
   const evm = yield* Evm;
-  const ens = yield* Ens;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const walletKeys = yield* WalletKeys;
   const createNotification = yield* makeCreateNotification;
+  const verifyPasskeyRegistration = yield* makeVerifyPasskeyRegistration;
 
   return Effect.fn("application.wallet.create")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
+    readonly userId: UserId;
     readonly request: CreateWalletRequest;
   }) {
+    const requestedOwner = input.request.owner;
+    const custody = requestedOwner.type === "passkey" ? "local" : "namera-managed";
+    const protectionLevel =
+      requestedOwner.type === "namera-managed" ? requestedOwner.protectionLevel : "not-applicable";
     const creationResults = Metric.withAttributes(walletCreationResults, {
       namespace: input.request.namespace,
       implementation: "alchemy-modular-v2",
-      protection_level: input.request.protectionLevel,
+      custody,
+      protection_level: protectionLevel,
     });
 
-    // Avoid a provider call for an exhausted plan. The locked check in the
-    // persistence transaction remains authoritative under concurrency.
-    yield* enforceWalletLimit(repository, input.organizationId, input.request.protectionLevel).pipe(
+    const initialLimitCheck =
+      requestedOwner.type === "passkey"
+        ? enforceLocalWalletLimit(repository, input.organizationId)
+        : enforceWalletLimit(repository, input.organizationId, requestedOwner.protectionLevel);
+    yield* initialLimitCheck.pipe(
       Effect.tapErrorTag("BillingError", () =>
         Metric.update(Metric.withAttributes(creationResults, { result: "limit_exceeded" }), 1),
       ),
       Effect.catchTag("DatabaseError", Effect.die),
     );
 
-    const ensName = toEnsName(input.request.ensLabel);
-    const availability = yield* ens
-      .isSubnameAvailable(ensName)
-      .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
-    if (!availability.isAvailable) {
-      return yield* new EnsNameUnavailableError({
-        code: "ENS_NAME_UNAVAILABLE",
-        label: input.request.ensLabel,
-      });
-    }
+    const signingKeyId = Schema.decodeSync(SigningKeyId)(generateUniqueId());
+    const preparedOwner = yield* requestedOwner.type === "passkey"
+      ? Effect.gen(function* () {
+          const passkey = yield* verifyPasskeyRegistration({
+            verificationId: requestedOwner.verificationId,
+            organizationId: input.organizationId,
+            userId: input.userId,
+            response: requestedOwner.response,
+          });
+          const publicKeyHex = Schema.decodeSync(Hex)(passkey.publicKeyHex);
+          return {
+            publicKeyHex,
+            signingKey: {
+              id: signingKeyId,
+              organizationId: input.organizationId,
+              purpose: "wallet-root",
+              custody: "local",
+              algorithm: "p256",
+              publicKeyHex,
+              status: "active",
+              data: {
+                version: 1,
+                type: "passkey",
+                credentialId: passkey.credentialId,
+                rpId: passkey.rpId,
+                transports: [...passkey.transports],
+                signCount: passkey.signCount,
+              },
+            } satisfies SigningKeyInsert,
+          } as const;
+        })
+      : Effect.gen(function* () {
+          const createdKey = yield* walletKeys
+            .create({
+              id: signingKeyId,
+              algorithm: walletPolicy.eip155.algorithm,
+              protectionLevel: requestedOwner.protectionLevel,
+            })
+            .pipe(
+              Effect.tapError(() =>
+                Metric.update(Metric.withAttributes(creationResults, { result: "key_failed" }), 1),
+              ),
+              Effect.mapError(
+                () =>
+                  new WalletCreationError({
+                    code: "KEY_CREATION_FAILED",
+                    namespace: input.request.namespace,
+                  }),
+              ),
+            );
+          const data =
+            createdKey.provider === "gcp-kms"
+              ? {
+                  version: 1 as const,
+                  type: "gcp-kms" as const,
+                  protectionLevel: createdKey.protectionLevel,
+                  providerAlgorithm: createdKey.data.providerAlgorithm,
+                  keyVersionName: createdKey.data.keyVersionName,
+                }
+              : {
+                  version: 1 as const,
+                  type: "local-provider" as const,
+                  protectionLevel: createdKey.protectionLevel,
+                  fileName: createdKey.data.fileName,
+                };
+          return {
+            publicKeyHex: createdKey.publicKeyHex,
+            signingKey: {
+              id: signingKeyId,
+              organizationId: input.organizationId,
+              purpose: "wallet-root",
+              custody: "namera-managed",
+              algorithm: createdKey.algorithm,
+              publicKeyHex: createdKey.publicKeyHex,
+              status: "active",
+              data,
+            } satisfies SigningKeyInsert,
+          } as const;
+        });
 
-    const walletKeyId = Schema.decodeSync(WalletKeyId)(generateUniqueId());
-    // Provider key creation cannot join the PostgreSQL transaction, so billing
-    // is checked again under a database lock before the resource is persisted.
-    const createdKey = yield* walletKeys
-      .create({
-        id: walletKeyId,
-        algorithm: walletPolicy.eip155.algorithm,
-        protectionLevel: input.request.protectionLevel,
-      })
-      .pipe(
-        Effect.tapError(() =>
-          Metric.update(Metric.withAttributes(creationResults, { result: "key_failed" }), 1),
-        ),
-        Effect.mapError(
-          () =>
-            new WalletCreationError({
-              code: "KEY_CREATION_FAILED",
-              namespace: input.request.namespace,
-            }),
-        ),
-      );
-
-    const owner = createWalletKeyWebAuthnAccount({
-      id: walletKeyId,
-      publicKey: createdKey.publicKeyHex,
-      origin: authConfig.dashboardPublicOrigin.origin,
-      rpId: authConfig.dashboardPublicOrigin.hostname,
-      validatorType: "webauthn_p256",
-      sign: (payload) =>
-        Effect.runPromise(walletKeys.signMessage({ ...createdKey, message: payload })),
-    });
     const account = yield* evm
       .createAccount({
         chainId: walletPolicy.eip155.derivationChainId,
         entryPointVersion: walletPolicy.eip155.alchemyModularV2.entryPointVersion,
         salt: walletPolicy.eip155.alchemyModularV2.salt,
         entityId: walletPolicy.eip155.alchemyModularV2.entityId,
-        owner: { validatorType: "webauthn_p256", account: owner },
+        owner: { validatorType: "webauthn_p256", publicKey: preparedOwner.publicKeyHex },
       })
       .pipe(
         Effect.tapError(() =>
@@ -124,47 +173,37 @@ export const makeCreateWallet = Effect.gen(function* () {
       return yield* Effect.die("Wallet derivation chain block explorer is missing");
     }
     const addressUrl = `${blockExplorerUrl.replace(/\/$/, "")}/address/${account.address}`;
-
-    yield* ens
-      .createSubname({
-        parentName: ensPolicy.parentName,
-        label: input.request.ensLabel,
-        owner: account.address,
-        addresses: [{ chain: ChainName.Ethereum, value: account.address }],
-      })
-      .pipe(
-        Effect.mapError((error) =>
-          error.reason === "ALREADY_EXISTS"
-            ? new EnsNameUnavailableError({
-                code: "ENS_NAME_UNAVAILABLE",
-                label: input.request.ensLabel,
-              })
-            : new EnsUnavailableError({ code: "ENS_UNAVAILABLE" }),
-        ),
-      );
+    const ownership =
+      preparedOwner.signingKey.custody === "local"
+        ? "User-owned passkey"
+        : `Namera managed · ${preparedOwner.signingKey.data.protectionLevel === "hsm" ? "HSM" : "Software"}`;
 
     const result = yield* transaction
       .run(
         Effect.gen(function* () {
           yield* lockOrganizationBilling(repository, input.organizationId);
-          yield* enforceWalletLimit(
-            repository,
-            input.organizationId,
-            input.request.protectionLevel,
-          );
-          const walletKey = yield* repository.core.walletKey.insert({
-            id: walletKeyId,
-            organizationId: input.organizationId,
-            provider: createdKey.provider,
-            algorithm: createdKey.algorithm,
-            protectionLevel: createdKey.protectionLevel,
-            publicKeyHex: createdKey.publicKeyHex,
-            status: "active",
-            data: createdKey.data,
-          });
+          if (requestedOwner.type === "passkey") {
+            yield* enforceLocalWalletLimit(repository, input.organizationId);
+            const consumed = yield* repository.auth.verification.consume({
+              verificationId: requestedOwner.verificationId,
+              consumedAt: yield* DateTime.now,
+              maxAttempts: 3,
+            });
+            if (consumed === undefined) {
+              return yield* new PasskeyVerificationError({ code: "REGISTRATION_NOT_FOUND" });
+            }
+          } else {
+            yield* enforceWalletLimit(
+              repository,
+              input.organizationId,
+              requestedOwner.protectionLevel,
+            );
+          }
+
+          const signingKey = yield* repository.core.signingKey.insert(preparedOwner.signingKey);
           const wallet = yield* repository.core.wallet.insert({
             organizationId: input.organizationId,
-            walletKeyId,
+            signingKeyId,
             metadata: input.request.metadata,
             status: "active",
             createdByActorId: input.actorId,
@@ -176,13 +215,13 @@ export const makeCreateWallet = Effect.gen(function* () {
             implementationVersion: account.modularAccountVersion,
             entryPointVersion: account.entryPointVersion,
           } as const;
-          const walletKeyEvent = yield* audit.organization({
+          const signingKeyEvent = yield* audit.organization({
             organizationId: input.organizationId,
             actorId: input.actorId,
-            event: "wallet_key.created",
-            resourceType: "wallet-key",
-            resourceId: walletKey.id,
-            data: { version: 1, protectionLevel: walletKey.protectionLevel },
+            event: "signing_key.created",
+            resourceType: "signing-key",
+            resourceId: signingKey.id,
+            data: { version: 1, custody: signingKey.custody },
           });
           const walletEvent = yield* audit.organization(
             {
@@ -193,14 +232,14 @@ export const makeCreateWallet = Effect.gen(function* () {
               resourceId: wallet.id,
               data: {
                 version: 1,
-                walletKeyId: walletKey.id,
+                signingKeyId: signingKey.id,
                 namespace: wallet.namespace,
                 address: account.address,
-                protectionLevel: walletKey.protectionLevel,
+                custody: signingKey.custody,
                 account: accountEvent,
               },
             },
-            { correlationId: walletKeyEvent.correlationId },
+            { correlationId: signingKeyEvent.correlationId },
           );
 
           const organization = yield* repository.auth.organization.findById(input.organizationId);
@@ -211,18 +250,28 @@ export const makeCreateWallet = Effect.gen(function* () {
             input.organizationId,
           );
           const now = yield* DateTime.now;
+          const notificationData =
+            signingKey.custody === "local"
+              ? {
+                  version: 1 as const,
+                  address: account.address,
+                  implementation: account.implementation,
+                  custody: "local" as const,
+                }
+              : {
+                  version: 1 as const,
+                  address: account.address,
+                  implementation: account.implementation,
+                  custody: "namera-managed" as const,
+                  protectionLevel: signingKey.data.protectionLevel,
+                };
           yield* createNotification({
             organizationId: input.organizationId,
             actorId: input.actorId,
             type: "wallet.created",
             resourceType: "wallet",
             resourceId: wallet.id,
-            data: {
-              version: 1,
-              address: account.address,
-              implementation: account.implementation,
-              protectionLevel: walletKey.protectionLevel,
-            },
+            data: notificationData,
             idempotencyKey: `notification:wallet.created:${wallet.id}`,
             correlationId: walletEvent.correlationId,
             expiresAt: null,
@@ -245,27 +294,15 @@ export const makeCreateWallet = Effect.gen(function* () {
                     address: account.address,
                     addressUrl,
                     implementation: account.implementation,
-                    protectionLevel: walletKey.protectionLevel,
+                    ownership,
                   },
                 },
               })),
           });
-          return { wallet, walletKey };
+          return { wallet, signingKey };
         }),
       )
       .pipe(
-        Effect.tapError(() =>
-          ens.deleteSubname(ensName).pipe(
-            Effect.catch((error) =>
-              Effect.logWarning("wallet.ens_compensation_failed").pipe(
-                Effect.annotateLogs({
-                  ens_name: ensName,
-                  ens_error_reason: error.reason,
-                }),
-              ),
-            ),
-          ),
-        ),
         Effect.tapErrorTag("BillingError", () =>
           Metric.update(Metric.withAttributes(creationResults, { result: "limit_exceeded" }), 1),
         ),
@@ -290,7 +327,8 @@ export const makeCreateWallet = Effect.gen(function* () {
       Effect.annotateLogs({
         namespace: input.request.namespace,
         implementation: "alchemy-modular-v2",
-        protection_level: input.request.protectionLevel,
+        custody,
+        protection_level: protectionLevel,
       }),
     );
     return result;

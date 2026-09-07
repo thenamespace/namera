@@ -28,6 +28,7 @@
     "@namera-ai/emails": "workspace:*",
     "@namera-ai/ens": "workspace:*",
     "@namera-ai/evm": "workspace:*",
+    "@namera-ai/passkeys": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/wallet-keys": "workspace:*",

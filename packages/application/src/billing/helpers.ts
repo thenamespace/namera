@@ -14,6 +14,7 @@ export interface OrganizationBillingSnapshot {
     readonly pendingInvitations: number;
     readonly softwareWallets: number;
     readonly hsmWallets: number;
+    readonly localWallets: number;
   };
 }
 
@@ -85,6 +86,19 @@ export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(fu
     return yield* new BillingLimitExceededError({
       code: "LIMIT_EXCEEDED",
       limit: "hsmWallets",
+    });
+  }
+});
+
+export const enforceLocalWalletLimit = Effect.fn("application.enforceLocalWalletLimit")(function* (
+  repository: RepositoryService,
+  organizationId: OrganizationId,
+) {
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  if (usage.localWallets >= limits.maxLocalWallets) {
+    return yield* new BillingLimitExceededError({
+      code: "LIMIT_EXCEEDED",
+      limit: "localWallets",
     });
   }
 });

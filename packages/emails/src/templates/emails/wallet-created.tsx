@@ -15,12 +15,11 @@ export const WalletCreatedEmail = ({
   address,
   addressUrl,
   organizationName,
-  protectionLevel,
+  ownership,
   walletName,
 }: WalletCreatedEmailProps) => {
   const addressDisplay = formatEvmAddress(address);
   const implementationName = "Alchemy Modular V2";
-  const protectionLevelName = protectionLevel === "hsm" ? "HSM" : "Software";
 
   return (
     <NameraEmail preview={`${walletName} is ready in ${organizationName}.`}>
@@ -41,7 +40,7 @@ export const WalletCreatedEmail = ({
               }
             />
             <EmailDetail label="Implementation" value={implementationName} />
-            <EmailDetail label="Key protection" value={protectionLevelName} />
+            <EmailDetail label="Ownership" value={ownership} />
           </EmailDetails>
           <EmailNotice>
             Namera will enforce organization permissions and session-key policies before this
@@ -58,7 +57,7 @@ WalletCreatedEmail.PreviewProps = {
   addressUrl: "https://etherscan.io/address/0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
   implementation: "alchemy-modular-v2",
   organizationName: "Atlas Labs",
-  protectionLevel: "software",
+  ownership: "Namera managed · Software",
   walletName: "Treasury",
 } satisfies WalletCreatedEmailProps;
 

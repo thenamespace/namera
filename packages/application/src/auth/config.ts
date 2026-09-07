@@ -11,6 +11,7 @@ export const AuthConfig = AuthEnvironmentConfig.pipe(
   Config.map(({ apiPublicOrigin, dashboardPublicOrigin }) => ({
     magicLink: authPolicy.magicLink,
     session: authPolicy.session,
+    passkey: authPolicy.passkey,
     cookie: authPolicy.cookie,
     returnTo: authPolicy.returnTo,
     invitation: authPolicy.invitation,

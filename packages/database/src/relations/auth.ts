@@ -203,6 +203,11 @@ export const authRelations = defineRelationsPart(schema, (r) => ({
       from: r.organization.id,
       to: r.walletKey.organizationId,
     }),
+    // One organization can own many signing keys.
+    signingKeys: r.many.signingKey({
+      from: r.organization.id,
+      to: r.signingKey.organizationId,
+    }),
     // One organization can own many wallets.
     wallets: r.many.wallet({ from: r.organization.id, to: r.wallet.organizationId }),
     // One organization can own many session keys.

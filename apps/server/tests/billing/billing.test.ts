@@ -43,6 +43,7 @@ layer(TestServerLayer)("billing routes", (it) => {
             remainingAmount: 5n,
           },
           { key: "hsm-wallets", includedAmount: 0n, usedAmount: 0n, remainingAmount: 0n },
+          { key: "local-wallets", includedAmount: 50n, usedAmount: 0n, remainingAmount: 50n },
         ],
       });
       expect(personalBilling.meters).toEqual([

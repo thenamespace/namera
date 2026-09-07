@@ -1,17 +1,18 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
-import { and, count, eq, gt, isNull, ne } from "drizzle-orm";
+import { and, count, eq, gt, isNull, ne, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { invitation, organizationMember, wallet, walletKey } from "#/schema/index";
+import { invitation, organizationMember, signingKey, wallet } from "#/schema/index";
 
 export interface BillingResourceUsage {
   readonly members: number;
   readonly pendingInvitations: number;
   readonly softwareWallets: number;
   readonly hsmWallets: number;
+  readonly localWallets: number;
 }
 
 export interface BillingUsageRepositoryService {
@@ -58,25 +59,39 @@ export class BillingUsageRepository extends Context.Service<
             const softwareWalletRows = yield* db
               .select({ value: count() })
               .from(wallet)
-              .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+              .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
               .where(
                 and(
                   eq(wallet.organizationId, organizationId),
                   ne(wallet.status, "archived"),
-                  eq(walletKey.protectionLevel, "software"),
-                  ne(walletKey.status, "destroyed"),
+                  eq(signingKey.custody, "namera-managed"),
+                  sql`${signingKey.data}->>'protectionLevel' = 'software'`,
+                  ne(signingKey.status, "destroyed"),
                 ),
               );
             const hsmWalletRows = yield* db
               .select({ value: count() })
               .from(wallet)
-              .innerJoin(walletKey, eq(wallet.walletKeyId, walletKey.id))
+              .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
               .where(
                 and(
                   eq(wallet.organizationId, organizationId),
                   ne(wallet.status, "archived"),
-                  eq(walletKey.protectionLevel, "hsm"),
-                  ne(walletKey.status, "destroyed"),
+                  eq(signingKey.custody, "namera-managed"),
+                  sql`${signingKey.data}->>'protectionLevel' = 'hsm'`,
+                  ne(signingKey.status, "destroyed"),
+                ),
+              );
+            const localWalletRows = yield* db
+              .select({ value: count() })
+              .from(wallet)
+              .innerJoin(signingKey, eq(wallet.signingKeyId, signingKey.id))
+              .where(
+                and(
+                  eq(wallet.organizationId, organizationId),
+                  ne(wallet.status, "archived"),
+                  eq(signingKey.custody, "local"),
+                  ne(signingKey.status, "destroyed"),
                 ),
               );
             return {
@@ -84,6 +99,7 @@ export class BillingUsageRepository extends Context.Service<
               pendingInvitations: invitationRows[0]?.value ?? 0,
               softwareWallets: softwareWalletRows[0]?.value ?? 0,
               hsmWallets: hsmWalletRows[0]?.value ?? 0,
+              localWallets: localWalletRows[0]?.value ?? 0,
             };
           },
           mapRepositoryError,

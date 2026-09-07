@@ -38,7 +38,8 @@ import {
 import { getChainDataByChainId } from "../chains/helpers.js";
 import { createPublicClient } from "../clients/helpers.js";
 import type { EvmConfigValues } from "../config.js";
-import type { AlchemyModularV2Owner } from "./types.js";
+import type { AlchemyModularV2CreationOwner, AlchemyModularV2Owner } from "./types.js";
+import { createPublicKeyWebAuthnAccount } from "./webauthn.js";
 
 const modularAccountV2FactoryAddress =
   "0x55010E571dCf07e254994bfc88b9C1C8FAe31960" satisfies Address;
@@ -183,7 +184,10 @@ type MakeAlchemyModularV2AccountProps =
   | Make7702AlchemyModularV2AccountProps;
 
 export type CreateAlchemyModularV2AccountProps =
-  | (MakeWebAuthnAlchemyModularV2AccountProps & { readonly chainId: number })
+  | (Omit<MakeWebAuthnAlchemyModularV2AccountProps, "owner"> & {
+      readonly chainId: number;
+      readonly owner: Extract<AlchemyModularV2CreationOwner, { validatorType: "webauthn_p256" }>;
+    })
   | (Make7702AlchemyModularV2AccountProps & { readonly chainId: number });
 
 const makeWebAuthnAlchemyModularV2Account = async (
@@ -286,7 +290,19 @@ export const createAlchemyModularV2Account = Effect.fn("evm.createAlchemyModular
 
     const publicClient = createPublicClient(chain, Redacted.value(config.alchemyApiKey));
     const account = yield* Effect.tryPromise({
-      try: () => makeAlchemyModularV2Account(props, publicClient),
+      try: () =>
+        makeAlchemyModularV2Account(
+          "salt" in props
+            ? {
+                ...props,
+                owner: {
+                  validatorType: "webauthn_p256",
+                  account: createPublicKeyWebAuthnAccount(props.owner.publicKey),
+                },
+              }
+            : props,
+          publicClient,
+        ),
       catch: (cause) =>
         new EvmAccountCreationError({ implementation: "alchemy-modular-v2", cause }),
     });

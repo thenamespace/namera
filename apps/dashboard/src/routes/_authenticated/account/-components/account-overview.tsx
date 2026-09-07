@@ -10,7 +10,7 @@ import {
   EvmAddressDisplay,
   NamespaceDisplay,
   WalletImplementationDisplay,
-  WalletProtectionDisplay,
+  WalletOwnerDisplay,
   WalletStatusDisplay,
 } from "@/components/display";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -84,8 +84,15 @@ export function AccountOverview({ account }: AccountOverviewProps) {
           <Property label="Implementation">
             <WalletImplementationDisplay implementation={account.implementation} />
           </Property>
-          <Property label="Protection">
-            <WalletProtectionDisplay protectionLevel={account.protectionLevel} />
+          <Property label="Ownership">
+            <WalletOwnerDisplay
+              custody={account.owner.custody}
+              protectionLevel={
+                account.owner.custody === "namera-managed"
+                  ? account.owner.protectionLevel
+                  : undefined
+              }
+            />
           </Property>
           <Property label="Address">
             <EvmAddressDisplay address={account.address} />

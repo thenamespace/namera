@@ -10,7 +10,12 @@ import {
 
 const NonNegativeAmount = Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n));
 
-export const BillingResourceKey = Schema.Literals(["members", "software-wallets", "hsm-wallets"]);
+export const BillingResourceKey = Schema.Literals([
+  "members",
+  "software-wallets",
+  "hsm-wallets",
+  "local-wallets",
+]);
 
 export const BillingResourceUsage = Schema.Struct({
   key: BillingResourceKey,

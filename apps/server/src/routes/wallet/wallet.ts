@@ -10,6 +10,22 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
   Effect.gen(function* () {
     const app = yield* Application.Application;
     return handlers
+      .handle("createPasskeyRegistrationOptions", () =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:create"] },
+          });
+          return yield* app.wallet.createPasskeyRegistrationOptions({
+            organizationId: data.organization.id,
+            userId: data.user.id,
+            userName: data.user.email,
+            userDisplayName: data.user.metadata.name ?? data.user.email,
+          });
+        }),
+      )
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
@@ -22,6 +38,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             yield* app.wallet.create({
               organizationId: data.organization.id,
               actorId: data.actorId,
+              userId: data.user.id,
               request: payload,
             }),
           );

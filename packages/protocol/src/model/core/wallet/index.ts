@@ -14,7 +14,7 @@ export const WalletUpdate = createUpdateSchema(Wallet);
 export const WalletInsert = createInsertSchema(
   Wallet,
   "organizationId",
-  "walletKeyId",
+  "signingKeyId",
   "metadata",
   "status",
   "createdByActorId",

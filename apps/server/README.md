@@ -80,6 +80,15 @@ does not evaluate signature policies, consume billing usage, persist an
 operation, or write an audit event. Verification has a separate 240
 requests-per-minute actor rate limit.
 
+`POST /wallets/passkey/registration-options` starts a five-minute WebAuthn
+ceremony for a user with `wallet:create`. It returns ES256-only, resident-key,
+user-verification-required options and replaces that user's older pending
+ceremony in the active organization. `POST /wallets` completes that ceremony
+when its discriminated owner is `passkey`, or creates a provider-backed key when
+the owner is `namera-managed`. The passkey ceremony is consumed in the same
+transaction as the root signing key, wallet, audit, notification, and email
+writes.
+
 Authenticated responses use `Cache-Control: no-store`. Authentication cookies
 use `Secure` outside development and omit it only when `NODE_ENV=development`.
 If authorization finds

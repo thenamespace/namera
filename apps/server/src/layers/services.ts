@@ -7,6 +7,7 @@ import { Database, DatabaseMigration, Repository, TransactionService } from "@na
 import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
+import { Passkeys } from "@namera-ai/passkeys";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { BillingWorkerLayer } from "#/workers/billing";
@@ -52,6 +53,7 @@ export const ServicesLive = Layer.mergeAll(
   WalletKeysLive,
   EvmLive,
   Ens.layer,
+  Passkeys.layer,
 );
 
 export const ApplicationLive = Application.layer;

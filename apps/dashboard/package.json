@@ -23,6 +23,7 @@
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/ui": "workspace:*",
+    "@simplewebauthn/browser": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-devtools": "catalog:",
     "@tanstack/react-hotkeys": "0.10.0",

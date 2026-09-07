@@ -23,7 +23,7 @@ import {
   MetadataDisplay,
   NamespaceDisplay,
   WalletImplementationDisplay,
-  WalletProtectionDisplay,
+  WalletOwnerDisplay,
   WalletStatusDisplay,
 } from "@/components/display";
 import { useWallets } from "@/hooks/wallet";
@@ -52,11 +52,11 @@ const columnIds = [
   "address",
   "implementation",
   "status",
-  "protectionLevel",
+  "ownership",
   "createdAt",
 ] as const;
 
-const defaultColumnIds = columnIds.filter((id) => id !== "protectionLevel");
+const defaultColumnIds = columnIds.filter((id) => id !== "ownership");
 
 type ConfigurableColumnId = (typeof columnIds)[number];
 
@@ -91,9 +91,7 @@ function AccountGroupLabel({ group }: { group: AccountGroupRow }) {
     if (group.grouping === "status") {
       return <WalletStatusDisplay status={group.value as WalletResponse["status"]} />;
     }
-    return (
-      <WalletProtectionDisplay protectionLevel={group.value as WalletResponse["protectionLevel"]} />
-    );
+    return <WalletOwnerDisplay custody={group.value as "local" | "namera-managed"} />;
   })();
 
   return (
@@ -114,8 +112,7 @@ const accountSorters: Record<
   address: (left, right) => accountCollator.compare(left.address, right.address),
   implementation: (left, right) =>
     accountCollator.compare(left.implementation, right.implementation),
-  protectionLevel: (left, right) =>
-    accountCollator.compare(left.protectionLevel, right.protectionLevel),
+  ownership: (left, right) => accountCollator.compare(left.owner.custody, right.owner.custody),
   createdAt: (left, right) =>
     DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
 };
@@ -171,12 +168,17 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? null : (
-        <WalletProtectionDisplay protectionLevel={row.protectionLevel} />
+        <WalletOwnerDisplay
+          custody={row.owner.custody}
+          protectionLevel={
+            row.owner.custody === "namera-managed" ? row.owner.protectionLevel : undefined
+          }
+        />
       ),
-    header: "Protection",
-    id: "protectionLevel",
-    minWidth: 100,
-    width: 115,
+    header: "Ownership",
+    id: "ownership",
+    minWidth: 190,
+    width: 210,
   },
   {
     allowsSorting: true,
@@ -220,7 +222,7 @@ function groupAccounts(
 ): AccountGroupRow[] {
   const groups = new Map<string, WalletResponse[]>();
   for (const account of accounts) {
-    const value = account[grouping];
+    const value = grouping === "ownership" ? account.owner.custody : account.status;
     const group = groups.get(value);
     if (group) group.push(account);
     else groups.set(value, [account]);
@@ -261,11 +263,10 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
           account.address.toLowerCase().includes(normalizedQuery) ||
           account.id.toLowerCase().includes(normalizedQuery);
         const matchesStatus = filters.status.size === 0 || filters.status.has(account.status);
-        const matchesProtection =
-          filters.protectionLevel.size === 0 ||
-          filters.protectionLevel.has(account.protectionLevel);
+        const matchesOwnership =
+          filters.ownership.size === 0 || filters.ownership.has(account.owner.custody);
 
-        return matchesQuery && matchesStatus && matchesProtection;
+        return matchesQuery && matchesStatus && matchesOwnership;
       }),
     [accountData, filters, normalizedQuery],
   );
@@ -288,12 +289,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const filterCounts = useMemo<AccountFilterCounts>(() => {
     const counts: AccountFilterCounts = {
       status: { active: 0, archived: 0, frozen: 0 },
-      protectionLevel: { hsm: 0, software: 0 },
+      ownership: { local: 0, "namera-managed": 0 },
     };
 
     for (const account of accountData) {
       counts.status[account.status] += 1;
-      counts.protectionLevel[account.protectionLevel] += 1;
+      counts.ownership[account.owner.custody] += 1;
     }
 
     return counts;

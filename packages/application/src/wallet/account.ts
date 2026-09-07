@@ -2,7 +2,11 @@ import { Data, Effect, Schema } from "effect";
 
 import type { WalletView } from "@namera-ai/database";
 import { createWalletKeySecp256k1Account, createWalletKeyWebAuthnAccount } from "@namera-ai/evm";
-import { GcpWalletKeyData, LocalWalletKeyData, WalletKeyHash } from "@namera-ai/protocol/model";
+import {
+  GcpSigningKeyData,
+  ManagedLocalSigningKeyData,
+  WalletKeyHash,
+} from "@namera-ai/protocol/model";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthConfig } from "#/auth/config";
@@ -17,31 +21,44 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
     if (
       wallet.wallet.namespace !== "eip155" ||
       wallet.wallet.status !== "active" ||
-      wallet.walletKey.status !== "active"
+      wallet.signingKey.status !== "active" ||
+      wallet.signingKey.custody !== "namera-managed"
     ) {
       return yield* new WalletAccountUnavailable();
     }
 
     const signer =
-      wallet.walletKey.provider === "local"
-        ? {
-            provider: "local" as const,
-            algorithm: wallet.walletKey.algorithm,
-            data: Schema.decodeUnknownSync(LocalWalletKeyData)(wallet.walletKey.data),
-          }
-        : {
-            provider: "gcp-kms" as const,
-            algorithm: wallet.walletKey.algorithm,
-            data: Schema.decodeUnknownSync(GcpWalletKeyData)(wallet.walletKey.data),
-          };
+      wallet.signingKey.data.type === "gcp-kms"
+        ? (() => {
+            const managedKey = Schema.decodeUnknownSync(GcpSigningKeyData)(wallet.signingKey.data);
+            return {
+              provider: "gcp-kms" as const,
+              algorithm: wallet.signingKey.algorithm,
+              data: {
+                version: 1 as const,
+                providerAlgorithm: managedKey.providerAlgorithm,
+                keyVersionName: managedKey.keyVersionName,
+              },
+            };
+          })()
+        : (() => {
+            const managedKey = Schema.decodeUnknownSync(ManagedLocalSigningKeyData)(
+              wallet.signingKey.data,
+            );
+            return {
+              provider: "local" as const,
+              algorithm: wallet.signingKey.algorithm,
+              data: { version: 1 as const, fileName: managedKey.fileName },
+            };
+          })();
     if (wallet.wallet.data.validatorType === "webauthn_p256") {
-      if (wallet.walletKey.algorithm !== "p256") {
+      if (wallet.signingKey.algorithm !== "p256") {
         return yield* new WalletAccountUnavailable();
       }
 
       const owner = createWalletKeyWebAuthnAccount({
-        id: wallet.walletKey.id,
-        publicKey: wallet.walletKey.publicKeyHex,
+        id: wallet.signingKey.id,
+        publicKey: wallet.signingKey.publicKeyHex,
         origin: authConfig.dashboardPublicOrigin.origin,
         rpId: authConfig.dashboardPublicOrigin.hostname,
         validatorType: "webauthn_p256",
@@ -55,12 +72,12 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
       } as const;
     }
 
-    if (wallet.walletKey.algorithm !== "secp256k1") {
+    if (wallet.signingKey.algorithm !== "secp256k1") {
       return yield* new WalletAccountUnavailable();
     }
 
     const owner = createWalletKeySecp256k1Account({
-      publicKey: wallet.walletKey.publicKeyHex,
+      publicKey: wallet.signingKey.publicKeyHex,
       sign: (hash) =>
         Effect.runPromise(
           walletKeys.signHash({

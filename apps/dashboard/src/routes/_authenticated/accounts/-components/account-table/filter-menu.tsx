@@ -2,20 +2,20 @@ import type { WalletResponse } from "@namera-ai/protocol/dto";
 import { Activity01Icon, HugeiconsIcon, Shield01Icon } from "@namera-ai/ui/icons";
 
 import { toTableSelection, type TableFilterMenuProps } from "@/components/common/table";
-import { WalletProtectionDisplay, WalletStatusDisplay } from "@/components/display";
+import { WalletOwnerDisplay, WalletStatusDisplay } from "@/components/display";
 
 const statusOptions = ["active", "frozen", "archived"] as const;
-const protectionOptions = ["software", "hsm"] as const;
+const ownershipOptions = ["local", "namera-managed"] as const;
 const defaultStatuses: ReadonlySet<WalletResponse["status"]> = new Set(["active"]);
 
 type AccountFilters = {
   status: ReadonlySet<WalletResponse["status"]>;
-  protectionLevel: ReadonlySet<WalletResponse["protectionLevel"]>;
+  ownership: ReadonlySet<WalletResponse["owner"]["custody"]>;
 };
 
 type AccountFilterCounts = {
   status: Record<WalletResponse["status"], number>;
-  protectionLevel: Record<WalletResponse["protectionLevel"], number>;
+  ownership: Record<WalletResponse["owner"]["custody"], number>;
 };
 
 type AccountFilterMenuProps = {
@@ -27,7 +27,7 @@ type AccountFilterMenuProps = {
 function createDefaultAccountFilters(): AccountFilters {
   return {
     status: new Set(defaultStatuses),
-    protectionLevel: new Set(),
+    ownership: new Set(),
   };
 }
 
@@ -37,9 +37,9 @@ const statusLabels: Record<WalletResponse["status"], string> = {
   frozen: "Frozen",
 };
 
-const protectionLabels: Record<WalletResponse["protectionLevel"], string> = {
-  hsm: "HSM",
-  software: "Software",
+const ownershipLabels: Record<WalletResponse["owner"]["custody"], string> = {
+  local: "User owned",
+  "namera-managed": "Namera managed",
 };
 
 export function AccountFilterMenu({
@@ -66,18 +66,18 @@ export function AccountFilterMenu({
           onChange({ ...filters, status: toTableSelection(keys, statusOptions) }),
       },
       {
-        id: "protection",
-        label: "Protection",
+        id: "ownership",
+        label: "Ownership",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Shield01Icon} />,
-        selectedKeys: filters.protectionLevel,
-        options: protectionOptions.map((value) => ({
+        selectedKeys: filters.ownership,
+        options: ownershipOptions.map((value) => ({
           id: value,
-          label: protectionLabels[value],
-          count: counts.protectionLevel[value],
-          content: <WalletProtectionDisplay protectionLevel={value} />,
+          label: ownershipLabels[value],
+          count: counts.ownership[value],
+          content: <WalletOwnerDisplay custody={value} />,
         })),
         onSelectionChange: (keys) =>
-          onChange({ ...filters, protectionLevel: toTableSelection(keys, protectionOptions) }),
+          onChange({ ...filters, ownership: toTableSelection(keys, ownershipOptions) }),
       },
     ],
     onClear: () => onChange(createDefaultAccountFilters()),

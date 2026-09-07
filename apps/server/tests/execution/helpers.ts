@@ -13,8 +13,7 @@ export const createExecutionFixture = Effect.fn("test.execution.createFixture")(
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      ensLabel: globalThis.crypto.randomUUID(),
-      protectionLevel: "software",
+      owner: { type: "namera-managed", protectionLevel: "software" },
       metadata: metadata(`Treasury ${suffix}`),
     },
   });

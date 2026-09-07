@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
-import type { DatabaseError, Email, VerificationId } from "@namera-ai/protocol";
+import type { DatabaseError, VerificationId } from "@namera-ai/protocol";
 import {
   Verification,
   VerificationInsert,
@@ -20,13 +20,13 @@ export interface VerificationRepositoryService {
   ) => Effect.Effect<Verification | undefined, DatabaseError>;
   findPendingByIdentifier: (params: {
     purpose: VerificationPurpose;
-    identifier: Email;
+    identifier: string;
     now: DateTime.Utc;
     maxAttempts: number;
   }) => Effect.Effect<Verification | undefined, DatabaseError>;
   revokePending: (params: {
     purpose: VerificationPurpose;
-    identifier: Email;
+    identifier: string;
     revokedAt: DateTime.Utc;
   }) => Effect.Effect<ReadonlyArray<Verification>, DatabaseError>;
   incrementAttempts: (params: {
@@ -60,7 +60,7 @@ export class VerificationRepository extends Context.Service<
             .onConflictDoNothing()
             .returning();
 
-          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+          return rows[0] ? Schema.decodeUnknownSync(Verification)(rows[0]) : undefined;
         }, mapRepositoryError),
         findById: Effect.fn("database.verificationRepository.findById")(function* (verificationId) {
           const db = yield* transactionOrDatabase(database);
@@ -70,7 +70,7 @@ export class VerificationRepository extends Context.Service<
             },
           });
 
-          return row ? Schema.decodeSync(Verification)(row) : undefined;
+          return row ? Schema.decodeUnknownSync(Verification)(row) : undefined;
         }, mapRepositoryError),
         findPendingByIdentifier: Effect.fn(
           "database.verificationRepository.findPendingByIdentifier",
@@ -93,7 +93,7 @@ export class VerificationRepository extends Context.Service<
             .orderBy(desc(verification.createdAt))
             .limit(1);
 
-          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+          return rows[0] ? Schema.decodeUnknownSync(Verification)(rows[0]) : undefined;
         }, mapRepositoryError),
         revokePending: Effect.fn("database.verificationRepository.revokePending")(function* ({
           purpose,
@@ -115,7 +115,7 @@ export class VerificationRepository extends Context.Service<
             )
             .returning();
 
-          return Schema.decodeSync(Schema.Array(Verification))(rows);
+          return Schema.decodeUnknownSync(Schema.Array(Verification))(rows);
         }, mapRepositoryError),
         incrementAttempts: Effect.fn("database.verificationRepository.incrementAttempts")(
           function* ({ verificationId, now, maxAttempts }) {
@@ -135,7 +135,7 @@ export class VerificationRepository extends Context.Service<
               )
               .returning();
 
-            return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+            return rows[0] ? Schema.decodeUnknownSync(Verification)(rows[0]) : undefined;
           },
           mapRepositoryError,
         ),
@@ -160,7 +160,7 @@ export class VerificationRepository extends Context.Service<
             )
             .returning();
 
-          return rows[0] ? Schema.decodeSync(Verification)(rows[0]) : undefined;
+          return rows[0] ? Schema.decodeUnknownSync(Verification)(rows[0]) : undefined;
         }, mapRepositoryError),
       });
     }),

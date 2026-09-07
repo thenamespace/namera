@@ -27,7 +27,7 @@ import {
   sessionKey,
   sessionKeyGrant,
   wallet,
-  walletKey,
+  signingKey,
 } from "#/schema/index";
 
 import {
@@ -97,7 +97,7 @@ export class ExecutionRepository extends Context.Service<
       ) {
         const db = yield* transactionOrDatabase(database);
         const rows = yield* db
-          .select({ execution, actor, sessionKey, wallet, walletKey })
+          .select({ execution, actor, sessionKey, wallet, signingKey })
           .from(execution)
           .innerJoin(
             executionSubmission,
@@ -135,10 +135,10 @@ export class ExecutionRepository extends Context.Service<
             ),
           )
           .innerJoin(
-            walletKey,
+            signingKey,
             and(
-              eq(walletKey.id, wallet.walletKeyId),
-              eq(walletKey.organizationId, execution.organizationId),
+              eq(signingKey.id, wallet.signingKeyId),
+              eq(signingKey.organizationId, execution.organizationId),
             ),
           )
           .where(

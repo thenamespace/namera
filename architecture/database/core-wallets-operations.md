@@ -4,9 +4,11 @@ The `core` schema separates key custody, namespace-specific wallet identity, del
 
 Source: [`packages/database/src/schema/core`](../../packages/database/src/schema/core).
 
-## `core.wallet_key`
+## `core.wallet_key` (legacy)
 
-Provider-neutral public description of a signing key. Private key material remains in the configured wallet-key provider; `data` stores provider references, not an exportable secret.
+Legacy managed-key record retained temporarily while the signing migration moves
+session operations. New wallet creation does not write or reference this table.
+Private key material remains in the configured provider.
 
 | Column             | PostgreSQL type | Required | Default  | Description                                              |
 | ------------------ | --------------- | -------- | -------- | -------------------------------------------------------- |
@@ -38,6 +40,55 @@ Provider-neutral public description of a signing key. Private key material remai
 
 - (`organization_id`, `status`) for active-key listings.
 
+## `core.signing_key`
+
+Provider-neutral signing identity used by wallets and, in a later slice,
+cryptographic session keys. Private and encrypted local key material is never
+persisted by the server.
+
+| Column            | PostgreSQL type | Required | Default  | Description                                                                          |
+| ----------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------ |
+| `id`              | `text`          | Yes      | UUIDv7   | Signing-key identifier.                                                              |
+| `organization_id` | `text`          | Yes      | —        | Owning tenant.                                                                       |
+| `purpose`         | `text`          | Yes      | —        | `wallet-root` or `session`.                                                          |
+| `custody`         | `text`          | Yes      | —        | `local` or `namera-managed`.                                                         |
+| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or future `ed25519`.                                            |
+| `public_key_hex`  | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                   |
+| `status`          | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                       |
+| `data`            | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, or managed development-provider metadata. |
+| `created_at`      | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                       |
+| `updated_at`      | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                                               |
+
+### Keys and uniqueness
+
+- Primary key: `id`.
+- Unique (`id`, `organization_id`) supports tenant-safe wallet references.
+- Unique (`organization_id`, `algorithm`, `public_key_hex`) prevents duplicate
+  registration of one cryptographic key inside a tenant.
+
+### Foreign keys
+
+- `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
+
+### Checks
+
+- Purpose, custody, algorithm, and status are restricted to protocol values.
+- Public keys use an even-length lowercase hexadecimal encoding.
+- `data` must be an object with a recognized discriminator.
+- Local custody accepts only `passkey` or `local-key` data; managed custody
+  requires `gcp-kms` or development-only `local-provider` data.
+- Passkeys are P-256 wallet-root signing keys.
+
+### Indexes
+
+- (`organization_id`, `purpose`, `status`) supports tenant-scoped lifecycle
+  lookups.
+- The unique public-key index supports deduplication lookup.
+
+`SigningKeyRepository` exposes insert, tenant-scoped ID lookup, public-key
+lookup, and lifecycle updates. Lifecycle updates refuse to modify a destroyed
+key. Wallet integration is active; session-key integration remains pending.
+
 ## `core.wallet`
 
 Programmable account visible to API clients. `namespace` selects the chain-family adapter and `data` contains its discriminated implementation details.
@@ -46,7 +97,7 @@ Programmable account visible to API clients. `namespace` selects the chain-famil
 | --------------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------- |
 | `id`                  | `text`          | Yes      | UUIDv7   | Public wallet identifier.                                                             |
 | `organization_id`     | `text`          | Yes      | —        | Owning tenant.                                                                        |
-| `wallet_key_id`       | `text`          | Yes      | —        | Owner key used to construct and sign for the account.                                 |
+| `signing_key_id`      | `text`          | Yes      | —        | Root signing key used to construct and authorize the account.                         |
 | `metadata`            | `jsonb`         | Yes      | —        | User-controlled name and description.                                                 |
 | `status`              | `text`          | Yes      | `active` | Wallet lifecycle state.                                                               |
 | `created_by_actor_id` | `text`          | Yes      | —        | Actor that created the wallet.                                                        |
@@ -63,7 +114,7 @@ Programmable account visible to API clients. `namespace` selects the chain-famil
 ### Foreign keys
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
-- (`wallet_key_id`, `organization_id`) → (`core.wallet_key.id`, `organization_id`), `ON DELETE RESTRICT`.
+- (`signing_key_id`, `organization_id`) → (`core.signing_key.id`, `organization_id`), `ON DELETE RESTRICT`.
 - (`created_by_actor_id`, `organization_id`) → (`auth.actor.id`, `organization_id`), `ON DELETE RESTRICT`.
 
 ### Checks
@@ -73,7 +124,7 @@ Programmable account visible to API clients. `namespace` selects the chain-famil
 ### Indexes
 
 - (`organization_id`, `status`) for workspace wallet lists.
-- `wallet_key_id` for custody impact and reconstruction queries.
+- `signing_key_id` for custody impact and reconstruction queries.
 - `created_by_actor_id` for creator history.
 
 ## `core.session_key`

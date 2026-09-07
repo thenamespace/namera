@@ -29,8 +29,7 @@ const createSessionKey = Effect.fnUntraced(function* () {
   const wallet = yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      ensLabel: globalThis.crypto.randomUUID(),
-      protectionLevel: "software",
+      owner: { type: "namera-managed", protectionLevel: "software" },
       metadata: { version: 1, name: "MCP wallet" },
     },
   });

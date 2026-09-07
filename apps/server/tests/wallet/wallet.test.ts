@@ -27,16 +27,14 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const treasury = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Treasury"),
         },
       });
       const operations = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Operations"),
         },
       });
@@ -45,7 +43,10 @@ layer(TestServerLayer)("wallet routes", (it) => {
         organizationId: owner.actor.organization.id,
         namespace: "eip155",
         implementation: "alchemy-modular-v2",
-        protectionLevel: "software",
+        owner: {
+          custody: "namera-managed",
+          protectionLevel: "software",
+        },
         data: {
           modularAccountVersion: "2.0.0",
           entryPointVersion: "0.7",
@@ -85,13 +86,13 @@ layer(TestServerLayer)("wallet routes", (it) => {
         owner.actor.organization.id,
       );
       const walletEvents = events.filter((event) => event.event === "wallet.created");
-      const walletKeyEvents = events.filter((event) => event.event === "wallet_key.created");
+      const signingKeyEvents = events.filter((event) => event.event === "signing_key.created");
       expect(walletEvents.map((event) => event.resourceId)).toEqual(
         expect.arrayContaining([treasury.id, operations.id]),
       );
-      expect(walletKeyEvents).toHaveLength(2);
+      expect(signingKeyEvents).toHaveLength(2);
       expect(walletEvents.map((event) => event.correlationId).toSorted()).toEqual(
-        walletKeyEvents.map((event) => event.correlationId).toSorted(),
+        signingKeyEvents.map((event) => event.correlationId).toSorted(),
       );
       expect(
         (yield* client.notification.list({ query: {} })).items.filter(
@@ -120,7 +121,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         address: "0x3333333333333333333333333333333333333333",
         addressUrl: "https://etherscan.io/address/0x3333333333333333333333333333333333333333",
         implementation: "alchemy-modular-v2",
-        protectionLevel: "software",
+        ownership: "Namera managed · Software",
       });
     }),
   );
@@ -143,8 +144,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("No email"),
         },
       });
@@ -172,8 +172,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Readable"),
         },
       });
@@ -186,8 +185,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
           .create({
             payload: {
               namespace: "eip155",
-              ensLabel: globalThis.crypto.randomUUID(),
-              protectionLevel: "software",
+              owner: { type: "namera-managed", protectionLevel: "software" },
               metadata: metadata("Forbidden"),
             },
           })
@@ -226,8 +224,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
-            ensLabel: globalThis.crypto.randomUUID(),
-            protectionLevel: "hsm",
+            owner: { type: "namera-managed", protectionLevel: "hsm" },
             metadata: metadata("HSM"),
           },
         })
@@ -238,8 +235,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         yield* client.wallet.create({
           payload: {
             namespace: "eip155",
-            ensLabel: globalThis.crypto.randomUUID(),
-            protectionLevel: "software",
+            owner: { type: "namera-managed", protectionLevel: "software" },
             metadata: metadata(`Wallet ${index}`),
           },
         });
@@ -248,8 +244,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         .create({
           payload: {
             namespace: "eip155",
-            ensLabel: globalThis.crypto.randomUUID(),
-            protectionLevel: "software",
+            owner: { type: "namera-managed", protectionLevel: "software" },
             metadata: metadata("Over limit"),
           },
         })
@@ -269,8 +264,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Original account"),
         },
       });
@@ -290,7 +284,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         address: wallet.address,
         namespace: wallet.namespace,
         implementation: wallet.implementation,
-        protectionLevel: wallet.protectionLevel,
+        owner: wallet.owner,
       });
       yield* client.wallet.update({
         params: { walletId: wallet.id },
@@ -315,8 +309,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
-          ensLabel: globalThis.crypto.randomUUID(),
-          protectionLevel: "software",
+          owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Owner account"),
         },
       });

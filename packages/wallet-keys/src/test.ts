@@ -5,17 +5,18 @@ import { Hex } from "@namera-ai/protocol";
 import type { WalletKeysService } from "./service.js";
 
 export const makeTestWalletKeys = (): WalletKeysService => ({
-  create: Effect.fn("wallet-keys.test.create")((input) =>
-    Effect.succeed({
+  create: Effect.fn("wallet-keys.test.create")((input) => {
+    const keySeed = input.id.replaceAll("-", "").repeat(4).slice(0, 128);
+    return Effect.succeed({
       provider: "local",
       algorithm: input.algorithm,
       protectionLevel: input.protectionLevel,
       publicKeyHex: Schema.decodeSync(Hex)(
-        input.algorithm === "ed25519" ? `0x${"00".repeat(32)}` : `0x04${"00".repeat(64)}`,
+        input.algorithm === "ed25519" ? `0x${keySeed.slice(0, 64)}` : `0x04${keySeed}`,
       ),
       data: { version: 1, fileName: `${input.id}.json` },
-    } as const),
-  ),
+    } as const);
+  }),
   signMessage: Effect.fn("wallet-keys.test.signMessage")((input) =>
     Effect.succeed(
       input.algorithm === "ed25519"

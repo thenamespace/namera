@@ -13,6 +13,11 @@ export interface AuthPolicy {
     readonly timeToLive: Duration.Duration;
     readonly tokenBytes: number;
   };
+  readonly passkey: {
+    readonly purpose: "passkey-registration";
+    readonly relyingPartyName: "Namera";
+    readonly timeToLive: Duration.Duration;
+  };
   readonly apiKey: {
     readonly prefix: "namera_";
     readonly tokenBytes: number;
@@ -62,6 +67,11 @@ export const authPolicy = {
   session: {
     timeToLive: Duration.days(30),
     tokenBytes: 32,
+  },
+  passkey: {
+    purpose: "passkey-registration",
+    relyingPartyName: "Namera",
+    timeToLive: Duration.minutes(5),
   },
   apiKey: {
     prefix: "namera_",
