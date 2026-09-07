@@ -10,6 +10,7 @@ export const registrationFixture = (input: {
   readonly rpId: string;
   readonly flags?: number;
   readonly tamperSignature?: boolean;
+  readonly crossOrigin?: boolean;
 }) => {
   const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const jwk = publicKey.export({ format: "jwk" });
@@ -42,7 +43,7 @@ export const registrationFixture = (input: {
       type: "webauthn.create",
       challenge: input.challenge,
       origin: input.origin,
-      crossOrigin: false,
+      crossOrigin: input.crossOrigin ?? false,
     }),
   );
   const signature = sign(

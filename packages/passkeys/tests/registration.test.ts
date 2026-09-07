@@ -35,6 +35,7 @@ layer(Passkeys.layer)("live passkey registration", (it) => {
     { name: "wrong challenge", patch: { challenge: "another-challenge" } },
     { name: "wrong origin", patch: { origin: "https://attacker.example.com" } },
     { name: "wrong RP ID", patch: { rpId: "attacker.example.com" } },
+    { name: "cross-origin ceremony without topOrigin", patch: { crossOrigin: true } },
     { name: "missing user verification", patch: { flags: 0x41 } },
     { name: "missing user presence", patch: { flags: 0x44 } },
     { name: "tampered attestation signature", patch: { tamperSignature: true } },

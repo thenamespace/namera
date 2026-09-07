@@ -124,6 +124,9 @@ responses increment the bounded verification attempt counter.
 
 - Add compensation/reconciliation for an external provider key created before a
   failed account-construction or persistence boundary.
+- The passkey service now generates and verifies owner authentication challenges
+  with credential, origin/RP, presence/verification and counter checks. Its real
+  signature tests pass, but installation/revocation routes are not yet wired.
 - Add passkey root signing ceremonies for installing and revoking mandatory
   onchain session keys; local root keys intentionally cannot use the current
   server-signing path.

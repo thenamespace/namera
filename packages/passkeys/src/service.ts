@@ -9,6 +9,8 @@ import {
 } from "@simplewebauthn/server";
 import { convertCOSEtoPKCS, COSEALG } from "@simplewebauthn/server/helpers";
 
+import { makeAuthenticationOptions, verifyAuthentication } from "./authentication.js";
+import { assertFirstPartyClientData } from "./client-data.js";
 import { PasskeyError } from "./error.js";
 
 export interface GeneratePasskeyRegistrationOptionsInput {
@@ -36,6 +38,8 @@ export interface VerifiedPasskeyRegistration {
 }
 
 export interface PasskeysService {
+  readonly generateAuthenticationOptions: typeof makeAuthenticationOptions;
+  readonly verifyAuthentication: typeof verifyAuthentication;
   readonly generateRegistrationOptions: (
     input: GeneratePasskeyRegistrationOptionsInput,
   ) => Effect.Effect<PublicKeyCredentialCreationOptionsJSON, PasskeyError>;
@@ -50,6 +54,8 @@ export class Passkeys extends Context.Service<Passkeys, PasskeysService>()(
   static readonly layer = Layer.succeed(
     this,
     Passkeys.of({
+      generateAuthenticationOptions: makeAuthenticationOptions,
+      verifyAuthentication,
       generateRegistrationOptions: Effect.fn("passkeys.generateRegistrationOptions")((input) =>
         Effect.tryPromise({
           try: () =>
@@ -73,16 +79,19 @@ export class Passkeys extends Context.Service<Passkeys, PasskeysService>()(
       ),
       verifyRegistration: Effect.fn("passkeys.verifyRegistration")(function* (input) {
         const verification = yield* Effect.tryPromise({
-          try: () =>
-            verifyRegistrationResponse({
-              response: input.response as RegistrationResponseJSON,
+          try: () => {
+            const response = input.response as RegistrationResponseJSON;
+            assertFirstPartyClientData(response.response.clientDataJSON);
+            return verifyRegistrationResponse({
+              response,
               expectedChallenge: input.expectedChallenge,
               expectedOrigin: input.expectedOrigin,
               expectedRPID: input.expectedRpId,
               requireUserPresence: true,
               requireUserVerification: true,
               supportedAlgorithmIDs: [COSEALG.ES256],
-            }),
+            });
+          },
           catch: (cause) => new PasskeyError({ operation: "verify-registration", cause }),
         });
         if (!verification.verified) {
