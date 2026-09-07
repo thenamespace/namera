@@ -120,6 +120,14 @@ consumes it with the signing-key, wallet, audit, notification, and email writes.
 Reuse fails even when the same browser response is submitted again. Invalid
 responses increment the bounded verification attempt counter.
 
+Owner authentication verification and atomic counter advancement are implemented
+as separate capabilities. The passkey service verifies the assertion against a
+stored credential and exact challenge; the signing-key repository advances its
+counter with a compare-and-set update. The forthcoming owner-approval workflow
+must consume its challenge and advance that counter in one transaction. Synced
+credentials may keep counter zero, so counter checks do not replace one-time
+approval consumption.
+
 ## Pending
 
 - Add compensation/reconciliation for an external provider key created before a

@@ -89,6 +89,14 @@ persisted by the server.
 lookup, and lifecycle updates. Lifecycle updates refuse to modify a destroyed
 key. Wallet integration is active; session-key integration remains pending.
 
+`advancePasskeyCounter` conditionally updates only the active local credential
+whose tenant, ID, credential ID and previous counter match. It accepts an
+increasing unsigned 32-bit counter or zero-to-zero for synced passkeys, never a
+decrease. It updates only `data.signCount`. Approval workflows must consume
+their one-time operation challenge in the same transaction: a zero counter is
+not itself replay protection. A focused persistence test covers stale counters,
+credential/tenant mismatch and disabled keys.
+
 ## `core.wallet`
 
 Programmable account visible to API clients. `namespace` selects the chain-family adapter and `data` contains its discriminated implementation details.
