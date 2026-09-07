@@ -17,6 +17,7 @@ export const makeCreateAccount = (config: EvmConfigValues) =>
 
 export * from "./webauthn.js";
 export * from "./secp256k1.js";
+export { encodeVerifiedOwnerAssertion, type VerifiedOwnerAssertion } from "./passkey-signature.js";
 export type {
   AlchemyModularV2CreationOwner,
   AlchemyModularV2Owner,

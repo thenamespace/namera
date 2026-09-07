@@ -102,6 +102,15 @@ ABI encoding. Authenticators and managed providers may produce high-S values;
 the Solidity verifier rejects them. The local fork regression deliberately
 uses a high-S signature and verifies a real EntryPoint deployment and transfer.
 
+`encodeVerifiedOwnerAssertion` converts a browser assertion already verified by
+the passkey service into the same validator ABI. It preserves the signed JSON
+and authenticator bytes and calculates JSON field positions as UTF-8 byte
+offsets. It is an encoder, not an authentication verifier. For owner
+UserOperations the current deployed adapter's WebAuthn challenge is the
+EIP-191 hash of the exact UserOperation hash, not the raw UserOperation hash.
+Application approval routes must bind that challenge to the persisted operation
+before accepting the assertion; those routes are not yet wired.
+
 ## secp256k1 owner adapter
 
 `createWalletKeySecp256k1Account` adapts a provider-neutral digest signer into

@@ -8,8 +8,6 @@ import {
   UnsupportedChainError,
 } from "@namera-ai/protocol";
 import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
-import * as P256 from "ox/P256";
-import * as Signature from "ox/Signature";
 import * as WebAuthnP256 from "ox/WebAuthnP256";
 import {
   concatHex,
@@ -33,12 +31,12 @@ import {
   type SmartAccount,
   type UserOperation,
   type WebAuthnAccount,
-  type WebAuthnSignReturnType,
 } from "viem/account-abstraction";
 
 import { getChainDataByChainId } from "../chains/helpers.js";
 import { createPublicClient } from "../clients/helpers.js";
 import type { EvmConfigValues } from "../config.js";
+import { encodeWebAuthnSignature, webAuthnSignatureParameters } from "./passkey-signature.js";
 import type { AlchemyModularV2CreationOwner, AlchemyModularV2Owner } from "./types.js";
 import { createPublicKeyWebAuthnAccount } from "./webauthn.js";
 
@@ -73,38 +71,6 @@ const webAuthnFactoryAbi = [
     stateMutability: "view",
   },
 ] as const;
-
-const webAuthnSignatureParameters = [
-  {
-    name: "params",
-    type: "tuple",
-    components: [
-      { name: "authenticatorData", type: "bytes" },
-      { name: "clientDataJSON", type: "string" },
-      { name: "challengeIndex", type: "uint256" },
-      { name: "typeIndex", type: "uint256" },
-      { name: "r", type: "uint256" },
-      { name: "s", type: "uint256" },
-    ],
-  },
-] as const;
-
-const encodeWebAuthnSignature = ({ signature, webauthn }: WebAuthnSignReturnType): Hex => {
-  const parsed = Signature.fromHex(signature);
-  // Solidity's P-256 verifier requires low-S; WebAuthn authenticators need not return it.
-  const order = P256.noble.CURVE.n;
-
-  return encodeAbiParameters(webAuthnSignatureParameters, [
-    {
-      authenticatorData: webauthn.authenticatorData,
-      clientDataJSON: webauthn.clientDataJSON,
-      challengeIndex: BigInt(webauthn.challengeIndex ?? 0),
-      typeIndex: BigInt(webauthn.typeIndex ?? 0),
-      r: parsed.r,
-      s: parsed.s > order / 2n ? order - parsed.s : parsed.s,
-    },
-  ]);
-};
 
 const dummyWebAuthnSignature = (() => {
   const { metadata } = WebAuthnP256.getSignPayload({
