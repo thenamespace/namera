@@ -108,8 +108,11 @@ and authenticator bytes and calculates JSON field positions as UTF-8 byte
 offsets. It is an encoder, not an authentication verifier. For owner
 UserOperations the current deployed adapter's WebAuthn challenge is the
 EIP-191 hash of the exact UserOperation hash, not the raw UserOperation hash.
-Application approval routes must bind that challenge to the persisted operation
-before accepting the assertion; those routes are not yet wired.
+`evm.execution.ownerApprovalChallenge` computes this challenge;
+`completeOwnerApproval` checks the assertion's challenge and encodes the signed
+operation without invoking an owner signer. Application approval routes must
+still verify the credential and atomically consume a persisted approval; those
+routes are not yet wired.
 
 ## secp256k1 owner adapter
 

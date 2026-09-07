@@ -11,9 +11,37 @@ Before calling the owner signer, the adapter reconstructs the account and compar
 - EntryPoint address and version with reconstructed account;
 - account-encoded calls with serialized `callData`;
 - context nonce with serialized nonce;
-- every gas/fee field and sponsorship mode with the serialized UserOperation.
+- every context gas/fee field and paymaster address with the serialized UserOperation.
 
 Any mismatch returns `SIGNING_FAILED`; no signature is produced.
+
+`prepared-account.ts` owns these checks for both managed signing and detached
+owner approval. `signed-operation.ts` builds the shared signed envelope without
+decoding already-decoded billing bigint/date fields as wire JSON a second time.
+
+## Detached passkey owner approval
+
+`evm.execution.ownerApprovalChallenge` accepts a public-key-only passkey account
+and the server's prepared execution. It reconstructs and checks the account,
+then returns the EIP-191 hash of its exact ERC-4337 UserOperation digest. No
+owner signing function is called.
+
+After the application verifies the browser response through `Passkeys`,
+`evm.execution.completeOwnerApproval` repeats those checks, binds the verified
+assertion's challenge to the prepared operation, normalizes its DER signature,
+and encodes the WebAuthn validator signature. It returns the same signed envelope
+as managed signing, including the original billing quote. It does not broadcast.
+
+The application must load the prepared operation from durable storage, verify
+credential/origin/RP/user-verification, consume its one-time approval and advance
+the authenticator counter atomically before persisting the signed payload. The
+EVM encoder is not a replacement for that authentication boundary. These
+application approval routes are not wired yet.
+
+The local Anvil test deploys and executes with this detached signature using a
+public-key-only reconstruction adapter. It also rejects mismatched challenges
+and changed prepared gas fields. This verifies contract encoding, not browser
+authenticator UX or hosted bundler sponsorship.
 
 ```mermaid
 sequenceDiagram

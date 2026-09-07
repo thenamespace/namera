@@ -12,7 +12,9 @@ import type {
   UserOperationHash,
 } from "@namera-ai/protocol";
 import type { EvmIntentCall, SupportedEvmChainId } from "@namera-ai/protocol";
+import type { Hex } from "viem";
 
+import type { VerifiedOwnerAssertion } from "../accounts/passkey-signature.js";
 import type { ReconstructEvmAccountInput } from "../accounts/types.js";
 
 export type PrepareEvmExecutionInput = {
@@ -29,6 +31,10 @@ export type SignEvmExecutionInput = {
 
 export type SubmitEvmExecutionInput = {
   readonly signed: EvmSignedExecution;
+};
+
+export type CompleteEvmOwnerApprovalInput = SignEvmExecutionInput & {
+  readonly assertion: VerifiedOwnerAssertion;
 };
 
 export type GetEvmExecutionReceiptInput = {
@@ -48,6 +54,12 @@ export interface EvmExecutionService {
   ) => Effect.Effect<EvmPreparedExecution, EvmExecutionFailure>;
   readonly sign: (
     input: SignEvmExecutionInput,
+  ) => Effect.Effect<EvmSignedExecution, EvmExecutionFailure>;
+  readonly ownerApprovalChallenge: (
+    input: SignEvmExecutionInput,
+  ) => Effect.Effect<Hex, EvmExecutionFailure>;
+  readonly completeOwnerApproval: (
+    input: CompleteEvmOwnerApprovalInput,
   ) => Effect.Effect<EvmSignedExecution, EvmExecutionFailure>;
   readonly submit: (
     input: SubmitEvmExecutionInput,

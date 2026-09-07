@@ -115,6 +115,14 @@ reconciliation can distinguish unknown, pending, preconfirmed, and mined operati
 Rundler has no dedicated bulk receipt action, so background processing batches
 database claims and performs bounded concurrent lookups across their chains.
 
+For browser-held owners, `execution.ownerApprovalChallenge` computes the exact
+WebAuthn challenge using a public-key-only reconstruction input.
+`execution.completeOwnerApproval` accepts the assertion verified by `Passkeys`
+and produces the same signed envelope without invoking an owner signer. The
+application still owns one-time approval storage, credential verification and
+atomic consumption. Both signing paths share prepared-account checks and signed
+envelope construction; see [sign/submit](../../architecture/evm/execution/sign-submit.md).
+
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive

@@ -3,6 +3,7 @@ import type { HttpClient } from "effect/unstable/http";
 import { makeEvmGasPrice } from "../billing/pricing.js";
 import { makeExecutionClients } from "../clients/execution.js";
 import type { EvmConfigValues } from "../config.js";
+import { makeEvmOwnerApproval } from "./owner-approval.js";
 import { makePrepareEvmExecution } from "./prepare.js";
 import {
   makeGetEvmExecutionReceipt,
@@ -21,10 +22,13 @@ export const makeEvmExecutionService = (
   // submission, and account clients
   // across every phase while keeping their large Viem types package-internal.
   const clients = makeExecutionClients(config);
+  const ownerApproval = makeEvmOwnerApproval(clients);
 
   return {
     prepare: makePrepareEvmExecution(clients, makeEvmGasPrice(config, httpClient)),
     sign: makeSignEvmExecution(clients),
+    ownerApprovalChallenge: ownerApproval.challenge,
+    completeOwnerApproval: ownerApproval.complete,
     submit: makeSubmitEvmExecution(clients),
     getReceipt: makeGetEvmExecutionReceipt(clients),
     getStatus: makeGetEvmUserOperationStatus(clients),

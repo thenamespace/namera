@@ -6,6 +6,7 @@ import {
   Hex,
   TransactionHash,
   UserOperationHash,
+  EvmExecutionError,
 } from "@namera-ai/protocol";
 import { entryPoint07Address } from "viem/account-abstraction";
 
@@ -35,6 +36,22 @@ export const makeTestEvmExecutionService = (
   } as const;
 
   return {
+    ownerApprovalChallenge: Effect.fn("evm.execution.test.ownerApprovalChallenge")(() =>
+      Effect.fail(
+        new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Configure an explicit owner approval test adapter"),
+        }),
+      ),
+    ),
+    completeOwnerApproval: Effect.fn("evm.execution.test.completeOwnerApproval")(() =>
+      Effect.fail(
+        new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Configure an explicit owner approval test adapter"),
+        }),
+      ),
+    ),
     prepare: Effect.fn("evm.execution.test.prepare")((input) =>
       Effect.succeed({
         version: 1,

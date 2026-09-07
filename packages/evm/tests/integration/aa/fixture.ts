@@ -19,6 +19,7 @@ import {
   toPackedUserOperation,
   type SmartAccount,
   type UserOperation,
+  type WebAuthnAccount,
 } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
@@ -30,8 +31,13 @@ export const makeAnvilFixture = async (
   url: string,
 ): Promise<{
   readonly account: SmartAccount;
+  readonly owner: WebAuthnAccount;
   readonly publicClient: PublicClient<Transport, Chain>;
-  readonly submit: (signer: SmartAccount, callData: Hex) => Promise<TransactionReceipt>;
+  readonly submit: (
+    signer: SmartAccount,
+    callData: Hex,
+    signOperation?: (operation: UserOperation<"0.7">) => Promise<Hex>,
+  ) => Promise<TransactionReceipt>;
   readonly advanceTime: (seconds: number) => Promise<void>;
 }> => {
   const endpoint = new URL(url);
@@ -81,7 +87,11 @@ export const makeAnvilFixture = async (
   );
   await testClient.setBalance({ address: account.address, value: parseEther("10") });
 
-  const submit = async (signer: SmartAccount, callData: Hex) => {
+  const submit = async (
+    signer: SmartAccount,
+    callData: Hex,
+    signOperation?: (operation: UserOperation<"0.7">) => Promise<Hex>,
+  ) => {
     const userOperation: UserOperation<"0.7"> = {
       sender: signer.address,
       nonce: await signer.getNonce(),
@@ -94,7 +104,9 @@ export const makeAnvilFixture = async (
       maxPriorityFeePerGas: 1_000_000_000n,
       signature: "0x",
     };
-    userOperation.signature = await signer.signUserOperation(userOperation);
+    userOperation.signature = await (signOperation === undefined
+      ? signer.signUserOperation(userOperation)
+      : signOperation(userOperation));
     await publicClient.simulateContract({
       account: relayer,
       address: account.entryPoint.address,
@@ -114,6 +126,7 @@ export const makeAnvilFixture = async (
   };
   return {
     account,
+    owner,
     publicClient,
     submit,
     advanceTime: async (seconds) => {

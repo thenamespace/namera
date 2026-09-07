@@ -9,6 +9,7 @@ export * from "./chains/index.js";
 export * from "./config.js";
 export type {
   EvmExecutionService,
+  CompleteEvmOwnerApprovalInput,
   GetEvmExecutionReceiptInput,
   PrepareEvmExecutionInput,
   SignEvmExecutionInput,
