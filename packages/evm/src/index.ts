@@ -17,6 +17,8 @@ export type {
   WaitForEvmExecutionReceiptInput,
 } from "./execution/types.js";
 export * from "./layer.js";
+export { resolveEvmSessionSigner } from "./sessions/signer.js";
+export { makeTestEvmSessionService } from "./sessions/test.js";
 export type {
   CompileEvmSessionInput,
   PrepareEvmSessionOperationInput,

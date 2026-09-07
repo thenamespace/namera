@@ -184,6 +184,13 @@ Use `Evm.testLayerWith({ execution: { ... } })` to override only the behavior a
 test needs while retaining the real policy registry and the rest of the
 deterministic execution lifecycle.
 
+`resolveEvmSessionSigner` validates an uncompressed secp256k1 public curve point
+and derives its canonical public key and address without receiving signing
+material. HTTP tests may opt into `makeTestEvmSessionService()` through
+`Evm.testLayerWith({ sessions: ... })`; this substitute tests persistence and
+transport, not contract permissions. The default session adapter remains
+fail-closed in tests unless explicitly supplied.
+
 ## Local contract tests
 
 With Anvil running a Sepolia fork on loopback (chain ID `11155111`):
