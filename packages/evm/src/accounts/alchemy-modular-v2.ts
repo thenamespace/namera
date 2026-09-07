@@ -8,6 +8,7 @@ import {
   UnsupportedChainError,
 } from "@namera-ai/protocol";
 import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
+import * as P256 from "ox/P256";
 import * as Signature from "ox/Signature";
 import * as WebAuthnP256 from "ox/WebAuthnP256";
 import {
@@ -90,6 +91,8 @@ const webAuthnSignatureParameters = [
 
 const encodeWebAuthnSignature = ({ signature, webauthn }: WebAuthnSignReturnType): Hex => {
   const parsed = Signature.fromHex(signature);
+  // Solidity's P-256 verifier requires low-S; WebAuthn authenticators need not return it.
+  const order = P256.noble.CURVE.n;
 
   return encodeAbiParameters(webAuthnSignatureParameters, [
     {
@@ -98,7 +101,7 @@ const encodeWebAuthnSignature = ({ signature, webauthn }: WebAuthnSignReturnType
       challengeIndex: BigInt(webauthn.challengeIndex ?? 0),
       typeIndex: BigInt(webauthn.typeIndex ?? 0),
       r: parsed.r,
-      s: parsed.s,
+      s: parsed.s > order / 2n ? order - parsed.s : parsed.s,
     },
   ]);
 };

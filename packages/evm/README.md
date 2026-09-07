@@ -165,3 +165,17 @@ signing; the adapter does not claim provider-specific token balance changes.
 Use `Evm.testLayerWith({ execution: { ... } })` to override only the behavior a
 test needs while retaining the real policy registry and the rest of the
 deterministic execution lifecycle.
+
+## Local contract tests
+
+With Anvil running a Sepolia fork on loopback (chain ID `11155111`):
+
+```sh
+NAMERA_TEST_ANVIL_URL=http://127.0.0.1:18545 pnpm --filter @namera-ai/evm test tests/aa
+```
+
+These opt-in tests require a loopback URL and verify the RPC identifies as Anvil
+before funding ephemeral test keys. They execute actual EntryPoint and Modular
+Account contracts, not the EVM test layer. Tests without this variable skip the
+fork suite. Direct `handleOps` tests prove contract behavior, not hosted Alchemy
+Wallet APIs, bundler mempool rules or BSO sponsorship.

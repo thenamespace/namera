@@ -94,6 +94,11 @@ WebAuthn account expected by the Alchemy SDK:
 5. expose `sign`, `signMessage`, and `signTypedData` without exposing private
    key material.
 
+The account encoder normalizes P-256 `s` into the lower half of the curve before
+ABI encoding. Authenticators and managed providers may produce high-S values;
+the Solidity verifier rejects them. The local fork regression deliberately
+uses a high-S signature and verifies a real EntryPoint deployment and transfer.
+
 ## secp256k1 owner adapter
 
 `createWalletKeySecp256k1Account` adapts a provider-neutral digest signer into
