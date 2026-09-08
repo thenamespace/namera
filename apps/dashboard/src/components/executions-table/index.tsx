@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { chains as supportedEvmChains } from "@namera-ai/evm";
+import { chains as supportedEvmChains } from "@namera-ai/evm/chains";
 import type { SessionKeyId, WalletId } from "@namera-ai/protocol";
 import type { ExecutionListItemResponse, ListExecutionsResponse } from "@namera-ai/protocol/dto";
 import type { ActorType } from "@namera-ai/protocol/model";

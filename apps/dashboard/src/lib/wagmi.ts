@@ -1,4 +1,4 @@
-import { chains } from "@namera-ai/evm";
+import { chains } from "@namera-ai/evm/chains";
 import { createConfig, http } from "wagmi";
 import { type Chain } from "wagmi/chains";
 

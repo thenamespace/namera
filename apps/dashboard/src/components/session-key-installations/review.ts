@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type {
   GetWalletPasskeyOwnerResponse,
   SessionKeyResponse,
@@ -26,7 +27,7 @@ export async function reviewSessionInstallation(
   ) {
     throw new Error("Passkey owner does not match this account");
   }
-  const { getChainDataByCaip2, reviewEvmSessionOperation } = await import("@namera-ai/evm");
+  const { reviewEvmSessionOperation } = await import("@namera-ai/evm/session-review");
   const chain = getChainDataByCaip2(installation.chainId);
   if (!chain) throw new Error("Unsupported approval chain");
   const reviewed = await Effect.runPromise(

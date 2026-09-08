@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { chains } from "@namera-ai/evm";
+import { chains } from "@namera-ai/evm/chains";
 import type { EvmGasBudgetPeriod, EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {

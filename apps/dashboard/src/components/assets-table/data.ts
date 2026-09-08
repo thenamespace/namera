@@ -1,4 +1,4 @@
-import { getChainDataByCaip2 } from "@namera-ai/evm";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { EthereumAddress } from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
 

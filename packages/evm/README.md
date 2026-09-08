@@ -47,6 +47,12 @@ remain under [operations](../../architecture/operations/executions.md).
 
 ## Adding EVM behavior
 
+Browser consumers use `@namera-ai/evm/chains` for chain metadata and
+`@namera-ai/evm/session-review` for read-only owner approval review. Both expose
+the same implementations as the root entry without importing the server service,
+provider configuration, or test layers. The root entry remains the backend API.
+All entries preserve the `namera-source` development condition and built ESM exports.
+
 1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain
    IDs or provider slugs through operations.
    Add its stable network key, presentation name, and CAIP-2 literal to the

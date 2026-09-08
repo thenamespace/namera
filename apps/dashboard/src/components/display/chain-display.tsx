@@ -1,4 +1,4 @@
-import { chains, type ChainData } from "@namera-ai/evm";
+import { chains, type ChainData } from "@namera-ai/evm/chains";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Typography } from "@namera-ai/ui";
 import { ChainIcon } from "@namera-ai/ui/icons";

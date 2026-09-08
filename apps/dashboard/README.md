@@ -43,6 +43,12 @@ Workspace package imports continue to use their package names.
 - `src/styles.css` — application stylesheet entry importing Namera UI styles.
 - `vite.config.ts` — Vite, Router, React, Tailwind, and devtools plugins.
 
+Vite adds `namera-source` to its default client resolution conditions; it must
+retain `browser` so dependencies do not resolve Node-only transports. Browser
+EVM imports use the `chains` and lazily loaded `session-review` subpaths, not the
+server root service. This keeps provider configuration and test layers out of
+the client bundle without duplicating account review logic.
+
 ## Authentication routes
 
 - `/auth` contains the magic-link request UI.

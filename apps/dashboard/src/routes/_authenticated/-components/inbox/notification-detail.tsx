@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import { DateTime } from "effect";
 
-import { getChainDataByCaip2 } from "@namera-ai/evm";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { NotificationResponse } from "@namera-ai/protocol/dto";
 import type { NotificationType } from "@namera-ai/protocol/model";
 import { buttonVariants, Surface, Typography } from "@namera-ai/ui";

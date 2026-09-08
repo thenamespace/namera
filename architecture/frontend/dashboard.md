@@ -118,6 +118,13 @@ sidebar group are removed. Direct navigation uses the shared not-found boundary.
 
 ## Browser telemetry
 
+The Vite resolver preserves its default client conditions alongside
+`namera-source`. Replacing those defaults can select Node transports from
+browser-compatible dependencies. Dashboard chain data and owner review use
+`@namera-ai/evm/chains` and `@namera-ai/evm/session-review`; they do not import the
+EVM server service/configuration barrel. The production build is checked for
+Node-module externalization warnings and unwanted provider configuration code.
+
 The shared atom runtime installs the dashboard OTLP Layer. The browser exports
 only through server `/t/*` endpoints with a dashboard service identity; provider
 credentials never enter the bundle.

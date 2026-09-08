@@ -15,6 +15,8 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
+    chains: "src/chains/index.ts",
+    "session-review": "src/sessions/review.ts",
   },
   publint: "ci-only",
   unbundle: true,

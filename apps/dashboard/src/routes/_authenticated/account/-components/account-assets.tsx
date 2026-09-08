@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { getChainDataByCaip2 } from "@namera-ai/evm";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { PortfolioResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";

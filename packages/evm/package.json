@@ -15,6 +15,14 @@
       "namera-source": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./chains": {
+      "namera-source": "./src/chains/index.ts",
+      "default": "./dist/chains.js"
+    },
+    "./session-review": {
+      "namera-source": "./src/sessions/review.ts",
+      "default": "./dist/session-review.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -23,6 +31,8 @@
     },
     "exports": {
       ".": "./dist/index.js",
+      "./chains": "./dist/chains.js",
+      "./session-review": "./dist/session-review.js",
       "./package.json": "./package.json"
     }
   },
