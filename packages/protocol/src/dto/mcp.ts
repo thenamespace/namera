@@ -99,6 +99,7 @@ const McpSignatureFields = {
 
 const McpSignMessageRequest = Schema.Struct({
   ...McpSignatureFields,
+  sessionKeyId: McpSessionKeyId,
   type: Schema.Literal("message"),
   message: Schema.String.annotate({
     description: "The exact UTF-8 message to sign. Do not hash or transform it first.",
@@ -107,6 +108,7 @@ const McpSignMessageRequest = Schema.Struct({
 
 const McpSignTypedDataRequest = Schema.Struct({
   ...McpSignatureFields,
+  sessionKeyId: McpSessionKeyId,
   type: Schema.Literal("typed-data"),
   typedData: EvmTypedData.annotate({
     description: "The complete EIP-712 typed-data object to sign.",
@@ -192,6 +194,12 @@ export const McpToolErrorCode = Schema.Literals([
   "LIMIT_EXCEEDED",
   "RATE_LIMITED",
   "INTERNAL_ERROR",
+  "UPSTREAM_UNAVAILABLE",
+  "LOCAL_SIGNER_REQUIRED",
+  "LOCAL_SIGNER_UNAVAILABLE",
+  "PREPARED_EXECUTION_INVALID",
+  "PREPARED_SIGNATURE_INVALID",
+  "LOCAL_SIGNATURE_INVALID",
 ]);
 
 export const McpToolError = Schema.Struct({

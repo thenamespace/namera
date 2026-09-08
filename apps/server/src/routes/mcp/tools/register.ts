@@ -173,6 +173,12 @@ export const signingHints = {
 } as const;
 
 const errorMessages: Readonly<Record<McpToolErrorCode, string>> = {
+  UPSTREAM_UNAVAILABLE: "The Namera API is temporarily unavailable.",
+  LOCAL_SIGNER_REQUIRED: "Configure a local session signer before signing.",
+  LOCAL_SIGNER_UNAVAILABLE: "Import and unlock the local session key before signing.",
+  PREPARED_EXECUTION_INVALID: "The prepared execution failed local authorization checks.",
+  PREPARED_SIGNATURE_INVALID: "The signature challenge failed local authorization checks.",
+  LOCAL_SIGNATURE_INVALID: "The local signer returned an invalid signature.",
   INVALID_ARGUMENT:
     "The tool arguments are invalid. Use IDs returned by Namera tools and follow the documented field formats.",
   UNAUTHORIZED: "The MCP authorization is unavailable or expired. Reconnect Namera.",

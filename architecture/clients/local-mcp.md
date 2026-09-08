@@ -1,9 +1,10 @@
 # Local MCP authorization
 
 The CLI owns the OAuth broker in `services/mcp/oauth-broker.ts`. The broker and
-upstream HTTP adapter and OAuth HTTP routes are implemented and tested; the
-`namera mcp start` listener, tool wiring, and persistent credential lifecycle are
-still pending. The API-hosted MCP transport has not yet been removed.
+upstream HTTP adapter, OAuth HTTP routes, and SDK-backed MCP tools are implemented
+and tested through the HTTP boundary. The `namera mcp start` listener and persistent
+credential lifecycle are still pending. The API-hosted MCP transport has not yet
+been removed.
 
 ## Two audiences
 
@@ -28,8 +29,35 @@ grants. The broker does not reuse the CLI profile's broader authorization.
 4. Consume that code once, checking the agent's verifier, client, redirect and
    local resource. Return independent random local access/refresh tokens.
 5. Resolve an incoming local bearer to its upstream credentials. The HTTP/tool
-   adapter must additionally load the live API actor and grants before allowing
+   adapter loads the live API actor and grants on every request before allowing
    any local signer access; broker lookup alone is not sufficient authorization.
+
+## Tool authorization and local signing
+
+The composed routes expose ten SDK-backed tools. Execution and signing require
+explicit wallet and session-key IDs. No tool accepts a private key, filesystem
+path, fee ceiling, or upstream credential. The locally configured signer resolver
+checks the live grant's wallet, namespace, session ID, and active status before
+opening the keystore. The SDK then validates the prepared operation against the
+locally imported binding before signing; the API rechecks authority at completion.
+
+Effective scopes are the intersection of the local token and live upstream
+authorization. Each MCP protocol session is bound to its local OAuth client and
+upstream authorization ID. A different authorization cannot reuse that session,
+and revocation or scope narrowing applies to subsequent requests. Authentication
+recognizes both HTTP status errors and the SDK's declared Unauthorized/Forbidden
+errors. API requests refuse redirects and have a 30-second deadline.
+
+Tool failures return bounded human-readable codes and schema-validated policy
+diagnostics, never raw SDK/provider/keystore errors. Execution results distinguish
+queued preparation from confirmation; descriptions warn that repeating an
+execution tool call can transfer twice. Signing and execution are not advertised
+as idempotent. Local SDK retries retain the operation's completion idempotency key.
+
+The installed Effect MCP transport retains protocol sessions until process exit.
+The adapter therefore caps successful/in-flight initializations at 128 for the
+listener lifetime rather than pruning only its own authorization bindings and
+leaking unbounded transport sessions. Restart requires OAuth reauthorization.
 
 ## Lifetime and replay
 
@@ -87,7 +115,8 @@ Remaining:
   as the in-memory HTTP boundary.
 - Persist refreshable authorization securely in the OS keyring, with a defined
   restart/logout/revocation lifecycle and no plaintext fallback.
-- Authenticate every MCP tool against the live API actor, bind MCP sessions to
-  that authorization, and execute via the SDK/local keystore.
+- Exercise actual authorized signing through the composed local MCP transport;
+  current HTTP tests cover discovery, SDK reads, live scope/revocation checks,
+  cross-authorization session isolation, and rejection before undelegated key access.
 - Wire the CLI command, replace hosted-MCP tests, remove the API transport, and
   verify a browser-to-local-MCP consent/signing journey.

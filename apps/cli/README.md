@@ -11,7 +11,8 @@ the CLI/SDK responsibility split.
 
 The local MCP OAuth broker and upstream adapter live in `services/mcp/`.
 They keep local and API credentials separate and test replay, expiry and refresh
-revocation races. OAuth HTTP routes and transport guards are tested in-memory.
+revocation races. OAuth routes, transport guards, SDK-backed tools, and live
+authorization/session isolation are tested through the in-memory HTTP boundary.
 The HTTP listener and `mcp start` command are not wired yet;
 see [local MCP integration status](../../architecture/clients/local-mcp.md).
 
