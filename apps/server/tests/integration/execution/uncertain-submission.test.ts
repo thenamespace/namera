@@ -3,6 +3,7 @@ import { Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
+import { Repository } from "@namera-ai/database";
 import { makeTestEvmExecutionService } from "@namera-ai/evm";
 import { EthereumAddress, EvmExecutionError, Hex, UserOperationHash } from "@namera-ai/protocol";
 
@@ -21,6 +22,7 @@ import { queueExecution } from "./fixture.js";
 for (const { status, mismatchedReceipt } of [
   { status: "reverted", mismatchedReceipt: false },
   { status: "failed", mismatchedReceipt: false },
+  { status: "included", mismatchedReceipt: false },
   { status: "included", mismatchedReceipt: true },
   { status: "failed", mismatchedReceipt: true },
 ] as const) {
@@ -109,14 +111,21 @@ for (const { status, mismatchedReceipt } of [
             yield* client.execution.getSubmission({
               params: { submissionId: queued.submissionId },
             }),
-          ).toMatchObject({ status: mismatchedReceipt ? "submitted" : "failed" });
+          ).toMatchObject({
+            status: mismatchedReceipt
+              ? "submitted"
+              : status === "included"
+                ? "confirmed"
+                : "failed",
+          });
           expect(yield* app.execution.reconcile()).toBe(0);
           yield* setApiKey();
           yield* setAuthToken(owner.cookie.value);
           const after = yield* client.billing.get();
           expect(after.meters.find(({ key }) => key === "execution.mainnet")).toMatchObject({
-            consumedAmount: before.meters.find(({ key }) => key === "execution.mainnet")
-              ?.consumedAmount,
+            consumedAmount:
+              (before.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount ?? 0n) +
+              (status === "included" && !mismatchedReceipt ? 1n : 0n),
             reservedAmount: mismatchedReceipt ? 1n : 0n,
           });
           expect(after.meters.find(({ key }) => key === "gas-sponsorship")).toMatchObject({
@@ -125,6 +134,12 @@ for (const { status, mismatchedReceipt } of [
               (mismatchedReceipt ? 0n : 32_400n),
             reservedAmount: mismatchedReceipt ? 100_000n : 0n,
           });
+          const events = yield* (yield* Repository).audit.organization.findForOrganization(
+            owner.actor.organization.id,
+          );
+          expect(events.filter(({ event }) => event === "execution.confirmed")).toHaveLength(
+            status === "included" && !mismatchedReceipt ? 1 : 0,
+          );
         }),
       );
     },
