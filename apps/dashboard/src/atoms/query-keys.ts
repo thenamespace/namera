@@ -7,6 +7,7 @@ import type {
   OAuthAuthorizationRequestId,
   OAuthDeviceAuthorizationId,
   SessionKeyId,
+  SessionKeyOperationId,
   WalletId,
 } from "@namera-ai/protocol";
 
@@ -66,6 +67,9 @@ export const QueryKeys = {
   },
   sessionKey: {
     all: ["session-key:all"] as const,
+    operations: ["session-key:operations"] as const,
+    operation: (operationId: SessionKeyOperationId) =>
+      [`session-key:operation:${operationId}`] as const,
     lists: ["session-key:lists"] as const,
     organizationLists: ["session-key:organization-lists"] as const,
     walletLists: ["session-key:wallet-lists"] as const,
@@ -133,6 +137,8 @@ export type QueryKey =
   | (typeof QueryKeys.billing.current)[number]
   | (typeof QueryKeys.dashboard.overview)[number]
   | (typeof QueryKeys.sessionKey.all)[number]
+  | (typeof QueryKeys.sessionKey.operations)[number]
+  | ReturnType<typeof QueryKeys.sessionKey.operation>[number]
   | (typeof QueryKeys.sessionKey.lists)[number]
   | (typeof QueryKeys.sessionKey.organizationLists)[number]
   | (typeof QueryKeys.sessionKey.walletLists)[number]

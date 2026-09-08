@@ -109,6 +109,54 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     title: "Policy does not match the account",
     description: "Use policies supported by the selected account namespace.",
   },
+  "SessionKeyCreationError:LOCAL_SIGNER_INVALID": {
+    title: "Invalid session signer",
+    description: "Generate a new local session key and try again.",
+  },
+  "SessionKeyCreationError:SIGNER_ALREADY_REGISTERED": {
+    title: "Session signer already registered",
+    description: "Continue with the existing session key instead of registering it again.",
+  },
+  "SessionKeyCreationError:WALLET_OWNER_UNAVAILABLE": {
+    title: "Account owner unavailable",
+    description: "Select an active passkey-owned account.",
+  },
+  "SessionKeyOperationError:INSTALLATION_UNAVAILABLE": {
+    title: "Installation unavailable",
+    description: "Refresh the session key to check its current network installations.",
+  },
+  "SessionKeyOperationError:OPERATION_UNAVAILABLE": {
+    title: "Approval operation unavailable",
+    description: "Check the active workspace and refresh the session key.",
+  },
+  "SessionKeyOperationError:OWNER_UNAVAILABLE": {
+    title: "Account owner unavailable",
+    description: "The account needs an active owner passkey to approve this operation.",
+  },
+  "SessionKeyOperationError:INVALID_TRANSITION": {
+    title: "Session key state changed",
+    description: "Refresh its installations before approving another operation.",
+  },
+  "SessionKeyOperationError:OPERATION_BUSY": {
+    title: "Another approval is in progress",
+    description: "Wait for the existing account operation to finish before trying again.",
+  },
+  "SessionKeyOperationError:IDEMPOTENCY_CONFLICT": {
+    title: "Approval request changed",
+    description: "Refresh the session key before starting a new approval.",
+  },
+  "SessionKeyOperationError:APPROVAL_EXPIRED": {
+    title: "Approval expired",
+    description: "Prepare a new operation and approve it with your passkey.",
+  },
+  "SessionKeyOperationError:APPROVAL_INVALID": {
+    title: "Passkey approval could not be verified",
+    description: "Use the passkey that owns this account and try again.",
+  },
+  "SessionKeyOperationError:PREPARATION_FAILED": {
+    title: "Couldn’t prepare the approval",
+    description: "The network could not prepare this operation. Try again shortly.",
+  },
   "ApiKeyError:API_KEY_NOT_FOUND": {
     title: "API key not found",
     description: "It may have already been revoked.",

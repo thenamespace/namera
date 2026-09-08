@@ -3,6 +3,8 @@ import type { SessionKeyId, WalletId } from "@namera-ai/protocol";
 import { NameraClient } from "@/atoms/client";
 import { QueryKeys } from "@/atoms/query-keys";
 
+export * from "./operation";
+
 export const sessionKeysAtom = NameraClient.query("sessionKey", "listForOrganization", {
   reactivityKeys: [
     ...QueryKeys.organization.active,

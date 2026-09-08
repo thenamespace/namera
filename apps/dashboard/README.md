@@ -113,6 +113,10 @@ under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detai
 list, and revoke atoms/hooks live under `src/atoms/api-key` and
 `src/hooks/api-key`. MCP and CLI authorization list, detail, and revoke
 atoms/hooks live under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
+Session-key `operation` modules also expose owner-approval prepare/complete
+mutations and a status query. These are typed data adapters, not a completed
+browser approval flow: callers must retain retry identity and poll receipts
+before presenting an installation as active.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.

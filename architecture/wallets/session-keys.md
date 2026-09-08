@@ -13,9 +13,8 @@ the owner-approved configuration. Alchemy's execution time/spend hooks do not
 constrain ERC-1271 signatures; only onchain uninstall removes that authority.
 See [onchain session compilation](../evm/accounts/onchain-sessions.md).
 
-The migration is incomplete: local operation signing and the dashboard creation
-flow still need wiring. Existing
-execution/signature workflows must not be considered self-custodial yet.
+The SDK and local MCP sign delegated operations using client-held session keys.
+The dashboard creation and owner-approval UI remain incomplete.
 
 ## Persistence and policy references
 
@@ -151,12 +150,21 @@ installation calldata are not returned. Machine actors read key and wallet views
 active grants. Routes expose create/get/list/wallet-list/revoke boundaries under
 `/session-keys`.
 
+## Dashboard integration
+
+Dashboard atoms and hooks expose preparation, completion and operation status
+through the shared typed client. Completion invalidates session and billing
+data; it does not optimistically activate a session. Status queries have a
+five-second cache lifetime, not automatic polling. The upcoming approval UI must
+poll while pending, refresh session/billing data after terminal receipts, and
+retain the preparation idempotency key across retries. Typed approval failures
+use the shared feedback registry; provider and assertion payloads are not shown.
+
 ## Pending
 
 - Complete stuck signed-operation cancellation/replacement recovery and connect
   the status endpoint to browser polling.
-- Replace legacy root-signing execution/signature flows with local session signing.
-- Update dashboard creation and existing API-only test fixtures for this contract.
+- Wire browser generation, encrypted export, and owner-approved creation UI.
 - Wire dashboard revocation to owner-approved uninstall on every installed chain
   and clearly distinguish immediate API cutoff from pending onchain removal.
 - Add retention behavior for expired/revoked keys and historical grants.
