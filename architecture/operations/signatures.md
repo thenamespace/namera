@@ -87,8 +87,8 @@ and bounded verification metrics protect the boundary.
 
 ## Pending
 
-- Wire SDK, CLI and local MCP to prepare, validate the challenge, sign locally,
-  and complete. Migrate remote-MCP authentication separately.
+- Wire local MCP to the SDK's implemented prepare/local-sign/complete workflow.
+  Migrate remote-MCP authentication separately.
 - Complete end-to-end browser consent/import coverage and consumer conformance.
 - Add namespace-specific signature variants only with another chain adapter.
 - Add EIP-712 domain/verifying-contract/primary-type policy restrictions before

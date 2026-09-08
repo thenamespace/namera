@@ -1,7 +1,10 @@
 import { Effect } from "effect";
 import { Command } from "effect/unstable/cli";
 
-import { SignRequest, type SignRequest as SignRequestType } from "@namera-ai/protocol/dto";
+import {
+  PrepareSignatureRequest as SignRequest,
+  type PrepareSignatureRequest as SignRequestType,
+} from "@namera-ai/protocol/dto";
 
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
@@ -12,6 +15,7 @@ const promptSignRequest = Effect.fn("cli.sign.promptRequest")(function* () {
   const prompts = yield* CliPrompts;
   const namespace = yield* prompts.namespace;
   const walletId = yield* prompts.walletId();
+  const sessionKeyId = yield* prompts.sessionKeyId();
   const chainId = yield* prompts.chainId();
   const type = yield* prompts.signatureType;
 
@@ -19,6 +23,7 @@ const promptSignRequest = Effect.fn("cli.sign.promptRequest")(function* () {
     ? ({
         namespace,
         walletId,
+        sessionKeyId,
         chainId,
         type,
         message: yield* prompts.message(),
@@ -26,6 +31,7 @@ const promptSignRequest = Effect.fn("cli.sign.promptRequest")(function* () {
     : ({
         namespace,
         walletId,
+        sessionKeyId,
         chainId,
         type,
         typedData: yield* prompts.typedData,

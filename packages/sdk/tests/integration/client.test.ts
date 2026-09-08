@@ -12,7 +12,6 @@ const submissionId = Schema.decodeSync(ExecutionSubmissionId)(
   "01a00427-5cb5-75be-9159-97eb6b3dca9d",
 );
 const address = Schema.decodeSync(EthereumAddress)("0x1111111111111111111111111111111111111111");
-const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -102,7 +101,7 @@ describe("NameraClient", () => {
     expect((init.headers as Record<string, string>)["idempotency-key"]).toBeUndefined();
   });
 
-  it("generates signature idempotency internally", async () => {
+  it("requires local signing without calling the legacy route", async () => {
     const fetch = vi.fn<NameraFetch>().mockResolvedValue(
       jsonResponse({
         namespace: "eip155",
@@ -121,13 +120,11 @@ describe("NameraClient", () => {
       walletId,
       chainId: "eip155:1",
       message: "Sign with Namera",
+      sessionKeyId,
     });
 
-    expect(result.success).toBe(true);
-    const [url, init] = fetch.mock.calls[0] ?? [];
-    if (init === undefined) throw new Error("Expected a fetch request");
-    expect(url?.toString()).toBe("http://localhost:8080/signatures");
-    expect((init.headers as Record<string, string>)["idempotency-key"]).toMatch(uuidV7Pattern);
+    expect(result).toMatchObject({ success: false, error: { code: "LOCAL_SIGNER_REQUIRED" } });
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("verifies smart-account signatures without an idempotency header", async () => {
@@ -166,12 +163,13 @@ describe("NameraClient", () => {
       .mockResolvedValue(jsonResponse({ _tag: "RateLimitExceeded", retryAfterSeconds: 60 }, 429));
     const client = new NameraClient({ apiKey: "nk_test_secret", fetch });
 
-    const result = await client.sign({
+    const result = await client.signatures.prepare({
       namespace: "eip155",
       type: "message",
       walletId,
       chainId: "eip155:1",
       message: "Do not retry this request",
+      sessionKeyId,
     });
 
     expect(result).toMatchObject({

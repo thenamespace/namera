@@ -58,7 +58,7 @@ must fail. No provider transaction is submitted and no signature is logged.
 The adapter owns chain/account encoding only. Callers must resolve installation
 data from persistence, validate actor/grant authority and lifetime, and own
 idempotency, billing and audit transitions. The application and API now expose
-prepare/complete with these checks; SDK/CLI signing remains pending.
+prepare/complete with these checks; SDK/CLI validate and sign locally.
 
 Actual-contract tests exercise both payload types with public-only account
 reconstruction, rejection before installation and after removal, changed-payload
@@ -85,14 +85,14 @@ Signature policy evaluation requires at least one signature operation that expli
 
 ## Idempotency and quota
 
-- Detached clients must generate a key internally and reuse it for retries of the same preparation; SDK/CLI/MCP orchestration is still pending.
+- SDK/CLI generate a key internally and reuse it for retries of the same preparation; local MCP integration remains pending.
 - Application canonical request hash rejects different input under the same actor/key.
 - Monthly signature quotas count successful operations in the effective billing window.
 - Reservation/failure lifecycle prevents an interrupted attempt from silently becoming unlimited free work.
 
 ## Pending before production
 
-- Wire detached preparation/completion into SDK, CLI and local MCP.
+- Wire detached preparation/completion into local MCP.
 - Disclose the offchain scope of API-enforced signature expiry/policies in client consent.
 - Add conformance fixtures for popular ERC-1271 consumers and counterfactual verification paths.
 - Define retention/redaction for signed message and typed-data content, especially personal data.

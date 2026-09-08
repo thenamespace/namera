@@ -48,6 +48,14 @@ transport tests exercise real local secp256k1 signing with injected Fetch and
 response loss. CLI keystore resolution is wired; dashboard authorization export
 and live-chain client integration are still pending.
 
+`sign` uses detached signature preparation and completion with an explicit
+session key ID. It requires local `allowSignatures` consent and `signTypedData`,
+recomputes the replay-safe module domain and original payload hash, checks
+expiry before and after signing, verifies the secp256k1 signature, and validates
+the completed ERC-1271 envelope. `signatures.prepare/complete` expose transport
+for clients that implement their own equivalent validation. API signature
+quotas govern API completions, not direct signatures created by a local holder.
+
 ## CLI
 
 The CLI uses OAuth device authorization for interactive profiles and the SDK for
@@ -66,7 +74,8 @@ passphrase prompt and OS-keyring-backed unlock. Execution resolves that material
 by API origin/session ID and checks its wallet/chain binding. Self-funded
 execution requires an explicit `--max-gas-cost-wei` budget or interactive consent.
 See [local keystore](local-keystore.md) for storage invariants and remaining
-packaged-platform verification. Local signature and MCP migration remain pending.
+packaged-platform verification. The same keystore resolves message/typed-data
+signers; local MCP migration remains pending.
 
 Global output is `pretty`, `json`, or `ndjson`. Pretty is a colored human view,
 not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to

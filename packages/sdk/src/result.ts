@@ -26,6 +26,7 @@ export type NameraLocalSignerFailure = {
     | "LOCAL_SIGNER_REQUIRED"
     | "LOCAL_SIGNER_UNAVAILABLE"
     | "PREPARED_EXECUTION_INVALID"
+    | "PREPARED_SIGNATURE_INVALID"
     | "LOCAL_SIGNATURE_INVALID";
   readonly message: string;
   readonly status: null;

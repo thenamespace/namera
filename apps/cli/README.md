@@ -63,9 +63,11 @@ and atomically installs a non-overwriting encrypted file under `session-keys`
 beside the CLI configuration. POSIX directory/file permissions are 0700/0600;
 there is no plaintext or keyring-unavailable fallback.
 
-Execution resolves the imported wallet/session/chain binding locally and uses
-the SDK's validated prepare/sign/complete flow. Browser export, local message
-signing, and local MCP integration remain migration work. Storage tests use a
+Execution and message/typed-data signing resolve the imported wallet/session/chain
+binding locally and use the SDK's validated prepare/sign/complete flows. `sign`
+requires an explicit session key ID and locally exported signature consent;
+older exports without `allowSignatures: true` cannot sign messages. Browser
+export and local MCP integration remain migration work. Storage tests use a
 substitute keyring; packaged OS-keyring and live-chain journeys remain pending.
 
 `--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,

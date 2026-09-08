@@ -1,12 +1,9 @@
-import type {
-  SignRequest as SignRequestType,
-  VerifySignatureRequest,
-} from "@namera-ai/protocol/dto";
-import { generateUniqueId } from "@namera-ai/utils";
+import type { PrepareSignatureRequest, VerifySignatureRequest } from "@namera-ai/protocol/dto";
 
 import { AuthClient } from "#/auth";
 import { ExecutionClient } from "#/executions";
 import { SessionKeyClient } from "#/session-keys";
+import { SignatureClient } from "#/signatures";
 import { NameraTransport, type NameraClientConfig } from "#/transport";
 import { WalletClient } from "#/wallets";
 
@@ -15,6 +12,7 @@ export class NameraClient {
   readonly executions: ExecutionClient;
   readonly sessionKeys: SessionKeyClient;
   readonly wallets: WalletClient;
+  readonly signatures: SignatureClient;
 
   readonly #transport: NameraTransport;
 
@@ -24,26 +22,11 @@ export class NameraClient {
     this.executions = new ExecutionClient(this.#transport, config.resolveSessionSigner);
     this.sessionKeys = new SessionKeyClient(this.#transport);
     this.wallets = new WalletClient(this.#transport);
+    this.signatures = new SignatureClient(this.#transport, config.resolveSessionSigner);
   }
 
-  sign(request: SignRequestType) {
-    const idempotencyKey = generateUniqueId();
-
-    if (request.type === "message") {
-      return this.#transport.requestWithRetry(
-        this.#transport.client.signature.sign({
-          headers: { "idempotency-key": idempotencyKey },
-          payload: request,
-        }),
-      );
-    }
-
-    return this.#transport.requestWithRetry(
-      this.#transport.client.signature.sign({
-        headers: { "idempotency-key": idempotencyKey },
-        payload: request,
-      }),
-    );
+  sign(request: PrepareSignatureRequest) {
+    return this.signatures.sign(request);
   }
 
   verifySignature(request: VerifySignatureRequest) {

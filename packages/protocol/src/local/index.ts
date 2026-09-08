@@ -15,6 +15,7 @@ export const LocalEvmSessionBinding = Schema.Struct({
   entityId: EvmSessionEntityId,
   isGlobal: Schema.Boolean,
   hasExecutionHooks: Schema.Boolean,
+  allowSignatures: Schema.optional(Schema.Boolean),
   validAfter: Schema.DateTimeUtcFromString,
   validUntil: Schema.DateTimeUtcFromString,
 }).check(

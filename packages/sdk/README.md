@@ -73,6 +73,7 @@ runtimes and tests.
 - `executions.simulate`, `executions.execute`, `executions.getStatus`,
   `executions.list`
 - `executions.prepare`, `executions.complete` — detached execution transport
+- `signatures.prepare`, `signatures.complete` — detached signature transport
 - `sign`, `verifySignature`
 
 Resource operations are intentionally grouped. Signing and verification remain
@@ -106,6 +107,18 @@ receives private key bytes through this interface. Do not populate the binding
 from the preparation response: it must originate from the owner-approved
 installation/export. The CLI keystore and dashboard export integration remain
 pending.
+
+`sign` requires `sessionKeyId` and uses the same local resolver. Its binding must
+explicitly set `allowSignatures: true`, and the signer must provide a
+`signTypedData` callback. The SDK reconstructs Alchemy's replay-safe challenge
+from the original payload and trusted wallet/chain binding, checks preparation
+identity and expiry, verifies the local ECDSA signer, then completes. It checks
+the returned ERC-1271 envelope against the signature it submitted. Completion
+retries never sign again. The optional low-level `signatures.prepare/complete`
+methods provide transport only; direct callers own these validation checks.
+
+API signature policy and expiry do not constrain direct local signing. Alchemy's
+TimeRange hook does not expire ERC-1271 authority; onchain uninstall revokes it.
 
 Before invoking the signer, the SDK checks wallet/session/installation/chain,
 validity, canonical EntryPoint, session nonce selector, requested calldata,

@@ -11,6 +11,10 @@ identify one wallet/session/signing key across distinct supported chains, with
 the wallet and signer addresses, installation ID, validator entity, global flag,
 execution-hook flag, and finite validity interval. The SDK uses these local
 bindings rather than trusting a server preparation to identify its authority.
+Bindings also carry optional `allowSignatures`; only explicit true allows local
+message/typed-data signing. Omission denies signing without changing execution
+authority. Export this value from the owner's approved installation, not from
+a later server challenge.
 
 Before encryption and after decryption, the SDK derives the signer address from
 the private key and checks every binding. This proves key correspondence, not

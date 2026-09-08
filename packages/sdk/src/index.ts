@@ -1,5 +1,6 @@
 export * from "./client.js";
 export * from "./executions.js";
+export * from "./signatures.js";
 export * from "./result.js";
 export * from "./session-keys.js";
 export * from "./wallets.js";

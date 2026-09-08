@@ -32,5 +32,6 @@ export const resolveCliSessionSigner =
       binding,
       ...(maxGasCostWei === undefined ? {} : { maxGasCostWei }),
       signMessage: (message) => account.signMessage({ message }),
+      signTypedData: (typedData) => account.signTypedData(typedData),
     };
   };
