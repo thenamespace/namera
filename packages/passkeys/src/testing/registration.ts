@@ -4,7 +4,7 @@ import type { RegistrationResponseJSON } from "@simplewebauthn/server";
 import { isoCBOR } from "@simplewebauthn/server/helpers";
 
 /** A real P-256 packed self-attestation, without a browser or a mocked verifier. */
-export const registrationFixture = (input: {
+export const createTestRegistration = (input: {
   readonly challenge: string;
   readonly origin: string;
   readonly rpId: string;

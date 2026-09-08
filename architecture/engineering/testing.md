@@ -78,9 +78,13 @@ The wallet-cap case seeds occupancy and calls the production lock/limit helpers
 inside insertion transactions. A second case submits eight HTTP creation retries
 for one ceremony at the final slot: exactly one succeeds, seven return the local
 wallet limit error, and one wallet/signing-key audit pair is added. Occupancy is
-seeded and registration verification uses the package test provider; independent
-users with distinct live WebAuthn ceremonies are not covered by this case. Provider calls
-remain deterministic substitutes; this lane does not verify live bundlers.
+seeded and registration verification uses the package test provider.
+`billing/wallet-cap.test.ts` additionally races five separate organization members
+with fixed per-client cookies and distinct challenges/credentials. Package-owned
+P-256 packed self-attestations pass through the live WebAuthn verifier. Only one
+wallet is created at the last slot, with one audit pair and usage of 50.
+Chain account derivation remains a deterministic substitute; this lane does not
+verify browser hardware or live bundlers.
 
 ## Isolation rules
 

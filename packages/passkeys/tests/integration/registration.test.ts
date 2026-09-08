@@ -2,7 +2,7 @@ import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
 
 import { Passkeys } from "../../src/service.js";
-import { registrationFixture } from "../fixtures/registration.js";
+import { createTestRegistration as registrationFixture } from "../../src/testing/registration.js";
 
 const ceremony = {
   challenge: "test-registration-challenge",

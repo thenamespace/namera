@@ -30,3 +30,9 @@ HTTP integration tests. It retains the private key inside its closure. Its
 optional test layer replaces registration only to provision that public key;
 authentication still runs the live verifier. Never compose it into a server
 runtime layer.
+
+`createTestRegistration()` from the same testing entry produces a fresh P-256
+packed self-attestation for a supplied challenge, origin and RP ID. Both the
+package verifier tests and multi-user HTTP wallet-cap tests use it with
+`Passkeys.layer`, without replacing registration verification. It returns only
+the public key and registration response, never the private key.

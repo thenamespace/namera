@@ -6,6 +6,8 @@ import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
 import { Passkeys } from "../service.js";
 
+export { createTestRegistration } from "./registration.js";
+
 export interface TestAuthenticationInput {
   readonly challenge: string;
   readonly origin: string;

@@ -391,6 +391,10 @@ subscription, and item state. Checkout redirects never grant product access.
 - opt-in PostgreSQL tests for concurrent admission on all four Free meters,
   duplicate reservation/settlement, release after settlement, and anniversary
   rollover. These use the production driver and migrations, not PGlite locks.
+- wallet-cap PostgreSQL tests cover both retrying one ceremony and five
+  independent users with real verified P-256 registration attestations. At
+  49 occupied slots, exactly one new wallet and its audit pair are committed;
+  unsuccessful admissions return the local-wallet limit error.
 
 Deliberately inactive until paid plans:
 
@@ -407,7 +411,6 @@ Deliberately inactive until paid plans:
   provider invoices expose a more exact billable amount.
 - Add production alerts for repeated recovery failures, projection repairs,
   hard-limit denial spikes, stale reservations, and pricing outages.
-- Extend PostgreSQL coverage to concurrent recovery/settlement and resource
-  creation at capacity; the current tests cover meter admission and rollover.
+- Extend combined rollover/recovery coverage across all Free meters.
 - Add future paid-path tests for credit corrections, webhook replay, delivery
   retries, and overage reporting.
