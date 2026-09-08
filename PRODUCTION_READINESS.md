@@ -72,19 +72,25 @@ build/typecheck tasks, not just test suites.
 
 ### Authentication and delegated access
 
-- [ ] Add the missing race tests for magic-link double consumption and the final
-      failed attempt; the conditional consume is already implemented.
-- [ ] Add the missing OAuth tests for redirect, state, PKCE, resource, and client
-      substitution; concurrent code redemption; simultaneous device approval or
-      denial; final polling; and refresh-token-family reuse.
+- [x] Verify mixed token/manual-code magic-link double consumption and OAuth
+      authorization-code redemption with eight concurrent requests on PostgreSQL.
+- [ ] Verify the final failed magic-link attempt under concurrent redemption.
+- [ ] Finish OAuth redirect, state, PKCE, resource, and client-substitution
+      coverage and competing-user device claim/approval-versus-denial races.
+      Duplicate approval, final polling, and refresh-token reuse races pass on
+      PostgreSQL; they do not cover these remaining transitions.
 
 ### Wallet and signing safety
 
 - [ ] Decide and implement the beta recovery path for a wallet whose primary
       P-256 owner is unavailable. If recovery is deferred, prevent meaningful
       mainnet use and disclose the limitation in the account UI.
-- [ ] Add a recovery worker for signature operations left in `reserved` after a
-      process interruption, including billing and policy-reservation release.
+- [x] Expire abandoned reserved signatures and release their billing capacity.
+      The composed billing worker performs this recovery; the signature HTTP
+      suite verifies expiry, rejection of late completion, and restored quota.
+      Current signature policies do not reserve stateful policy capacity.
+- [ ] Verify signature completion racing expiry recovery on PostgreSQL; the
+      sequential expiry regression does not prove the concurrent lock boundary.
 - [ ] Restrict EIP-712 signing by domain, verifying contract, and primary type
       before general typed-data signing is enabled on mainnet.
 - [ ] Confirm wallet creation, reconstruction, message signing, typed-data
@@ -93,12 +99,14 @@ build/typecheck tasks, not just test suites.
 
 ### Execution and policies
 
-- [ ] Add an EVM destination/contract allowlist policy before enabling general
-      mainnet session-key execution.
-- [ ] Add an EVM function-selector allowlist policy before enabling general
-      mainnet contract calls.
-- [ ] Add ERC-20 spend limits before presenting token transfer as a safe
-      delegated mainnet workflow.
+- [x] Expose destination, function-selector and ERC-20 allowance permissions in
+      the session contract, Alchemy compiler and dashboard policy catalog.
+      Permission translation, overlap rejection and privileged-target protection
+      have unit coverage. These are onchain grants/hooks, not new API policies.
+- [ ] Add real-contract enforcement tests for selector grants and ERC-20
+      allowances, including denial and allowance exhaustion. Translation tests
+      alone do not prove deployed-contract behavior. Target denial already has
+      coverage in the Sepolia-fork session lifecycle suite.
 - [ ] Define a stable result when policy-required simulation data is unavailable
       or incomplete; never silently evaluate against missing asset changes.
 - [ ] Give submitted executions a bounded reconciliation lifetime and an
@@ -173,12 +181,12 @@ not required for the beta.
       access and refresh tokens, with committed revocation before the error.
 - [x] Verify duplicate CLI device approvals create one authorization and
       concurrent final polls issue one token response on PostgreSQL.
-- [ ] Add crash-recovery tests for signatures reserved before signing and
-      executions interrupted before submission, after submission, and before
-      settlement.
-- [ ] Add policy tests only for the new destination, selector, and ERC-20 spend
-      policies plus missing simulation context and UTC period boundaries. The
-      existing policy behavior remains covered by the current server suite.
+- [ ] Complete concurrent signature-expiry recovery and execution crash-recovery
+      tests before submission, after submission, and before settlement.
+      Abandoned-signature expiry already has a sequential HTTP/worker regression.
+- [ ] Complete real-contract selector/ERC-20 enforcement coverage plus missing
+      simulation context and UTC period boundaries. Existing permission schema
+      and compiler tests do not replace real-contract enforcement tests.
 
 ### Eight-network capability test
 
