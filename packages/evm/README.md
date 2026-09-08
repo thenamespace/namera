@@ -131,6 +131,16 @@ application still owns one-time approval storage, credential verification and
 atomic consumption. Both signing paths share prepared-account checks and signed
 envelope construction; see [sign/submit](../../architecture/evm/execution/sign-submit.md).
 
+For installed local sessions, preparation accepts persisted installation data
+and reconnects to the same deployed wallet with its secp256k1 validator entity.
+The reconstructed account has no signing capability. `sessionSigningMessage`
+returns the exact UserOperation hash for client-side EIP-191 signing;
+`completeSessionExecution` verifies the returned EOA signature against the
+persisted signer and packs the Modular Account envelope. It also checks the
+session nonce selector, account, calls and prepared context. Application callers
+must enforce active grants, installation lifecycle, policies and atomic billing
+before accepting and broadcasting the envelope.
+
 `evm.sessions.compile` reconstructs the stored account using its public owner,
 checks the address, and returns the protocol installation data for persistence.
 `prepareOperation` selects the stored install or uninstall calldata and prepares

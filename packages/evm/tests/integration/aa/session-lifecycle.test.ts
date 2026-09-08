@@ -6,15 +6,20 @@ import {
   isModularAccountV2,
   toModularAccountV2Base,
 } from "@alchemy/smart-accounts";
-import { EthereumAddress, EvmSessionAuthorization } from "@namera-ai/protocol/evm";
+import { EthereumAddress, EvmSessionAuthorization, Hex } from "@namera-ai/protocol/evm";
 import { createClient, http, parseEther, parseEventLogs } from "viem";
 import { entryPoint07Abi } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import { describe, expect, it } from "vitest";
 
+import { getChainDataByCaip2 } from "../../../src/chains/helpers.js";
+import { reconstructExecutionAccount } from "../../../src/execution/account.js";
+import { makeEvmSessionSignature } from "../../../src/execution/session-signature.js";
+import { normalizeEvmUserOperation } from "../../../src/execution/user-operation.js";
 import { compileEvmSession } from "../../../src/sessions/compile.js";
 import { makeEvmSessionService } from "../../../src/sessions/service.js";
+import { preparedExecutionFixture } from "../../fixtures/prepared-execution.js";
 import { makeAnvilFixture } from "./fixture.js";
 
 const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
@@ -86,13 +91,60 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
         args: [1, recipient, account.address],
       }),
     ).toEqual([true, false, false]);
-    const session = await toModularAccountV2Base({
-      client: publicClient,
-      owner: key,
-      accountAddress: account.address,
-      signerEntity: { entityId: 1, isGlobalValidation: false },
-      getFactoryArgs: async () => ({}),
-    });
+    const chain = getChainDataByCaip2("eip155:11155111");
+    if (chain === undefined) throw new Error("Missing fixture chain");
+    const session = await Effect.runPromise(
+      reconstructExecutionAccount(
+        { account: reconstruction, session: compiled },
+        chain,
+        publicClient,
+      ),
+    );
+    const detached = makeEvmSessionSignature(() => ({ publicClient }));
+    const signSessionOperation = async (
+      operation: Parameters<typeof normalizeEvmUserOperation>[0],
+      value: bigint,
+      to: `0x${string}` = recipient,
+    ) => {
+      const prepared = preparedExecutionFixture(
+        await Effect.runPromise(normalizeEvmUserOperation(operation)),
+        [{ to: EthereumAddress.make(to), value, data: Hex.make("0x") }],
+      );
+      const sessionInput = { account: reconstruction, session: compiled, prepared };
+      const message = await Effect.runPromise(detached.message(sessionInput));
+      const signature = await key.signMessage({ message: { raw: message } });
+      const wrongSigner = privateKeyToAccount(generatePrivateKey());
+      expect(
+        await Effect.runPromise(
+          detached
+            .complete({
+              ...sessionInput,
+              signature: await wrongSigner.signMessage({ message: { raw: message } }),
+            })
+            .pipe(Effect.flip),
+        ),
+      ).toMatchObject({ code: "SIGNING_FAILED" });
+      expect(
+        await Effect.runPromise(
+          detached
+            .complete({
+              ...sessionInput,
+              signature,
+              prepared: {
+                ...prepared,
+                userOperation: { ...prepared.userOperation, nonce: 0n },
+                context: {
+                  ...prepared.context,
+                  userOperation: { ...prepared.context.userOperation, nonce: 0n },
+                },
+              },
+            })
+            .pipe(Effect.flip),
+        ),
+      ).toMatchObject({ code: "SIGNING_FAILED" });
+      return (await Effect.runPromise(detached.complete({ ...sessionInput, signature })))
+        .userOperation.signature;
+    };
     const before = await publicClient.getBalance({ address: recipient });
     await expect(
       submit(
@@ -100,11 +152,14 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
         await session.encodeCalls([
           { to: "0x0000000000000000000000000000000000009999", value: 0n },
         ]),
+        (operation) =>
+          signSessionOperation(operation, 0n, "0x0000000000000000000000000000000000009999"),
       ),
     ).rejects.toThrow();
     const successful = await submit(
       session,
       await session.encodeCalls([{ to: recipient, value: allowance }]),
+      (operation) => signSessionOperation(operation, allowance),
     );
     const events = parseEventLogs({
       abi: entryPoint07Abi,
@@ -117,6 +172,7 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
     const overBudget = await submit(
       session,
       await session.encodeCalls([{ to: recipient, value: 1n }]),
+      (operation) => signSessionOperation(operation, 1n),
     );
     expect(
       parseEventLogs({
@@ -147,7 +203,9 @@ describe.skipIf(anvilUrl === undefined)("real onchain session lifecycle", () => 
       }),
     ).toEqual([false, false, false]);
     await expect(
-      submit(session, await session.encodeCalls([{ to: recipient, value: 0n }])),
+      submit(session, await session.encodeCalls([{ to: recipient, value: 0n }]), (operation) =>
+        signSessionOperation(operation, 0n),
+      ),
     ).rejects.toThrow();
   }, 60_000);
 

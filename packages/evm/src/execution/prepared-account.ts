@@ -2,10 +2,10 @@ import { Effect } from "effect";
 
 import { EvmExecutionError, UnsupportedChainError } from "@namera-ai/protocol";
 
-import { reconstructEvmAccount } from "../accounts/reconstruct.js";
 import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
+import { reconstructExecutionAccount } from "./account.js";
 import type { SignEvmExecutionInput } from "./types.js";
 import { toViemUserOperation } from "./user-operation.js";
 
@@ -21,13 +21,34 @@ export const makeReconstructPreparedAccount = (
       });
     }
 
-    const account = yield* reconstructEvmAccount(input.account, getClients(chain).publicClient);
+    const account = yield* reconstructExecutionAccount(
+      input,
+      chain,
+      getClients(chain).publicClient,
+    );
     const encodedCalls = yield* Effect.tryPromise({
       try: () => account.encodeCalls(input.prepared.context.calls),
       catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
     });
     const contextGas = input.prepared.context.userOperation.gas;
     const operation = input.prepared.userOperation;
+    if (input.session !== undefined) {
+      const nonceKey =
+        (BigInt(input.session.authorization.entityId) << 8n) | (input.session.isGlobal ? 1n : 0n);
+      // Viem allocates a parallel lane in the upper 152 bits of the nonce key.
+      // The lower 40 bits select the validation entity and flags, not the lane.
+      if (
+        ((operation.nonce >> 64n) & ((1n << 40n) - 1n)) !== nonceKey ||
+        operation.factory !== undefined ||
+        operation.factoryData !== undefined ||
+        operation.authorization !== undefined
+      ) {
+        return yield* new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Prepared operation does not select the stored session validator"),
+        });
+      }
+    }
     if (
       input.prepared.context.chainId !== input.prepared.chainId ||
       input.prepared.context.account.toLowerCase() !== account.address.toLowerCase() ||

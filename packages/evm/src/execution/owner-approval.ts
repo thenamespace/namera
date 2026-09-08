@@ -24,7 +24,7 @@ export const makeEvmOwnerApproval = (
   const resolve = Effect.fn("evm.execution.resolveOwnerApproval")(function* (
     input: SignEvmExecutionInput,
   ) {
-    if (input.account.owner.validatorType !== "webauthn_p256") {
+    if (input.account.owner.validatorType !== "webauthn_p256" || input.session !== undefined) {
       return yield* new EvmExecutionError({
         code: "SIGNING_FAILED",
         cause: new Error("Owner approval requires a passkey"),

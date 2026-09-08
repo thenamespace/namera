@@ -10,11 +10,11 @@ import type { EvmGasPriceQuote } from "@namera-ai/protocol";
 import { getAddress, toEventSelector } from "viem";
 import { UserOperationExecutionError } from "viem/account-abstraction";
 
-import { reconstructEvmAccount } from "../accounts/reconstruct.js";
 import { makeEvmExecutionBilling } from "../billing/execution.js";
 import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
+import { reconstructExecutionAccount } from "./account.js";
 import type { PrepareEvmExecutionInput } from "./types.js";
 import { applyEvmExecutionSponsorship, normalizeEvmUserOperation } from "./user-operation.js";
 
@@ -83,7 +83,7 @@ export const makePrepareEvmExecution = (
     }
 
     const clients = getClients(chain);
-    const account = yield* reconstructEvmAccount(input.account, clients.publicClient);
+    const account = yield* reconstructExecutionAccount(input, chain, clients.publicClient);
     const smartAccountClient = clients.createSmartAccountClient(account);
     const estimatedUserOperation = yield* Effect.tryPromise({
       try: () => smartAccountClient.prepareUserOperation({ account, calls: input.calls }),

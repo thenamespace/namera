@@ -11,6 +11,8 @@ export { isReceiptForEvmExecution } from "./execution/receipt-binding.js";
 export type {
   EvmExecutionService,
   CompleteEvmOwnerApprovalInput,
+  CompleteEvmSessionExecutionInput,
+  SignEvmSessionExecutionInput,
   GetEvmExecutionReceiptInput,
   PrepareEvmExecutionInput,
   SignEvmExecutionInput,

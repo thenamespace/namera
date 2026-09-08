@@ -10,6 +10,7 @@ import {
   makeGetEvmUserOperationStatus,
   makeWaitForEvmExecutionReceipt,
 } from "./receipt.js";
+import { makeEvmSessionSignature } from "./session-signature.js";
 import { makeSignEvmExecution } from "./sign.js";
 import { makeSubmitEvmExecution } from "./submit.js";
 import type { EvmExecutionService } from "./types.js";
@@ -23,8 +24,11 @@ export const makeEvmExecutionService = (
   // across every phase while keeping their large Viem types package-internal.
   const clients = makeExecutionClients(config);
   const ownerApproval = makeEvmOwnerApproval(clients);
+  const sessionSignature = makeEvmSessionSignature(clients);
 
   return {
+    sessionSigningMessage: sessionSignature.message,
+    completeSessionExecution: sessionSignature.complete,
     prepare: makePrepareEvmExecution(clients, makeEvmGasPrice(config, httpClient)),
     sign: makeSignEvmExecution(clients),
     ownerApprovalChallenge: ownerApproval.challenge,

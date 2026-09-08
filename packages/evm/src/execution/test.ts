@@ -36,6 +36,22 @@ export const makeTestEvmExecutionService = (
   } as const;
 
   return {
+    sessionSigningMessage: Effect.fn("evm.execution.test.sessionSigningMessage")(() =>
+      Effect.fail(
+        new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Configure an explicit local session test adapter"),
+        }),
+      ),
+    ),
+    completeSessionExecution: Effect.fn("evm.execution.test.completeSessionExecution")(() =>
+      Effect.fail(
+        new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Configure an explicit local session test adapter"),
+        }),
+      ),
+    ),
     ownerApprovalChallenge: Effect.fn("evm.execution.test.ownerApprovalChallenge")(() =>
       Effect.fail(
         new EvmExecutionError({

@@ -35,13 +35,35 @@ as managed signing, including the original billing quote. It does not broadcast.
 The application must load the prepared operation from durable storage, verify
 credential/origin/RP/user-verification, consume its one-time approval and advance
 the authenticator counter atomically before persisting the signed payload. The
-EVM encoder is not a replacement for that authentication boundary. These
-application approval routes are not wired yet.
+EVM encoder is not a replacement for that authentication boundary. No HTTP
+authentication or persistence is performed inside this adapter.
 
 The local Anvil test deploys and executes with this detached signature using a
 public-key-only reconstruction adapter. It also rejects mismatched challenges
 and changed prepared gas fields. This verifies contract encoding, not browser
 authenticator UX or hosted bundler sponsorship.
+
+## Detached local session execution
+
+Preparation can select a persisted single-signer installation instead of the
+root validator. The adapter first reconstructs and checks the wallet address,
+requires deployed code, then reconnects with the installation's signer address,
+entity ID and global-validation flag. That public-only account throws if asked
+to sign and cannot deploy or replace the wallet owner.
+
+`sessionSigningMessage` returns the ERC-4337 digest. The client signs its raw
+32 bytes with EIP-191 `signMessage`, not as UTF-8 hexadecimal text.
+`completeSessionExecution` verifies that EOA signature against the persisted
+session signer and packs it through Alchemy's `packUOSignature`. The completed
+envelope preserves the prepared billing quote and deterministic operation hash.
+
+Both phases repeat prepared-account/context checks. The nonce key must select
+the exact stored entity and global flag in its low 40 bits. Viem's parallel nonce
+lanes occupy the upper 152 bits; the full nonce remains bound by the signature.
+Session executions cannot contain deployment factory data. Passkey
+owner completion refuses a session-selected operation. Grant/lifecycle checks,
+API policy reservations, one-time completion and persistence remain application
+responsibilities; the adapter alone is not an authorization API.
 
 ```mermaid
 sequenceDiagram
