@@ -50,10 +50,18 @@ Server is the Node composition and transport boundary:
 - implement typed API handlers;
 - resolve cookie/API-key/OAuth actors and permissions;
 - apply cookies, form parsing, redirects, headers, rate limits, and request context;
-- host MCP Streamable HTTP and tool adapters;
+- retain MCP OAuth while the CLI hosts local Streamable HTTP and tool adapters;
 - start/stop workers with runtime lifecycle.
 
 Handlers should decode through `HttpApi`, enforce transport/actor policy, call one application operation, and map the safe result. They should not duplicate queries or business transactions.
+
+The outer `SecurityHeadersMiddleware` installs API-origin response protections
+before rate limiting and routing. Its pre-response handler adds
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and
+`Referrer-Policy: no-referrer` without replacing existing cache, redirect, or
+cookie headers. Focused transport tests cover success, redirect, and error
+response statuses. Dashboard document CSP and WebAuthn Permissions-Policy must
+be configured on the dashboard origin; these API headers do not supply them.
 
 ## Testing path
 

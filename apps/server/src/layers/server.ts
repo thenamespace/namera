@@ -16,7 +16,12 @@ import {
   SessionKeyWorkerLive,
   ServicesLive,
 } from "#/layers/services";
-import { CorsMiddleware, RateLimitMiddleware, TelemetryMiddleware } from "#/middlewares/index";
+import {
+  CorsMiddleware,
+  RateLimitMiddleware,
+  SecurityHeadersMiddleware,
+  TelemetryMiddleware,
+} from "#/middlewares/index";
 import { RateLimiterLive } from "#/rate-limit";
 import {
   ApiReferenceRoutes,
@@ -70,7 +75,8 @@ const Routes = Layer.mergeAll(
 // accepted requests retain consistent operational context.
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
-  middleware: (httpEffect) => TelemetryMiddleware(RateLimitMiddleware(httpEffect)),
+  middleware: (httpEffect) =>
+    SecurityHeadersMiddleware(TelemetryMiddleware(RateLimitMiddleware(httpEffect))),
 }).pipe(
   Layer.provide(
     HttpMiddleware.layerTracerDisabledForUrls([
