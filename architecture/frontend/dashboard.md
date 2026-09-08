@@ -88,12 +88,24 @@ UIKit `Field` primitives. UIKit selection controls adapt value/change props
 explicitly. Permission-aware route data decides whether a form is interactive;
 read-only forms do not autosave or block navigation.
 
+The shared `FieldError` renders explicit resolver messages with UIKit typography
+and `role="alert"`. It must not delegate to React Aria's context-dependent
+`FieldError`: native inputs managed by React Hook Form do not provide that
+validation context, so messages would be silently hidden. Render coverage checks
+both explicit children and resolver errors outside a React Aria form.
+
 The signature policy editor requires at least one EIP-712 rule for typed-data
 selection. Each rule includes a network, verifying contract, optional exact
 domain name/version, and comma-separated primary types. Its Effect form schema
 converts these to the public policy contract and rejects duplicate types. Shared
 summaries display each tuple and warn on existing unrestricted policies. API-only
 scope and the absence of message-value limits are disclosed in the editor.
+
+Production-preview browser verification covered empty-rule and duplicate-type
+errors, keyboard toggling of exact domain matching, saving and reopening a rule,
+and preserving an exact empty name. This exercised a local draft only: it did
+not create or install an onchain session. Full session creation/approval journeys
+remain separate gates.
 
 ## Shared UI ownership
 

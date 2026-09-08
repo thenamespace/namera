@@ -111,8 +111,9 @@ test substitutes; the API, policy engine and persistence are real.
   Migrate remote-MCP authentication separately.
 - Complete end-to-end browser consent/import coverage and consumer conformance.
 - Add namespace-specific signature variants only with another chain adapter.
-- Verify the EIP-712 rule editor in a browser. New session creation requires
-  explicit typed-data rules at the shared API contract boundary; these
-  API rules do not prevent direct local signing outside Namera.
+- Complete browser session creation/approval with EIP-712 rules. Local draft
+  validation, save/edit and exact-domain round trips passed production-preview
+  browser checks. The shared API creation contract requires explicit rules;
+  these API rules do not prevent direct local signing outside Namera.
 - Add per-session-key signature count policies through the existing generic
   reservation model if product delegation limits require them.

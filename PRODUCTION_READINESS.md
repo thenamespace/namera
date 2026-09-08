@@ -118,7 +118,8 @@ build/typecheck tasks, not just test suites.
       completion; the dashboard editor preserves exact domain restrictions.
       These are API restrictions, not limits on direct local signing. Existing
       unrestricted development sessions must be revoked/replaced or the dev DB
-      wiped before beta. Browser editor verification remains pending.
+      wiped before beta. Production-preview browser checks cover editor errors,
+      save/reopen and exact-empty-domain preservation, not onchain approval.
 - [ ] Confirm wallet creation, reconstruction, message signing, typed-data
       signing, ERC-1271/ERC-6492 verification, and revocation behave identically
       on every enabled network.
