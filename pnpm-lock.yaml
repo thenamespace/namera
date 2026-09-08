@@ -240,6 +240,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
+      viem:
+        specifier: 'catalog:'
+        version: 2.55.11(typescript@6.0.3)(zod@4.4.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -814,6 +817,9 @@ importers:
 
   packages/sdk:
     dependencies:
+      '@alchemy/smart-accounts':
+        specifier: 'catalog:'
+        version: 5.2.0(viem@2.55.11(typescript@6.0.3)(zod@4.4.3))
       '@namera-ai/api':
         specifier: workspace:*
         version: link:../api
@@ -826,6 +832,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.105
+      viem:
+        specifier: 'catalog:'
+        version: 2.55.11(typescript@6.0.3)(zod@4.4.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

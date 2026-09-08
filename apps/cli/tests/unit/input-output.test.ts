@@ -9,6 +9,7 @@ import { formatValue } from "../../src/services/output.js";
 const executeParams = JSON.stringify({
   namespace: "eip155",
   walletId: "01a01924-9b93-754b-a6a2-cbdb597757cf",
+  sessionKeyId: "01a01924-9b93-754b-a6a2-cbdb597757d0",
   chainId: "eip155:11155111",
   sponsor: false,
   calls: [

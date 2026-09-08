@@ -5,6 +5,7 @@ import {
   EthereumAddress,
   EvmTypedData,
   Hex,
+  SessionKeyId,
   SupportedEvmChainId,
   WalletId,
 } from "@namera-ai/protocol";
@@ -36,6 +37,10 @@ const makePrompts = () => ({
   chainId: (message = "Chain") =>
     Prompt.run(schemaText(message, SupportedEvmChainId, "eip155:11155111")).pipe(
       Effect.flatMap(Schema.decodeUnknownEffect(SupportedEvmChainId)),
+    ),
+  sessionKeyId: (message = "Session key ID") =>
+    Prompt.run(schemaText(message, SessionKeyId)).pipe(
+      Effect.flatMap(Schema.decodeUnknownEffect(SessionKeyId)),
     ),
   ethereumAddress: (message: string) =>
     Prompt.run(schemaText(message, EthereumAddress)).pipe(

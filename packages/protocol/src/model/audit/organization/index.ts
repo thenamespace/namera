@@ -10,6 +10,7 @@ import {
 } from "./cli-authorization.js";
 import {
   ExecutionConfirmedEventData,
+  ExecutionSigningEventData,
   ExecutionFailedEventData,
   ExecutionSubmittedEventData,
 } from "./execution.js";
@@ -29,7 +30,11 @@ import {
   McpAuthorizationRevokedEventData,
 } from "./oauth-authorization.js";
 import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
-import { SessionKeyCreatedEventData, SessionKeyRevokedEventData } from "./session-key.js";
+import {
+  SessionKeyCreatedEventData,
+  SessionKeyRevokedEventData,
+  SessionKeyOperationEventData,
+} from "./session-key.js";
 import { SignatureCreatedEventData } from "./signature.js";
 import {
   WalletCreatedEventData,
@@ -54,6 +59,7 @@ export const SigningKeyCreatedEvent = organizationEvent(SigningKeyCreatedEventDa
 export const WalletUpdatedEvent = organizationEvent(WalletUpdatedEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 export const SessionKeyRevokedEvent = organizationEvent(SessionKeyRevokedEventData);
+export const SessionKeyOperationEvent = organizationEvent(SessionKeyOperationEventData);
 export const ApiKeyCreatedEvent = organizationEvent(ApiKeyCreatedEventData);
 export const ApiKeyRevokedEvent = organizationEvent(ApiKeyRevokedEventData);
 export const McpAuthorizationApprovedEvent = organizationEvent(McpAuthorizationApprovedEventData);
@@ -61,6 +67,7 @@ export const McpAuthorizationRevokedEvent = organizationEvent(McpAuthorizationRe
 export const CliAuthorizationApprovedEvent = organizationEvent(CliAuthorizationApprovedEventData);
 export const CliAuthorizationRevokedEvent = organizationEvent(CliAuthorizationRevokedEventData);
 export const ExecutionSubmittedEvent = organizationEvent(ExecutionSubmittedEventData);
+export const ExecutionSigningEvent = organizationEvent(ExecutionSigningEventData);
 export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
 export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
 export const SignatureCreatedEvent = organizationEvent(SignatureCreatedEventData);
@@ -80,6 +87,7 @@ export const OrganizationEvent = Schema.Union([
   WalletUpdatedEvent,
   SessionKeyCreatedEvent,
   SessionKeyRevokedEvent,
+  SessionKeyOperationEvent,
   ApiKeyCreatedEvent,
   ApiKeyRevokedEvent,
   McpAuthorizationApprovedEvent,
@@ -87,6 +95,7 @@ export const OrganizationEvent = Schema.Union([
   CliAuthorizationApprovedEvent,
   CliAuthorizationRevokedEvent,
   ExecutionSubmittedEvent,
+  ExecutionSigningEvent,
   ExecutionConfirmedEvent,
   ExecutionFailedEvent,
   SignatureCreatedEvent,

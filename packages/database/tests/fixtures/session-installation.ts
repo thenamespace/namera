@@ -56,9 +56,20 @@ export const installationFixture = Effect.fn("test.installation.fixture")(functi
       entityId: 0,
     },
   });
+  const sessionSigner = yield* repository.core.signingKey.insert({
+    id: SigningKeyId.make(generateUniqueId()),
+    organizationId: organization.id,
+    purpose: "session",
+    custody: "local",
+    algorithm: "secp256k1",
+    status: "active",
+    publicKeyHex: "0x04aabbdd",
+    data: { version: 1, type: "local-key" },
+  });
   const sessionKey = yield* repository.core.sessionKey.insert({
     organizationId: organization.id,
     walletId: wallet.id,
+    signingKeyId: sessionSigner.id,
     createdByActorId: actor.id,
     namespace: "eip155",
     metadata: { version: 1, name },

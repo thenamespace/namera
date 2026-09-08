@@ -1,9 +1,14 @@
 # Session keys and grants
 
-A session key is an immutable policy bundle attached to one wallet. It is not a
-secret signing key: Namera's wallet owner remains the signer. A session key
-describes delegated authority and becomes usable by a machine actor only through
-an active grant.
+A session key is an immutable delegation attached to one wallet and one
+`signing_key`. Registration accepts a local secp256k1 public key; Namera never
+receives its private key. Chain installations store the compiled onchain
+authorization separately from additional API policies. Registration is pending,
+not authority to execute. Machine actors additionally require an active grant.
+
+The migration is incomplete: local operation signing and the dashboard creation
+flow still need wiring. Existing
+execution/signature workflows must not be considered self-custodial yet.
 
 ## Persistence and policy references
 
@@ -22,24 +27,83 @@ codes.
 sequenceDiagram
   actor Admin
   participant App as Session-key application
-  participant Policy as EVM policy registry
+  participant EVM as EVM session adapter
   participant Tx as PostgreSQL transaction
 
-  Admin->>App: wallet + metadata + create-policy union
-  App->>App: verify active organization wallet and namespace
-  App->>Policy: validate cardinality and materialize stable policy IDs/applicability
-  Policy-->>App: deterministic ordered policies
+  Admin->>App: wallet + public signer + chains + lifetime + permissions + API policies
+  App->>App: verify active tenant wallet and local passkey owner
+  App->>EVM: validate signer curve point and compile each chain installation
+  EVM-->>App: canonical signer and installation calldata/configuration
   App->>App: canonical policy hash excluding generated IDs
-  App->>Tx: insert session key and initialize handler state
+  App->>Tx: insert local signing key, pending session and pending installations
   App->>Tx: audit + notifications + email jobs
   Tx-->>Admin: expanded session-key view
 ```
 
 Policy hashing uses purpose-separated SHA-256 over canonical JSON, sorts object
 keys, ignores generated policy IDs, and is invariant to policy-array order.
-Creation requires a non-expired time window and rejects repeated singleton
-policy types. It does not impose arbitrary payload, call-count, or address-list
-limits beyond each policy schema's semantic validation.
+Creation requires a finite, non-expired onchain lifetime and rejects repeated
+singleton API policy types. API policies may be empty. Duplicate signer public
+keys within a tenant return `SIGNER_ALREADY_REGISTERED` using a conflict-safe
+insert inside the transaction; no orphan session or duplicate notification is
+created. Each installation has a separate domain-separated configuration hash
+binding wallet, signer identity, chain and compiled authorization.
+
+The database defaults sessions to `pending`. Its activation operation requires
+at least one installed chain record; operation authorization must also verify
+the requested chain's installation. Receipt reconciliation invokes activation
+only after confirming the installation.
+
+## Owner approval
+
+`POST /session-keys/operations/prepare` takes an installation ID, install/uninstall
+kind, idempotency key and sponsorship choice. It accepts no arbitrary calldata.
+Only a user with the corresponding create/revoke permission may prepare it.
+The EVM adapter prepares the stored self-call using the public passkey owner.
+A short transaction locks the wallet and owner key, repeats lifecycle checks,
+enforces one pending owner operation per wallet/chain, and records the exact
+prepared operation plus an audit event. Provider calls happen outside this lock.
+Retries return the same operation and challenge; changing the request under the
+same key is rejected. The challenge signs the precise ERC-4337 digest using the
+account's WebAuthn encoding, not an unrelated random approval token.
+
+`POST /session-keys/operations/complete` accepts the operation ID and a browser
+assertion. The original actor must still have the operation's permission. The
+live passkey verifier checks credential, RP, origin, user verification, challenge
+and counter. EVM validates and encodes the assertion against the persisted
+operation. The transaction repeats owner/lifecycle checks, advances the counter,
+conditionally accepts the signature, reserves execution/gas usage and appends
+the approval audit event. Quota failure rolls back all these writes. A successful
+retry reads the durable state without advancing the counter or charging twice.
+
+Completion returns `signed`; the scoped session-key worker owns broadcasting
+and receipt processing. Session-operation billing holds use source type
+`session-key-operation` and are deliberately deferred by generic expiry recovery.
+They cannot be released merely because a signed root operation's HTTP or approval
+TTL elapsed. No private key or signed operation is returned in the completion
+response. Registration/approval alone never sets a session to active.
+
+`GET /session-keys/operations/:operationId` allows organization users with
+`session-key:read` to poll only operation ID and status. Cross-tenant IDs return
+`OPERATION_UNAVAILABLE`; machine credentials cannot read owner approval records.
+Neither signed envelopes nor private approval/lease data cross this boundary.
+
+## Receipt recovery
+
+The worker runs every five seconds after database migrations, expires only
+unsigned approvals, and claims up to 20 signed/submitted operations with two-minute
+leases. Four operations may reconcile concurrently. It queries receipts before
+resubmitting the identical stored signed operation; ambiguous provider failures
+retain both signature and quota reservation and retry after 15 seconds.
+
+Receipt chain, UserOperation hash, sender, nonce and EntryPoint must match the
+persisted signed envelope. Under the wallet lock and a live lease, one transaction
+finishes the operation ledger, updates the installation, activates successful
+installations, settles execution/gas reservations and appends an audit event.
+Included failures consume execution usage and actual sponsored gas. Failed
+installations may retry; failed uninstalls leave the permission installed.
+Approval TTL never releases a signed operation's reservation. Stuck owner nonces
+still need explicit cancellation/replacement recovery before beta.
 
 ## Selection model
 
@@ -51,20 +115,43 @@ mutating state.
 
 ## Revocation
 
-Revoking a session key conditionally marks it revoked and revokes all active
-grants in the same transaction. The first transition appends audit,
-notifications, and email jobs; retries are side-effect-free. API-key, OAuth, and
-dashboard caches refresh because their grant views change.
+Revocation first changes a pending/active session to `revoking`, revokes every
+active grant and expires unsigned owner approvals in one wallet-locked
+transaction. `session_key.revocation_requested` records this immediate API
+cutoff. `revokedAt` and `revokedByActorId` identify the request, not its later
+onchain completion. Retries do not repeat the transition.
+
+Signed owner operations remain recoverable: revocation cannot invalidate bytes
+already signed by the owner. A late installation receipt must leave the session
+`revoking`, never reactivate it. Installed chains require a new owner-approved
+uninstall; preparing or completing an uninstall requires the session to already
+be revoking. Failed included uninstalls leave that chain installed and retryable.
+
+The database only permits final `revoked` status when no installation is
+submitted, installed or revoking and no signed/submitted owner operation remains.
+Never-installed pending/failed chains require no fabricated uninstall receipt.
+The final transition, `session_key.revoked` audit event, notification and email
+jobs share one transaction. A wholly unsigned registration can finish at the
+initial request; otherwise receipt reconciliation finalizes it after the last
+successful removal. Completion notifications are never sent at the initial API
+cutoff while onchain authority remains.
 
 ## Reads
 
-User actors read organization- or wallet-scoped expanded views with creator and
-wallet data. Machine actors read compact key and wallet views only through their
+User actors read organization- or wallet-scoped expanded views with creator,
+wallet and public installation data. Private material, operation leases and
+installation calldata are not returned. Machine actors read key and wallet views only through their
 active grants. Routes expose create/get/list/wallet-list/revoke boundaries under
 `/session-keys`.
 
 ## Pending
 
+- Complete stuck signed-operation cancellation/replacement recovery and connect
+  the status endpoint to browser polling.
+- Replace legacy root-signing execution/signature flows with local session signing.
+- Update dashboard creation and existing API-only test fixtures for this contract.
+- Wire dashboard revocation to owner-approved uninstall on every installed chain
+  and clearly distinguish immediate API cutoff from pending onchain removal.
 - Add retention behavior for expired/revoked keys and historical grants.
 - Per-grant editing is intentionally unsupported; revoke/replace the parent
   credential or authorization instead.

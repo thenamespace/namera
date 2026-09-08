@@ -6,6 +6,7 @@ import {
   CompleteExecutionRequest,
   PrepareExecutionRequest,
 } from "../../src/dto/execution-signing.js";
+import { SimulateExecutionRequest } from "../../src/dto/execution.js";
 
 const prepare = {
   namespace: "eip155",
@@ -27,6 +28,10 @@ describe("local execution wire contracts", () => {
     expect(Schema.decodeUnknownSync(PrepareExecutionRequest)(prepare).sponsor).toBeUndefined();
     const { sessionKeyId: _sessionKeyId, ...missingSession } = prepare;
     expect(() => Schema.decodeUnknownSync(PrepareExecutionRequest)(missingSession)).toThrow();
+    expect(() => Schema.decodeUnknownSync(SimulateExecutionRequest)(missingSession)).toThrow();
+    expect(Schema.decodeUnknownSync(SimulateExecutionRequest)(prepare).sessionKeyId).toBe(
+      prepare.sessionKeyId,
+    );
   });
 
   it.each([

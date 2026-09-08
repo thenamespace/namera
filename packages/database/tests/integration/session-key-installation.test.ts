@@ -17,9 +17,16 @@ layer(Persistence)("session installation persistence", (it) => {
     Effect.gen(function* () {
       yield* (yield* TestDatabase).reset;
       const repository = (yield* Repository).core.sessionKeyInstallation;
+      const sessions = (yield* Repository).core.sessionKey;
       const owner = yield* fixture("installation-owner");
       const other = yield* fixture("installation-other");
       const installed = yield* repository.insert(owner.input);
+      expect(
+        (yield* sessions.findById(owner.input.sessionKeyId, owner.organization.id))?.status,
+      ).toBe("pending");
+      expect(
+        yield* sessions.activate(owner.input.sessionKeyId, owner.organization.id),
+      ).toBeUndefined();
       const scope = { id: installed.id, organizationId: owner.organization.id };
       const confirmation = {
         ...scope,
@@ -41,6 +48,34 @@ layer(Persistence)("session installation persistence", (it) => {
         yield* repository.markInstalled({ ...confirmation, userOperationHash: otherHash }),
       ).toBeUndefined();
       expect((yield* repository.markInstalled(confirmation))?.status).toBe("installed");
+      expect(
+        yield* sessions.activate(owner.input.sessionKeyId, other.organization.id),
+      ).toBeUndefined();
+      expect(
+        (yield* sessions.activate(owner.input.sessionKeyId, owner.organization.id))?.status,
+      ).toBe("active");
+      expect(
+        yield* sessions.activate(owner.input.sessionKeyId, owner.organization.id),
+      ).toBeUndefined();
+      expect(
+        yield* sessions.beginRevocation(
+          owner.input.sessionKeyId,
+          other.organization.id,
+          other.actor.id,
+          confirmation.confirmedAt,
+        ),
+      ).toBeUndefined();
+      expect(
+        (yield* sessions.beginRevocation(
+          owner.input.sessionKeyId,
+          owner.organization.id,
+          owner.actor.id,
+          confirmation.confirmedAt,
+        ))?.status,
+      ).toBe("revoking");
+      expect(
+        yield* sessions.finishRevocation(owner.input.sessionKeyId, owner.organization.id),
+      ).toBeUndefined();
       expect((yield* repository.beginRevocation(scope))?.status).toBe("revoking");
       expect(yield* repository.markRevoked(confirmation)).toBeUndefined();
       yield* repository.markRevocationSubmitted({ ...scope, userOperationHash: otherHash });
@@ -49,6 +84,15 @@ layer(Persistence)("session installation persistence", (it) => {
       ).toBe("revoked");
       expect(yield* repository.markInstalled(confirmation)).toBeUndefined();
       expect(yield* repository.beginRevocation(scope)).toBeUndefined();
+      expect(
+        yield* sessions.finishRevocation(owner.input.sessionKeyId, other.organization.id),
+      ).toBeUndefined();
+      expect(
+        (yield* sessions.finishRevocation(owner.input.sessionKeyId, owner.organization.id))?.status,
+      ).toBe("revoked");
+      expect(
+        yield* sessions.finishRevocation(owner.input.sessionKeyId, owner.organization.id),
+      ).toBeUndefined();
     }),
   );
 

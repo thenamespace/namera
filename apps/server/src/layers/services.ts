@@ -12,6 +12,7 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
+import { SessionKeyWorkerLayer } from "#/workers/session-key";
 
 const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
   Layer.provide(Database.layer),
@@ -82,6 +83,17 @@ export const BillingWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
     yield* DatabaseMigration;
     return BillingWorkerLayer;
+  }),
+).pipe(
+  Layer.provide(DatabaseMigration.layer),
+  Layer.provide(ApplicationLive),
+  Layer.provide(ServicesLive),
+);
+
+export const SessionKeyWorkerLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* DatabaseMigration;
+    return SessionKeyWorkerLayer;
   }),
 ).pipe(
   Layer.provide(DatabaseMigration.layer),

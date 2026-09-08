@@ -6,6 +6,7 @@ import type {
   DatabaseError,
   OrganizationId,
   SessionKeyGrantId,
+  SessionKeyId,
 } from "@namera-ai/protocol";
 import {
   SessionKey,
@@ -15,7 +16,7 @@ import {
   type SessionKeyGrant as SessionKeyGrantModel,
   type SessionKeyGrantInsert as SessionKeyGrantInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, count } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -27,6 +28,11 @@ export interface SessionKeyGrantView {
 }
 
 export interface SessionKeyGrantRepositoryService {
+  readonly countRevokedForSession: (input: {
+    readonly organizationId: OrganizationId;
+    readonly sessionKeyId: SessionKeyId;
+    readonly revokedAt: DateTime.Utc;
+  }) => Effect.Effect<number, DatabaseError>;
   readonly insertMany: (
     data: ReadonlyArray<SessionKeyGrantInsertModel>,
   ) => Effect.Effect<ReadonlyArray<SessionKeyGrantModel>, DatabaseError>;
@@ -37,6 +43,7 @@ export interface SessionKeyGrantRepositoryService {
   readonly findByIdWithSessionKey: (
     id: SessionKeyGrantId,
     organizationId: OrganizationId,
+    forUpdate?: boolean,
   ) => Effect.Effect<SessionKeyGrantView | undefined, DatabaseError>;
   readonly findActiveForActors: (
     organizationId: OrganizationId,
@@ -96,6 +103,25 @@ export class SessionKeyGrantRepository extends Context.Service<
       }, mapRepositoryError);
 
       return SessionKeyGrantRepository.of({
+        countRevokedForSession: Effect.fn(
+          "database.sessionKeyGrantRepository.countRevokedForSession",
+        )(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const [row] = yield* db
+            .select({ count: count() })
+            .from(sessionKeyGrant)
+            .where(
+              and(
+                eq(sessionKeyGrant.organizationId, input.organizationId),
+                eq(sessionKeyGrant.sessionKeyId, input.sessionKeyId),
+                eq(
+                  sessionKeyGrant.revokedAt,
+                  Schema.encodeSync(Schema.DateTimeUtcFromDate)(input.revokedAt),
+                ),
+              ),
+            );
+          return row?.count ?? 0;
+        }, mapRepositoryError),
         insertMany: Effect.fn("database.sessionKeyGrantRepository.insertMany")(function* (data) {
           if (data.length === 0) return [];
           const db = yield* transactionOrDatabase(database);
@@ -113,9 +139,9 @@ export class SessionKeyGrantRepository extends Context.Service<
         ),
         findByIdWithSessionKey: Effect.fn(
           "database.sessionKeyGrantRepository.findByIdWithSessionKey",
-        )(function* (id, organizationId) {
+        )(function* (id, organizationId, forUpdate = false) {
           const db = yield* transactionOrDatabase(database);
-          const rows = yield* db
+          const query = db
             .select({ grant: sessionKeyGrant, sessionKey })
             .from(sessionKeyGrant)
             .innerJoin(
@@ -129,6 +155,7 @@ export class SessionKeyGrantRepository extends Context.Service<
               and(eq(sessionKeyGrant.id, id), eq(sessionKeyGrant.organizationId, organizationId)),
             )
             .limit(1);
+          const rows = yield* forUpdate ? query.for("update") : query;
           const row = rows[0];
           return row === undefined
             ? undefined

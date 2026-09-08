@@ -6,16 +6,19 @@ import {
   type DatabaseError,
   type OrganizationId,
   type SessionKeyInstallationId,
+  type SessionKeyId,
   type SessionKeyOperationId,
   type TransactionHash,
   type UserOperationHash,
+  type WalletId,
+  type SupportedEvmChainId,
 } from "@namera-ai/protocol";
 import { SessionKeyOperation, SessionKeyOperationInsert } from "@namera-ai/protocol/model";
 import { and, asc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { sessionKeyOperation as table } from "#/schema/index";
+import { sessionKeyOperation as table, sessionKeyInstallation } from "#/schema/index";
 
 type Scope = { readonly id: SessionKeyOperationId; readonly organizationId: OrganizationId };
 type Lease = Scope & { readonly leaseToken: string; readonly now: DateTime.Utc };
@@ -39,6 +42,11 @@ export interface SessionKeyOperationRepositoryService {
     readonly organizationId: OrganizationId;
     readonly installationId: SessionKeyInstallationId;
     readonly kind: SessionKeyOperation["kind"];
+  }) => Result;
+  readonly findActiveForWalletChain: (input: {
+    readonly organizationId: OrganizationId;
+    readonly walletId: WalletId;
+    readonly chainId: SupportedEvmChainId;
   }) => Result;
   readonly acceptSignature: (
     input: Scope & {
@@ -68,6 +76,11 @@ export interface SessionKeyOperationRepositoryService {
   readonly expireAwaitingSignatures: (input: {
     readonly now: DateTime.Utc;
     readonly limit: number;
+  }) => Batch;
+  readonly cancelUnsignedForSession: (input: {
+    readonly organizationId: OrganizationId;
+    readonly sessionKeyId: SessionKeyId;
+    readonly now: DateTime.Utc;
   }) => Batch;
 }
 
@@ -163,6 +176,25 @@ export class SessionKeyOperationRepository extends Context.Service<
                   eq(table.organizationId, input.organizationId),
                   eq(table.installationId, input.installationId),
                   eq(table.kind, input.kind),
+                  inArray(table.status, ["awaiting-signature", "signed", "submitted"]),
+                ),
+              )
+              .limit(1),
+          );
+        }, mapRepositoryError),
+        findActiveForWalletChain: Effect.fn(
+          "database.sessionKeyOperation.findActiveForWalletChain",
+        )(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .select()
+              .from(table)
+              .where(
+                and(
+                  eq(table.organizationId, input.organizationId),
+                  eq(table.walletId, input.walletId),
+                  eq(table.chainId, input.chainId),
                   inArray(table.status, ["awaiting-signature", "signed", "submitted"]),
                 ),
               )
@@ -282,6 +314,33 @@ export class SessionKeyOperationRepository extends Context.Service<
               .update(table)
               .set({ status: "expired", finishedAt: date(input.now) })
               .where(inArray(table.id, due))
+              .returning(),
+          );
+        }, mapRepositoryError),
+        cancelUnsignedForSession: Effect.fn(
+          "database.sessionKeyOperation.cancelUnsignedForSession",
+        )(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const installations = db
+            .select({ id: sessionKeyInstallation.id })
+            .from(sessionKeyInstallation)
+            .where(
+              and(
+                eq(sessionKeyInstallation.organizationId, input.organizationId),
+                eq(sessionKeyInstallation.sessionKeyId, input.sessionKeyId),
+              ),
+            );
+          return decodeBatch(
+            yield* db
+              .update(table)
+              .set({ status: "expired", finishedAt: date(input.now) })
+              .where(
+                and(
+                  eq(table.organizationId, input.organizationId),
+                  eq(table.status, "awaiting-signature"),
+                  inArray(table.installationId, installations),
+                ),
+              )
               .returning(),
           );
         }, mapRepositoryError),

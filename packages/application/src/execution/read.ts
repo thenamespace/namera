@@ -163,7 +163,7 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
       }
       return {
         namespace: submission.namespace,
-        status: "submitted" as const,
+        status: submission.status,
         submissionId: submission.id,
         userOperationHash: submission.data.signedExecution?.userOperationHash ?? null,
       };

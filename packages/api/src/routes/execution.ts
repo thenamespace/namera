@@ -10,6 +10,10 @@ import {
   ExecuteRequest,
   ExecuteRequestHeaders,
   ExecuteResponse,
+  PrepareExecutionRequest,
+  PrepareExecutionResponse,
+  CompleteExecutionRequest,
+  CompleteExecutionResponse,
   GetExecutionRequest,
   GetExecutionResponse,
   GetExecutionSubmissionRequest,
@@ -24,6 +28,19 @@ import { CommonErrors } from "#/common";
 import { Authorization } from "#/middlewares/index";
 
 export class ExecutionGroup extends HttpApiGroup.make("execution")
+  .add(
+    HttpApiEndpoint.post("prepare", "/prepare", {
+      payload: PrepareExecutionRequest,
+      headers: ExecuteRequestHeaders,
+      success: PrepareExecutionResponse,
+      error: [ExecutionError, ...BillingErrors, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Prepare an operation for a locally held session signer"),
+    HttpApiEndpoint.post("complete", "/complete", {
+      payload: CompleteExecutionRequest,
+      success: CompleteExecutionResponse,
+      error: [ExecutionError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Accept a local signature and queue the exact prepared operation"),
+  )
   .add(
     HttpApiEndpoint.post("simulate", "/simulate", {
       payload: SimulateExecutionRequest,

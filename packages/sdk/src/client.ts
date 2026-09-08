@@ -21,7 +21,7 @@ export class NameraClient {
   constructor(config: NameraClientConfig) {
     this.#transport = new NameraTransport(config);
     this.auth = new AuthClient(this.#transport);
-    this.executions = new ExecutionClient(this.#transport);
+    this.executions = new ExecutionClient(this.#transport, config.resolveSessionSigner);
     this.sessionKeys = new SessionKeyClient(this.#transport);
     this.wallets = new WalletClient(this.#transport);
   }

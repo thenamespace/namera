@@ -7,6 +7,8 @@ import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
 
+import { importSessionKeyCommand } from "./import.js";
+
 const list = Command.make(
   "list",
   {
@@ -40,6 +42,6 @@ const get = Command.make(
 );
 
 export const sessionKeyCommand = Command.make("session-key").pipe(
-  Command.withDescription("Read granted session keys"),
-  Command.withSubcommands([list, get]),
+  Command.withDescription("Read granted session keys and import local signing material"),
+  Command.withSubcommands([list, get, importSessionKeyCommand]),
 );

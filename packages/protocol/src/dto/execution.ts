@@ -48,6 +48,10 @@ const EvmExecutionCallRequest = Schema.Struct({
 const EvmExecutionRequestFields = {
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
+  sessionKeyId: SessionKeyId.annotate({
+    description:
+      "The delegated session key installed on chainId for this wallet. Use the same session for simulation and execution.",
+  }),
   chainId: SupportedEvmChainId,
   calls: Schema.Array(EvmExecutionCallRequest).check(
     Schema.isMinLength(1, { message: "At least one call is required" }),
@@ -62,7 +66,7 @@ export const ExecuteEvmRequest = Schema.Struct({
   }),
 }).annotate({
   identifier: "ExecuteEvmRequest",
-  description: "Execute EVM calls through an API key's authorized session keys",
+  description: "Execute EVM calls through an explicitly selected delegated session key",
 });
 
 export const ExecuteRequest = Schema.Union([ExecuteEvmRequest], { mode: "oneOf" }).annotate({
@@ -82,7 +86,8 @@ export const SimulateExecutionRequest = Schema.Union([SimulateEvmExecutionReques
   mode: "oneOf",
 }).annotate({
   identifier: "SimulateExecutionRequest",
-  description: "Simulate an execution and evaluate the current delegated session-key policies",
+  description:
+    "Simulate an execution with the selected installed session and its current API policies",
 });
 
 const ExecutionSimulationResponseFields = {
@@ -270,7 +275,10 @@ const ExecutionSubmissionResponseCommon = {
 
 export const PendingEvmExecutionSubmissionResponse = Schema.Struct({
   ...ExecutionSubmissionResponseCommon,
-  status: Schema.Literal("submitted"),
+  status: Schema.Literals(["reserved", "prepared", "submitted"]).annotate({
+    description:
+      "Reserved awaits a local signature; prepared is durably signed and queued; submitted has been observed by the bundler.",
+  }),
   userOperationHash: Schema.NullOr(UserOperationHash),
 }).annotate({ identifier: "PendingEvmExecutionSubmissionResponse" });
 

@@ -22,6 +22,32 @@ Execution and signing generate a UUIDv7 idempotency key internally and reuse it
 for three bounded exponential-backoff retries of network, HTTP 408, and HTTP 5xx
 failures. Declared business failures are never retried.
 
+Execution and simulation requests select `sessionKeyId` explicitly alongside
+the wallet and chain. Simulation uses that installed session's public-only
+account adapter and API policies; it never previews a different signer. The
+legacy server execution call fails closed. The SDK uses the detached flow below.
+
+`executions.prepare` and `executions.complete` expose the detached transport.
+Preparation owns an internal retry-stable idempotency key. Completion retries
+the identical submission/signature and preserves the queued `prepared` status;
+it does not claim chain confirmation.
+
+`executions.execute` resolves a local signer before preparation, validates the
+server preparation against its locally trusted installation binding and the
+original calls, recomputes the canonical EntryPoint 0.7 hash, signs its raw bytes
+with EIP-191, verifies the signer address, then completes. Missing local custody
+fails closed without contacting the server. A signing callback is invoked once;
+completion retries preserve the exact signature. A self-funded request requires
+an explicit local maximum gas cost. BSO requests reject nonzero gas fees and
+paymaster substitution. Local key exceptions are not returned to callers.
+
+Viem provides hashing/signature verification and Alchemy's installed calldata
+codec provides Modular Account V2 encoding. No provider credentials or backend
+EVM service are imported by the SDK. Unit tests cover tampered preparations;
+transport tests exercise real local secp256k1 signing with injected Fetch and
+response loss. CLI keystore resolution is wired; dashboard authorization export
+and live-chain client integration are still pending.
+
 ## CLI
 
 The CLI uses OAuth device authorization for interactive profiles and the SDK for
@@ -34,6 +60,13 @@ Commands cover login/logout/status, wallet and session-key reads, execution
 simulation/submit/status/history, signing, and verification. Complex operations
 accept schema-decoded inline `--params` JSON or use reusable typed interactive
 prompts. No request-file input exists.
+
+`session-key import` installs encrypted local signing material with a hidden
+passphrase prompt and OS-keyring-backed unlock. Execution resolves that material
+by API origin/session ID and checks its wallet/chain binding. Self-funded
+execution requires an explicit `--max-gas-cost-wei` budget or interactive consent.
+See [local keystore](local-keystore.md) for storage invariants and remaining
+packaged-platform verification. Local signature and MCP migration remain pending.
 
 Global output is `pretty`, `json`, or `ndjson`. Pretty is a colored human view,
 not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to

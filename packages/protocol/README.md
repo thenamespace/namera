@@ -15,6 +15,8 @@ for protocol/API ownership, schema rules, and public-change sequencing.
 - `src/dto/` — public API request and response schemas.
 - `src/dto/mcp.ts` — safe structured results returned by MCP tools.
 - `src/evm/` — CAIP identifiers and reusable EVM execution primitives.
+- `src/local/` — client-only local signer bindings and encrypted export format;
+  never include these key-material schemas in HTTP contracts or audit data.
 - `src/errors/` — typed errors used across the project.
 - `src/policy/` — provider-neutral policy handler contracts and normalized
   namespace-specific evaluation contexts.
@@ -116,7 +118,7 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   identity needed by activity consumers without exposing credential data.
 - Execution simulation contracts return normalized call results separately from
   point-in-time session-key policy eligibility. Allowed responses identify the
-  selected session key; denied responses identify each candidate session key's
+  explicitly selected installed session key; denied responses identify that session's
   first deterministic policy ID and bounded denial code.
 - Execution requests expose an optional `sponsor` flag. Omission is canonically
   equivalent to `true`; `false` requests a self-funded UserOperation. Both modes
@@ -125,8 +127,8 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 - Local execution signing contracts live in `dto/execution-signing.ts`.
   Preparation explicitly selects a session and returns a stored operation with
   an EIP-191 signing message; completion accepts only its submission identity
-  and raw secp256k1 signature. These schemas precede the new HTTP workflow and
-  do not imply that the legacy executor has been replaced.
+  and raw secp256k1 signature. The HTTP prepare/complete workflow is implemented;
+  the legacy execute entry point fails closed while clients migrate.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, the standardized bundler
   gas-estimation result, and normalized `simulateCalls` outcomes. The latter
@@ -160,4 +162,5 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
 5. When adding a mutation, extend the relevant versioned audit-event union if a
    historical record is required. Adding a new payload shape is preferred to
    changing the meaning of an existing version.
-6. Export through only the intended root, `dto`, `model`, or `evm` entry point.
+6. Export through only the intended root, `dto`, `model`, `evm`, or client-only
+   `local` entry point.

@@ -7,7 +7,7 @@ import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { EnsTestLayer } from "@namera-ai/ens";
-import { Evm } from "@namera-ai/evm";
+import { Evm, type EvmTestOptions } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
@@ -49,60 +49,67 @@ const TestPersistenceLayer = Layer.mergeAll(Repository.layer, TransactionService
 
 const TestCryptoLayer = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
-const TestServicesLayer = Layer.mergeAll(
-  EmailJobs.layer,
-  EnsTestLayer,
-  Evm.testLayer,
-  WalletKeys.testLayer,
-  Passkeys.testLayer,
-).pipe(
-  Layer.provideMerge(EmailService.testLayer),
-  Layer.provideMerge(TestPersistenceLayer),
-  Layer.provideMerge(TestCryptoLayer),
-);
+export const makeTestServerLayer = (
+  evmOptions: EvmTestOptions = {},
+  passkeysLayer: Layer.Layer<Passkeys> = Passkeys.testLayer,
+) => {
+  const TestServicesLayer = Layer.mergeAll(
+    EmailJobs.layer,
+    EnsTestLayer,
+    Evm.testLayerWith(evmOptions),
+    WalletKeys.testLayer,
+    passkeysLayer,
+  ).pipe(
+    Layer.provideMerge(EmailService.testLayer),
+    Layer.provideMerge(TestPersistenceLayer),
+    Layer.provideMerge(TestCryptoLayer),
+  );
 
-const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
+  const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
 
-const TestAuthorizationLayer = AuthorizationLive.pipe(
-  Layer.provide(TestServicesLayer),
-  Layer.provide(AuthCookieConfig.testLayer),
-);
+  const TestAuthorizationLayer = AuthorizationLive.pipe(
+    Layer.provide(TestServicesLayer),
+    Layer.provide(AuthCookieConfig.testLayer),
+  );
 
-const TestHandlersLayer = Layer.mergeAll(
-  AddressMetadataRoutes,
-  ApiKeyRoutes,
-  BillingRoutes,
-  DashboardRoutes,
-  HealthRoutes,
-  ExecutionRoutes,
-  EnsRoutes,
-  SessionKeyRoutes,
-  SignatureRoutes,
-  InvitationRoutes,
-  MagicLinkRoutes,
-  MemberRoutes,
-  NotificationRoutes,
-  PortfolioRoutes,
-  OAuthRoutes,
-  OrganizationRoutes,
-  SessionRoutes,
-  UserRoutes,
-  WalletRoutes,
-).pipe(
-  Layer.provide(TestAuthorizationLayer),
-  Layer.provide(TestApplicationLayer),
-  Layer.provide(TestServicesLayer),
-  Layer.provide(AuthCookieConfig.testLayer),
-  HttpRouter.provideRequest(RateLimiterLive),
-);
+  const TestHandlersLayer = Layer.mergeAll(
+    AddressMetadataRoutes,
+    ApiKeyRoutes,
+    BillingRoutes,
+    DashboardRoutes,
+    HealthRoutes,
+    ExecutionRoutes,
+    EnsRoutes,
+    SessionKeyRoutes,
+    SignatureRoutes,
+    InvitationRoutes,
+    MagicLinkRoutes,
+    MemberRoutes,
+    NotificationRoutes,
+    PortfolioRoutes,
+    OAuthRoutes,
+    OrganizationRoutes,
+    SessionRoutes,
+    UserRoutes,
+    WalletRoutes,
+  ).pipe(
+    Layer.provide(TestAuthorizationLayer),
+    Layer.provide(TestApplicationLayer),
+    Layer.provide(TestServicesLayer),
+    Layer.provide(AuthCookieConfig.testLayer),
+    HttpRouter.provideRequest(RateLimiterLive),
+  );
 
-export const TestServerLayer = Layer.mergeAll(
-  TestHandlersLayer,
-  TestApplicationLayer,
-  TestAuthorizationLayer,
-  RateLimiterLive,
-  TestServicesLayer,
-  TestAuthTokenStateLayer,
-  TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
-  HttpServer.layerServices,
-).pipe(Layer.provide(TestConfigLayer));
+  return Layer.mergeAll(
+    TestHandlersLayer,
+    TestApplicationLayer,
+    TestAuthorizationLayer,
+    RateLimiterLive,
+    TestServicesLayer,
+    TestAuthTokenStateLayer,
+    TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
+    HttpServer.layerServices,
+  ).pipe(Layer.provide(TestConfigLayer));
+};
+
+export const TestServerLayer = makeTestServerLayer();

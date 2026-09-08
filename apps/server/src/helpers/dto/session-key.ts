@@ -9,6 +9,7 @@ export const toSessionKeySummaryResponse = (sessionKey: SessionKey): SessionKeyS
   id: sessionKey.id,
   organizationId: sessionKey.organizationId,
   walletId: sessionKey.walletId,
+  signingKeyId: sessionKey.signingKeyId,
   namespace: sessionKey.namespace,
   metadata: sessionKey.metadata,
   policies: sessionKey.policies,
@@ -22,4 +23,12 @@ export const toSessionKeyResponse = (input: SessionKeyView): SessionKeyResponse 
   ...toSessionKeySummaryResponse(input.sessionKey),
   wallet: toWalletResponse(input.wallet),
   creator: toMemberResponse(input.creator),
+  installations: input.installations.map((installation) => ({
+    id: installation.id,
+    chainId: installation.chainId,
+    status: installation.status,
+    authorization: installation.data.authorization,
+    installTransactionHash: installation.installTransactionHash,
+    uninstallTransactionHash: installation.uninstallTransactionHash,
+  })),
 });

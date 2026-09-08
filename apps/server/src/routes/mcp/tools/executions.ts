@@ -20,7 +20,7 @@ import { executionHints, readOnlyHints, registerMcpTool, simulationHints } from 
 
 const ExecuteTransaction = Tool.make("execute_transaction", {
   description:
-    "Sign and submit the exact EVM calls from a delegated Namera wallet. Call simulate_transaction first and proceed only when allowed and callsSucceeded are both true. Use walletId from list_wallets, never a wallet address or session-key ID. Namera selects an eligible session key automatically. Gas sponsorship defaults to enabled; set sponsor to false only when the smart account should pay gas. Every confirmed transaction consumes execution usage, while only sponsored mainnet transactions consume sponsored-gas credits. This operation can transfer assets and repeated tool calls can submit more than one transaction.",
+    "Execute exact EVM calls from a delegated wallet. Use walletId from list_wallets and sessionKeyId from list_session_keys; these IDs are not interchangeable. Simulate the same session and calls first. Hosted execution is unavailable during the migration to local signing; use the local MCP client once configured. Repeated executions can transfer assets more than once.",
   parameters: McpExecuteTransactionRequest,
   success: Schema.Struct({
     execution: Schema.optionalKey(ExecuteResponse),
@@ -30,7 +30,7 @@ const ExecuteTransaction = Tool.make("execute_transaction", {
 
 const SimulateTransaction = Tool.make("simulate_transaction", {
   description:
-    "Simulate exact EVM calls and evaluate every eligible delegated session key policy without signing, submitting, reserving policy usage, or consuming billing usage. Use walletId from list_wallets, never a wallet address or session-key ID. Execute only when allowed and callsSucceeded are both true.",
+    "Simulate exact EVM calls with the explicitly selected installed session key, without signing, submitting, reserving policy usage, or consuming billing usage. Use walletId from list_wallets and sessionKeyId from list_session_keys; do not interchange these IDs. Execute with the same session only when allowed and callsSucceeded are both true.",
   parameters: McpSimulateTransactionRequest,
   success: Schema.Struct({
     simulation: Schema.optionalKey(SimulateExecutionResponse),

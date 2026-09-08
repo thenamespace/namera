@@ -1,12 +1,20 @@
-import type { ActorId, OrganizationId, SessionKeyId, WalletId } from "@namera-ai/protocol";
+import type {
+  ActorId,
+  OrganizationId,
+  SessionKeyId,
+  SigningKeyId,
+  WalletId,
+} from "@namera-ai/protocol";
 import type { SessionKey, SessionKeyEncoded } from "@namera-ai/protocol/model";
-import { foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, foreignKey, index, jsonb, text, unique } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId } from "#/schema/common";
 
 import { actor } from "../auth/actor.js";
 import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
+import { signingKey } from "./signing-key.js";
 import { wallet } from "./wallet.js";
 
 export const sessionKey = coreSchema.table(
@@ -18,18 +26,35 @@ export const sessionKey = coreSchema.table(
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "restrict" }),
     walletId: text("wallet_id").notNull().$type<WalletId>(),
+    signingKeyId: text("signing_key_id").notNull().$type<SigningKeyId>(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
     namespace: text("namespace").notNull().$type<SessionKey["namespace"]>(),
     metadata: jsonb("metadata").notNull().$type<SessionKey["metadata"]>(),
     policies: jsonb("policies").notNull().$type<SessionKeyEncoded["policies"]>(),
     policyHash: text("policy_hash").notNull(),
-    status: text("status").notNull().default("active").$type<SessionKey["status"]>(),
+    status: text("status").notNull().default("pending").$type<SessionKey["status"]>(),
     revokedAt: createTimestampField("revoked_at"),
     revokedByActorId: text("revoked_by_actor_id").$type<ActorId>(),
     createdAt: createTimestampField("created_at").defaultNow().notNull(),
   },
   (table) => [
     unique("session_key_id_organization_unique").on(table.id, table.organizationId),
+    unique("session_key_signing_key_unique").on(table.signingKeyId),
+    foreignKey({
+      name: "session_key_signing_key_organization_fk",
+      columns: [table.signingKeyId, table.organizationId],
+      foreignColumns: [signingKey.id, signingKey.organizationId],
+    }).onDelete("restrict"),
+    check(
+      "session_key_status_check",
+      sql`${table.status} IN ('pending', 'active', 'revoking', 'revoked')`,
+    ),
+    check(
+      "session_key_revocation_check",
+      sql`
+      (${table.status} IN ('revoking', 'revoked')) = (${table.revokedAt} IS NOT NULL)
+      AND (${table.revokedAt} IS NULL) = (${table.revokedByActorId} IS NULL)`,
+    ),
     unique("session_key_id_wallet_organization_unique").on(
       table.id,
       table.walletId,

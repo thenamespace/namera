@@ -18,6 +18,7 @@ const promptTransactionRequest = Effect.fn("cli.execution.promptTransactionReque
   const prompts = yield* CliPrompts;
   const namespace = yield* prompts.namespace;
   const walletId = yield* prompts.walletId();
+  const sessionKeyId = yield* prompts.sessionKeyId();
   const chainId = yield* prompts.chainId();
   const callCount = yield* prompts.integer("Number of calls", { min: 1, default: 1 });
   const calls = yield* Effect.forEach(
@@ -33,7 +34,13 @@ const promptTransactionRequest = Effect.fn("cli.execution.promptTransactionReque
       }),
   );
 
-  return { namespace, walletId, chainId, calls } satisfies SimulateExecutionRequestType;
+  return {
+    namespace,
+    walletId,
+    sessionKeyId,
+    chainId,
+    calls,
+  } satisfies SimulateExecutionRequestType;
 });
 
 const promptExecutionRequest = Effect.fn("cli.execution.promptExecutionRequest")(function* () {
@@ -46,10 +53,26 @@ const promptExecutionRequest = Effect.fn("cli.execution.promptExecutionRequest")
 
 const execute = Command.make(
   "execute",
-  { params: paramsFlag, profile: profileFlag },
-  Effect.fn(function* ({ params, profile }) {
+  {
+    params: paramsFlag,
+    profile: profileFlag,
+    maxGasCost: Flag.string("max-gas-cost-wei").pipe(
+      Flag.withDescription("Local fee ceiling for self-funded operations, in wei"),
+      Flag.optional,
+    ),
+  },
+  Effect.fn(function* ({ params, profile, maxGasCost }) {
     const request = yield* resolveParams(params, ExecuteRequest, promptExecutionRequest());
-    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
+    let maxGasCostWei: bigint | undefined;
+    if (Option.isSome(maxGasCost)) {
+      maxGasCostWei = yield* Schema.decodeUnknownEffect(
+        Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n)),
+      )(maxGasCost.value);
+    } else if (request.sponsor === false && Option.isNone(params)) {
+      const prompts = yield* CliPrompts;
+      maxGasCostWei = yield* prompts.ethereumValue("Maximum total gas cost (wei)");
+    }
+    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile, maxGasCostWei));
     yield* printValue(yield* runPromise(client.executions.execute(request)));
   }),
 ).pipe(Command.withDescription("Execute EVM calls after validating an inline or prompted request"));

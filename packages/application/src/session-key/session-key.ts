@@ -4,19 +4,50 @@ import {
   type ActorId,
   type OrganizationId,
   type SessionKeyCreationError,
+  type SessionKeyOperationError,
   type SessionKeyId,
+  type SessionKeyOperationId,
   type SessionKeyNotFoundError,
   type WalletId,
   type WalletNotFoundError,
+  type BillingLimitExceededError,
 } from "@namera-ai/protocol";
-import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
+import type {
+  CreateSessionKeyRequest,
+  PrepareSessionKeyOperationRequest,
+  PrepareSessionKeyOperationResponse,
+  CompleteSessionKeyOperationRequest,
+  SessionKeyOperationResponse,
+} from "@namera-ai/protocol/dto";
 
+import { makeCompleteSessionKeyOperation } from "./complete-operation.js";
 import { makeCreateSessionKey } from "./create.js";
+import { makePrepareSessionKeyOperation } from "./prepare-operation.js";
 import { makeReadSessionKeys } from "./read.js";
+import { makeReconcileSessionKeyOperations } from "./reconcile-operations.js";
 import { makeRevokeSessionKey } from "./revoke.js";
 import type { SessionKeyView } from "./view.js";
 
 export interface SessionKeyApplication {
+  readonly getOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly operationId: SessionKeyOperationId;
+  }) => Effect.Effect<SessionKeyOperationResponse, SessionKeyOperationError>;
+  readonly reconcileOperations: () => Effect.Effect<number>;
+  readonly completeOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly allowedKinds: ReadonlyArray<"install" | "uninstall">;
+    readonly request: CompleteSessionKeyOperationRequest;
+  }) => Effect.Effect<
+    SessionKeyOperationResponse,
+    SessionKeyOperationError | BillingLimitExceededError
+  >;
+  readonly prepareOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly request: PrepareSessionKeyOperationRequest;
+  }) => Effect.Effect<PrepareSessionKeyOperationResponse, SessionKeyOperationError>;
   readonly create: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -47,8 +78,18 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   const create = yield* makeCreateSessionKey;
   const read = yield* makeReadSessionKeys;
   const revoke = yield* makeRevokeSessionKey;
+  const prepareOperation = yield* makePrepareSessionKeyOperation;
+  const completeOperation = yield* makeCompleteSessionKeyOperation;
+  const reconcileOperations = yield* makeReconcileSessionKeyOperations;
 
-  return { create, ...read, revoke } satisfies SessionKeyApplication;
+  return {
+    create,
+    ...read,
+    revoke,
+    prepareOperation,
+    completeOperation,
+    reconcileOperations,
+  } satisfies SessionKeyApplication;
 });
 
 export type { SessionKeyView } from "./view.js";

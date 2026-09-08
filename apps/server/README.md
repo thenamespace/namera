@@ -54,17 +54,24 @@ type and ID so dashboard and delegated clients do not need secondary lookups.
 
 `POST /executions/simulate` is available to API-key and CLI actors that may
 execute. It applies a dedicated actor rate limit, runs the same unsigned EVM call
-simulation and current policy evaluation used before execution, and returns
+simulation and current policy evaluation for the explicitly selected installed
+session key used before execution, and returns
 call success independently from session-key policy eligibility. It does not
 reserve policy state, sign or submit calls, create records, or consume billing
 usage.
 
-`POST /executions` accepts an optional `sponsor` boolean that defaults to
+`POST /executions/prepare` accepts an explicit installed session key and an
+optional `sponsor` boolean that defaults to
 `true`. Sponsored requests use Alchemy Bundler Sponsored Operations (BSO);
 setting it to `false` submits the estimated UserOperation through regular
 Rundler without the BSO policy header. Confirmed sponsored and unsponsored
 requests both consume the appropriate execution meter; only sponsored mainnet
-requests reserve and settle the sponsored-gas meter.
+requests reserve and settle the sponsored-gas meter. `POST /executions/complete`
+accepts only a submission ID and local secp256k1 signature, verifies the stored
+operation and current authority, and queues its signed envelope for the worker.
+Status polling distinguishes unsigned `reserved`, signed `prepared`, and
+bundler-observed `submitted` attempts. The old `POST /executions` currently fails
+closed while SDK/CLI consumers migrate to the detached flow.
 
 `POST /signatures` is available to granted machine actors. It requires an
 `Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
@@ -181,8 +188,8 @@ to the durable session-key grants selected during consent. The compact tool
 surface covers wallet list/get, session-key list/get with an optional wallet
 filter, transaction simulation/execution/status/history, and message or typed-data
 signing/verification. Tool inputs never accept an organization, actor identity,
-or session-key selector; those are derived from the bearer authorization and
-Namera automatically evaluates eligible delegated session keys. Execution and
+or credential material; authority is derived from the bearer authorization.
+Execution and simulation require an explicit delegated session-key selector. Execution and
 signing tool inputs also omit idempotency keys; the MCP adapter generates one
 per tool invocation.
 

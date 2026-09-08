@@ -14,6 +14,28 @@ const PublicKeyCredentialDescriptor = Schema.Struct({
   transports: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 
+export const PasskeyAuthenticationOptions = Schema.Struct({
+  challenge: Base64UrlString,
+  rpId: NonEmptyString,
+  timeout: Schema.Int.check(Schema.isGreaterThan(0)),
+  allowCredentials: Schema.Array(PublicKeyCredentialDescriptor),
+  userVerification: Schema.Literal("required"),
+}).annotate({ identifier: "PasskeyAuthenticationOptions" });
+
+export const PasskeyAuthenticationResponse = Schema.Struct({
+  id: Base64UrlString,
+  rawId: Base64UrlString,
+  type: Schema.Literal("public-key"),
+  response: Schema.Struct({
+    clientDataJSON: Base64UrlString,
+    authenticatorData: Base64UrlString,
+    signature: Base64UrlString,
+    userHandle: Schema.optionalKey(Base64UrlString),
+  }),
+  authenticatorAttachment: Schema.optionalKey(Schema.Literals(["cross-platform", "platform"])),
+  clientExtensionResults: Schema.Struct({}),
+}).annotate({ identifier: "PasskeyAuthenticationResponse" });
+
 export const PasskeyRegistrationOptions = Schema.Struct({
   challenge: Base64UrlString,
   rp: Schema.Struct({

@@ -1,11 +1,27 @@
 import { Schema } from "effect";
 
-import { OrganizationId, SessionKeyId, WalletId } from "#/common/index";
+export * from "./operation.js";
+
+import {
+  OrganizationId,
+  SessionKeyId,
+  SessionKeyInstallationId,
+  SigningKeyId,
+  WalletId,
+} from "#/common/index";
+import {
+  EvmSessionAuthorization,
+  EvmSessionPermissions,
+  Hex,
+  SupportedEvmChainId,
+  TransactionHash,
+} from "#/evm/index";
 import {
   CreateEvmSessionKeyPolicy,
   EvmSessionKeyPolicies,
   SessionKeyMetadata,
   SessionKeyStatus,
+  SessionKeyInstallationStatus,
 } from "#/model/index";
 
 import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
@@ -15,18 +31,36 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,
-  policies: Schema.Array(CreateEvmSessionKeyPolicy)
-    .check(Schema.isMinLength(1, { message: "At least one policy is required" }))
-    .check(
-      Schema.makeFilter((policies) =>
-        policies.some((policy) => policy.type === "evm.time-window")
-          ? undefined
-          : { path: [], issue: "A time-window policy is required" },
+  signer: Schema.Struct({
+    custody: Schema.Literal("local"),
+    algorithm: Schema.Literal("secp256k1"),
+    publicKey: Hex.check(Schema.isPattern(/^0x04[0-9a-f]{128}$/)),
+  }),
+  onchain: Schema.Struct({
+    chains: Schema.Array(SupportedEvmChainId)
+      .check(Schema.isMinLength(1))
+      .check(
+        Schema.makeFilter((chains) =>
+          new Set(chains).size === chains.length ? undefined : "Duplicate chain",
+        ),
       ),
+    validAfter: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    validUntil: Schema.Int.check(
+      Schema.isGreaterThanOrEqualTo(1),
+      // Expiry is also stored as a timestamp and used for notifications.
+      Schema.isLessThanOrEqualTo(8_640_000_000_000),
     ),
+    permissions: EvmSessionPermissions,
+  }).check(
+    Schema.makeFilter((value) =>
+      value.validUntil > value.validAfter ? undefined : "Session expiry must follow its start time",
+    ),
+  ),
+  policies: Schema.Array(CreateEvmSessionKeyPolicy),
 }).annotate({
   identifier: "CreateEvmSessionKeyRequest",
-  description: "Create an EVM session key with immutable offchain policies",
+  description:
+    "Register a local secp256k1 session with mandatory onchain permissions and optional API policies. The key remains pending until its owner-approved installation is confirmed. Never send private key material.",
 });
 
 export const CreateSessionKeyRequest = Schema.Union([CreateEvmSessionKeyRequest], {
@@ -37,6 +71,7 @@ const EvmSessionKeyResponseFields = {
   id: SessionKeyId,
   organizationId: OrganizationId,
   walletId: WalletId,
+  signingKeyId: SigningKeyId,
   namespace: Schema.Literal("eip155"),
   metadata: SessionKeyMetadata,
   policies: EvmSessionKeyPolicies,
@@ -55,10 +90,24 @@ export const SessionKeySummaryResponse = Schema.Union([EvmSessionKeySummaryRespo
   mode: "oneOf",
 }).annotate({ identifier: "SessionKeySummaryResponse" });
 
+export const SessionKeyInstallationResponse = Schema.Struct({
+  id: SessionKeyInstallationId,
+  chainId: SupportedEvmChainId,
+  status: SessionKeyInstallationStatus,
+  authorization: EvmSessionAuthorization,
+  installTransactionHash: Schema.NullOr(TransactionHash),
+  uninstallTransactionHash: Schema.NullOr(TransactionHash),
+}).annotate({
+  identifier: "SessionKeyInstallationResponse",
+  description:
+    "Public onchain authorization and its confirmed installation state. Pending entries are not usable.",
+});
+
 export const EvmSessionKeyResponse = Schema.Struct({
   ...EvmSessionKeyResponseFields,
   wallet: WalletResponse,
   creator: GetOrganizationMemberResponse,
+  installations: Schema.Array(SessionKeyInstallationResponse),
 }).annotate({
   identifier: "EvmSessionKeyResponse",
   description: "An EVM session key with its wallet and creating organization member",

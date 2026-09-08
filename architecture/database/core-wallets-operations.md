@@ -87,7 +87,8 @@ persisted by the server.
 
 `SigningKeyRepository` exposes insert, tenant-scoped ID lookup, public-key
 lookup, and lifecycle updates. Lifecycle updates refuse to modify a destroyed
-key. Wallet integration is active; session-key integration remains pending.
+key. Wallet roots and dedicated session signers reference this table. Session
+registration uses conflict-safe public-key insertion inside its transaction.
 
 `advancePasskeyCounter` conditionally updates only the active local credential
 whose tenant, ID, credential ID and previous counter match. It accepts an
@@ -139,37 +140,44 @@ Programmable account visible to API clients. `namespace` selects the chain-famil
 
 Immutable policy envelope granting bounded authority over one wallet. Revocation is terminal; policy edits create a new session key rather than mutating historical authorization.
 
-| Column                | PostgreSQL type | Required | Default  | Description                                                     |
-| --------------------- | --------------- | -------- | -------- | --------------------------------------------------------------- |
-| `id`                  | `text`          | Yes      | UUIDv7   | Session-key identifier.                                         |
-| `organization_id`     | `text`          | Yes      | —        | Owning tenant.                                                  |
-| `wallet_id`           | `text`          | Yes      | —        | Controlled wallet.                                              |
-| `created_by_actor_id` | `text`          | Yes      | —        | Actor that created the delegation.                              |
-| `namespace`           | `text`          | Yes      | —        | Policy namespace matching the wallet.                           |
-| `metadata`            | `jsonb`         | Yes      | —        | Session-key display name and description.                       |
-| `policies`            | `jsonb`         | Yes      | —        | Ordered, protocol-decoded policy definitions.                   |
-| `policy_hash`         | `text`          | Yes      | —        | Canonical hash binding operations to the exact policy envelope. |
-| `status`              | `text`          | Yes      | `active` | `active` or terminal revoked state defined by the model.        |
-| `revoked_at`          | `timestamptz`   | No       | `NULL`   | Revocation time.                                                |
-| `revoked_by_actor_id` | `text`          | No       | `NULL`   | Revoking actor.                                                 |
-| `created_at`          | `timestamptz`   | Yes      | `now()`  | Creation time.                                                  |
+| Column                | PostgreSQL type | Required | Default   | Description                                                                   |
+| --------------------- | --------------- | -------- | --------- | ----------------------------------------------------------------------------- |
+| `id`                  | `text`          | Yes      | UUIDv7    | Session-key identifier.                                                       |
+| `organization_id`     | `text`          | Yes      | —         | Owning tenant.                                                                |
+| `wallet_id`           | `text`          | Yes      | —         | Controlled wallet.                                                            |
+| `signing_key_id`      | `text`          | Yes      | —         | Dedicated session signing key; registration stores only a local public key.   |
+| `created_by_actor_id` | `text`          | Yes      | —         | Actor that created the delegation.                                            |
+| `namespace`           | `text`          | Yes      | —         | Policy namespace matching the wallet.                                         |
+| `metadata`            | `jsonb`         | Yes      | —         | Session-key display name and description.                                     |
+| `policies`            | `jsonb`         | Yes      | —         | Ordered, protocol-decoded policy definitions.                                 |
+| `policy_hash`         | `text`          | Yes      | —         | Canonical hash binding operations to the exact policy envelope.               |
+| `status`              | `text`          | Yes      | `pending` | `pending`, `active`, `revoking`, or `revoked`.                                |
+| `revoked_at`          | `timestamptz`   | No       | `NULL`    | API revocation request time; onchain completion is recorded per installation. |
+| `revoked_by_actor_id` | `text`          | No       | `NULL`    | Revoking actor.                                                               |
+| `created_at`          | `timestamptz`   | Yes      | `now()`   | Creation time.                                                                |
 
 ### Keys and uniqueness
 
 - Primary key: `id`.
 - Unique (`id`, `organization_id`).
 - Unique (`id`, `wallet_id`, `organization_id`) binds signature references to the same wallet.
+- Unique `signing_key_id`: a signer belongs to one immutable delegation.
 
 ### Foreign keys
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 - (`wallet_id`, `organization_id`) → `core.wallet`, `ON DELETE RESTRICT`.
+- (`signing_key_id`, `organization_id`) → `core.signing_key`, `ON DELETE RESTRICT`.
 - (`created_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 - (`revoked_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 
 ### Checks
 
-- No explicit SQL lifecycle check currently couples status and revocation columns; application/repository transitions own that invariant.
+- Status is one of `pending`, `active`, `revoking`, `revoked`.
+- Revoking/revoked states require both revocation timestamp and actor; pending/active require neither.
+- The activation repository conditionally updates pending rows only when a
+  tenant-matching installed chain record exists. Authorization must still check
+  the specific requested chain.
 
 ### Indexes
 
@@ -208,6 +216,8 @@ a new session/validation entity. No private key material is stored here.
 ### Keys, constraints and indexes
 
 - Primary key `id`; unique `(id, organization_id)`.
+- Unique `(id, session_key_id, organization_id)` binds execution submissions to
+  the same session as their actor grant.
 - Unique `(organization_id, session_key_id, chain_id)`.
 - Unique `(organization_id, wallet_id, chain_id, entity_id)`, including terminal
   rows: validation entities are not recycled while old signed operations may exist.
@@ -426,6 +436,9 @@ Idempotent execution attempt and orchestration state. It exists before external 
 | `organization_id`      | `text`          | Yes      | —          | Tenant boundary.                                                       |
 | `actor_id`             | `text`          | Yes      | —          | Calling principal.                                                     |
 | `session_key_grant_id` | `text`          | Yes      | —          | Actor-bound authority used by the operation.                           |
+| `session_key_id`       | `text`          | Yes      | —          | Cryptographic session shared by the grant and installation.            |
+| `installation_id`      | `text`          | Yes      | —          | Onchain session installation selected for signing.                     |
+| `expires_at`           | `timestamptz`   | Yes      | —          | Deadline to accept a local signature; not a signed-operation timeout.  |
 | `namespace`            | `text`          | Yes      | —          | Execution adapter namespace.                                           |
 | `idempotency_key`      | `text`          | Yes      | —          | Stable retry key generated by SDK/CLI/MCP clients.                     |
 | `request_hash`         | `text`          | Yes      | —          | Canonical request digest used to reject key reuse for different input. |
@@ -451,7 +464,8 @@ Idempotent execution attempt and orchestration state. It exists before external 
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 - (`actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
-- (`session_key_grant_id`, `actor_id`, `organization_id`) → `core.session_key_grant`, `ON DELETE RESTRICT`.
+- (`session_key_grant_id`, `session_key_id`, `actor_id`, `organization_id`) → `core.session_key_grant`, `ON DELETE RESTRICT`.
+- (`installation_id`, `session_key_id`, `organization_id`) → `core.session_key_installation`, `ON DELETE RESTRICT`.
 
 ### Checks
 
@@ -462,6 +476,23 @@ Idempotent execution attempt and orchestration state. It exists before external 
 - (`organization_id`, `created_at`) for activity listing.
 - (`organization_id`, `actor_id`, `created_at`) for actor history.
 - (`status`, `lease_expires_at`) for processing recovery.
+- (`status`, `expires_at`) for expired unsigned preparation recovery.
+- (`installation_id`, `organization_id`) for installation-bound operation lookup.
+
+### Local signature acceptance
+
+The version-1 EVM payload now retains the full `prepared` operation alongside
+`signedExecution`. `acceptSignature` changes only the signed envelope and
+lifecycle fields; it never replaces prepared calls or gas. Its conditional write
+requires the original actor, tenant, request hash, `reserved` state and an
+unexpired deadline. Replays cannot overwrite an accepted signature. The caller
+must cryptographically verify the envelope and recheck current authority before
+this write, within the billing/policy transaction.
+
+This persistence change is part of the in-progress two-phase executor migration.
+The legacy executor does not yet supply the new required preparation bindings;
+new application and HTTP wiring remain pending. Repository tests cover ownership,
+expiry and one-time acceptance, not end-to-end execution authorization.
 
 ## `core.execution`
 

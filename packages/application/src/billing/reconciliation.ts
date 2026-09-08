@@ -24,6 +24,9 @@ export const makeBillingReconciliation = Effect.gen(function* () {
   const periods = yield* makeBillingPeriods;
 
   const recoverReservation = Effect.fnUntraced(function* (reservation: BillingUsageReservation) {
+    // Owner-approved operations can be broadcast after an HTTP timeout. Their
+    // receipt worker settles these holds; age alone must never release them.
+    if (reservation.sourceType === "session-key-operation") return false;
     if (reservation.sourceType === "signature-operation") {
       const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
         Schema.decodeUnknownSync(SignatureOperationId)(reservation.sourceId),

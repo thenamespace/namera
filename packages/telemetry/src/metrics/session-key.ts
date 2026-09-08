@@ -1,5 +1,14 @@
 import { Metric } from "effect";
 
+export const sessionKeyOperationResults = Metric.counter("namera.session_key.operation.results", {
+  description: "Owner-approved session operation transitions and denials",
+  incremental: true,
+});
+
+export const sessionKeyOperationDuration = Metric.timer("namera.session_key.operation.duration", {
+  description: "Duration of owner session operation preparation and approval",
+});
+
 export const sessionKeyCreationResults = Metric.counter("namera.session_key.creation.results", {
   description: "Session-key creation outcomes",
   incremental: true,

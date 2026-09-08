@@ -12,6 +12,62 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
     const app = yield* Application.Application;
 
     return handlers
+      .handle("getOperation", ({ params }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["session-key:read"] },
+          });
+          return yield* app.sessionKey.getOperation({
+            organizationId: data.organization.id,
+            operationId: params.operationId,
+          });
+        }),
+      )
+      .handle("completeOperation", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          const allowedKinds: Array<"install" | "uninstall"> = [];
+          if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
+          if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
+          yield* consumeRateLimit(
+            "session_key.operation.organization",
+            data.organization.id,
+            rateLimitPolicy.sessionKey.revokeByOrganization,
+          );
+          return yield* app.sessionKey.completeOperation({
+            organizationId: data.organization.id,
+            actorId: data.actorId,
+            allowedKinds,
+            request: payload,
+          });
+        }),
+      )
+      .handle("prepareOperation", ({ payload }) =>
+        Effect.gen(function* () {
+          const actor = yield* CurrentActor;
+          const data = yield* enforceActor({
+            actor,
+            allowedActors: ["user"],
+            requiredPermissions: {
+              user: [payload.kind === "install" ? "session-key:create" : "session-key:revoke"],
+            },
+          });
+          yield* consumeRateLimit(
+            "session_key.operation.organization",
+            data.organization.id,
+            rateLimitPolicy.sessionKey.revokeByOrganization,
+          );
+          return yield* app.sessionKey.prepareOperation({
+            organizationId: data.organization.id,
+            actorId: data.actorId,
+            request: payload,
+          });
+        }),
+      )
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

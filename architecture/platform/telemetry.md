@@ -70,6 +70,12 @@ only nonzero aggregate run counts and one bounded failure event.
 
 ### Dashboard signals
 
+Owner session operations expose `namera.session_key.operation.results` with
+bounded `stage` (`prepare`, `approve`) and `result` (transition or protocol error
+code), plus `namera.session_key.operation.duration` tagged by stage. Replayed
+successful requests do not increment transition counts. As with billing,
+transaction-scoped metrics can describe an attempt subsequently rolled back.
+
 | Metric                                    | Bounded attributes | Meaning                                  |
 | ----------------------------------------- | ------------------ | ---------------------------------------- |
 | `namera.dashboard.overview.reads`         | —                  | Successful organization overview reads.  |

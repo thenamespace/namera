@@ -3,10 +3,12 @@ import { Effect } from "effect";
 import { Repository } from "@namera-ai/database";
 import {
   SessionKeyNotFoundError,
+  SessionKeyOperationError,
   WalletNotFoundError,
   type ActorId,
   type OrganizationId,
   type SessionKeyId,
+  type SessionKeyOperationId,
   type WalletId,
 } from "@namera-ai/protocol";
 
@@ -15,6 +17,23 @@ import { makeLoadSessionKeyViews } from "./view.js";
 export const makeReadSessionKeys = Effect.gen(function* () {
   const repository = yield* Repository;
   const loadViews = yield* makeLoadSessionKeyViews;
+
+  const getOperation = Effect.fn("application.sessionKey.getOperation")(
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly operationId: SessionKeyOperationId;
+    }) {
+      const operation = yield* repository.core.sessionKeyOperation.findById({
+        id: input.operationId,
+        organizationId: input.organizationId,
+      });
+      if (operation === undefined)
+        return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
+      // The stored envelope includes signatures and leases; expose only polling state.
+      return { operationId: operation.id, status: operation.status };
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
 
   const get = Effect.fn("application.sessionKey.get")(
     function* (input: {
@@ -77,5 +96,5 @@ export const makeReadSessionKeys = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { get, listForOrganization, listForWallet };
+  return { get, getOperation, listForOrganization, listForWallet };
 });

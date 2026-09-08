@@ -72,6 +72,7 @@ runtimes and tests.
 - `sessionKeys.list({ walletId? })`, `sessionKeys.get`
 - `executions.simulate`, `executions.execute`, `executions.getStatus`,
   `executions.list`
+- `executions.prepare`, `executions.complete` — detached execution transport
 - `sign`, `verifySignature`
 
 Resource operations are intentionally grouped. Signing and verification remain
@@ -79,7 +80,9 @@ at the root because they are cross-resource signature capabilities rather than
 collections. Verification is read-only and does not consume signature usage.
 
 Simulation is read-only and reports call success separately from session-key
-policy eligibility. `executions.execute` sponsors gas by default; callers may set
+policy eligibility. Simulation and execution requests require `sessionKeyId`
+separately from `walletId`, identifying the installed session to use.
+`executions.execute` sponsors gas by default; callers may set
 `sponsor: false` to pay gas from the smart account without consuming sponsored-gas
 credits. Both modes consume execution usage. Execution and signing methods generate an idempotency key internally before
 the first request. The same key is reused for up to three retries with bounded
@@ -87,6 +90,37 @@ exponential backoff when the failure is a network interruption, HTTP 408, or
 HTTP 5xx response. Validation, authorization, policy, rate-limit, billing, and
 other declared API failures are returned immediately and are never retried.
 Callers do not supply or manage idempotency keys.
+
+Detached execution uses `prepare` to obtain an unsigned operation and `complete`
+to return the local session signature. Preparation retries reuse one generated
+key; completion retries reuse the same submission and signature. `prepared` in
+the completion response means queued, not broadcast or confirmed. These methods
+only provide transport: callers must independently validate the prepared hash,
+chain, account, calls, and session authority before signing.
+
+`executions.execute` performs this orchestration when `resolveSessionSigner` is
+configured. The resolver returns a `LocalSessionSigner` from trusted local
+storage: its public installation binding, an EIP-191 signing callback, and an
+explicit `maxGasCostWei` allowance for self-funded operations. The SDK never
+receives private key bytes through this interface. Do not populate the binding
+from the preparation response: it must originate from the owner-approved
+installation/export. The CLI keystore and dashboard export integration remain
+pending.
+
+Before invoking the signer, the SDK checks wallet/session/installation/chain,
+validity, canonical EntryPoint, session nonce selector, requested calldata,
+execution-hook wrapper, and sponsorship/fee consent. It recomputes the hash
+locally with Viem and checks the returned signature's address. Completion
+retries never invoke the signer again. Local signing failures use `kind:
+"signer"` and stable codes without exposing keystore exceptions. A missing
+resolver fails before any request; there is no root-key fallback.
+
+`sealLocalSessionKey` / `openLocalSessionKey` provide the browser-compatible
+encrypted export codec described in
+[local keystores](../../architecture/clients/local-keystore.md). They accept
+redacted passwords, use WebCrypto, and validate signer/key correspondence.
+They do not read files, contact the API, or prove installation approval. The
+client-only schemas live in `@namera-ai/protocol/local`, not API DTOs.
 
 ## Structure
 
@@ -96,6 +130,7 @@ Callers do not supply or manage idempotency keys.
 - `src/transport.ts` — internal generated HttpApi client, authentication
   middleware, and transient retry boundary.
 - `src/result.ts` — promise result and SDK error contracts.
+- `src/signing/` — local signer contract and independent execution validation.
 - `src/index.ts` — intentional public exports.
 - `tests/` — transport-boundary contract tests using an injected Fetch function.
 - `package.json` — package metadata, scripts, source condition, and publish exports.

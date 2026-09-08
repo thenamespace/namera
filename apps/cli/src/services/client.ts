@@ -2,8 +2,9 @@ import { NameraClient } from "@namera-ai/sdk";
 
 import { getProfile } from "./config.js";
 import { getValidAccessToken } from "./oauth.js";
+import { resolveCliSessionSigner } from "./session-keystore/index.js";
 
-export const makeCliClient = async (profile?: string) => {
+export const makeCliClient = async (profile?: string, maxGasCostWei?: bigint) => {
   const apiKey = process.env.NAMERA_API_KEY;
   if (apiKey !== undefined) {
     const baseUrl = process.env.NAMERA_API_URL ?? "http://localhost:8080";
@@ -11,7 +12,11 @@ export const makeCliClient = async (profile?: string) => {
       config: { activeProfile: "automation", profiles: {} },
       profile: { baseUrl },
       profileName: "automation",
-      client: new NameraClient({ apiKey, baseUrl }),
+      client: new NameraClient({
+        apiKey,
+        baseUrl,
+        resolveSessionSigner: resolveCliSessionSigner(new URL(baseUrl).origin, maxGasCostWei),
+      }),
     };
   }
 
@@ -21,6 +26,10 @@ export const makeCliClient = async (profile?: string) => {
     client: new NameraClient({
       baseUrl: resolved.profile.baseUrl,
       getAccessToken: () => getValidAccessToken(resolved.profileName, resolved.profile.baseUrl),
+      resolveSessionSigner: resolveCliSessionSigner(
+        new URL(resolved.profile.baseUrl).origin,
+        maxGasCostWei,
+      ),
     }),
   };
 };

@@ -30,6 +30,10 @@ export interface WalletRepositoryService {
   readonly findForOrganization: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<WalletView>, DatabaseError>;
+  readonly findByIdForUpdate: (
+    id: WalletId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<WalletView | undefined, DatabaseError>;
   readonly findByIdForActor: (
     id: WalletId,
     organizationId: OrganizationId,
@@ -84,6 +88,25 @@ export class WalletRepository extends Context.Service<WalletRepository, WalletRe
           if (row === undefined) return undefined;
           const { signingKey: key, ...walletRow } = row;
           return decodeWalletView({ wallet: walletRow, signingKey: key });
+        }, mapRepositoryError),
+        findByIdForUpdate: Effect.fn("database.walletRepository.findByIdForUpdate")(function* (
+          id,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({ wallet, signingKey })
+            .from(wallet)
+            .innerJoin(
+              signingKey,
+              and(
+                eq(wallet.signingKeyId, signingKey.id),
+                eq(wallet.organizationId, signingKey.organizationId),
+              ),
+            )
+            .where(and(eq(wallet.id, id), eq(wallet.organizationId, organizationId)))
+            .for("update");
+          return rows[0] === undefined ? undefined : decodeWalletView(rows[0]);
         }, mapRepositoryError),
         findForOrganization: Effect.fn("database.walletRepository.findForOrganization")(function* (
           organizationId,

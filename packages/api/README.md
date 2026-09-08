@@ -27,7 +27,11 @@ sequence.
   server routes.
 - `src/routes/wallet.ts` — create, list, get, update organization wallet metadata,
   and list paginated all-chain fungible assets.
-- `src/routes/session-key.ts` — create, get, list, and revoke organization session keys.
+- `src/routes/session-key.ts` — register/get/list session keys and prepare/complete
+  passkey owner approvals for stored onchain installation/removal operations.
+  Member-authorized operation status reads expose no signed envelope or lease.
+  Receipt processing is required before activation. Revocation removes API
+  grants immediately and finishes after owner-approved onchain removal.
 - `src/routes/api-key.ts` — create, get, list, and revoke organization API keys
   with their authorized session keys.
 - `src/routes/execution.ts` — read-only execution simulation, API-key execution,

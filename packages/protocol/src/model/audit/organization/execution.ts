@@ -3,6 +3,18 @@ import { Schema } from "effect";
 import { ExecutionId, ExecutionSubmissionId, SessionKeyGrantId } from "#/common/index";
 import { SupportedEvmChainId, TransactionHash, UserOperationHash } from "#/evm/index";
 
+export const ExecutionSigningEventData = Schema.Struct({
+  event: Schema.Literals(["execution.prepared", "execution.signature_accepted"]),
+  resourceType: Schema.Literal("execution-submission"),
+  resourceId: ExecutionSubmissionId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    namespace: Schema.Literal("eip155"),
+    chainId: SupportedEvmChainId,
+    sessionKeyGrantId: SessionKeyGrantId,
+  }),
+});
+
 export const ExecutionSubmittedEventData = Schema.Struct({
   event: Schema.Literal("execution.submitted"),
   resourceType: Schema.Literal("execution-submission"),

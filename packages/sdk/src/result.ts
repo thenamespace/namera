@@ -1,4 +1,4 @@
-export type NameraSdkErrorKind = "api" | "contract" | "network" | "unexpected";
+export type NameraSdkErrorKind = "api" | "contract" | "network" | "unexpected" | "signer";
 
 export type NameraApiErrorCode<E> = E extends { readonly code: infer C extends string } ? C : never;
 
@@ -14,13 +14,28 @@ export type NameraApiFailure<E> = {
 };
 
 export type NameraInfrastructureFailure = {
-  readonly kind: Exclude<NameraSdkErrorKind, "api">;
+  readonly kind: Exclude<NameraSdkErrorKind, "api" | "signer">;
   readonly message: string;
   readonly status: number | null;
   readonly cause: unknown;
 };
 
-export type NameraSdkError<E = never> = NameraApiFailure<E> | NameraInfrastructureFailure;
+export type NameraLocalSignerFailure = {
+  readonly kind: "signer";
+  readonly code:
+    | "LOCAL_SIGNER_REQUIRED"
+    | "LOCAL_SIGNER_UNAVAILABLE"
+    | "PREPARED_EXECUTION_INVALID"
+    | "LOCAL_SIGNATURE_INVALID";
+  readonly message: string;
+  readonly status: null;
+  readonly cause: null;
+};
+
+export type NameraSdkError<E = never> =
+  | NameraApiFailure<E>
+  | NameraInfrastructureFailure
+  | NameraLocalSignerFailure;
 
 export type NameraResult<A, E = never> =
   | { readonly success: true; readonly data: A; readonly error: null }

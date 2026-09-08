@@ -93,6 +93,7 @@ application contracts are the extension point for future chain families.
 - [Notifications](notifications/README.md)
 - [Durable email delivery](notifications/email-delivery.md)
 - [SDK, CLI, and MCP tools](clients/sdk-cli-mcp.md)
+- [Local session key exports](clients/local-keystore.md)
 - [Dashboard](frontend/dashboard.md)
 
 ## Documentation contract

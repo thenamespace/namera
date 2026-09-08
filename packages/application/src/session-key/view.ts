@@ -7,10 +7,12 @@ import type {
   OrganizationMember,
   OrganizationRole,
   User,
+  SessionKeyInstallation,
 } from "@namera-ai/protocol/model";
 
 export interface SessionKeyView {
   readonly sessionKey: EvmSessionKey;
+  readonly installations: ReadonlyArray<SessionKeyInstallation>;
   readonly wallet: WalletView;
   readonly creator: {
     readonly organizationMember: OrganizationMember;
@@ -28,11 +30,15 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
   ) {
     if (sessionKeys.length === 0) return [];
 
-    const [wallets, creators] = yield* Effect.all([
+    const [wallets, creators, installations] = yield* Effect.all([
       repository.core.wallet.findForOrganization(organizationId),
       repository.auth.member.findByActorIds(organizationId, [
         ...new Set(sessionKeys.map((sessionKey) => sessionKey.createdByActorId)),
       ]),
+      repository.core.sessionKeyInstallation.findForSessions(
+        organizationId,
+        sessionKeys.map(({ id }) => id),
+      ),
     ]);
     const walletById = new Map(wallets.map((wallet) => [wallet.wallet.id, wallet]));
     const creatorByActorId = new Map(
@@ -46,7 +52,14 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
       if (wallet === undefined || creator === undefined) {
         return yield* Effect.die("Session-key response relation is missing");
       }
-      views.push({ sessionKey, wallet, creator });
+      views.push({
+        sessionKey,
+        wallet,
+        creator,
+        installations: installations.filter(
+          (installation) => installation.sessionKeyId === sessionKey.id,
+        ),
+      });
     }
     return views;
   });

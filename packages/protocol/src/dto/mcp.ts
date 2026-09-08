@@ -46,12 +46,13 @@ const McpTransactionFields = {
     description: "The wallet namespace. EVM operations use eip155.",
   }),
   walletId: McpWalletId,
+  sessionKeyId: McpSessionKeyId,
   chainId: McpChainId,
   calls: Schema.Array(McpExecutionCall)
     .check(Schema.isMinLength(1, { message: "At least one call is required" }))
     .annotate({
       description:
-        "The complete ordered call batch. Namera automatically selects a delegated session key whose policies allow every call.",
+        "The complete ordered call batch. The selected session key must authorize every call.",
     }),
 };
 
@@ -79,7 +80,7 @@ export const McpExecuteTransactionRequest = Schema.Struct({
 }).annotate({
   identifier: "McpExecuteTransactionRequest",
   description:
-    "An exact EVM transaction for a Namera wallet. The session key is selected automatically and must not be supplied.",
+    "An exact EVM transaction for a Namera wallet and its explicitly selected delegated session key.",
 });
 
 export const McpSimulateTransactionRequest = Schema.Struct(McpTransactionFields).annotate({

@@ -26,6 +26,7 @@ export const BillingMeterUnit = Schema.Literals(["operation", "micro-usd"]);
 export const BillingUsageSourceType = Schema.Literals([
   "execution-submission",
   "signature-operation",
+  "session-key-operation",
   "manual-adjustment",
 ]);
 

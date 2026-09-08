@@ -1,4 +1,4 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 
 import {
   ExecutionSubmissionId,
@@ -6,18 +6,11 @@ import {
   SessionKeyInstallationId,
   SigningKeyId,
 } from "#/common/index";
-import { Bytes32, EvmPreparedExecution, Hex } from "#/evm/index";
+import { Bytes32, EvmPreparedExecution, Hex, UserOperationHash } from "#/evm/index";
 
 import { ExecuteEvmRequest } from "./execution.js";
 
-export const PrepareEvmExecutionRequest = ExecuteEvmRequest.mapFields(
-  Struct.assign({
-    sessionKeyId: SessionKeyId.annotate({
-      description:
-        "The delegated session key whose local signer will sign this operation. It must belong to walletId, be granted to the current actor, and be installed on chainId.",
-    }),
-  }),
-).annotate({
+export const PrepareEvmExecutionRequest = ExecuteEvmRequest.annotate({
   identifier: "PrepareEvmExecutionRequest",
   description:
     "Prepare one call batch for one explicitly selected local session key. Does not sign or broadcast. The SDK reuses its internal idempotency key when retrying preparation.",
@@ -79,3 +72,15 @@ export type PrepareEvmExecutionResponse = typeof PrepareEvmExecutionResponse.Typ
 export type PrepareExecutionResponse = typeof PrepareExecutionResponse.Type;
 export type CompleteEvmExecutionRequest = typeof CompleteEvmExecutionRequest.Type;
 export type CompleteExecutionRequest = typeof CompleteExecutionRequest.Type;
+
+export const CompleteExecutionResponse = Schema.Struct({
+  namespace: Schema.Literal("eip155"),
+  submissionId: ExecutionSubmissionId,
+  status: Schema.Literals(["prepared", "submitted", "confirmed", "failed"]),
+  userOperationHash: UserOperationHash,
+}).annotate({
+  identifier: "CompleteExecutionResponse",
+  description:
+    "Durable local-signature acceptance. Prepared means queued for broadcast, not submitted or confirmed. Poll submission status for the chain outcome.",
+});
+export type CompleteExecutionResponse = typeof CompleteExecutionResponse.Type;

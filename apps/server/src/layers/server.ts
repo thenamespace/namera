@@ -13,6 +13,7 @@ import {
   BillingWorkerLive,
   EmailWorkerLive,
   ExecutionWorkerLive,
+  SessionKeyWorkerLive,
   ServicesLive,
 } from "#/layers/services";
 import { CorsMiddleware, RateLimitMiddleware, TelemetryMiddleware } from "#/middlewares/index";
@@ -67,6 +68,7 @@ const Routes = Layer.mergeAll(
   EmailWorkerLive,
   BillingWorkerLive,
   ExecutionWorkerLive,
+  SessionKeyWorkerLive,
 );
 
 // ServerLive is the transport composition root. Middleware order is intentional:

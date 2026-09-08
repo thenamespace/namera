@@ -14,11 +14,37 @@ export class SessionKeyCreationError extends Schema.TaggedError<SessionKeyCreati
       "POLICY_CARDINALITY_EXCEEDED",
       "WALLET_NOT_ACTIVE",
       "WALLET_NAMESPACE_MISMATCH",
+      "LOCAL_SIGNER_INVALID",
+      "SIGNER_ALREADY_REGISTERED",
+      "WALLET_OWNER_UNAVAILABLE",
+      "ONCHAIN_PREPARATION_FAILED",
     ]),
   },
   { httpApiStatus: 409 },
 ) {}
 
-export const SessionKeyErrors = [SessionKeyNotFoundError, SessionKeyCreationError] as const;
+export class SessionKeyOperationError extends Schema.TaggedError<SessionKeyOperationError>()(
+  "SessionKeyOperationError",
+  {
+    code: Schema.Literals([
+      "INSTALLATION_UNAVAILABLE",
+      "OPERATION_UNAVAILABLE",
+      "OWNER_UNAVAILABLE",
+      "INVALID_TRANSITION",
+      "OPERATION_BUSY",
+      "IDEMPOTENCY_CONFLICT",
+      "APPROVAL_EXPIRED",
+      "APPROVAL_INVALID",
+      "PREPARATION_FAILED",
+    ]),
+  },
+  { httpApiStatus: 409 },
+) {}
+
+export const SessionKeyErrors = [
+  SessionKeyNotFoundError,
+  SessionKeyCreationError,
+  SessionKeyOperationError,
+] as const;
 export const SessionKeyError = Schema.Union(SessionKeyErrors);
 export type SessionKeyError = typeof SessionKeyError.Type;

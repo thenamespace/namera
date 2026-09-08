@@ -17,6 +17,9 @@ import { signingKey } from "#/schema/index";
 
 export interface SigningKeyRepositoryService {
   readonly insert: (input: SigningKeyInsertModel) => Effect.Effect<SigningKeyModel, DatabaseError>;
+  readonly insertIfPublicKeyAvailable: (
+    input: SigningKeyInsertModel,
+  ) => Effect.Effect<SigningKeyModel | undefined, DatabaseError>;
   readonly findById: (
     id: SigningKeyId,
     organizationId: OrganizationId,
@@ -61,6 +64,20 @@ export class SigningKeyRepository extends Context.Service<
             .values({ ...encoded, id: input.id, organizationId: input.organizationId })
             .returning();
           return decodeSigningKey(rows[0]);
+        }, mapRepositoryError),
+        insertIfPublicKeyAvailable: Effect.fn(
+          "database.signingKeyRepository.insertIfPublicKeyAvailable",
+        )(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const encoded = Schema.encodeSync(SigningKeyInsert)(input);
+          const rows = yield* db
+            .insert(signingKey)
+            .values({ ...encoded, id: input.id, organizationId: input.organizationId })
+            .onConflictDoNothing({
+              target: [signingKey.organizationId, signingKey.algorithm, signingKey.publicKeyHex],
+            })
+            .returning();
+          return rows[0] === undefined ? undefined : decodeSigningKey(rows[0]);
         }, mapRepositoryError),
         findById: Effect.fn("database.signingKeyRepository.findById")(function* (
           id,

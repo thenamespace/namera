@@ -18,8 +18,9 @@ namera --output ndjson wallet list
 namera wallet get <wallet-id>
 namera session-key list [--wallet <wallet-id>]
 namera session-key get <session-key-id>
+namera session-key import <encrypted-export> --profile personal
 namera execution simulate
-namera execution execute --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","calls":[...],"sponsor":false}'
+namera execution execute --params '{"namespace":"eip155","walletId":"...","sessionKeyId":"...","chainId":"eip155:1","calls":[...],"sponsor":false}'
 namera execution status <submission-id>
 namera execution list [--cursor <execution-id>]
 namera sign
@@ -46,7 +47,26 @@ Execution, simulation, signing, and verification prompt for their request fields
 the same public request shape inline with `--params '<json>'` for non-interactive use; the CLI
 decodes both paths through the public protocol schema and does not read request files.
 Interactive execution asks whether Namera should sponsor gas and defaults to yes.
+Execution and simulation require the same explicit session key ID; interactive
+commands prompt for it separately from the wallet ID.
 Inline execution params may set `sponsor` to `false`; omission remains sponsored.
+Self-funded execution also requires `--max-gas-cost-wei <amount>` (or the
+interactive fee-budget prompt). The local signer rejects preparations above
+that budget before signing.
+
+## Local session keys
+
+`session-key import` accepts a base64url-encoded encrypted export and prompts
+for its passphrase without echoing it. The export must match the active API
+origin. Import re-encrypts the key with an independent OS-keyring unlock secret
+and atomically installs a non-overwriting encrypted file under `session-keys`
+beside the CLI configuration. POSIX directory/file permissions are 0700/0600;
+there is no plaintext or keyring-unavailable fallback.
+
+Execution resolves the imported wallet/session/chain binding locally and uses
+the SDK's validated prepare/sign/complete flow. Browser export, local message
+signing, and local MCP integration remain migration work. Storage tests use a
+substitute keyring; packaged OS-keyring and live-chain journeys remain pending.
 
 `--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
 colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact

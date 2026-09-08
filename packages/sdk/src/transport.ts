@@ -13,10 +13,12 @@ import {
   type NameraResult,
   type NameraSdkError,
 } from "#/result";
+import type { ResolveSessionSigner } from "#/signing/local-session";
 
 type NameraClientBaseConfig = {
   readonly baseUrl?: string;
   readonly fetch?: NameraFetch;
+  readonly resolveSessionSigner?: ResolveSessionSigner;
 };
 
 export type NameraClientConfig = NameraClientBaseConfig &

@@ -1,6 +1,30 @@
 import { Schema } from "effect";
 
-import { SessionKeyId, WalletId } from "#/common/index";
+import {
+  SessionKeyId,
+  WalletId,
+  SessionKeyInstallationId,
+  SessionKeyOperationId,
+} from "#/common/index";
+import { SupportedEvmChainId } from "#/evm/chains";
+
+export const SessionKeyOperationEventData = Schema.Struct({
+  event: Schema.Literals([
+    "session_key.operation_prepared",
+    "session_key.operation_approved",
+    "session_key.operation_confirmed",
+    "session_key.operation_failed",
+  ]),
+  resourceType: Schema.Literal("session-key"),
+  resourceId: SessionKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    installationId: SessionKeyInstallationId,
+    operationId: SessionKeyOperationId,
+    chainId: SupportedEvmChainId,
+    kind: Schema.Literals(["install", "uninstall"]),
+  }),
+});
 
 export const SessionKeyCreatedEventData = Schema.Struct({
   event: Schema.Literal("session_key.created"),
@@ -23,7 +47,7 @@ export const SessionKeyCreatedEventData = Schema.Struct({
 });
 
 export const SessionKeyRevokedEventData = Schema.Struct({
-  event: Schema.Literal("session_key.revoked"),
+  event: Schema.Literals(["session_key.revocation_requested", "session_key.revoked"]),
   resourceType: Schema.Literal("session-key"),
   resourceId: SessionKeyId,
   data: Schema.Struct({

@@ -38,7 +38,7 @@ composition model.
 - `src/signature/` — shared account/grant resolution, signature-operation
   lifecycle, and separate policy-gated signing and read-only verification
   builders composed behind one application surface.
-- `src/execution/` — synchronous execution orchestration, transactional lifecycle
+- `src/execution/` — local-signature preparation/acceptance, transactional lifecycle
   settlement/release, lease-based background reconciliation, and scoped reads.
 - `src/ens/` — Namera ENS naming policy and public availability composition.
 - `src/wallet/` — separately composed creation, passkey registration ceremony,
@@ -117,9 +117,12 @@ Session-key creation validates the organization wallet and its namespace before
 persisting versioned policy instances. Registry-owned cardinality rejects a
 second instance only for policy types declared singleton; repeatable types and
 the total policy array have no product-level maximum. The same registry assigns
-IDs and code-owned applicability without application policy switches. Revocation
-atomically marks the immutable key revoked and revokes all active grants while
-preserving in-flight execution history. Policy hashes are purpose-separated and
+IDs and code-owned applicability without application policy switches. Registration
+persists a dedicated local signer and pending onchain installations. Owner passkey
+approval records an immutable signed attempt; receipt recovery activates it.
+Revocation immediately removes API grants, then waits for owner-approved onchain
+removal before finalizing the session and notifying members. Signed installation
+attempts remain recoverable without restoring API authority. Policy hashes are purpose-separated and
 canonical across object-key and policy-array ordering while excluding generated
 policy IDs. The session key, audit event, inbox recipients, and durable email
 jobs share one transaction.
@@ -153,8 +156,12 @@ Wallet updates replace only metadata and leave the namespace, implementation,
 address, protection level, key material, and account data unchanged. No-op
 updates do not create duplicate audit events or metrics.
 
-Execution requests reserve one granted session key, persist the exact signed
-UserOperation, submit it, and briefly wait for its receipt. A successful receipt
+Execution preparation selects an explicitly granted installed session key and
+persists its unsigned UserOperation together with policy and billing holds.
+Completion verifies the local signature, rechecks authority and expiry under
+locks, and attaches the signed envelope once. The worker submits and reconciles
+that envelope; routine operations never use the root signer. The legacy execute
+method currently fails closed while clients migrate. A successful receipt
 settles policy state and creates the execution in the same transaction. A
 definitive failure releases policy state. Timeout or uncertain RPC outcomes
 return `submitted`; `Application.execution.reconcile` later claims a bounded
@@ -166,10 +173,10 @@ on policy types. Periodic allowance settlement remains attached to the exact
 window in which the execution was authorized, even when confirmation occurs in
 a later window.
 
-Execution simulation prepares the same unsigned operation and normalized call
-simulation as execution, then previews every eligible session key against its
-current policy state. It returns the first allowed session key or each
-candidate's first deterministic policy denial. The preview does not reserve or
+Execution simulation uses the same public-only preparation as local execution
+for one explicitly selected installed session. It previews that session against
+its current policy state and returns approval or its first deterministic policy
+denial. The preview does not reserve or
 settle policy state, sign or submit an operation, create execution records,
 consume billing usage, or emit audit events, so its authorization result is
 point-in-time only.

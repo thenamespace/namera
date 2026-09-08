@@ -4,6 +4,11 @@ import * as schema from "#/schema/index";
 
 export const coreRelations = defineRelationsPart(schema, (r) => ({
   signingKey: {
+    // A delegated signing key is dedicated to one immutable session envelope.
+    sessionKeys: r.many.sessionKey({
+      from: [r.signingKey.id, r.signingKey.organizationId],
+      to: [r.sessionKey.signingKeyId, r.sessionKey.organizationId],
+    }),
     // Each signing key belongs to one organization.
     organization: r.one.organization({
       from: r.signingKey.organizationId,
@@ -54,6 +59,12 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   sessionKey: {
+    // Delegated signing material is separate from the wallet's owner key.
+    signingKey: r.one.signingKey({
+      from: [r.sessionKey.signingKeyId, r.sessionKey.organizationId],
+      to: [r.signingKey.id, r.signingKey.organizationId],
+      optional: false,
+    }),
     // A logical session has one independently confirmed installation per chain.
     installations: r.many.sessionKeyInstallation({
       from: [r.sessionKey.id, r.sessionKey.organizationId],
@@ -226,6 +237,20 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   executionSubmission: {
+    // The installed authority and actor grant must reference the same session.
+    installation: r.one.sessionKeyInstallation({
+      from: [
+        r.executionSubmission.installationId,
+        r.executionSubmission.sessionKeyId,
+        r.executionSubmission.organizationId,
+      ],
+      to: [
+        r.sessionKeyInstallation.id,
+        r.sessionKeyInstallation.sessionKeyId,
+        r.sessionKeyInstallation.organizationId,
+      ],
+      optional: false,
+    }),
     // Each execution submission belongs to one organization.
     organization: r.one.organization({
       from: r.executionSubmission.organizationId,

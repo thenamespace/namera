@@ -6,7 +6,9 @@ import type {
   DatabaseError,
   ExecutionSubmissionId,
   OrganizationId,
+  EvmSignedExecution as EvmSignedExecutionModel,
 } from "@namera-ai/protocol";
+import { EvmSignedExecution } from "@namera-ai/protocol";
 import {
   ExecutionSubmission,
   ExecutionSubmissionInsert,
@@ -14,13 +16,22 @@ import {
   type ExecutionSubmission as ExecutionSubmissionModel,
   type ExecutionSubmissionInsert as ExecutionSubmissionInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, asc, eq, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { executionSubmission } from "#/schema/index";
 
 export interface ExecutionSubmissionRepositoryService {
+  readonly acceptSignature: (input: {
+    readonly id: ExecutionSubmissionId;
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly requestHash: string;
+    readonly signed: EvmSignedExecutionModel;
+    readonly now: DateTime.Utc;
+    readonly nextReconcileAt: DateTime.Utc;
+  }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly insert: (
     data: ExecutionSubmissionInsertModel,
   ) => Effect.Effect<
@@ -97,6 +108,35 @@ export class ExecutionSubmissionRepository extends Context.Service<
       const database = yield* Database;
 
       return ExecutionSubmissionRepository.of({
+        acceptSignature: Effect.fn("database.executionSubmission.acceptSignature")(function* (
+          input,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const signed = Schema.encodeSync(EvmSignedExecution)(input.signed);
+          const rows = yield* db
+            .update(executionSubmission)
+            .set({
+              status: "prepared",
+              data: sql`jsonb_set(${executionSubmission.data}, '{signedExecution}', ${JSON.stringify(signed)}::jsonb)`,
+              leaseToken: null,
+              leaseExpiresAt: encodeDate(input.nextReconcileAt),
+            })
+            .where(
+              and(
+                eq(executionSubmission.id, input.id),
+                eq(executionSubmission.organizationId, input.organizationId),
+                eq(executionSubmission.actorId, input.actorId),
+                eq(executionSubmission.requestHash, input.requestHash),
+                eq(executionSubmission.status, "reserved"),
+                gt(executionSubmission.expiresAt, encodeDate(input.now)),
+                sql`${executionSubmission.data}->'signedExecution' = 'null'::jsonb`,
+              ),
+            )
+            .returning();
+          return rows[0] === undefined
+            ? undefined
+            : Schema.decodeSync(ExecutionSubmission)(rows[0]);
+        }, mapRepositoryError),
         insert: Effect.fn("database.executionSubmissionRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(ExecutionSubmissionInsert)(data);
@@ -310,7 +350,13 @@ export class ExecutionSubmissionRepository extends Context.Service<
             .from(executionSubmission)
             .where(
               and(
-                inArray(executionSubmission.status, ["prepared", "submitted"]),
+                or(
+                  inArray(executionSubmission.status, ["prepared", "submitted"]),
+                  and(
+                    eq(executionSubmission.status, "reserved"),
+                    lte(executionSubmission.expiresAt, encodedNow),
+                  ),
+                ),
                 or(
                   isNull(executionSubmission.leaseExpiresAt),
                   lte(executionSubmission.leaseExpiresAt, encodedNow),
@@ -348,7 +394,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
                 eq(executionSubmission.id, id),
                 eq(executionSubmission.organizationId, organizationId),
                 eq(executionSubmission.leaseToken, leaseToken),
-                inArray(executionSubmission.status, ["prepared", "submitted"]),
+                inArray(executionSubmission.status, ["reserved", "prepared", "submitted"]),
               ),
             )
             .returning();

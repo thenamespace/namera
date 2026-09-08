@@ -1,0 +1,144 @@
+import { DateTime, Duration, Effect } from "effect";
+
+import { Repository, TransactionService } from "@namera-ai/database";
+import { Evm } from "@namera-ai/evm";
+import { ExecutionError, type DatabaseError, type EvmPolicyError } from "@namera-ai/protocol";
+import type {
+  CompleteExecutionRequest,
+  CompleteExecutionResponse,
+  GrantedActorData,
+} from "@namera-ai/protocol/dto";
+
+import { Audit } from "#/audit/layer";
+
+import { makeLoadExecutionAuthority } from "./authority.js";
+
+export const makeCompleteLocalExecution = Effect.gen(function* () {
+  const repository = yield* Repository;
+  const transaction = yield* TransactionService;
+  const evm = yield* Evm;
+  const loadAuthority = yield* makeLoadExecutionAuthority;
+  const audit = yield* Audit;
+  return Effect.fn("application.execution.completeLocal")(
+    function* (input: {
+      readonly actor: GrantedActorData;
+      readonly request: CompleteExecutionRequest;
+    }): Effect.fn.Return<
+      CompleteExecutionResponse,
+      ExecutionError | DatabaseError | EvmPolicyError
+    > {
+      const submission = yield* repository.core.executionSubmission.findByIdForActor(
+        input.request.submissionId,
+        input.actor.organizationId,
+        input.actor.actorId,
+      );
+      if (submission === undefined)
+        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+      if (submission.status !== "reserved" && submission.data.signedExecution !== null)
+        return {
+          namespace: "eip155",
+          submissionId: submission.id,
+          status: submission.status,
+          userOperationHash: submission.data.signedExecution.userOperationHash,
+        };
+      if (
+        submission.status !== "reserved" ||
+        DateTime.toEpochMillis(submission.expiresAt) <= DateTime.toEpochMillis(yield* DateTime.now)
+      )
+        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+      const grant = input.actor.grants.find(
+        (candidate) => candidate.grant.id === submission.sessionKeyGrantId,
+      );
+      if (grant === undefined)
+        return yield* new ExecutionError({ code: "NO_AUTHORIZED_SESSION_KEY" });
+      const scope = {
+        actor: input.actor,
+        walletId: grant.sessionKey.walletId,
+        sessionKeyId: submission.sessionKeyId,
+        chainId: submission.data.chainId,
+      };
+      const authority = yield* loadAuthority(scope);
+      if (authority.installation.id !== submission.installationId)
+        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+      const signed = yield* evm.execution
+        .completeSessionExecution({
+          account: authority.account,
+          session: authority.installation.data,
+          prepared: submission.data.prepared,
+          signature: input.request.signature,
+        })
+        .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
+
+      const accepted = yield* transaction.run(
+        Effect.gen(function* () {
+          yield* repository.core.wallet.findByIdForUpdate(
+            scope.walletId,
+            input.actor.organizationId,
+          );
+          const current = yield* loadAuthority({ ...scope, forUpdate: true });
+          const existing = yield* repository.core.executionSubmission.findByIdForUpdate(
+            submission.id,
+            input.actor.organizationId,
+          );
+          if (existing === undefined)
+            return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+          if (existing.status !== "reserved" && existing.data.signedExecution !== null)
+            return existing;
+          if (
+            current.installation.id !== submission.installationId ||
+            current.sessionKey.policyHash !== submission.policyHash ||
+            current.signer.id !== authority.signer.id
+          )
+            return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+          // Check stateless policies again; the attempt already owns its stateful reservation.
+          const decision = yield* evm.policy.evaluate({
+            policies: current.sessionKey.policies,
+            context: submission.data.prepared.context,
+          });
+          if (!decision.allowed)
+            return yield* new ExecutionError({
+              code: "POLICY_DENIED",
+              policyId: decision.policyId,
+              policyCode: decision.code,
+            });
+          const now = yield* DateTime.now;
+          const updated = yield* repository.core.executionSubmission.acceptSignature({
+            id: submission.id,
+            organizationId: input.actor.organizationId,
+            actorId: input.actor.actorId,
+            requestHash: submission.requestHash,
+            signed,
+            now,
+            nextReconcileAt: DateTime.addDuration(now, Duration.seconds(1)),
+          });
+          if (updated === undefined)
+            return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+          yield* audit.organization({
+            organizationId: input.actor.organizationId,
+            actorId: input.actor.actorId,
+            event: "execution.signature_accepted",
+            resourceType: "execution-submission",
+            resourceId: updated.id,
+            data: {
+              version: 1,
+              namespace: "eip155",
+              chainId: updated.data.chainId,
+              sessionKeyGrantId: updated.sessionKeyGrantId,
+            },
+          });
+          return updated;
+        }),
+      );
+      if (accepted.status === "reserved" || accepted.data.signedExecution === null)
+        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+      return {
+        namespace: "eip155",
+        submissionId: accepted.id,
+        status: accepted.status,
+        userOperationHash: accepted.data.signedExecution.userOperationHash,
+      };
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+    Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
+  );
+});

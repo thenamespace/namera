@@ -111,7 +111,10 @@ is not obvious.
 Execution reconciliation claims `prepared` and `submitted` rows in bounded
 batches using `FOR UPDATE SKIP LOCKED`. A shared token leases the claimed batch;
 all terminal transitions verify both submission identity and lease ownership.
-Fresh `reserved` rows are never claimed, and synchronous execution schedules a
+Unexpired `reserved` rows are never claimed; expired unsigned preparations are
+leased for transactional reservation release. Signature acceptance atomically
+checks actor, request hash and expiry and preserves the persisted preparation.
+Synchronous execution schedules a
 grace period before a prepared or submitted row becomes eligible, preventing the
 worker from racing an active HTTP request.
 

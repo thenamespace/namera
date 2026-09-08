@@ -4,6 +4,8 @@ import {
   SessionKeyCreationError,
   SessionKeyNotFoundError,
   WalletNotFoundError,
+  SessionKeyOperationError,
+  BillingLimitExceededError,
 } from "@namera-ai/protocol";
 import {
   CreateSessionKeyRequest,
@@ -15,6 +17,11 @@ import {
   ListSessionKeysForWalletResponse,
   RevokeSessionKeyRequest,
   RevokeSessionKeyResponse,
+  PrepareSessionKeyOperationRequest,
+  PrepareSessionKeyOperationResponse,
+  CompleteSessionKeyOperationRequest,
+  SessionKeyOperationResponse,
+  GetSessionKeyOperationRequest,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -22,6 +29,24 @@ import { Authorization } from "#/middlewares/index";
 
 export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
   .add(
+    HttpApiEndpoint.get("getOperation", "/operations/:operationId", {
+      params: GetSessionKeyOperationRequest,
+      success: SessionKeyOperationResponse,
+      error: [SessionKeyOperationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Read the status of a stored owner approval operation"),
+    HttpApiEndpoint.post("completeOperation", "/operations/complete", {
+      payload: CompleteSessionKeyOperationRequest,
+      success: SessionKeyOperationResponse,
+      error: [SessionKeyOperationError, BillingLimitExceededError, ...CommonErrors],
+    }).annotate(
+      OpenApi.Summary,
+      "Approve a stored session operation with the wallet owner passkey",
+    ),
+    HttpApiEndpoint.post("prepareOperation", "/operations/prepare", {
+      payload: PrepareSessionKeyOperationRequest,
+      success: PrepareSessionKeyOperationResponse,
+      error: [SessionKeyOperationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Prepare a passkey-approved session installation or removal"),
     HttpApiEndpoint.post("create", "/", {
       payload: CreateSessionKeyRequest,
       success: CreateSessionKeyResponse.pipe(HttpApiSchema.status("Created")),
@@ -47,6 +72,9 @@ export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
       error: [SessionKeyNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Revoke a session key and all of its active grants"),
   )
-  .annotate(OpenApi.Description, "Immutable offchain session keys and policies")
+  .annotate(
+    OpenApi.Description,
+    "Local session signers, onchain installations and additional API policies",
+  )
   .middleware(Authorization)
   .prefix("/session-keys") {}

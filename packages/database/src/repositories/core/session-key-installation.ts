@@ -9,7 +9,7 @@ import type {
   UserOperationHash,
 } from "@namera-ai/protocol";
 import { SessionKeyInstallation, SessionKeyInstallationInsert } from "@namera-ai/protocol/model";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -32,11 +32,16 @@ export interface SessionKeyInstallationRepositoryService {
     organizationId: OrganizationId,
     sessionKeyId: SessionKeyId,
   ) => Effect.Effect<ReadonlyArray<SessionKeyInstallation>, DatabaseError>;
+  readonly findForSessions: (
+    organizationId: OrganizationId,
+    sessionKeyIds: ReadonlyArray<SessionKeyId>,
+  ) => Effect.Effect<ReadonlyArray<SessionKeyInstallation>, DatabaseError>;
   readonly markSubmitted: (input: Submission) => Result;
   readonly markInstalled: (input: Confirmation) => Result;
   readonly beginRevocation: (scope: Scope) => Result;
   readonly markRevocationSubmitted: (input: Submission) => Result;
   readonly markRevoked: (input: Confirmation) => Result;
+  readonly markFailed: (input: Confirmation & { readonly kind: "install" | "uninstall" }) => Result;
 }
 
 const scoped = (scope: Scope) =>
@@ -85,6 +90,24 @@ export class SessionKeyInstallationRepository extends Context.Service<
             .orderBy(asc(table.chainId));
           return rows.map((row) => Schema.decodeSync(SessionKeyInstallation)(row));
         }, mapRepositoryError),
+        findForSessions: Effect.fn("database.sessionKeyInstallation.findForSessions")(function* (
+          organizationId,
+          sessionKeyIds,
+        ) {
+          if (sessionKeyIds.length === 0) return [];
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(table)
+            .where(
+              and(
+                eq(table.organizationId, organizationId),
+                inArray(table.sessionKeyId, [...sessionKeyIds]),
+              ),
+            )
+            .orderBy(asc(table.sessionKeyId), asc(table.chainId));
+          return rows.map((row) => Schema.decodeSync(SessionKeyInstallation)(row));
+        }, mapRepositoryError),
         markSubmitted: Effect.fn("database.sessionKeyInstallation.markSubmitted")(function* (
           input,
         ) {
@@ -92,14 +115,12 @@ export class SessionKeyInstallationRepository extends Context.Service<
           return decode(
             yield* db
               .update(table)
-              .set({ status: "submitted", installUserOperationHash: input.userOperationHash })
-              .where(
-                and(
-                  scoped(input),
-                  eq(table.status, "pending"),
-                  isNull(table.installUserOperationHash),
-                ),
-              )
+              .set({
+                status: "submitted",
+                installUserOperationHash: input.userOperationHash,
+                installTransactionHash: null,
+              })
+              .where(and(scoped(input), inArray(table.status, ["pending", "failed"])))
               .returning(),
           );
         }, mapRepositoryError),
@@ -170,6 +191,33 @@ export class SessionKeyInstallationRepository extends Context.Service<
                   scoped(input),
                   eq(table.status, "revoking"),
                   eq(table.uninstallUserOperationHash, input.userOperationHash),
+                ),
+              )
+              .returning(),
+          );
+        }, mapRepositoryError),
+        markFailed: Effect.fn("database.sessionKeyInstallation.markFailed")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          // The immutable operation ledger retains failed transaction history;
+          // a failed uninstall leaves the installed permission in force.
+          return decode(
+            yield* db
+              .update(table)
+              .set(
+                input.kind === "install"
+                  ? { status: "failed", installTransactionHash: input.transactionHash }
+                  : { status: "installed", uninstallUserOperationHash: null },
+              )
+              .where(
+                and(
+                  scoped(input),
+                  eq(table.status, input.kind === "install" ? "submitted" : "revoking"),
+                  eq(
+                    input.kind === "install"
+                      ? table.installUserOperationHash
+                      : table.uninstallUserOperationHash,
+                    input.userOperationHash,
+                  ),
                 ),
               )
               .returning(),

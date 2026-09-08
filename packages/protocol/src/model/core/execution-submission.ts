@@ -1,7 +1,14 @@
 import { Schema, Struct } from "effect";
 
-import { ActorId, ExecutionSubmissionId, OrganizationId, SessionKeyGrantId } from "#/common/index";
-import { EvmSignedExecution, SupportedEvmChainId } from "#/evm/index";
+import {
+  ActorId,
+  ExecutionSubmissionId,
+  OrganizationId,
+  SessionKeyGrantId,
+  SessionKeyId,
+  SessionKeyInstallationId,
+} from "#/common/index";
+import { EvmPreparedExecution, EvmSignedExecution, SupportedEvmChainId } from "#/evm/index";
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import { EvmIntentCall } from "#/policy/evm/index";
@@ -18,6 +25,7 @@ export const EvmExecutionSubmissionData = Schema.Struct({
   version: Schema.Literal(1),
   chainId: SupportedEvmChainId,
   calls: Schema.Array(EvmIntentCall),
+  prepared: Schema.toCodecJson(EvmPreparedExecution),
   signedExecution: Schema.NullOr(EvmSignedExecution),
 });
 
@@ -26,6 +34,9 @@ const ExecutionSubmissionCommon = Schema.Struct({
   organizationId: OrganizationId,
   actorId: ActorId,
   sessionKeyGrantId: SessionKeyGrantId,
+  sessionKeyId: SessionKeyId,
+  installationId: SessionKeyInstallationId,
+  expiresAt: Schema.DateTimeUtcFromDate,
   idempotencyKey: NonEmptyString,
   requestHash: NonEmptyString,
   policyHash: NonEmptyString,
@@ -51,6 +62,9 @@ export const ExecutionSubmissionInsert = createInsertSchema(
   "organizationId",
   "actorId",
   "sessionKeyGrantId",
+  "sessionKeyId",
+  "installationId",
+  "expiresAt",
   "idempotencyKey",
   "requestHash",
   "policyHash",

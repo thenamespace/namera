@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { ActorId, OrganizationId, SessionKeyId, WalletId } from "#/common/index";
+import { ActorId, OrganizationId, SessionKeyId, SigningKeyId, WalletId } from "#/common/index";
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import {
@@ -16,7 +16,7 @@ import {
   EvmTimeWindowPolicy,
 } from "#/policy/evm/index";
 
-export const SessionKeyStatus = Schema.Literals(["active", "revoked"]);
+export const SessionKeyStatus = Schema.Literals(["pending", "active", "revoking", "revoked"]);
 
 export const SessionKeyMetadata = Schema.Struct({
   version: Schema.Literal(1),
@@ -39,9 +39,7 @@ export const CreateEvmSessionKeyPolicy = Schema.Union([
   CreateEvmNativeSpendLimitPolicy,
   CreateEvmSignaturePolicy,
 ]);
-export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy).check(
-  Schema.isMinLength(1, { message: "At least one policy is required" }),
-);
+export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy);
 
 export const SessionKeyPolicy = EvmSessionKeyPolicy;
 export const SessionKeyPolicies = EvmSessionKeyPolicies;
@@ -50,6 +48,7 @@ const SessionKeyCommon = Schema.Struct({
   id: SessionKeyId,
   organizationId: OrganizationId,
   walletId: WalletId,
+  signingKeyId: SigningKeyId,
   createdByActorId: ActorId,
   metadata: SessionKeyMetadata,
   policyHash: Schema.String,
@@ -72,6 +71,7 @@ export const SessionKeyInsert = createInsertSchema(
   SessionKey,
   "organizationId",
   "walletId",
+  "signingKeyId",
   "createdByActorId",
   "namespace",
   "metadata",
