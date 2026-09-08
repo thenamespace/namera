@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { organizationAtom } from "@/atoms/auth/organization";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -51,6 +52,12 @@ function WorkspacePage() {
         </HeadingGroup>
         {organization.data ? (
           <WorkspaceForm canUpdate={canUpdate} organization={organization.data} />
+        ) : organization.isError ? (
+          <DataError
+            label="workspace"
+            onRetry={organization.refetch}
+            isRetrying={organization.isFetching}
+          />
         ) : (
           <DataLoading className="min-h-64" label="Loading workspace" />
         )}

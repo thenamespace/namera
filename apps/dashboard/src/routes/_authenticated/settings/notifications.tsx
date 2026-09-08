@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { notificationPreferencesAtom } from "@/atoms/notification";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -46,6 +47,12 @@ function NotificationsPage() {
           <NotificationPreferencesForm
             initialPreferences={preferences.data}
             organizationId={currentUser.organization.id}
+          />
+        ) : preferences.isError ? (
+          <DataError
+            label="notification preferences"
+            onRetry={preferences.refetch}
+            isRetrying={preferences.isFetching}
           />
         ) : (
           <DataLoading className="min-h-64" label="Loading notification preferences" />

@@ -44,6 +44,10 @@ to the overview. They never render exception messages or request URLs. A child
 route failure stays in that route's boundary under its loaded parent layout;
 failure of the authentication layout itself cannot retain that layout's sidebar.
 Component-owned query errors still need their own local feedback states.
+Execution details, workspace settings, notification preferences and session-key
+creation also use local retry feedback when their initial data request fails.
+Already-loaded form data is retained on background refresh failure so unsaved
+edits are not discarded.
 
 ## State and mutations
 

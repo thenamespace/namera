@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -53,6 +54,12 @@ function CreateSessionKeyPage() {
             </HeadingGroup>
             {wallets.data ? (
               <CreateSessionKeyForm wallets={wallets.data} />
+            ) : wallets.isError ? (
+              <DataError
+                label="accounts"
+                onRetry={wallets.refetch}
+                isRetrying={wallets.isFetching}
+              />
             ) : (
               <DataLoading className="min-h-64" label="Loading accounts" />
             )}

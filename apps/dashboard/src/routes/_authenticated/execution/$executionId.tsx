@@ -6,6 +6,7 @@ import { ExecutionId } from "@namera-ai/protocol";
 
 import { executionAtom } from "@/atoms/execution";
 import { startPrefetchQuery } from "@/atoms/prefetch";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { ExecutionDetails } from "@/components/execution-details";
 import { HeadingGroup } from "@/components/heading-group";
@@ -48,6 +49,12 @@ function ExecutionPage() {
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
         {execution.data ? (
           <ExecutionDetails details={execution.data} />
+        ) : execution.isError ? (
+          <DataError
+            label="execution"
+            onRetry={execution.refetch}
+            isRetrying={execution.isFetching}
+          />
         ) : (
           <DataLoading className="min-h-64" label="Loading execution" />
         )}
