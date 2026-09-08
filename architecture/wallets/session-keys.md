@@ -6,6 +6,13 @@ receives its private key. Chain installations store the compiled onchain
 authorization separately from additional API policies. Registration is pending,
 not authority to execute. Machine actors additionally require an active grant.
 
+Onchain signature authority requires explicit `onchain.allowSignatures: true`
+during registration. It defaults to false even with an API `evm.signature`
+policy. The value is stored in each installation authorization and bound into
+the owner-approved configuration. Alchemy's execution time/spend hooks do not
+constrain ERC-1271 signatures; only onchain uninstall removes that authority.
+See [onchain session compilation](../evm/accounts/onchain-sessions.md).
+
 The migration is incomplete: local operation signing and the dashboard creation
 flow still need wiring. Existing
 execution/signature workflows must not be considered self-custodial yet.

@@ -71,6 +71,7 @@ layer(fixture.layer)("session-key routes", (it) => {
           ...request,
           signer: (yield* localSessionRequest(wallet.id)).signer,
           policies: request.policies.toReversed(),
+          onchain: { ...request.onchain, allowSignatures: true },
         },
       });
 
@@ -115,6 +116,9 @@ layer(fixture.layer)("session-key routes", (it) => {
       });
       expect(created.policies[0]?.id).toBeDefined();
       expect(created.policyHash).toBe(duplicate.policyHash);
+      // API signature policy does not imply onchain signature authority.
+      expect(created.installations[0]?.authorization.allowSignatures).toBe(false);
+      expect(duplicate.installations[0]?.authorization.allowSignatures).toBe(true);
       expect((yield* client.sessionKey.get({ params: { sessionKeyId: created.id } })).id).toBe(
         created.id,
       );

@@ -70,6 +70,10 @@ export const EvmSessionAuthorization = Schema.Struct({
   entityId: EvmSessionEntityId,
   signerAddress: EthereumAddress,
   permissions: EvmSessionPermissions,
+  allowSignatures: Schema.optionalKey(Schema.Boolean).annotate({
+    description:
+      "Explicit ERC-1271 signature authority; omitted means false. Onchain time, spend and call hooks do not restrict signatures. Uninstall the validation to revoke this authority onchain.",
+  }),
   validAfter: Timestamp,
   validUntil: Timestamp,
 }).check(

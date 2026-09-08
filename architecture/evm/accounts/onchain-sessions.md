@@ -18,13 +18,16 @@ must not supply arbitrary owner calls or replacement installation data.
 Per-chain installation storage
 and conditional lifecycle transitions exist in the database repository. A
 separate session operation ledger retains owner-prepared attempts and signatures
-for retry/recovery without overwriting installation history. Owner
-approval routes, dashboard and SDK session execution are not wired yet.
+for retry/recovery without overwriting installation history. Owner approval and
+receipt recovery are wired in the API; SDK local execution is implemented.
+Dashboard approval/export and detached message signing remain pending.
 
 ## Contract
 
 `EvmSessionAuthorization` is version 1: signer address, non-root entity ID,
 finite `validAfter`/`validUntil` Unix seconds and typed onchain permissions.
+Optional `allowSignatures` defaults to false. It is a separate owner-approved
+capability, never inferred from an API signature policy or a root execution grant.
 Amounts are decimal strings on the wire and bigint base units internally.
 Selectors are exactly four bytes. Entity IDs 1 through 2,147,483,646 avoid root
 entity zero and the upstream offset namespace for hook storage.
@@ -61,12 +64,19 @@ execution hooks, reversing insertion order within each contract linked list.
 Passing only an entity ID to an
 allowlist can detach the hook while leaving its permission storage behind.
 
-The installed validation enables UserOperations, not ERC-1271 signature
-validation. Signature capability needs its own explicit implementation and
-tests; transaction access must never silently grant arbitrary signatures.
+The installed validation always enables UserOperations. Only explicit
+`allowSignatures: true` additionally enables ERC-1271 validation. After compiling
+hooks once, the adapter encodes the final installation arguments with this flag;
+PermissionBuilder alone always leaves it false. The flag is persisted in each
+chain authorization and bound into its owner-approved installation hash.
 Alchemy's TimeRangeModule deliberately does not enforce time bounds for
 ERC-1271 signatures, and its spend/allowlist hooks do not restrict message
 contents. Those restrictions must not be advertised as onchain signature rules.
+Expiry or API revocation stops requests through Namera but cannot prevent the
+local key holder from signing independently. Uninstalling the validation removes
+its ERC-1271 authority, including acceptance of previously issued signatures.
+The dashboard must disclose this before allowing signature authority. This
+compiler support alone does not implement the detached signature API.
 See the upstream [TimeRangeModule](https://github.com/alchemyplatform/modular-account/blob/develop/src/modules/permissions/TimeRangeModule.sol)
 and [ModuleManagerInternals](https://github.com/alchemyplatform/modular-account/blob/develop/src/account/ModuleManagerInternals.sol).
 
@@ -85,11 +95,13 @@ This lane does not verify hosted bundling or BSO sponsorship.
 Installation and removal are also exercised as self-targeted calls through the
 root account's normal `encodeCalls` path. The owner-approval workflow can use
 normal execution preparation instead of a separate gas-estimation pipeline.
+`session-signatures.test.ts` verifies default-denied signature authority, opt-in
+message and typed-data signatures, wrong-message/chain/wallet replay rejection,
+continued signature validity after TimeRange expiry and rejection after uninstall
+against the actual forked contracts.
 
 ## Pending
 
-- Connect persisted per-chain installation state to owner approval and receipt recovery.
-- Bind owner approvals to exact installation/removal operations.
-- Add real-contract tests for all permission types and signature capability.
-- Wire application, routes, browser approval and local session signing.
+- Add real-contract tests for the remaining permission types.
+- Wire browser approval/export and detached message/typed-data signing.
 - Verify hosted bundler/BSO support on the eight advertised chains.

@@ -53,8 +53,17 @@ export const compileEvmSession = async (
 
   // Compilation mutates the upstream builder. Calling it a second time would
   // append duplicate hooks, so inspect the resulting arguments without recompiling.
-  const installCallData = await builder.compileRaw();
+  await builder.compileRaw();
   const compiled = await builder.compileInstallArgs();
+  // PermissionBuilder enables UserOperations only. Signature authority must be
+  // separately approved; API signature policies never turn this flag on.
+  const installCallData = await installValidationActions(client).encodeInstallValidation({
+    ...compiled,
+    validationConfig: {
+      ...compiled.validationConfig,
+      isSignatureValidation: authorization.allowSignatures === true,
+    },
+  });
   const uninstallCallData = await installValidationActions(client).encodeUninstallValidation({
     moduleAddress: compiled.validationConfig.moduleAddress,
     entityId: authorization.entityId,

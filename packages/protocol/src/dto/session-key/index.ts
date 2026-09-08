@@ -51,6 +51,7 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
       Schema.isLessThanOrEqualTo(8_640_000_000_000),
     ),
     permissions: EvmSessionPermissions,
+    allowSignatures: EvmSessionAuthorization.fields.allowSignatures,
   }).check(
     Schema.makeFilter((value) =>
       value.validUntil > value.validAfter ? undefined : "Session expiry must follow its start time",

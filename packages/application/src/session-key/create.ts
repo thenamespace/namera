@@ -137,6 +137,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                 validAfter: input.request.onchain.validAfter,
                 validUntil: input.request.onchain.validUntil,
                 permissions: input.request.onchain.permissions,
+                allowSignatures: input.request.onchain.allowSignatures ?? false,
               },
             });
             const hash = yield* crypto.hash({
