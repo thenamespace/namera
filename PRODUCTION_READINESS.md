@@ -63,6 +63,10 @@ build/typecheck tasks, not just test suites.
 - [ ] Complete one route matrix covering actor type, permission, organization
       isolation, resource ownership, and session-key grant requirements for
       every public server endpoint.
+      Wallet list/detail/portfolio now have an API-key HTTP matrix covering
+      granted, ungranted and foreign wallets, immediate session-grant revocation,
+      revoked credentials and denial of human-only owner/metadata operations.
+      This does not close OAuth actor coverage or the remaining route matrix.
 - [ ] Close any uncovered tenant-isolation or privilege-escalation paths found
       by that review.
 - [x] Apply `Cache-Control: no-store` to authentication, OAuth, credential,
