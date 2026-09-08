@@ -7,6 +7,25 @@ wallet owner signs.
 
 ## Persistence and EVM internals
 
+### Self-custody migration boundary
+
+`PrepareExecutionRequest` and `CompleteExecutionRequest` define the new local
+signing contract in protocol. Preparation selects one explicit `sessionKeyId`
+alongside wallet, chain, calls and sponsorship. Its response identifies the
+persisted submission, installation and signing key, and includes the exact
+prepared operation plus its raw UserOperation hash for EIP-191 signing. Clients
+must recompute that hash before asking the local signer to sign.
+
+Completion carries only namespace, submission ID and the raw 65-byte secp256k1
+signature. The server must load the immutable preparation, recheck authority and
+expiry, verify the signature, then construct the account validation envelope.
+It must not accept replacement operation fields from the client. Schema tests
+cover wire quantities, required signer selection and signature-envelope shape;
+cryptographic correctness is tested in the EVM adapter.
+
+These contracts are not yet HTTP endpoints. The workflow below still describes
+the legacy executor until persistence, application and route wiring are replaced.
+
 The complete `core.execution_submission` and `core.execution` definitions are
 in the [core database catalog](../database/core-wallets-operations.md). The
 mutable submission makes retries/reconciliation explicit; the confirmed

@@ -122,6 +122,11 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   equivalent to `true`; `false` requests a self-funded UserOperation. Both modes
   consume execution usage, while only sponsored mainnet operations consume the
   sponsored-gas meter.
+- Local execution signing contracts live in `dto/execution-signing.ts`.
+  Preparation explicitly selects a session and returns a stored operation with
+  an EIP-191 signing message; completion accepts only its submission identity
+  and raw secp256k1 signature. These schemas precede the new HTTP workflow and
+  do not imply that the legacy executor has been replaced.
 - EVM policy handlers receive `EvmIntentContext`, which separates normalized
   calls, the prepared UserOperation gas envelope, the standardized bundler
   gas-estimation result, and normalized `simulateCalls` outcomes. The latter
