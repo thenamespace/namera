@@ -27,6 +27,10 @@ invitation review, OAuth consent, CLI consent, and workspace creation use
 sidebar-free layouts where appropriate. `/auth/verify` explicitly exchanges the
 credential then replaces location with the server-approved return path.
 
+Session bootstrap maps only the typed `Unauthorized` response to a missing
+actor. Offline, server, permission, and decoding failures remain errors and
+reach the retry boundary; they must not masquerade as a successful logout.
+
 Account, session-key, and execution detail parents validate branded IDs,
 prefetch detail once, map missing resources to the router not-found boundary,
 and provide nested navigation.

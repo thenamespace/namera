@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { Atom } from "effect/unstable/reactivity";
 
+import { recoverSignedOutSession } from "@/atoms/auth/browser-session";
 import { NameraClient } from "@/atoms/client";
 import { QueryKeys } from "@/atoms/query-keys";
 
@@ -8,9 +9,7 @@ export const currentUserAtom = NameraClient.runtime
   .atom(
     Effect.gen(function* () {
       const client = yield* NameraClient;
-      return yield* client.session
-        .currentUser({})
-        .pipe(Effect.catchCause(() => Effect.succeed(null)));
+      return yield* recoverSignedOutSession(client.session.currentUser({}));
     }),
   )
   .pipe(
