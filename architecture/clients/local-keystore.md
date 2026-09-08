@@ -22,6 +22,16 @@ that the installation is actually approved or deployed. The dashboard must
 construct the export from the owner-approved installation; the import flow must
 check the active API origin and installation lifecycle before use.
 
+`createLocalSessionBindings` verifies a decoded registration against the caller's
+original request and separately selected wallet. The network set must match
+exactly. Wallet and signer addresses, ordered permissions (including exact base
+units), validity and signature consent must be unchanged. Root determines the
+global flag; native/ERC-20 spend permissions determine Alchemy's execution-hook
+wrapper. Gas/time/allowlist validation hooks do not enable that wrapper.
+The helper retains server-assigned installation/entity identifiers, which must
+also be checked when approving installation calldata. It does not establish
+onchain authority, approve a passkey challenge, or check receipt state.
+
 ## Encryption
 
 The SDK's `createLocalSessionKeyDraft` is a client-only generation handle. A
@@ -77,5 +87,7 @@ modes, and encrypted round trips. The CLI build and import help smoke test pass.
   corrected retry, and disposal during encryption. No private material is part
   of the handle's serialized shape.
 - Pending: connect browser generation, owner approval and export UI.
+- Registration-binding regressions reject response substitutions for wallets,
+  signers, networks, expiry, signature consent, root authority and exact spend.
 - Pending: real OS-keyring and owner-approved import-to-execution journeys.
 - Pending: local MCP reuse, removal/backup UX, and packaged platform tests.

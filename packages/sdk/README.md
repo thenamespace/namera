@@ -147,6 +147,19 @@ Dispose after export or when abandoning the flow. Disposal prevents future and
 in-flight exports from returning, but cannot guarantee erasure of JavaScript or
 WebCrypto intermediate memory. The handle performs no network or storage access.
 
+`createLocalSessionBindings({ request, wallet, registration })` checks the public
+registration against the original local request and previously selected wallet.
+It rejects changed wallet/signer identity, missing/repeated/substituted networks,
+and changed onchain permissions, lifetime or signature consent. Amounts remain
+exact integers. It derives the local execution-wrapper flags from those checked
+permissions rather than a later signing challenge.
+
+This helper accepts decoded DTOs and does not contact a provider. Its output is
+a reviewed configuration, **not proof of owner approval or installation**. Keep
+it for approval validation and encrypted backup, but never present a registered
+key as active until its installation receipt is confirmed. Owner approval must
+still verify the prepared operation against this reviewed configuration.
+
 ## Structure
 
 - `src/client.ts` — public `NameraClient` facade.

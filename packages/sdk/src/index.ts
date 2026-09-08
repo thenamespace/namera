@@ -14,6 +14,10 @@ export {
 } from "./signing/session-key-draft.js";
 export type { LocalEvmSessionBinding } from "./signing/execution-validation.js";
 export {
+  createLocalSessionBindings,
+  LocalSessionRegistrationError,
+} from "./signing/session-registration.js";
+export {
   LocalKeystoreError,
   sealLocalSessionKey,
   openLocalSessionKey,
