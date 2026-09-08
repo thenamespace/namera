@@ -20,6 +20,10 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { oauthAuthorization } from "#/schema/index";
 
 export interface OAuthAuthorizationRepositoryService {
+  /** Hold inside a transaction to serialize token rotation and revocation. */
+  readonly lockById: (
+    id: OAuthAuthorizationId,
+  ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly insert: (
     data: OAuthAuthorizationInsert,
   ) => Effect.Effect<OAuthAuthorizationModel, DatabaseError>;
@@ -61,6 +65,16 @@ export class OAuthAuthorizationRepository extends Context.Service<
       const database = yield* Database;
 
       return OAuthAuthorizationRepository.of({
+        lockById: Effect.fn("database.oauthAuthorizationRepository.lockById")(function* (id) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(oauthAuthorization)
+            .where(eq(oauthAuthorization.id, id))
+            .limit(1)
+            .for("update");
+          return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0]) : undefined;
+        }, mapRepositoryError),
         insert: Effect.fn("database.oauthAuthorizationRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(OAuthAuthorizationInsert)(data);

@@ -169,6 +169,8 @@ not required for the beta.
       locking and must not be certified only with PGlite.
       Magic-link mixed token/code consumption and OAuth HTTP code redemption
       now have eight-way race coverage; execution and recovery races remain.
+- [x] Verify concurrent refresh-token reuse invalidates the winning rotation's
+      access and refresh tokens, with committed revocation before the error.
 - [ ] Add crash-recovery tests for signatures reserved before signing and
       executions interrupted before submission, after submission, and before
       settlement.

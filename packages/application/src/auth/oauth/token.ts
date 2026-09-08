@@ -170,13 +170,6 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       if (existing.resource !== input.resource) {
         return yield* new OAuthTokenError({ code: "INVALID_TARGET" });
       }
-      // Refresh tokens rotate once. Reuse indicates a copied token, so revoke
-      // the entire authorization instead of allowing two valid token branches.
-      if (existing.consumedAt !== null || existing.revokedAt !== null) {
-        yield* repository.auth.oauth.token.revokeAuthorization(existing.authorizationId, now);
-        yield* Metric.update(Metric.withAttributes(oauthTokenResults, { result: "reuse" }), 1);
-        return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
-      }
       const requestedScopes = input.scopes ?? existing.scopes;
       if (requestedScopes.some((scope) => !existing.scopes.includes(scope as OAuthScope))) {
         return yield* new OAuthTokenError({ code: "INVALID_SCOPE" });
@@ -184,6 +177,20 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
       const scopes = requestedScopes as ReadonlyArray<OAuthScope>;
       const result = yield* transaction.run(
         Effect.gen(function* () {
+          // All generations of this authorization share one lock. Reread after
+          // acquiring it so a concurrent rotation cannot evade reuse detection.
+          const locked = yield* repository.auth.oauth.authorization.lockById(
+            existing.authorizationId,
+          );
+          if (locked === undefined) return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
+          const current = yield* repository.auth.oauth.token.findByHash(tokenHash);
+          if (current === undefined) return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
+          if (current.consumedAt !== null || current.revokedAt !== null) {
+            yield* repository.auth.oauth.token.revokeAuthorization(current.authorizationId, now);
+            // Return success from the transaction so the revocation is committed.
+            // The protocol error is raised only after leaving this boundary.
+            return undefined;
+          }
           const consumed = yield* repository.auth.oauth.token.consumeRefreshByHash(tokenHash, now);
           if (consumed === undefined || consumed.type !== "refresh") {
             return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
@@ -206,6 +213,10 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
           });
         }),
       );
+      if (result === undefined) {
+        yield* Metric.update(Metric.withAttributes(oauthTokenResults, { result: "reuse" }), 1);
+        return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
+      }
       yield* Metric.update(Metric.withAttributes(oauthTokenResults, { result: "refreshed" }), 1);
       return result;
     },

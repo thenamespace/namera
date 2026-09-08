@@ -16,8 +16,10 @@ sequenceDiagram
   Client->>App: refresh token, client ID, resource, optional narrowed scopes
   App->>DB: Hash and load refresh token
   App->>App: Validate client, resource, expiry/lifecycle, scope subset
+  App->>DB: Begin transaction, lock authorization, reread token
   alt token already consumed or revoked
     App->>DB: Revoke every token for authorization
+    DB-->>App: Commit revocation
     App-->>Client: invalid_grant
   else live token
     App->>DB: Atomically consume refresh token
@@ -29,6 +31,17 @@ sequenceDiagram
 ```
 
 Reuse is treated as evidence that a rotating credential was copied. The implementation revokes the authorization's token set instead of allowing two live branches.
+
+Refreshes serialize on the authorization row, across all token generations.
+Token lifecycle is reread after acquiring that lock; a pre-transaction read
+cannot decide whether a concurrent refresh has consumed the token. Reuse returns
+a transaction result before raising `INVALID_GRANT` so the revocation is not
+rolled back with the protocol error. The durable consent itself is unchanged;
+all its current tokens are invalidated.
+
+The regression races eight refreshes of one parent and verifies one issuance,
+seven rejections, no surviving access token from that issuance, and a rejected
+child refresh. It is exercised against PGlite and PostgreSQL.
 
 ## Access-token validation
 
@@ -76,7 +89,8 @@ Because refresh credentials are single-use, SDK/CLI clients must serialize refre
 
 ## Pending before production
 
-- Verify family-wide reuse handling under concurrent requests and database failure.
+- Verify revocation rollback behavior under database failure; concurrent reuse
+  and child-token invalidation are covered.
 - Define token TTLs, authorization expiry, and refresh-session maximum age per client type.
 - Add cleanup that preserves required security history while removing expired credential rows.
 - Add client-disable and signing-key/credential incident runbooks.

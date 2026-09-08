@@ -1,9 +1,9 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Duration, Effect, Schema } from "effect";
+import { DateTime, Duration, Effect, Result, Schema } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 
 import { Application } from "@namera-ai/application";
-import { CryptoService } from "@namera-ai/crypto";
+import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { OAuthAuthorizationRequestId } from "@namera-ai/protocol";
 import { OAuthDynamicClientRegistrationResponse } from "@namera-ai/protocol/dto";
@@ -625,13 +625,50 @@ layer(fixture.layer)("OAuth authorization routes", (it) => {
           })
           .pipe(Effect.flip),
       ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_TARGET" });
-      const rotated = yield* app.oauth.token.refresh({
-        refreshToken: issuedRefreshToken,
-        clientId,
-        resource,
-      });
+      const rotations = yield* Effect.all(
+        Array.from({ length: 8 }, () =>
+          app.oauth.token
+            .refresh({
+              refreshToken: issuedRefreshToken,
+              clientId,
+              resource,
+            })
+            .pipe(Effect.result),
+        ),
+        { concurrency: 8 },
+      );
+      const successes = rotations.filter(Result.isSuccess);
+      expect(successes).toHaveLength(1);
+      expect(rotations.filter(Result.isFailure)).toHaveLength(7);
+      for (const failure of rotations.filter(Result.isFailure)) {
+        expect(failure.failure).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_GRANT" });
+      }
+      const rotated = successes[0]?.success;
+      if (rotated === undefined) return yield* Effect.die("Expected one rotation");
       expect(rotated.refreshToken).toBeTruthy();
       expect(rotated.refreshToken).not.toBe(issued.refreshToken);
+      const crypto = yield* CryptoService;
+      const repository = yield* Repository;
+      expect(
+        yield* repository.auth.oauth.token.findActiveAccessByHash(
+          yield* crypto.hash({
+            purpose: cryptoPurpose.oauthAccessToken,
+            value: rotated.accessToken,
+          }),
+          yield* DateTime.now,
+        ),
+      ).toBeUndefined();
+      if (rotated.refreshToken === undefined)
+        return yield* Effect.die("Expected child refresh token");
+      expect(
+        yield* app.oauth.token
+          .refresh({
+            refreshToken: rotated.refreshToken,
+            clientId,
+            resource,
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "OAuthTokenError", code: "INVALID_GRANT" });
       expect(
         yield* app.oauth.token
           .refresh({ refreshToken: issuedRefreshToken, clientId, resource })
