@@ -144,6 +144,42 @@ const initialize = async (rpc: Parameters<Parameters<typeof withTools>[0]>[0]["r
 };
 
 describe("SDK-backed local MCP HTTP tools", () => {
+  it("returns a non-retryable paused-network error without signing", async () => {
+    const fixture = mcpSignatureFixture();
+    const signTypedData = vi.fn(async (value) =>
+      fixture.account.signTypedData(value as TypedDataDefinition),
+    );
+    await withTools(
+      async ({ rpc }) => {
+        const sessionId = await initialize(rpc);
+        const response = await rpc(
+          "tools/call",
+          {
+            name: "sign",
+            arguments: { request: Schema.encodeSync(PrepareSignatureRequest)(fixture.request) },
+          },
+          sessionId,
+        );
+        expect(await response.json()).toMatchObject({
+          result: {
+            isError: true,
+            structuredContent: { error: { code: "NETWORK_PAUSED", retryable: false } },
+          },
+        });
+        expect(signTypedData).not.toHaveBeenCalled();
+      },
+      {
+        grants: fixture.grants,
+        resolveSigner: async () => ({
+          binding: fixture.binding,
+          signMessage: (message) => fixture.account.signMessage({ message }),
+          signTypedData,
+        }),
+        fetch: async () =>
+          Response.json({ _tag: "SignatureError", code: "NETWORK_PAUSED" }, { status: 409 }),
+      },
+    );
+  });
   it.each(["revoked authorization", "removed grant", "revoked session", "wrong wallet"])(
     "rejects a valid signing request before opening the keystore: %s",
     async (scenario) => {

@@ -4,6 +4,7 @@ import { PolicyId } from "#/common/index";
 import { EvmPolicyDenialCode } from "#/policy/evm/decision";
 
 export const EvmExecutionErrorCode = Schema.Literals([
+  "NETWORK_PAUSED",
   "ACCOUNT_RECONSTRUCTION_FAILED",
   "ACCOUNT_ADDRESS_MISMATCH",
   "PREPARATION_FAILED",
@@ -26,6 +27,7 @@ export class EvmExecutionError extends Schema.TaggedError<EvmExecutionError>()(
 export type EvmExecutionErrorCode = typeof EvmExecutionErrorCode.Type;
 
 export const ExecutionErrorCode = Schema.Literals([
+  "NETWORK_PAUSED",
   "NO_AUTHORIZED_SESSION_KEY",
   "POLICY_DENIED",
   "IDEMPOTENCY_CONFLICT",

@@ -17,7 +17,13 @@ export const makeEvmSignatureService = (
   digest: digestEvmSignature,
   sign: Effect.fn("evm.signature.sign")(function* (input) {
     const chain = getChainDataByCaip2(input.chainId);
-    if (chain === undefined || !chain.operationsEnabled) {
+    if (chain !== undefined && !chain.operationsEnabled) {
+      return yield* new EvmSignatureError({
+        code: "NETWORK_PAUSED",
+        cause: new Error("New operations on this network are paused"),
+      });
+    }
+    if (chain === undefined) {
       return yield* new UnsupportedChainError({
         namespace: "eip155",
         chainId: input.chainId,

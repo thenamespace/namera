@@ -158,8 +158,13 @@ export const makeCreateSessionKey = Effect.gen(function* () {
         { concurrency: 4 },
       ).pipe(
         Effect.catchTags({
-          EvmExecutionError: () =>
-            Effect.fail(new SessionKeyCreationError({ code: "ONCHAIN_PREPARATION_FAILED" })),
+          EvmExecutionError: (error) =>
+            Effect.fail(
+              new SessionKeyCreationError({
+                code:
+                  error.code === "NETWORK_PAUSED" ? "NETWORK_PAUSED" : "ONCHAIN_PREPARATION_FAILED",
+              }),
+            ),
           UnsupportedChainError: () =>
             Effect.fail(new SessionKeyCreationError({ code: "ONCHAIN_PREPARATION_FAILED" })),
         }),

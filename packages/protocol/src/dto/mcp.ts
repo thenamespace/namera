@@ -177,6 +177,7 @@ export const McpGetExecutionsRequest = Schema.Struct({
 }).annotate({ identifier: "McpGetExecutionsRequest" });
 
 export const McpToolErrorCode = Schema.Literals([
+  "NETWORK_PAUSED",
   "INVALID_ARGUMENT",
   "UNAUTHORIZED",
   "INSUFFICIENT_SCOPE",

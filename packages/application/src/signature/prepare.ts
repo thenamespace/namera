@@ -53,7 +53,17 @@ export const makePrepareSignature = Effect.gen(function* () {
           account: selected.account,
           session: selected.installation.data,
         })
-        .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new SignatureError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "SIGNING_FAILED",
+              }),
+          ),
+        );
       const payloadDigest = yield* evm
         .digestSignature(request)
         .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));

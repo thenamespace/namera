@@ -5,6 +5,7 @@ import { McpToolError, McpToolErrorCode } from "@namera-ai/protocol/dto";
 import type { NameraResult } from "@namera-ai/sdk";
 
 const messages: Readonly<Record<McpToolErrorCode, string>> = {
+  NETWORK_PAUSED: "New operations on this network are paused. Do not retry until it is re-enabled.",
   INVALID_ARGUMENT: "Invalid tool input. Use returned IDs and the documented field formats.",
   UNAUTHORIZED: "The authorization expired or was revoked. Reconnect Namera.",
   INSUFFICIENT_SCOPE: "Reauthorize Namera with permission to execute and sign.",

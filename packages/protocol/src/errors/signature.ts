@@ -4,6 +4,7 @@ import { PolicyId } from "#/common/index";
 import { EvmPolicyDenialCode } from "#/policy/evm/decision";
 
 export const EvmSignatureErrorCode = Schema.Literals([
+  "NETWORK_PAUSED",
   "ACCOUNT_RECONSTRUCTION_FAILED",
   "ACCOUNT_ADDRESS_MISMATCH",
   "SIGNING_FAILED",
@@ -19,6 +20,7 @@ export class EvmSignatureError extends Schema.TaggedError<EvmSignatureError>()(
 ) {}
 
 export const SignatureErrorCode = Schema.Literals([
+  "NETWORK_PAUSED",
   "NO_AUTHORIZED_SESSION_KEY",
   "POLICY_DENIED",
   "SIGNING_FAILED",

@@ -20,6 +20,26 @@ const jsonResponse = (body: unknown, status = 200) =>
   });
 
 describe("NameraClient", () => {
+  it("preserves a paused-network error without retrying preparation", async () => {
+    const fetch = vi
+      .fn<NameraFetch>()
+      .mockImplementation(async () =>
+        jsonResponse({ _tag: "ExecutionError", code: "NETWORK_PAUSED" }, 409),
+      );
+    const client = new NameraClient({ apiKey: "test-api-key", fetch });
+    const result = await client.executions.prepare({
+      namespace: "eip155",
+      walletId,
+      sessionKeyId,
+      chainId: "eip155:1",
+      calls: [{ to: address, value: 0n, data: "0x" }],
+    });
+    expect(result).toMatchObject({
+      success: false,
+      error: { kind: "api", code: "NETWORK_PAUSED", message: expect.stringContaining("paused") },
+    });
+    expect(fetch).toHaveBeenCalledOnce();
+  });
   it("constructs API-key reads and decodes successful responses", async () => {
     const fetch = vi.fn<NameraFetch>().mockResolvedValue(jsonResponse([]));
 

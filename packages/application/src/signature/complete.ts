@@ -60,7 +60,17 @@ export const makeCompleteSignature = Effect.gen(function* () {
           session: selected.installation.data,
           signature: input.request.signature,
         })
-        .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new SignatureError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "SIGNING_FAILED",
+              }),
+          ),
+        );
 
       // Provider verification is outside locks. Recheck grant and policy authority
       // before settlement; revocation cannot commit between admission and charging.

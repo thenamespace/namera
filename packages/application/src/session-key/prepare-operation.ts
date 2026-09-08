@@ -63,7 +63,15 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
         const challenge = yield* evm.execution
           .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
           .pipe(
-            Effect.mapError(() => new SessionKeyOperationError({ code: "PREPARATION_FAILED" })),
+            Effect.mapError(
+              (error) =>
+                new SessionKeyOperationError({
+                  code:
+                    "code" in error && error.code === "NETWORK_PAUSED"
+                      ? "NETWORK_PAUSED"
+                      : "PREPARATION_FAILED",
+                }),
+            ),
           );
         const options = yield* passkeys
           .generateAuthenticationOptions({
@@ -114,7 +122,17 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
           kind: input.request.kind,
           sponsorship: input.request.sponsor ? "alchemy-bso" : "none",
         })
-        .pipe(Effect.mapError(() => new SessionKeyOperationError({ code: "PREPARATION_FAILED" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new SessionKeyOperationError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "PREPARATION_FAILED",
+              }),
+          ),
+        );
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
           // Serialize owner nonces across every session on this wallet. No remote call holds this lock.

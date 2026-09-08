@@ -209,7 +209,17 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
           session: authority.installation.data,
           prepared: submission.data.prepared,
         })
-        .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ExecutionError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "EXECUTION_FAILED",
+              }),
+          ),
+        );
       return {
         namespace: "eip155",
         submissionId: submission.id,

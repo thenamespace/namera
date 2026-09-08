@@ -56,7 +56,9 @@ Each registry row has a code-owned `operationsEnabled` flag (currently true for
 all eight networks). Set it to false and rebuild/restart the server to pause new
 execution/simulation preparation, session compilation, owner/session execution
 signature acceptance, and message/typed-data signing. These adapter boundaries
-return `UnsupportedChainError` before acquiring provider clients or signers.
+return `EvmExecutionError` or `EvmSignatureError` with code `NETWORK_PAUSED`
+before acquiring provider clients or signers. Unknown chains still return
+`UnsupportedChainError`.
 Session install and uninstall preparations use the same execution guard; a pause
 therefore also pauses new owner-approved uninstall operations. Immediate API
 grant revocation is independent of the network and remains available.
@@ -71,9 +73,13 @@ provider/signer access. Dashboard session creation disables paused choices and
 validates the network field; installation panels disable new approvals but keep
 polling signed attempts. Policy editors retain paused choices for existing
 restrictions. Both apps must rebuild for a code-owned flag change; stale browsers
-remain subject to the server guards. Precise operation-specific unavailable
-error codes through API/SDK/CLI/MCP still need integration before closing the
-end-to-end availability gate.
+remain subject to the server guards. Application execution, signature, session
+creation and owner-approval errors preserve `NETWORK_PAUSED` as an HTTP 409
+business error. The SDK returns it without automatic retries, local MCP exposes
+it with `retryable: false`, and dashboard feedback explains the pause.
+HTTP regressions cover admission without billing changes and signature acceptance
+without attaching an execution envelope; provider enforcement is tested separately
+at the adapter boundary. Paused-network browser verification remains pending.
 
 ## Per-chain clients
 

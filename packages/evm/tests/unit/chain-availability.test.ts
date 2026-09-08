@@ -82,9 +82,7 @@ it("rejects new operation boundaries on a paused chain before provider or signer
   const failures = await Effect.runPromise(Effect.forEach(operations, Effect.flip));
   for (const failure of failures) {
     expect(failure).toMatchObject({
-      _tag: "UnsupportedChainError",
-      namespace: "eip155",
-      chainId,
+      code: "NETWORK_PAUSED",
     });
   }
   expect(getClients).not.toHaveBeenCalled();

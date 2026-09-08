@@ -67,7 +67,17 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
           prepared: submission.data.prepared,
           signature: input.request.signature,
         })
-        .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ExecutionError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "EXECUTION_FAILED",
+              }),
+          ),
+        );
 
       const accepted = yield* transaction.run(
         Effect.gen(function* () {

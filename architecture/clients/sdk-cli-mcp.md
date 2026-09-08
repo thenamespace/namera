@@ -22,6 +22,11 @@ Execution and signing generate a UUIDv7 idempotency key internally and reuse it
 for three bounded exponential-backoff retries of network, HTTP 408, and HTTP 5xx
 failures. Declared business failures are never retried.
 
+Paused networks return the declared `NETWORK_PAUSED` business code, not a
+transport failure. SDK/CLI messages identify the pause, and MCP returns the same
+code with `retryable: false`; callers should wait for re-enablement. Already
+accepted submissions retain their status/recovery flow.
+
 Execution and simulation requests select `sessionKeyId` explicitly alongside
 the wallet and chain. Simulation uses that installed session's public-only
 account adapter and API policies; it never previews a different signer. The

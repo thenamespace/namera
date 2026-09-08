@@ -23,7 +23,17 @@ export const makePrepareExecution = Effect.gen(function* () {
         calls: input.request.calls,
         sponsorship: input.request.sponsor === false ? "none" : "alchemy-bso",
       })
-      .pipe(Effect.mapError(() => new ExecutionError({ code: "EXECUTION_FAILED" })));
+      .pipe(
+        Effect.mapError(
+          (error) =>
+            new ExecutionError({
+              code:
+                "code" in error && error.code === "NETWORK_PAUSED"
+                  ? "NETWORK_PAUSED"
+                  : "EXECUTION_FAILED",
+            }),
+        ),
+      );
     return { authority, prepared };
   });
 });

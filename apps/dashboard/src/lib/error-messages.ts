@@ -7,11 +7,19 @@ export type FeedbackMessage = {
 
 type ErrorMessageResolver = FeedbackMessage | ((error: object) => FeedbackMessage);
 
+const networkPaused: FeedbackMessage = {
+  title: "Network paused",
+  description: "New operations are unavailable on this network. Try again after it is re-enabled.",
+};
+
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "ExecutionError:NETWORK_PAUSED": networkPaused,
+  "SignatureError:NETWORK_PAUSED": networkPaused,
+  "SessionKeyCreationError:NETWORK_PAUSED": networkPaused,
+  "SessionKeyOperationError:NETWORK_PAUSED": networkPaused,
   "SessionKeyCreationError:ONCHAIN_PREPARATION_FAILED": {
     title: "Network unavailable",
-    description:
-      "A selected network could not prepare this session. It may be paused; try again later.",
+    description: "A selected network could not prepare this session. Try again later.",
   },
   Unauthorized: {
     title: "Sign in required",

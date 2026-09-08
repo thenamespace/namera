@@ -53,7 +53,17 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
       });
       const challenge = yield* evm.execution
         .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
-        .pipe(Effect.mapError(() => new SessionKeyOperationError({ code: "APPROVAL_INVALID" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new SessionKeyOperationError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "APPROVAL_INVALID",
+              }),
+          ),
+        );
       const assertion = yield* passkeys
         .verifyAuthentication({
           response: input.request.response,
@@ -73,7 +83,17 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
           prepared: operation.data.prepared,
           assertion,
         })
-        .pipe(Effect.mapError(() => new SessionKeyOperationError({ code: "APPROVAL_INVALID" })));
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new SessionKeyOperationError({
+                code:
+                  "code" in error && error.code === "NETWORK_PAUSED"
+                    ? "NETWORK_PAUSED"
+                    : "APPROVAL_INVALID",
+              }),
+          ),
+        );
 
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
