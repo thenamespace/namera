@@ -194,3 +194,7 @@ broadcast/**/31337
 
 # Research
 research
+
+# Local migration handoff and audit notes
+/MIGRATION_HANDOFF.local.md
+/PRODUCTION_AUDIT.local.md
