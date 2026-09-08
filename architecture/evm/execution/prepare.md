@@ -70,7 +70,11 @@ rules.
 For auxiliary `simulateCalls`, empty calldata is omitted rather than sent as `data: "0x"`; Viem otherwise attempts an access-list asset-selector path that can produce provider gas errors. Non-empty calldata remains unchanged.
 
 Every auxiliary call carries the successfully estimated UserOperation call-gas
-limit. Viem forwards it to `eth_createAccessList` during asset discovery, avoiding
+limit plus 21,000 intrinsic gas and a conservative 40 gas per calldata byte.
+This accommodates the [EIP-7623 calldata floor](https://eips.ethereum.org/EIPS/eip-7623)
+without underfunding cheap raw calls. It only bounds auxiliary simulation; it
+does not change the signed operation's gas or billing estimates.
+Viem forwards it to `eth_createAccessList` during asset discovery, avoiding
 Alchemy's rejection of an implicit gas allowance above the block limit. Asset
 and transfer tracing remain enabled; a simulation failure still fails preparation.
 The live Sepolia passkey installation journey reproduced the missing-limit

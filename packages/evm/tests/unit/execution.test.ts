@@ -78,8 +78,8 @@ it("bounds auxiliary simulation gas and omits only empty calldata", () => {
   );
 
   expect(calls).toEqual([
-    { to: address, value: 1n, gas: 250_000n },
-    { to: address, value: 0n, data: "0x1234", gas: 250_000n },
+    { to: address, value: 1n, gas: 271_000n },
+    { to: address, value: 0n, data: "0x1234", gas: 271_080n },
   ]);
 });
 

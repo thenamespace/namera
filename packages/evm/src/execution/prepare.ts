@@ -61,13 +61,17 @@ const normalizeNativeTransfers = (
     }),
   );
 
-export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"], gas: bigint) =>
-  calls.map(({ data, ...call }) =>
+export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"], executionGas: bigint) =>
+  calls.map(({ data, ...call }) => {
+    // Raw transactions need intrinsic gas in addition to UserOperation call gas.
+    // Forty per byte conservatively covers the EIP-7623 calldata floor; this
+    // auxiliary allowance never changes the signed operation or billing estimate.
+    const gas = executionGas + 21_000n + BigInt((data.length - 2) / 2) * 40n;
     // Viem discovers touched assets through eth_createAccessList whenever
     // calldata is present. Empty calldata carries no asset selector and must
     // be omitted from this auxiliary simulation to avoid provider gas errors.
-    data === "0x" ? { ...call, gas } : { ...call, data, gas },
-  );
+    return data === "0x" ? { ...call, gas } : { ...call, data, gas };
+  });
 
 export const makePrepareEvmExecution = (
   getClients: (chain: ChainData) => ExecutionClients,

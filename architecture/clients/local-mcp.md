@@ -86,6 +86,15 @@ provider response bodies through OAuth errors.
 
 ## Verification and remaining integration
 
+A live Sepolia journey on 2026-09-09 used the production dashboard build,
+the local API with isolated PostgreSQL data, and the packaged CLI. A Chromium
+virtual passkey created the wallet and approved its session installation. The
+browser export was imported into encrypted files and macOS Keychain, and actual
+browser OAuth consent authorized local MCP. Its simulation succeeded; execution
+signed through the imported key and confirmed through Alchemy BSO. This verifies
+one sponsored zero-value execution, not physical passkey authenticators,
+unsponsored calls, message/typed-data signing, or the eight-network matrix.
+
 CLI tests exercise real crypto with a controlled clock, a provider substitute
 for broker races, and the actual HTTP adapter with injected Fetch. They cover
 separate audiences, replay, redirect/PKCE binding, expiry, scope narrowing,
