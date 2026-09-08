@@ -86,7 +86,12 @@ modes, and encrypted round trips. The CLI build and import help smoke test pass.
 - Generation-handle tests cover real encrypted round trips, signer mismatch,
   corrected retry, and disposal during encryption. No private material is part
   of the handle's serialized shape.
-- Pending: connect browser generation, owner approval and export UI.
+- Browser generation and encrypted export are connected to registration. The key
+  handle remains in a ref, navigation warns before losing an unsaved draft, and
+  only the encrypted command enters the clipboard. A disposable isolated browser
+  preview verified encryption; no live registration/import journey is claimed.
+- Pending: connect owner approval and receipt polling, and recover ambiguous
+  registration responses without replacing or losing the original draft.
 - Registration-binding regressions reject response substitutions for wallets,
   signers, networks, expiry, signature consent, root authority and exact spend.
 - Pending: real OS-keyring and owner-approved import-to-execution journeys.

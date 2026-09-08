@@ -173,7 +173,23 @@ also present. Signature consent defaults off and explains that execution expiry
 does not remove ERC-1271 authority. The account picker only offers active local
 P-256 owners. Lifetime ordering failures attach to the expiry field; the server
 still checks that the expiry has not passed when registering.
-Browser key generation, owner approval and encrypted export are not yet connected.
+Creation generates a local SDK draft on first submission and puts only its public
+signer in form/API state. The draft stays in a ref and is disposed on unmount or
+after the user acknowledges importing/backing it up. Successful registration is
+checked against the submitted configuration and selected wallet before constructing
+local bindings. Mismatches prevent export. The screen labels registration as
+pending, not usable authority.
+
+The export form requires a confirmed passphrase of at least 12 characters and
+uses the SDK WebCrypto codec. It clears passphrase fields after encryption and
+shows a base64url encrypted `namera session-key import` command. Router navigation
+and browser unload warn while the local key has not been acknowledged as saved.
+The encrypted export was exercised with a disposable browser-only test key;
+this does not prove the full registration/import/approval journey.
+
+Owner passkey approval and receipt polling still need to be connected. A lost
+registration response also needs a public-signer lookup recovery path so retrying
+the same local draft can recover its existing pending registration.
 
 ## Pending
 

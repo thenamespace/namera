@@ -23,6 +23,7 @@
     "@namera-ai/api": "workspace:*",
     "@namera-ai/evm": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/sdk": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@simplewebauthn/browser": "catalog:",
