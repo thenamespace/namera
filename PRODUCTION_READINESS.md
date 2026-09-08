@@ -33,8 +33,10 @@ the hosted MCP transport is removed while its OAuth service remains.
 Verified on 2026-09-08:
 
 - [x] `pnpm check` passes all 66 workspace tasks.
-- [x] `pnpm test` passes all 37 task-graph entries, including 34 server suites and 141
-      server tests.
+- [x] `pnpm test` passes all 37 task-graph entries. The default server lane passes
+      36 suites / 150 tests and skips the three PostgreSQL-only billing tests.
+      SDK: 50 tests; CLI: 38; dashboard: 21; EVM: 59 passing / four opt-in
+      Anvil tests skipped. Cached tasks are included in the task-graph total.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
       extension.
 - [x] The dashboard and server production builds complete.
