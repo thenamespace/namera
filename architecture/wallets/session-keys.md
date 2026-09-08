@@ -152,6 +152,15 @@ active grants. Routes expose create/get/list/wallet-list/revoke boundaries under
 
 ## Dashboard integration
 
+The SDK's `validateOwnerApproval` verifies decoded preparations against locally
+reviewed chain, account, owner entity, factory arguments and compiled self-call.
+It rejects altered authority, undeclared gas charges, expired approvals and
+WebAuthn challenge/credential/RP substitutions. Its hash uses the canonical
+EntryPoint and personal-sign encoding used by the deployed passkey adapter.
+The guard is unit-tested; independent browser compilation and prompt wiring
+are still required. A caller must not treat the server's calldata as the locally
+reviewed action.
+
 Dashboard atoms and hooks expose preparation, completion and operation status
 through the shared typed client. Completion invalidates session and billing
 data; it does not optimistically activate a session. Status queries have a

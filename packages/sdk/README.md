@@ -160,6 +160,16 @@ it for approval validation and encrypted backup, but never present a registered
 key as active until its installation receipt is confirmed. Owner approval must
 still verify the prepared operation against this reviewed configuration.
 
+`validateOwnerApproval({ reviewed, response, now })` is the browser-compatible
+passkey approval guard. It checks a decoded preparation against independently
+reconstructed wallet/factory data, the owner validator entity, locally compiled
+installation/removal calldata, sponsorship or an explicit native-gas ceiling,
+expiry, RP and credential. It recomputes the ERC-4337 hash and its WebAuthn
+personal-sign challenge before the authenticator is opened. It does not compile
+permissions, reconstruct the wallet, invoke WebAuthn or establish receipt state.
+Never populate `reviewed` from the preparation being checked. Dashboard wiring
+and independent compilation remain pending.
+
 ## Structure
 
 - `src/client.ts` — public `NameraClient` facade.
