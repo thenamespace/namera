@@ -136,8 +136,11 @@ provider evidence cannot finalize an attempt.
 The PostgreSQL HTTP integration suite runs eight concurrent reconciliation passes
 for submission and again for receipt settlement. Two queued operations produce
 exactly two confirmations, one native-spend total, the expected execution/gas
-usage and no remaining holds. Expired-lease takeover after a worker crash remains
-a separate verification requirement.
+usage and no remaining holds. A separate PostgreSQL regression abandons a claimed
+prepared or submitted row, advances to lease expiry, and verifies replacement
+claiming, rejection of stale terminal/release writes, and one final confirmation
+with correct billing. This simulates loss of the worker at the durable claim
+boundary; it does not inject a process crash during provider submission.
 
 ## Simulation
 
