@@ -94,6 +94,12 @@ both PGlite and the opt-in PostgreSQL lane. Concurrent challenge requests may
 send one email (cooldown observed) or replace an earlier challenge; only one
 credential may remain redeemable in either schedule.
 
+At four failed code attempts, the HTTP suite races one valid token or code
+against seven incorrect codes. Conditional updates serialize consumption against
+the fifth failure: successful consumption leaves four attempts and one session;
+lockout leaves five attempts and no session or cookie. Both variants pass on
+PostgreSQL and PGlite.
+
 ## Security and failures
 
 - Expired, consumed, revoked, missing, wrong-purpose, and wrong-token cases collapse to `INVALID_OR_EXPIRED_LINK`.
@@ -114,4 +120,3 @@ credential may remain redeemable in either schedule.
 - Add cleanup/retention for terminal and expired verification rows.
 - Verify production sender authentication, reputation, and deliverability.
 - Apply and test strict security headers on the verification page.
-- Add race tests for final-attempt concurrency; double consumption is covered.

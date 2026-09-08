@@ -211,6 +211,77 @@ layer(TestServerLayer)("magic-link routes", (it) => {
     }),
   );
 
+  for (const type of ["token", "code"] as const) {
+    it.effect(`serializes ${type} redemption against the final failed code attempt`, () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const email = testEmail(`final-attempt-${type}@example.com`);
+        const link = yield* requestMagicLink(client, email);
+        const wrongCode = Schema.decodeSync(MagicLinkCode)(
+          link.code === "00000000" ? "11111111" : "00000000",
+        );
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          expect(
+            (yield* client.magicLink.verify({
+              payload: { type: "code", email, code: wrongCode },
+              responseMode: "response-only",
+            })).status,
+          ).toBe(400);
+        }
+        const responses = yield* Effect.all(
+          [
+            client.magicLink.verify(
+              type === "token"
+                ? {
+                    payload: { type, id: link.id, token: link.token },
+                    responseMode: "response-only",
+                  }
+                : {
+                    payload: { type, email, code: Schema.decodeSync(MagicLinkCode)(link.code) },
+                    responseMode: "response-only",
+                  },
+            ),
+            ...Array.from({ length: 7 }, () =>
+              client.magicLink.verify({
+                payload: { type: "code", email, code: wrongCode },
+                responseMode: "response-only",
+              }),
+            ),
+          ],
+          { concurrency: "unbounded" },
+        );
+        const repository = yield* Repository;
+        const verification = yield* repository.auth.verification.findById(link.id);
+        if (verification === undefined) return yield* Effect.die("Expected verification");
+        const user = yield* repository.auth.user.findByEmail(email);
+        if (responses[0]?.status === 200) {
+          expect(verification.attempts).toBe(4);
+          expect(verification.consumedAt).not.toBeNull();
+          if (user === undefined) return yield* Effect.die("Expected signed-in user");
+          expect(
+            yield* repository.auth.session.findActiveForUser(user.id, yield* DateTime.now),
+          ).toHaveLength(1);
+          expect(
+            responses.filter((response) => response.cookies.cookies["auth-token"]),
+          ).toHaveLength(1);
+        } else {
+          expect(responses[0]?.status).toBe(400);
+          expect(verification.attempts).toBe(5);
+          expect(verification.consumedAt).toBeNull();
+          expect(user).toBeUndefined();
+          expect(responses.filter((response) => response.status === 429)).toHaveLength(1);
+          expect(responses.every((response) => !response.cookies.cookies["auth-token"])).toBe(true);
+        }
+        expect(
+          responses
+            .slice(1)
+            .every((response) => response.status === 400 || response.status === 429),
+        ).toBe(true);
+      }),
+    );
+  }
+
   it.effect("keeps only configured application return paths", () =>
     Effect.gen(function* () {
       yield* resetTestState();

@@ -78,7 +78,8 @@ build/typecheck tasks, not just test suites.
 
 - [x] Verify mixed token/manual-code magic-link double consumption and OAuth
       authorization-code redemption with eight concurrent requests on PostgreSQL.
-- [ ] Verify the final failed magic-link attempt under concurrent redemption.
+- [x] Verify the final failed magic-link attempt under concurrent token/code
+      redemption on PostgreSQL: consumption and lockout remain mutually exclusive.
 - [ ] Finish OAuth redirect, state, PKCE, resource, and client-substitution
       coverage and competing-user device claim/approval-versus-denial races.
       Duplicate approval, final polling, and refresh-token reuse races pass on
