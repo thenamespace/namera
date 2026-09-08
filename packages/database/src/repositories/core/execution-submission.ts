@@ -45,6 +45,7 @@ export interface ExecutionSubmissionRepositoryService {
   readonly findByIdForUpdate: (
     id: ExecutionSubmissionId,
     organizationId: OrganizationId,
+    skipLocked?: boolean,
   ) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly findByIdForActor: (
     id: ExecutionSubmissionId,
@@ -184,7 +185,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
           return row === undefined ? undefined : Schema.decodeSync(ExecutionSubmission)(row as any);
         }, mapRepositoryError),
         findByIdForUpdate: Effect.fn("database.executionSubmissionRepository.findByIdForUpdate")(
-          function* (id, organizationId) {
+          function* (id, organizationId, skipLocked = false) {
             const db = yield* transactionOrDatabase(database);
             const rows = yield* db
               .select()
@@ -196,7 +197,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
                 ),
               )
               .limit(1)
-              .for("update");
+              .for("update", skipLocked ? { skipLocked: true } : {});
             return rows[0] ? Schema.decodeSync(ExecutionSubmission)(rows[0] as any) : undefined;
           },
           mapRepositoryError,

@@ -69,8 +69,13 @@ export const makeBillingReconciliation = Effect.gen(function* () {
       const submission = yield* repository.core.executionSubmission.findByIdForUpdate(
         Schema.decodeUnknownSync(ExecutionSubmissionId)(reservation.sourceId),
         reservation.organizationId,
+        true,
       );
-      if (submission === undefined || submission.status === "failed") {
+      // Settlement locks the submission before billing. Recovery already holds
+      // the reservation, so skip busy submissions instead of reversing that order.
+      // A skipped (or missing) row is not evidence that the operation failed.
+      if (submission === undefined) return false;
+      if (submission.status === "failed") {
         yield* metering.release({
           organizationId: reservation.organizationId,
           reservationId: reservation.id,

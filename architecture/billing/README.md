@@ -300,7 +300,8 @@ The server runs a scoped billing worker every minute after migrations. Each run:
 1. advances expired open anniversary periods in bounded batches;
 2. claims expired active reservations with `FOR UPDATE SKIP LOCKED`;
 3. settles terminal successful execution/signature sources, releases terminal
-   failures and missing/manual sources, and defers operations still in flight;
+   failures and manual sources, and defers operations still in flight or whose
+   execution/signature source cannot be locked;
 4. locks each open meter balance and recomputes consumed usage from immutable
    events plus reserved usage from active reservations;
 5. repairs a divergent projection only when the reconstructed totals remain
@@ -310,6 +311,13 @@ Execution receipt reconciliation remains the authority for uncertain onchain
 state. Billing recovery will not guess gas cost for an active submission.
 Included failures remain reserved until an actual receipt provides the gas
 measurement; rejected pre-inclusion work can be released.
+
+Expiry recovery already owns reservation locks, whereas execution settlement
+owns its submission lock first. Recovery therefore uses `SKIP LOCKED` for the
+source lookup and defers busy or missing submissions without releasing quota.
+A PostgreSQL regression holds that source lock in another transaction and
+verifies recovery finishes with both holds active; subsequent execution recovery
+then confirms and settles both holds. Age alone never establishes non-inclusion.
 
 The worker is safe across replicas because claims skip locked rows and all
 terminal transitions are idempotent. Logs contain only aggregate counts;
