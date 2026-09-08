@@ -133,6 +133,12 @@ to the stored signed envelope before settlement or release. A mismatch preserves
 the submitted state and reservations and schedules another lookup; unrelated
 provider evidence cannot finalize an attempt.
 
+The PostgreSQL HTTP integration suite runs eight concurrent reconciliation passes
+for submission and again for receipt settlement. Two queued operations produce
+exactly two confirmations, one native-spend total, the expected execution/gas
+usage and no remaining holds. Expired-lease takeover after a worker crash remains
+a separate verification requirement.
+
 ## Simulation
 
 `POST /executions/simulate` requires wallet, chain, calls and an explicit

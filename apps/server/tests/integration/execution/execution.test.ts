@@ -320,7 +320,7 @@ layer(executionFixture.layer)("execution routes", (it) => {
     }),
   );
 
-  it.effect("settles locally signed executions through the background worker", () =>
+  it.effect("settles locally signed executions once across competing workers", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const testExecution = yield* TestEvmExecution;
@@ -382,11 +382,20 @@ layer(executionFixture.layer)("execution routes", (it) => {
       });
       expect(second.status).toBe("prepared");
 
-      yield* TestClock.adjust(Duration.seconds(2));
-      yield* (yield* Application).execution.reconcile();
-      yield* TestClock.adjust(Duration.seconds(16));
       const app = yield* Application;
-      expect(yield* app.execution.reconcile()).toBe(2);
+      yield* TestClock.adjust(Duration.seconds(2));
+      const submissions = yield* Effect.all(
+        Array.from({ length: 8 }, () => app.execution.reconcile()),
+        { concurrency: "unbounded" },
+      );
+      expect(submissions.reduce((total, count) => total + count, 0)).toBe(2);
+      yield* TestClock.adjust(Duration.seconds(16));
+      const settlements = yield* Effect.all(
+        Array.from({ length: 8 }, () => app.execution.reconcile()),
+        { concurrency: "unbounded" },
+      );
+      expect(settlements.reduce((total, count) => total + count, 0)).toBe(2);
+      expect(yield* app.execution.reconcile()).toBe(0);
 
       const repository = yield* Repository;
       expect(
@@ -407,6 +416,32 @@ layer(executionFixture.layer)("execution routes", (it) => {
           owner.actor.organization.id,
         ),
       ).toBeDefined();
+      const events = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      );
+      expect(events.filter(({ event }) => event === "execution.confirmed")).toHaveLength(2);
+      const spendPolicy = sessionKey.policies.find(
+        (policy) => policy.type === "evm.native-spend-limit",
+      );
+      if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
+      expect(
+        yield* repository.core.sessionKeyPolicyState.findForPolicy(
+          owner.actor.organization.id,
+          sessionKey.id,
+          spendPolicy.id,
+        ),
+      ).toMatchObject([{ data: { version: 1, spent: "4", reserved: "0" } }]);
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      const billing = yield* client.billing.get();
+      expect(billing.meters.find(({ key }) => key === "execution.mainnet")).toMatchObject({
+        consumedAmount: 3n,
+        reservedAmount: 0n,
+      });
+      expect(billing.meters.find(({ key }) => key === "gas-sponsorship")).toMatchObject({
+        consumedAmount: 64_800n,
+        reservedAmount: 0n,
+      });
       yield* testExecution.setReceiptMode("immediate");
     }),
   );

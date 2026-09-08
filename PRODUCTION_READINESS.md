@@ -121,6 +121,10 @@ build/typecheck tasks, not just test suites.
       explicit terminal state when the provider outcome remains unknown.
 - [ ] Ensure an interrupted execution can settle or release billing and policy
       reservations without double settlement.
+- [x] Verify eight competing execution workers claim and settle two queued
+      operations once on PostgreSQL, with exactly two confirmation events,
+      expected policy/billing totals and no remaining reservations. This covers
+      competing live workers, not crashes or expired-lease takeover.
 - [ ] Add a code-owned enable/disable state for each of the eight beta networks
       and reject disabled chains consistently across API, SDK-backed flows, CLI,
       MCP, and dashboard data.
