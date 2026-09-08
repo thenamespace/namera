@@ -17,7 +17,10 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestServerLayer } from "../../fixtures/layers/index.js";
+import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+
+const fixture = makeOwnerSessionTestFixture();
 
 const clientId = "https://mcp-client.example/client.json";
 const redirectUri = "https://mcp-client.example/callback";
@@ -26,17 +29,11 @@ const verifier = "a".repeat(64);
 
 const createSessionKey = Effect.fnUntraced(function* () {
   const client = yield* makeTestApiClient;
-  const wallet = yield* client.wallet.create({
+  const [existingWallet] = yield* client.wallet.list();
+  const wallet = existingWallet ?? (yield* createTestPasskeyWallet(client, "MCP wallet"));
+  const session = yield* client.sessionKey.create({
     payload: {
-      namespace: "eip155",
-      owner: { type: "namera-managed", protectionLevel: "software" },
-      metadata: { version: 1, name: "MCP wallet" },
-    },
-  });
-  return yield* client.sessionKey.create({
-    payload: {
-      namespace: "eip155",
-      walletId: wallet.id,
+      ...(yield* localSessionRequest(wallet.id)),
       metadata: { version: 1, name: "MCP session" },
       policies: [
         {
@@ -48,6 +45,7 @@ const createSessionKey = Effect.fnUntraced(function* () {
       ],
     },
   });
+  return yield* fixture.confirmOperation(client, session, "install");
 });
 
 const registerClient = Effect.fnUntraced(function* () {
@@ -84,7 +82,7 @@ const startAuthorization = Effect.fnUntraced(function* (state = "test-state") {
   });
 });
 
-layer(TestServerLayer)("OAuth authorization routes", (it) => {
+layer(fixture.layer)("OAuth authorization routes", (it) => {
   it.effect("publishes discovery metadata and serves the full protocol exchange", () =>
     Effect.gen(function* () {
       yield* resetTestState();

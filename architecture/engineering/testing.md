@@ -72,6 +72,14 @@ For a stateful endpoint, cover the behavior that protects the contract:
 Repository queries are acceptable for setup and for outcomes not exposed by the
 public API. Test helpers may assemble workflows but must not hide assertions.
 
+Session-key, API-key, and OAuth grant suites create passkey wallets and register
+local public signers. Grant setup runs the owner-approval HTTP routes, verifies
+a real WebAuthn assertion, and invokes one reconciliation iteration against the
+package-owned receipt substitute. It does not activate sessions by editing the
+database. Registration remains pending until that receipt; revocation tests
+distinguish immediate grant removal from confirmed onchain uninstallation.
+This covers application/transport lifecycle behavior, not live chain enforcement.
+
 ## Commands
 
 ```sh

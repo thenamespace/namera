@@ -2,20 +2,19 @@ import { createECDH } from "node:crypto";
 
 import { DateTime, Effect } from "effect";
 
-import { Hex, type SupportedEvmChainId } from "@namera-ai/protocol";
+import { Hex, type SupportedEvmChainId, type WalletId } from "@namera-ai/protocol";
 
 import type { TestApiClient } from "./api.js";
 
-/** Registers public-only fixtures; it does not simulate owner approval or activation. */
-export const registerPendingLocalSession = Effect.fn("test.registerPendingLocalSession")(function* (
+export const createTestPasskeyWallet = Effect.fn("test.createPasskeyWallet")(function* (
   client: TestApiClient,
-  chains: ReadonlyArray<SupportedEvmChainId> = ["eip155:11155111", "eip155:84532"],
+  name = "Passkey wallet",
 ) {
   const registration = yield* client.wallet.createPasskeyRegistrationOptions();
-  const wallet = yield* client.wallet.create({
+  return yield* client.wallet.create({
     payload: {
       namespace: "eip155",
-      metadata: { version: 1, name: "Passkey wallet" },
+      metadata: { version: 1, name },
       owner: {
         type: "passkey",
         verificationId: registration.verificationId,
@@ -33,12 +32,18 @@ export const registerPendingLocalSession = Effect.fn("test.registerPendingLocalS
       },
     },
   });
+});
+
+export const localSessionRequest = Effect.fn("test.localSessionRequest")(function* (
+  walletId: WalletId,
+  chains: ReadonlyArray<SupportedEvmChainId> = ["eip155:1"],
+) {
   const signer = createECDH("secp256k1");
   signer.generateKeys();
   const now = Math.floor(DateTime.toEpochSeconds(yield* DateTime.now));
-  const request = {
+  return {
     namespace: "eip155" as const,
-    walletId: wallet.id,
+    walletId,
     metadata: { version: 1 as const, name: "Local agent" },
     signer: {
       custody: "local" as const,
@@ -53,5 +58,14 @@ export const registerPendingLocalSession = Effect.fn("test.registerPendingLocalS
     },
     policies: [],
   };
+});
+
+/** Registers public-only fixtures; it does not simulate owner approval or activation. */
+export const registerPendingLocalSession = Effect.fn("test.registerPendingLocalSession")(function* (
+  client: TestApiClient,
+  chains: ReadonlyArray<SupportedEvmChainId> = ["eip155:11155111", "eip155:84532"],
+) {
+  const wallet = yield* createTestPasskeyWallet(client);
+  const request = yield* localSessionRequest(wallet.id, chains);
   return { wallet, request, session: yield* client.sessionKey.create({ payload: request }) };
 });

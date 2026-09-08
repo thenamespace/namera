@@ -16,7 +16,11 @@ import {
   testEmail,
   type TestApiClient,
 } from "../../fixtures/index.js";
-import { TestEmails, TestServerLayer } from "../../fixtures/layers/index.js";
+import { TestEmails } from "../../fixtures/layers/index.js";
+import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+
+const fixture = makeOwnerSessionTestFixture();
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 
@@ -24,17 +28,11 @@ const createSessionKey = Effect.fn("server.test.createApiKeySessionKey")(functio
   client: TestApiClient,
   name: string,
 ) {
-  const wallet = yield* client.wallet.create({
+  const [existingWallet] = yield* client.wallet.list();
+  const wallet = existingWallet ?? (yield* createTestPasskeyWallet(client, `${name} wallet`));
+  const session = yield* client.sessionKey.create({
     payload: {
-      namespace: "eip155",
-      owner: { type: "namera-managed", protectionLevel: "software" },
-      metadata: metadata(`${name} wallet`),
-    },
-  });
-  return yield* client.sessionKey.create({
-    payload: {
-      namespace: "eip155",
-      walletId: wallet.id,
+      ...(yield* localSessionRequest(wallet.id)),
       metadata: metadata(name),
       policies: [
         {
@@ -46,9 +44,10 @@ const createSessionKey = Effect.fn("server.test.createApiKeySessionKey")(functio
       ],
     },
   });
+  return yield* fixture.confirmOperation(client, session, "install");
 });
 
-layer(TestServerLayer)("API-key routes", (it) => {
+layer(fixture.layer)("API-key routes", (it) => {
   it.effect("creates, lists, and reads API keys with grants and durable side effects", () =>
     Effect.gen(function* () {
       yield* resetTestState();

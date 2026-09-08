@@ -15,28 +15,24 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestEmails, TestServerLayer } from "../../fixtures/layers/index.js";
+import { TestEmails } from "../../fixtures/layers/index.js";
+import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
+const fixture = makeOwnerSessionTestFixture();
 const metadata = (name: string) => ({ version: 1 as const, name });
 
-layer(TestServerLayer)("session-key routes", (it) => {
+layer(fixture.layer)("session-key routes", (it) => {
   it.effect("creates and reads time-window session keys with durable side effects", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("session-key-owner@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Treasury"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Treasury");
       const now = yield* DateTime.now;
       const expiresAt = DateTime.addDuration(now, Duration.hours(1));
       const request = {
-        namespace: "eip155" as const,
-        walletId: wallet.id,
+        ...(yield* localSessionRequest(wallet.id)),
         metadata: metadata("Agent window"),
         policies: [
           {
@@ -71,14 +67,18 @@ layer(TestServerLayer)("session-key routes", (it) => {
 
       const created = yield* client.sessionKey.create({ payload: request });
       const duplicate = yield* client.sessionKey.create({
-        payload: { ...request, policies: request.policies.toReversed() },
+        payload: {
+          ...request,
+          signer: (yield* localSessionRequest(wallet.id)).signer,
+          policies: request.policies.toReversed(),
+        },
       });
 
       expect(created).toMatchObject({
         organizationId: owner.actor.organization.id,
         walletId: wallet.id,
         namespace: "eip155",
-        status: "active",
+        status: "pending",
         metadata: metadata("Agent window"),
         wallet: {
           id: wallet.id,
@@ -172,13 +172,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("session-key-policy-limits@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Policy limits"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Policy limits");
       const now = yield* DateTime.now;
       const timeWindow = {
         type: "evm.time-window" as const,
@@ -191,8 +185,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
         yield* client.sessionKey
           .create({
             payload: {
-              namespace: "eip155",
-              walletId: wallet.id,
+              ...(yield* localSessionRequest(wallet.id)),
               metadata: metadata("Repeated policy"),
               policies: [timeWindow, timeWindow],
             },
@@ -214,17 +207,10 @@ layer(TestServerLayer)("session-key routes", (it) => {
       yield* signIn(client, testEmail("session-key-permission-owner@example.com"));
       const member = yield* createMember(client, testEmail("session-key-reader@example.com"));
       yield* setAuthToken(member.ownerToken);
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Operations"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Operations");
       const created = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Read only"),
           policies: [
             {
@@ -246,8 +232,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
         yield* client.sessionKey
           .create({
             payload: {
-              namespace: "eip155",
-              walletId: wallet.id,
+              ...(yield* localSessionRequest(wallet.id)),
               metadata: metadata("Forbidden"),
               policies: [
                 {
@@ -285,13 +270,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("session-key-api-reader@example.com"));
       const expiresAt = DateTime.addDuration(yield* DateTime.now, Duration.days(1));
-      const grantedWallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Granted wallet"),
-        },
-      });
+      const grantedWallet = yield* createTestPasskeyWallet(client, "Granted wallet");
       const hiddenWallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
@@ -301,8 +280,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
       });
       const grantedSessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: grantedWallet.id,
+          ...(yield* localSessionRequest(grantedWallet.id)),
           metadata: metadata("Granted key"),
           policies: [
             {
@@ -316,8 +294,7 @@ layer(TestServerLayer)("session-key routes", (it) => {
       });
       const hiddenSessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: hiddenWallet.id,
+          ...(yield* localSessionRequest(grantedWallet.id)),
           metadata: metadata("Hidden key"),
           policies: [
             {
@@ -329,6 +306,9 @@ layer(TestServerLayer)("session-key routes", (it) => {
           ],
         },
       });
+      expect((yield* fixture.confirmOperation(client, grantedSessionKey, "install")).status).toBe(
+        "active",
+      );
       const apiKey = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Scoped reader"),
@@ -370,20 +350,13 @@ layer(TestServerLayer)("session-key routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("session-key-expired@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Expired wallet"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Expired wallet");
 
       expect(
         yield* client.sessionKey
           .create({
             payload: {
-              namespace: "eip155",
-              walletId: wallet.id,
+              ...(yield* localSessionRequest(wallet.id)),
               metadata: metadata("Expired"),
               policies: [
                 {
@@ -406,17 +379,10 @@ layer(TestServerLayer)("session-key routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("session-key-revoke@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Revocation wallet"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Revocation wallet");
       const sessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Revocable key"),
           policies: [
             {
@@ -428,6 +394,9 @@ layer(TestServerLayer)("session-key routes", (it) => {
           ],
         },
       });
+      expect((yield* fixture.confirmOperation(client, sessionKey, "install")).status).toBe(
+        "active",
+      );
       const firstApiKey = yield* client.apiKey.create({
         payload: {
           metadata: metadata("First agent"),
@@ -443,9 +412,11 @@ layer(TestServerLayer)("session-key routes", (it) => {
         },
       });
 
-      const revoked = yield* client.sessionKey.revoke({
+      const requested = yield* client.sessionKey.revoke({
         params: { sessionKeyId: sessionKey.id },
       });
+      expect(requested.status).toBe("revoking");
+      const revoked = yield* fixture.confirmOperation(client, sessionKey, "uninstall");
       expect(revoked).toMatchObject({
         id: sessionKey.id,
         status: "revoked",
@@ -529,17 +500,10 @@ layer(TestServerLayer)("session-key routes", (it) => {
         testEmail("session-key-revoke-member@example.com"),
       );
       yield* setAuthToken(member.ownerToken);
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Permission wallet"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Permission wallet");
       const sessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Permission key"),
           policies: [
             {
