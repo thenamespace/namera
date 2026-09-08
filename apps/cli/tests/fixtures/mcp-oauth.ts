@@ -16,6 +16,7 @@ export const verifier = "v".repeat(43);
 export const challenge = createHash("sha256").update(verifier).digest("base64url");
 
 export const makeMcpOAuthFixture = Effect.fn("test.makeMcpOAuthFixture")(function* (options?: {
+  readonly beforeExchange?: Effect.Effect<void, LocalOAuthError>;
   readonly beforeRefresh?: Effect.Effect<void, LocalOAuthError>;
 }) {
   const exchanges = yield* Ref.make<
@@ -40,6 +41,7 @@ export const makeMcpOAuthFixture = Effect.fn("test.makeMcpOAuthFixture")(functio
           ...values,
           { ...input, verifier: Redacted.value(input.verifier) },
         ]);
+        if (options?.beforeExchange) yield* options.beforeExchange;
         return yield* credentials;
       }),
     refresh: (input) =>

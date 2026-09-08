@@ -95,7 +95,9 @@ build/typecheck tasks, not just test suites.
       The code-binding HTTP regression now rejects client, exact callback,
       resource and valid-but-wrong PKCE substitutions, then permits one original
       redemption and rejects replay. Opaque consent state round-trips unchanged.
-      Local MCP/browser callback state and the full broker journey remain open.
+      Local broker tests cover callback replay, client/redirect/resource/PKCE
+      binding, ambiguous exchange failure, and consent expiry during exchange.
+      The full browser-to-broker consent/signing journey remains open.
 
 ### Wallet and signing safety
 

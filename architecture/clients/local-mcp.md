@@ -106,6 +106,13 @@ then releases the requests and verifies discovery succeeds. The broker exchange
 is substituted to control request lifetime; this proves admission/release at
 the Node transport, not OAuth validity or slow-header timeout behavior.
 
+Callback recovery tests hold the upstream exchange in flight while consent
+expires: no local code is returned, competing callbacks and denial cannot reuse
+the state, and only one upstream exchange runs. An ambiguous exchange failure
+also consumes state; recovery requires fresh consent, which is tested separately
+from replaying the failed callback. These use the real broker with a controlled
+upstream service and clock, not a browser or live issuer.
+
 The HTTP routes expose local issuer/resource metadata, registration, consent
 redirect/callback, token exchange/refresh, and revocation. Denied consent consumes
 the bound state and returns only `access_denied` to the registered callback.
