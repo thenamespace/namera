@@ -376,9 +376,14 @@ Browser code never receives the LGTM or Axiom destination credentials.
 
 ## Commands
 
+`tests/unit` covers frontend form boundaries through the actual resolver. It
+does not replace browser journeys or server authorization tests.
+
 ```sh
 pnpm --filter @namera-ai/dashboard dev
 pnpm --filter @namera-ai/dashboard generate-routes
 pnpm --filter @namera-ai/dashboard typecheck
+pnpm --filter @namera-ai/dashboard typecheck:test
+pnpm --filter @namera-ai/dashboard test
 pnpm --filter @namera-ai/dashboard build
 ```

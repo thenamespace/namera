@@ -46,9 +46,9 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
     <section>
       <div className="mb-4 flex items-start justify-between gap-4">
         <HeadingGroup>
-          <HeadingGroup.Title>Policies</HeadingGroup.Title>
+          <HeadingGroup.Title>API policies</HeadingGroup.Title>
           <HeadingGroup.Description>
-            Define when and how this session key can be used.
+            Additional restrictions when using Namera. These do not restrict direct onchain use.
           </HeadingGroup.Description>
         </HeadingGroup>
         <EvmPolicyDialog
@@ -63,7 +63,7 @@ export function PolicySection({ form, wallets }: PolicySectionProps) {
           <DashboardCardContent className="px-6 py-8 text-center">
             <Typography.Paragraph color="muted" size="sm" className="text-center">
               {wallet
-                ? "No policies added. Add at least one policy to continue."
+                ? "No additional API restrictions. Onchain permissions still apply."
                 : "Select an account before adding policies."}
             </Typography.Paragraph>
           </DashboardCardContent>

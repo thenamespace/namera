@@ -160,6 +160,16 @@ poll while pending, refresh session/billing data after terminal receipts, and
 retain the preparation idempotency key across retries. Typed approval failures
 use the shared feedback registry; provider and assertion payloads are not shown.
 
+Creation now separates onchain permissions from optional API policies. The
+shared `components/policy/evm/onchain` editor covers all eight compiled permission
+types with protocol-backed address, selector and integer-base-unit validation.
+Root access requires a field-specific acknowledgement; API restrictions are
+explicitly described as unable to constrain direct onchain use. The editor was
+checked in an isolated browser harness for root consent and exact native amounts;
+the harness was removed afterward. Dashboard unit regressions exercise the actual
+form resolver for consent errors and exact integer amounts. Full account creation, lifetime/network
+selection, owner approval and encrypted export are not yet connected.
+
 ## Pending
 
 - Complete stuck signed-operation cancellation/replacement recovery and connect

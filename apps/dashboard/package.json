@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
     "build": "vite build",
     "dev": "vite dev --port 3000",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
@@ -11,7 +12,8 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --pretty false"
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false"
   },
   "dependencies": {
     "@effect/atom-react": "catalog:",
@@ -52,6 +54,7 @@
     "@vitejs/plugin-react": "catalog:",
     "klarity": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -12,6 +12,7 @@ import { useCreateSessionKey } from "@/hooks/session-key";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
+import { OnchainPermissions } from "./onchain-permissions";
 import { PolicySection } from "./policies";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
@@ -59,6 +60,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>
       <div className="grid gap-8">
         <SessionKeyDetailsCard control={form.control} wallets={wallets} />
+        <OnchainPermissions form={form} />
         <PolicySection form={form} wallets={wallets} />
       </div>
 
