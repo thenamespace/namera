@@ -209,16 +209,19 @@ build/typecheck tasks, not just test suites.
       not-found, permission-denied, offline, and provider-unavailable states.
 - [x] Hide unfinished routes and navigation entries rather than exposing empty
       beta surfaces.
-- [ ] Handle an organization or permission change while a protected page is
+- [x] Handle an organization or permission change while a protected page is
       open by invalidating stale atoms and redirecting or re-rendering safely.
       Denied queries/mutations refresh the shared actor. Confirmed authority
       changes now unmount protected content, reset the registry, reload route
       capabilities and redirect missing sessions. Autosave checks its captured
       authority before validation and dispatch. Production-preview Chromium
       verified consecutive role downgrade and sign-out transitions with
-      intercepted transport responses and one denied save attempt. Actual
-      workspace switching with a dirty form and focus-based revalidation still
-      need browser coverage; this item is not fully closed.
+      intercepted transport responses and one denied save attempt. A real API
+      workspace switch plus a synthetic visibility event now verifies dirty-form
+      cancellation (zero writes), unchanged stored workspace names, rendering
+      the new scope and switching back through the sidebar. The current-user
+      atom revalidates on document visibility; unchanged profile responses retain
+      unsaved edits. This does not provide instant push-based revocation.
 
 ### Wallet operations
 

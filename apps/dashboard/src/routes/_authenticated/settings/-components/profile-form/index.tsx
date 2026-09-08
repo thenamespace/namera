@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { Schema } from "effect";
 
@@ -29,6 +29,7 @@ import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 import { defaultProfileImage, profileFormValues } from "./values";
 
 export function ProfileForm({ user }: { user: GetUserResponse }) {
+  const lastServerValues = useRef(JSON.stringify(profileFormValues(user)));
   const updateUser = useUpdateUser({
     onError: (error) =>
       showErrorToast(error, {
@@ -50,6 +51,10 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
   });
   useEffect(() => {
     const nextValue = profileFormValues(user);
+    const signature = JSON.stringify(nextValue);
+    // Session revalidation returns a new object even when profile data is unchanged.
+    if (signature === lastServerValues.current) return;
+    lastServerValues.current = signature;
     form.reset(nextValue);
     resetBaseline(nextValue);
   }, [form, resetBaseline, user]);

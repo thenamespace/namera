@@ -14,6 +14,7 @@ export const currentUserAtom = NameraClient.runtime
   )
   .pipe(
     NameraClient.runtime.factory.withReactivity(QueryKeys.session.current),
+    Atom.refreshOnWindowFocus,
     Atom.setIdleTTL("30 seconds"),
   );
 

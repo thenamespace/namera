@@ -20,6 +20,9 @@ Workspace package imports continue to use their package names.
   `/auth`. The frontend current-user atom maps only `Unauthorized` to `null`.
   Transport failures, server errors, and defects propagate to the router error
   boundary rather than redirecting an authenticated browser to sign-in.
+  The current-user atom revalidates when the document becomes visible. Confirmed
+  authority changes clear protected state and reload route capabilities; normal
+  profile refreshes do not reset dirty values when server values are unchanged.
 - `src/routes/**/-components/` — UI used by one route or route group. Keep a
   single-file component directly in this directory. Give it a folder with an
   `index.tsx` entry only after it is split across multiple files.

@@ -66,8 +66,10 @@ session subscription is reattached after registry reset. Profile presentation
 changes do not discard forms. Autosave captures its original authority and checks
 it before validation and again before dispatch, including unmount/pagehide flushes.
 These guards do not cancel writes already accepted by the server or replace
-server-side authorization. There is no push notification of remote role changes;
-this transition runs when current-user revalidation observes them.
+server-side authorization. The shared current-user atom refreshes when the
+document becomes visible using Effect's focus signal. There is no push
+notification of remote role changes; the transition runs when revalidation
+observes them. An unchanged profile refresh does not reset dirty form values.
 
 Production-preview Chromium verification used a real signed-in development
 session with intercepted 403/401 and changed-role responses. A denied workspace
@@ -75,6 +77,15 @@ save caused a read-only reload with one write attempt; a subsequent denied MCP
 query in the same page lifecycle redirected to sign-in and removed the protected
 sidebar. This covers frontend transitions, not live server role mutation (covered
 separately by HTTP integration tests).
+
+A second production-preview Chromium check changed the active workspace through
+the real API while its old settings form was dirty, then dispatched the document
+visibility event. No update request was sent, both workspace names remained
+unchanged in the API, and the new workspace's form rendered. Switching back
+through the sidebar restored the original account list. The same browser check
+verifies that returning to the tab retains an unsaved profile name when the
+server profile has not changed. Visibility is triggered by the test rather than
+requiring an operating-system window switch.
 
 Workspace form initialization/reset supplies the displayed fallback logo when
 metadata has none. Otherwise React Hook Form registers an explicit undefined
