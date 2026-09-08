@@ -6,7 +6,14 @@ import { Application, makeBillingMetering } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 
-import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
+import {
+  createMember,
+  makeTestApiClient,
+  resetTestState,
+  setAuthToken,
+  signIn,
+  testEmail,
+} from "../../fixtures/index.js";
 import { registerPendingLocalSession } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
@@ -128,6 +135,33 @@ layer(fixture.layer)("owner approval", (it) => {
         expect(keyBefore?.data).toMatchObject({ signCount: 0 });
         const response = authenticator.authenticate(ceremony);
         const payload = { operationId: prepared.operationId, response };
+        const otherOwner = yield* signIn(client, testEmail("approval-other-org@namera.test"));
+        yield* setAuthToken(owner.cookie.value);
+        const admin = yield* createMember(client, testEmail("approval-admin@namera.test"), "admin");
+        for (const token of [otherOwner.cookie.value, admin.memberToken]) {
+          yield* setAuthToken(token);
+          expect(
+            yield* client.sessionKey.completeOperation({ payload }).pipe(Effect.flip),
+          ).toMatchObject({ code: "OPERATION_UNAVAILABLE" });
+        }
+        expect(
+          (yield* repository.core.wallet.findById(wallet.id, owner.actor.organization.id))
+            ?.signingKey.data,
+        ).toMatchObject({ signCount: 0 });
+        expect(
+          yield* repository.core.sessionKeyOperation.findById({
+            id: prepared.operationId,
+            organizationId: owner.actor.organization.id,
+          }),
+        ).toMatchObject({ status: "awaiting-signature", data: { signed: null } });
+        expect(
+          yield* repository.billing.usageReservation.listBySource(
+            owner.actor.organization.id,
+            "session-key-operation",
+            prepared.operationId,
+          ),
+        ).toHaveLength(0);
+        yield* setAuthToken(owner.cookie.value);
         const metering = yield* makeBillingMetering;
         const fullQuota = yield* metering.reserve({
           organizationId: owner.actor.organization.id,

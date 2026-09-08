@@ -83,6 +83,11 @@ conditionally accepts the signature, reserves execution/gas usage and appends
 the approval audit event. Quota failure rolls back all these writes. A successful
 retry reads the durable state without advancing the counter or charging twice.
 
+The HTTP regression presents a valid assertion from another organization and
+from another admin in the same organization. Both are rejected without consuming
+the counter, signing the operation or reserving billing; the initiating user can
+then complete the same assertion. Provider submission remains substituted in this test.
+
 Completion returns `signed`; the scoped session-key worker owns broadcasting
 and receipt processing. Session-operation billing holds use source type
 `session-key-operation` and are deliberately deferred by generic expiry recovery.
