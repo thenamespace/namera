@@ -72,8 +72,10 @@ docker stop namera-billing-concurrency-test
 ```
 
 The billing concurrency suite runs only in this lane. It exercises eight-way
-meter admission, idempotent reservation/settlement, release after settlement,
-and anniversary rollover against real PostgreSQL transactions. Provider calls
+meter admission, local-wallet last-slot admission, idempotent reservation/settlement,
+release after settlement, and anniversary rollover against real PostgreSQL transactions.
+The wallet-cap case seeds occupancy and calls the production lock/limit helpers
+inside insertion transactions; it is not a concurrent WebAuthn ceremony test. Provider calls
 remain deterministic substitutes; this lane does not verify live bundlers.
 
 ## Isolation rules

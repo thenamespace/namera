@@ -128,6 +128,9 @@ build/typecheck tasks, not just test suites.
 - [x] Verify concurrent admission at the Free signature, mainnet execution,
       testnet execution, and sponsored-gas meter limits on PostgreSQL.
 - [ ] Verify concurrent wallet creation at the Free local-wallet resource cap.
+      The PostgreSQL admission test passes with 49 existing wallets: one of
+      eight locked insertion transactions succeeds and seven hit the cap. Full
+      concurrent registration-ceremony coverage remains pending.
 - [x] Verify concurrent billing reservation/settlement retries produce one hold
       and one ledger debit; release after settlement does not return used quota.
 - [x] Verify concurrent anniversary rollover creates one new period and one

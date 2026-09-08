@@ -1,8 +1,14 @@
 import { describe, expect, layer } from "@effect/vitest";
 import { DateTime, Effect, Result } from "effect";
 
-import { freeBillingPlan, makeBillingMetering, makeBillingPeriods } from "@namera-ai/application";
-import { Repository } from "@namera-ai/database";
+import {
+  enforceLocalWalletLimit,
+  freeBillingPlan,
+  lockOrganizationBilling,
+  makeBillingMetering,
+  makeBillingPeriods,
+} from "@namera-ai/application";
+import { Repository, TransactionService } from "@namera-ai/database";
 
 import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
 import { TestServerLayer } from "../../fixtures/layers/index.js";
@@ -11,6 +17,75 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
   "PostgreSQL billing concurrency",
   () => {
     layer(TestServerLayer)((it) => {
+      it.effect(
+        "admits only one local wallet when concurrent transactions compete for the last slot",
+        () =>
+          Effect.gen(function* () {
+            yield* resetTestState();
+            const client = yield* makeTestApiClient;
+            const { actor } = yield* signIn(
+              client,
+              testEmail("concurrent-local-wallets@example.com"),
+            );
+            const organizationId = actor.organization.id;
+            const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+            const wallet = yield* client.wallet.create({
+              payload: {
+                namespace: "eip155",
+                metadata: { version: 1, name: "Capacity fixture" },
+                owner: {
+                  type: "passkey",
+                  verificationId: registration.verificationId,
+                  response: {
+                    id: "test-passkey",
+                    rawId: "test-passkey",
+                    type: "public-key",
+                    response: { clientDataJSON: "dGVzdA", attestationObject: "dGVzdA" },
+                    clientExtensionResults: {},
+                  },
+                },
+              },
+            });
+            const repository = yield* Repository;
+            const transaction = yield* TransactionService;
+            const stored = yield* repository.core.wallet.findById(wallet.id, organizationId);
+            if (stored === undefined) return yield* Effect.die("Expected capacity fixture wallet");
+            const insert = {
+              organizationId,
+              signingKeyId: wallet.owner.signingKeyId,
+              createdByActorId: stored.wallet.createdByActorId,
+              namespace: wallet.namespace,
+              metadata: wallet.metadata,
+              data: stored.wallet.data,
+              status: "active" as const,
+            };
+            // Seed resource occupancy directly; only admission is under test here.
+            for (let index = 1; index < 49; index++) yield* repository.core.wallet.insert(insert);
+            const admit = transaction.run(
+              Effect.gen(function* () {
+                yield* lockOrganizationBilling(repository, organizationId);
+                yield* enforceLocalWalletLimit(repository, organizationId);
+                return yield* repository.core.wallet.insert(insert);
+              }),
+            );
+            const outcomes = yield* Effect.all(
+              Array.from({ length: 8 }, () => admit.pipe(Effect.result)),
+              { concurrency: 8 },
+            );
+            expect(outcomes.filter(Result.isSuccess)).toHaveLength(1);
+            const failures = outcomes.filter(Result.isFailure);
+            expect(failures).toHaveLength(7);
+            for (const failure of failures)
+              expect(failure.failure).toMatchObject({
+                code: "LIMIT_EXCEEDED",
+                limit: "localWallets",
+              });
+            expect(
+              (yield* client.billing.get()).resources.find(({ key }) => key === "local-wallets"),
+            ).toMatchObject({ usedAmount: 50n, remainingAmount: 0n });
+          }),
+      );
+
       it.effect("serializes competing admissions at each Free meter's hard limit", () =>
         Effect.gen(function* () {
           yield* resetTestState();
