@@ -104,6 +104,13 @@ For a stateful endpoint, cover the behavior that protects the contract:
 Repository queries are acceptable for setup and for outcomes not exposed by the
 public API. Test helpers may assemble workflows but must not hide assertions.
 
+The typed API authentication-boundary suite reflects every endpoint from
+`NameraApi`. Only health, ENS availability and magic-link request/verification
+are public. Every other endpoint must declare authorization and return 401 with
+no-store for a credential-free request, before payload decoding. This guard
+automatically includes new typed routes; raw OAuth protocol routes have separate
+tests. It does not replace actor-permission or tenant-isolation tests.
+
 Session-key, API-key, and OAuth grant suites create passkey wallets and register
 local public signers. Grant setup runs the owner-approval HTTP routes, verifies
 a real WebAuthn assertion, and invokes one reconciliation iteration against the

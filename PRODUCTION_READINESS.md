@@ -57,6 +57,9 @@ build/typecheck tasks, not just test suites.
 
 ### Route authorization
 
+- [x] Verify every protected typed API endpoint rejects credential-free requests
+      before payload decoding, with no-store responses. The reflected contract
+      regression rejects new public endpoints outside the explicit allowlist.
 - [ ] Complete one route matrix covering actor type, permission, organization
       isolation, resource ownership, and session-key grant requirements for
       every public server endpoint.
