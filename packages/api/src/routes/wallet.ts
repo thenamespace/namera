@@ -13,6 +13,7 @@ import {
   CreateWalletResponse,
   GetWalletRequest,
   GetWalletResponse,
+  GetWalletPasskeyOwnerResponse,
   GetWalletPortfolioRequest,
   PortfolioResponse,
   PasskeyRegistrationOptionsResponse,
@@ -44,6 +45,11 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
       success: GetWalletResponse,
       error: [WalletNotFoundError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Get a wallet in the active organization"),
+    HttpApiEndpoint.get("getPasskeyOwner", "/:walletId/passkey-owner", {
+      params: GetWalletRequest,
+      success: GetWalletPasskeyOwnerResponse,
+      error: [WalletNotFoundError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Read public passkey owner details (organization users only)"),
     HttpApiEndpoint.get("getPortfolio", "/:walletId/portfolio", {
       params: GetWalletRequest,
       query: GetWalletPortfolioRequest,

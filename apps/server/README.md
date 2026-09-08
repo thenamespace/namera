@@ -100,6 +100,12 @@ If authorization finds
 an invalid session or a session whose active membership no longer exists, it
 also expires the stale `auth-token` cookie so the browser can recover cleanly.
 
+`GET /wallets/:walletId/passkey-owner` requires a user with `wallet:read` in the
+active organization. It returns only the public key and credential/RP identifiers
+needed to review an owner approval, or a null owner for non-passkey wallets.
+Machine actors cannot read this descriptor, even with wallet grants. Ordinary
+wallet responses do not include credential metadata.
+
 `@namera-ai/telemetry` exports logs, traces, and metrics over OTLP. HTTP tracing
 uses one stable route-normalized span per request. It excludes the Scalar
 reference, routine current-session probe, and telemetry proxy routes. Bounded

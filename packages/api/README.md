@@ -26,7 +26,8 @@ sequence.
   MCP/CLI authorization management endpoints. OAuth wire endpoints remain raw
   server routes.
 - `src/routes/wallet.ts` — create, list, get, update organization wallet metadata,
-  and list paginated all-chain fungible assets.
+  list paginated all-chain fungible assets, and user-only public passkey owner
+  details for independent approval review.
 - `src/routes/session-key.ts` — register/get/list session keys and prepare/complete
   passkey owner approvals for stored onchain installation/removal operations.
   Member-authorized operation status reads expose no signed envelope or lease.

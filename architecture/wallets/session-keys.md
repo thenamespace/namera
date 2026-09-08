@@ -152,12 +152,22 @@ active grants. Routes expose create/get/list/wallet-list/revoke boundaries under
 
 ## Dashboard integration
 
+`GET /wallets/:walletId/passkey-owner` exposes only the public P-256 key,
+signing-key ID, credential ID and RP ID needed for owner-operation review. It
+requires a user actor with `wallet:read` in the active organization; machine
+grants do not authorize this endpoint. Other tenants receive `WALLET_NOT_FOUND`.
+Non-passkey wallets return `owner: null`. The response is not cached and contains
+no provider locator, counter, private key or signed envelope. Ordinary wallet
+responses remain unchanged. This read has no audit event or mutation; normal
+HTTP instrumentation covers it.
+
 The SDK's `validateOwnerApproval` verifies decoded preparations against locally
 reviewed chain, account, owner entity, factory arguments and compiled self-call.
 It rejects altered authority, undeclared gas charges, expired approvals and
 WebAuthn challenge/credential/RP substitutions. Its hash uses the canonical
 EntryPoint and personal-sign encoding used by the deployed passkey adapter.
-The guard is unit-tested; independent browser compilation and prompt wiring
+The guard is unit-tested; the EVM package now supplies read-only account
+reconstruction and session compilation. Browser integration and prompt wiring
 are still required. A caller must not treat the server's calldata as the locally
 reviewed action.
 

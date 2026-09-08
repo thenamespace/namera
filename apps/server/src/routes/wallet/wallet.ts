@@ -78,6 +78,31 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           );
         }),
       )
+      .handle("getPasskeyOwner", ({ params }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["wallet:read"] },
+          });
+          const { wallet, signingKey } = yield* app.wallet.get({
+            organizationId: data.organization.id,
+            walletId: params.walletId,
+          });
+          return {
+            walletId: wallet.id,
+            owner:
+              signingKey.custody === "local" && signingKey.data.type === "passkey"
+                ? {
+                    signingKeyId: signingKey.id,
+                    publicKeyHex: signingKey.publicKeyHex,
+                    credentialId: signingKey.data.credentialId,
+                    rpId: signingKey.data.rpId,
+                  }
+                : null,
+          };
+        }),
+      )
       .handle("getPortfolio", ({ params, query }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

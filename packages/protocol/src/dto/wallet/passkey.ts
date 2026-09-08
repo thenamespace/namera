@@ -1,12 +1,31 @@
 import { Schema } from "effect";
 
-import { VerificationId } from "#/common/index";
+import { SigningKeyId, VerificationId, WalletId } from "#/common/index";
+import { Hex } from "#/evm/index";
 import { NonEmptyString } from "#/model/common";
 
 const Base64UrlString = Schema.String.check(
   Schema.isPattern(/^[A-Za-z0-9_-]+$/, { message: "Expected an unpadded base64url value" }),
   Schema.isMinLength(1),
 );
+
+export const GetWalletPasskeyOwnerResponse = Schema.Struct({
+  walletId: WalletId,
+  owner: Schema.NullOr(
+    Schema.Struct({
+      signingKeyId: SigningKeyId,
+      publicKeyHex: Hex,
+      credentialId: Base64UrlString,
+      rpId: NonEmptyString,
+    }),
+  ),
+}).annotate({
+  identifier: "GetWalletPasskeyOwnerResponse",
+  description:
+    "Public passkey data for independent owner-operation review. User-only; owner is null for non-passkey wallets. No signing capability is returned.",
+});
+
+export type GetWalletPasskeyOwnerResponse = typeof GetWalletPasskeyOwnerResponse.Type;
 
 const PublicKeyCredentialDescriptor = Schema.Struct({
   id: Base64UrlString,
