@@ -56,6 +56,13 @@ The default avatar matches the displayed fallback and is persisted with the
 first profile edit. Avatar validation errors are visible. Resolver regressions
 cover an image-free profile and preservation of an existing image.
 
+Account and session-key creation share `OptionalFormDescription`: an empty or
+undefined controlled description decodes to an absent key before reaching the
+strict public DTO. Nonempty text retains the protocol length checks. The account
+textarea keeps an empty string when cleared; neither creation flow requires a
+description. Form resolver tests exercise blank and populated descriptions and
+verify that the decoded session request can be encoded by the public API schema.
+
 ## State and mutations
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch

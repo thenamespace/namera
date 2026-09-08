@@ -1,4 +1,4 @@
-import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
+import type { CreateSessionKeyFormSchema } from "./schema";
 
-export type CreateSessionKeyFormInput = typeof CreateSessionKeyRequest.Encoded;
-export type CreateSessionKeyFormValues = typeof CreateSessionKeyRequest.Type;
+export type CreateSessionKeyFormInput = typeof CreateSessionKeyFormSchema.Encoded;
+export type CreateSessionKeyFormValues = typeof CreateSessionKeyFormSchema.Type;

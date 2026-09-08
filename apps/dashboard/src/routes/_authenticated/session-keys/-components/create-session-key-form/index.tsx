@@ -6,11 +6,7 @@ import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import {
-  CreateSessionKeyRequest,
-  type CreateSessionKeyResponse,
-  type ListWalletsResponse,
-} from "@namera-ai/protocol/dto";
+import { type CreateSessionKeyResponse, type ListWalletsResponse } from "@namera-ai/protocol/dto";
 import type { LocalEvmSessionBinding } from "@namera-ai/protocol/local";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
@@ -32,6 +28,7 @@ import { ExportSessionKey } from "./export-key";
 import { OnchainPermissions } from "./onchain-permissions";
 import { OnchainSettings } from "./onchain-settings";
 import { PolicySection } from "./policies";
+import { CreateSessionKeyFormSchema } from "./schema";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
@@ -141,7 +138,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
   });
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues,
-    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyRequest)),
+    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

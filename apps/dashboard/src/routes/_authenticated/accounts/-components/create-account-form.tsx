@@ -4,8 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { WalletMetadata } from "@namera-ai/protocol/model";
-import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Button,
   Field,
@@ -31,21 +29,14 @@ import {
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-const supportedLogoTypes = ["icon", "emoji", "image"] as const;
-const defaultLogo: MetadataIcon = { type: "emoji", value: "💳" };
-const CreateAccountFormValues = Schema.Struct({
-  metadata: WalletMetadata,
-});
-type CreateAccountFormValues = typeof CreateAccountFormValues.Type;
-type CreateAccountFormValuesEncoded = typeof CreateAccountFormValues.Encoded;
+import {
+  CreateAccountFormValues,
+  type CreateAccountFormValuesEncoded,
+  defaultAccountLogo,
+  defaultAccountValues,
+} from "./create-account-schema";
 
-const defaultValues: CreateAccountFormValuesEncoded = {
-  metadata: {
-    version: 1,
-    name: "",
-    logo: defaultLogo,
-  },
-};
+const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 
 export function CreateAccountForm() {
   const navigate = useNavigate();
@@ -71,7 +62,7 @@ export function CreateAccountForm() {
     },
   });
   const form = useForm<CreateAccountFormValuesEncoded, unknown, CreateAccountFormValues>({
-    defaultValues,
+    defaultValues: defaultAccountValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateAccountFormValues)),
   });
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -124,7 +115,7 @@ export function CreateAccountForm() {
                       size="md"
                       supportedTypes={supportedLogoTypes}
                       triggerClassName="justify-self-end"
-                      value={field.value ?? defaultLogo}
+                      value={field.value ?? defaultAccountLogo}
                     />
                   </Field>
                 </DashboardCardRow>
@@ -175,7 +166,6 @@ export function CreateAccountForm() {
                       rows={3}
                       value={field.value ?? ""}
                       variant="secondary"
-                      onChange={(event) => field.onChange(event.target.value || undefined)}
                     />
                   </Field>
                 </DashboardCardRow>
