@@ -4,6 +4,7 @@ import { RegistryContext, scheduleTask } from "@effect/atom-react";
 import { AtomRegistry } from "effect/unstable/reactivity";
 
 import { DataLoading } from "@/components/data-loading";
+import { RouterError, RouterNotFound } from "@/components/route-failure";
 import { routeTree } from "@/routeTree.gen";
 
 function RouterPending() {
@@ -22,6 +23,8 @@ export function getRouter() {
     },
     scrollRestoration: true,
     defaultPendingComponent: RouterPending,
+    defaultErrorComponent: RouterError,
+    defaultNotFoundComponent: RouterNotFound,
     defaultPendingMinMs: 250,
     defaultPendingMs: 150,
     defaultPreload: "intent",

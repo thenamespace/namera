@@ -125,7 +125,7 @@ build/typecheck tasks, not just test suites.
 
 ### Global route behavior
 
-- [ ] Add global TanStack Router error and not-found components.
+- [x] Add global TanStack Router error and not-found components.
 - [ ] Replace indefinite spinners and blank regions with retryable error,
       not-found, permission-denied, offline, and provider-unavailable states.
 - [ ] Hide unfinished routes and navigation entries rather than exposing empty

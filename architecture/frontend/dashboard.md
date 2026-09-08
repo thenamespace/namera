@@ -31,6 +31,13 @@ Account, session-key, and execution detail parents validate branded IDs,
 prefetch detail once, map missing resources to the router not-found boundary,
 and provide nested navigation.
 
+The router has shared error and not-found fallbacks. Errors expose a reload
+action (clearing failed in-memory atom results), and both states offer a return
+to the overview. They never render exception messages or request URLs. A child
+route failure stays in that route's boundary under its loaded parent layout;
+failure of the authentication layout itself cannot retain that layout's sidebar.
+Component-owned query errors still need their own local feedback states.
+
 ## State and mutations
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch
