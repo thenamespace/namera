@@ -28,7 +28,9 @@ import type { EvmPortfolioService } from "./portfolio/types.js";
 import { makeEvmSessionService } from "./sessions/service.js";
 import type { EvmSessionService } from "./sessions/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
+import { makeEvmSessionSignatureService } from "./signing/session.js";
 import { makeEvmSignatureService } from "./signing/sign.js";
+import type { EvmSessionSignatureService } from "./signing/types.js";
 import type { DigestEvmSignature, SignEvm, VerifyEvm } from "./signing/types.js";
 import { makeEvmTestService, TestEvmExecution, type EvmTestOptions } from "./test.js";
 
@@ -59,6 +61,7 @@ export interface EvmService {
   readonly digestSignature: DigestEvmSignature;
   readonly sign: SignEvm;
   readonly verifySignature: VerifyEvm;
+  readonly sessionSignatures: EvmSessionSignatureService;
 }
 
 // Evm is the namespace adapter consumed by application workflows. It owns
@@ -102,6 +105,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         portfolio,
         sign: signature.sign,
         verifySignature: signature.verify,
+        sessionSignatures: makeEvmSessionSignatureService(makeExecutionClients(config)),
       });
     }),
   );

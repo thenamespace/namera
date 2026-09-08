@@ -58,6 +58,8 @@ export * from "./signatures/index.js";
 export type {
   DigestEvmSignature,
   EvmSignatureService,
+  EvmSessionSignatureService,
+  SignEvmSessionInput,
   SignEvm,
   SignEvmInput,
   VerifyEvm,

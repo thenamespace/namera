@@ -11,7 +11,11 @@ The EVM adapter supports fully discriminated personal-message and EIP-712 typed-
 
 The result is decoded as protocol `Bytes32`. Digesting is reusable for canonical request hashing/policy context and does not call a provider.
 
-## Signing
+## Legacy owner signing
+
+This is the old synchronous path, not the self-custodial beta signing flow.
+Local passkey owners cannot sign silently through this adapter. The public
+signature workflow still needs migration to the detached flow below.
 
 ```mermaid
 sequenceDiagram
@@ -35,6 +39,30 @@ sequenceDiagram
 ```
 
 Reconstruction errors map to `ACCOUNT_RECONSTRUCTION_FAILED` or `ACCOUNT_ADDRESS_MISMATCH`; owner signing failures map to `SIGNING_FAILED`.
+
+## Detached session signing adapter
+
+`Evm.sessionSignatures.prepare` reconstructs the public account and requires
+explicit `allowSignatures` with the supported SingleSignerValidation module.
+It hashes the original message/typed data, then builds Alchemy's `ReplaySafeHash`
+typed data using the chain ID, module verifying contract and wallet address
+left-padded to 32 bytes as domain salt. It never invokes an owner signer.
+
+`complete` recomputes that payload from trusted persisted inputs, verifies the
+local secp256k1 signature against the session's signer address, packs its non-root
+entity ID using `pack1271Signature`, and calls ERC-1271 verification on the
+account. An ECDSA signature alone is insufficient: uninstalled/revoked validators
+must fail. No provider transaction is submitted and no signature is logged.
+
+The adapter owns chain/account encoding only. Callers must resolve installation
+data from persistence, validate actor/grant authority and lifetime, and own
+idempotency, billing and audit transitions. This package-level implementation
+does not yet expose detached signature API routes or SDK/CLI signing.
+
+Actual-contract tests exercise both payload types with public-only account
+reconstruction, rejection before installation and after removal, changed-payload
+rejection, and the domain replay protections. Alchemy's time hook does not
+expire ERC-1271 signatures; see [onchain sessions](accounts/onchain-sessions.md).
 
 ## ERC-1271-compatible verification
 
@@ -63,6 +91,8 @@ Signature policy evaluation requires at least one signature operation that expli
 
 ## Pending before production
 
+- Wire detached preparation/completion into persistence, API, SDK, CLI and local MCP.
+- Enforce signature expiry/policies in API requests and disclose their offchain scope.
 - Add conformance fixtures for popular ERC-1271 consumers and counterfactual verification paths.
 - Define retention/redaction for signed message and typed-data content, especially personal data.
 - Add optional domain/contract allowlist policies before broad typed-data production use.

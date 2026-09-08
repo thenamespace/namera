@@ -3,6 +3,7 @@ import { Context, Effect, Layer, Ref, Schema } from "effect";
 import {
   EthereumAddress,
   EvmExecutionError,
+  EvmSignatureError,
   Hex,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
@@ -113,6 +114,22 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
       ),
     } satisfies EvmPortfolioService,
     digestSignature: digestEvmSignature,
+    sessionSignatures: {
+      prepare: () =>
+        Effect.fail(
+          new EvmSignatureError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Session signing requires an explicit test adapter"),
+          }),
+        ),
+      complete: () =>
+        Effect.fail(
+          new EvmSignatureError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Session signing requires an explicit test adapter"),
+          }),
+        ),
+    },
     sign: Effect.fn("evm.signature.test.sign")(() => Effect.succeed(Hex.make("0x1234"))),
     verifySignature: Effect.fn("evm.signature.test.verify")((input) =>
       Effect.succeed(input.signature === Hex.make("0x1234")),

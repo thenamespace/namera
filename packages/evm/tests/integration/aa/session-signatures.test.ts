@@ -1,16 +1,26 @@
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 
 import {
   DefaultModuleAddress,
   pack1271Signature,
   toReplaySafeTypedData,
 } from "@alchemy/smart-accounts";
-import { EvmSessionAuthorization } from "@namera-ai/protocol/evm";
-import { concatHex, createClient, custom, hashMessage, hashTypedData, type Hex } from "viem";
+import { EvmSessionAuthorization, Hex as ProtocolHex } from "@namera-ai/protocol/evm";
+import {
+  concatHex,
+  createClient,
+  custom,
+  hashMessage,
+  hashTypedData,
+  type Hex,
+  type TypedDataDefinition,
+} from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it } from "vitest";
 
 import { compileEvmSession } from "../../../src/sessions/compile.js";
+import { makeEvmSessionService } from "../../../src/sessions/service.js";
+import { makeEvmSessionSignatureService } from "../../../src/signing/session.js";
 import { makeAnvilFixture } from "./fixture.js";
 
 const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
@@ -18,7 +28,8 @@ const anvilUrl = process.env.NAMERA_TEST_ANVIL_URL;
 describe.skipIf(anvilUrl === undefined)("onchain session signature authority", () => {
   it("requires explicit approval, binds replay domains, and ends only on uninstall", async () => {
     if (anvilUrl === undefined) throw new Error("NAMERA_TEST_ANVIL_URL is required");
-    const { account, publicClient, submit, advanceTime } = await makeAnvilFixture(anvilUrl);
+    const { account, reconstruction, publicClient, submit, advanceTime } =
+      await makeAnvilFixture(anvilUrl);
     const key = privateKeyToAccount(generatePrivateKey());
     const client = createClient({
       account,
@@ -63,29 +74,89 @@ describe.skipIf(anvilUrl === undefined)("onchain session signature authority", (
       publicClient.verifyHash({ address: account.address, hash, signature });
     expect(await verify(messageHash, await signHash(messageHash, 1))).toBe(false);
 
-    const enabled = await compileEvmSession(client, {
-      ...authorization,
-      entityId: 2,
-      allowSignatures: true,
+    const sessions = makeEvmSessionService(() => ({ publicClient }), {
+      prepare: () => Effect.die(new Error("Signature preparation must not prepare UserOperations")),
     });
+    const enabled = await Effect.runPromise(
+      sessions.compile({
+        account: reconstruction,
+        chainId: "eip155:11155111",
+        authorization: { ...authorization, entityId: 2, allowSignatures: true },
+      }),
+    );
+    const signatures = makeEvmSessionSignatureService(() => ({ publicClient }));
+    const signingInput = {
+      account: reconstruction,
+      chainId: "eip155:11155111",
+      session: enabled,
+      type: "message",
+      message: "Approve this message, not a transaction",
+    } as const;
+    const typedData = await Effect.runPromise(signatures.prepare(signingInput));
+    const localSignature = ProtocolHex.make(
+      await key.signTypedData(typedData as unknown as TypedDataDefinition),
+    );
+    expect(
+      await Effect.runPromise(
+        signatures.complete({ ...signingInput, signature: localSignature }).pipe(Effect.flip),
+      ),
+    ).toMatchObject({ code: "VERIFICATION_FAILED" });
     await submit(
       account,
       await account.encodeCalls([{ to: account.address, data: enabled.installCallData }]),
     );
-    const messageSignature = await signHash(messageHash, 2);
+    const messageSignature = await Effect.runPromise(
+      signatures.complete({ ...signingInput, signature: localSignature }),
+    );
+    expect(messageSignature).toBe(await signHash(messageHash, 2));
+    expect(
+      await Effect.runPromise(
+        signatures
+          .complete({ ...signingInput, message: "Changed", signature: localSignature })
+          .pipe(Effect.flip),
+      ),
+    ).toMatchObject({ code: "SIGNING_FAILED" });
+    expect(
+      await Effect.runPromise(
+        signatures
+          .prepare({
+            ...signingInput,
+            session: {
+              ...enabled,
+              authorization: { ...enabled.authorization, allowSignatures: false },
+            },
+          })
+          .pipe(Effect.flip),
+      ),
+    ).toMatchObject({ code: "SIGNING_FAILED" });
     expect(await verify(messageHash, messageSignature)).toBe(true);
     expect(await verify(hashMessage("Different message"), messageSignature)).toBe(false);
     expect(await verify(messageHash, await signHash(messageHash, 2, 1))).toBe(false);
     expect(
       await verify(messageHash, await signHash(messageHash, 2, publicClient.chain.id, key.address)),
     ).toBe(false);
-    const typedHash = hashTypedData({
+    const requestTypedData = {
       domain: { name: "Session signature test", chainId: publicClient.chain.id },
       types: { Consent: [{ name: "action", type: "string" }] },
       primaryType: "Consent",
       message: { action: "Sign typed data" },
-    });
-    const typedSignature = await signHash(typedHash, 2);
+    } as const;
+    const typedHash = hashTypedData(requestTypedData);
+    const typedInput = {
+      ...signingInput,
+      type: "typed-data" as const,
+      typedData: requestTypedData,
+    };
+    const typedChallenge = await Effect.runPromise(signatures.prepare(typedInput));
+    const typedSignature = await Effect.runPromise(
+      signatures.complete({
+        ...typedInput,
+        signature: ProtocolHex.make(
+          await key.signTypedData(typedChallenge as unknown as TypedDataDefinition),
+        ),
+      }),
+    );
+    expect(typedSignature).toBe(await signHash(typedHash, 2));
     expect(await verify(typedHash, typedSignature)).toBe(true);
 
     // Alchemy's TimeRange hook deliberately does not expire ERC-1271 authority.
@@ -99,5 +170,10 @@ describe.skipIf(anvilUrl === undefined)("onchain session signature authority", (
     );
     expect(await verify(messageHash, messageSignature)).toBe(false);
     expect(await verify(typedHash, typedSignature)).toBe(false);
+    expect(
+      await Effect.runPromise(
+        signatures.complete({ ...signingInput, signature: localSignature }).pipe(Effect.flip),
+      ),
+    ).toMatchObject({ code: "VERIFICATION_FAILED" });
   }, 30_000);
 });

@@ -8,6 +8,7 @@ import type {
   SupportedEvmChainId,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
+import type { EvmSessionInstallationData } from "@namera-ai/protocol/model";
 
 import type { ReconstructEvmAccountInput } from "../accounts/types.js";
 
@@ -50,4 +51,17 @@ export interface EvmSignatureService {
   readonly digest: DigestEvmSignature;
   readonly sign: SignEvm;
   readonly verify: VerifyEvm;
+}
+
+export type SignEvmSessionInput = SignEvmInput & {
+  readonly session: EvmSessionInstallationData;
+};
+
+export interface EvmSessionSignatureService {
+  readonly prepare: (
+    input: SignEvmSessionInput,
+  ) => Effect.Effect<EvmTypedData, EvmSignatureError | UnsupportedChainError>;
+  readonly complete: (
+    input: SignEvmSessionInput & { readonly signature: Hex },
+  ) => Effect.Effect<Hex, EvmSignatureError | UnsupportedChainError>;
 }
