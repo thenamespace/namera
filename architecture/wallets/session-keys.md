@@ -226,6 +226,17 @@ A lost
 registration response also needs a public-signer lookup recovery path so retrying
 the same local draft can recover its existing pending registration.
 
+### Recovering an owner approval
+
+`GET /session-keys/installations/:installationId/operations/:kind` recovers the
+active owner operation within the caller's organization. It returns only its ID
+and status, plus the original preparation request for the initiating user while
+the unsigned challenge remains valid. Other members can observe status but cannot
+recover that user's retry request. Signed/submitted operations never return an
+assertion or envelope. Terminal operations are absent from this lookup. The
+dashboard recovery wiring remains pending; the endpoint is covered for tenant
+isolation, member visibility, expiration, and signed/confirmed transitions.
+
 ## Pending
 
 - Complete stuck signed-operation cancellation/replacement recovery and connect

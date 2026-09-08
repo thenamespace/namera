@@ -6,7 +6,14 @@ import { Repository } from "@namera-ai/database";
 import { makeTestEvmSessionService } from "@namera-ai/evm";
 import { Hex } from "@namera-ai/protocol";
 
-import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
+import {
+  createMember,
+  makeTestApiClient,
+  resetTestState,
+  setAuthToken,
+  signIn,
+  testEmail,
+} from "../../fixtures/index.js";
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
 import { registerPendingLocalSession } from "../../fixtures/local-session.js";
 
@@ -34,7 +41,18 @@ layer(
           idempotencyKey: crypto.randomUUID(),
           sponsor: false,
         };
+        const params = { installationId: installation.id, kind: "install" as const };
+        expect(yield* client.sessionKey.getActiveOperation({ params })).toEqual({
+          operation: null,
+        });
         const prepared = yield* client.sessionKey.prepareOperation({ payload });
+        expect(yield* client.sessionKey.getActiveOperation({ params })).toEqual({
+          operation: {
+            operationId: prepared.operationId,
+            status: "awaiting-signature",
+            retryRequest: payload,
+          },
+        });
         expect(
           yield* client.sessionKey.getOperation({
             params: { operationId: prepared.operationId },
@@ -46,6 +64,15 @@ layer(
           allowCredentials: [{ id: "test-passkey", type: "public-key" }],
         });
         expect(prepared.options.challenge).toBe(Buffer.alloc(32, 0x11).toString("base64url"));
+        const member = yield* createMember(client, testEmail("approval-reader@namera.test"));
+        expect(yield* client.sessionKey.getActiveOperation({ params })).toEqual({
+          operation: {
+            operationId: prepared.operationId,
+            status: "awaiting-signature",
+            retryRequest: null,
+          },
+        });
+        yield* setAuthToken(member.ownerToken);
         const replay = yield* client.sessionKey.prepareOperation({ payload });
         expect(replay.operationId).toBe(prepared.operationId);
         expect(replay.prepared).toEqual(prepared.prepared);
@@ -72,10 +99,22 @@ layer(
           )).filter(({ event }) => event === "session_key.operation_prepared"),
         ).toHaveLength(1);
         yield* TestClock.adjust(Duration.minutes(6));
+        expect(yield* client.sessionKey.getActiveOperation({ params })).toEqual({
+          operation: {
+            operationId: prepared.operationId,
+            status: "awaiting-signature",
+            retryRequest: null,
+          },
+        });
         expect(
           yield* client.sessionKey.prepareOperation({ payload }).pipe(Effect.flip),
         ).toMatchObject({ code: "APPROVAL_EXPIRED" });
         yield* signIn(client, testEmail("other-owner-operation@namera.test"));
+        expect(
+          yield* client.sessionKey.getActiveOperation({ params }).pipe(Effect.flip),
+        ).toMatchObject({
+          code: "INSTALLATION_UNAVAILABLE",
+        });
         expect(
           yield* client.sessionKey
             .getOperation({

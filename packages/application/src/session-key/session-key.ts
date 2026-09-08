@@ -18,6 +18,8 @@ import type {
   PrepareSessionKeyOperationResponse,
   CompleteSessionKeyOperationRequest,
   SessionKeyOperationResponse,
+  GetActiveSessionKeyOperationRequest,
+  GetActiveSessionKeyOperationResponse,
 } from "@namera-ai/protocol/dto";
 
 import { makeCompleteSessionKeyOperation } from "./complete-operation.js";
@@ -29,6 +31,11 @@ import { makeRevokeSessionKey } from "./revoke.js";
 import type { SessionKeyView } from "./view.js";
 
 export interface SessionKeyApplication {
+  readonly getActiveOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly request: GetActiveSessionKeyOperationRequest;
+  }) => Effect.Effect<GetActiveSessionKeyOperationResponse, SessionKeyOperationError>;
   readonly getOperation: (input: {
     readonly organizationId: OrganizationId;
     readonly operationId: SessionKeyOperationId;

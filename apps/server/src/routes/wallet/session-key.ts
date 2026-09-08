@@ -12,6 +12,20 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
     const app = yield* Application.Application;
 
     return handlers
+      .handle("getActiveOperation", ({ params }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["user"],
+            requiredPermissions: { user: ["session-key:read"] },
+          });
+          return yield* app.sessionKey.getActiveOperation({
+            organizationId: data.organization.id,
+            actorId: data.actorId,
+            request: params,
+          });
+        }),
+      )
       .handle("getOperation", ({ params }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

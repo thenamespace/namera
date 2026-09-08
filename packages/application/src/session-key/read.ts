@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
 import {
@@ -11,12 +11,55 @@ import {
   type SessionKeyOperationId,
   type WalletId,
 } from "@namera-ai/protocol";
+import type {
+  GetActiveSessionKeyOperationRequest,
+  GetActiveSessionKeyOperationResponse,
+} from "@namera-ai/protocol/dto";
 
 import { makeLoadSessionKeyViews } from "./view.js";
 
 export const makeReadSessionKeys = Effect.gen(function* () {
   const repository = yield* Repository;
   const loadViews = yield* makeLoadSessionKeyViews;
+
+  const getActiveOperation = Effect.fn("application.sessionKey.getActiveOperation")(
+    function* (input: {
+      readonly organizationId: OrganizationId;
+      readonly actorId: ActorId;
+      readonly request: GetActiveSessionKeyOperationRequest;
+    }) {
+      const installation = yield* repository.core.sessionKeyInstallation.findById({
+        organizationId: input.organizationId,
+        id: input.request.installationId,
+      });
+      if (installation === undefined)
+        return yield* new SessionKeyOperationError({ code: "INSTALLATION_UNAVAILABLE" });
+      const operation = yield* repository.core.sessionKeyOperation.findActiveForInstallation({
+        organizationId: input.organizationId,
+        ...input.request,
+      });
+      if (operation === undefined) return { operation: null };
+      const now = yield* DateTime.now;
+      return {
+        operation: {
+          operationId: operation.id,
+          status: operation.status,
+          retryRequest:
+            operation.actorId === input.actorId &&
+            operation.status === "awaiting-signature" &&
+            DateTime.toEpochMillis(operation.expiresAt) > DateTime.toEpochMillis(now)
+              ? {
+                  installationId: operation.installationId,
+                  kind: operation.kind,
+                  idempotencyKey: operation.idempotencyKey,
+                  sponsor: operation.data.prepared.sponsorship === "alchemy-bso",
+                }
+              : null,
+        },
+      } satisfies GetActiveSessionKeyOperationResponse;
+    },
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
 
   const getOperation = Effect.fn("application.sessionKey.getOperation")(
     function* (input: {
@@ -96,5 +139,5 @@ export const makeReadSessionKeys = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { get, getOperation, listForOrganization, listForWallet };
+  return { get, getOperation, getActiveOperation, listForOrganization, listForWallet };
 });

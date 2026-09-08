@@ -156,6 +156,10 @@ layer(fixture.layer)("owner approval", (it) => {
         });
         const accepted = yield* client.sessionKey.completeOperation({ payload });
         expect(accepted).toEqual({ operationId: prepared.operationId, status: "signed" });
+        const activeParams = { installationId: installation.id, kind: "install" as const };
+        expect(yield* client.sessionKey.getActiveOperation({ params: activeParams })).toEqual({
+          operation: { operationId: prepared.operationId, status: "signed", retryRequest: null },
+        });
         expect(yield* client.sessionKey.completeOperation({ payload })).toEqual(accepted);
         const keyAfter = (yield* repository.core.wallet.findById(
           wallet.id,
@@ -209,6 +213,9 @@ layer(fixture.layer)("owner approval", (it) => {
         expect(
           (yield* client.sessionKey.get({ params: { sessionKeyId: session.id } })).status,
         ).toBe("active");
+        expect(yield* client.sessionKey.getActiveOperation({ params: activeParams })).toEqual({
+          operation: null,
+        });
         expect(
           (yield* repository.core.sessionKeyOperation.findById({
             id: prepared.operationId,

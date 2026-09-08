@@ -43,6 +43,27 @@ export const GetSessionKeyOperationRequest = Schema.Struct({
   operationId: SessionKeyOperationId,
 }).annotate({ identifier: "GetSessionKeyOperationRequest" });
 
+export const GetActiveSessionKeyOperationRequest = Schema.Struct({
+  installationId: SessionKeyInstallationId,
+  kind: SessionKeyOperationKind,
+}).annotate({ identifier: "GetActiveSessionKeyOperationRequest" });
+
+export const GetActiveSessionKeyOperationResponse = Schema.Struct({
+  operation: Schema.NullOr(
+    Schema.Struct({
+      ...SessionKeyOperationResponse.fields,
+      retryRequest: Schema.NullOr(PrepareSessionKeyOperationRequest),
+    }),
+  ),
+}).annotate({
+  identifier: "GetActiveSessionKeyOperationResponse",
+  description:
+    "Active owner approval for an installation. Only the initiating user can recover its unsigned retry request; signatures and envelopes are never returned.",
+});
+
+export type GetActiveSessionKeyOperationRequest = typeof GetActiveSessionKeyOperationRequest.Type;
+export type GetActiveSessionKeyOperationResponse = typeof GetActiveSessionKeyOperationResponse.Type;
+
 export type PrepareSessionKeyOperationRequest = typeof PrepareSessionKeyOperationRequest.Type;
 export type PrepareSessionKeyOperationResponse = typeof PrepareSessionKeyOperationResponse.Type;
 export type CompleteSessionKeyOperationRequest = typeof CompleteSessionKeyOperationRequest.Type;

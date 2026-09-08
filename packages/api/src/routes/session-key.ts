@@ -22,6 +22,8 @@ import {
   CompleteSessionKeyOperationRequest,
   SessionKeyOperationResponse,
   GetSessionKeyOperationRequest,
+  GetActiveSessionKeyOperationRequest,
+  GetActiveSessionKeyOperationResponse,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -29,6 +31,11 @@ import { Authorization } from "#/middlewares/index";
 
 export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
   .add(
+    HttpApiEndpoint.get("getActiveOperation", "/installations/:installationId/operations/:kind", {
+      params: GetActiveSessionKeyOperationRequest,
+      success: GetActiveSessionKeyOperationResponse,
+      error: [SessionKeyOperationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Recover an active installation or removal approval"),
     HttpApiEndpoint.get("getOperation", "/operations/:operationId", {
       params: GetSessionKeyOperationRequest,
       success: SessionKeyOperationResponse,
