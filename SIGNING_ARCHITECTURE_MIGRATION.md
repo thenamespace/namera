@@ -690,7 +690,11 @@ Namera API
 #### Agent host to local MCP
 
 The local MCP uses Streamable HTTP bound only to loopback. It exposes protected
-resource metadata and `WWW-Authenticate` discovery for Namera's OAuth server.
+resource metadata and `WWW-Authenticate` discovery for its local OAuth broker.
+The broker separately uses Namera's OAuth server for API-scoped credentials;
+local-audience tokens are never passed through to the API. See
+[local MCP authorization](architecture/clients/local-mcp.md) for implementation
+status and the independent PKCE, state and token boundaries.
 Validate Host, Origin, access-token resource/audience, authorization and session
 binding. An arbitrary website or network peer must not be able to invoke the
 unlocked keystore. Do not trust a client merely because the connection is local.

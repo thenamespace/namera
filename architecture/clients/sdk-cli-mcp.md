@@ -83,13 +83,12 @@ not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
 
 ## MCP tools
 
-The CLI-local transport migration has a tested URL/security policy under
-`services/mcp/transport-security.ts`: a literal IPv4 loopback listener, exact
-Host/Origin checks, HTTPS or literal-loopback OAuth callbacks, exact registered
-redirect matching, and RFC 7636 PKCE input shapes. These are policy primitives,
-not a running server: the local OAuth broker and HTTP middleware still need to
-wire them before the hosted transport can be removed. Native MCP clients may
-omit Origin, but must still authenticate; an absent Origin is not authorization.
+The CLI-local transport migration has a tested OAuth broker and upstream HTTP
+adapter, plus URL/Host/Origin/PKCE security policy primitives. See
+[local MCP authorization](local-mcp.md) for the separate audiences, lifetimes,
+replay guarantees and remaining runtime integration. They are not yet a running
+server. Native MCP clients may omit Origin, but must still authenticate; an
+absent Origin is not authorization.
 
 The `/mcp` transport exposes a deliberately compact tool set:
 
