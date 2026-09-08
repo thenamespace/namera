@@ -149,7 +149,31 @@ function NativeSpendLimitPolicySummary({ policy }: { policy: NativeSpendLimitPol
 }
 
 function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValue }) {
-  return <span>{policy.allowedTypes.map((type) => signatureTypeLabels[type]).join(" and ")}</span>;
+  return (
+    <span className="grid gap-2">
+      <span>{policy.allowedTypes.map((type) => signatureTypeLabels[type]).join(" and ")}</span>
+      {policy.allowedTypes.includes("typed-data")
+        ? (policy.typedDataRules?.map((rule, index) => (
+            <span
+              className="bg-surface grid gap-1 rounded-md p-2 text-xs"
+              // Read-only tuples have no IDs and may contain identical rules.
+              // oxlint-disable-next-line react/no-array-index-key
+              key={`${rule.chainId}:${rule.verifyingContract}:${index}`}
+            >
+              <span>
+                {evmChainById.get(rule.chainId)?.name ?? rule.chainId} ·{" "}
+                {rule.primaryTypes.join(", ")}
+              </span>
+              <span className="break-all font-mono">{rule.verifyingContract}</span>
+              <span className="text-muted">
+                {rule.name === undefined ? "Any domain name" : `Name: ${rule.name}`} ·{" "}
+                {rule.version === undefined ? "Any version" : `Version: ${rule.version}`}
+              </span>
+            </span>
+          )) ?? <span className="text-warning text-xs">No typed-data domain restrictions</span>)
+        : null}
+    </span>
+  );
 }
 
 export function EvmPolicySummary({ policy }: { policy: PolicySummaryValue }) {

@@ -41,8 +41,12 @@ is invalid. Message requests are unaffected by typed-data rules.
 
 These are API policies, not onchain EIP-712 validation hooks. A user-controlled
 key can still sign outside Namera, and domain matching does not constrain values
-inside a Permit or other message. Dashboard rule editing and the mainnet beta
-requirement for restricted typed-data consent remain pending.
+inside a Permit or other message. The dashboard editor requires at least one
+rule when typed data is selected and displays all rule tuples in the shared
+summary. Existing unrestricted policies show an explicit warning. Domain matching
+checkboxes distinguish unrestricted fields from exact values, including an empty
+string; editing preserves that distinction. Message types are entered as a comma-separated
+list. Enforcing restricted consent at the API creation boundary remains pending.
 
 ## `evm.native-spend-limit`
 

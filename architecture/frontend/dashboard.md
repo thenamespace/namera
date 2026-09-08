@@ -88,6 +88,13 @@ UIKit `Field` primitives. UIKit selection controls adapt value/change props
 explicitly. Permission-aware route data decides whether a form is interactive;
 read-only forms do not autosave or block navigation.
 
+The signature policy editor requires at least one EIP-712 rule for typed-data
+selection. Each rule includes a network, verifying contract, optional exact
+domain name/version, and comma-separated primary types. Its Effect form schema
+converts these to the public policy contract and rejects duplicate types. Shared
+summaries display each tuple and warn on existing unrestricted policies. API-only
+scope and the absence of message-value limits are disclosed in the editor.
+
 ## Shared UI ownership
 
 - `src/routes/**/-components`: one route or route-group composition.

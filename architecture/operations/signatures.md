@@ -111,8 +111,8 @@ test substitutes; the API, policy engine and persistence are real.
   Migrate remote-MCP authentication separately.
 - Complete end-to-end browser consent/import coverage and consumer conformance.
 - Add namespace-specific signature variants only with another chain adapter.
-- Expose the implemented EIP-712 rule editor and summaries in the dashboard,
-  and require restricted typed-data consent before public production. Optional
+- Verify the EIP-712 rule editor in a browser and require restricted typed-data
+  consent at the API boundary before public production. Optional
   API rules alone do not prevent direct local signing outside Namera.
 - Add per-session-key signature count policies through the existing generic
   reservation model if product delegation limits require them.

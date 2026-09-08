@@ -5,12 +5,25 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { CreateEvmSignaturePolicy } from "@namera-ai/protocol";
-import { CheckboxButtonGroup, Field, FieldGroup, FieldLabel, Typography } from "@namera-ai/ui";
+import {
+  Button,
+  CheckboxButtonGroup,
+  Field,
+  FieldGroup,
+  FieldLabel,
+  Typography,
+} from "@namera-ai/ui";
 import { HugeiconsIcon, Message01Icon, SourceCodeIcon } from "@namera-ai/ui/icons";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { evmPolicyFormIds } from "./data";
+import {
+  SignaturePolicyForm,
+  toSignatureFormInput,
+  type SignatureFormInput,
+} from "./signature-form";
+import { SignatureRuleFields } from "./signature-rule-fields";
 import type { EvmPolicyInput, SignaturePolicyInput } from "./types";
 
 type SignaturePolicyValues = typeof CreateEvmSignaturePolicy.Type;
@@ -52,10 +65,12 @@ export function SignaturePolicyEditor({
   initialValue = emptySignaturePolicy,
   onSave,
 }: SignaturePolicyEditorProps) {
-  const form = useForm<SignaturePolicyInput, unknown, SignaturePolicyValues>({
-    defaultValues: initialValue,
-    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateEvmSignaturePolicy)),
+  const form = useForm<SignatureFormInput, unknown, SignaturePolicyValues>({
+    defaultValues: toSignatureFormInput(initialValue),
+    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(SignaturePolicyForm)),
   });
+  const rules = useFieldArray({ control: form.control, name: "rules" });
+  const allowedTypes = useWatch({ control: form.control, name: "allowedTypes" });
   const submitPolicy = form.handleSubmit((policy) => {
     onSave(Schema.encodeSync(CreateEvmSignaturePolicy)(policy));
   });
@@ -80,7 +95,10 @@ export function SignaturePolicyEditor({
                 name={field.name}
                 value={Array.from(field.value)}
                 onBlur={field.onBlur}
-                onChange={field.onChange}
+                onChange={(value) => {
+                  field.onChange(value);
+                  if (!value.includes("typed-data")) rules.replace([]);
+                }}
               >
                 {signatureOptions.map((option) => (
                   <CheckboxButtonGroup.Item key={option.id} value={option.id}>
@@ -103,6 +121,45 @@ export function SignaturePolicyEditor({
             </Field>
           )}
         />
+        {allowedTypes.includes("typed-data") ? (
+          <>
+            <Typography.Paragraph color="muted" size="xs">
+              Allow only matching networks, contracts and message types. Names and versions are
+              exact when matching is enabled. These API rules do not restrict signing outside Namera
+              or amounts inside a message.
+            </Typography.Paragraph>
+            {rules.fields.map((rule, index) => (
+              <SignatureRuleFields
+                key={rule.id}
+                control={form.control}
+                index={index}
+                onRemove={() => rules.remove(index)}
+              />
+            ))}
+            {form.formState.errors.rules ? (
+              <Typography.Paragraph className="text-danger" role="alert" size="xs">
+                {form.formState.errors.rules.message ?? form.formState.errors.rules.root?.message}
+              </Typography.Paragraph>
+            ) : null}
+            <Button
+              type="button"
+              variant="tertiary"
+              onPress={() =>
+                rules.append({
+                  chainId: "eip155:1",
+                  verifyingContract: "",
+                  name: "",
+                  version: "",
+                  matchName: false,
+                  matchVersion: false,
+                  primaryTypes: "",
+                })
+              }
+            >
+              Add typed-data rule
+            </Button>
+          </>
+        ) : null}
       </FieldGroup>
     </form>
   );
