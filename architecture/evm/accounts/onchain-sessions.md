@@ -82,6 +82,16 @@ and [ModuleManagerInternals](https://github.com/alchemyplatform/modular-account/
 
 ## Verification
 
+`reviewEvmSessionOperation` exposes read-only public-passkey reconstruction and
+the existing permission compiler for browser approval review. Its output contains
+the expected self-call, factory arguments, owner entity and account/chain. The
+caller supplies a trusted chain-aware RPC; a chain mismatch or reconstructed
+address mismatch fails closed. No owner signing callback is supplied. Unit tests
+run real account construction and encoding with substituted RPC reads, including
+signature-consent changes and installation/removal differences. This is not a
+live RPC or completed browser approval test. Public owner metadata and dashboard
+prompt/polling wiring remain pending.
+
 Opt-in tests under `packages/evm/tests/integration/aa` use an explicitly configured local
 Anvil endpoint and verify its client identity before funding ephemeral test
 keys. They execute EntryPoint 0.7 `handleOps` against forked Alchemy contracts.

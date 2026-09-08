@@ -21,6 +21,11 @@ export type {
 } from "./execution/types.js";
 export * from "./layer.js";
 export { resolveEvmSessionSigner } from "./sessions/signer.js";
+export {
+  reviewEvmSessionOperation,
+  type ReviewEvmSessionOperationInput,
+  type ReviewedEvmSessionOperation,
+} from "./sessions/review.js";
 export { makeTestEvmSessionService } from "./sessions/test.js";
 export { makeTestEvmExecutionService } from "./execution/test.js";
 export type {

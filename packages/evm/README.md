@@ -149,6 +149,15 @@ signs or broadcasts. Application owns installation state, approval consumption,
 and billing; callers must load installation data from scoped persistence, not
 accept compiler output or owner calls from an HTTP request.
 
+`reviewEvmSessionOperation` is the client-side read-only approval adapter. Given
+passkey wallet metadata, its public owner key, reviewed authorization and a
+chain-aware public client, it reconstructs the account and uses the same compiler
+as the backend. It returns expected install/uninstall calldata and factory data
+for independent approval validation. It cannot sign or broadcast; it does not
+read runtime secrets. Callers must trust their RPC and retain the reviewed
+configuration instead of taking it from the preparation response. Dashboard
+integration still needs the public owner descriptor and approval UI.
+
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
 uses the prepared block timestamp with an inclusive start and exclusive
