@@ -14,24 +14,60 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { TestEmails, TestServerLayer } from "../../fixtures/layers/index.js";
+import { createTestManagedWallet } from "../../fixtures/managed-wallet.js";
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 
 layer(TestServerLayer)("wallet routes", (it) => {
-  it.effect("creates, lists, and reads Alchemy Modular V2 wallets", () =>
+  it.effect("rejects managed custody in beta without creating resources or billing usage", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("beta-custody@example.com"));
+      const repository = yield* Repository;
+      const billingBefore = yield* client.billing.get();
+      const auditBefore = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      );
+
+      for (const protectionLevel of ["software", "hsm"] as const) {
+        const error = yield* client.wallet
+          .create({
+            payload: {
+              namespace: "eip155",
+              owner: { type: "namera-managed", protectionLevel },
+              metadata: metadata("Unavailable managed account"),
+            },
+          })
+          .pipe(Effect.flip);
+        expect(error).toMatchObject({
+          _tag: "WalletCustodyUnavailableError",
+          code: "MANAGED_WALLETS_DISABLED",
+        });
+      }
+
+      expect(yield* client.wallet.list()).toEqual([]);
+      expect(yield* client.billing.get()).toEqual(billingBefore);
+      expect(
+        yield* repository.audit.organization.findForOrganization(owner.actor.organization.id),
+      ).toEqual(auditBefore);
+    }),
+  );
+
+  it.effect("lists and reads existing managed Alchemy Modular V2 wallets", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("wallet-owner@example.com"));
 
-      const treasury = yield* client.wallet.create({
+      const treasury = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
           metadata: metadata("Treasury"),
         },
       });
-      const operations = yield* client.wallet.create({
+      const operations = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
@@ -141,7 +177,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         },
       });
 
-      const wallet = yield* client.wallet.create({
+      const wallet = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
@@ -169,7 +205,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       yield* signIn(client, testEmail("wallet-permission-owner@example.com"));
       const member = yield* createMember(client, testEmail("wallet-reader@example.com"));
       yield* setAuthToken(member.ownerToken);
-      const wallet = yield* client.wallet.create({
+      const wallet = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
@@ -220,19 +256,17 @@ layer(TestServerLayer)("wallet routes", (it) => {
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("wallet-limit@example.com"));
 
-      const hsmError = yield* client.wallet
-        .create({
-          payload: {
-            namespace: "eip155",
-            owner: { type: "namera-managed", protectionLevel: "hsm" },
-            metadata: metadata("HSM"),
-          },
-        })
-        .pipe(Effect.flip);
+      const hsmError = yield* createTestManagedWallet(client, {
+        payload: {
+          namespace: "eip155",
+          owner: { type: "namera-managed", protectionLevel: "hsm" },
+          metadata: metadata("HSM"),
+        },
+      }).pipe(Effect.flip);
       expect(hsmError).toMatchObject({ _tag: "BillingError", limit: "hsmWallets" });
 
       for (let index = 0; index < 5; index += 1) {
-        yield* client.wallet.create({
+        yield* createTestManagedWallet(client, {
           payload: {
             namespace: "eip155",
             owner: { type: "namera-managed", protectionLevel: "software" },
@@ -240,15 +274,13 @@ layer(TestServerLayer)("wallet routes", (it) => {
           },
         });
       }
-      const softwareError = yield* client.wallet
-        .create({
-          payload: {
-            namespace: "eip155",
-            owner: { type: "namera-managed", protectionLevel: "software" },
-            metadata: metadata("Over limit"),
-          },
-        })
-        .pipe(Effect.flip);
+      const softwareError = yield* createTestManagedWallet(client, {
+        payload: {
+          namespace: "eip155",
+          owner: { type: "namera-managed", protectionLevel: "software" },
+          metadata: metadata("Over limit"),
+        },
+      }).pipe(Effect.flip);
       expect(softwareError).toMatchObject({
         _tag: "BillingError",
         limit: "softwareWallets",
@@ -261,7 +293,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("wallet-update@example.com"));
-      const wallet = yield* client.wallet.create({
+      const wallet = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
@@ -306,7 +338,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       yield* signIn(client, testEmail("wallet-update-owner@example.com"));
       const member = yield* createMember(client, testEmail("wallet-update-member@example.com"));
       yield* setAuthToken(member.ownerToken);
-      const wallet = yield* client.wallet.create({
+      const wallet = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },

@@ -50,13 +50,19 @@ concurrent requests from exceeding plan capacity. EntryPoint version,
 implementation version, entity ID, salt, and P-256 signing policy are
 server-owned constants rather than public input.
 
-`POST /wallets` accepts a discriminated owner:
+The shared owner model is discriminated. The beta HTTP route `POST /wallets`
+permits only `passkey`; authenticated managed requests receive HTTP 403
+`WalletCustodyUnavailableError` / `MANAGED_WALLETS_DISABLED` before any billing,
+provider, or persistence work. The dashboard offers only passkey creation.
+Managed construction remains internal for future use and is not a beta feature.
+
+Owner variants:
 
 - `passkey` includes the one-time verification ID and browser registration
   response. The server verifies user presence, user verification, challenge,
   origin, RP ID, and ES256 before storing only the credential identifier and
   public key.
-- `namera-managed` includes `software` or `hsm` protection. The configured
+- Internally, `namera-managed` includes `software` or `hsm` protection. The configured
   `WalletKeys` provider creates the private key; only its opaque locator and
   public key are persisted.
 
@@ -123,8 +129,8 @@ responses increment the bounded verification attempt counter.
 Owner authentication verification and atomic counter advancement are implemented
 as separate capabilities. The passkey service verifies the assertion against a
 stored credential and exact challenge; the signing-key repository advances its
-counter with a compare-and-set update. The forthcoming owner-approval workflow
-must consume its challenge and advance that counter in one transaction. Synced
+counter with a compare-and-set update. The owner-approval workflow
+consumes its challenge and advances that counter in one transaction. Synced
 credentials may keep counter zero, so counter checks do not replace one-time
 approval consumption.
 
@@ -132,12 +138,9 @@ approval consumption.
 
 - Add compensation/reconciliation for an external provider key created before a
   failed account-construction or persistence boundary.
-- The passkey service now generates and verifies owner authentication challenges
-  with credential, origin/RP, presence/verification and counter checks. Its real
-  signature tests pass, but installation/revocation routes are not yet wired.
-- Add passkey root signing ceremonies for installing and revoking mandatory
-  onchain session keys; local root keys intentionally cannot use the current
-  server-signing path.
+- Verify the complete browser/live-chain installation and removal journey;
+  owner approval routes and dashboard ceremonies are wired, with HTTP and
+  separate Anvil contract coverage. See [session keys](session-keys.md).
 - Add a standalone, transactional account naming workflow before assigning ENS
   names to wallets.
 - Define freeze/archive semantics before adding those lifecycle operations.

@@ -13,6 +13,7 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { createTestManagedWallet } from "../../fixtures/managed-wallet.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const fixture = makeOwnerSessionTestFixture();
@@ -49,7 +50,7 @@ layer(fixture.layer)("wallet passkey owner read", (it) => {
         algorithm: "p256",
       });
 
-      const managed = yield* client.wallet.create({
+      const managed = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },

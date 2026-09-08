@@ -83,7 +83,7 @@ Wallet list, detail, and creation atoms/hooks are available under
 family and refresh when the active organization changes. `/accounts` prefetches
 the active organization's wallets and presents them through a sortable,
 filterable, non-resizable DataGrid with configurable visible columns. `/accounts/new`
-creates a software-protected EVM smart account using the shared wallet DTO while
+creates a user-owned passkey EVM smart account using the shared wallet DTO while
 presenting wallet terminology as "account" in the UI. The route and the Accounts
 header action derive visibility from `wallet:create`; the server remains the
 authoritative permission boundary. EVM address displays resolve mainnet ENS names

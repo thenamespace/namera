@@ -4,8 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import type { CreateWalletRequest } from "@namera-ai/protocol/dto";
-import { WalletKeyProtectionLevel, WalletMetadata } from "@namera-ai/protocol/model";
+import { WalletMetadata } from "@namera-ai/protocol/model";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Button,
@@ -15,8 +14,6 @@ import {
   FieldLabel,
   IconPicker,
   Input,
-  ListBox,
-  Select,
   TextArea,
   Typography,
   cn,
@@ -36,34 +33,13 @@ import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "💳" };
-const ownerOptions = [
-  {
-    id: "passkey",
-    name: "User-owned passkey",
-    description: "You approve ownership with this device. Namera never holds the owner key.",
-  },
-  {
-    id: "namera-managed",
-    name: "Namera managed",
-    description: "Namera secures the owner key and signs approved operations for you.",
-  },
-] as const;
-const protectionOptions = [
-  { id: "software", name: "Software" },
-  { id: "hsm", name: "HSM" },
-] as const;
-
 const CreateAccountFormValues = Schema.Struct({
-  ownerType: Schema.Literals(["passkey", "namera-managed"]),
-  protectionLevel: WalletKeyProtectionLevel,
   metadata: WalletMetadata,
 });
 type CreateAccountFormValues = typeof CreateAccountFormValues.Type;
 type CreateAccountFormValuesEncoded = typeof CreateAccountFormValues.Encoded;
 
 const defaultValues: CreateAccountFormValuesEncoded = {
-  ownerType: "passkey",
-  protectionLevel: "software",
   metadata: {
     version: 1,
     name: "",
@@ -98,47 +74,37 @@ export function CreateAccountForm() {
     defaultValues,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateAccountFormValues)),
   });
-  const ownerType = form.watch("ownerType");
-  const handleSubmit = form.handleSubmit((values) => {
-    void (async () => {
-      let owner: CreateWalletRequest["owner"];
-      if (values.ownerType === "passkey") {
-        const ceremony = await registrationOptions.mutateAsync().catch(() => undefined);
-        if (ceremony === undefined) return;
-        const response = await startRegistration({
-          optionsJSON: ceremony.options as Parameters<typeof startRegistration>[0]["optionsJSON"],
-        }).catch((error: unknown) => {
-          showErrorToast(error, {
-            title: "Passkey setup was not completed",
-            description: "No account was created. You can try again when ready.",
-          });
-          return undefined;
-        });
-        if (response === undefined) return;
-        owner = {
-          type: "passkey",
-          verificationId: ceremony.verificationId,
-          response,
-        };
-      } else {
-        owner = {
-          type: "namera-managed",
-          protectionLevel: values.protectionLevel,
-        };
-      }
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const ceremony = await registrationOptions.mutateAsync().catch(() => undefined);
+    if (ceremony === undefined) return;
+    const response = await startRegistration({
+      optionsJSON: ceremony.options as Parameters<typeof startRegistration>[0]["optionsJSON"],
+    }).catch((error: unknown) => {
+      showErrorToast(error, {
+        title: "Passkey setup was not completed",
+        description: "No account was created. You can try again when ready.",
+      });
+      return undefined;
+    });
+    if (response === undefined) return;
+    const owner = {
+      type: "passkey" as const,
+      verificationId: ceremony.verificationId,
+      response,
+    };
 
-      await createWallet
-        .mutateAsync({
-          payload: {
-            namespace: "eip155",
-            owner,
-            metadata: values.metadata,
-          },
-        })
-        .catch(() => undefined);
-    })();
+    await createWallet
+      .mutateAsync({
+        payload: {
+          namespace: "eip155",
+          owner,
+          metadata: values.metadata,
+        },
+      })
+      .catch(() => undefined);
   });
-  const isPending = registrationOptions.isPending || createWallet.isPending;
+  const isPending =
+    form.formState.isSubmitting || registrationOptions.isPending || createWallet.isPending;
 
   return (
     <form id="create-account-form" noValidate onSubmit={handleSubmit}>
@@ -216,81 +182,15 @@ export function CreateAccountForm() {
               )}
             />
 
-            <Controller
-              control={form.control}
-              name="ownerType"
-              render={({ field, fieldState }) => (
-                <DashboardCardRow className="sm:items-start">
-                  <Field className="contents" data-invalid={fieldState.invalid}>
-                    <div className="grid min-w-0 gap-1">
-                      <FieldLabel id="create-account-owner-label">Ownership</FieldLabel>
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </div>
-                    <Select
-                      aria-labelledby="create-account-owner-label"
-                      fullWidth
-                      isInvalid={fieldState.invalid}
-                      selectedKey={field.value}
-                      variant="secondary"
-                      onSelectionChange={field.onChange}
-                    >
-                      <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                        <Select.Value />
-                        <Select.Indicator />
-                      </Select.Trigger>
-                      <Select.Popover>
-                        <ListBox items={ownerOptions}>
-                          {(option) => (
-                            <ListBox.Item id={option.id} textValue={option.name}>
-                              <div className="grid min-w-0 gap-0.5">
-                                <span>{option.name}</span>
-                                <span className="text-xs text-muted">{option.description}</span>
-                              </div>
-                            </ListBox.Item>
-                          )}
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
-                  </Field>
-                </DashboardCardRow>
-              )}
-            />
-
-            {ownerType === "namera-managed" ? (
-              <Controller
-                control={form.control}
-                name="protectionLevel"
-                render={({ field, fieldState }) => (
-                  <DashboardCardRow>
-                    <Field className="contents" data-invalid={fieldState.invalid}>
-                      <FieldLabel id="create-account-protection-label">Key protection</FieldLabel>
-                      <Select
-                        aria-labelledby="create-account-protection-label"
-                        fullWidth
-                        isInvalid={fieldState.invalid}
-                        selectedKey={field.value}
-                        variant="secondary"
-                        onSelectionChange={field.onChange}
-                      >
-                        <Select.Trigger onBlur={field.onBlur} ref={field.ref}>
-                          <Select.Value />
-                          <Select.Indicator />
-                        </Select.Trigger>
-                        <Select.Popover>
-                          <ListBox items={protectionOptions}>
-                            {(option) => (
-                              <ListBox.Item id={option.id} textValue={option.name}>
-                                {option.name}
-                              </ListBox.Item>
-                            )}
-                          </ListBox>
-                        </Select.Popover>
-                      </Select>
-                    </Field>
-                  </DashboardCardRow>
-                )}
-              />
-            ) : null}
+            <DashboardCardRow>
+              <Typography.Paragraph size="sm">Ownership</Typography.Paragraph>
+              <div>
+                <Typography.Paragraph size="sm">User-owned passkey</Typography.Paragraph>
+                <Typography.Paragraph size="xs" color="muted">
+                  Namera never holds your owner key. Keep a backup of your passkey.
+                </Typography.Paragraph>
+              </div>
+            </DashboardCardRow>
 
             <DashboardCardRow>
               <Typography className="text-sm!">Namespace</Typography>
@@ -328,11 +228,7 @@ export function CreateAccountForm() {
         isDisabled={isPending}
         type="submit"
       >
-        {isPending
-          ? ownerType === "passkey"
-            ? "Waiting for passkey…"
-            : "Creating…"
-          : "Create account"}
+        {isPending ? "Waiting for passkey…" : "Create account"}
       </Button>
     </form>
   );

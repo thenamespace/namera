@@ -3,6 +3,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
+import { WalletCustodyUnavailableError } from "@namera-ai/protocol";
 
 import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
 
@@ -34,6 +35,10 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["wallet:create"] },
           });
+          // Managed providers remain available internally for future products,
+          // but the beta never creates a server-controlled owner key.
+          if (payload.owner.type !== "passkey")
+            return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
           return toWalletResponse(
             yield* app.wallet.create({
               organizationId: data.organization.id,

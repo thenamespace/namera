@@ -6,6 +6,7 @@ import {
   PasskeyRegistrationError,
   PasskeyVerificationError,
   WalletCreationError,
+  WalletCustodyUnavailableError,
   WalletNotFoundError,
 } from "@namera-ai/protocol";
 import {
@@ -34,8 +35,17 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
     HttpApiEndpoint.post("create", "/", {
       payload: CreateWalletRequest,
       success: CreateWalletResponse.pipe(HttpApiSchema.status("Created")),
-      error: [WalletCreationError, PasskeyVerificationError, ...BillingErrors, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Create a wallet"),
+      error: [
+        WalletCreationError,
+        WalletCustodyUnavailableError,
+        PasskeyVerificationError,
+        ...BillingErrors,
+        ...CommonErrors,
+      ],
+    }).annotate(
+      OpenApi.Summary,
+      "Create a passkey-owned wallet (managed custody is disabled in beta)",
+    ),
     HttpApiEndpoint.get("list", "/", {
       success: ListWalletsResponse,
       error: CommonErrors,

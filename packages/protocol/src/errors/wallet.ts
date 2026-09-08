@@ -1,5 +1,11 @@
 import { Schema } from "effect";
 
+export class WalletCustodyUnavailableError extends Schema.TaggedError<WalletCustodyUnavailableError>()(
+  "WalletCustodyUnavailableError",
+  { code: Schema.Literal("MANAGED_WALLETS_DISABLED") },
+  { httpApiStatus: 403 },
+) {}
+
 export class EvmAccountCreationError extends Schema.TaggedError<EvmAccountCreationError>()(
   "EvmAccountCreationError",
   {
@@ -90,6 +96,7 @@ export class PortfolioUnavailableError extends Schema.TaggedError<PortfolioUnava
 ) {}
 
 export const WalletErrors = [
+  WalletCustodyUnavailableError,
   WalletCreationError,
   PasskeyRegistrationError,
   PasskeyVerificationError,

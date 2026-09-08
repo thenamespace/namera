@@ -93,6 +93,11 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     title: "Account not found",
     description: "It may have been removed or belongs to another workspace.",
   },
+  "WalletCustodyUnavailableError:MANAGED_WALLETS_DISABLED": {
+    title: "Passkey ownership required",
+    description:
+      "Managed accounts are not available during beta. Create a user-owned passkey account.",
+  },
   "SessionKeyError:SESSION_KEY_NOT_FOUND": {
     title: "Session key not found",
     description: "It may have been revoked or belongs to another workspace.",

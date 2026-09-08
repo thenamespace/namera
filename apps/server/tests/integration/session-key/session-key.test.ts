@@ -17,6 +17,7 @@ import {
 } from "../../fixtures/index.js";
 import { TestEmails } from "../../fixtures/layers/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { createTestManagedWallet } from "../../fixtures/managed-wallet.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const fixture = makeOwnerSessionTestFixture();
@@ -275,7 +276,7 @@ layer(fixture.layer)("session-key routes", (it) => {
       yield* signIn(client, testEmail("session-key-api-reader@example.com"));
       const expiresAt = DateTime.addDuration(yield* DateTime.now, Duration.days(1));
       const grantedWallet = yield* createTestPasskeyWallet(client, "Granted wallet");
-      const hiddenWallet = yield* client.wallet.create({
+      const hiddenWallet = yield* createTestManagedWallet(client, {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },

@@ -89,8 +89,10 @@ requests-per-minute actor rate limit.
 ceremony for a user with `wallet:create`. It returns ES256-only, resident-key,
 user-verification-required options and replaces that user's older pending
 ceremony in the active organization. `POST /wallets` completes that ceremony
-when its discriminated owner is `passkey`, or creates a provider-backed key when
-the owner is `namera-managed`. The passkey ceremony is consumed in the same
+when its discriminated owner is `passkey`. Beta requests with a `namera-managed`
+owner return 403 `MANAGED_WALLETS_DISABLED` before provider or billing work.
+Managed creation remains an internal application capability for future use.
+The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
 

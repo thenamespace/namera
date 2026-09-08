@@ -16,6 +16,11 @@ layers. Tests do not mock each application function independently.
 Application behavior exercised through the server boundary is not duplicated in
 a second application-only suite.
 
+Managed-wallet compatibility fixtures invoke the internal application directly:
+the beta HTTP create route rejects managed custody. A dedicated route regression
+covers that rejection without changing wallet, billing, or audit state; passkey
+creation tests continue to use the public ceremony and create routes.
+
 Organize suites by boundary within their owning package: `tests/unit/` for pure
 domain rules, `tests/integration/` for real service/persistence/HTTP boundaries,
 and `tests/e2e/` for packaged or browser journeys. Keep feature folders within
