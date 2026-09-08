@@ -14,6 +14,12 @@ import type { ExecutionClients } from "../clients/execution.js";
 import type { SubmitEvmExecutionInput } from "./types.js";
 import { toViemUserOperation } from "./user-operation.js";
 
+// ERC-7769 validation failures prove rejection of this request. Internal/server
+// errors do not prove whether the provider accepted it before responding.
+const rejectionCodes = new Set([
+  -32602, -32500, -32501, -32502, -32503, -32504, -32505, -32507, -32508,
+]);
+
 export const makeSubmitEvmExecution = (getClients: (chain: ChainData) => ExecutionClients) =>
   Effect.fn("evm.execution.submit")(function* (input: SubmitEvmExecutionInput) {
     const chain = getChainDataByCaip2(input.signed.chainId);
@@ -48,10 +54,14 @@ export const makeSubmitEvmExecution = (getClients: (chain: ChainData) => Executi
           }),
       catch: (cause) => {
         const rpcError =
-          cause instanceof BaseError &&
-          cause.walk((error) => error instanceof RpcRequestError) !== null;
+          cause instanceof BaseError
+            ? cause.walk((error) => error instanceof RpcRequestError)
+            : null;
         return new EvmExecutionError({
-          code: rpcError ? "SUBMISSION_REJECTED" : "SUBMISSION_UNKNOWN",
+          code:
+            rpcError instanceof RpcRequestError && rejectionCodes.has(rpcError.code)
+              ? "SUBMISSION_REJECTED"
+              : "SUBMISSION_UNKNOWN",
           cause,
         });
       },

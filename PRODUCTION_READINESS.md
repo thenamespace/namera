@@ -156,6 +156,11 @@ build/typecheck tasks, not just test suites.
       incomplete asset discovery still needs separate validation above.
 - [ ] Give submitted executions a bounded reconciliation lifetime and an
       explicit terminal state when the provider outcome remains unknown.
+      Ambiguous RPC/server errors and mismatched bundler response hashes now
+      preserve reservations. Adapter coverage uses Viem's HTTP error wrapping;
+      the HTTP lifecycle regression verifies delayed hash visibility followed
+      by exactly-once receipt settlement. This does not close the bounded
+      unknown-outcome handling item.
 - [ ] Ensure an interrupted execution can settle or release billing and policy
       reservations without double settlement.
 - [x] Verify eight competing execution workers claim and settle two queued

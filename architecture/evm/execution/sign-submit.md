@@ -95,20 +95,26 @@ Rundler transport. Neither path calls an EIP-7677 paymaster. Rundler
 
 ## Error classification
 
-| Error                      | Meaning                                                     | Reservation behavior                               |
-| -------------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
-| `SUBMISSION_REJECTED`      | Provider returned a recognized RPC rejection; not accepted. | Application may release/fail after status logic.   |
-| `SUBMISSION_UNKNOWN`       | Transport/provider failure leaves acceptance ambiguous.     | Keep reservation; mark submitted and reconcile.    |
-| `SUBMISSION_HASH_MISMATCH` | Stored/signed/bundler hash integrity violation.             | Definitive failure; release after lifecycle guard. |
+| Error                      | Meaning                                                              | Reservation behavior                                               |
+| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `SUBMISSION_REJECTED`      | Provider returned an ERC-7769 validation rejection for this request. | Application may release/fail after status logic.                   |
+| `SUBMISSION_UNKNOWN`       | Transport/provider failure leaves acceptance ambiguous.              | Keep reservations and reconcile the canonical hash.                |
+| `SUBMISSION_HASH_MISMATCH` | Stored/signed/bundler hash integrity violation.                      | Keep reservations; a response mismatch can occur after acceptance. |
 
 This classification is critical. Treating a timeout as rejection can double-spend a periodic budget if the bundler actually accepted the operation.
+
+Only the validation codes documented by [ERC-7769](https://eips.ethereum.org/EIPS/eip-7769#eth_senduseroperation)
+are classified as rejection: `-32602`, `-32500` through `-32505`, `-32507`, and
+`-32508`. Internal RPC errors, unknown server codes and rate-limit responses stay
+ambiguous. Adapter tests exercise these codes through Viem's actual error wrapping
+with a substituted transport; they do not call a live provider.
 
 ## Durable transition order
 
 1. Persist signed execution and mark submission prepared.
 2. Call external bundler.
-3. For success or ambiguous failure, transactionally mark submission/reservations submitted and write `execution.submitted` audit.
-4. For definitive failure, transactionally release reservations and write `execution.failed`.
+3. On success or observed provider acceptance, mark submitted and write `execution.submitted` audit transactionally. An ambiguous response with no observed acceptance retains the prepared row and schedules recovery.
+4. For definitive rejection confirmed by the lifecycle's status checks, release reservations and write `execution.failed` transactionally.
 
 The signed execution is persisted before submission so reconciliation can safely retry or query status after process failure.
 
