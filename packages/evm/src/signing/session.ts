@@ -21,7 +21,7 @@ export const makeEvmSessionSignatureService = (
 ): EvmSessionSignatureService => {
   const resolve = Effect.fn("evm.signature.resolveSession")(function* (input: SignEvmSessionInput) {
     const chain = getChainDataByCaip2(input.chainId);
-    if (chain === undefined)
+    if (chain === undefined || !chain.operationsEnabled)
       return yield* new UnsupportedChainError({ namespace: "eip155", chainId: input.chainId });
 
     if (

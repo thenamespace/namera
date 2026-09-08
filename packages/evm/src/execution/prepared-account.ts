@@ -14,7 +14,7 @@ export const makeReconstructPreparedAccount = (
 ) =>
   Effect.fn("evm.execution.reconstructPreparedAccount")(function* (input: SignEvmExecutionInput) {
     const chain = getChainDataByCaip2(input.prepared.chainId);
-    if (chain === undefined) {
+    if (chain === undefined || !chain.operationsEnabled) {
       return yield* new UnsupportedChainError({
         namespace: "eip155",
         chainId: input.prepared.chainId,

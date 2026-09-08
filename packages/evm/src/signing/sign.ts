@@ -17,7 +17,7 @@ export const makeEvmSignatureService = (
   digest: digestEvmSignature,
   sign: Effect.fn("evm.signature.sign")(function* (input) {
     const chain = getChainDataByCaip2(input.chainId);
-    if (chain === undefined) {
+    if (chain === undefined || !chain.operationsEnabled) {
       return yield* new UnsupportedChainError({
         namespace: "eip155",
         chainId: input.chainId,

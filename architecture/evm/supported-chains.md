@@ -50,6 +50,26 @@ Registry construction derives a protocol-validated `SupportedEvmChainId` from
 ID. Unknown inputs return `undefined`; adapter operations convert that absence
 to `UnsupportedChainError` before making a provider call.
 
+### Operational pause
+
+Each registry row has a code-owned `operationsEnabled` flag (currently true for
+all eight networks). Set it to false and rebuild/restart the server to pause new
+execution/simulation preparation, session compilation, owner/session execution
+signature acceptance, and message/typed-data signing. These adapter boundaries
+return `UnsupportedChainError` before acquiring provider clients or signers.
+Session install and uninstall preparations use the same execution guard; a pause
+therefore also pauses new owner-approved uninstall operations. Immediate API
+grant revocation is independent of the network and remains available.
+
+Do not remove a paused chain from protocol schemas or metadata. Already signed
+durable submissions still submit/reconcile their immutable envelopes, and status,
+receipts, verification, portfolio, and historical chain displays remain available.
+This is an admission pause, not cancellation of previously authorized operations
+or an onchain circuit breaker. Unit tests replace the registry lookup with a
+paused row and verify the six preparation/signature boundaries fail before
+provider/signer access. Dashboard disabled-option presentation and HTTP error UX
+still need integration before closing the end-to-end availability gate.
+
 ## Per-chain clients
 
 `makeExecutionClients` lazily caches one client bundle by numeric chain ID:

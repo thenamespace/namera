@@ -159,6 +159,9 @@ build/typecheck tasks, not just test suites.
 - [ ] Add a code-owned enable/disable state for each of the eight beta networks
       and reject disabled chains consistently across API, SDK-backed flows, CLI,
       MCP, and dashboard data.
+      EVM registry flags and preparation/signing guards are implemented; all
+      eight remain enabled. Already signed operation recovery and reads stay
+      available. Dashboard selection and HTTP error presentation remain open.
 
 ### Billing and data reads
 

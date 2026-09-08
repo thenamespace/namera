@@ -55,6 +55,10 @@ All entries preserve the `namera-source` development condition and built ESM exp
 
 1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain
    IDs or provider slugs through operations.
+   Each row's `operationsEnabled` flag pauses new preparation/signing while
+   retaining chain identity and recovery for previously accepted operations.
+   See the [pause semantics](../../architecture/evm/supported-chains.md#operational-pause)
+   before changing it; it does not cancel already signed submissions.
    Add its stable network key, presentation name, and CAIP-2 literal to the
    protocol chain schemas in the same change.
 2. Keep Viem client factories as plain internal helpers. Create clients inside

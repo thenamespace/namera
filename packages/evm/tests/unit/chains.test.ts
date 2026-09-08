@@ -22,4 +22,5 @@ it("exposes only the eight launch networks", () => {
       data.chain.testnet ?? false,
     ]),
   ).toEqual(launchChains);
+  expect(Object.values(chains).every(({ operationsEnabled }) => operationsEnabled)).toBe(true);
 });

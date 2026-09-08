@@ -36,12 +36,15 @@ export interface ChainData {
   readonly namespace: "eip155";
   readonly alchemyChain: AlchemyChain;
   readonly environment: "mainnet" | "testnet";
+  /** Pause new preparations/signatures without removing historical chain identity. */
+  readonly operationsEnabled: boolean;
 }
 
 const chainData = <const TChain extends Chain, const TAlchemyChain extends AlchemyChain>(
   chain: TChain,
   name: EvmChainName,
   alchemyChain: TAlchemyChain,
+  operationsEnabled: boolean,
 ): ChainData => ({
   chain,
   chainId: Schema.decodeUnknownSync(SupportedEvmChainId)(`eip155:${chain.id}`),
@@ -49,17 +52,18 @@ const chainData = <const TChain extends Chain, const TAlchemyChain extends Alche
   namespace: "eip155",
   alchemyChain,
   environment: chain.testnet === true ? "testnet" : "mainnet",
+  operationsEnabled,
 });
 
 export const chains: Readonly<Record<SupportedEvmChain, ChainData>> = {
-  "arbitrum-mainnet": chainData(arbitrum, "arbitrum", "arb-mainnet"),
-  "arbitrum-sepolia": chainData(arbitrumSepolia, "arbitrum", "arb-sepolia"),
-  "base-mainnet": chainData(base, "base", "base-mainnet"),
-  "base-sepolia": chainData(baseSepolia, "base", "base-sepolia"),
-  "ethereum-mainnet": chainData(mainnet, "ethereum", "eth-mainnet"),
-  "ethereum-sepolia": chainData(sepolia, "ethereum", "eth-sepolia"),
-  "optimism-mainnet": chainData(optimism, "optimism", "opt-mainnet"),
-  "optimism-sepolia": chainData(optimismSepolia, "optimism", "opt-sepolia"),
+  "arbitrum-mainnet": chainData(arbitrum, "arbitrum", "arb-mainnet", true),
+  "arbitrum-sepolia": chainData(arbitrumSepolia, "arbitrum", "arb-sepolia", true),
+  "base-mainnet": chainData(base, "base", "base-mainnet", true),
+  "base-sepolia": chainData(baseSepolia, "base", "base-sepolia", true),
+  "ethereum-mainnet": chainData(mainnet, "ethereum", "eth-mainnet", true),
+  "ethereum-sepolia": chainData(sepolia, "ethereum", "eth-sepolia", true),
+  "optimism-mainnet": chainData(optimism, "optimism", "opt-mainnet", true),
+  "optimism-sepolia": chainData(optimismSepolia, "optimism", "opt-sepolia", true),
 };
 
 export type SupportedChainId = SupportedEvmChainId;
