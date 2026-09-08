@@ -118,6 +118,18 @@ sidebar group are removed. Direct navigation uses the shared not-found boundary.
 
 ## Browser telemetry
 
+Dashboard document security is owned by `tooling/document-security.ts`, not the
+API middleware. Production HTML includes a CSP fallback and no-referrer metadata;
+builds emit an `_headers` file containing CSP framing denial, nosniff, frame
+denial, no-referrer and a Permissions-Policy permitting first-party WebAuthn but
+disabling camera, microphone, geolocation and payment. Hosts without `_headers`
+support must apply those values themselves. Vite preview applies the full policy;
+development omits CSP to allow HMR. Scripts must be same-origin; API/RPC/telemetry
+connections may only use self and the configured API origin. Inline styles remain
+necessary for the shared UI. External token/avatar images are HTTPS-only.
+The document meta fallback cannot enforce `frame-ancestors` or browser permissions.
+Actual hosted-header and critical-browser-journey verification remain required.
+
 The Vite resolver preserves its default client conditions alongside
 `namera-source`. Replacing those defaults can select Node transports from
 browser-compatible dependencies. Dashboard chain data and owner review use

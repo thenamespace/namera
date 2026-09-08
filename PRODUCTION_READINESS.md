@@ -76,6 +76,9 @@ build/typecheck tasks, not just test suites.
       provide their own byte bounds.
 - [ ] Add the browser security headers that are independent of deployment:
       content type, framing, referrer, permissions, and content security policy.
+      Dashboard build/preview now owns the policy and emits `_headers`, with a
+      meta CSP fallback. Verify all critical browser journeys under this policy
+      and confirm the actual static host applies its HTTP headers before closing.
 
 ### Authentication and delegated access
 

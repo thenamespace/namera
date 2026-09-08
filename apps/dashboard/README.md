@@ -390,6 +390,22 @@ read-only presentation.
 
 ## Environment
 
+### Document security
+
+`tooling/document-security.ts` owns the dashboard CSP and browser permissions.
+Production HTML carries a meta CSP restricting scripts to this origin and
+connections to this origin plus `VITE_API_URL`'s origin. Inline styles remain
+allowed for UIKit, charts and Motion; inline scripts and eval are not allowed.
+Images may use HTTPS, data and blob URLs. Passkey creation/authentication is
+limited to this origin by Permissions-Policy.
+
+Builds emit `dist/_headers` for static hosts supporting that format. Other hosts
+must apply its values to dashboard responses explicitly. Vite preview sends
+these headers for local production verification; development sends the same
+non-CSP headers but omits CSP for HMR. A meta policy alone cannot enforce framing
+or Permissions-Policy. Do not mark the hosting boundary verified until response
+headers have been checked on the actual dashboard origin.
+
 | Variable                         | Required | Description                          |
 | -------------------------------- | -------- | ------------------------------------ |
 | `VITE_API_URL`                   | Yes      | Namera API and telemetry proxy base. |
