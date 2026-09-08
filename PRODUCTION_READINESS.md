@@ -70,7 +70,9 @@ build/typecheck tasks, not just test suites.
       This does not close OAuth actor coverage or the remaining route matrix.
       MCP OAuth now additionally covers ten read routes after execute-only scope
       narrowing, read-only completion denial and immediate session-grant
-      revocation. CLI-specific scopes and the complete route matrix remain open.
+      revocation. CLI device-token refresh narrowing to wallet:read now rejects
+      eight out-of-scope operations; session-grant and authorization revocation
+      take effect immediately. The exhaustive route matrix remains open.
       Existing browser sessions now have downgrade/removal coverage across five
       management operations and seven reads, including absence of mutation audit
       effects after permission denial. In-flight changes and dashboard cache

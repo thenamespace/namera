@@ -80,6 +80,12 @@ approval against denial. Exactly one decision succeeds; the persisted state,
 authorization/grants, approval audit and device-token exchange agree with that
 decision. This test passes on PostgreSQL and PGlite.
 
+The CLI authority HTTP regression exchanges an approved device grant, narrows
+its refresh token to `wallet:read`, and verifies eight protected operations
+reject that token. Revoking its session-key grant immediately hides the wallet;
+revoking the CLI authorization invalidates the bearer token. Browser cookies are
+cleared for delegated requests so this exercises CLI rather than user authority.
+
 ## Pending before production
 
 - Add operator visibility for abandoned/slow-down-heavy device requests without exposing user codes.
