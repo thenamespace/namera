@@ -144,7 +144,13 @@ usage and no remaining holds. A separate PostgreSQL regression abandons a claime
 prepared or submitted row, advances to lease expiry, and verifies replacement
 claiming, rejection of stale terminal/release writes, and one final confirmation
 with correct billing. This simulates loss of the worker at the durable claim
-boundary; it does not inject a process crash during provider submission.
+boundary. A separate regression interrupts the actual reconciliation fiber just
+after the provider substitute accepts submission, before the submitted-state
+write. This passes against both migrated PGlite and PostgreSQL. The signed
+envelope and active billing holds survive, another worker
+cannot claim before lease expiry, and takeover confirms once with one submitted
+audit, one confirmation audit, and exactly one execution/gas settlement. This
+injects Effect interruption, not an OS process kill or live bundler crash.
 
 ## Simulation
 

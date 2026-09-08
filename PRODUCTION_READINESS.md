@@ -152,8 +152,10 @@ build/typecheck tasks, not just test suites.
       expected policy/billing totals and no remaining reservations. This covers
       competing live workers, not crashes or expired-lease takeover.
 - [x] Verify abandoned prepared/submitted lease takeover on PostgreSQL, including
-      stale-write rejection and one final billed confirmation. Actual provider
-      submission interrupted before persistence still needs separate coverage.
+      stale-write rejection and one final billed confirmation. A separate test
+      interrupts reconciliation after the provider substitute accepts submission
+      but before persistence, then verifies lease recovery and one billed
+      confirmation. Live provider/process termination remains unverified.
 - [ ] Add a code-owned enable/disable state for each of the eight beta networks
       and reject disabled chains consistently across API, SDK-backed flows, CLI,
       MCP, and dashboard data.
