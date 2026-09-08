@@ -33,7 +33,12 @@ type SessionKeyDetailsCardProps = {
 };
 
 export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCardProps) {
-  const activeWallets = wallets.filter((wallet) => wallet.status === "active");
+  const activeWallets = wallets.filter(
+    (wallet) =>
+      wallet.status === "active" &&
+      wallet.owner.custody === "local" &&
+      wallet.owner.algorithm === "p256",
+  );
 
   return (
     <DashboardCardRoot>
@@ -142,7 +147,7 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                           ) : (
                             <span className="text-muted">
                               {activeWallets.length === 0
-                                ? "No active accounts"
+                                ? "No active passkey accounts"
                                 : "Select an account"}
                             </span>
                           )}

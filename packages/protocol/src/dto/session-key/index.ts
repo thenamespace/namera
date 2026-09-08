@@ -54,7 +54,9 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
     allowSignatures: EvmSessionAuthorization.fields.allowSignatures,
   }).check(
     Schema.makeFilter((value) =>
-      value.validUntil > value.validAfter ? undefined : "Session expiry must follow its start time",
+      value.validUntil > value.validAfter
+        ? undefined
+        : { path: ["validUntil"], issue: "Session expiry must follow its start time" },
     ),
   ),
   policies: Schema.Array(CreateEvmSessionKeyPolicy),

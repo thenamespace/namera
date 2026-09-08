@@ -167,8 +167,13 @@ Root access requires a field-specific acknowledgement; API restrictions are
 explicitly described as unable to constrain direct onchain use. The editor was
 checked in an isolated browser harness for root consent and exact native amounts;
 the harness was removed afterward. Dashboard unit regressions exercise the actual
-form resolver for consent errors and exact integer amounts. Full account creation, lifetime/network
-selection, owner approval and encrypted export are not yet connected.
+form resolver for consent errors and exact integer amounts. Network selection,
+minute-precision local-time lifetime controls, and explicit signature consent are
+also present. Signature consent defaults off and explains that execution expiry
+does not remove ERC-1271 authority. The account picker only offers active local
+P-256 owners. Lifetime ordering failures attach to the expiry field; the server
+still checks that the expiry has not passed when registering.
+Browser key generation, owner approval and encrypted export are not yet connected.
 
 ## Pending
 

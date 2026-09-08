@@ -13,6 +13,7 @@ import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
 import { OnchainPermissions } from "./onchain-permissions";
+import { OnchainSettings } from "./onchain-settings";
 import { PolicySection } from "./policies";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
@@ -26,6 +27,13 @@ const defaultValues = {
     description: "",
   },
   policies: [],
+  onchain: {
+    chains: [],
+    validAfter: 0,
+    validUntil: 0,
+    permissions: [],
+    allowSignatures: false,
+  },
 } satisfies DefaultValues<CreateSessionKeyFormInput>;
 
 type CreateSessionKeyFormProps = {
@@ -60,6 +68,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>
       <div className="grid gap-8">
         <SessionKeyDetailsCard control={form.control} wallets={wallets} />
+        <OnchainSettings form={form} />
         <OnchainPermissions form={form} />
         <PolicySection form={form} wallets={wallets} />
       </div>
