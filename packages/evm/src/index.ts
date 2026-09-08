@@ -55,6 +55,7 @@ export type {
   SettleEvmPoliciesInput,
 } from "./policy/types.js";
 export * from "./signatures/index.js";
+export { createTestEvmSessionSigner, makeTestEvmSessionSignatureService } from "./signing/test.js";
 export type {
   DigestEvmSignature,
   EvmSignatureService,

@@ -38,8 +38,9 @@ sequence.
   actor-owned submission status, and member-authorized confirmed execution
   history with expanded account, session-key, and initiating-actor list items.
 - `src/routes/ens.ts` — public ENSIP-normalized Namera subname availability.
-- `src/routes/signature.ts` — machine-actor smart-account message and typed-data
-  signing and read-only verification.
+- `src/routes/signature.ts` — machine-actor message/typed-data preparation and
+  local signature completion (`/signatures/prepare`, `/signatures/complete`),
+  plus read-only verification. Legacy synchronous signing fails closed.
 - `src/middlewares/` — middleware contracts such as authorization context.
 - `src/common.ts` — errors shared by API groups.
 

@@ -1,18 +1,32 @@
 import { Effect } from "effect";
 
-import type { BillingError, SignatureError } from "@namera-ai/protocol";
+import { SignatureError, type BillingError } from "@namera-ai/protocol";
 import type {
   GrantedActorData,
   SignRequest,
   SignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
+  PrepareSignatureRequest,
+  PrepareSignatureResponse,
+  CompleteSignatureRequest,
+  CompleteSignatureResponse,
 } from "@namera-ai/protocol/dto";
 
-import { makeSign } from "./sign.js";
+import { makeCompleteSignature } from "./complete.js";
+import { makePrepareSignature } from "./prepare.js";
 import { makeVerifySignature } from "./verify.js";
 
 export interface SignatureApplication {
+  readonly prepare: (input: {
+    readonly actor: GrantedActorData;
+    readonly idempotencyKey: string;
+    readonly request: PrepareSignatureRequest;
+  }) => Effect.Effect<PrepareSignatureResponse, BillingError | SignatureError>;
+  readonly complete: (input: {
+    readonly actor: GrantedActorData;
+    readonly request: CompleteSignatureRequest;
+  }) => Effect.Effect<CompleteSignatureResponse, SignatureError>;
   readonly sign: (input: {
     readonly actor: GrantedActorData;
     readonly idempotencyKey: string;
@@ -25,7 +39,17 @@ export interface SignatureApplication {
 }
 
 export const makeSignatureApplication = Effect.gen(function* () {
-  const sign = yield* makeSign;
+  const prepare = yield* makePrepareSignature;
+  const complete = yield* makeCompleteSignature;
   const verify = yield* makeVerifySignature;
-  return { sign, verify } satisfies SignatureApplication;
+  return {
+    prepare,
+    complete,
+    verify,
+    // Kept only until client migration removes the old transport. Never fall back
+    // to a root signer for routine signature requests.
+    sign: Effect.fn("application.signature.signDisabled")(function* () {
+      return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
+    }),
+  } satisfies SignatureApplication;
 });

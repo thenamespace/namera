@@ -4,7 +4,7 @@ import { SessionKeyGrantId, WalletId } from "#/common/index";
 import { EvmSignatureType, SupportedEvmChainId } from "#/evm/index";
 
 export const SignatureCreatedEventData = Schema.Struct({
-  event: Schema.Literal("signature.created"),
+  event: Schema.Literals(["signature.prepared", "signature.created"]),
   resourceType: Schema.Literal("wallet"),
   resourceId: WalletId,
   data: Schema.Struct({

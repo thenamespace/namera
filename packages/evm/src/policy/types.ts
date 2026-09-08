@@ -71,7 +71,7 @@ export type SettleEvmPoliciesInput = CompleteEvmPolicyOperationInput & {
 export type ReleaseEvmPoliciesInput = CompleteEvmPolicyOperationInput;
 
 export interface EvmPolicyService {
-  readonly executionDeadline: (input: {
+  readonly authorizationDeadline: (input: {
     readonly policies: EvmSessionKeyPolicies;
     readonly latest: DateTime.Utc;
   }) => DateTime.Utc;

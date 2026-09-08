@@ -9,7 +9,7 @@ import type {
 } from "./types.js";
 
 export const makeEvmPolicyService = (): EvmPolicyService => ({
-  executionDeadline: ({ policies, latest }) => {
+  authorizationDeadline: ({ policies, latest }) => {
     let deadline = latest;
     for (const policy of policies) {
       if (

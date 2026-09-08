@@ -35,6 +35,12 @@ export interface SignatureOperationRepositoryService {
   readonly findByIdForUpdate: (
     id: SignatureOperationId,
     organizationId: OrganizationId,
+    skipLocked?: boolean,
+  ) => Effect.Effect<SignatureOperationModel | undefined, DatabaseError>;
+  readonly findByIdForActor: (
+    id: SignatureOperationId,
+    organizationId: OrganizationId,
+    actorId: ActorId,
   ) => Effect.Effect<SignatureOperationModel | undefined, DatabaseError>;
   readonly markSucceeded: (input: {
     readonly id: SignatureOperationId;
@@ -108,7 +114,7 @@ export class SignatureOperationRepository extends Context.Service<
           return row === undefined ? undefined : Schema.decodeSync(SignatureOperation)(row as any);
         }, mapRepositoryError),
         findByIdForUpdate: Effect.fn("database.signatureOperationRepository.findByIdForUpdate")(
-          function* (id, organizationId) {
+          function* (id, organizationId, skipLocked = false) {
             const db = yield* transactionOrDatabase(database);
             const rows = yield* db
               .select()
@@ -120,8 +126,24 @@ export class SignatureOperationRepository extends Context.Service<
                 ),
               )
               .limit(1)
-              .for("update");
+              .for("update", skipLocked ? { skipLocked: true } : {});
             return rows[0] ? Schema.decodeSync(SignatureOperation)(rows[0] as any) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        findByIdForActor: Effect.fn("database.signatureOperationRepository.findByIdForActor")(
+          function* (id, organizationId, actorId) {
+            const db = yield* transactionOrDatabase(database);
+            const row = yield* db.query.signatureOperation.findFirst({
+              where: {
+                id: { eq: id },
+                organizationId: { eq: organizationId },
+                actorId: { eq: actorId },
+              },
+            });
+            return row === undefined
+              ? undefined
+              : Schema.decodeUnknownSync(SignatureOperation)(row);
           },
           mapRepositoryError,
         ),

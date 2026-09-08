@@ -12,13 +12,56 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
     const app = yield* Application.Application;
 
     return handlers
+      .handle("prepare", ({ headers, payload }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["signature:create"],
+            },
+          });
+          yield* consumeRateLimit(
+            "signature.prepare.actor",
+            data.actorId,
+            rateLimitPolicy.signature.byApiKey,
+          );
+          return yield* app.signature.prepare({
+            actor: data,
+            idempotencyKey: headers["idempotency-key"],
+            request: payload,
+          });
+        }),
+      )
+      .handle("complete", ({ payload }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["api-key", "cli"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["signature:create"],
+            },
+          });
+          yield* consumeRateLimit(
+            "signature.complete.actor",
+            data.actorId,
+            rateLimitPolicy.signature.byApiKey,
+          );
+          return yield* app.signature.complete({ actor: data, request: payload });
+        }),
+      )
       .handle("verify", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
             allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["signature:create"] },
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["signature:create"],
+            },
           });
           yield* consumeRateLimit(
             "signature.verification.actor",

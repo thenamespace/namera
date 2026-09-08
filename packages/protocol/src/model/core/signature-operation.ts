@@ -14,7 +14,10 @@ import { createInsertSchema } from "#/model/helpers";
 
 export const SignatureOperationStatus = Schema.Literals(["reserved", "succeeded", "failed"]);
 
-export const SignatureOperationFailureCode = Schema.Literals(["SIGNING_FAILED"]);
+export const SignatureOperationFailureCode = Schema.Literals([
+  "SIGNING_FAILED",
+  "PREPARATION_EXPIRED",
+]);
 
 const EvmSignatureOperationDataCommon = {
   version: Schema.Literal(1),

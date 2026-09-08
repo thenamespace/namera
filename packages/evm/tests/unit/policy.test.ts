@@ -647,13 +647,13 @@ it.effect("treats time-window expiration as an exclusive boundary", () =>
     expect(allowed).toEqual({ allowed: true });
     expect(expired).toEqual({ allowed: false, policyId, code: "TIME_WINDOW_EXPIRED" });
     const latest = DateTime.fromEpochSeconds(300);
-    expect(evm.policy.executionDeadline({ policies: [timeWindow], latest })).toEqual(
+    expect(evm.policy.authorizationDeadline({ policies: [timeWindow], latest })).toEqual(
       timeWindow.expiresAt,
     );
-    expect(evm.policy.executionDeadline({ policies: [], latest })).toEqual(latest);
+    expect(evm.policy.authorizationDeadline({ policies: [], latest })).toEqual(latest);
     const earlierDeadline = DateTime.fromEpochSeconds(1);
     expect(
-      evm.policy.executionDeadline({ policies: [timeWindow], latest: earlierDeadline }),
+      evm.policy.authorizationDeadline({ policies: [timeWindow], latest: earlierDeadline }),
     ).toEqual(earlierDeadline);
   }).pipe(Effect.provide(Evm.testLayer)),
 );

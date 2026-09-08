@@ -7,6 +7,7 @@ import {
   makeTestEvmSessionService,
   TestEvmExecution,
   type EvmExecutionService,
+  type EvmTestOptions,
 } from "@namera-ai/evm";
 import { createTestAuthenticator } from "@namera-ai/passkeys/testing";
 import { EthereumAddress, Hex } from "@namera-ai/protocol";
@@ -18,6 +19,7 @@ import { makeTestServerLayer } from "./layers/index.js";
 /** Real passkey verification; chain encoding and enforcement run in the Anvil suite. */
 export const makeOwnerSessionTestFixture = (
   executionOverrides: Partial<EvmExecutionService> = {},
+  serviceOverrides: Omit<EvmTestOptions, "execution"> = {},
 ) => {
   const authenticator = createTestAuthenticator();
   const execution = makeTestEvmExecutionService();
@@ -59,6 +61,7 @@ export const makeOwnerSessionTestFixture = (
     layer: makeTestServerLayer(
       {
         sessions: makeTestEvmSessionService(),
+        ...serviceOverrides,
         execution: {
           ownerApprovalChallenge: () => Effect.succeed(Hex.make(`0x${"11".repeat(32)}`)),
           completeOwnerApproval: execution.sign,

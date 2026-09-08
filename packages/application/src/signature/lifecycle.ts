@@ -1,7 +1,7 @@
 import { DateTime, Effect } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import type { SignatureOperationId } from "@namera-ai/protocol";
+import { SignatureError, type SignatureOperationId } from "@namera-ai/protocol";
 import type { GrantedActorData } from "@namera-ai/protocol/dto";
 
 import { Audit } from "#/audit/layer";
@@ -25,49 +25,25 @@ export const makeSignatureOperationLifecycle = Effect.gen(function* () {
     return reservations.find((reservation) => reservation.meterKey === "signature");
   });
 
-  const fail = Effect.fn("application.signature.failOperation")(function* (input: {
-    readonly organizationId: GrantedActorData["organizationId"];
-    readonly operationId: SignatureOperationId;
-  }) {
-    yield* transaction.run(
-      Effect.gen(function* () {
-        const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
-          input.operationId,
-          input.organizationId,
-        );
-        if (operation === undefined || operation.status !== "reserved") return;
-
-        const reservation = yield* findBillingReservation(input.organizationId, operation.id);
-        if (reservation === undefined)
-          return yield* Effect.die("Signature billing reservation is missing");
-        yield* billing.release({
-          organizationId: input.organizationId,
-          reservationId: reservation.id,
-        });
-
-        yield* repository.core.signatureOperation.markFailed({
-          id: operation.id,
-          organizationId: operation.organizationId,
-          failureCode: "SIGNING_FAILED",
-          failedAt: yield* DateTime.now,
-        });
-      }),
-    );
-  });
-
   const succeed = Effect.fn("application.signature.succeedOperation")(function* (input: {
     readonly actor: GrantedActorData;
     readonly operationId: SignatureOperationId;
   }) {
-    yield* transaction.run(
+    return yield* transaction.run(
       Effect.gen(function* () {
         const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
           input.operationId,
           input.actor.organizationId,
         );
-        if (operation === undefined || operation.status !== "reserved") {
-          return yield* Effect.die("Signature operation reservation is missing");
-        }
+        if (operation === undefined || operation.actorId !== input.actor.actorId)
+          return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
+        if (operation.status === "succeeded") return false;
+        if (
+          operation.status !== "reserved" ||
+          DateTime.toEpochMillis(operation.reservationExpiresAt) <=
+            DateTime.toEpochMillis(yield* DateTime.now)
+        )
+          return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
 
         const reservation = yield* findBillingReservation(input.actor.organizationId, operation.id);
         if (reservation === undefined)
@@ -107,9 +83,10 @@ export const makeSignatureOperationLifecycle = Effect.gen(function* () {
             sessionKeyGrantId: operation.sessionKeyGrantId,
           },
         });
+        return true;
       }),
     );
   });
 
-  return { fail, succeed } as const;
+  return { succeed } as const;
 });

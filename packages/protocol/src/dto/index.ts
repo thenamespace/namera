@@ -9,4 +9,5 @@ export * from "./notification/index.js";
 export * from "./mcp.js";
 export * from "./session-key/index.js";
 export * from "./signature.js";
+export * from "./signature-signing.js";
 export * from "./wallet/index.js";

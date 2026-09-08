@@ -15,7 +15,8 @@ The result is decoded as protocol `Bytes32`. Digesting is reusable for canonical
 
 This is the old synchronous path, not the self-custodial beta signing flow.
 Local passkey owners cannot sign silently through this adapter. The public
-signature workflow still needs migration to the detached flow below.
+signature workflow now uses the detached flow below; the legacy HTTP signing
+route fails closed instead of falling back to an owner key.
 
 ```mermaid
 sequenceDiagram
@@ -56,8 +57,8 @@ must fail. No provider transaction is submitted and no signature is logged.
 
 The adapter owns chain/account encoding only. Callers must resolve installation
 data from persistence, validate actor/grant authority and lifetime, and own
-idempotency, billing and audit transitions. This package-level implementation
-does not yet expose detached signature API routes or SDK/CLI signing.
+idempotency, billing and audit transitions. The application and API now expose
+prepare/complete with these checks; SDK/CLI signing remains pending.
 
 Actual-contract tests exercise both payload types with public-only account
 reconstruction, rejection before installation and after removal, changed-payload
@@ -84,15 +85,15 @@ Signature policy evaluation requires at least one signature operation that expli
 
 ## Idempotency and quota
 
-- SDK/CLI/MCP generate a key internally and reuse it for automatic retries of the same logical signature.
+- Detached clients must generate a key internally and reuse it for retries of the same preparation; SDK/CLI/MCP orchestration is still pending.
 - Application canonical request hash rejects different input under the same actor/key.
 - Monthly signature quotas count successful operations in the effective billing window.
 - Reservation/failure lifecycle prevents an interrupted attempt from silently becoming unlimited free work.
 
 ## Pending before production
 
-- Wire detached preparation/completion into persistence, API, SDK, CLI and local MCP.
-- Enforce signature expiry/policies in API requests and disclose their offchain scope.
+- Wire detached preparation/completion into SDK, CLI and local MCP.
+- Disclose the offchain scope of API-enforced signature expiry/policies in client consent.
 - Add conformance fixtures for popular ERC-1271 consumers and counterfactual verification paths.
 - Define retention/redaction for signed message and typed-data content, especially personal data.
 - Add optional domain/contract allowlist policies before broad typed-data production use.

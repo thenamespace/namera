@@ -190,16 +190,17 @@ retain their account, session key, and initiating actor view for transport
 mapping. Keep this distinction in one use case rather than duplicating
 machine-specific operations.
 
-Signature requests are synchronous and idempotently reserved. They require an active
-API-key grant to an active wallet session key with an explicit `evm.signature`
-policy, evaluate the signature-specific context and time window, reconstruct
-the account, enforce the organization monthly signature allowance, and call
-`evm.sign`. The persisted operation uses a discriminated message/typed-data
-payload and records its digest, policy hash, actor, grant, and lifecycle. The
-returned signature bytes are never stored or logged. Success and its safe
-organization audit event share one transaction; definitive signing failures
-release reserved billing capacity. Signature workflows do not enqueue
-notifications or emails.
+Signature preparation requires an exact active granted local session, installed
+onchain signature authority, and an explicit `evm.signature` API policy. It
+reserves one monthly signature unit and returns a replay-safe EIP-712 challenge.
+Completion verifies the locally produced signature through `evm.sessionSignatures`,
+rechecks authority under locks, and atomically settles billing, operation status
+and audit. The persisted discriminated message/typed-data payload binds its
+digest, policy hash, actor and grant; signature bytes are never stored or logged.
+Abandoned preparations expire through billing reconciliation. Invalid signatures
+can be retried until expiry, and successful retries do not charge twice. The
+legacy synchronous signing method fails closed. Signature workflows do not
+enqueue notifications or emails.
 
 Signature verification is a separate read-only workflow. It requires an active
 machine-actor grant to the requested wallet but does not require signature

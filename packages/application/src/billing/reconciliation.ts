@@ -31,8 +31,12 @@ export const makeBillingReconciliation = Effect.gen(function* () {
       const operation = yield* repository.core.signatureOperation.findByIdForUpdate(
         Schema.decodeUnknownSync(SignatureOperationId)(reservation.sourceId),
         reservation.organizationId,
+        true,
       );
-      if (operation?.status === "succeeded") {
+      // Expiry recovery already holds the billing row. Do not wait on an
+      // operation lock held by completion, which settles in the opposite order.
+      if (operation === undefined) return false;
+      if (operation.status === "succeeded") {
         yield* metering.settle({
           organizationId: reservation.organizationId,
           reservationId: reservation.id,
@@ -41,15 +45,24 @@ export const makeBillingReconciliation = Effect.gen(function* () {
         });
         return true;
       }
-      if (operation === undefined || operation.status === "failed") {
-        yield* metering.release({
-          organizationId: reservation.organizationId,
-          reservationId: reservation.id,
-          status: "expired",
+      if (
+        operation.status === "reserved" &&
+        DateTime.toEpochMillis(operation.reservationExpiresAt) <=
+          DateTime.toEpochMillis(yield* DateTime.now)
+      ) {
+        yield* repository.core.signatureOperation.markFailed({
+          id: operation.id,
+          organizationId: operation.organizationId,
+          failureCode: "PREPARATION_EXPIRED",
+          failedAt: yield* DateTime.now,
         });
-        return true;
-      }
-      return false;
+      } else if (operation.status !== "failed") return false;
+      yield* metering.release({
+        organizationId: reservation.organizationId,
+        reservationId: reservation.id,
+        status: "expired",
+      });
+      return true;
     }
 
     if (reservation.sourceType === "execution-submission") {

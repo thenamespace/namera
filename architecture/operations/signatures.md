@@ -28,19 +28,17 @@ sequenceDiagram
   participant Tx as PostgreSQL transaction
   participant EVM
 
-  Client->>App: wallet + chain + message/typed data + internal idempotency key
+  Client->>App: POST /signatures/prepare: wallet + session + chain + payload + idempotency key
   App->>App: hash request; resolve prior attempt
-  App->>App: find active account/grant/session-key candidates
+  App->>App: resolve exact active grant and installed local session
   App->>Policy: time, chain, and explicit signature capability evaluation
   App->>Tx: insert reserved operation + reserve anniversary-period signature unit
-  App->>EVM: reconstruct Alchemy Modular Account V2 and sign
-  alt success
-    App->>Tx: mark succeeded + audit + settle policy reservations
-    App-->>Client: signature bytes + safe operation details
-  else definitive signing failure
-    App->>Tx: mark failed + release capacity/reservations
-    App-->>Client: typed failure
-  end
+  App-->>Client: operation ID + replay-safe EIP-712 challenge + expiry
+  Client->>Client: verify challenge and sign with local session key
+  Client->>App: POST /signatures/complete: operation ID + raw signature
+  App->>EVM: verify local ECDSA and installed ERC-1271 authority
+  App->>Tx: recheck grant/policies; settle one unit + mark succeeded + audit
+  App-->>Client: packed smart-account signature
 ```
 
 The current `evm.signature` policy explicitly permits message, typed data, or
@@ -48,9 +46,30 @@ both. Time-window and chain-allowlist policies also apply. Billing settles
 successful operations and holds active reservations, preventing concurrent
 requests from crossing the organization's anniversary-period quota.
 
-SDK, CLI, and MCP generate and reuse the idempotency key across transient
-retries. Declared policy, billing, authorization, and validation failures are not
-retried.
+The exact session must also have owner-approved `onchain.allowSignatures`.
+The server never signs with the wallet owner. The legacy synchronous
+`POST /signatures` route fails closed with `SIGNATURE_UNAVAILABLE` until its
+clients migrate; API-key and CLI actors can use prepare/complete now.
+
+Preparation reserves one unit for at most five minutes, bounded by session and
+API time-window expiry. Reusing the same actor/idempotency key with different
+input fails; identical retries reuse the operation and reservation. Completion
+loads the original payload from persistence and rechecks actor, grant, policy
+hash, installation, and expiry. Invalid signatures remain retryable while the
+reservation is live. Successful completion retries verify authority again but
+do not charge twice. Signature bytes are never persisted.
+
+The billing reconciliation worker expires abandoned reservations, records
+`PREPARATION_EXPIRED`, and releases capacity. It skips locked signature rows
+rather than reversing completion's operation/billing lock order. Preparation
+and success write `signature.prepared` and `signature.created` audit events
+inside their transactions. Existing signature duration, result, policy and
+verification metrics use bounded attributes.
+
+These quotas govern Namera API completions, not signatures made directly by a
+local key holder. Alchemy's time hook does not expire ERC-1271 signature
+authority: onchain uninstall is required to revoke it. API expiry is not an
+onchain restriction and must be disclosed in client consent.
 
 ## Verification
 
@@ -68,6 +87,9 @@ and bounded verification metrics protect the boundary.
 
 ## Pending
 
+- Wire SDK, CLI and local MCP to prepare, validate the challenge, sign locally,
+  and complete. Migrate remote-MCP authentication separately.
+- Complete end-to-end browser consent/import coverage and consumer conformance.
 - Add namespace-specific signature variants only with another chain adapter.
 - Add EIP-712 domain/verifying-contract/primary-type policy restrictions before
   allowing broad typed-data signing in public production.

@@ -114,7 +114,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 current.installation.data.authorization.validUntil * 1000,
               ),
             );
-            const expiresAt = evm.policy.executionDeadline({
+            const expiresAt = evm.policy.authorizationDeadline({
               policies: current.sessionKey.policies,
               latest,
             });
