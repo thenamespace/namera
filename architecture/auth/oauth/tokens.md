@@ -46,6 +46,15 @@ Protected requests must require all of the following:
 
 Updating `last_used_at` is metadata, not the security decision.
 
+API bearer middleware accepts CLI or MCP authorizations only for the exact API
+origin. It checks the current client status and uses the intersection of token
+and authorization scopes, not the original authorization scope set alone.
+Consequently a narrowed refresh token cannot regain permissions at route
+enforcement. MCP actors use `mcp:read` for wallet/session/history/verification
+and `mcp:execute` for simulation, execution preparation/completion, and signature
+preparation/completion. User-only management routes remain forbidden, and reads
+stay actor/grant scoped. Hosted `/mcp` tokens are not accepted by this middleware.
+
 ## Explicit revocation
 
 The token revocation endpoint hashes input under both access and refresh purposes and conditionally revokes the matching row. Authorization management revocation is stronger: it marks the durable authorization revoked, revokes all authorization tokens, revokes every active session-key grant for its actor, and writes type-specific audit/notification effects in one transaction.

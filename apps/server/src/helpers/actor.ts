@@ -12,6 +12,7 @@ export type ActorPermissionRequirements = {
   readonly user: readonly MemberPermission[];
   readonly "api-key": readonly never[];
   readonly cli: readonly OAuthScope[];
+  readonly mcp: readonly OAuthScope[];
 };
 
 type SupportedActorType = keyof ActorPermissionRequirements & ActorType;
@@ -62,7 +63,10 @@ const enforceActorEffect = Effect.fn("server.enforceActor")(function* (
     case "api-key":
       return actor.data;
     case "cli":
-      if (!hasRequiredPermissions(actor.data.authorization.scopes, requiredPermissions?.cli)) {
+    case "mcp":
+      if (
+        !hasRequiredPermissions(actor.data.authorization.scopes, requiredPermissions?.[actor.type])
+      ) {
         return yield* new HttpApiError.Forbidden();
       }
       return actor.data;
@@ -78,7 +82,9 @@ export function enforceActor(
   return enforceActorEffect(props);
 }
 
-export const toActorReadScope = (data: ActorData<"user" | "api-key" | "cli">): ActorReadScope =>
+export const toActorReadScope = (
+  data: ActorData<"user" | "api-key" | "cli" | "mcp">,
+): ActorReadScope =>
   // Users may inspect their organization according to role permissions. Machine
   // actors see only resources reachable through their own grants or ownership.
   "organization" in data

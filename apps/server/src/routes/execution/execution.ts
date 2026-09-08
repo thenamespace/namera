@@ -21,8 +21,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
         Effect.gen(function* () {
           const data = yield* enforceActor({
             actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
           });
           yield* consumeRateLimit(
             "execution.prepare.actor",
@@ -40,8 +44,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
         Effect.gen(function* () {
           const data = yield* enforceActor({
             actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
           });
           yield* consumeRateLimit(
             "execution.complete.actor",
@@ -56,8 +64,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
           });
           yield* consumeRateLimit(
             "execution.simulation.actor",
@@ -72,8 +84,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["execution:execute"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
           });
           yield* consumeRateLimit(
             "execution.api_key",
@@ -92,8 +108,8 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["execution:read"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: { "api-key": [], cli: ["execution:read"], mcp: ["mcp:read"] },
           });
           return yield* app.execution.getSubmission({
             organizationId: data.organizationId,
@@ -107,11 +123,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key", "cli"],
+            allowedActors: ["user", "api-key", "cli", "mcp"],
             requiredPermissions: {
               user: ["execution:read"],
               "api-key": [],
               cli: ["execution:read"],
+              mcp: ["mcp:read"],
             },
           });
           const result = yield* app.execution.get({
@@ -126,11 +143,12 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key", "cli"],
+            allowedActors: ["user", "api-key", "cli", "mcp"],
             requiredPermissions: {
               user: ["execution:read"],
               "api-key": [],
               cli: ["execution:read"],
+              mcp: ["mcp:read"],
             },
           });
           const result = yield* app.execution.list({

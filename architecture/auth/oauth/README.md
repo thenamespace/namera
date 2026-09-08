@@ -5,6 +5,11 @@ Namera uses one OAuth persistence and token model for two delegated client types
 - **MCP**: authorization code with PKCE `S256`, resource-bound bearer tokens, and Streamable HTTP at `/mcp`.
 - **CLI**: device authorization, resource-bound bearer tokens, and rotating refresh tokens.
 
+The local-MCP migration now allows authorization-code tokens for the API-origin
+audience. These authenticate as MCP actors on scoped API routes. The CLI-local
+listener and its separate agent-facing OAuth boundary remain to be implemented;
+hosted `/mcp` transport has not yet been removed.
+
 Both create a durable `auth.oauth_authorization`, a dedicated organization actor, and explicit `core.session_key_grant` rows. Scope allows a class of action; grants and session-key policies decide the concrete wallets/operations.
 
 ## Documentation

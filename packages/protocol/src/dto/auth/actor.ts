@@ -89,7 +89,17 @@ export const CliActor = Schema.Struct({
   data: CliActorData,
 }).annotate({ identifier: "CliActor" });
 
-export const CurrentActorResponse = Schema.Union([UserActor, ApiKeyActor, CliActor]).annotate({
+export const McpActor = Schema.Struct({
+  type: Schema.Literal("mcp"),
+  data: CliActorData,
+}).annotate({ identifier: "McpActor" });
+
+export const CurrentActorResponse = Schema.Union([
+  UserActor,
+  ApiKeyActor,
+  CliActor,
+  McpActor,
+]).annotate({
   identifier: "CurrentActorResponse",
 });
 
@@ -100,4 +110,5 @@ export type ApiKeyActorData = typeof ApiKeyActorData.Type;
 export type ApiKeyActor = typeof ApiKeyActor.Type;
 export type CliActorData = typeof CliActorData.Type;
 export type CliActor = typeof CliActor.Type;
+export type McpActor = typeof McpActor.Type;
 export type CurrentActorResponse = typeof CurrentActorResponse.Type;

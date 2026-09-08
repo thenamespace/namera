@@ -18,7 +18,15 @@ Pre-registered and metadata-document client types share the same `auth.oauth_cli
 
 ## Starting authorization
 
-The server resolves public `client_id`, requires active status and exact redirect membership, requires response type `code`, validates PKCE challenge schema and method `S256`, requires the canonical `/mcp` resource URL, deduplicates scopes, and verifies them against both server and optional client-registered scope. `offline_access` additionally requires refresh-token grant support.
+The server resolves public `client_id`, requires active status and exact redirect membership, requires response type `code`, validates PKCE challenge schema and method `S256`, deduplicates scopes, and verifies them against both server and optional client-registered scope. `offline_access` additionally requires refresh-token grant support.
+
+The resource must be the canonical API origin (local MCP's upstream API client)
+or the legacy `/mcp` resource while hosted transport is being removed. These
+audiences are not interchangeable: ordinary API middleware rejects `/mcp`
+tokens. The root protected-resource metadata advertises the API origin; the
+legacy `/mcp` metadata still advertises its distinct resource. A local MCP
+listener must authenticate its agent-facing connection separately; this change
+does not authorize passing a loopback-audience bearer token upstream.
 
 Only after these checks does it insert a pending authorization request and redirect the browser to `/oauth/authorize?requestId=...`.
 

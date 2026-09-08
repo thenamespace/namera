@@ -16,10 +16,11 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
         Effect.gen(function* () {
           const data = yield* enforceActor({
             actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli"],
+            allowedActors: ["api-key", "cli", "mcp"],
             requiredPermissions: {
               "api-key": [],
               cli: ["signature:create"],
+              mcp: ["mcp:execute"],
             },
           });
           yield* consumeRateLimit(
@@ -38,10 +39,11 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
         Effect.gen(function* () {
           const data = yield* enforceActor({
             actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli"],
+            allowedActors: ["api-key", "cli", "mcp"],
             requiredPermissions: {
               "api-key": [],
               cli: ["signature:create"],
+              mcp: ["mcp:execute"],
             },
           });
           yield* consumeRateLimit(
@@ -57,10 +59,11 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key", "cli"],
+            allowedActors: ["api-key", "cli", "mcp"],
             requiredPermissions: {
               "api-key": [],
               cli: ["signature:create"],
+              mcp: ["mcp:read"],
             },
           });
           yield* consumeRateLimit(
@@ -76,8 +79,8 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["api-key", "cli"],
-            requiredPermissions: { "api-key": [], cli: ["signature:create"] },
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: { "api-key": [], cli: ["signature:create"], mcp: ["mcp:execute"] },
           });
           yield* consumeRateLimit(
             "signature.api_key",

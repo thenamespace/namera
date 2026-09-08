@@ -77,13 +77,19 @@ export const AuthorizationLive = Layer.effect(
           .pipe(Effect.orDie);
         if (token === undefined) return yield* new HttpApiError.Unauthorized();
 
+        const client = yield* repository.auth.oauth.client
+          .findById(token.clientId)
+          .pipe(Effect.orDie);
+        if (client === undefined || client.status !== "active")
+          return yield* new HttpApiError.Unauthorized();
+
         const authorization = yield* repository.auth.oauth.authorization
           .findActiveById(token.authorizationId, now)
           .pipe(Effect.orDie);
         const expectedResource = new URL(authConfig.apiPublicOrigin).origin;
         if (
           authorization === undefined ||
-          authorization.type !== "cli" ||
+          (authorization.type !== "cli" && authorization.type !== "mcp") ||
           authorization.actorId === undefined ||
           authorization.clientId !== token.clientId ||
           authorization.resource !== expectedResource ||
@@ -96,14 +102,15 @@ export const AuthorizationLive = Layer.effect(
           .findActiveForActor(authorization.organizationId, authorization.actorId)
           .pipe(Effect.orDie);
         const actor: CurrentActorResponse = {
-          type: "cli",
+          type: authorization.type,
           data: {
             actorId: authorization.actorId,
             organizationId: authorization.organizationId,
             authorization: {
               id: authorization.id,
               clientId: authorization.clientId,
-              scopes: authorization.scopes,
+              // Refresh may narrow a token below its durable authorization.
+              scopes: token.scopes.filter((scope) => authorization.scopes.includes(scope)),
               metadata: authorization.metadata,
               expiresAt: authorization.expiresAt,
               lastUsedAt: authorization.lastUsedAt,

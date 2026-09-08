@@ -49,8 +49,13 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key", "cli"],
-            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
+            allowedActors: ["user", "api-key", "cli", "mcp"],
+            requiredPermissions: {
+              user: ["wallet:read"],
+              "api-key": [],
+              cli: ["wallet:read"],
+              mcp: ["mcp:read"],
+            },
           });
           return (yield* app.wallet.list(toActorReadScope(data))).map(toWalletResponse);
         }),
@@ -60,8 +65,13 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key", "cli"],
-            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
+            allowedActors: ["user", "api-key", "cli", "mcp"],
+            requiredPermissions: {
+              user: ["wallet:read"],
+              "api-key": [],
+              cli: ["wallet:read"],
+              mcp: ["mcp:read"],
+            },
           });
           return toWalletResponse(
             yield* app.wallet.get({ ...toActorReadScope(data), walletId: params.walletId }),
@@ -73,8 +83,13 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({
             actor,
-            allowedActors: ["user", "api-key", "cli"],
-            requiredPermissions: { user: ["wallet:read"], "api-key": [], cli: ["wallet:read"] },
+            allowedActors: ["user", "api-key", "cli", "mcp"],
+            requiredPermissions: {
+              user: ["wallet:read"],
+              "api-key": [],
+              cli: ["wallet:read"],
+              mcp: ["mcp:read"],
+            },
           });
           return yield* app.wallet.getPortfolio({
             ...toActorReadScope(data),

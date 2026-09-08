@@ -73,12 +73,10 @@ Status polling distinguishes unsigned `reserved`, signed `prepared`, and
 bundler-observed `submitted` attempts. The old `POST /executions` currently fails
 closed while SDK/CLI consumers migrate to the detached flow.
 
-`POST /signatures` is available to granted machine actors. It requires an
-`Idempotency-Key` header, applies the dedicated actor rate limit, and delegates
-grant, signature-policy, persistence, and anniversary-period billing enforcement to the
-application workflow. Signing remains synchronous and has no background worker.
-The public SDK creates this header internally; CLI and MCP users never manage
-it themselves.
+`POST /signatures/prepare` reserves a local signature operation with an internal
+idempotency key; `/signatures/complete` verifies and settles it. The SDK/CLI
+sign locally between these calls. Abandoned reservations are recovered by the
+billing worker. The legacy synchronous `/signatures` route fails closed.
 
 `POST /signatures/verify` verifies the original message or EIP-712 payload for
 an actively granted wallet. It uses ERC-1271 for deployed accounts and ERC-6492
@@ -181,6 +179,13 @@ pre-registered `namera-cli` public client. Device approval creates a `cli` actor
 with explicit session-key grants. Generic API authorization accepts its bearer
 token only for the API-origin resource and enforces both OAuth scopes and
 grants; CLI authorization does not emit email.
+
+Authorization-code MCP tokens may also target the API origin for a local MCP
+client. They retain their MCP actor identity and require `mcp:read` or
+`mcp:execute` on delegated resource routes. API middleware checks client status,
+active authorization, exact audience, and the current token's narrowed scopes.
+Tokens issued for the legacy `/mcp` audience cannot access ordinary API routes.
+The local listener must maintain a separate agent-facing authorization boundary.
 
 The authorized MCP transport is mounted at `/mcp`. Read tools require
 `mcp:read`; transaction execution and signing require `mcp:execute` in addition
