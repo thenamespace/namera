@@ -91,8 +91,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
 
       const definitivelyRejected =
         Predicate.isTagged(submitted.failure, "EvmExecutionError") &&
-        (submitted.failure.code === "SUBMISSION_REJECTED" ||
-          submitted.failure.code === "SUBMISSION_HASH_MISMATCH");
+        submitted.failure.code === "SUBMISSION_REJECTED";
 
       const status = yield* evm.execution
         .getStatus({ chainId: signed.chainId, userOperationHash: signed.userOperationHash })

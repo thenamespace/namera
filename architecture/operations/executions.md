@@ -137,6 +137,11 @@ to the stored signed envelope before settlement or release. A mismatch preserves
 the submitted state and reservations and schedules another lookup; unrelated
 provider evidence cannot finalize an attempt.
 
+A different hash in the submission response is also an uncertain outcome, not
+proof of rejection. Recovery retains holds when the canonical hash is initially
+not found and keeps looking up that canonical hash. The HTTP regression covers
+this visibility delay and a later matching receipt settling billing exactly once.
+
 The PostgreSQL HTTP integration suite runs eight concurrent reconciliation passes
 for submission and again for receipt settlement. Two queued operations produce
 exactly two confirmations, one native-spend total, the expected execution/gas
