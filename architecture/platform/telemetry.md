@@ -40,6 +40,11 @@ signed messages, transaction calls, signatures, arbitrary payloads, raw URLs,
 or unbounded error text. Development-only providers may expose local test values
 only where their package README states that behavior.
 
+Execution and billing recovery emit fixed failure events, never raw error
+objects. Per-submission recovery retains the submission ID and a code-owned
+retry reason for diagnosis; database/provider causes may include confidential
+query parameters or signed envelopes and must not be serialized into those logs.
+
 ## Metrics
 
 Definitions live in `packages/telemetry/src/metrics`. The owning workflow

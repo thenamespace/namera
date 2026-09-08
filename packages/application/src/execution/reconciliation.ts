@@ -256,8 +256,9 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
         submissions,
         (submission) =>
           reconcileOne(submission, leaseToken).pipe(
-            Effect.catch((error) =>
-              Effect.logError("execution.reconciliation.failed", error).pipe(
+            Effect.catch(() =>
+              // Provider/database causes can contain signed envelopes or credentials.
+              Effect.logError("execution.reconciliation.failed").pipe(
                 Effect.annotateLogs({ submission_id: submission.id }),
                 Effect.andThen(retry(submission, leaseToken, "unexpected_error")),
                 Effect.catch(() => Effect.void),

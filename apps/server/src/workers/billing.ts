@@ -22,7 +22,7 @@ export const BillingWorkerLayer = Layer.effectDiscard(
                   }),
                 ),
           ),
-          Effect.catch((error) => Effect.logError("billing.worker.failed", error)),
+          Effect.catch(() => Effect.logError("billing.worker.failed")),
         );
         yield* Effect.sleep(workerPollInterval);
       }

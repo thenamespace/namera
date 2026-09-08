@@ -12,11 +12,7 @@ export const ExecutionWorkerLayer = Layer.effectDiscard(
       while (true) {
         const processed = yield* app.execution
           .reconcile()
-          .pipe(
-            Effect.catch((error) =>
-              Effect.logError("execution.worker.failed", error).pipe(Effect.as(0)),
-            ),
-          );
+          .pipe(Effect.catch(() => Effect.logError("execution.worker.failed").pipe(Effect.as(0))));
         if (processed === 0) yield* Effect.sleep(workerPollInterval);
       }
     }).pipe(
