@@ -101,6 +101,9 @@ return compact row contracts; detail pages load expanded relations.
 
 ## Implemented product routes
 
+Identity and Templates are not beta features: their empty routes and the Identity
+sidebar group are removed. Direct navigation uses the shared not-found boundary.
+
 - organization overview with compact resource KPIs, namespace operation totals,
   configurable activity trends, and a shared recent-executions summary;
 - magic-link sign-in and invitation recipient review;
@@ -145,7 +148,7 @@ the active organization's live projections.
 
 ## Pending
 
-- Build notification inbox, audit history, and remaining asset/identity/template
-  product surfaces as their backend contracts stabilize.
+- Identity, templates and audit-history browsing are future product surfaces,
+  not empty beta navigation destinations. Inbox and account assets are implemented.
 - Add browser interaction and accessibility regression tests.
 - Measure route/chunk splitting before optimizing large bundles.

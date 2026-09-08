@@ -13,10 +13,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
-import { Route as AuthenticatedIdentityRouteImport } from './routes/_authenticated/identity'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
-import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthenticatedAccountAccountIdRouteRouteImport } from './routes/_authenticated/account/$accountId/route'
@@ -69,11 +67,6 @@ const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedIdentityRoute = AuthenticatedIdentityRouteImport.update({
-  id: '/identity',
-  path: '/identity',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -82,11 +75,6 @@ const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
 const AuthenticatedMcpRoute = AuthenticatedMcpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -284,10 +272,8 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/activity': typeof AuthenticatedActivityRoute
-  '/identity': typeof AuthenticatedIdentityRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
   '/account/$accountId': typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
@@ -323,10 +309,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRoute
-  '/identity': typeof AuthenticatedIdentityRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
@@ -364,10 +348,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
-  '/_authenticated/identity': typeof AuthenticatedIdentityRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
-  '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
@@ -408,10 +390,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/activity'
-    | '/identity'
     | '/inbox'
     | '/mcp'
-    | '/templates'
     | '/auth/verify'
     | '/auth/'
     | '/account/$accountId'
@@ -447,10 +427,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/activity'
-    | '/identity'
     | '/inbox'
     | '/mcp'
-    | '/templates'
     | '/auth/verify'
     | '/'
     | '/auth'
@@ -487,10 +465,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/activity'
-    | '/_authenticated/identity'
     | '/_authenticated/inbox'
     | '/_authenticated/mcp'
-    | '/_authenticated/templates'
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
@@ -561,13 +537,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/identity': {
-      id: '/_authenticated/identity'
-      path: '/identity'
-      fullPath: '/identity'
-      preLoaderRoute: typeof AuthenticatedIdentityRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/inbox': {
       id: '/_authenticated/inbox'
       path: '/inbox'
@@ -580,13 +549,6 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof AuthenticatedMcpRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/templates': {
-      id: '/_authenticated/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/auth/': {
@@ -872,10 +834,8 @@ const AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
-  AuthenticatedIdentityRoute: typeof AuthenticatedIdentityRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
-  AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountAccountIdRouteRoute: typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
   AuthenticatedSessionKeySessionKeyIdRouteRoute: typeof AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren
@@ -901,10 +861,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
-  AuthenticatedIdentityRoute: AuthenticatedIdentityRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
-  AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountAccountIdRouteRoute:
     AuthenticatedAccountAccountIdRouteRouteWithChildren,

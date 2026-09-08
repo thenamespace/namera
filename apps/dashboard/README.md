@@ -255,8 +255,9 @@ the dashboard.
 validates against `CreateOrganizationRequest`, creates and activates the new
 workspace through the existing organization operation, then navigates home.
 
-The remaining main and settings sidebar destinations render an empty
-`DashboardPage` placeholder until their feature UI is implemented.
+Unimplemented Identity and Templates routes are excluded from the beta route
+tree and sidebar. Their former URLs reach the shared not-found boundary rather
+than an empty page.
 
 Shared page and section composition should use `DashboardPage`,
 `HeadingGroup.Title`/`Description`, and the individual `DashboardCardRoot`,

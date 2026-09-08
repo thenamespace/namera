@@ -4,7 +4,6 @@ import { Sidebar } from "@namera-ai/ui";
 
 import { SidebarGroup } from "../sidebar-group";
 import { adminGroupItems } from "./admin";
-import { agentsGroupItems } from "./agents";
 import { coreGroupItems } from "./core";
 import { SidebarHeader } from "./header";
 import { primaryGroupItems } from "./primary";
@@ -17,7 +16,6 @@ export const AppSidebar = ({ children }: PropsWithChildren) => {
         <Sidebar.Content>
           <SidebarGroup {...primaryGroupItems} />
           <SidebarGroup {...coreGroupItems} />
-          <SidebarGroup {...agentsGroupItems} />
           <SidebarGroup {...adminGroupItems} />
         </Sidebar.Content>
       </Sidebar>
