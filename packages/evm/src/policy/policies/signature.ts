@@ -17,14 +17,35 @@ export class EvmSignaturePolicyHandler extends PolicyHandler<
 
   readonly evaluate = Effect.fn("evm.policy.signature.evaluate")(
     (policy: EvmSignaturePolicy, context: EvmSignatureContext) =>
-      Effect.succeed(
-        policy.allowedTypes.includes(context.type)
-          ? ({ allowed: true } satisfies EvmPolicyDecision)
-          : ({
+      Effect.sync(() => {
+        if (!policy.allowedTypes.includes(context.type))
+          return {
+            allowed: false,
+            policyId: policy.id,
+            code: "SIGNATURE_TYPE_NOT_ALLOWED",
+          } satisfies EvmPolicyDecision;
+
+        if (context.type === "typed-data" && policy.typedDataRules !== undefined) {
+          const { domain, primaryType } = context.typedData;
+          // Match a complete tuple; independent allowlists would authorize unintended
+          // combinations of a protocol's contract, domain and message type.
+          const permitted = policy.typedDataRules.some(
+            (rule) =>
+              rule.chainId === context.chainId &&
+              `eip155:${domain.chainId}` === rule.chainId &&
+              domain.verifyingContract?.toLowerCase() === rule.verifyingContract.toLowerCase() &&
+              (rule.name === undefined || rule.name === domain.name) &&
+              (rule.version === undefined || rule.version === domain.version) &&
+              rule.primaryTypes.includes(primaryType),
+          );
+          if (!permitted)
+            return {
               allowed: false,
               policyId: policy.id,
-              code: "SIGNATURE_TYPE_NOT_ALLOWED",
-            } satisfies EvmPolicyDecision),
-      ),
+              code: "TYPED_DATA_NOT_ALLOWED",
+            } satisfies EvmPolicyDecision;
+        }
+        return { allowed: true } satisfies EvmPolicyDecision;
+      }),
   );
 }

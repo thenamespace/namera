@@ -1,7 +1,18 @@
 import { Schema } from "effect";
 
 import { PolicyId } from "#/common/index";
+import { SupportedEvmChainId } from "#/evm/chains";
+import { EthereumAddress } from "#/evm/primitives";
 import { EvmSignatureType } from "#/evm/signature";
+import { NonEmptyString } from "#/model/common";
+
+const TypedDataRule = Schema.Struct({
+  chainId: SupportedEvmChainId,
+  verifyingContract: EthereumAddress,
+  name: Schema.optionalKey(Schema.String),
+  version: Schema.optionalKey(Schema.String),
+  primaryTypes: Schema.Array(NonEmptyString).check(Schema.isMinLength(1), Schema.isUnique()),
+});
 
 const EvmSignaturePolicyFields = {
   type: Schema.Literal("evm.signature"),
@@ -9,6 +20,12 @@ const EvmSignaturePolicyFields = {
   allowedTypes: Schema.Array(EvmSignatureType)
     .check(Schema.isMinLength(1, { message: "At least one signature type is required" }))
     .check(Schema.isUnique()),
+  typedDataRules: Schema.optionalKey(
+    Schema.Array(TypedDataRule).check(Schema.isMinLength(1)).annotate({
+      description:
+        "Optional API-level EIP-712 allowlist. One complete rule must match the request chain, domain chain, verifying contract and primary type. Names and versions match exactly when specified. These checks do not restrict direct local signing outside Namera.",
+    }),
+  ),
 };
 
 export const EvmSignaturePolicy = Schema.Struct({

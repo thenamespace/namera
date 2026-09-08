@@ -29,6 +29,21 @@ Applies to executions and signatures. It permits only a chain ID contained in `c
 
 Applies only to signatures and is the explicit signature-access grant. `allowedTypes` contains `message`, `typed-data`, or both. Missing type returns `SIGNATURE_TYPE_NOT_ALLOWED`. An entire session key without this policy returns `SIGNATURE_POLICY_REQUIRED` before signing.
 
+Optional `typedDataRules` narrows typed-data requests. Each rule contains a
+supported CAIP-2 `chainId`, `verifyingContract`, non-empty `primaryTypes`, and
+optional exact domain `name` and `version`. One complete rule must match; fields
+from different rules cannot be combined. Both the operation chain and the
+payload's domain chain must match the rule. Contract comparison ignores hex case;
+domain names, versions, and primary types are case-sensitive. Missing required
+domain fields or no matching rule returns `TYPED_DATA_NOT_ALLOWED` with the
+policy ID. An omitted rule list retains type-only authorization; an empty list
+is invalid. Message requests are unaffected by typed-data rules.
+
+These are API policies, not onchain EIP-712 validation hooks. A user-controlled
+key can still sign outside Namera, and domain matching does not constrain values
+inside a Permit or other message. Dashboard rule editing and the mainnet beta
+requirement for restricted typed-data consent remain pending.
+
 ## `evm.native-spend-limit`
 
 Applies to executions. Native spend is the sum of `call.value` across the complete batch.
