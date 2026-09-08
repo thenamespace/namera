@@ -34,6 +34,11 @@ Vitest must resolve workspace dependencies using the `namera-source` condition
 in both normal and SSR resolution. Inline workspace packages where needed; a
 test must not silently validate stale `dist` files after a schema change.
 
+Database and server integration suites allow 30 seconds for setup hooks: each
+worker initializes PGlite and applies the real migrations, including `pg_trgm`.
+The setup budget accommodates parallel workspace runs without increasing the
+timeout of individual test assertions.
+
 ## Test composition
 
 Provider packages expose deterministic test Layers beside the live service.

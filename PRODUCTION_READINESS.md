@@ -30,13 +30,14 @@ the hosted MCP transport is removed while its OAuth service remains.
 
 ## Current baseline
 
-Verified on 2026-09-08:
+Workspace verification refreshed on 2026-09-09:
 
 - [x] `pnpm check` passes all 66 workspace tasks.
 - [x] `pnpm test` passes all 37 task-graph entries. The default server lane passes
-      36 suites / 150 tests and skips the three PostgreSQL-only billing tests.
-      SDK: 50 tests; CLI: 38; dashboard: 21; EVM: 59 passing / four opt-in
-      Anvil tests skipped. Cached tasks are included in the task-graph total.
+      48 suites / 175 tests and skips seven opt-in tests in three suites.
+      Database: 11; SDK: 51; CLI: 46 passing / two opt-in skipped;
+      dashboard: 50; EVM: 62 passing / six opt-in skipped.
+      Cached tasks are included in the task-graph total.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
       extension.
 - [x] The dashboard and server production builds complete.
@@ -46,8 +47,8 @@ including the three billing concurrency scenarios. This proves the tested
 driver/migration and billing boundaries, not every possible race.
 
 These checks do not certify live networks or browser journeys.
-The default EVM run skips four opt-in Anvil account-abstraction
-tests. A separate Sepolia-fork run on 2026-09-08 passed all four: detached passkey
+The default EVM run skips six opt-in Anvil account-abstraction
+tests. A separate Sepolia-fork run on 2026-09-08 passed four: detached passkey
 deployment, session installation/native limits/revocation, execution lifetime,
 and ERC-1271 message/typed-data authority. This does not certify bundler/BSO
 behavior or the other seven networks. Task-graph entries include dependency
