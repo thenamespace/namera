@@ -2,13 +2,14 @@ import { request as httpRequest } from "node:http";
 import { createServer } from "node:net";
 
 import { NodeCrypto } from "@effect/platform-node";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Deferred, Effect, Layer, ManagedRuntime } from "effect";
 
 import { describe, expect, it } from "vitest";
 
 import { LocalMcpApi } from "../../../src/services/mcp/api-client.js";
 import { localMcpListener } from "../../../src/services/mcp/listener.js";
 import { LocalMcpOAuth } from "../../../src/services/mcp/oauth-broker.js";
+import { LocalOAuthError } from "../../../src/services/mcp/oauth-contracts.js";
 import { localMcpUrls } from "../../../src/services/mcp/transport-security.js";
 import { apiOrigin, makeMcpOAuthFixture } from "../../fixtures/mcp-oauth.js";
 
@@ -33,6 +34,82 @@ const unusedPort = () =>
   });
 
 describe("local MCP Node listener", () => {
+  it("rejects overflow while token requests are blocked and recovers its permits", async () => {
+    const urls = localMcpUrls(await unusedPort());
+    const fixture = await Effect.runPromise(
+      makeMcpOAuthFixture().pipe(Effect.provide(NodeCrypto.layer)),
+    );
+    const admitted = Deferred.makeUnsafe<void>();
+    const release = Deferred.makeUnsafe<void>();
+    let started = 0;
+    const runtime = ManagedRuntime.make(
+      localMcpListener(urls).pipe(
+        Layer.provide(
+          Layer.mergeAll(
+            Layer.succeed(LocalMcpOAuth, {
+              ...fixture.broker,
+              // Hold the transport at the broker boundary, independently of token validity.
+              exchange: () =>
+                Effect.gen(function* () {
+                  started += 1;
+                  if (started === 32) yield* Deferred.succeed(admitted, undefined);
+                  yield* Deferred.await(release);
+                  return yield* new LocalOAuthError({ code: "invalid_grant" });
+                }),
+            }),
+            LocalMcpApi.layer({
+              apiOrigin,
+              fetch: async () => {
+                throw new Error("Unexpected upstream access");
+              },
+            }),
+          ),
+        ),
+      ),
+    );
+    const pending: Promise<number>[] = [];
+    try {
+      await runtime.runPromise(Effect.void);
+      for (let index = 0; index < 32; index += 1) {
+        pending.push(
+          fetch(`${urls.origin}/oauth/token`, {
+            method: "POST",
+            headers: { "content-type": "application/x-www-form-urlencoded" },
+            body: "grant_type=authorization_code",
+            signal: AbortSignal.timeout(5_000),
+          }).then(async (response) => {
+            await response.text();
+            return response.status;
+          }),
+        );
+      }
+      await Promise.race([
+        Effect.runPromise(Deferred.await(admitted)),
+        Promise.all(pending).then(() => {
+          throw new Error("Requests finished before admission");
+        }),
+      ]);
+      const overflow = await fetch(`${urls.origin}/.well-known/oauth-protected-resource/mcp`, {
+        signal: AbortSignal.timeout(5_000),
+      });
+      expect(overflow.status).toBe(503);
+      expect(overflow.headers.get("retry-after")).toBe("1");
+      expect(overflow.headers.get("cache-control")).toBe("no-store");
+      await overflow.text();
+      Effect.runSync(Deferred.succeed(release, undefined));
+      expect(await Promise.all(pending)).toEqual(Array.from({ length: 32 }, () => 400));
+      const recovered = await fetch(`${urls.origin}/.well-known/oauth-protected-resource/mcp`, {
+        signal: AbortSignal.timeout(5_000),
+      });
+      expect(recovered.status).toBe(200);
+      await recovered.text();
+    } finally {
+      Effect.runSync(Deferred.succeed(release, undefined));
+      await Promise.allSettled(pending);
+      await runtime.dispose();
+    }
+  });
+
   it("serves guarded discovery, bounds real request bodies, and releases its port", async () => {
     const urls = localMcpUrls(await unusedPort());
     const fixture = await Effect.runPromise(

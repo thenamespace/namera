@@ -94,6 +94,11 @@ a live Namera consent/signing journey yet. A Node socket test additionally cover
 discovery, forged Host/Origin rejection, the OAuth challenge, oversized declared
 bodies, oversized chunked bodies without Content-Length, continued listener
 health after rejection, and port release after disposing the listener.
+A separate real-socket regression holds 32 token requests at the broker boundary,
+checks that the next discovery request returns 503 with Retry-After/no-store,
+then releases the requests and verifies discovery succeeds. The broker exchange
+is substituted to control request lifetime; this proves admission/release at
+the Node transport, not OAuth validity or slow-header timeout behavior.
 
 The HTTP routes expose local issuer/resource metadata, registration, consent
 redirect/callback, token exchange/refresh, and revocation. Denied consent consumes
@@ -124,8 +129,8 @@ and fragments. CLI profile/API-key credentials are deliberately not reused.
 
 Remaining:
 
-- Verify slow requests and concurrency limits on the Node HTTP adapter,
-  beyond the existing declared/chunked body rejection and lifecycle coverage.
+- Verify slow-header and slow-body deadlines on the Node HTTP adapter beyond
+  the existing body rejection, concurrent admission and lifecycle coverage.
 - Persist refreshable authorization securely in the OS keyring, with a defined
   restart/logout/revocation lifecycle and no plaintext fallback.
 - Verify a browser-to-local-MCP consent/signing journey and live-chain execution.
