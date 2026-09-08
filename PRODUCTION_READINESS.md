@@ -36,7 +36,7 @@ Workspace verification refreshed on 2026-09-09:
 - [x] `pnpm test` passes all 37 task-graph entries. The default server lane passes
       49 suites / 176 tests and skips seven opt-in tests in three suites.
       Database: 11; SDK: 51; CLI: 47 passing / two opt-in skipped;
-      dashboard: 50; EVM: 63 passing / six opt-in skipped.
+      dashboard: 51; EVM: 63 passing / six opt-in skipped.
       Cached tasks are included in the task-graph total.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
       extension.
@@ -181,8 +181,12 @@ build/typecheck tasks, not just test suites.
       Late matching receipts still settle. An explicit operator resolution UI
       and authoritative non-execution proof remain separate work; timeout is
       intentionally not treated as terminal failure.
-- [ ] Ensure an interrupted execution can settle or release billing and policy
+- [x] Ensure an interrupted execution can settle or release billing and policy
       reservations without double settlement.
+      The prepared/submitted lease-recovery and interrupted-submission HTTP
+      regressions verify stale-worker rejection, retained signed holds and one
+      final confirmation/settlement. Provider outcomes are substituted; a live
+      provider kill/restart rehearsal remains outside this assertion.
 - [x] Verify eight competing execution workers claim and settle two queued
       operations once on PostgreSQL, with exactly two confirmation events,
       expected policy/billing totals and no remaining reservations. This covers
@@ -192,7 +196,7 @@ build/typecheck tasks, not just test suites.
       interrupts reconciliation after the provider substitute accepts submission
       but before persistence, then verifies lease recovery and one billed
       confirmation. Live provider/process termination remains unverified.
-- [ ] Add a code-owned enable/disable state for each of the eight beta networks
+- [x] Add a code-owned enable/disable state for each of the eight beta networks
       and reject disabled chains consistently across API, SDK-backed flows, CLI,
       MCP, and dashboard data.
       EVM registry flags and preparation/signing guards are implemented; all
@@ -259,6 +263,12 @@ build/typecheck tasks, not just test suites.
       consistent for every policy available in the beta.
 
 ### Tables and forms
+
+In addition to the existing local detail/form boundaries, all primary resource
+tables now expose query-owned Retry controls. Inbox initial/cursor failures have
+local retries, and failed read/archive/mark-all-read requests preserve server
+state. Production-preview Chromium verifies these inbox failure/retry paths;
+the regression keeps Load more reachable when filters hide the current page.
 
 - [ ] Fix any beta table or form that still lacks a retryable error state,
       invalidates the wrong atom family after mutation, or reports success before
