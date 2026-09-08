@@ -2,13 +2,13 @@
 
 Namera uses one OAuth persistence and token model for two delegated client types:
 
-- **MCP**: authorization code with PKCE `S256`, resource-bound bearer tokens, and Streamable HTTP at `/mcp`.
+- **MCP**: authorization code with PKCE `S256` and API-origin bearer tokens for the local MCP broker.
 - **CLI**: device authorization, resource-bound bearer tokens, and rotating refresh tokens.
 
-The local-MCP migration now allows authorization-code tokens for the API-origin
-audience. These authenticate as MCP actors on scoped API routes. The CLI-local
-listener and its separate agent-facing OAuth boundary remain to be implemented;
-hosted `/mcp` transport has not yet been removed.
+Authorization-code tokens target only the API-origin audience and authenticate
+as MCP actors on scoped API routes. The CLI-local listener has its own OAuth
+issuer and separate agent-facing bearer tokens. Hosted `/mcp` transport and its
+metadata are removed; see [local MCP](../../clients/local-mcp.md).
 
 Both create a durable `auth.oauth_authorization`, a dedicated organization actor, and explicit `core.session_key_grant` rows. Scope allows a class of action; grants and session-key policies decide the concrete wallets/operations.
 
@@ -24,7 +24,7 @@ Both create a durable `auth.oauth_authorization`, a dedicated organization actor
 | Component                     | Responsibility                                                                                  |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
 | Authorization-server metadata | Advertise protocol endpoints and capabilities.                                                  |
-| Protected-resource metadata   | Advertise `/mcp` authorization servers/scopes.                                                  |
+| Protected-resource metadata   | Advertise API-origin authorization servers/scopes.                                              |
 | Client registration           | Validate public client metadata and exact redirects.                                            |
 | Authorization request         | Validate client, redirect, response, PKCE, resource, and scope before browser consent.          |
 | Consent/device approval       | Bind authenticated user, organization, selected session keys, actor, and durable authorization. |

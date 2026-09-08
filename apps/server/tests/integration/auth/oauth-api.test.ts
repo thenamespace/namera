@@ -138,11 +138,11 @@ layer(fixture.layer)("MCP API audience", (it) => {
     }),
   );
 
-  it.effect("rejects legacy MCP-audience tokens at ordinary API routes", () =>
+  it.effect("rejects requests for the removed hosted MCP audience", () =>
     Effect.gen(function* () {
-      const { delegated } = yield* setup("http://api.test/mcp");
-      expect(yield* delegated.wallet.list().pipe(Effect.flip)).toMatchObject({
-        _tag: "Unauthorized",
+      expect(yield* setup("http://api.test/mcp").pipe(Effect.flip)).toMatchObject({
+        _tag: "OAuthAuthorizationRequestError",
+        code: "INVALID_RESOURCE",
       });
     }),
   );

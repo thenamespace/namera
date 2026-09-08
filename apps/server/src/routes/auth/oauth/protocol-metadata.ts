@@ -51,7 +51,7 @@ export const protectedResourceMetadataRoute = (path: `/${string}`) =>
       const issuer = config.apiPublicOrigin.toString().replace(/\/$/, "");
       return HttpServerResponse.jsonUnsafe(
         {
-          resource: path.endsWith("/mcp") ? `${issuer}/mcp` : issuer,
+          resource: issuer,
           authorization_servers: [issuer],
           bearer_methods_supported: ["header"],
           scopes_supported: ["mcp:read", "mcp:execute"],

@@ -19,6 +19,5 @@ export const OAuthProtocolRoutes = Layer.mergeAll(
   OAuthTokenRoute,
   OAuthRevocationRoute,
   OAuthAuthorizationServerMetadataRoute,
-  protectedResourceMetadataRoute("/.well-known/oauth-protected-resource/mcp"),
   protectedResourceMetadataRoute("/.well-known/oauth-protected-resource"),
 );

@@ -24,7 +24,7 @@ const fixture = makeOwnerSessionTestFixture();
 
 const clientId = "https://mcp-client.example/client.json";
 const redirectUri = "https://mcp-client.example/callback";
-const resource = "http://api.test/mcp";
+const resource = "http://api.test";
 const verifier = "a".repeat(64);
 
 const createSessionKey = Effect.fnUntraced(function* () {
@@ -104,7 +104,7 @@ layer(fixture.layer)("OAuth authorization routes", (it) => {
         token_endpoint: "http://api.test/oauth/token",
       });
       const protectedResource = yield* protocolClient.get(
-        "http://api.test/.well-known/oauth-protected-resource/mcp",
+        "http://api.test/.well-known/oauth-protected-resource",
       );
       expect(yield* protectedResource.json).toMatchObject({
         resource,

@@ -42,7 +42,8 @@ telemetry. Provider selection is environment-owned:
 - The generated Effect `HttpApi` serves typed application routes.
 - OAuth protocol routes handle form media types and protocol-specific error
   responses directly where the generated JSON API is not appropriate.
-- `/mcp` uses Effect's Streamable HTTP MCP transport.
+- MCP transport runs in the CLI loopback listener, not the API. OAuth consent,
+  token issuance and authorization management remain on the API.
 - `/rpc/eip155/:chainId` proxies validated EVM JSON-RPC to Alchemy.
 - `/t/{traces,logs,metrics}/v1` proxies browser OTLP without exposing provider
   credentials.

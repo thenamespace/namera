@@ -5,6 +5,5 @@ export * from "./dashboard/index.js";
 export * from "./data/index.js";
 export * from "./execution/index.js";
 export * from "./ens.js";
-export * from "./mcp/index.js";
 export * from "./proxy/index.js";
 export * from "./wallet/index.js";

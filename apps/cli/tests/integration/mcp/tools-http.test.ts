@@ -1,14 +1,17 @@
 import { NodeCrypto } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { HttpRouter } from "effect/unstable/http";
 
+import { PrepareSignatureRequest, PrepareSignatureResponse } from "@namera-ai/protocol/dto";
 import type { NameraFetch, ResolveSessionSigner } from "@namera-ai/sdk";
+import type { TypedDataDefinition } from "viem";
 import { describe, expect, it, vi } from "vitest";
 
 import { LocalMcpApi } from "../../../src/services/mcp/api-client.js";
 import { LocalMcpOAuth } from "../../../src/services/mcp/oauth-broker.js";
 import { localMcpRoutes } from "../../../src/services/mcp/routes.js";
 import { apiOrigin, makeMcpOAuthFixture, urls } from "../../fixtures/mcp-oauth.js";
+import { mcpSignatureFixture } from "../../fixtures/mcp-signature.js";
 
 const id = "01a00407-5961-75cf-933e-9cfd0336ec16";
 const otherId = "01a00407-5961-75cf-933e-9cfd0336ec17";
@@ -27,11 +30,16 @@ const withTools = async (
     fetch: ReturnType<typeof vi.fn<NameraFetch>>;
     signer: ReturnType<typeof vi.fn<ResolveSessionSigner>>;
   }) => Promise<void>,
+  options?: {
+    readonly grants?: readonly unknown[];
+    readonly resolveSigner?: ResolveSessionSigner;
+    readonly fetch?: NameraFetch;
+  },
 ) => {
   let authorizationId = id;
   let revoked = false;
   let scopes = ["mcp:read", "mcp:execute"];
-  const fetch = vi.fn<NameraFetch>(async (input) => {
+  const fetch = vi.fn<NameraFetch>(async (input, init) => {
     const path = new URL(input.toString()).pathname;
     if (path.endsWith("/actor") && revoked) return new Response(null, { status: 401 });
     if (path.endsWith("/actor"))
@@ -40,7 +48,7 @@ const withTools = async (
         data: {
           actorId: id,
           organizationId: id,
-          grants: [],
+          grants: options?.grants ?? [],
           authorization: {
             id: authorizationId,
             clientId: id,
@@ -53,11 +61,15 @@ const withTools = async (
         },
       });
     if (path === "/wallets") return Response.json([]);
+    if (options?.fetch) return options.fetch(input, init);
     throw new Error(`Unexpected API request: ${path}`);
   });
-  const signer = vi
-    .fn<ResolveSessionSigner>()
-    .mockRejectedValue(new Error("must not open keystore"));
+  const signer = vi.fn<ResolveSessionSigner>(
+    options?.resolveSigner ??
+      (async () => {
+        throw new Error("must not open keystore");
+      }),
+  );
   const fixture = await Effect.runPromise(
     makeMcpOAuthFixture().pipe(Effect.provide(NodeCrypto.layer)),
   );
@@ -127,6 +139,68 @@ const initialize = async (rpc: Parameters<Parameters<typeof withTools>[0]>[0]["r
 };
 
 describe("SDK-backed local MCP HTTP tools", () => {
+  it("signs an authorized exact challenge locally but rejects a substituted payload", async () => {
+    const fixture = mcpSignatureFixture();
+    const signTypedData = vi.fn((typedData: TypedDataDefinition) =>
+      fixture.account.signTypedData(typedData),
+    );
+    let tamper = true;
+    let completions = 0;
+    await withTools(
+      async ({ rpc, signer }) => {
+        const sessionId = await initialize(rpc);
+        const params = {
+          name: "sign",
+          arguments: { request: Schema.encodeSync(PrepareSignatureRequest)(fixture.request) },
+        };
+        const rejected = await rpc("tools/call", params, sessionId);
+        expect(await rejected.json()).toMatchObject({
+          result: {
+            isError: true,
+            structuredContent: { error: { code: "PREPARED_SIGNATURE_INVALID" } },
+          },
+        });
+        expect(signTypedData).not.toHaveBeenCalled();
+        expect(completions).toBe(0);
+        tamper = false;
+        const signed = await rpc("tools/call", params, sessionId);
+        expect(await signed.json()).toMatchObject({
+          result: {
+            structuredContent: {
+              signature: { walletId: fixture.binding.walletId, type: "message" },
+            },
+          },
+        });
+        expect(signer).toHaveBeenCalledTimes(2);
+        expect(signTypedData).toHaveBeenCalledOnce();
+        expect(completions).toBe(1);
+      },
+      {
+        grants: fixture.grants,
+        resolveSigner: async () => ({
+          binding: fixture.binding,
+          signMessage: (message) => fixture.account.signMessage({ message }),
+          signTypedData,
+        }),
+        fetch: async (input, init) => {
+          if (input.toString().endsWith("/signatures/prepare")) {
+            const response = Schema.encodeSync(PrepareSignatureResponse)(fixture.response);
+            return Response.json(
+              tamper
+                ? { ...response, request: { ...response.request, message: "Do something else" } }
+                : response,
+            );
+          }
+          expect(input.toString()).toContain("/signatures/complete");
+          completions += 1;
+          const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
+            signature: `0x${string}`;
+          };
+          return Response.json(fixture.complete(payload.signature));
+        },
+      },
+    );
+  });
   it("discovers ten tools and carries the live request principal into tool calls", () =>
     withTools(async ({ rpc, fetch }) => {
       const sessionId = await initialize(rpc);

@@ -23,11 +23,9 @@ import {
   ApiRoutes,
   RootRoutes,
   OAuthProtocolRoutes,
-  McpRoutes,
   RpcRoutes,
   TelemetryRoutes,
 } from "#/routes/index";
-import { McpAuthorizationMiddleware } from "#/routes/mcp/authorization";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
@@ -61,10 +59,6 @@ const Routes = Layer.mergeAll(
       ),
     ),
   ),
-  McpRoutes.pipe(
-    Layer.provide(ApplicationLive),
-    HttpRouter.provideRequest(Layer.mergeAll(ServicesLive, RateLimiterLive)),
-  ),
   EmailWorkerLive,
   BillingWorkerLive,
   ExecutionWorkerLive,
@@ -76,8 +70,7 @@ const Routes = Layer.mergeAll(
 // accepted requests retain consistent operational context.
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
-  middleware: (httpEffect) =>
-    TelemetryMiddleware(RateLimitMiddleware(McpAuthorizationMiddleware(httpEffect))),
+  middleware: (httpEffect) => TelemetryMiddleware(RateLimitMiddleware(httpEffect)),
 }).pipe(
   Layer.provide(
     HttpMiddleware.layerTracerDisabledForUrls([

@@ -4,7 +4,9 @@ The CLI owns the OAuth broker in `services/mcp/oauth-broker.ts`. The broker and
 upstream HTTP adapter, OAuth HTTP routes, and SDK-backed MCP tools are implemented
 and tested through the HTTP boundary. `namera mcp start` composes them into a
 Node HTTP listener bound only to `127.0.0.1`. Persistent credential lifecycle is
-still pending. The API-hosted MCP transport has not yet been removed.
+still pending. The API-hosted MCP transport is removed; OAuth consent, tokens,
+and authorization management remain on the API. Only API-origin resources are
+accepted upstream.
 
 ## Two audiences
 
@@ -125,8 +127,12 @@ Remaining:
   beyond the existing socket-level rejection and lifecycle coverage.
 - Persist refreshable authorization securely in the OS keyring, with a defined
   restart/logout/revocation lifecycle and no plaintext fallback.
-- Exercise actual authorized signing through the composed local MCP transport;
-  current HTTP tests cover discovery, SDK reads, live scope/revocation checks,
-  cross-authorization session isolation, and rejection before undelegated key access.
-- Replace hosted-MCP tests, remove the API transport, and
-  verify a browser-to-local-MCP consent/signing journey.
+- Verify a browser-to-local-MCP consent/signing journey and live-chain execution.
+  HTTP tests already exercise a real secp256k1 signer with injected API preparation
+  and completion, including rejection of a changed payload before signing.
+
+MCP call counters are updated in the CLI through the existing shared telemetry
+definition, tagged only with the fixed tool name and success/error. Tool spans
+contain no arguments, credentials or signatures. Export is not enabled by default
+on the user's machine; the counters remain in-process. Hosted transport tests
+were replaced by CLI OAuth/HTTP/SDK tests and API-origin OAuth integration tests.

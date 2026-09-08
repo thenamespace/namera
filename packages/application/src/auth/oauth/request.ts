@@ -49,8 +49,7 @@ export const makeOAuthRequestApplication = Effect.gen(function* () {
       }
 
       const apiResource = new URL(config.apiPublicOrigin).origin;
-      const legacyMcpResource = new URL("/mcp", config.apiPublicOrigin).toString();
-      if (input.resource !== apiResource && input.resource !== legacyMcpResource) {
+      if (input.resource !== apiResource) {
         return yield* new OAuthAuthorizationRequestError({ code: "INVALID_RESOURCE" });
       }
 

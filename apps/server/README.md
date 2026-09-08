@@ -23,8 +23,8 @@ the server/application ownership split.
 - `src/routes/wallet/` — wallet and session-key handlers.
 - `src/routes/execution/` — execution and signature handlers.
 - `src/routes/ens.ts` — public, IP-rate-limited ENS label availability.
-- `src/routes/billing/`, `src/routes/mcp/`, and `src/routes/proxy/` — focused
-  billing, MCP, RPC, and telemetry transport boundaries.
+- `src/routes/billing/` and `src/routes/proxy/` — focused
+  billing, RPC, and telemetry transport boundaries.
 - `src/helpers/` — actor enforcement, cookie helpers, and domain-separated DTO
   mappers composed through one stable helper barrel.
 - `src/middlewares/` — authorization, CORS, and rate-limit middleware.
@@ -184,29 +184,11 @@ Authorization-code MCP tokens may also target the API origin for a local MCP
 client. They retain their MCP actor identity and require `mcp:read` or
 `mcp:execute` on delegated resource routes. API middleware checks client status,
 active authorization, exact audience, and the current token's narrowed scopes.
-Tokens issued for the legacy `/mcp` audience cannot access ordinary API routes.
-The local listener must maintain a separate agent-facing authorization boundary.
-
-The authorized MCP transport is mounted at `/mcp`. Read tools require
-`mcp:read`; transaction execution and signing require `mcp:execute` in addition
-to the durable session-key grants selected during consent. The compact tool
-surface covers wallet list/get, session-key list/get with an optional wallet
-filter, transaction simulation/execution/status/history, and message or typed-data
-signing/verification. Tool inputs never accept an organization, actor identity,
-or credential material; authority is derived from the bearer authorization.
-Execution and simulation require an explicit delegated session-key selector. Execution and
-signing tool inputs also omit idempotency keys; the MCP adapter generates one
-per tool invocation.
-
-Tool failures set `isError`, return a stable structured error `code`, an
-actionable human message, and retry metadata where relevant. Declared wallet,
-session-key, execution, policy, billing, and rate-limit failures retain their
-domain codes. Invalid tool arguments use `INVALID_ARGUMENT`; unexpected defects
-use `INTERNAL_ERROR` without exposing their cause.
-
-MCP tool inputs and structured outputs use root object schemas. The registration
-adapter inlines Effect's root `$ref` while retaining nested `$defs`, avoiding
-strict-client schema loading failures without weakening runtime decoding.
+Only API-origin resources are issued. Hosted `/mcp` transport and its resource
+metadata are removed. `namera mcp start` owns Streamable HTTP, independent local
+OAuth credentials, SDK tool adapters, and local signing. The API retains MCP
+consent, registration, tokens, and authorization list/get/revoke routes.
+See [local MCP](../../architecture/clients/local-mcp.md) for the client boundary.
 
 The in-memory store is suitable while the server runs as a single instance. It
 resets on restart and does not coordinate between replicas. Before horizontally

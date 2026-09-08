@@ -234,6 +234,9 @@ importers:
       '@namera-ai/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@napi-rs/keyring':
         specifier: 'catalog:'
         version: 1.3.0
