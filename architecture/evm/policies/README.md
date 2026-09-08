@@ -28,6 +28,14 @@ Equal-priority instances sort by policy ID. This makes the first denial stable a
 
 ## Execution evaluation
 
+Execution preparation requires a complete adapter simulation before policy
+evaluation. A failed simulation returns `EXECUTION_FAILED` through both public
+preview and preparation routes; it is not an allow/deny policy decision and has
+no fabricated policy ID. The route regression injects a simulation failure and
+verifies unchanged billing, no policy state, no execution audit and no worker
+claim. It does not prove live-provider asset-discovery completeness: an empty
+asset-change list must not be assumed exhaustive by future token policies.
+
 1. Order policy instances.
 2. Skip not-applicable operations.
 3. Run stateless evaluation for fast denials.

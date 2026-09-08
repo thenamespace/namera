@@ -123,6 +123,9 @@ build/typecheck tasks, not just test suites.
       coverage in the Sepolia-fork session lifecycle suite.
 - [ ] Define a stable result when policy-required simulation data is unavailable
       or incomplete; never silently evaluate against missing asset changes.
+- [x] Verify a simulation adapter failure stops preview and preparation with
+      `EXECUTION_FAILED`, without policy state or billing holds. Live-provider
+      incomplete asset discovery still needs separate validation above.
 - [ ] Give submitted executions a bounded reconciliation lifetime and an
       explicit terminal state when the provider outcome remains unknown.
 - [ ] Ensure an interrupted execution can settle or release billing and policy
