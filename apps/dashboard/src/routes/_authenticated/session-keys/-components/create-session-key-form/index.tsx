@@ -22,7 +22,9 @@ import { AlertDialog, Button, Typography } from "@namera-ai/ui";
 import { useForm, type DefaultValues } from "react-hook-form";
 
 import { SessionKeyInstallations } from "@/components/session-key-installations";
+import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCreateSessionKey } from "@/hooks/session-key";
+import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
@@ -61,6 +63,8 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
   const submitting = useRef(false);
   const reviewedWallet = useRef<ListWalletsResponse[number] | undefined>(undefined);
   const mounted = useRef(true);
+  const recoveryAbort = useRef<AbortController | null>(null);
+  const recover = useRecoverSessionRegistration();
   const [needsBackup, setNeedsBackup] = useState(false);
   const [registration, setRegistration] = useState<CreateSessionKeyResponse>();
   const [bindings, setBindings] = useState<ReadonlyArray<LocalEvmSessionBinding>>();
@@ -69,6 +73,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      recoveryAbort.current?.abort();
       draft.current?.dispose();
       draft.current = null;
     };
@@ -78,37 +83,61 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     enableBeforeUnload: needsBackup,
     withResolver: true,
   });
+  const acceptRegistration = (
+    created: CreateSessionKeyResponse,
+    payload: CreateSessionKeyFormValues,
+  ) => {
+    if (!mounted.current) return;
+    setRegistration(created);
+    const wallet = reviewedWallet.current;
+    try {
+      if (!wallet) throw new Error("Selected wallet unavailable");
+      setBindings(createLocalSessionBindings({ request: payload, wallet, registration: created }));
+    } catch (error) {
+      setRegistrationError(true);
+      showErrorToast(error, {
+        title: "Session configuration does not match",
+        description: "Do not approve this session. Keep this page open.",
+      });
+      return;
+    }
+    showSuccessToast({
+      title: "Session key registered",
+      description: "Save your key. Onchain approval is still required.",
+    });
+  };
   const createSessionKey = useCreateSessionKey({
     onSettled: () => {
       submitting.current = false;
     },
-    onError: (error) =>
-      showErrorToast(error, {
-        title: "Couldn’t create session key",
-        description: "Review its details and policies, then try again.",
-      }),
-    onSuccess: (created, { payload }) => {
+    onError: async (error, { payload }) => {
       if (!mounted.current) return;
-      setRegistration(created);
-      const wallet = reviewedWallet.current;
+      const abort = new AbortController();
+      recoveryAbort.current = abort;
       try {
+        const wallet = reviewedWallet.current;
         if (!wallet) throw new Error("Selected wallet unavailable");
-        setBindings(
-          createLocalSessionBindings({ request: payload, wallet, registration: created }),
-        );
-      } catch (error) {
-        setRegistrationError(true);
-        showErrorToast(error, {
-          title: "Session configuration does not match",
-          description: "Do not approve this session. Keep this page open.",
+        const sessions = await recover(payload.walletId, abort.signal);
+        if (abort.signal.aborted) return;
+        const recovered = recoverSessionRegistration(payload, wallet, sessions);
+        if (recovered) {
+          acceptRegistration(recovered, payload);
+          return;
+        }
+      } catch (recoveryError) {
+        if (abort.signal.aborted) return;
+        showErrorToast(recoveryError, {
+          title: "Couldn’t recover registration",
+          description: "Keep this page open and retry with the same local key.",
         });
         return;
       }
-      showSuccessToast({
-        title: "Session key registered",
-        description: "Save your key. Onchain approval is still required.",
+      showErrorToast(error, {
+        title: "Couldn’t create session key",
+        description: "Review its details and policies, then try again.",
       });
     },
+    onSuccess: (created, { payload }) => acceptRegistration(created, payload),
   });
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues,

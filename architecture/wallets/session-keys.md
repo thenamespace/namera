@@ -223,9 +223,13 @@ onchain installation. Network/state/credential errors leave a retry action.
 The browser boundary has owner/account substitution regressions, and SDK/EVM
 unit tests exercise compilation and envelope validation. The actual browser
 prompt, encrypted import and live receipt journey still require verification.
-A lost
-registration response also needs a public-signer lookup recovery path so retrying
-the same local draft can recover its existing pending registration.
+After a failed registration response, the dashboard refreshes the wallet-scoped
+session list and searches for its local public signer. Exactly one pending match
+may be recovered, and wallet, chains, onchain permissions, lifetime, signature
+consent and API policies must match the submitted request before export.
+Lookup failure retains the same draft for retry. This reuses the existing
+authorized list endpoint; it does not send private material or create a second
+signer. Closing the page still loses an unexported local key.
 
 ### Recovering an owner approval
 

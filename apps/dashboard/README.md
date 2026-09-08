@@ -126,7 +126,10 @@ The session creation form generates its local secp256k1 draft through the SDK,
 submits only the public signer, validates returned installation configuration,
 and offers an encrypted CLI export. The draft is held outside form/atom state.
 Passphrase fields clear after encryption; leaving with an unsaved key requires
-confirmation. Registration is shown as pending. The installation panel becomes
+confirmation. A failed create response triggers a fresh wallet-session lookup
+for the same public signer. Recovery requires one pending registration with
+matching authority; failures retain the draft for retry. Registration is shown
+as pending. The installation panel becomes
 available after backup acknowledgement and also appears on overview/policies.
 It supports sponsored install and removal with the owner's passkey. Approval
 assertions remain in memory only. Reloads look up the active operation: owned,
