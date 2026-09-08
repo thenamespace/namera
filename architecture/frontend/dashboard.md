@@ -48,6 +48,12 @@ Execution details, workspace settings, notification preferences and session-key
 creation also use local retry feedback when their initial data request fails.
 Already-loaded form data is retained on background refresh failure so unsaved
 edits are not discarded.
+The shared query adapter makes an exception for typed `Unauthorized` and
+`Forbidden` failures: it exposes no cached data for that denied result, including
+while retrying it. Initial loading and ordinary network/server errors retain
+their existing behavior. This is a presentation safeguard, not cache erasure or
+an authorization boundary. Session-wide revalidation and route-loader fallback
+data still need separate handling when authority changes.
 
 Profile form initialization and refresh normalize absent avatar/name fields to
 controlled values. React Hook Form otherwise introduces an explicit undefined

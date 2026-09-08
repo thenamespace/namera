@@ -5,6 +5,7 @@ import { Option } from "effect";
 import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
 import type { QueryKey } from "@/atoms/query-keys";
+import { queryData } from "@/lib/query-data";
 
 type MutationVariables<Input> = Omit<Input, "reactivityKeys">;
 type MutationArguments<Input> =
@@ -35,7 +36,7 @@ export const toQuery = <Args extends readonly unknown[], A, E>(
 
     return {
       cause: isError ? result.cause : null,
-      data: Option.getOrUndefined(AsyncResult.value(result)),
+      data: queryData(result),
       error: Option.getOrNull(AsyncResult.error(result)),
       isError,
       isFetching: result.waiting,

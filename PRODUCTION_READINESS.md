@@ -211,6 +211,10 @@ build/typecheck tasks, not just test suites.
       beta surfaces.
 - [ ] Handle an organization or permission change while a protected page is
       open by invalidating stale atoms and redirecting or re-rendering safely.
+      The query adapter no longer exposes previous success data on an
+      Unauthorized/Forbidden result or its pending retry. This does not yet
+      invalidate the complete registry, refresh route capabilities, or remove
+      independently held loader/form data.
 
 ### Wallet operations
 
