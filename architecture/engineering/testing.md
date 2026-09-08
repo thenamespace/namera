@@ -75,7 +75,11 @@ The billing concurrency suite runs only in this lane. It exercises eight-way
 meter admission, local-wallet last-slot admission, idempotent reservation/settlement,
 release after settlement, and anniversary rollover against real PostgreSQL transactions.
 The wallet-cap case seeds occupancy and calls the production lock/limit helpers
-inside insertion transactions; it is not a concurrent WebAuthn ceremony test. Provider calls
+inside insertion transactions. A second case submits eight HTTP creation retries
+for one ceremony at the final slot: exactly one succeeds, seven return the local
+wallet limit error, and one wallet/signing-key audit pair is added. Occupancy is
+seeded and registration verification uses the package test provider; independent
+users with distinct live WebAuthn ceremonies are not covered by this case. Provider calls
 remain deterministic substitutes; this lane does not verify live bundlers.
 
 ## Isolation rules

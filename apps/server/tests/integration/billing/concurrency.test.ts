@@ -9,14 +9,103 @@ import {
   makeBillingPeriods,
 } from "@namera-ai/application";
 import { Repository, TransactionService } from "@namera-ai/database";
+import { Hex, SigningKeyId } from "@namera-ai/protocol";
 
 import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
 import { TestServerLayer } from "../../fixtures/layers/index.js";
+import { createTestManagedWallet } from "../../fixtures/managed-wallet.js";
 
 describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
   "PostgreSQL billing concurrency",
   () => {
     layer(TestServerLayer)((it) => {
+      it.effect("settles concurrent passkey creation retries once at the wallet cap", () =>
+        Effect.gen(function* () {
+          yield* resetTestState();
+          const client = yield* makeTestApiClient;
+          const { actor } = yield* signIn(client, testEmail("wallet-retry-cap@example.com"));
+          const organizationId = actor.organization.id;
+          const wallet = yield* createTestManagedWallet(client, {
+            payload: {
+              namespace: "eip155",
+              owner: { type: "namera-managed", protectionLevel: "software" },
+              metadata: { version: 1, name: "Capacity template" },
+            },
+          });
+          const repository = yield* Repository;
+          const stored = yield* repository.core.wallet.findById(wallet.id, organizationId);
+          if (stored === undefined) return yield* Effect.die("Expected fixture wallet");
+          const capacityKey = yield* repository.core.signingKey.insert({
+            id: SigningKeyId.make("00000000-0000-7000-8000-000000000001"),
+            organizationId,
+            purpose: "wallet-root",
+            custody: "local",
+            algorithm: "p256",
+            publicKeyHex: Hex.make(`0x04${"02".repeat(64)}`),
+            status: "active",
+            data: {
+              version: 1,
+              type: "passkey",
+              credentialId: "capacity-fixture",
+              rpId: "dashboard.test",
+              signCount: 0,
+              transports: ["internal"],
+            },
+          });
+          // Occupancy is a fixture; all competing mutations use the public create route.
+          for (let index = 0; index < 49; index++) {
+            yield* repository.core.wallet.insert({
+              organizationId,
+              signingKeyId: capacityKey.id,
+              createdByActorId: stored.wallet.createdByActorId,
+              namespace: wallet.namespace,
+              metadata: wallet.metadata,
+              data: stored.wallet.data,
+              status: "active",
+            });
+          }
+          const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+          const request = {
+            payload: {
+              namespace: "eip155" as const,
+              metadata: { version: 1 as const, name: "Last slot" },
+              owner: {
+                type: "passkey" as const,
+                verificationId: registration.verificationId,
+                response: {
+                  id: "test-passkey",
+                  rawId: "test-passkey",
+                  type: "public-key" as const,
+                  response: { clientDataJSON: "dGVzdA", attestationObject: "dGVzdA" },
+                  clientExtensionResults: {},
+                },
+              },
+            },
+          };
+          const outcomes = yield* Effect.all(
+            Array.from({ length: 8 }, () => client.wallet.create(request).pipe(Effect.result)),
+            { concurrency: 8 },
+          );
+          expect(outcomes.filter(Result.isFailure).map((outcome) => outcome.failure)).toHaveLength(
+            7,
+          );
+          expect(outcomes.filter(Result.isSuccess)).toHaveLength(1);
+          for (const outcome of outcomes.filter(Result.isFailure)) {
+            expect(outcome.failure).toMatchObject({
+              code: "LIMIT_EXCEEDED",
+              limit: "localWallets",
+            });
+          }
+          expect(
+            (yield* client.billing.get()).resources.find(({ key }) => key === "local-wallets"),
+          ).toMatchObject({ usedAmount: 50n, remainingAmount: 0n });
+          const events = yield* repository.audit.organization.findForOrganization(organizationId);
+          // The fixture and the single successful request each have one atomic audit pair.
+          expect(events.filter((event) => event.event === "wallet.created")).toHaveLength(2);
+          expect(events.filter((event) => event.event === "signing_key.created")).toHaveLength(2);
+        }),
+      );
+
       it.effect(
         "admits only one local wallet when concurrent transactions compete for the last slot",
         () =>

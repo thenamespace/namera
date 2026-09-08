@@ -151,6 +151,9 @@ build/typecheck tasks, not just test suites.
 - [x] Verify concurrent admission at the Free signature, mainnet execution,
       testnet execution, and sponsored-gas meter limits on PostgreSQL.
 - [ ] Verify concurrent wallet creation at the Free local-wallet resource cap.
+      PostgreSQL covers helper-level competing admissions and eight HTTP retries
+      of one passkey ceremony at the last slot (one success, seven limit errors,
+      one audit pair). Distinct-user concurrent ceremonies remain unverified.
       The PostgreSQL admission test passes with 49 existing wallets: one of
       eight locked insertion transactions succeeds and seven hit the cap. Full
       concurrent registration-ceremony coverage remains pending.
