@@ -130,6 +130,14 @@ sidebar group are removed. Direct navigation uses the shared not-found boundary.
 - MCP and CLI authorization consent with account-grouped active session-key
   selection.
 
+## Local MCP setup
+
+MCP settings include local listener setup above the authorization table. The
+start command targets the configured API origin; the agent connects to the CLI's
+loopback HTTP endpoint, not a server-hosted MCP route. Instructions distinguish
+MCP OAuth consent from CLI login/API keys, require local encrypted session-key
+imports for signing, and disclose reauthorization after listener restarts.
+
 ## Browser telemetry
 
 Dashboard document security is owned by `tooling/document-security.ts`, not the

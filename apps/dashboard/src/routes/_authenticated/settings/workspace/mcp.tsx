@@ -9,6 +9,7 @@ import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
 
 import { McpAuthorizationsTable } from "../-components/mcp-authorizations-table";
+import { McpSetup } from "../-components/mcp-setup";
 
 const mcpAuthorizationReadPermission = ["mcp-authorization:read"] as const;
 const mcpAuthorizationRevokePermission = ["mcp-authorization:revoke"] as const;
@@ -53,7 +54,14 @@ function McpSettingsPage() {
             Connect AI clients to Namera and manage their delegated account access.
           </HeadingGroup.Description>
         </HeadingGroup>
-        {canRead ? <McpAuthorizationsTable canRevoke={canRevoke} /> : <PermissionDenied />}
+        {canRead ? (
+          <>
+            <McpSetup />
+            <McpAuthorizationsTable canRevoke={canRevoke} />
+          </>
+        ) : (
+          <PermissionDenied />
+        )}
       </DashboardPage.Content>
     </DashboardPage>
   );

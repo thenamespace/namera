@@ -207,11 +207,13 @@ bounded multi-select with network icons and derived select-all state.
   once after creation. Actors with `api-key:revoke` can revoke an active key from
   its row action after confirming that all of its session-key grants will also
   be revoked.
-- `/settings/workspace/mcp` presents the remote MCP endpoint and a searchable,
+- `/settings/workspace/mcp` presents local CLI MCP setup instructions and a searchable,
   status-filtered authorization table. Active authorizations are shown by
   default, and actors with `mcp-authorization:revoke` can revoke an active
   client's session-key grants after confirmation. The former `/mcp` route
-  redirects here.
+  redirects here. Setup uses the configured API origin and the loopback MCP URL,
+  shared copy controls, and explains encrypted key import, separate OAuth consent,
+  and reauthorization after restarting the local listener.
 - `/settings/workspace/cli-authorizations` presents a searchable,
   status-filtered list of authorized CLI devices. Active authorizations are
   shown by default, and actors with `cli-authorization:revoke` can revoke an
