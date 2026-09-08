@@ -5,7 +5,6 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { UpdateOrganizationRequest, type GetOrganizationResponse } from "@namera-ai/protocol/dto";
-import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Field,
   FieldError,
@@ -28,8 +27,9 @@ import { useUpdateOrganization } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
+import { defaultWorkspaceLogo, workspaceFormValues } from "./workspace-form-values";
+
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
-const defaultLogo: MetadataIcon = { type: "emoji", value: "🏢" };
 
 type WorkspaceFormProps = {
   canUpdate: boolean;
@@ -46,7 +46,7 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
     onSuccess: () => showSuccessToast({ title: "Workspace updated successfully" }),
   });
   const form = useForm<UpdateOrganizationRequest>({
-    defaultValues: { metadata: organization.metadata },
+    defaultValues: workspaceFormValues(organization),
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateOrganizationRequest)),
   });
   const { resetBaseline } = useAutoSave({
@@ -59,7 +59,7 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
   });
 
   useEffect(() => {
-    const nextValue = { metadata: organization.metadata };
+    const nextValue = workspaceFormValues(organization);
     form.reset(nextValue);
     resetBaseline(nextValue);
   }, [form, organization, resetBaseline]);
@@ -88,13 +88,13 @@ export function WorkspaceForm({ canUpdate, organization }: WorkspaceFormProps) {
                       size="md"
                       supportedTypes={supportedLogoTypes}
                       triggerClassName="justify-self-end"
-                      value={field.value ?? defaultLogo}
+                      value={field.value ?? defaultWorkspaceLogo}
                     />
                   ) : (
                     <IconPreview
                       className="justify-self-end"
                       size="md"
-                      value={field.value ?? defaultLogo}
+                      value={field.value ?? defaultWorkspaceLogo}
                     />
                   )}
                 </Field>

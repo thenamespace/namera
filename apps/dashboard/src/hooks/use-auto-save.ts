@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+
+import { RegistryContext } from "@effect/atom-react";
 
 import type { FieldValues, SubmitHandler, UseFormReturn } from "react-hook-form";
+
+import { canSaveInAuthority, sessionAuthority } from "@/atoms/auth/authority";
+import { currentUserAtom } from "@/atoms/auth/session";
+import { queryData } from "@/lib/query-data";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -25,6 +31,8 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
   enabled = true,
   flushOnUnmount = true,
 }: UseAutoSaveOptions<T, TTransformedValues>) {
+  const registry = useContext(RegistryContext);
+  const authority = useRef(sessionAuthority(queryData(registry.get(currentUserAtom))));
   const [status, setStatus] = useState<AutoSaveStatus>("idle");
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const onSaveRef = useRef(onSave);
@@ -63,7 +71,14 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
   const save = useCallback(
     async (options: SaveOptions = {}) => {
       clearSaveTimeout();
-      if (!enabledRef.current) return;
+      if (
+        !enabledRef.current ||
+        !canSaveInAuthority(
+          authority.current,
+          sessionAuthority(queryData(registry.get(currentUserAtom))),
+        )
+      )
+        return;
 
       const data = form.getValues();
       const dataSignature = stableStringify(data);
@@ -83,6 +98,14 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
       try {
         let didSave = false;
         await form.handleSubmit(async (validatedData) => {
+          // Validation may be asynchronous; recheck before dispatching a write.
+          if (
+            !canSaveInAuthority(
+              authority.current,
+              sessionAuthority(queryData(registry.get(currentUserAtom))),
+            )
+          )
+            return;
           await onSaveRef.current(validatedData);
           didSave = true;
         })();
@@ -113,7 +136,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
         }
       }
     },
-    [clearSaveTimeout, clearStatusTimeout, form, setPendingIfMounted, setStatusIfMounted],
+    [clearSaveTimeout, clearStatusTimeout, form, registry, setPendingIfMounted, setStatusIfMounted],
   );
 
   const queueSave = useCallback(() => {

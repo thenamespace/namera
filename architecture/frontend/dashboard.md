@@ -55,10 +55,31 @@ their existing behavior. This is a presentation safeguard, not cache erasure or
 an authorization boundary. Denied queries and mutations trigger a shared
 current-user refresh so atom-based permission guards receive the latest role or
 signed-out result. The bootstrap query cannot invalidate itself; temporary
-transport/server failures do not request session revalidation. Unit tests cover
-this decision, not the full browser lifecycle. Route-loader fallback data,
-full-registry invalidation, redirects and independently held form state still
-need separate handling when authority changes.
+transport/server failures do not request session revalidation.
+
+The authenticated layout compares the observed actor with its loaded authority
+(user, session, organization, membership, role and sorted permissions). A change
+hides and unmounts the protected content, resets the atom registry and invalidates
+route loaders. A missing actor redirects to sign-in; changed permissions reload
+read-only/edit capabilities. The boundary is keyed by loaded authority so its
+session subscription is reattached after registry reset. Profile presentation
+changes do not discard forms. Autosave captures its original authority and checks
+it before validation and again before dispatch, including unmount/pagehide flushes.
+These guards do not cancel writes already accepted by the server or replace
+server-side authorization. There is no push notification of remote role changes;
+this transition runs when current-user revalidation observes them.
+
+Production-preview Chromium verification used a real signed-in development
+session with intercepted 403/401 and changed-role responses. A denied workspace
+save caused a read-only reload with one write attempt; a subsequent denied MCP
+query in the same page lifecycle redirected to sign-in and removed the protected
+sidebar. This covers frontend transitions, not live server role mutation (covered
+separately by HTTP integration tests).
+
+Workspace form initialization/reset supplies the displayed fallback logo when
+metadata has none. Otherwise React Hook Form registers an explicit undefined
+logo and the optional-key request schema blocks name-only saves. Resolver tests
+cover missing logos and preservation of existing logo/description values.
 
 Profile form initialization and refresh normalize absent avatar/name fields to
 controlled values. React Hook Form otherwise introduces an explicit undefined

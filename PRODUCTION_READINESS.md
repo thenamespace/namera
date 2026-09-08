@@ -211,13 +211,14 @@ build/typecheck tasks, not just test suites.
       beta surfaces.
 - [ ] Handle an organization or permission change while a protected page is
       open by invalidating stale atoms and redirecting or re-rendering safely.
-      The query adapter no longer exposes previous success data on an
-      Unauthorized/Forbidden result or its pending retry. This does not yet
-      invalidate the complete registry, refresh route capabilities, or remove
-      independently held loader/form data.
-      Denied hook queries/mutations now refresh the shared current-user atom;
-      the bootstrap excludes itself to avoid loops. Full browser lifecycle
-      verification, redirects and loader-capability refresh remain open.
+      Denied queries/mutations refresh the shared actor. Confirmed authority
+      changes now unmount protected content, reset the registry, reload route
+      capabilities and redirect missing sessions. Autosave checks its captured
+      authority before validation and dispatch. Production-preview Chromium
+      verified consecutive role downgrade and sign-out transitions with
+      intercepted transport responses and one denied save attempt. Actual
+      workspace switching with a dirty form and focus-based revalidation still
+      need browser coverage; this item is not fully closed.
 
 ### Wallet operations
 

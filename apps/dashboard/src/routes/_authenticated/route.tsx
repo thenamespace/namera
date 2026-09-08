@@ -1,8 +1,11 @@
 import { Outlet, createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 
+import { sessionAuthority } from "@/atoms/auth/authority";
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery } from "@/atoms/prefetch";
 import { AppSidebar, SettingsSidebar } from "@/components";
+
+import { SessionBoundary } from "./-components/session-boundary";
 
 export const Route = createFileRoute("/_authenticated")({
   loader: async ({ abortController, context, location }) => {
@@ -38,6 +41,15 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const actor = Route.useLoaderData();
+  return (
+    <SessionBoundary key={sessionAuthority(actor)} actor={actor}>
+      <AuthenticatedContent />
+    </SessionBoundary>
+  );
+}
+
+function AuthenticatedContent() {
   const { pathname } = useLocation();
   if (
     pathname === "/workspace/new" ||

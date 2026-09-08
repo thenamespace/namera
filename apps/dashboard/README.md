@@ -367,12 +367,18 @@ saves by rerunning after the active save completes. It exposes
 `idle`, `saving`, `saved`, and `error` status plus `resetBaseline` for server data
 replacements. It also makes a best-effort silent flush of dirty values on route
 unmount and `pagehide`, including when navigation happens before the debounce.
+Flushes only run while the form's original user/session/workspace/role authority
+still matches the current actor, with a second check after asynchronous validation.
+The authenticated layout clears cached state and reloads route permissions when
+session revalidation observes an authority change; affected forms are unmounted.
 
 When loader data replaces a mounted form, call both
 `form.reset(nextValue)` and `autoSave.resetBaseline(nextValue)`.
 Use the same form-value normalization for initialization and reset. In particular,
 the profile supplies its displayed default avatar rather than registering an
 explicit undefined image, which is not valid for the protocol's optional-key field.
+Workspace settings similarly supplies its displayed fallback logo before a
+name-only edit; initialization and reset share `workspaceFormValues`.
 
 ```tsx
 const form = useForm<ProfileInput, unknown, ProfileOutput>({
