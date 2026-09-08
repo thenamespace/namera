@@ -67,6 +67,9 @@ build/typecheck tasks, not just test suites.
       granted, ungranted and foreign wallets, immediate session-grant revocation,
       revoked credentials and denial of human-only owner/metadata operations.
       This does not close OAuth actor coverage or the remaining route matrix.
+      MCP OAuth now additionally covers ten read routes after execute-only scope
+      narrowing, read-only completion denial and immediate session-grant
+      revocation. CLI-specific scopes and the complete route matrix remain open.
 - [ ] Close any uncovered tenant-isolation or privilege-escalation paths found
       by that review.
 - [x] Apply `Cache-Control: no-store` to authentication, OAuth, credential,

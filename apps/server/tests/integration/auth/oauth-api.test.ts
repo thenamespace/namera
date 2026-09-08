@@ -5,6 +5,7 @@ import { NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
+import { ExecutionId, ExecutionSubmissionId, Hex, SignatureOperationId } from "@namera-ai/protocol";
 
 import { handledApi } from "../../fixtures/http-api-test.js";
 import {
@@ -135,6 +136,25 @@ layer(fixture.layer)("MCP API audience", (it) => {
           })
           .pipe(Effect.flip),
       ).toMatchObject({ _tag: "Forbidden" });
+      const completions: ReadonlyArray<Effect.Effect<unknown, unknown>> = [
+        readOnly.execution.complete({
+          payload: {
+            namespace: "eip155",
+            submissionId: ExecutionSubmissionId.make("01900000-0000-7000-8000-000000000012"),
+            signature: Hex.make(`0x${"11".repeat(65)}`),
+          },
+        }),
+        readOnly.signature.complete({
+          payload: {
+            namespace: "eip155",
+            operationId: SignatureOperationId.make("01900000-0000-7000-8000-000000000013"),
+            signature: Hex.make(`0x${"11".repeat(65)}`),
+          },
+        }),
+      ];
+      for (const complete of completions) {
+        expect(yield* complete.pipe(Effect.flip)).toMatchObject({ _tag: "Forbidden" });
+      }
     }),
   );
 
@@ -143,6 +163,127 @@ layer(fixture.layer)("MCP API audience", (it) => {
       expect(yield* setup("http://api.test/mcp").pipe(Effect.flip)).toMatchObject({
         _tag: "OAuthAuthorizationRequestError",
         code: "INVALID_RESOURCE",
+      });
+    }),
+  );
+
+  it.effect("does not infer read authority from an execute-only narrowed token", () =>
+    Effect.gen(function* () {
+      const { token, wallet, session } = yield* setup();
+      if (token.refreshToken === undefined) return yield* Effect.die("Expected refresh token");
+      const app = yield* Application;
+      const narrowed = yield* app.oauth.token.refresh({
+        refreshToken: token.refreshToken,
+        clientId,
+        resource: "http://api.test",
+        scopes: ["mcp:execute"],
+      });
+      const executeOnly = yield* handledApi(NameraApi, {
+        headers: { authorization: `Bearer ${narrowed.accessToken}` },
+      });
+      expect(yield* executeOnly.session.currentActor()).toMatchObject({
+        type: "mcp",
+        data: { authorization: { scopes: ["mcp:execute"] } },
+      });
+
+      const reads: ReadonlyArray<{
+        name: string;
+        request: Effect.Effect<unknown, unknown>;
+      }> = [
+        { name: "wallet list", request: executeOnly.wallet.list() },
+        {
+          name: "wallet detail",
+          request: executeOnly.wallet.get({ params: { walletId: wallet.id } }),
+        },
+        {
+          name: "portfolio",
+          request: executeOnly.wallet.getPortfolio({ params: { walletId: wallet.id }, query: {} }),
+        },
+        { name: "session list", request: executeOnly.sessionKey.listForOrganization() },
+        {
+          name: "wallet sessions",
+          request: executeOnly.sessionKey.listForWallet({ params: { walletId: wallet.id } }),
+        },
+        {
+          name: "session detail",
+          request: executeOnly.sessionKey.get({ params: { sessionKeyId: session.id } }),
+        },
+        { name: "execution history", request: executeOnly.execution.list({ query: {} }) },
+        {
+          name: "execution detail",
+          request: executeOnly.execution.get({
+            params: { executionId: ExecutionId.make("01900000-0000-7000-8000-000000000010") },
+          }),
+        },
+        {
+          name: "submission",
+          request: executeOnly.execution.getSubmission({
+            params: {
+              submissionId: ExecutionSubmissionId.make("01900000-0000-7000-8000-000000000011"),
+            },
+          }),
+        },
+        {
+          name: "signature verification",
+          request: executeOnly.signature.verify({
+            payload: {
+              namespace: "eip155",
+              walletId: wallet.id,
+              chainId: "eip155:1",
+              type: "message",
+              message: "scope test",
+              signature: "0x",
+            },
+          }),
+        },
+      ];
+      for (const { name, request } of reads) {
+        expect(yield* request.pipe(Effect.flip), name).toMatchObject({ _tag: "Forbidden" });
+      }
+    }),
+  );
+
+  it.effect("removes a live OAuth token's resource access when its session is revoked", () =>
+    Effect.gen(function* () {
+      const { api, delegated, owner, wallet, session } = yield* setup();
+      expect((yield* delegated.wallet.get({ params: { walletId: wallet.id } })).id).toBe(wallet.id);
+      yield* setAuthToken(owner.cookie.value);
+      yield* api.sessionKey.revoke({ params: { sessionKeyId: session.id } });
+      yield* setAuthToken();
+
+      // Consent and the token remain valid; only the wallet authority has been removed.
+      expect(yield* delegated.session.currentActor()).toMatchObject({ type: "mcp" });
+      expect(yield* delegated.wallet.list()).toEqual([]);
+      expect(yield* delegated.sessionKey.listForOrganization()).toEqual([]);
+      expect(
+        yield* delegated.wallet
+          .getPortfolio({ params: { walletId: wallet.id }, query: {} })
+          .pipe(Effect.flip),
+      ).toMatchObject({
+        _tag: "WalletError",
+        code: "WALLET_NOT_FOUND",
+      });
+      expect(
+        yield* delegated.sessionKey.get({ params: { sessionKeyId: session.id } }).pipe(Effect.flip),
+      ).toMatchObject({
+        _tag: "SessionKeyError",
+        code: "SESSION_KEY_NOT_FOUND",
+      });
+      expect(
+        yield* delegated.execution
+          .simulate({
+            payload: {
+              namespace: "eip155",
+              walletId: wallet.id,
+              sessionKeyId: session.id,
+              chainId: "eip155:1",
+              calls: [{ to: wallet.address, value: 0n, data: "0x" }],
+            },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({
+        _tag: "ExecutionError",
+        code: "NO_AUTHORIZED_SESSION_KEY",
       });
     }),
   );

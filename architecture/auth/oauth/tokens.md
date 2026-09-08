@@ -77,6 +77,17 @@ and `mcp:execute` for simulation, execution preparation/completion, and signatur
 preparation/completion. User-only management routes remain forbidden, and reads
 stay actor/grant scoped. Hosted `/mcp` tokens are not accepted by this middleware.
 
+The MCP API integration matrix verifies a refreshed execute-only token is denied
+wallet list/detail/portfolio, organization and wallet session lists, session
+detail, execution list/detail/submission status, and signature verification.
+Read-only tokens cannot prepare signatures, simulate executions, or complete
+execution/signature operations. Completion cases use well-formed nonexistent
+operation IDs to verify scope denial precedes resource lookup. Revoking a session
+removes its grant from a still-valid MCP token immediately: lists become empty,
+details become not-found, and simulation rejects missing authority before
+onchain uninstallation. These are HTTP tests with substituted chain providers,
+not a browser-to-local-MCP or live-chain verification.
+
 ## Explicit revocation
 
 The token revocation endpoint hashes input under both access and refresh purposes and conditionally revokes the matching row. Authorization management revocation is stronger: it marks the durable authorization revoked, revokes all authorization tokens, revokes every active session-key grant for its actor, and writes type-specific audit/notification effects in one transaction.
