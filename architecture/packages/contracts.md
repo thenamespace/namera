@@ -9,6 +9,8 @@ Protocol is the shared language of every runtime. It contains Effect schemas and
 - `src/model`: persistence/domain models and encoded forms.
 - `src/dto`: public request/response projections; safe views must exclude sensitive fields.
 - `src/evm`: EVM primitives, execution/signature context/results, policies, and chain IDs.
+- `src/local`: client-only session authority and encrypted keystore contracts,
+  exported separately as `@namera-ai/protocol/local`. These are not API DTOs.
 - domain error modules: `Schema.TaggedError` expected failures.
 - audit/notification model modules: closed versioned event unions.
 
