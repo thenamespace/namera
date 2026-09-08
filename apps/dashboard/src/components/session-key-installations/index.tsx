@@ -15,10 +15,15 @@ import { billingAtom } from "@/atoms/billing";
 import { ChainDisplay } from "@/components/display";
 import { PermissionGuard } from "@/components/permission";
 import { OnchainAuthorizationSummary } from "@/components/policy/evm/onchain/summary";
-import { useSessionKey, useSessionKeyOperation } from "@/hooks/session-key";
+import {
+  useActiveSessionKeyOperation,
+  useSessionKey,
+  useSessionKeyOperation,
+} from "@/hooks/session-key";
 import { useWalletPasskeyOwner } from "@/hooks/wallet";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
+import { recoverSponsoredApproval } from "./recovery";
 import { useInstallationApproval } from "./use-approval";
 
 const createPermission = ["session-key:create"] as const;
@@ -85,7 +90,15 @@ function Installation({
   endApproval: () => void;
 }) {
   const kind = session.status === "revoking" ? "uninstall" : "install";
+  const active = useActiveSessionKeyOperation({ installationId: installation.id, kind });
   const approval = useInstallationApproval(session, installation, owner, kind);
+  const recovered = active.data?.operation;
+  const operationId = approval.operationId ?? recovered?.operationId;
+  const retryRequest = recoverSponsoredApproval(
+    { installationId: installation.id, kind },
+    recovered ?? null,
+  );
+  const resumable = retryRequest !== undefined;
   const eligible =
     kind === "uninstall"
       ? installation.status === "installed" || installation.status === "revoking"
@@ -93,10 +106,12 @@ function Installation({
         (installation.status === "pending" || installation.status === "failed");
   const finish = () => {
     refresh();
+    active.refetch();
     approval.finish();
   };
   const approve = () => {
-    if (beginApproval()) void approval.approve().finally(endApproval);
+    if (!active.isSuccess || active.isFetching || (recovered && !resumable)) return;
+    if (beginApproval()) void approval.approve(retryRequest).finally(endApproval);
   };
   return (
     <article className="rounded-xl bg-surface p-4">
@@ -115,13 +130,18 @@ function Installation({
               size="sm"
               isPending={approval.pending}
               isDisabled={
-                working || !owner?.owner || (Boolean(approval.operationId) && !approval.error)
+                working ||
+                !owner?.owner ||
+                !active.isSuccess ||
+                active.isFetching ||
+                Boolean(recovered && !resumable) ||
+                (Boolean(approval.operationId) && !approval.error)
               }
               onPress={approve}
             >
               {approval.pending
                 ? "Checking approval…"
-                : approval.error
+                : approval.error || resumable
                   ? "Retry approval"
                   : kind === "uninstall"
                     ? "Remove with passkey"
@@ -133,10 +153,24 @@ function Installation({
           </div>
         </PermissionGuard>
       ) : null}
-      {approval.operationId ? (
+      {active.isError ? (
+        <div className="mt-2 text-xs text-muted" role="alert">
+          Couldn’t check existing approvals.
+          <Button variant="tertiary" size="sm" onPress={active.refetch}>
+            Retry
+          </Button>
+        </div>
+      ) : null}
+      {recovered?.status === "awaiting-signature" && !resumable ? (
+        <Typography.Paragraph size="xs" color="muted">
+          Resume this approval in the client and user account that started it, or wait for it to
+          expire.
+        </Typography.Paragraph>
+      ) : null}
+      {operationId ? (
         <ReceiptStatus
-          key={approval.operationId}
-          operationId={approval.operationId}
+          key={operationId}
+          operationId={operationId}
           pending={approval.pending}
           onTerminal={finish}
         />

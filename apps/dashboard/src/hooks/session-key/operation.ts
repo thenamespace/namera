@@ -1,5 +1,6 @@
 import { QueryKeys } from "@/atoms/query-keys";
 import {
+  activeSessionKeyOperationAtom,
   completeSessionKeyOperationMutation,
   prepareSessionKeyOperationMutation,
   sessionKeyOperationAtom,
@@ -7,6 +8,7 @@ import {
 import { toMutation, toQuery } from "@/hooks/atom";
 
 export const useSessionKeyOperation = toQuery(sessionKeyOperationAtom);
+export const useActiveSessionKeyOperation = toQuery(activeSessionKeyOperationAtom);
 
 // The caller retains one idempotency key for a preparation attempt, including retries.
 export const usePrepareSessionKeyOperation = toMutation(prepareSessionKeyOperationMutation);

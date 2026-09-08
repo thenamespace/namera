@@ -5,6 +5,7 @@ import { DateTime, Effect } from "effect";
 import type {
   CompleteSessionKeyOperationRequest,
   GetWalletPasskeyOwnerResponse,
+  PrepareSessionKeyOperationRequest,
   PrepareSessionKeyOperationResponse,
   SessionKeyResponse,
 } from "@namera-ai/protocol/dto";
@@ -46,15 +47,26 @@ export function useInstallationApproval(
     [],
   );
 
-  const approve = async () => {
+  const approve = async (recovered?: PrepareSessionKeyOperationRequest) => {
     if (busy.current || !descriptor) return;
+    // The dashboard currently reviews sponsored approvals only. Never silently
+    // change a recovered self-funded request or resume a different installation.
+    if (
+      recovered &&
+      (!recovered.sponsor ||
+        recovered.installationId !== installation.id ||
+        recovered.kind !== kind)
+    )
+      return;
     busy.current = true;
     setPending(true);
     setError(false);
     const abort = new AbortController();
     controller.current = abort;
     try {
-      const current = (attempt.current ??= { key: crypto.randomUUID() });
+      const current = (attempt.current ??= {
+        key: recovered?.idempotencyKey ?? crypto.randomUUID(),
+      });
       if (!current.assertion) {
         const reviewed = await reviewSessionInstallation(
           session.wallet,

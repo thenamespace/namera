@@ -129,8 +129,11 @@ Passphrase fields clear after encryption; leaving with an unsaved key requires
 confirmation. Registration is shown as pending. The installation panel becomes
 available after backup acknowledgement and also appears on overview/policies.
 It supports sponsored install and removal with the owner's passkey. Approval
-retry identity and assertions remain in memory only; reload recovery and the
-full browser/live-chain journey remain unfinished.
+assertions remain in memory only. Reloads look up the active operation: owned,
+unsigned sponsored approvals resume their original retry identity; signed
+operations are tracked without another passkey prompt. Recovery read errors
+disable approval until retried. The full browser/live-chain journey remains
+unfinished.
 `/session-key/$sessionKeyId` redirects to its overview and owns a shared detail
 shell with Overview, Policies, and Executions navigation. The overview presents
 the session key identity and its core status, account, namespace, creator,

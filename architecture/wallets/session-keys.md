@@ -179,7 +179,8 @@ five-second cache lifetime. The installation component refreshes operation statu
 every three seconds while pending and refreshes session/billing data on terminal
 receipts. It retains the preparation idempotency key and the accepted browser
 assertion in component memory across retries, without signing again after an
-ambiguous completion response. These values do not survive navigation/reload.
+ambiguous completion response. Assertions do not survive navigation/reload;
+active-operation lookup recovers the public retry identity or receipt status.
 Typed approval failures
 use the shared feedback registry; provider and assertion payloads are not shown.
 
@@ -234,15 +235,18 @@ and status, plus the original preparation request for the initiating user while
 the unsigned challenge remains valid. Other members can observe status but cannot
 recover that user's retry request. Signed/submitted operations never return an
 assertion or envelope. Terminal operations are absent from this lookup. The
-dashboard recovery wiring remains pending; the endpoint is covered for tenant
+dashboard resumes only owned unsigned sponsored requests matching the displayed
+installation and action. Signed operations are polled without another prompt;
+self-funded or other-user unsigned approvals must finish in their original client
+or expire. Recovery lookup errors disable new approvals rather than falling back
+to a new identity. The endpoint is covered for tenant
 isolation, member visibility, expiration, and signed/confirmed transitions.
 
 ## Pending
 
-- Complete stuck signed-operation cancellation/replacement recovery and connect
-  the status endpoint to browser polling.
+- Complete stuck signed-operation cancellation/replacement recovery.
 - Verify browser generation, encrypted export/import and owner-approved creation
-  end to end; recover pending approval identities after navigation/reload.
+  end to end, including recovery after navigation/reload.
 - Verify dashboard removal on every installed chain, including partial failures.
 - Add retention behavior for expired/revoked keys and historical grants.
 - Per-grant editing is intentionally unsupported; revoke/replace the parent
