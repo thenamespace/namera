@@ -1,8 +1,8 @@
 # Local MCP authorization
 
 The CLI owns the OAuth broker in `services/mcp/oauth-broker.ts`. The broker and
-upstream HTTP adapter are implemented and tested; the `namera mcp start`
-listener, HTTP routes, tool wiring, and persistent credential lifecycle are
+upstream HTTP adapter and OAuth HTTP routes are implemented and tested; the
+`namera mcp start` listener, tool wiring, and persistent credential lifecycle are
 still pending. The API-hosted MCP transport has not yet been removed.
 
 ## Two audiences
@@ -62,12 +62,29 @@ separate audiences, replay, redirect/PKCE binding, expiry, scope narrowing,
 refresh/revoke concurrency, and malformed upstream responses. They do not prove
 the HTTP listener or a live Namera consent journey yet.
 
+The HTTP routes expose local issuer/resource metadata, registration, consent
+redirect/callback, token exchange/refresh, and revocation. Denied consent consumes
+the bound state and returns only `access_denied` to the registered callback.
+Unknown state never redirects. Query/form duplicate parameters are rejected.
+OAuth bodies are read through a 32 KiB bounded stream with a 10-second read
+timeout; this does not depend on Web Request convenience getters honoring the
+platform body-size setting.
+
+The shared listener guard checks exact Host/Origin, caps URLs at 8 KiB, limits
+registration to 10 requests/minute, other OAuth/discovery routes to 120/minute,
+and MCP requests to 600/minute. It admits at most 32 requests concurrently;
+overflow returns 503 without queuing. Responses receive no-store/no-referrer,
+nosniff, and a restrictive CSP. Request URL logging must stay disabled because
+OAuth callback URLs contain credentials. HTTP integration tests cover the
+consent/token/revocation journey, safe denial, headers, duplicate parameters,
+oversized bodies, host/origin rejection and registration limits. CLI source
+and tests are both typechecked.
+
 Remaining:
 
-- Mount metadata, registration, authorization, callback, token and revocation
-  routes with strict Host/Origin checks, duplicate-parameter rejection, request
-  size/rate/concurrency bounds, safe OAuth errors, and no-store headers.
-- Handle denied upstream consent through the bound callback state.
+- Compose the OAuth routes and guard into the actual loopback listener. Verify
+  concurrency limits and body/timeout behavior on the Node HTTP adapter as well
+  as the in-memory HTTP boundary.
 - Persist refreshable authorization securely in the OS keyring, with a defined
   restart/logout/revocation lifecycle and no plaintext fallback.
 - Authenticate every MCP tool against the live API actor, bind MCP sessions to

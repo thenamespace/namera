@@ -215,6 +215,18 @@ export const buildLocalMcpOAuth = Effect.fn("LocalMcpOAuth.build")(function* (co
     };
   });
 
+  const deny = Effect.fn("LocalMcpOAuth.deny")(function* (state: string) {
+    const key = yield* digest("state:", state);
+    prune(yield* Clock.currentTimeMillis);
+    const flow = pending.get(key);
+    if (!flow) return yield* invalid("invalid_grant");
+    pending.delete(key);
+    const redirect = new URL(flow.request.redirect_uri);
+    redirect.searchParams.set("error", "access_denied");
+    if (flow.request.state !== undefined) redirect.searchParams.set("state", flow.request.state);
+    return redirect.toString();
+  });
+
   const exchange = Effect.fn("LocalMcpOAuth.exchange")(function* (input: unknown) {
     const request = yield* Schema.decodeUnknownEffect(LocalOAuthCodeExchange)(input).pipe(
       Effect.mapError(() => invalid("invalid_request")),
@@ -306,7 +318,7 @@ export const buildLocalMcpOAuth = Effect.fn("LocalMcpOAuth.build")(function* (co
     );
   });
 
-  return { register, begin, callback, exchange, refresh, authenticate, revoke };
+  return { register, begin, callback, deny, exchange, refresh, authenticate, revoke };
 });
 
 export class LocalMcpOAuth extends Context.Service<

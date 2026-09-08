@@ -22,7 +22,8 @@
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "start": "node dist/index.js",
     "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
-    "typecheck": "tsc -p tsconfig.json --pretty false"
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",

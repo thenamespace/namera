@@ -21,7 +21,7 @@ export type LocalMcpUrls = ReturnType<typeof localMcpUrls>;
 /** Forwarded headers must never relax the authority accepted by a local listener. */
 export const acceptsLocalMcpRequest = (
   urls: LocalMcpUrls,
-  headers: { readonly host?: string; readonly origin?: string },
+  headers: { readonly host?: string | undefined; readonly origin?: string | undefined },
 ) =>
   headers.host === urls.authority &&
   (headers.origin === undefined || headers.origin === urls.origin);
