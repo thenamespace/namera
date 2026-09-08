@@ -40,6 +40,7 @@ export function OnchainSettings({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel id="session-networks-label">Networks</FieldLabel>
                   <EvmNetworkMultiSelect
+                    operationalOnly
                     aria-labelledby="session-networks-label"
                     name={field.name}
                     value={field.value ?? []}

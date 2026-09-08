@@ -67,8 +67,13 @@ receipts, verification, portfolio, and historical chain displays remain availabl
 This is an admission pause, not cancellation of previously authorized operations
 or an onchain circuit breaker. Unit tests replace the registry lookup with a
 paused row and verify the six preparation/signature boundaries fail before
-provider/signer access. Dashboard disabled-option presentation and HTTP error UX
-still need integration before closing the end-to-end availability gate.
+provider/signer access. Dashboard session creation disables paused choices and
+validates the network field; installation panels disable new approvals but keep
+polling signed attempts. Policy editors retain paused choices for existing
+restrictions. Both apps must rebuild for a code-owned flag change; stale browsers
+remain subject to the server guards. Precise operation-specific unavailable
+error codes through API/SDK/CLI/MCP still need integration before closing the
+end-to-end availability gate.
 
 ## Per-chain clients
 

@@ -21,6 +21,7 @@ export const evmChainOptions = Object.values(chains)
     name: data.chain.name,
     nativeCurrency: data.chain.nativeCurrency,
     testnet: data.chain.testnet ?? false,
+    operationsEnabled: data.operationsEnabled,
   }))
   .toSorted((left, right) => {
     if (left.testnet !== right.testnet) return left.testnet ? 1 : -1;

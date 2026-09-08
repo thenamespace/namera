@@ -8,6 +8,11 @@ export type FeedbackMessage = {
 type ErrorMessageResolver = FeedbackMessage | ((error: object) => FeedbackMessage);
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "SessionKeyCreationError:ONCHAIN_PREPARATION_FAILED": {
+    title: "Network unavailable",
+    description:
+      "A selected network could not prepare this session. It may be paused; try again later.",
+  },
   Unauthorized: {
     title: "Sign in required",
     description: "Sign in again, then retry this action.",

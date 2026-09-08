@@ -1,13 +1,15 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import * as chainRegistry from "@namera-ai/evm/chains";
 import { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CreateSessionKeyFormSchema } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/schema";
 
 const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema));
 const options = { fields: {}, shouldUseNativeValidation: false };
+afterEach(() => vi.restoreAllMocks());
 const request = {
   namespace: "eip155",
   walletId: "00000000-0000-7000-8000-000000000001",
@@ -53,4 +55,20 @@ describe("optional session description", () => {
     );
     expect(rejected.errors).toHaveProperty("metadata.description.message");
   });
+});
+
+it("rejects paused networks through the actual session creation form resolver", async () => {
+  const chain = chainRegistry.chains["base-mainnet"];
+  vi.spyOn(chainRegistry, "getChainDataByCaip2").mockReturnValue({
+    ...chain,
+    operationsEnabled: false,
+  });
+  const rejected = await resolve(request, undefined, options);
+  expect(rejected.errors).toHaveProperty(
+    "onchain.chains.message",
+    "Choose networks that are not paused.",
+  );
+  vi.restoreAllMocks();
+  const accepted = await resolve(request, undefined, options);
+  expect(accepted.errors).toEqual({});
 });

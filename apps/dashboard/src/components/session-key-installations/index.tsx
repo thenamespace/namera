@@ -21,6 +21,7 @@ import {
   useSessionKeyOperation,
 } from "@/hooks/session-key";
 import { useWalletPasskeyOwner } from "@/hooks/wallet";
+import { isChainOperationEnabled } from "@/lib/chain-availability";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { recoverSponsoredApproval } from "./recovery";
@@ -99,6 +100,7 @@ function Installation({
     recovered ?? null,
   );
   const resumable = retryRequest !== undefined;
+  const networkAvailable = isChainOperationEnabled(installation.chainId);
   const eligible =
     kind === "uninstall"
       ? installation.status === "installed" || installation.status === "revoking"
@@ -110,7 +112,8 @@ function Installation({
     approval.finish();
   };
   const approve = () => {
-    if (!active.isSuccess || active.isFetching || (recovered && !resumable)) return;
+    if (!networkAvailable || !active.isSuccess || active.isFetching || (recovered && !resumable))
+      return;
     if (beginApproval()) void approval.approve(retryRequest).finally(endApproval);
   };
   return (
@@ -130,6 +133,7 @@ function Installation({
               size="sm"
               isPending={approval.pending}
               isDisabled={
+                !networkAvailable ||
                 working ||
                 !owner?.owner ||
                 !active.isSuccess ||
@@ -152,6 +156,12 @@ function Installation({
             </Typography.Paragraph>
           </div>
         </PermissionGuard>
+      ) : null}
+      {!networkAvailable ? (
+        <Typography.Paragraph className="mt-3" size="xs" color="muted">
+          Network paused. New approvals are unavailable; already signed operations continue to
+          reconcile. API revocation does not remove onchain permissions.
+        </Typography.Paragraph>
       ) : null}
       {active.isError ? (
         <div className="mt-2 text-xs text-muted" role="alert">

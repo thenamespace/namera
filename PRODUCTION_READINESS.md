@@ -161,7 +161,9 @@ build/typecheck tasks, not just test suites.
       MCP, and dashboard data.
       EVM registry flags and preparation/signing guards are implemented; all
       eight remain enabled. Already signed operation recovery and reads stay
-      available. Dashboard selection and HTTP error presentation remain open.
+      available. Dashboard selection, form validation and approval controls now
+      reflect paused chains. Operation-specific API/SDK/CLI/MCP errors and full
+      paused-network browser verification remain open.
 
 ### Billing and data reads
 

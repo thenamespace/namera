@@ -10,6 +10,7 @@ import { evmChainById, evmChainOptions } from "./data";
 type EvmNetworkMultiSelectProps = {
   "aria-labelledby": string;
   isInvalid?: boolean;
+  operationalOnly?: boolean;
   name: string;
   onBlur: () => void;
   onChange: (chainIds: ReadonlyArray<SupportedEvmChainId>) => void;
@@ -20,6 +21,7 @@ type EvmNetworkMultiSelectProps = {
 export function EvmNetworkMultiSelect({
   "aria-labelledby": ariaLabelledBy,
   isInvalid = false,
+  operationalOnly = false,
   name,
   onBlur,
   onChange,
@@ -30,7 +32,9 @@ export function EvmNetworkMultiSelect({
     const chain = evmChainById.get(chainId);
     return chain ? [chain] : [];
   });
-  const allNetworksSelected = value.length === evmChainOptions.length;
+  const selectable = evmChainOptions.filter((chain) => !operationalOnly || chain.operationsEnabled);
+  const allNetworksSelected =
+    selectable.length > 0 && selectable.every((chain) => value.includes(chain.id));
 
   return (
     <Select<(typeof evmChainOptions)[number], "multiple">
@@ -70,22 +74,22 @@ export function EvmNetworkMultiSelect({
           aria-label="Select all networks"
           className="w-full rounded-md px-2 py-1.5 transition-colors hover:bg-default"
           isSelected={allNetworksSelected}
-          onChange={(isSelected) =>
-            onChange(isSelected ? evmChainOptions.map((chain) => chain.id) : [])
-          }
+          isDisabled={selectable.length === 0}
+          onChange={(isSelected) => onChange(isSelected ? selectable.map((chain) => chain.id) : [])}
         >
           <Checkbox.Content className="w-full">
             <Checkbox.Control>
               <Checkbox.Indicator />
             </Checkbox.Control>
             <span className="flex-1 text-left font-medium">Select all networks</span>
-            <span className="text-muted text-xs">{evmChainOptions.length}</span>
+            <span className="text-muted text-xs">{selectable.length}</span>
           </Checkbox.Content>
         </Checkbox>
         <ListBox className="max-h-60 overflow-y-auto" items={evmChainOptions}>
           {(chain) => (
             <ListBox.Item
               id={chain.id}
+              isDisabled={operationalOnly && !chain.operationsEnabled}
               textValue={`${chain.name} (${chain.nativeCurrency.symbol})`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -100,6 +104,7 @@ export function EvmNetworkMultiSelect({
                   <span className="text-muted text-xs">({chain.nativeCurrency.symbol})</span>
                 </span>
               </div>
+              {!chain.operationsEnabled ? <span className="text-muted text-xs">Paused</span> : null}
               <ListBox.ItemIndicator />
             </ListBox.Item>
           )}

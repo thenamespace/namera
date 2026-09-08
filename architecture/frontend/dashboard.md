@@ -107,6 +107,16 @@ and preserving an exact empty name. This exercised a local draft only: it did
 not create or install an onchain session. Full session creation/approval journeys
 remain separate gates.
 
+Session network selection reads the EVM registry's `operationsEnabled` flag.
+Paused networks remain visible with a Paused label but cannot be selected for
+new sessions; Select all includes only enabled networks. The form resolver also
+rejects paused networks on the network field. Policy editors retain paused
+networks so existing restrictions can still be represented. The installation
+panel disables new passkey approvals on paused networks without stopping receipt
+polling for already signed operations, and explains that API revocation does
+not remove onchain permissions. Registry state is bundled at build time; server
+adapter guards remain authoritative if a browser has an older build.
+
 ## Shared UI ownership
 
 - `src/routes/**/-components`: one route or route-group composition.
