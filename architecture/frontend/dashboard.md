@@ -32,8 +32,11 @@ actor. Offline, server, permission, and decoding failures remain errors and
 reach the retry boundary; they must not masquerade as a successful logout.
 
 Account, session-key, and execution detail parents validate branded IDs,
-prefetch detail once, map missing resources to the router not-found boundary,
-and provide nested navigation.
+prefetch detail once, and provide nested navigation. Invalid IDs use the router
+not-found boundary. Account and session-key detail query failures render a local
+`DataError` with atom refresh inside their shells, rather than leaving nested
+pages loading indefinitely. Retry is disabled while that query is refreshing;
+provider exception details are never displayed.
 
 The router has shared error and not-found fallbacks. Errors expose a reload
 action (clearing failed in-memory atom results), and both states offer a return

@@ -6,6 +6,7 @@ import { WalletId } from "@namera-ai/protocol";
 
 import { startPrefetchQuery } from "@/atoms/prefetch";
 import { walletAtom } from "@/atoms/wallet";
+import { DataError } from "@/components/data-error";
 import { useWallet } from "@/hooks/wallet";
 
 import { AccountShell } from "../-components/account-shell";
@@ -25,7 +26,11 @@ function AccountLayout() {
   const account = useWallet(accountId);
   return (
     <AccountShell account={account.data}>
-      <Outlet />
+      {account.isError ? (
+        <DataError label="account" onRetry={account.refetch} isRetrying={account.isFetching} />
+      ) : (
+        <Outlet />
+      )}
     </AccountShell>
   );
 }

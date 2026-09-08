@@ -6,6 +6,7 @@ import { SessionKeyId } from "@namera-ai/protocol";
 
 import { startPrefetchQuery } from "@/atoms/prefetch";
 import { sessionKeyAtom } from "@/atoms/session-key";
+import { DataError } from "@/components/data-error";
 import { useSessionKey } from "@/hooks/session-key";
 
 import { SessionKeyShell } from "../-components/session-key-shell";
@@ -29,7 +30,15 @@ function SessionKeyLayout() {
   const sessionKey = useSessionKey(sessionKeyId);
   return (
     <SessionKeyShell sessionKey={sessionKey.data}>
-      <Outlet />
+      {sessionKey.isError ? (
+        <DataError
+          label="session key"
+          onRetry={sessionKey.refetch}
+          isRetrying={sessionKey.isFetching}
+        />
+      ) : (
+        <Outlet />
+      )}
     </SessionKeyShell>
   );
 }
