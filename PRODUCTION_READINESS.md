@@ -34,8 +34,8 @@ Workspace verification refreshed on 2026-09-09:
 
 - [x] `pnpm check` passes all 66 workspace tasks.
 - [x] `pnpm test` passes all 37 task-graph entries. The default server lane passes
-      48 suites / 175 tests and skips seven opt-in tests in three suites.
-      Database: 11; SDK: 51; CLI: 46 passing / two opt-in skipped;
+      49 suites / 176 tests and skips seven opt-in tests in three suites.
+      Database: 11; SDK: 51; CLI: 47 passing / two opt-in skipped;
       dashboard: 50; EVM: 62 passing / six opt-in skipped.
       Cached tasks are included in the task-graph total.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
