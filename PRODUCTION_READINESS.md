@@ -168,6 +168,11 @@ build/typecheck tasks, not just test suites.
       releasing an earlier uncertain attempt. Seven PostgreSQL recovery tests
       cover this and interrupted-worker takeover; repository tests reject stale,
       expired and foreign-tenant broadcast claims.
+      Automatic rebroadcasts are now capped at 24 hours; old attempts retain
+      holds, poll read-only every five minutes and emit an unresolved warning.
+      Late matching receipts still settle. An explicit operator resolution UI
+      and authoritative non-execution proof remain separate work; timeout is
+      intentionally not treated as terminal failure.
 - [ ] Ensure an interrupted execution can settle or release billing and policy
       reservations without double settlement.
 - [x] Verify eight competing execution workers claim and settle two queued

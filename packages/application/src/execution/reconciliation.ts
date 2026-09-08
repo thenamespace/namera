@@ -13,6 +13,8 @@ const reconciliationPolicy = {
   concurrency: 5,
   leaseDuration: Duration.minutes(2),
   retryDelay: Duration.seconds(15),
+  broadcastLifetime: Duration.hours(24),
+  unresolvedRetryDelay: Duration.minutes(5),
 } as const;
 
 export const makeExecutionReconciliation = Effect.gen(function* () {
@@ -27,22 +29,31 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     reason: string,
   ) {
     const now = yield* DateTime.now;
+    const unresolved = DateTime.isGreaterThanOrEqualTo(
+      now,
+      DateTime.addDuration(submission.createdAt, reconciliationPolicy.broadcastLifetime),
+    );
     yield* repository.core.executionSubmission.releaseLease({
       id: submission.id,
       organizationId: submission.organizationId,
       leaseToken,
-      nextReconcileAt: DateTime.addDuration(now, reconciliationPolicy.retryDelay),
+      nextReconcileAt: DateTime.addDuration(
+        now,
+        unresolved ? reconciliationPolicy.unresolvedRetryDelay : reconciliationPolicy.retryDelay,
+      ),
     });
     yield* Metric.update(
       Metric.withAttributes(executionReconciliations, {
         namespace: submission.namespace,
-        result: "retry",
+        result: unresolved ? "unresolved" : "retry",
       }),
       1,
     );
-    yield* Effect.logDebug("execution.reconciliation.deferred").pipe(
-      Effect.annotateLogs({ submission_id: submission.id, reason }),
-    );
+    yield* (
+      unresolved
+        ? Effect.logWarning("execution.reconciliation.unresolved")
+        : Effect.logDebug("execution.reconciliation.deferred")
+    ).pipe(Effect.annotateLogs({ submission_id: submission.id, reason }));
   });
 
   const reconcileOne = Effect.fn("application.execution.reconciliation.process")(function* (
@@ -75,7 +86,11 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     }
 
     const signed = submission.data.signedExecution;
-    if (submission.status === "prepared") {
+    const broadcastExpired = DateTime.isGreaterThanOrEqualTo(
+      yield* DateTime.now,
+      DateTime.addDuration(submission.createdAt, reconciliationPolicy.broadcastLifetime),
+    );
+    if (submission.status === "prepared" && !broadcastExpired) {
       // Persist before RPC: a crash or lost response must survive lease takeover.
       const attempt = yield* repository.core.executionSubmission.recordBroadcastAttempt({
         id: submission.id,
@@ -161,6 +176,19 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     if (Result.isSuccess(receipt) && Option.isSome(receipt.success)) {
       if (!isReceiptForEvmExecution(signed, receipt.success.value)) {
         yield* retry(submission, leaseToken, "receipt_mismatch");
+        return;
+      }
+      // An old ambiguous broadcast can become visible after we stop sending it.
+      // Preserve the normal submitted transition before settling on the next pass.
+      if (submission.status === "prepared") {
+        yield* lifecycle.markSubmitted({
+          submissionId: submission.id,
+          organizationId: submission.organizationId,
+          actorId: submission.actorId,
+          grant: grantView.grant,
+          signedExecution: signed,
+          leaseToken,
+        });
         return;
       }
       if (!receipt.success.value.success) {

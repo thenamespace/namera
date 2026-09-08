@@ -149,6 +149,22 @@ rejection is insufficient; recovery retains holds until status/receipt evidence
 resolves that canonical operation. The regression also covers rejection of a
 retry between the lost first response and eventual receipt visibility.
 
+Automatic broadcasts stop 24 hours after the submission was created. Recovery
+then performs read-only receipt/status checks every five minutes and emits
+`execution.reconciliation.unresolved` with the submission ID and a fixed reason.
+The reconciliation counter uses `result=unresolved`; it contains no tenant IDs.
+An eventual matching receipt still follows the submitted/settled transitions.
+Age alone never marks an operation failed or releases its holds: the operation
+may already have reached the chain. This is a bound on broadcasting and polling
+frequency, not proof of a terminal outcome.
+
+For an unresolved warning, inspect the recorded canonical UserOperation hash
+against the configured chain/EntryPoint and provider. Restore provider access
+and allow receipt reconciliation to finish. Do not clear billing reservations,
+replace the signed envelope, or tell a client to create a new attempt solely
+because a provider returns `not_found`. Manual force-release is deliberately
+not exposed without authoritative non-execution evidence.
+
 The PostgreSQL HTTP integration suite runs eight concurrent reconciliation passes
 for submission and again for receipt settlement. Two queued operations produce
 exactly two confirmations, one native-spend total, the expected execution/gas

@@ -44,6 +44,9 @@ Execution and billing recovery emit fixed failure events, never raw error
 objects. Per-submission recovery retains the submission ID and a code-owned
 retry reason for diagnosis; database/provider causes may include confidential
 query parameters or signed envelopes and must not be serialized into those logs.
+After 24 hours, unresolved execution recovery emits a warning at its five-minute
+read-only retry cadence and records `result=unresolved` on the reconciliation
+counter. This distinguishes investigation-needed attempts from normal retries.
 
 ## Metrics
 

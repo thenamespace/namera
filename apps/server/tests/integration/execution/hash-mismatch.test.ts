@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Context, Effect, Option } from "effect";
+import { Clock, Context, Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
@@ -25,6 +25,9 @@ const receiptVisible = Context.Reference<boolean>("test/hashMismatch/receiptVisi
 const rejectRetry = Context.Reference<boolean>("test/hashMismatch/rejectRetry", {
   defaultValue: () => false,
 });
+const forbidBroadcast = Context.Reference<boolean>("test/hashMismatch/forbidBroadcast", {
+  defaultValue: () => false,
+});
 const operationHash = UserOperationHash.make(`0x${"55".repeat(32)}`);
 const provider = makeTestEvmExecutionService();
 const fixture = makeOwnerSessionTestFixture({
@@ -35,6 +38,7 @@ const fixture = makeOwnerSessionTestFixture({
       .pipe(Effect.map((signed) => ({ ...signed, userOperationHash: operationHash }))),
   submit: Effect.fnUntraced(function* (input) {
     if (input.signed.userOperationHash !== operationHash) return yield* provider.submit(input);
+    if (yield* forbidBroadcast) return yield* Effect.die("Rebroadcast after lifetime expired");
     return yield* new EvmExecutionError({
       code: (yield* rejectRetry) ? "SUBMISSION_REJECTED" : "SUBMISSION_HASH_MISMATCH",
       cause: "Provider accepted the operation but returned a different hash",
@@ -46,15 +50,17 @@ const fixture = makeOwnerSessionTestFixture({
       transactionHash: null,
     };
   }),
-  getReceipt: (input) =>
-    provider.getReceipt(input).pipe(
+  getReceipt: Effect.fnUntraced(function* (input) {
+    if (input.userOperationHash === operationHash && !(yield* receiptVisible)) return Option.none();
+    return yield* provider.getReceipt(input).pipe(
       Effect.map((receipt) =>
         Option.map(receipt, (value) => ({
           ...value,
           sender: EthereumAddress.make("0x3333333333333333333333333333333333333333"),
         })),
       ),
-    ),
+    );
+  }),
 });
 
 layer(fixture.layer)("mismatched submission response", (it) => {
@@ -62,6 +68,7 @@ layer(fixture.layer)("mismatched submission response", (it) => {
     "keeps holds while the canonical hash is not visible and settles a later matching receipt once",
     () =>
       Effect.gen(function* () {
+        yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
         yield* resetTestState();
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("hash-mismatch@example.com"));
@@ -123,15 +130,35 @@ layer(fixture.layer)("mismatched submission response", (it) => {
           )).every((hold) => hold.status === "active"),
         ).toBe(true);
 
-        yield* TestClock.adjust("16 seconds");
+        yield* TestClock.adjust("24 hours");
         expect(
-          yield* app.execution.reconcile().pipe(Effect.provideService(receiptVisible, true)),
+          yield* app.execution.reconcile().pipe(Effect.provideService(forbidBroadcast, true)),
+        ).toBe(1);
+        expect(
+          (yield* repository.billing.usageReservation.listBySource(
+            owner.actor.organization.id,
+            "execution-submission",
+            queued.submissionId,
+          )).every((hold) => hold.status === "active"),
+        ).toBe(true);
+        yield* TestClock.adjust("16 seconds");
+        expect(yield* app.execution.reconcile()).toBe(0);
+        yield* TestClock.adjust("5 minutes");
+        expect(
+          yield* app.execution
+            .reconcile()
+            .pipe(
+              Effect.provideService(receiptVisible, true),
+              Effect.provideService(forbidBroadcast, true),
+            ),
         ).toBe(1);
         expect(
           yield* client.execution.getSubmission({ params: { submissionId: queued.submissionId } }),
         ).toMatchObject({ status: "submitted" });
         yield* TestClock.adjust("16 seconds");
-        expect(yield* app.execution.reconcile()).toBe(1);
+        expect(
+          yield* app.execution.reconcile().pipe(Effect.provideService(receiptVisible, true)),
+        ).toBe(1);
         expect(
           yield* client.execution.getSubmission({ params: { submissionId: queued.submissionId } }),
         ).toMatchObject({ status: "confirmed" });
