@@ -7,6 +7,7 @@ export type {
 export * from "./billing/index.js";
 export * from "./chains/index.js";
 export * from "./config.js";
+export { isReceiptForEvmExecution } from "./execution/receipt-binding.js";
 export type {
   EvmExecutionService,
   CompleteEvmOwnerApprovalInput,
@@ -19,6 +20,7 @@ export type {
 export * from "./layer.js";
 export { resolveEvmSessionSigner } from "./sessions/signer.js";
 export { makeTestEvmSessionService } from "./sessions/test.js";
+export { makeTestEvmExecutionService } from "./execution/test.js";
 export type {
   CompileEvmSessionInput,
   PrepareEvmSessionOperationInput,

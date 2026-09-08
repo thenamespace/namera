@@ -22,17 +22,19 @@ export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
   readonly execution?: Partial<EvmExecutionService>;
 };
 
+type TestReceiptMode = "failed" | "immediate" | "pending" | "missing";
+
 export class TestEvmExecution extends Context.Service<
   TestEvmExecution,
   {
-    readonly receiptMode: Effect.Effect<"failed" | "immediate" | "pending">;
-    readonly setReceiptMode: (mode: "failed" | "immediate" | "pending") => Effect.Effect<void>;
+    readonly receiptMode: Effect.Effect<TestReceiptMode>;
+    readonly setReceiptMode: (mode: TestReceiptMode) => Effect.Effect<void>;
   }
 >()("@namera-ai/evm/TestEvmExecution") {
   static readonly layer = Layer.effect(
     TestEvmExecution,
     Effect.gen(function* () {
-      const receiptMode = yield* Ref.make<"failed" | "immediate" | "pending">("immediate");
+      const receiptMode = yield* Ref.make<TestReceiptMode>("immediate");
       return TestEvmExecution.of({
         receiptMode: Ref.get(receiptMode),
         setReceiptMode: (mode) => Ref.set(receiptMode, mode),

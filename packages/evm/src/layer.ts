@@ -120,20 +120,22 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
             ...service.execution,
             getReceipt: Effect.fn("evm.execution.test.controlledGetReceipt")((input) =>
               Effect.flatMap(testExecution.receiptMode, (mode) =>
-                service.execution
-                  .getReceipt(input)
-                  .pipe(
-                    Effect.map(
-                      Option.map((receipt) =>
-                        mode === "failed" ? failTestReceipt(receipt) : receipt,
+                mode === "missing"
+                  ? Effect.succeed(Option.none())
+                  : service.execution
+                      .getReceipt(input)
+                      .pipe(
+                        Effect.map(
+                          Option.map((receipt) =>
+                            mode === "failed" ? failTestReceipt(receipt) : receipt,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
               ),
             ),
             waitForReceipt: Effect.fn("evm.execution.test.controlledWaitForReceipt")((input) =>
               Effect.flatMap(testExecution.receiptMode, (mode) =>
-                mode === "pending"
+                mode === "pending" || mode === "missing"
                   ? Effect.succeed(Option.none())
                   : service.execution
                       .waitForReceipt(input)

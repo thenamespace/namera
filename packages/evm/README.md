@@ -117,6 +117,12 @@ reconciliation can distinguish unknown, pending, preconfirmed, and mined operati
 Rundler has no dedicated bulk receipt action, so background processing batches
 database claims and performs bounded concurrent lookups across their chains.
 
+`isReceiptForEvmExecution` binds a normalized receipt to a persisted signed
+envelope by chain, UserOperation hash, sender, nonce and EntryPoint. Session
+installation recovery uses this guard before changing permission or billing state.
+The provider-owned `TestEvmExecution` layer includes a `missing` receipt mode for
+testing deferred submission recovery with Effect's test clock.
+
 For browser-held owners, `execution.ownerApprovalChallenge` computes the exact
 WebAuthn challenge using a public-key-only reconstruction input.
 `execution.completeOwnerApproval` accepts the assertion verified by `Passkeys`
