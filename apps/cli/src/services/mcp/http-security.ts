@@ -36,6 +36,10 @@ export const localMcpHttpSecurity = (urls: LocalMcpUrls) => {
       if (request.url.length > 8192)
         return HttpServerResponse.empty({ status: 414, headers: localMcpResponseHeaders });
       const path = request.url.split("?", 1)[0];
+      const maxBodyKiB = path === "/mcp" ? 256 : 32;
+      const contentLength = request.headers["content-length"];
+      if (contentLength !== undefined && Number(contentLength) > maxBodyKiB * 1024)
+        return HttpServerResponse.empty({ status: 413, headers: localMcpResponseHeaders });
       const bucket =
         path === "/oauth/register" ? limits.register : path === "/mcp" ? limits.mcp : limits.oauth;
       const now = yield* Clock.currentTimeMillis;
@@ -50,10 +54,7 @@ export const localMcpHttpSecurity = (urls: LocalMcpUrls) => {
         });
       bucket.used += 1;
       const response = yield* next.pipe(
-        Effect.provideService(
-          HttpIncomingMessage.MaxBodySize,
-          FileSystem.KiB(path === "/mcp" ? 256 : 32),
-        ),
+        Effect.provideService(HttpIncomingMessage.MaxBodySize, FileSystem.KiB(maxBodyKiB)),
         inflight.withPermitsIfAvailable(1),
       );
       return Option.isNone(response)

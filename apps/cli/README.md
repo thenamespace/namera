@@ -13,8 +13,9 @@ The local MCP OAuth broker and upstream adapter live in `services/mcp/`.
 They keep local and API credentials separate and test replay, expiry and refresh
 revocation races. OAuth routes, transport guards, SDK-backed tools, and live
 authorization/session isolation are tested through the in-memory HTTP boundary.
-The HTTP listener and `mcp start` command are not wired yet;
-see [local MCP integration status](../../architecture/clients/local-mcp.md).
+`mcp start` runs the loopback HTTP listener; secure broker persistence and the
+browser-to-local-signing journey remain pending. See
+[local MCP integration status](../../architecture/clients/local-mcp.md).
 
 Run `pnpm --filter @namera-ai/cli typecheck:test` to typecheck both source and
 tests, including HTTP request-context composition.
@@ -36,6 +37,7 @@ namera execution list [--cursor <execution-id>]
 namera sign
 namera verify-signature --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","type":"message","message":"hello","signature":"0x..."}'
 namera logout
+namera mcp start --host http://localhost:8080 --port 3847
 ```
 
 The development build targets `http://localhost:8080` by default, so `namera
@@ -63,6 +65,26 @@ Inline execution params may set `sponsor` to `false`; omission remains sponsored
 Self-funded execution also requires `--max-gas-cost-wei <amount>` (or the
 interactive fee-budget prompt). The local signer rejects preparations above
 that budget before signing.
+
+## Local MCP
+
+Run `namera mcp start`, then connect your agent to `http://127.0.0.1:3847/mcp`.
+The agent completes OAuth through Namera's consent page; ordinary CLI login or
+`NAMERA_API_KEY` does not grant MCP access. Select only the sessions that agent
+should use, and import their encrypted keys on this machine before signing.
+
+`--host` selects the API origin, not the bind address. HTTPS is required except
+for local development. The listener always binds `127.0.0.1`; it cannot be exposed
+on a public interface through flags. `--port` changes all local discovery and
+callback URLs consistently. `--max-gas-cost-wei` sets a user-owned per-operation
+fee ceiling for self-funded transactions; without it, those transactions fail
+local validation. Agents cannot override this ceiling through tool arguments.
+
+Keep the process running. OAuth broker state is currently in memory and restarting
+requires reauthorization; local signing keys remain in the encrypted keystore.
+Ctrl-C closes the listener. JSON/NDJSON print one readiness object after binding;
+`--quiet` suppresses it. Request URL logging is disabled to avoid logging OAuth
+callback credentials.
 
 ## Local session keys
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   acceptsLocalMcpRequest,
+  LocalMcpApiOrigin,
   LocalMcpCodeChallenge,
   LocalMcpCodeVerifier,
   LocalMcpRedirectUri,
@@ -13,6 +14,26 @@ import {
 
 describe("local MCP transport security", () => {
   const urls = localMcpUrls(3847);
+
+  it("allows secure API origins and loopback development without embedded credentials", () => {
+    const decode = Schema.decodeUnknownSync(LocalMcpApiOrigin);
+    for (const origin of [
+      "https://api.namera.example",
+      "http://localhost:8080",
+      "http://127.0.0.1:8080/",
+      "http://[::1]:8080",
+    ])
+      expect(decode(origin)).toBe(origin);
+    for (const origin of [
+      "http://api.namera.example",
+      "https://user:secret@api.example",
+      "https://api.example/path",
+      "https://api.example?token=secret",
+      "https://api.example#token",
+      "file:///tmp/key",
+    ])
+      expect(() => decode(origin)).toThrow();
+  });
 
   it("pins discovery, resource and callback to the loopback listener", () => {
     expect(urls.resource).toBe("http://127.0.0.1:3847/mcp");

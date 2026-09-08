@@ -75,7 +75,8 @@ by API origin/session ID and checks its wallet/chain binding. Self-funded
 execution requires an explicit `--max-gas-cost-wei` budget or interactive consent.
 See [local keystore](local-keystore.md) for storage invariants and remaining
 packaged-platform verification. The same keystore resolves message/typed-data
-signers; local MCP migration remains pending.
+signers and the local MCP listener. End-to-end browser/local signing verification
+remains pending.
 
 Global output is `pretty`, `json`, or `ndjson`. Pretty is a colored human view,
 not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
@@ -83,11 +84,11 @@ not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
 
 ## MCP tools
 
-The CLI-local transport migration has a tested OAuth broker and upstream HTTP
-adapter, plus URL/Host/Origin/PKCE security policy primitives. See
+`namera mcp start` runs the SDK-backed tools and OAuth broker on literal loopback,
+with URL/Host/Origin/PKCE guards and live API authorization checks. See
 [local MCP authorization](local-mcp.md) for the separate audiences, lifetimes,
-replay guarantees and remaining runtime integration. They are not yet a running
-server. Native MCP clients may omit Origin, but must still authenticate; an
+replay guarantees and remaining persistence/end-to-end integration. Native MCP
+clients may omit Origin, but must still authenticate; an
 absent Origin is not authorization.
 
 The `/mcp` transport exposes a deliberately compact tool set:

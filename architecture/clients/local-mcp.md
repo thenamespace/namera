@@ -2,9 +2,9 @@
 
 The CLI owns the OAuth broker in `services/mcp/oauth-broker.ts`. The broker and
 upstream HTTP adapter, OAuth HTTP routes, and SDK-backed MCP tools are implemented
-and tested through the HTTP boundary. The `namera mcp start` listener and persistent
-credential lifecycle are still pending. The API-hosted MCP transport has not yet
-been removed.
+and tested through the HTTP boundary. `namera mcp start` composes them into a
+Node HTTP listener bound only to `127.0.0.1`. Persistent credential lifecycle is
+still pending. The API-hosted MCP transport has not yet been removed.
 
 ## Two audiences
 
@@ -88,7 +88,9 @@ CLI tests exercise real crypto with a controlled clock, a provider substitute
 for broker races, and the actual HTTP adapter with injected Fetch. They cover
 separate audiences, replay, redirect/PKCE binding, expiry, scope narrowing,
 refresh/revoke concurrency, and malformed upstream responses. They do not prove
-the HTTP listener or a live Namera consent journey yet.
+a live Namera consent/signing journey yet. A Node socket test additionally covers
+discovery, forged Host/Origin rejection, the OAuth challenge, oversized declared
+bodies, and port release after disposing the listener.
 
 The HTTP routes expose local issuer/resource metadata, registration, consent
 redirect/callback, token exchange/refresh, and revocation. Denied consent consumes
@@ -108,15 +110,23 @@ consent/token/revocation journey, safe denial, headers, duplicate parameters,
 oversized bodies, host/origin rejection and registration limits. CLI source
 and tests are both typechecked.
 
+The Node listener has a 10-second header deadline and a 30-second request-body
+deadline. A declared oversized Content-Length is rejected with 413 before body
+consumption; absent/chunked lengths still meet the streaming limit (the Node
+adapter can close the connection when consumption exceeds it). CLI output is
+emitted only after binding, uses the global output format, and honors quiet mode.
+Neither request logs nor the framework's separate listen log are enabled.
+API origin configuration rejects non-loopback HTTP, credentials, paths, queries,
+and fragments. CLI profile/API-key credentials are deliberately not reused.
+
 Remaining:
 
-- Compose the OAuth routes and guard into the actual loopback listener. Verify
-  concurrency limits and body/timeout behavior on the Node HTTP adapter as well
-  as the in-memory HTTP boundary.
+- Verify slow/chunked requests and concurrency limits on the Node HTTP adapter,
+  beyond the existing socket-level rejection and lifecycle coverage.
 - Persist refreshable authorization securely in the OS keyring, with a defined
   restart/logout/revocation lifecycle and no plaintext fallback.
 - Exercise actual authorized signing through the composed local MCP transport;
   current HTTP tests cover discovery, SDK reads, live scope/revocation checks,
   cross-authorization session isolation, and rejection before undelegated key access.
-- Wire the CLI command, replace hosted-MCP tests, remove the API transport, and
+- Replace hosted-MCP tests, remove the API transport, and
   verify a browser-to-local-MCP consent/signing journey.

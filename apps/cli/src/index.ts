@@ -5,6 +5,7 @@ import { Command } from "effect/unstable/cli";
 
 import { authCommand, loginCommand, logoutCommand } from "#/commands/auth/index";
 import { executionCommand } from "#/commands/execution/index";
+import { mcpCommand } from "#/commands/mcp/index";
 import { nameraCommand } from "#/commands/root";
 import { sessionKeyCommand } from "#/commands/session-key/index";
 import { signCommand } from "#/commands/sign";
@@ -20,6 +21,7 @@ const namera = nameraCommand.pipe(
     walletCommand,
     sessionKeyCommand,
     executionCommand,
+    mcpCommand,
     signCommand,
     verifySignatureCommand,
   ]),
