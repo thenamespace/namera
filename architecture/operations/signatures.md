@@ -69,6 +69,11 @@ verification metrics use bounded attributes.
 The HTTP integration suite races eight late completions against eight recovery
 passes after expiry. PostgreSQL coverage verifies one recovered hold, no late
 success, one failed operation, and no retained or consumed signature quota.
+A complementary eight-way valid-completion race returns identical results to
+every caller with one settled reservation, one consumed unit and one
+`signature.created` audit event. Both races use the real HTTP/application and
+PostgreSQL transaction boundaries; chain verification remains a package-owned
+provider substitute, not a live ERC-1271 test.
 A separate delayed-provider case starts completion before expiry, confirms it
 is still in flight after expiry, recovers the hold, then lets verification
 finish. Settlement rejects the recovered operation and quota remains unchanged.

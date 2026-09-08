@@ -213,9 +213,12 @@ not required for the beta.
       access and refresh tokens, with committed revocation before the error.
 - [x] Verify duplicate CLI device approvals create one authorization and
       concurrent final polls issue one token response on PostgreSQL.
-- [ ] Complete concurrent signature-expiry recovery and execution crash-recovery
-      tests before submission, after submission, and before settlement.
-      Abandoned-signature expiry already has a sequential HTTP/worker regression.
+- [x] Verify concurrent signature completion and expiry recovery on PostgreSQL.
+      Eight valid completions settle/audit once; eight expired completions racing
+      eight cleanup passes release once. Delayed verification after recovery
+      cannot settle the released hold.
+- [ ] Complete execution crash-recovery tests before submission, after
+      submission, and before settlement.
 - [ ] Complete real-contract selector/ERC-20 enforcement coverage plus missing
       simulation context and UTC period boundaries. Existing permission schema
       and compiler tests do not replace real-contract enforcement tests.

@@ -107,6 +107,47 @@ layer(delayedFixture.layer)("signature verification across expiry", (it) => {
 });
 
 layer(fixture.layer)("detached signature routes", (it) => {
+  it.effect("concurrent valid completions settle and audit only once", () =>
+    Effect.gen(function* () {
+      const { client, signer, payload, owner } = yield* setup();
+      const prepared = yield* client.signature.prepare({
+        headers: { "idempotency-key": "concurrent-success" },
+        payload,
+      });
+      const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+      const results = yield* Effect.forEach(
+        Array.from({ length: 8 }),
+        () =>
+          client.signature.complete({
+            payload: { namespace: "eip155", operationId: prepared.operationId, signature },
+          }),
+        { concurrency: "unbounded" },
+      );
+      expect(results).toHaveLength(8);
+      for (const result of results) {
+        expect(result).toEqual(results[0]);
+        expect(result).toMatchObject({ type: "message", signature: "0x1234" });
+      }
+      const repository = yield* Repository;
+      const holds = yield* repository.billing.usageReservation.listBySource(
+        owner.actor.organization.id,
+        "signature-operation",
+        prepared.operationId,
+      );
+      expect(holds).toHaveLength(1);
+      expect(holds[0]).toMatchObject({ status: "settled" });
+      const events = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      );
+      expect(events.filter(({ event }) => event === "signature.created")).toHaveLength(1);
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature"),
+      ).toMatchObject({ consumedAmount: 1n, reservedAmount: 0n });
+    }),
+  );
+
   it.effect(
     "meters message/typed-data completion exactly once and keeps signatures out of storage",
     () =>
