@@ -159,6 +159,8 @@ panel disables new passkey approvals on paused networks without stopping receipt
 polling for already signed operations, and explains that API revocation does
 not remove onchain permissions. Registry state is bundled at build time; server
 adapter guards remain authoritative if a browser has an older build.
+Removal retry and receipt feedback distinguish uninstalling permissions from
+approving a new installation; a failed removal does not restore API access.
 
 ## Shared UI ownership
 

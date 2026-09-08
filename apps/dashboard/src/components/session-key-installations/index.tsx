@@ -32,10 +32,12 @@ const revokePermission = ["session-key:revoke"] as const;
 
 function ReceiptStatus({
   operationId,
+  kind,
   pending,
   onTerminal,
 }: {
   operationId: SessionKeyOperationResponse["operationId"];
+  kind: "install" | "uninstall";
   pending: boolean;
   onTerminal: () => void;
 }) {
@@ -54,14 +56,24 @@ function ReceiptStatus({
     if (!terminal || pending || handled.current) return;
     handled.current = true;
     refreshBilling();
-    if (status === "confirmed") showSuccessToast({ title: "Network approval confirmed" });
+    if (status === "confirmed")
+      showSuccessToast({
+        title: kind === "uninstall" ? "Onchain permissions removed" : "Network approval confirmed",
+      });
     else
       showErrorToast(undefined, {
-        title: status === "expired" ? "Approval expired" : "Onchain approval failed",
+        title:
+          kind === "uninstall"
+            ? status === "expired"
+              ? "Removal approval expired"
+              : "Onchain removal failed"
+            : status === "expired"
+              ? "Approval expired"
+              : "Onchain approval failed",
         description: "Review the network and try again.",
       });
     onTerminal();
-  }, [terminal, pending, status, refreshBilling, onTerminal]);
+  }, [terminal, pending, status, kind, refreshBilling, onTerminal]);
   return (
     <output className="block text-xs text-muted">
       {operation.isError
@@ -146,7 +158,9 @@ function Installation({
               {approval.pending
                 ? "Checking approval…"
                 : approval.error || resumable
-                  ? "Retry approval"
+                  ? kind === "uninstall"
+                    ? "Retry removal"
+                    : "Retry approval"
                   : kind === "uninstall"
                     ? "Remove with passkey"
                     : "Approve with passkey"}
@@ -181,6 +195,7 @@ function Installation({
         <ReceiptStatus
           key={operationId}
           operationId={operationId}
+          kind={kind}
           pending={approval.pending}
           onTerminal={finish}
         />

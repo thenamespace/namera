@@ -66,6 +66,22 @@ its own detail component so links, identifiers, and domain displays remain
 type-safe as new occurrence types are added. On narrow screens, the rail and
 detail become a list-to-detail navigation flow.
 
+Read, mark-all-read and archive actions render recipient state from invalidated
+server queries, not permanent optimistic overrides. A failed write keeps the
+notification and its unread state visible; successful archive clears only the
+selection for that notification. Initial and additional-page failures offer
+local retry. Additional pages retain their cursor while retrying, and the empty
+filtered view keeps Load more available when the server has another page.
+Session notifications distinguish registration, API access revocation and
+onchain authority. Revoking API grants does not by itself uninstall permissions
+or prevent the local key holder from signing outside Namera.
+
+Production-preview Chromium checks inject failed inbox reads and mutations:
+initial and cursor-page retries recover, failed read/archive/mark-all-read
+preserve visible state, and a successful archive refreshes the list and clears
+the matching selection. These checks use real notification-shaped responses
+with intercepted transport; server recipient authorization is covered separately.
+
 ## Pending
 
 - Add email-delivery webhook, bounce, and suppression handling when required by

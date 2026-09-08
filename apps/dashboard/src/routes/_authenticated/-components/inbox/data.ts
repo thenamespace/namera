@@ -59,7 +59,7 @@ export const notificationPresentation = {
     group: "access",
     icon: Key01Icon,
     title: "Session key revoked",
-    preview: "A session key and its active grants were revoked.",
+    preview: "Session API access and grants revoked. Review onchain removal status.",
   },
   "api_key.created": {
     group: "access",

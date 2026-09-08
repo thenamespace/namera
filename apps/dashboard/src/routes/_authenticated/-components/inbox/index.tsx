@@ -13,6 +13,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import { TableFilterControl } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -42,7 +43,16 @@ function NotificationPageLoader({
     if (query.data !== undefined) onData(cursor, query.data);
   }, [cursor, onData, query.data]);
 
-  return null;
+  if (query.isError)
+    return (
+      <div className="px-3 py-4" role="alert">
+        <Typography.Paragraph size="sm">Couldn’t load more notifications.</Typography.Paragraph>
+        <Button variant="tertiary" size="sm" onPress={query.refetch} isDisabled={query.isFetching}>
+          {query.isFetching ? "Retrying…" : "Retry loading notifications"}
+        </Button>
+      </div>
+    );
+  return query.data === undefined ? <DataLoading label="Loading more notifications" /> : null;
 }
 
 function NotificationEmptyDetail() {
@@ -64,13 +74,22 @@ function NotificationEmptyDetail() {
 }
 
 type DetailToolbarProps = {
+  readonly isArchiving: boolean;
+  readonly isMarkingRead: boolean;
   readonly canMarkRead: boolean;
   readonly onArchive: () => void;
   readonly onBack: () => void;
   readonly onMarkRead: () => void;
 };
 
-function DetailToolbar({ canMarkRead, onArchive, onBack, onMarkRead }: DetailToolbarProps) {
+function DetailToolbar({
+  canMarkRead,
+  isArchiving,
+  isMarkingRead,
+  onArchive,
+  onBack,
+  onMarkRead,
+}: DetailToolbarProps) {
   return (
     <div className="flex h-12 shrink-0 items-center justify-between border-b px-3 sm:px-4">
       <Button
@@ -92,6 +111,7 @@ function DetailToolbar({ canMarkRead, onArchive, onBack, onMarkRead }: DetailToo
               <Button
                 isIconOnly
                 aria-label="Mark notification as read"
+                isDisabled={isMarkingRead}
                 size="sm"
                 variant="tertiary"
                 onPress={onMarkRead}
@@ -111,6 +131,7 @@ function DetailToolbar({ canMarkRead, onArchive, onBack, onMarkRead }: DetailToo
             <Button
               isIconOnly
               aria-label="Archive notification"
+              isDisabled={isArchiving}
               size="sm"
               variant="tertiary"
               onPress={onArchive}
@@ -136,11 +157,6 @@ export function Inbox() {
     ReadonlyMap<NotificationId, ListNotificationsResponse>
   >(new Map());
   const [selectedId, setSelectedId] = useState<NotificationId | null>(null);
-  const [readOverrides, setReadOverrides] = useState<ReadonlySet<NotificationId>>(new Set());
-  const [archivedOverrides, setArchivedOverrides] = useState<ReadonlySet<NotificationId>>(
-    new Set(),
-  );
-  const [allReadOverride, setAllReadOverride] = useState(false);
 
   const markRead = useMarkNotificationRead({
     onError: (error) =>
@@ -159,7 +175,10 @@ export function Inbox() {
   const archive = useArchiveNotification({
     onError: (error) =>
       showErrorToast(error, { title: "Couldn’t archive notification", description: "Try again." }),
-    onSuccess: () => showSuccessToast({ title: "Notification archived" }),
+    onSuccess: (_, { payload }) => {
+      setSelectedId((current) => (current === payload.notificationId ? null : current));
+      showSuccessToast({ title: "Notification archived" });
+    },
   });
 
   const handleAdditionalPage = useEventCallback(
@@ -182,32 +201,14 @@ export function Inbox() {
       }
     }
 
-    const visibleItems: Array<NotificationResponse> = [];
-    for (const item of byId.values()) {
-      if (archivedOverrides.has(item.notification.id)) continue;
-      visibleItems.push(
-        allReadOverride || readOverrides.has(item.notification.id)
-          ? { ...item, readAt: item.readAt ?? item.receivedAt }
-          : item,
-      );
-    }
-
-    return visibleItems;
-  }, [
-    additionalCursors,
-    additionalPages,
-    allReadOverride,
-    archivedOverrides,
-    firstPage.data,
-    readOverrides,
-  ]);
+    return [...byId.values()];
+  }, [additionalCursors, additionalPages, firstPage.data]);
 
   const { clearFilters, filteredItems, filterFacets, query, setQuery } = useInboxFilters(items);
 
   const selected = filteredItems.find((item) => item.notification.id === selectedId);
-  const unreadCount = allReadOverride
-    ? 0
-    : (unreadCountQuery.data?.count ?? items.filter((item) => item.readAt === null).length);
+  const unreadCount =
+    unreadCountQuery.data?.count ?? items.filter((item) => item.readAt === null).length;
   const lastPage =
     additionalCursors.length === 0
       ? firstPage.data
@@ -217,26 +218,20 @@ export function Inbox() {
 
   const selectNotification = useEventCallback((item: NotificationResponse) => {
     setSelectedId(item.notification.id);
-    if (item.readAt !== null || readOverrides.has(item.notification.id) || allReadOverride) return;
-
-    setReadOverrides((current) => new Set(current).add(item.notification.id));
+    if (item.readAt !== null || markRead.isPending) return;
     markRead.mutate({ payload: { notificationId: item.notification.id } });
   });
   const closeSelected = useEventCallback(() => setSelectedId(null));
   const markSelectedRead = useEventCallback(() => {
-    if (selected === undefined || selected.readAt !== null) return;
-    setReadOverrides((current) => new Set(current).add(selected.notification.id));
+    if (selected === undefined || selected.readAt !== null || markRead.isPending) return;
     markRead.mutate({ payload: { notificationId: selected.notification.id } });
   });
   const markEveryNotificationRead = useEventCallback(() => {
-    setAllReadOverride(true);
     markAllRead.mutate();
   });
   const archiveSelected = useEventCallback(() => {
-    if (selected === undefined) return;
+    if (selected === undefined || archive.isPending) return;
     const notificationId = selected.notification.id;
-    setArchivedOverrides((current) => new Set(current).add(notificationId));
-    setSelectedId(null);
     archive.mutate({ payload: { notificationId } });
   });
   const loadMore = useEventCallback(() => {
@@ -248,10 +243,6 @@ export function Inbox() {
 
   return (
     <DashboardPage>
-      {additionalCursors.map((cursor) => (
-        <NotificationPageLoader cursor={cursor} key={cursor} onData={handleAdditionalPage} />
-      ))}
-
       <div className="grid h-[calc(100dvh-1rem)] min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <aside
           className={
@@ -319,14 +310,11 @@ export function Inbox() {
             {firstPage.isLoading ? (
               <DataLoading className="min-h-72" label="Loading notifications" />
             ) : firstPage.isError ? (
-              <div className="px-5 py-10 text-center">
-                <Typography className="text-sm! text-danger" weight="medium">
-                  Couldn’t load notifications
-                </Typography>
-                <Typography className="mt-1 text-xs!" color="muted">
-                  Refresh the page to try again.
-                </Typography>
-              </div>
+              <DataError
+                label="notifications"
+                onRetry={firstPage.refetch}
+                isRetrying={firstPage.isFetching}
+              />
             ) : (
               <NotificationList
                 canLoadMore={nextCursor !== null && nextCursor !== undefined}
@@ -337,6 +325,9 @@ export function Inbox() {
                 onSelect={selectNotification}
               />
             )}
+            {additionalCursors.map((cursor) => (
+              <NotificationPageLoader cursor={cursor} key={cursor} onData={handleAdditionalPage} />
+            ))}
           </div>
         </aside>
 
@@ -350,6 +341,8 @@ export function Inbox() {
           ) : (
             <>
               <DetailToolbar
+                isArchiving={archive.isPending}
+                isMarkingRead={markRead.isPending}
                 canMarkRead={selected.readAt === null}
                 onArchive={archiveSelected}
                 onBack={closeSelected}

@@ -109,8 +109,14 @@ export function useInstallationApproval(
       if (!abort.signal.aborted) {
         setError(true);
         showErrorToast(cause, {
-          title: "Couldn’t approve this network",
-          description: "Retry here to resume the same approval safely.",
+          title:
+            kind === "uninstall"
+              ? "Couldn’t remove onchain permissions"
+              : "Couldn’t approve this network",
+          description:
+            kind === "uninstall"
+              ? "API access remains revoked. Retry here to resume removal safely."
+              : "Retry here to resume the same approval safely.",
         });
       }
     } finally {

@@ -242,8 +242,8 @@ function SessionKeyNotificationDetail({
     <NotificationDetailLayout
       description={
         revoked
-          ? "This session key can no longer sign or execute operations. Every active grant attached to it was revoked at the same time."
-          : "A new session key was created with an immutable policy set. Only operations allowed by every policy can be signed or executed."
+          ? "Namera API, CLI, and MCP access for this session key was revoked, including its active grants. The local key can still exercise installed onchain permissions until the account owner removes them on each network. Open the session key to review removal status."
+          : "A local session key was registered. Its onchain permissions require the account owner’s passkey approval before use. Additional API policies apply to operations sent through Namera."
       }
       item={item}
     >

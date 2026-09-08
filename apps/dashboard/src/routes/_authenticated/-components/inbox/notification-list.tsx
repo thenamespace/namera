@@ -79,36 +79,34 @@ export function NotificationList({
   onLoadMore,
   onSelect,
 }: NotificationListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="grid min-h-72 place-items-center px-6 py-12 text-center">
-        <div>
-          <div className="mx-auto grid size-10 place-items-center rounded-lg bg-secondary text-muted">
-            <HugeiconsIcon className="size-5" icon={InboxIcon} />
-          </div>
-          <Typography className="mt-3 text-sm!" weight="medium">
-            No notifications
-          </Typography>
-          <Typography className="mt-1 text-xs!" color="muted">
-            New account and workspace activity will appear here.
-          </Typography>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="px-2 pb-3">
-      <ul aria-label="Notifications" className="space-y-0.5">
-        {items.map((item) => (
-          <NotificationListItem
-            isSelected={item.notification.id === selectedId}
-            item={item}
-            key={item.notification.id}
-            onSelect={onSelect}
-          />
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <div className="grid min-h-72 place-items-center px-6 py-12 text-center">
+          <div>
+            <div className="mx-auto grid size-10 place-items-center rounded-lg bg-secondary text-muted">
+              <HugeiconsIcon className="size-5" icon={InboxIcon} />
+            </div>
+            <Typography className="mt-3 text-sm!" weight="medium">
+              No notifications
+            </Typography>
+            <Typography className="mt-1 text-xs!" color="muted">
+              New account and workspace activity will appear here.
+            </Typography>
+          </div>
+        </div>
+      ) : (
+        <ul aria-label="Notifications" className="space-y-0.5">
+          {items.map((item) => (
+            <NotificationListItem
+              isSelected={item.notification.id === selectedId}
+              item={item}
+              key={item.notification.id}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      )}
 
       {canLoadMore ? (
         <Button
