@@ -68,15 +68,18 @@ it.effect("preserves decoded sponsorship billing when finalizing a signed operat
   }),
 );
 
-it("omits empty calldata only from auxiliary call simulation", () => {
-  const calls = toSimulationCalls([
-    { to: address, value: 1n, data: Hex.make("0x") },
-    { to: address, value: 0n, data: Hex.make("0x1234") },
-  ]);
+it("bounds auxiliary simulation gas and omits only empty calldata", () => {
+  const calls = toSimulationCalls(
+    [
+      { to: address, value: 1n, data: Hex.make("0x") },
+      { to: address, value: 0n, data: Hex.make("0x1234") },
+    ],
+    250_000n,
+  );
 
   expect(calls).toEqual([
-    { to: address, value: 1n },
-    { to: address, value: 0n, data: "0x1234" },
+    { to: address, value: 1n, gas: 250_000n },
+    { to: address, value: 0n, data: "0x1234", gas: 250_000n },
   ]);
 });
 

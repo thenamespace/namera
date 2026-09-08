@@ -69,6 +69,13 @@ rules.
 
 For auxiliary `simulateCalls`, empty calldata is omitted rather than sent as `data: "0x"`; Viem otherwise attempts an access-list asset-selector path that can produce provider gas errors. Non-empty calldata remains unchanged.
 
+Every auxiliary call carries the successfully estimated UserOperation call-gas
+limit. Viem forwards it to `eth_createAccessList` during asset discovery, avoiding
+Alchemy's rejection of an implicit gas allowance above the block limit. Asset
+and transfer tracing remain enabled; a simulation failure still fails preparation.
+The live Sepolia passkey installation journey reproduced the missing-limit
+failure and confirmed installation after this change.
+
 Native transfers are normalized from provider trace logs emitted at `0xeeee…eeee` with the ERC-20-style `Transfer(address,address,uint256)` selector. Each record includes call index, from, to, and decimal-string value. Token asset changes contain address, bounded symbol (≤64 when valid), optional valid decimals (0–255), and pre/post/diff values.
 
 ## Prepared context

@@ -61,12 +61,12 @@ const normalizeNativeTransfers = (
     }),
   );
 
-export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"]) =>
+export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"], gas: bigint) =>
   calls.map(({ data, ...call }) =>
     // Viem discovers touched assets through eth_createAccessList whenever
     // calldata is present. Empty calldata carries no asset selector and must
     // be omitted from this auxiliary simulation to avoid provider gas errors.
-    data === "0x" ? call : { ...call, data },
+    data === "0x" ? { ...call, gas } : { ...call, data, gas },
   );
 
 export const makePrepareEvmExecution = (
@@ -107,7 +107,8 @@ export const makePrepareEvmExecution = (
       try: () =>
         clients.publicClient.simulateCalls({
           account: account.address,
-          calls: toSimulationCalls(input.calls),
+          // Viem forwards this limit to its access-list discovery requests too.
+          calls: toSimulationCalls(input.calls, estimatedUserOperation.callGasLimit),
           traceAssetChanges: true,
           traceTransfers: true,
         }),
