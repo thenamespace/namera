@@ -5,7 +5,6 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { UpdateUserRequest, type GetUserResponse } from "@namera-ai/protocol/dto";
-import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
   Field,
   FieldError,
@@ -27,7 +26,7 @@ import { useUpdateUser } from "@/hooks/auth";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-const defaultImage: MetadataIcon = { type: "icon", value: "user", color: "#f7f8f8" };
+import { defaultProfileImage, profileFormValues } from "./values";
 
 export function ProfileForm({ user }: { user: GetUserResponse }) {
   const updateUser = useUpdateUser({
@@ -39,7 +38,7 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
     onSuccess: () => showSuccessToast({ title: "Profile updated successfully" }),
   });
   const form = useForm<UpdateUserRequest>({
-    defaultValues: { metadata: user.metadata },
+    defaultValues: profileFormValues(user),
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(UpdateUserRequest)),
   });
   const { resetBaseline } = useAutoSave({
@@ -50,7 +49,7 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
     },
   });
   useEffect(() => {
-    const nextValue = { metadata: user.metadata };
+    const nextValue = profileFormValues(user);
     form.reset(nextValue);
     resetBaseline(nextValue);
   }, [form, resetBaseline, user]);
@@ -74,8 +73,9 @@ export function ProfileForm({ user }: { user: GetUserResponse }) {
                     // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
                     supportedTypes={["image"]}
                     triggerClassName="justify-self-end"
-                    value={field.value ?? defaultImage}
+                    value={field.value ?? defaultProfileImage}
                   />
+                  {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
                 </Field>
               </DashboardCardRow>
             )}

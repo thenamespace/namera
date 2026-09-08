@@ -49,6 +49,13 @@ creation also use local retry feedback when their initial data request fails.
 Already-loaded form data is retained on background refresh failure so unsaved
 edits are not discarded.
 
+Profile form initialization and refresh normalize absent avatar/name fields to
+controlled values. React Hook Form otherwise introduces an explicit undefined
+avatar, which the optional-key protocol schema rejects and prevents autosave.
+The default avatar matches the displayed fallback and is persisted with the
+first profile edit. Avatar validation errors are visible. Resolver regressions
+cover an image-free profile and preservation of an existing image.
+
 ## State and mutations
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch

@@ -368,6 +368,9 @@ unmount and `pagehide`, including when navigation happens before the debounce.
 
 When loader data replaces a mounted form, call both
 `form.reset(nextValue)` and `autoSave.resetBaseline(nextValue)`.
+Use the same form-value normalization for initialization and reset. In particular,
+the profile supplies its displayed default avatar rather than registering an
+explicit undefined image, which is not valid for the protocol's optional-key field.
 
 ```tsx
 const form = useForm<ProfileInput, unknown, ProfileOutput>({
