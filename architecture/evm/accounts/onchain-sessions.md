@@ -20,7 +20,8 @@ and conditional lifecycle transitions exist in the database repository. A
 separate session operation ledger retains owner-prepared attempts and signatures
 for retry/recovery without overwriting installation history. Owner approval and
 receipt recovery are wired in the API; SDK local execution is implemented.
-Dashboard approval/export and detached message signing remain pending.
+Dashboard passkey approval, encrypted export and detached local message signing
+are wired through the SDK and local CLI MCP.
 
 ## Contract
 
@@ -88,9 +89,13 @@ the expected self-call, factory arguments, owner entity and account/chain. The
 caller supplies a trusted chain-aware RPC; a chain mismatch or reconstructed
 address mismatch fails closed. No owner signing callback is supplied. Unit tests
 run real account construction and encoding with substituted RPC reads, including
-signature-consent changes and installation/removal differences. This is not a
-live RPC or completed browser approval test. Public owner metadata and dashboard
-prompt/polling wiring remain pending.
+signature-consent changes and installation/removal differences.
+Factory arguments are derived from the public passkey, salt and owner entity,
+independent of deployment status. Viem's `getFactoryArgs` omits them for deployed
+wallets; using it for review would block subsequent installation and removal.
+Unit coverage includes deployed and counterfactual accounts. A live Sepolia
+browser approval also confirmed a second installation on an already deployed
+wallet; the local MCP execution journey is recorded in the client architecture.
 
 Opt-in tests under `packages/evm/tests/integration/aa` use an explicitly configured local
 Anvil endpoint and verify its client identity before funding ephemeral test
@@ -117,5 +122,4 @@ against the actual forked contracts.
 ## Pending
 
 - Add real-contract tests for the remaining permission types.
-- Wire browser approval/export and detached message/typed-data signing.
 - Verify hosted bundler/BSO support on the eight advertised chains.

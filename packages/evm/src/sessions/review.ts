@@ -5,6 +5,7 @@ import type { EvmSessionAuthorization, SupportedEvmChainId } from "@namera-ai/pr
 import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
 import { createClient, custom, type Address, type Hex, type PublicClient } from "viem";
 
+import { getWebAuthnFactoryArgs } from "../accounts/alchemy-modular-v2.js";
 import { reconstructEvmAccount } from "../accounts/reconstruct.js";
 import { createPublicKeyWebAuthnAccount } from "../accounts/webauthn.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
@@ -66,10 +67,11 @@ export const reviewEvmSessionOperation: (
           }),
           input.authorization,
         );
-        const { factory, factoryData } = await account.getFactoryArgs();
-        if (factory === undefined || factoryData === undefined) {
-          throw new Error("Passkey account factory data unavailable");
-        }
+        const { factory, factoryData } = getWebAuthnFactoryArgs(
+          input.ownerPublicKey,
+          input.wallet.salt,
+          input.wallet.entityId,
+        );
         return {
           chainId: input.chainId,
           walletAddress: account.address,

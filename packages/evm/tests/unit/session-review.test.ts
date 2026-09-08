@@ -4,7 +4,7 @@ import { EthereumAddress } from "@namera-ai/protocol";
 import { EvmSessionAuthorization } from "@namera-ai/protocol/evm";
 import * as P256 from "ox/P256";
 import * as PublicKey from "ox/PublicKey";
-import { createPublicClient, custom, encodeAbiParameters } from "viem";
+import { createPublicClient, custom, encodeAbiParameters, parseAbiParameters } from "viem";
 import { sepolia } from "viem/chains";
 import { describe, expect, it } from "vitest";
 
@@ -51,6 +51,34 @@ const client = createPublicClient({
 });
 
 describe("browser session operation review", () => {
+  it("reviews install and removal after the wallet is deployed", async () => {
+    const deployedClient = createPublicClient({
+      chain: sepolia,
+      transport: custom({
+        request: async ({ method, params }) => {
+          if (method === "eth_call" && params[0].to.toLowerCase() === walletAddress)
+            return encodeAbiParameters(
+              parseAbiParameters("(uint8, bytes25[], bytes25[], bytes4[])"),
+              [[0, [], [], []]],
+            );
+          if (method === "eth_call")
+            return encodeAbiParameters([{ type: "address" }], [walletAddress]);
+          if (method === "eth_getCode") return "0x6000";
+          throw new Error(`Unexpected RPC method: ${method}`);
+        },
+      }),
+    });
+    await Promise.all(
+      (["install", "uninstall"] as const).map(async (kind) => {
+        const [reviewed, counterfactual] = await Promise.all([
+          Effect.runPromise(reviewEvmSessionOperation({ ...input, kind }, deployedClient)),
+          Effect.runPromise(reviewEvmSessionOperation({ ...input, kind }, client)),
+        ]);
+        expect(reviewed).toEqual(counterfactual);
+      }),
+    );
+  });
+
   it("compiles stable install/removal calls with public owner material only", async () => {
     const first = await Effect.runPromise(reviewEvmSessionOperation(input, client));
     const second = await Effect.runPromise(reviewEvmSessionOperation(input, client));

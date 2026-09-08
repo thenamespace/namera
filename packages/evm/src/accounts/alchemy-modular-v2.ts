@@ -102,6 +102,24 @@ const getPublicKeyCoordinates = (publicKey: Hex) => {
   };
 };
 
+// Deployment-independent review data: SmartAccount.getFactoryArgs intentionally
+// returns nothing once code exists, but clients still need the canonical origin.
+export const getWebAuthnFactoryArgs = (
+  publicKey: Hex,
+  salt: bigint,
+  entityId: number,
+): { readonly factory: Address; readonly factoryData: Hex } => {
+  const { x, y } = getPublicKeyCoordinates(publicKey);
+  return {
+    factory: modularAccountV2FactoryAddress,
+    factoryData: encodeFunctionData({
+      abi: webAuthnFactoryAbi,
+      functionName: "createWebAuthnAccount",
+      args: [x, y, salt, entityId],
+    }),
+  };
+};
+
 const packUserOperationSignature = (signature: Hex): Hex => concatHex(["0xff", signature]);
 
 const packErc1271Signature = (entityId: number, signature: Hex): Hex =>
@@ -170,11 +188,7 @@ const makeWebAuthnAlchemyModularV2Account = async (
   const chainClient = publicClient as PublicClient<Transport, Chain>;
   const webAuthnOwner = props.owner.account;
   const { x, y } = getPublicKeyCoordinates(webAuthnOwner.publicKey);
-  const factoryData = encodeFunctionData({
-    abi: webAuthnFactoryAbi,
-    functionName: "createWebAuthnAccount",
-    args: [x, y, props.salt, props.entityId],
-  });
+  const factoryArgs = getWebAuthnFactoryArgs(webAuthnOwner.publicKey, props.salt, props.entityId);
   const accountAddress = await chainClient.readContract({
     address: modularAccountV2FactoryAddress,
     abi: webAuthnFactoryAbi,
@@ -187,10 +201,7 @@ const makeWebAuthnAlchemyModularV2Account = async (
     owner,
     accountAddress,
     signerEntity: { entityId: props.entityId, isGlobalValidation: true },
-    getFactoryArgs: async () => ({
-      factory: modularAccountV2FactoryAddress,
-      factoryData,
-    }),
+    getFactoryArgs: async () => factoryArgs,
   });
 
   return {

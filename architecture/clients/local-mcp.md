@@ -92,14 +92,19 @@ virtual passkey created the wallet and approved its session installation. The
 browser export was imported into encrypted files and macOS Keychain, and actual
 browser OAuth consent authorized local MCP. Its simulation succeeded; execution
 signed through the imported key and confirmed through Alchemy BSO. This verifies
-one sponsored zero-value execution, not physical passkey authenticators,
-unsponsored calls, message/typed-data signing, or the eight-network matrix.
+one sponsored zero-value execution. A second session installed on the deployed
+wallet then signed EIP-712 typed data through the same local MCP/Keychain path:
+ERC-1271 verification accepted the original and rejected the altered payload.
+A message request not enabled by its API policy returned
+`POLICY_DENIED` / `SIGNATURE_TYPE_NOT_ALLOWED`. Physical passkey authenticators,
+unsponsored calls and the eight-network matrix are not certified by this run.
 
 CLI tests exercise real crypto with a controlled clock, a provider substitute
 for broker races, and the actual HTTP adapter with injected Fetch. They cover
 separate audiences, replay, redirect/PKCE binding, expiry, scope narrowing,
 refresh/revoke concurrency, and malformed upstream responses. They do not prove
-a live Namera consent/signing journey yet. A Node socket test additionally covers
+the live provider; the separate journey above supplies that evidence for Sepolia.
+A Node socket test additionally covers
 discovery, forged Host/Origin rejection, the OAuth challenge, oversized declared
 bodies, oversized chunked bodies without Content-Length, continued listener
 health after rejection, and port release after disposing the listener.
