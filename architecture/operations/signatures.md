@@ -97,13 +97,22 @@ does not create authority. It does not persist an operation, consume billing,
 write audit, or return private provider details. A dedicated actor rate limit
 and bounded verification metrics protect the boundary.
 
+## Policy boundary verification
+
+The signature HTTP suite creates and installs a session with `typedDataRules`,
+then verifies a mismatched domain is denied with the policy ID before billing or
+signature audit writes. A corrected request reuses the unconsumed idempotency key
+and completes with one charged signature. Provider signing/receipt services are
+test substitutes; the API, policy engine and persistence are real.
+
 ## Pending
 
 - Wire local MCP to the SDK's implemented prepare/local-sign/complete workflow.
   Migrate remote-MCP authentication separately.
 - Complete end-to-end browser consent/import coverage and consumer conformance.
 - Add namespace-specific signature variants only with another chain adapter.
-- Add EIP-712 domain/verifying-contract/primary-type policy restrictions before
-  allowing broad typed-data signing in public production.
+- Expose the implemented EIP-712 rule editor and summaries in the dashboard,
+  and require restricted typed-data consent before public production. Optional
+  API rules alone do not prevent direct local signing outside Namera.
 - Add per-session-key signature count policies through the existing generic
   reservation model if product delegation limits require them.

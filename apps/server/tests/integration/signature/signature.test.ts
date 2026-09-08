@@ -5,6 +5,7 @@ import { TestClock } from "effect/testing";
 import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 import { createTestEvmSessionSigner, makeTestEvmSessionSignatureService } from "@namera-ai/evm";
+import { EthereumAddress } from "@namera-ai/protocol";
 import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
 
 import {
@@ -107,6 +108,79 @@ layer(delayedFixture.layer)("signature verification across expiry", (it) => {
 });
 
 layer(fixture.layer)("detached signature routes", (it) => {
+  it.effect("enforces persisted typed-data rules before reserving quota", () =>
+    Effect.gen(function* () {
+      const contract = EthereumAddress.make("0x1111111111111111111111111111111111111111");
+      const { client, payload, owner, signer, session, apiKey } = yield* setup([
+        {
+          type: "evm.signature",
+          version: 1,
+          allowedTypes: ["typed-data"],
+          typedDataRules: [
+            {
+              chainId: "eip155:1",
+              verifyingContract: contract,
+              name: "Namera",
+              version: "1",
+              primaryTypes: ["Authorization"],
+            },
+          ],
+        },
+      ]);
+      const policyId = session.policies.find(({ type }) => type === "evm.signature")?.id;
+      expect(policyId).toBeDefined();
+      const headers = { "idempotency-key": "restricted-typed-data" };
+      expect(
+        yield* client.signature
+          .prepare({
+            headers,
+            payload: { ...payload, type: "typed-data", typedData },
+          })
+          .pipe(Effect.flip),
+      ).toMatchObject({
+        code: "POLICY_DENIED",
+        policyCode: "TYPED_DATA_NOT_ALLOWED",
+        policyId,
+      });
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature"),
+      ).toMatchObject({ consumedAmount: 0n, reservedAmount: 0n });
+      const repository = yield* Repository;
+      const events = yield* repository.audit.organization.findForOrganization(
+        owner.actor.organization.id,
+      );
+      expect(events.filter(({ event }) => event.startsWith("signature."))).toHaveLength(0);
+
+      // A denied attempt does not consume the idempotency key or reserve quota.
+      yield* setAuthToken();
+      yield* setApiKey(apiKey.key);
+      const prepared = yield* client.signature.prepare({
+        headers,
+        payload: {
+          ...payload,
+          type: "typed-data",
+          typedData: { ...typedData, domain: { ...typedData.domain, verifyingContract: contract } },
+        },
+      });
+      expect(
+        yield* client.signature.complete({
+          payload: {
+            namespace: "eip155",
+            operationId: prepared.operationId,
+            signature: yield* Effect.promise(() => signer.sign(prepared.signing.typedData)),
+          },
+        }),
+      ).toMatchObject({ type: "typed-data" });
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature"),
+      ).toMatchObject({ consumedAmount: 1n, reservedAmount: 0n });
+    }),
+  );
+
   it.effect("concurrent valid completions settle and audit only once", () =>
     Effect.gen(function* () {
       const { client, signer, payload, owner } = yield* setup();
