@@ -88,6 +88,12 @@ sequenceDiagram
 
 The conditional consume inside the transaction prevents two valid clicks from minting two sessions.
 
+The route suite races eight mixed token/code redemptions of one challenge and
+asserts one success, one auth cookie, and one persisted session. It runs against
+both PGlite and the opt-in PostgreSQL lane. Concurrent challenge requests may
+send one email (cooldown observed) or replace an earlier challenge; only one
+credential may remain redeemable in either schedule.
+
 ## Security and failures
 
 - Expired, consumed, revoked, missing, wrong-purpose, and wrong-token cases collapse to `INVALID_OR_EXPIRED_LINK`.
@@ -108,4 +114,4 @@ The conditional consume inside the transaction prevents two valid clicks from mi
 - Add cleanup/retention for terminal and expired verification rows.
 - Verify production sender authentication, reputation, and deliverability.
 - Apply and test strict security headers on the verification page.
-- Add race tests for double consumption and final-attempt concurrency.
+- Add race tests for final-attempt concurrency; double consumption is covered.

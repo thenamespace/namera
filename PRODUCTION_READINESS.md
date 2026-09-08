@@ -167,6 +167,8 @@ not required for the beta.
       redemption, billing hard limits, idempotent execution submission, and
       policy/billing reservation settlement. These behaviors depend on database
       locking and must not be certified only with PGlite.
+      Magic-link mixed token/code consumption and OAuth HTTP code redemption
+      now have eight-way race coverage; execution and recovery races remain.
 - [ ] Add crash-recovery tests for signatures reserved before signing and
       executions interrupted before submission, after submission, and before
       settlement.

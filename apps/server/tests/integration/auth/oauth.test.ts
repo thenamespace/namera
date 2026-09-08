@@ -169,19 +169,30 @@ layer(fixture.layer)("OAuth authorization routes", (it) => {
       });
       const code = new URL(approved.redirectUrl).searchParams.get("code");
       if (code === null) return yield* Effect.die("Expected OAuth code");
-      const token = yield* protocolClient.execute(
-        HttpClientRequest.post("http://api.test/oauth/token").pipe(
-          HttpClientRequest.bodyUrlParams({
-            grant_type: "authorization_code",
-            code,
-            client_id: registration.client_id,
-            redirect_uri: redirectUri,
-            code_verifier: verifier,
-            resource,
-          }),
-        ),
+      const tokenRequest = HttpClientRequest.post("http://api.test/oauth/token").pipe(
+        HttpClientRequest.bodyUrlParams({
+          grant_type: "authorization_code",
+          code,
+          client_id: registration.client_id,
+          redirect_uri: redirectUri,
+          code_verifier: verifier,
+          resource,
+        }),
       );
-      expect(token.status).toBe(200);
+      const exchanges = yield* Effect.all(
+        Array.from({ length: 8 }, () => protocolClient.execute(tokenRequest)),
+        { concurrency: 8 },
+      );
+      expect(exchanges.filter((response) => response.status === 200)).toHaveLength(1);
+      const rejected = exchanges.filter((response) => response.status !== 200);
+      expect(rejected).toHaveLength(7);
+      for (const response of rejected) {
+        expect(response.status).toBe(400);
+        expect(yield* response.json).toMatchObject({ error: "invalid_grant" });
+        expect(response.headers["cache-control"]).toBe("no-store");
+      }
+      const token = exchanges.find((response) => response.status === 200);
+      if (token === undefined) return yield* Effect.die("Expected one successful exchange");
       const tokenBody = yield* token.json;
       expect(tokenBody).toMatchObject({ token_type: "Bearer" });
       expect(token.headers["cache-control"]).toBe("no-store");

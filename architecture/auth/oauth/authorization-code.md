@@ -85,8 +85,13 @@ Denial conditionally marks the live request and redirects to the exact registere
 - Durable authorization remains active and belongs to the client.
 - Code consumption and token insertion share a transaction.
 
+The HTTP protocol test races eight valid exchanges of one authorization code:
+one returns a token response and seven return `invalid_grant` with no-store
+headers. The same suite runs in PGlite and the opt-in PostgreSQL test lane.
+
 ## Pending before production
 
 - Add end-to-end interoperability tests with Codex, Claude, and generic MCP OAuth clients.
-- Test malicious redirect/state/PKCE/resource substitution and concurrent code redemption.
+- Extend malicious redirect/state/PKCE/resource substitution coverage; concurrent
+  code redemption is covered through the HTTP token endpoint.
 - Define approval expiry UI/policy and reauthorization behavior.

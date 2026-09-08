@@ -78,7 +78,14 @@ layer(TestServerLayer)("magic-link routes", (it) => {
           responseMode: "response-only",
         });
       });
-      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 400]);
+      // The second request may observe cooldown or replace the first challenge.
+      // Either schedule must leave exactly one redeemable credential.
+      expect(responses.length).toBeGreaterThanOrEqual(1);
+      expect(responses.length).toBeLessThanOrEqual(2);
+      expect(responses.filter((response) => response.status === 200)).toHaveLength(1);
+      expect(
+        responses.every((response) => response.status === 200 || response.status === 400),
+      ).toBe(true);
     }),
   );
 
@@ -122,6 +129,49 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       expect(result.body.returnTo).toBe("/");
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.cookies.cookies["auth-token"]?.value).toBeTruthy();
+    }),
+  );
+
+  it.effect("allows only one concurrent redemption across the token and code", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const email = testEmail("concurrent-redemption@example.com");
+      const link = yield* requestMagicLink(client, email);
+      const responses = yield* Effect.all(
+        Array.from({ length: 8 }, (_, index) =>
+          client.magicLink.verify(
+            index % 2 === 0
+              ? {
+                  payload: { type: "token", id: link.id, token: link.token },
+                  responseMode: "response-only",
+                }
+              : {
+                  payload: {
+                    type: "code",
+                    email,
+                    code: Schema.decodeSync(MagicLinkCode)(link.code),
+                  },
+                  responseMode: "response-only",
+                },
+          ),
+        ),
+        { concurrency: 8 },
+      );
+      expect(responses.filter((response) => response.status === 200)).toHaveLength(1);
+      expect(responses.filter((response) => response.status === 400)).toHaveLength(7);
+      expect(responses.filter((response) => response.cookies.cookies["auth-token"])).toHaveLength(
+        1,
+      );
+      const repository = yield* Repository;
+      const consumed = yield* repository.auth.verification.findById(link.id);
+      expect(consumed).toBeDefined();
+      expect(consumed?.consumedAt).not.toBeNull();
+      const user = yield* repository.auth.user.findByEmail(email);
+      if (user === undefined) return yield* Effect.die("Expected signed-in user");
+      expect(
+        yield* repository.auth.session.findActiveForUser(user.id, yield* DateTime.now),
+      ).toHaveLength(1);
     }),
   );
 
