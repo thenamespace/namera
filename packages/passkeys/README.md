@@ -24,3 +24,9 @@ increase. A challenge must still be single-use even when counters are zero.
 generated P-256 packed self-attestations, including challenge/origin/RP mismatch,
 missing user presence or verification, and a corrupted signature. These tests
 do not substitute for browser authenticator integration tests.
+
+`createTestAuthenticator()` from `@namera-ai/passkeys/testing` supplies ephemeral signed assertions for package and
+HTTP integration tests. It retains the private key inside its closure. Its
+optional test layer replaces registration only to provision that public key;
+authentication still runs the live verifier. Never compose it into a server
+runtime layer.

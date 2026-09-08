@@ -15,7 +15,9 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
+    testing: "src/testing/authenticator.ts",
   },
+  deps: { neverBundle: ["node:crypto"] },
   publint: "ci-only",
   unbundle: true,
 }) as UserConfig;

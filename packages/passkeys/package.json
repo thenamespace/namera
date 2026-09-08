@@ -15,6 +15,10 @@
       "namera-source": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./testing": {
+      "namera-source": "./src/testing/authenticator.ts",
+      "default": "./dist/testing.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -23,6 +27,7 @@
     },
     "exports": {
       ".": "./dist/index.js",
+      "./testing": "./dist/testing.js",
       "./package.json": "./package.json"
     }
   },
