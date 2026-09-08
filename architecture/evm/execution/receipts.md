@@ -17,10 +17,12 @@ report no paymaster; sponsorship is determined from the persisted signed
 execution envelope rather than receipt paymaster presence.
 
 `isReceiptForEvmExecution` additionally compares chain, sender, nonce and
-EntryPoint with a stored signed envelope. Session-key owner-operation recovery
-uses this guard before committing installation or billing transitions. A failed
+EntryPoint with a stored signed envelope. Session-key owner-operation and ordinary
+execution recovery use this guard before committing policy or billing transitions. A failed
 receipt may still match the operation; success controls the resulting transition,
-not the identity check.
+not the identity check. Mismatched receipts defer recovery without releasing or
+settling reservations, even if the provider also reports rejection. The ordinary
+execution HTTP suite covers both successful and failed mismatched receipts.
 
 ## Settlement transaction
 

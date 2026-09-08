@@ -2,7 +2,7 @@ import { DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "e
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
-import { Evm } from "@namera-ai/evm";
+import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
 import type { EvmSessionKey, ExecutionSubmission } from "@namera-ai/protocol/model";
 import { executionReconciliations, executionResults } from "@namera-ai/telemetry";
 
@@ -151,6 +151,10 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
       .getReceipt({ chainId: signed.chainId, userOperationHash: signed.userOperationHash })
       .pipe(Effect.result);
     if (Result.isSuccess(receipt) && Option.isSome(receipt.success)) {
+      if (!isReceiptForEvmExecution(signed, receipt.success.value)) {
+        yield* retry(submission, leaseToken, "receipt_mismatch");
+        return;
+      }
       if (!receipt.success.value.success) {
         yield* lifecycle.release({
           organizationId: submission.organizationId,

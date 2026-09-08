@@ -128,6 +128,11 @@ receipt instead of repeatedly submitting it. The failed receipt releases policy
 and execution capacity while settling actual sponsored gas. HTTP regressions
 cover both status variants and assert zero remaining billing reservations.
 
+Receipt recovery binds chain, UserOperation hash, sender, nonce and EntryPoint
+to the stored signed envelope before settlement or release. A mismatch preserves
+the submitted state and reservations and schedules another lookup; unrelated
+provider evidence cannot finalize an attempt.
+
 ## Simulation
 
 `POST /executions/simulate` requires wallet, chain, calls and an explicit
