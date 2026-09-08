@@ -76,6 +76,14 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
 
     const signed = submission.data.signedExecution;
     if (submission.status === "prepared") {
+      // Persist before RPC: a crash or lost response must survive lease takeover.
+      const attempt = yield* repository.core.executionSubmission.recordBroadcastAttempt({
+        id: submission.id,
+        organizationId: submission.organizationId,
+        leaseToken,
+        now: yield* DateTime.now,
+      });
+      if (attempt === undefined) return;
       const submitted = yield* evm.execution.submit({ signed }).pipe(Effect.result);
       if (Result.isSuccess(submitted)) {
         yield* lifecycle.markSubmitted({
@@ -90,6 +98,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
       }
 
       const definitivelyRejected =
+        submission.data.broadcastAttempted !== true &&
         Predicate.isTagged(submitted.failure, "EvmExecutionError") &&
         submitted.failure.code === "SUBMISSION_REJECTED";
 

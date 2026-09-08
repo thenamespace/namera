@@ -108,6 +108,29 @@ layer(Persistence)("local execution persistence", (it) => {
       expect(replay.inserted).toBe(false);
       expect(replay.submission.id).toBe(submission.id);
       expect(replay.submission.data.signedExecution).toEqual(owner.signed);
+
+      yield* repository.claimForReconciliation({
+        now: DateTime.fromEpochSeconds(110),
+        leaseToken: "broadcast-worker",
+        leaseExpiresAt: DateTime.fromEpochSeconds(130),
+        limit: 1,
+      });
+      const attempt = {
+        id: submission.id,
+        organizationId: owner.organization.id,
+        leaseToken: "broadcast-worker",
+        now: DateTime.fromEpochSeconds(111),
+      };
+      for (const invalid of [
+        { ...attempt, organizationId: other.organization.id },
+        { ...attempt, leaseToken: "stale-worker" },
+        { ...attempt, now: DateTime.fromEpochSeconds(130) },
+      ])
+        expect(yield* repository.recordBroadcastAttempt(invalid)).toBeUndefined();
+      const started = yield* repository.recordBroadcastAttempt(attempt);
+      expect(started?.data.broadcastAttempted).toBe(true);
+      expect(started?.data.signedExecution).toEqual(owner.signed);
+      expect(started?.data.prepared).toEqual(submission.data.prepared);
     }),
   );
 

@@ -23,6 +23,12 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { executionSubmission } from "#/schema/index";
 
 export interface ExecutionSubmissionRepositoryService {
+  readonly recordBroadcastAttempt: (input: {
+    readonly id: ExecutionSubmissionId;
+    readonly organizationId: OrganizationId;
+    readonly leaseToken: string;
+    readonly now: DateTime.Utc;
+  }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly acceptSignature: (input: {
     readonly id: ExecutionSubmissionId;
     readonly organizationId: OrganizationId;
@@ -109,6 +115,31 @@ export class ExecutionSubmissionRepository extends Context.Service<
       const database = yield* Database;
 
       return ExecutionSubmissionRepository.of({
+        recordBroadcastAttempt: Effect.fn("database.executionSubmission.recordBroadcastAttempt")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(executionSubmission)
+              .set({
+                data: sql`jsonb_set(${executionSubmission.data}, '{broadcastAttempted}', 'true'::jsonb)`,
+              })
+              .where(
+                and(
+                  eq(executionSubmission.id, input.id),
+                  eq(executionSubmission.organizationId, input.organizationId),
+                  eq(executionSubmission.status, "prepared"),
+                  eq(executionSubmission.leaseToken, input.leaseToken),
+                  gt(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
+                  sql`${executionSubmission.data}->'signedExecution' != 'null'::jsonb`,
+                ),
+              )
+              .returning();
+            return rows[0] === undefined
+              ? undefined
+              : Schema.decodeSync(ExecutionSubmission)(rows[0]);
+          },
+          mapRepositoryError,
+        ),
         acceptSignature: Effect.fn("database.executionSubmission.acceptSignature")(function* (
           input,
         ) {

@@ -162,6 +162,10 @@ build/typecheck tasks, not just test suites.
       the HTTP lifecycle regression verifies delayed hash visibility followed
       by exactly-once receipt settlement. This does not close the bounded
       unknown-outcome handling item.
+      A durable pre-RPC attempt marker also prevents a rejected retry from
+      releasing an earlier uncertain attempt. Seven PostgreSQL recovery tests
+      cover this and interrupted-worker takeover; repository tests reject stale,
+      expired and foreign-tenant broadcast claims.
 - [ ] Ensure an interrupted execution can settle or release billing and policy
       reservations without double settlement.
 - [x] Verify eight competing execution workers claim and settle two queued

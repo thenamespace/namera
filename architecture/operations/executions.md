@@ -142,6 +142,13 @@ proof of rejection. Recovery retains holds when the canonical hash is initially
 not found and keeps looking up that canonical hash. The HTTP regression covers
 this visibility delay and a later matching receipt settling billing exactly once.
 
+Each broadcast is preceded by a leased durable attempt marker. Only a first
+attempt's validation rejection can be combined with an absent provider status to
+release holds. Once an earlier attempt may have reached the bundler, a later send
+rejection is insufficient; recovery retains holds until status/receipt evidence
+resolves that canonical operation. The regression also covers rejection of a
+retry between the lost first response and eventual receipt visibility.
+
 The PostgreSQL HTTP integration suite runs eight concurrent reconciliation passes
 for submission and again for receipt settlement. Two queued operations produce
 exactly two confirmations, one native-spend total, the expected execution/gas

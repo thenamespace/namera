@@ -27,6 +27,7 @@ export const EvmExecutionSubmissionData = Schema.Struct({
   calls: Schema.Array(EvmIntentCall),
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signedExecution: Schema.NullOr(EvmSignedExecution),
+  broadcastAttempted: Schema.optionalKey(Schema.Literal(true)),
 });
 
 const ExecutionSubmissionCommon = Schema.Struct({

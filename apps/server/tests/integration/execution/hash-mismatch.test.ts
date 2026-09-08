@@ -22,6 +22,9 @@ import { queueExecution } from "./fixture.js";
 const receiptVisible = Context.Reference<boolean>("test/hashMismatch/receiptVisible", {
   defaultValue: () => false,
 });
+const rejectRetry = Context.Reference<boolean>("test/hashMismatch/rejectRetry", {
+  defaultValue: () => false,
+});
 const operationHash = UserOperationHash.make(`0x${"55".repeat(32)}`);
 const provider = makeTestEvmExecutionService();
 const fixture = makeOwnerSessionTestFixture({
@@ -33,7 +36,7 @@ const fixture = makeOwnerSessionTestFixture({
   submit: Effect.fnUntraced(function* (input) {
     if (input.signed.userOperationHash !== operationHash) return yield* provider.submit(input);
     return yield* new EvmExecutionError({
-      code: "SUBMISSION_HASH_MISMATCH",
+      code: (yield* rejectRetry) ? "SUBMISSION_REJECTED" : "SUBMISSION_HASH_MISMATCH",
       cause: "Provider accepted the operation but returned a different hash",
     });
   }),
@@ -101,6 +104,24 @@ layer(fixture.layer)("mismatched submission response", (it) => {
         expect(holds).toHaveLength(2);
         expect(holds.every((hold) => hold.status === "active")).toBe(true);
         expect(yield* app.execution.reconcile()).toBe(0);
+
+        yield* TestClock.adjust("16 seconds");
+        expect(
+          yield* app.execution.reconcile().pipe(Effect.provideService(rejectRetry, true)),
+        ).toBe(1);
+        expect(
+          yield* repository.core.executionSubmission.findById(
+            queued.submissionId,
+            owner.actor.organization.id,
+          ),
+        ).toMatchObject({ status: "prepared", data: { broadcastAttempted: true } });
+        expect(
+          (yield* repository.billing.usageReservation.listBySource(
+            owner.actor.organization.id,
+            "execution-submission",
+            queued.submissionId,
+          )).every((hold) => hold.status === "active"),
+        ).toBe(true);
 
         yield* TestClock.adjust("16 seconds");
         expect(

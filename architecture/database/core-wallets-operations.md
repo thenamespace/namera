@@ -489,10 +489,17 @@ unexpired deadline. Replays cannot overwrite an accepted signature. The caller
 must cryptographically verify the envelope and recheck current authority before
 this write, within the billing/policy transaction.
 
-This persistence change is part of the in-progress two-phase executor migration.
-The legacy executor does not yet supply the new required preparation bindings;
-new application and HTTP wiring remain pending. Repository tests cover ownership,
-expiry and one-time acceptance, not end-to-end execution authorization.
+Before external submission, `recordBroadcastAttempt` stores
+`data.broadcastAttempted: true` while requiring a prepared signed row and the
+current, unexpired lease in the same organization. Absence means no recorded
+broadcast attempt. This monotonic marker survives lost responses and worker
+takeover; it does not assert provider acceptance. A later send rejection alone
+cannot prove an earlier attempt was not accepted. No new column or index is
+needed; the marker is part of the version-1 typed JSON payload.
+
+The two-phase application and HTTP routes are wired. Repository tests cover
+ownership, expiry, signature acceptance and broadcast-lease guards; HTTP
+execution tests additionally cover authorization, policy/billing and recovery.
 
 ## `core.execution`
 

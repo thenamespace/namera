@@ -112,11 +112,14 @@ with a substituted transport; they do not call a live provider.
 ## Durable transition order
 
 1. Persist signed execution and mark submission prepared.
-2. Call external bundler.
+2. Record a durable broadcast-attempt marker under the live worker lease, then call the external bundler.
 3. On success or observed provider acceptance, mark submitted and write `execution.submitted` audit transactionally. An ambiguous response with no observed acceptance retains the prepared row and schedules recovery.
 4. For definitive rejection confirmed by the lifecycle's status checks, release reservations and write `execution.failed` transactionally.
 
 The signed execution is persisted before submission so reconciliation can safely retry or query status after process failure.
+The attempt marker prevents a later retry's validation error from proving rejection
+of the original attempt. Only the first attempt may be failed from a send rejection
+plus an absent status; later uncertainty needs canonical status/receipt evidence.
 
 The signed envelope also persists the EVM-owned billing measurement selected at
 preparation. Successful and reverted receipts calculate micro-USD from

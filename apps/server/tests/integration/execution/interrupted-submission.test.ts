@@ -82,6 +82,7 @@ layer(fixture.layer)("interrupted provider submission", (it) => {
         organizationId,
       );
       expect(abandoned?.status).toBe("prepared");
+      expect(abandoned?.data.broadcastAttempted).toBe(true);
       expect(abandoned?.leaseToken).not.toBeNull();
       expect(abandoned?.data.signedExecution).toEqual(original?.data.signedExecution);
       expect(yield* app.execution.reconcile()).toBe(0);
