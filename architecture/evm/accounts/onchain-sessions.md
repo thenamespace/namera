@@ -98,10 +98,14 @@ keys. They execute EntryPoint 0.7 `handleOps` against forked Alchemy contracts.
 They do not mock validation or run transactions on the source chain.
 
 Coverage includes P-256 deployment with high-S authenticator output, session
-installation, native allowance, target denial, start/expiry enforcement and
+installation, native allowance, target/selector denial, ERC-20 transfer/approval
+allowance exhaustion, start/expiry enforcement and
 revocation. The adapter compilation path also rejects mismatched reconstructed
 addresses and unsafe account-target grants. It uses a public-key-only owner.
 This lane does not verify hosted bundling or BSO sponsorship.
+The token tests deploy the checked-in test token and assert both UserOperation
+outcomes and token balances/allowances. They exercise Namera's compilation through
+the deployed permission modules, not a substitute policy evaluator.
 Installation and removal are also exercised as self-targeted calls through the
 root account's normal `encodeCalls` path. The owner-approval workflow can use
 normal execution preparation instead of a separate gas-estimation pipeline.

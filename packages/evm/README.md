@@ -231,3 +231,18 @@ fork suite. The fixture also checks the Sepolia chain ID. Files run serially
 when the variable is set because lifetime tests advance the shared fork clock.
 Direct `handleOps` tests prove contract behavior, not hosted Alchemy
 Wallet APIs, bundler mempool rules or BSO sponsorship.
+
+The token-permission suite deploys a minimal test ERC-20 on the fork. It verifies
+selector denial, cumulative transfer/approval allowance exhaustion, and unchanged
+balances/approvals after denied operations. Its Solidity source and compiled
+creation bytecode are under `tests/integration/aa/contracts`; the bytecode is
+committed so running Vitest does not require a Solidity compiler. To regenerate,
+run from the repository root using Foundry and copy the resulting bytecode into
+`token-bytecode.ts`:
+
+```sh
+forge inspect --root packages/evm/tests/integration/aa/contracts --use 0.8.28 TestToken bytecode
+```
+
+Use the default compiler settings (no optimizer). The contract is a test fixture,
+not a production token implementation.

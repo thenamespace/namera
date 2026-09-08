@@ -45,6 +45,7 @@ export const makeAnvilFixture = async (
     signOperation?: (operation: UserOperation<"0.7">) => Promise<Hex>,
   ) => Promise<TransactionReceipt>;
   readonly advanceTime: (seconds: number) => Promise<void>;
+  readonly deployContract: (bytecode: Hex) => Promise<`0x${string}`>;
 }> => {
   const endpoint = new URL(url);
   if (
@@ -153,6 +154,17 @@ export const makeAnvilFixture = async (
     },
     publicClient,
     submit,
+    deployContract: async (bytecode) => {
+      const hash = await walletClient.deployContract({ abi: [], bytecode });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (
+        receipt.status !== "success" ||
+        receipt.contractAddress === null ||
+        receipt.contractAddress === undefined
+      )
+        throw new Error("Test contract deployment failed");
+      return receipt.contractAddress;
+    },
     advanceTime: async (seconds) => {
       await testClient.increaseTime({ seconds });
       await testClient.mine({ blocks: 1 });

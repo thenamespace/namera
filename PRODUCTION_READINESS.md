@@ -117,10 +117,12 @@ build/typecheck tasks, not just test suites.
       the session contract, Alchemy compiler and dashboard policy catalog.
       Permission translation, overlap rejection and privileged-target protection
       have unit coverage. These are onchain grants/hooks, not new API policies.
-- [ ] Add real-contract enforcement tests for selector grants and ERC-20
+- [x] Add real-contract enforcement tests for selector grants and ERC-20
       allowances, including denial and allowance exhaustion. Translation tests
       alone do not prove deployed-contract behavior. Target denial already has
-      coverage in the Sepolia-fork session lifecycle suite.
+      coverage in the Sepolia-fork session lifecycle suite. Token tests also
+      verify transfer-plus-approval exhaustion and unchanged token state after
+      denied transfers/approvals on that fork; this is not an eight-chain gate.
 - [ ] Define a stable result when policy-required simulation data is unavailable
       or incomplete; never silently evaluate against missing asset changes.
 - [x] Verify a simulation adapter failure stops preview and preparation with
