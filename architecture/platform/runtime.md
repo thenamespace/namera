@@ -54,6 +54,12 @@ Credentialed CORS allows one configured dashboard origin. Cookies, actor
 authentication, permission narrowing, DTO mapping, rate limiting, and transport
 error mapping live in server adapters rather than application workflows.
 
+The outer security middleware sets `nosniff`, frame denial, no-referrer, and
+defaults responses to `Cache-Control: no-store` before authentication or routing.
+Successful public OAuth discovery responses retain their explicit cache policy;
+all error responses use no-store. Status, cookies, and redirect locations are
+preserved. Dashboard document CSP and WebAuthn permissions belong to its origin.
+
 ## Workers
 
 ### Email delivery

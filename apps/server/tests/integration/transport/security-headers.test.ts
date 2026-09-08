@@ -12,7 +12,7 @@ for (const status of [200, 303, 401, 500]) {
         Effect.succeed(
           HttpServerResponse.empty({
             status,
-            headers: { "cache-control": "no-store", location: "https://example.com/callback" },
+            headers: { location: "https://example.com/callback" },
           }),
         ),
       );
@@ -60,6 +60,39 @@ it.effect("applies protections when routing fails before producing a response", 
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
       "referrer-policy": "no-referrer",
+      "cache-control": "no-store",
     });
   }),
 );
+
+for (const status of [200, 503]) {
+  it.effect(`preserves public discovery caching only for successful responses (${status})`, () =>
+    Effect.gen(function* () {
+      let observed: HttpServerResponse.HttpServerResponse | undefined;
+      yield* HttpEffect.toHandled(
+        SecurityHeadersMiddleware(
+          Effect.succeed(
+            HttpServerResponse.empty({
+              status,
+              headers: { "cache-control": "public, max-age=300" },
+            }),
+          ),
+        ),
+        (_request, response) =>
+          Effect.sync(() => {
+            observed = response;
+          }),
+      ).pipe(
+        Effect.provideService(
+          HttpServerRequest.HttpServerRequest,
+          HttpServerRequest.fromWeb(
+            new Request("https://api.example.com/.well-known/oauth-authorization-server"),
+          ),
+        ),
+      );
+      expect(observed?.headers["cache-control"]).toBe(
+        status === 200 ? "public, max-age=300" : "no-store",
+      );
+    }),
+  );
+}

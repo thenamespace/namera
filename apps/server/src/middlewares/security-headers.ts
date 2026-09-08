@@ -12,7 +12,14 @@ const headers = {
 export const SecurityHeadersMiddleware = HttpMiddleware.make((httpEffect) =>
   Effect.gen(function* () {
     yield* HttpEffect.appendPreResponseHandler((_request, response) =>
-      Effect.succeed(HttpServerResponse.setHeaders(response, headers)),
+      Effect.succeed(
+        HttpServerResponse.setHeaders(response, {
+          ...headers,
+          // Public OAuth discovery opts into caching; errors never inherit it.
+          "cache-control":
+            response.status < 400 ? (response.headers["cache-control"] ?? "no-store") : "no-store",
+        }),
+      ),
     );
     return yield* httpEffect;
   }),

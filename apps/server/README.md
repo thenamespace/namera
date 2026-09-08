@@ -96,7 +96,10 @@ The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
 
-Authenticated responses use `Cache-Control: no-store`. Authentication cookies
+API responses default to `Cache-Control: no-store`, including failures before
+authentication and unexpected errors. Successful public OAuth discovery responses
+retain their explicit five-minute cache policy; error responses always use no-store.
+Authentication cookies
 and existing redirect headers are preserved by the outer API security middleware,
 which sets `nosniff`, frame denial, and a no-referrer policy. Dashboard document
 CSP and passkey permissions are owned by the dashboard origin. Authentication cookies

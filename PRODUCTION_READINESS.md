@@ -62,8 +62,10 @@ build/typecheck tasks, not just test suites.
       every public server endpoint.
 - [ ] Close any uncovered tenant-isolation or privilege-escalation paths found
       by that review.
-- [ ] Apply `Cache-Control: no-store` to authentication, OAuth, credential,
-      signing, execution, and other sensitive responses.
+- [x] Apply `Cache-Control: no-store` to authentication, OAuth, credential,
+      signing, execution, and other sensitive responses. The outer API middleware
+      defaults to no-store, including pre-authentication failures and defects;
+      successful public OAuth discovery retains its explicit cache policy.
 - [x] Bound request bodies for JSON, form, RPC, MCP, and browser telemetry
       endpoints. API buffered readers enforce 2 MiB / OAuth 64 KiB while reading;
       local MCP has separate bounded readers. Real-socket overflow tests cover
