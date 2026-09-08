@@ -125,6 +125,13 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 
 ## Rate limiting
 
+Request bodies are capped at 2 MiB (64 KiB for `/oauth/*`) before unbounded
+allocation, including chunked requests. Declared oversize requests return 413;
+stream overflow may return a decoding error or close the connection. Node uses
+explicit 10-second header and 30-second request-receive deadlines, a 5-second
+keep-alive timeout and 16 KiB header cap. These do not shorten application or
+provider work after a request has been received.
+
 The server uses Effect's process-local in-memory `RateLimiter`. One shared layer
 backs both the global IP limit and stricter operation limits. Policies are kept
 in `src/rate-limit.ts`; each counter is isolated by a namespaced key such as

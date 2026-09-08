@@ -63,6 +63,18 @@ cookie headers. Focused transport tests cover success, redirect, and error
 response statuses. Dashboard document CSP and WebAuthn Permissions-Policy must
 be configured on the dashboard origin; these API headers do not supply them.
 
+`RequestBodyLimitMiddleware` bounds decoded request bodies to 2 MiB, with a
+64 KiB limit for `/oauth/*`. Declared oversized bodies return 413/no-store;
+the Node text/JSON/form/binary readers enforce the same limit as chunks arrive,
+so omitting Content-Length does not bypass it. Overflow during reading may
+produce a decode error or close the connection before a response can be sent.
+These are transport bounds, not policy-entry or call-count limits. New streaming
+routes must explicitly bound `request.stream`, which bypasses buffered readers.
+The Node server sets 10-second header, 30-second request-receive, 5-second
+keep-alive timeouts and a 16 KiB header limit. Provider timeouts are independent.
+Real-socket tests cover declared and chunked overflow, subsequent valid requests,
+and listener cleanup; they do not simulate slow-header timeout expiry.
+
 ## Testing path
 
 - Repository tests prove constraints/query/transaction behavior.

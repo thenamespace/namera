@@ -58,8 +58,11 @@ build/typecheck tasks, not just test suites.
       by that review.
 - [ ] Apply `Cache-Control: no-store` to authentication, OAuth, credential,
       signing, execution, and other sensitive responses.
-- [ ] Bound request bodies for JSON, form, RPC, MCP, and browser telemetry
-      endpoints.
+- [x] Bound request bodies for JSON, form, RPC, MCP, and browser telemetry
+      endpoints. API buffered readers enforce 2 MiB / OAuth 64 KiB while reading;
+      local MCP has separate bounded readers. Real-socket overflow tests cover
+      omitted Content-Length and listener recovery. New streaming routes must
+      provide their own byte bounds.
 - [ ] Add the browser security headers that are independent of deployment:
       content type, framing, referrer, permissions, and content security policy.
 

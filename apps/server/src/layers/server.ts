@@ -1,5 +1,3 @@
-import { createServer } from "node:http";
-
 import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
@@ -19,6 +17,7 @@ import {
 import {
   CorsMiddleware,
   RateLimitMiddleware,
+  RequestBodyLimitMiddleware,
   SecurityHeadersMiddleware,
   TelemetryMiddleware,
 } from "#/middlewares/index";
@@ -32,13 +31,15 @@ import {
   TelemetryRoutes,
 } from "#/routes/index";
 
+import { createHttpServer } from "./http-server.js";
+
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
     // Never accept traffic against an older schema. Migrations and system-data
     yield* DatabaseMigration;
     const config = yield* ServerConfig;
 
-    return NodeHttpServer.layer(createServer, {
+    return NodeHttpServer.layer(createHttpServer, {
       host: config.host,
       port: config.port,
     });
@@ -76,7 +77,9 @@ const Routes = Layer.mergeAll(
 export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
   middleware: (httpEffect) =>
-    SecurityHeadersMiddleware(TelemetryMiddleware(RateLimitMiddleware(httpEffect))),
+    SecurityHeadersMiddleware(
+      TelemetryMiddleware(RateLimitMiddleware(RequestBodyLimitMiddleware(httpEffect))),
+    ),
 }).pipe(
   Layer.provide(
     HttpMiddleware.layerTracerDisabledForUrls([
