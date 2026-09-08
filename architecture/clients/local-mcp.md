@@ -94,6 +94,12 @@ a live Namera consent/signing journey yet. A Node socket test additionally cover
 discovery, forged Host/Origin rejection, the OAuth challenge, oversized declared
 bodies, oversized chunked bodies without Content-Length, continued listener
 health after rejection, and port release after disposing the listener.
+Valid signing requests on an already initialized MCP session are also tested
+after upstream authorization revocation, grant removal, session revocation, and
+wallet-binding substitution. Each fails before opening the local signer or
+requesting signature preparation. The API responses are injected in this test;
+it verifies the local HTTP authorization boundary, not server-side revocation
+persistence or a live OAuth journey.
 A separate real-socket regression holds 32 token requests at the broker boundary,
 checks that the next discovery request returns 503 with Retry-After/no-store,
 then releases the requests and verifies discovery succeeds. The broker exchange

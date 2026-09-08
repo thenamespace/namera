@@ -27,6 +27,7 @@ const withTools = async (
     setAuthorization: (id: string) => void;
     revoke: () => void;
     readOnly: () => void;
+    setGrants: (grants: readonly unknown[]) => void;
     fetch: ReturnType<typeof vi.fn<NameraFetch>>;
     signer: ReturnType<typeof vi.fn<ResolveSessionSigner>>;
   }) => Promise<void>,
@@ -39,6 +40,7 @@ const withTools = async (
   let authorizationId = id;
   let revoked = false;
   let scopes = ["mcp:read", "mcp:execute"];
+  let grants = options?.grants ?? [];
   const fetch = vi.fn<NameraFetch>(async (input, init) => {
     const path = new URL(input.toString()).pathname;
     if (path.endsWith("/actor") && revoked) return new Response(null, { status: 401 });
@@ -48,7 +50,7 @@ const withTools = async (
         data: {
           actorId: id,
           organizationId: id,
-          grants: options?.grants ?? [],
+          grants,
           authorization: {
             id: authorizationId,
             clientId: id,
@@ -119,6 +121,9 @@ const withTools = async (
       readOnly: () => {
         scopes = ["mcp:read"];
       },
+      setGrants: (value) => {
+        grants = value;
+      },
     });
   } finally {
     await server.dispose();
@@ -139,6 +144,56 @@ const initialize = async (rpc: Parameters<Parameters<typeof withTools>[0]>[0]["r
 };
 
 describe("SDK-backed local MCP HTTP tools", () => {
+  it.each(["revoked authorization", "removed grant", "revoked session", "wrong wallet"])(
+    "rejects a valid signing request before opening the keystore: %s",
+    async (scenario) => {
+      const fixture = mcpSignatureFixture();
+      await withTools(
+        async ({ rpc, signer, fetch, revoke, setGrants }) => {
+          const sessionId = await initialize(rpc);
+          if (scenario === "revoked authorization") revoke();
+          else if (scenario === "removed grant") setGrants([]);
+          else
+            setGrants(
+              fixture.grants.map((grant) => ({
+                ...grant,
+                sessionKey: {
+                  ...grant.sessionKey,
+                  ...(scenario === "revoked session"
+                    ? { status: "revoked" }
+                    : { walletId: otherId }),
+                },
+              })),
+            );
+
+          const response = await rpc(
+            "tools/call",
+            {
+              name: "sign",
+              arguments: { request: Schema.encodeSync(PrepareSignatureRequest)(fixture.request) },
+            },
+            sessionId,
+          );
+          if (scenario === "revoked authorization") {
+            expect(response.status).toBe(401);
+            expect(response.headers.get("www-authenticate")).toContain(urls.resourceMetadata);
+          } else {
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({
+              result: {
+                isError: true,
+                structuredContent: { error: { code: "LOCAL_SIGNER_UNAVAILABLE" } },
+              },
+            });
+          }
+          expect(signer).not.toHaveBeenCalled();
+          expect(fetch.mock.calls.every(([url]) => url.toString().endsWith("/actor"))).toBe(true);
+        },
+        { grants: fixture.grants },
+      );
+    },
+  );
+
   it("signs an authorized exact challenge locally but rejects a substituted payload", async () => {
     const fixture = mcpSignatureFixture();
     const signTypedData = vi.fn((typedData: TypedDataDefinition) =>
