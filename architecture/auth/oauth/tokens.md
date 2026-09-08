@@ -6,6 +6,15 @@ Namera stores only purpose-separated access/refresh token hashes. Refresh tokens
 
 Every issuance creates a short-lived access token. If scopes include `offline_access`, it also creates a refresh token with a new family ID or the consumed parent's family ID. Raw values are returned after inserts; hashes, audience, scopes, expiry, and lineage are persisted.
 
+Authorization-code consumption and issuance share a transaction. A different
+registered client, callback (including a trailing slash), resource, or validly
+formatted but incorrect PKCE verifier returns `invalid_grant` and rolls back
+consumption. The protocol integration test tries all four substitutions, then
+redeems the original code successfully and rejects replay. It also verifies
+opaque state survives the consent redirect unchanged. The test uses the real
+token HTTP handler and migrated PGlite; session installation uses the EVM test
+provider, not a live chain.
+
 ## Refresh rotation
 
 ```mermaid

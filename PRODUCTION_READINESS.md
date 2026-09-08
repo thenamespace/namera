@@ -92,6 +92,10 @@ build/typecheck tasks, not just test suites.
       coverage.
       Duplicate approval, final polling, and refresh-token reuse races pass on
       PostgreSQL; they do not cover these remaining transitions.
+      The code-binding HTTP regression now rejects client, exact callback,
+      resource and valid-but-wrong PKCE substitutions, then permits one original
+      redemption and rejects replay. Opaque consent state round-trips unchanged.
+      Local MCP/browser callback state and the full broker journey remain open.
 
 ### Wallet and signing safety
 
