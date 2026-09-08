@@ -182,8 +182,12 @@ build/typecheck tasks, not just test suites.
       and one ledger debit; release after settlement does not return used quota.
 - [x] Verify concurrent anniversary rollover creates one new period and one
       set of balances on PostgreSQL.
-- [ ] Verify anniversary rollover and stale-reservation recovery preserve the
+- [x] Verify anniversary rollover and stale-reservation recovery preserve the
       ledger-derived balance for every Free-plan meter.
+      HTTP-prepared mainnet/testnet executions and signatures complete or expire
+      across the anniversary. PostgreSQL verifies old-period settlement/release,
+      ledger agreement, idempotent recovery, and untouched new-period allowance.
+      EVM provider behavior is substituted; this does not verify live bundlers.
 
 ## 2. Dashboard completeness
 

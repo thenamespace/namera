@@ -169,6 +169,15 @@ previous end. This preserves a January 31 anniversary after February instead of
 permanently drifting it to the 28th. A single account row lock serializes
 rollover and admission for one organization.
 
+Rollover does not move outstanding reservations to the new period. Settlement
+and release address the reservation's original period, including after it closes.
+The operation-rollover integration test prepares mainnet/testnet executions and
+signatures before the anniversary, completes one of each afterward, and expires
+the abandoned preparations through their workers. It checks all four old-period
+balances against the ledger and active holds, with zero usage or reservations in
+the new period. Chain execution is substituted; application, WebAuthn approval,
+database transactions and billing workers are real.
+
 ## Usage authorization lifecycle
 
 ```mermaid
@@ -411,6 +420,5 @@ Deliberately inactive until paid plans:
   provider invoices expose a more exact billable amount.
 - Add production alerts for repeated recovery failures, projection repairs,
   hard-limit denial spikes, stale reservations, and pricing outages.
-- Extend combined rollover/recovery coverage across all Free meters.
 - Add future paid-path tests for credit corrections, webhook replay, delivery
   retries, and overage reporting.
