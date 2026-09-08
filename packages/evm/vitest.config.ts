@@ -12,6 +12,9 @@ export default defineNodeVitestConfig({
     },
   },
   test: {
+    // Fork suites advance one shared Anvil clock; parallel files can expire
+    // another suite's authorization while it is being exercised.
+    fileParallelism: process.env.NAMERA_TEST_ANVIL_URL === undefined,
     server: {
       deps: {
         inline: [/^@namera-ai\//],

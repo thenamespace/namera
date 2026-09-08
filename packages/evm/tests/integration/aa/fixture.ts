@@ -57,6 +57,8 @@ export const makeAnvilFixture = async (
   const publicClient = createPublicClient({ chain: sepolia, transport });
   const version = await publicClient.request({ method: "web3_clientVersion" });
   if (!version.toLowerCase().includes("anvil")) throw new Error("AA tests only run on Anvil");
+  if ((await publicClient.getChainId()) !== sepolia.id)
+    throw new Error("AA tests require a Sepolia fork");
   const testClient = createTestClient({ chain: sepolia, mode: "anvil", transport });
   const relayer = privateKeyToAccount(generatePrivateKey());
   await testClient.setBalance({ address: relayer.address, value: parseEther("100") });

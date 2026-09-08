@@ -227,5 +227,7 @@ NAMERA_TEST_ANVIL_URL=http://127.0.0.1:18545 pnpm --filter @namera-ai/evm test t
 These opt-in tests require a loopback URL and verify the RPC identifies as Anvil
 before funding ephemeral test keys. They execute actual EntryPoint and Modular
 Account contracts, not the EVM test layer. Tests without this variable skip the
-fork suite. Direct `handleOps` tests prove contract behavior, not hosted Alchemy
+fork suite. The fixture also checks the Sepolia chain ID. Files run serially
+when the variable is set because lifetime tests advance the shared fork clock.
+Direct `handleOps` tests prove contract behavior, not hosted Alchemy
 Wallet APIs, bundler mempool rules or BSO sponsorship.

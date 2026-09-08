@@ -41,7 +41,10 @@ Verified on 2026-09-08:
 
 These checks do not certify live networks, browser journeys or PostgreSQL
 concurrency. The default EVM run skips four opt-in Anvil account-abstraction
-tests; they must be run separately. Task-graph entries include dependency
+tests. A separate Sepolia-fork run on 2026-09-08 passed all four: detached passkey
+deployment, session installation/native limits/revocation, execution lifetime,
+and ERC-1271 message/typed-data authority. This does not certify bundler/BSO
+behavior or the other seven networks. Task-graph entries include dependency
 build/typecheck tasks, not just test suites.
 
 ## 1. Server correctness and security
