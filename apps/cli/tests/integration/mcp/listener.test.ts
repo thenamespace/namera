@@ -99,6 +99,38 @@ describe("local MCP Node listener", () => {
       });
       expect(oversized.status).toBe(413);
       await oversized.text();
+      const chunked = await new Promise<number | "reset">((resolve, reject) => {
+        const socketRequest = httpRequest(
+          `${urls.origin}/oauth/register`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json", "transfer-encoding": "chunked" },
+            timeout: 5_000,
+          },
+          (response) => {
+            response.resume();
+            response.once("end", () => resolve(response.statusCode ?? 0));
+            response.once("error", reject);
+          },
+        );
+        socketRequest.once("error", (error: NodeJS.ErrnoException) => {
+          // The Node body-size guard may close the socket before OAuth can encode
+          // invalid_request. Either outcome must reject this body, not register it.
+          if (error.code === "ECONNRESET" || error.code === "EPIPE") resolve("reset");
+          else reject(error);
+        });
+        socketRequest.once("timeout", () =>
+          socketRequest.destroy(new Error("Chunked request timed out")),
+        );
+        socketRequest.write('{"padding":"');
+        for (let index = 0; index < 34; index += 1) socketRequest.write("x".repeat(1024));
+        socketRequest.end('","redirect_uris":["https://agent.example/callback"]}');
+      });
+      expect([400, 413, "reset"]).toContain(chunked);
+      // Oversized input must not poison the listener for subsequent clients.
+      const healthy = await request("/.well-known/oauth-protected-resource/mcp");
+      expect(healthy.status).toBe(200);
+      await healthy.text();
     } finally {
       await runtime.dispose();
     }

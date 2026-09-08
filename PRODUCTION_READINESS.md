@@ -30,14 +30,19 @@ the hosted MCP transport is removed while its OAuth service remains.
 
 ## Current baseline
 
-Verified on 2026-08-24:
+Verified on 2026-09-08:
 
-- [x] `pnpm check` passes all 59 workspace tasks.
-- [x] `pnpm test` passes all 32 test tasks, including 27 server suites and 124
+- [x] `pnpm check` passes all 66 workspace tasks.
+- [x] `pnpm test` passes all 37 task-graph entries, including 34 server suites and 141
       server tests.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
       extension.
 - [x] The dashboard and server production builds complete.
+
+These checks do not certify live networks, browser journeys or PostgreSQL
+concurrency. The default EVM run skips four opt-in Anvil account-abstraction
+tests; they must be run separately. Task-graph entries include dependency
+build/typecheck tasks, not just test suites.
 
 ## 1. Server correctness and security
 
