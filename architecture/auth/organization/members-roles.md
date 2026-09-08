@@ -32,6 +32,17 @@ flowchart TD
 
 The expected-current-role argument is an optimistic concurrency guard. If another request changes the target between authorization and mutation, the update fails rather than applying a decision made against stale privilege.
 
+Browser authorization reloads the active membership and effective role for every
+request; a session cookie does not retain the permissions from login. The
+`organization/access-changes.test.ts` HTTP regression downgrades an authenticated
+admin without replacing their session. Member reads remain available, while
+registration options, workspace updates, invitations, role changes and removals
+return `Forbidden` without extra organization audit events. Removing that member
+then rejects session, wallet, session-key, execution, member, billing and inbox
+reads with `Unauthorized`; the owner's session remains valid. This verifies
+subsequent requests, not a mutation already in flight during the role change or
+the dashboard's cache invalidation behavior.
+
 ## Operations
 
 | Operation             | Required properties                                                             |

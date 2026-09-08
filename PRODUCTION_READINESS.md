@@ -70,6 +70,10 @@ build/typecheck tasks, not just test suites.
       MCP OAuth now additionally covers ten read routes after execute-only scope
       narrowing, read-only completion denial and immediate session-grant
       revocation. CLI-specific scopes and the complete route matrix remain open.
+      Existing browser sessions now have downgrade/removal coverage across five
+      management operations and seven reads, including absence of mutation audit
+      effects after permission denial. In-flight changes and dashboard cache
+      behavior are not covered by this server regression.
 - [ ] Close any uncovered tenant-isolation or privilege-escalation paths found
       by that review.
 - [x] Apply `Cache-Control: no-store` to authentication, OAuth, credential,
