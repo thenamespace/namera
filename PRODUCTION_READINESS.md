@@ -80,8 +80,10 @@ build/typecheck tasks, not just test suites.
       authorization-code redemption with eight concurrent requests on PostgreSQL.
 - [x] Verify the final failed magic-link attempt under concurrent token/code
       redemption on PostgreSQL: consumption and lockout remain mutually exclusive.
+- [x] Verify competing-user device claims and approval-versus-denial races on
+      PostgreSQL, including persisted authorization and token-exchange outcomes.
 - [ ] Finish OAuth redirect, state, PKCE, resource, and client-substitution
-      coverage and competing-user device claim/approval-versus-denial races.
+      coverage.
       Duplicate approval, final polling, and refresh-token reuse races pass on
       PostgreSQL; they do not cover these remaining transitions.
 

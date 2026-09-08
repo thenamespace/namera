@@ -74,9 +74,13 @@ final HTTP token polls. It asserts one durable CLI authorization with the chosen
 grant, one successful token response, and rejection of all losing attempts.
 This suite passes with both PGlite and PostgreSQL transactions.
 
+A separate HTTP test pins two users' cookies and races their claims, requiring
+one claimant and rejecting denial by the other user. The winner then races
+approval against denial. Exactly one decision succeeds; the persisted state,
+authorization/grants, approval audit and device-token exchange agree with that
+decision. This test passes on PostgreSQL and PGlite.
+
 ## Pending before production
 
-- Test competing users claiming a request and simultaneous approve versus deny;
-  duplicate approval and final-poll races are covered.
 - Add operator visibility for abandoned/slow-down-heavy device requests without exposing user codes.
 - Define maximum device-name/platform lengths at the protocol boundary if not already constrained.
