@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import { getEvmPolicyDefinitionFor, orderEvmPolicies } from "./registry.js";
 import type {
@@ -9,6 +9,17 @@ import type {
 } from "./types.js";
 
 export const makeEvmPolicyService = (): EvmPolicyService => ({
+  executionDeadline: ({ policies, latest }) => {
+    let deadline = latest;
+    for (const policy of policies) {
+      if (
+        policy.type === "evm.time-window" &&
+        DateTime.toEpochMillis(policy.expiresAt) < DateTime.toEpochMillis(deadline)
+      )
+        deadline = policy.expiresAt;
+    }
+    return deadline;
+  },
   evaluate: Effect.fn("evm.policy.evaluate")(function* (input) {
     for (const policy of orderEvmPolicies(input.policies)) {
       const operation = getEvmPolicyDefinitionFor(policy).execution;

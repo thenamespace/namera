@@ -14,6 +14,13 @@ Applies to executions using simulated block timestamp and signatures using opera
 
 Start is inclusive; expiry is exclusive. It is stateless because absolute bounds do not reset or accumulate.
 
+`Evm.policy.executionDeadline` caps a detached execution preparation's signing
+deadline at this policy's `expiresAt`. It never extends the caller's deadline
+(which also accounts for the signing TTL and onchain session expiry). This
+prevents delayed signature acceptance from relying on a still-valid historical
+simulation timestamp after the API policy expires. Submission acceptance must
+enforce the resulting deadline atomically; this is not an onchain expiry rule.
+
 ## `evm.chain-allowlist`
 
 Applies to executions and signatures. It permits only a chain ID contained in `chainIds`; otherwise it returns `CHAIN_NOT_ALLOWED`. It restricts but does not grant signature access.

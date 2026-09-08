@@ -1,4 +1,4 @@
-import type { Effect } from "effect";
+import type { DateTime, Effect } from "effect";
 
 import type {
   EvmExecutionReceipt,
@@ -71,6 +71,10 @@ export type SettleEvmPoliciesInput = CompleteEvmPolicyOperationInput & {
 export type ReleaseEvmPoliciesInput = CompleteEvmPolicyOperationInput;
 
 export interface EvmPolicyService {
+  readonly executionDeadline: (input: {
+    readonly policies: EvmSessionKeyPolicies;
+    readonly latest: DateTime.Utc;
+  }) => DateTime.Utc;
   readonly evaluate: (
     input: EvaluateEvmPoliciesInput,
   ) => Effect.Effect<EvmPolicyDecision, EvmPolicyError>;
