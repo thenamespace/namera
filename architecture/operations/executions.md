@@ -122,6 +122,12 @@ policy and billing reservations. Signed attempts remain recoverable after the
 client signing deadline; that deadline does not authorize releasing an uncertain
 onchain operation's capacity.
 
+If a submission response is lost but the provider reports an included failure
+(`reverted` or `failed`), recovery marks the attempt submitted and polls its
+receipt instead of repeatedly submitting it. The failed receipt releases policy
+and execution capacity while settling actual sponsored gas. HTTP regressions
+cover both status variants and assert zero remaining billing reservations.
+
 ## Simulation
 
 `POST /executions/simulate` requires wallet, chain, calls and an explicit

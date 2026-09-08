@@ -51,8 +51,8 @@ flowchart TD
   Data -->|Yes| Status{Submission status}
   Status -->|prepared| Resubmit[Retry sendUserOperation]
   Resubmit --> Observe[Query status when needed]
-  Observe -->|submitted/included| Mark[Mark submitted]
-  Observe -->|rejected/reverted/failed| Release
+  Observe -->|submitted/included/reverted/failed| Mark[Mark submitted; recover receipt]
+  Observe -->|rejected| Release
   Observe -->|not observed but definitive rejection| Release
   Observe -->|unknown/transient| Retry
   Status -->|submitted| Receipt[Get receipt]

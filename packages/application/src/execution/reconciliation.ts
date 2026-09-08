@@ -101,7 +101,13 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
         yield* retry(submission, leaseToken, "submit_status_unavailable");
         return;
       }
-      if (status.success.status === "submitted" || status.success.status === "included") {
+      if (
+        status.success.status === "submitted" ||
+        status.success.status === "included" ||
+        status.success.status === "reverted" ||
+        status.success.status === "failed"
+      ) {
+        // Included failures also need receipt recovery for actual sponsored gas.
         yield* lifecycle.markSubmitted({
           submissionId: submission.id,
           organizationId: submission.organizationId,
@@ -121,12 +127,6 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
           stage: "submit",
           leaseToken,
         });
-        return;
-      }
-      if (status.success.status === "reverted" || status.success.status === "failed") {
-        // Included failures consume sponsored gas. Wait for the receipt so the
-        // billing settlement uses the provider's actual gas cost.
-        yield* retry(submission, leaseToken, "failed_receipt_pending");
         return;
       }
       if (
