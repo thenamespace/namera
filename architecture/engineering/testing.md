@@ -137,7 +137,12 @@ session storage with `@napi-rs/keyring`, a random credential-service namespace,
 and a temporary directory. It verifies import, reopening through a new store
 instance, absence of plaintext material in the file and POSIX permissions, then
 removes the credentials and files. It passed on macOS; Windows/Linux remain
-unverified. This is not a packaged CLI prompt or OAuth/MCP journey test.
+unverified. The separate `packaged-import.test.ts` runs the built CLI in a Python
+standard-library pseudo-terminal on macOS. It enters a generated passphrase,
+checks that the terminal does not echo it, then decrypts the installed key through
+the real OS credential. It uses isolated configuration, does not authenticate or
+call the API, and cleans up its files and credentials. Build the CLI before this
+test. Neither test covers OAuth/MCP or onchain signing.
 
 ```sh
 NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts

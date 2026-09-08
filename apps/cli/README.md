@@ -103,8 +103,21 @@ export and local MCP integration remain migration work. Normal storage tests use
 substitute keyring. Opt in to the real platform-keyring test with
 `NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts`.
 It uses an isolated credential namespace and temporary files and cleans both up.
-Import and reopening passed on macOS; Windows/Linux and the packaged CLI prompt
-and OAuth/MCP journeys remain pending.
+Import and reopening passed on macOS; Windows/Linux and OAuth/MCP journeys
+remain pending. The built CLI prompt has separate coverage below.
+
+For the built command's hidden-passphrase prompt and real macOS keyring import,
+build first, then run the opt-in terminal test (requires `python3` for its
+standard-library pseudo-terminal):
+
+```sh
+pnpm --filter @namera-ai/cli build
+NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/packaged-import.test.ts
+```
+
+This test uses an isolated config directory and an unused random API credential;
+import is local and makes no API call. It does not test login, OAuth or onchain
+signing. Temporary files and keyring entries are removed afterward.
 
 `--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
 colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact
