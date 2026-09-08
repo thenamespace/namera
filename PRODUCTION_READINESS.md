@@ -30,6 +30,12 @@ the hosted MCP transport is removed while its OAuth service remains.
 
 ## Current baseline
 
+Handoff: 2026-09-09. At the user's request, agent implementation/testing stops
+here. Remaining browser journeys, UI review/fixes and eight-chain live checks
+are user-owned. Unchecked items remain unverified or unresolved; this handoff
+does not certify the full beta gate. In particular, owner recovery is not
+implemented and uncertain signed executions intentionally retain their holds.
+
 Workspace verification refreshed on 2026-09-09:
 
 - [x] `pnpm check` passes all 66 workspace tasks.
@@ -327,6 +333,9 @@ verified passes. Local contract, integration, and regression tests remain in sco
       once in the live suite where the provider can produce the condition.
 
 ### Dashboard browser journeys
+
+Owner: user. These remaining manual checks and resulting UI fixes are outside
+the agent's current pass, per the final handoff request.
 
 - [ ] Authentication and workspace: sign in, create/switch workspace, update
       profile/workspace, invite a member, accept the invitation, and sign out.
