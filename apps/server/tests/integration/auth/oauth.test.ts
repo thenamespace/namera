@@ -722,27 +722,48 @@ layer(fixture.layer)("OAuth authorization routes", (it) => {
         platform: "darwin-arm64",
       });
 
-      expect(
-        yield* client.oauth.approveOAuthDeviceAuthorization({
-          payload: {
-            deviceAuthorizationId: pending.id,
-            organizationId: owner.actor.organization.id,
-            sessionKeyIds: [sessionKey.id],
-          },
-        }),
-      ).toEqual({ status: "approved" });
-
-      const issued = yield* protocolClient.execute(
-        HttpClientRequest.post("http://api.test/oauth/token").pipe(
-          HttpClientRequest.bodyUrlParams({
-            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-            device_code: startedBody.device_code,
-            client_id: "namera-cli",
-            resource: "http://api.test",
-          }),
+      const approvals = yield* Effect.all(
+        Array.from({ length: 8 }, () =>
+          client.oauth
+            .approveOAuthDeviceAuthorization({
+              payload: {
+                deviceAuthorizationId: pending.id,
+                organizationId: owner.actor.organization.id,
+                sessionKeyIds: [sessionKey.id],
+              },
+            })
+            .pipe(Effect.result),
         ),
+        { concurrency: 8 },
       );
-      expect(issued.status).toBe(200);
+      expect(approvals.filter(Result.isSuccess)).toHaveLength(1);
+      const deniedApprovals = approvals.filter(Result.isFailure);
+      expect(deniedApprovals).toHaveLength(7);
+      for (const failure of deniedApprovals) {
+        expect(failure.failure).toMatchObject({ code: "REQUEST_NOT_FOUND" });
+      }
+
+      const pollRequest = HttpClientRequest.post("http://api.test/oauth/token").pipe(
+        HttpClientRequest.bodyUrlParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+          device_code: startedBody.device_code,
+          client_id: "namera-cli",
+          resource: "http://api.test",
+        }),
+      );
+      const polls = yield* Effect.all(
+        Array.from({ length: 8 }, () => protocolClient.execute(pollRequest)),
+        { concurrency: 8 },
+      );
+      expect(polls.filter((response) => response.status === 200)).toHaveLength(1);
+      const rejectedPolls = polls.filter((response) => response.status !== 200);
+      expect(rejectedPolls).toHaveLength(7);
+      for (const response of rejectedPolls) {
+        expect(response.status).toBe(400);
+        expect(yield* response.json).toMatchObject({ error: "invalid_grant" });
+      }
+      const issued = polls.find((response) => response.status === 200);
+      if (issued === undefined) return yield* Effect.die("Expected token response");
       expect(yield* issued.json).toMatchObject({
         token_type: "Bearer",
         scope:

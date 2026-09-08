@@ -171,6 +171,8 @@ not required for the beta.
       now have eight-way race coverage; execution and recovery races remain.
 - [x] Verify concurrent refresh-token reuse invalidates the winning rotation's
       access and refresh tokens, with committed revocation before the error.
+- [x] Verify duplicate CLI device approvals create one authorization and
+      concurrent final polls issue one token response on PostgreSQL.
 - [ ] Add crash-recovery tests for signatures reserved before signing and
       executions interrupted before submission, after submission, and before
       settlement.

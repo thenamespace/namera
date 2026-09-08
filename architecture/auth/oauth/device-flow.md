@@ -69,8 +69,14 @@ sequenceDiagram
 
 The CLI must honor the returned interval and updated slow-down behavior rather than tight-looping.
 
+The protocol regression races eight dashboard approval requests and then eight
+final HTTP token polls. It asserts one durable CLI authorization with the chosen
+grant, one successful token response, and rejection of all losing attempts.
+This suite passes with both PGlite and PostgreSQL transactions.
+
 ## Pending before production
 
-- Test simultaneous claim, approve/deny, and final poll races.
+- Test competing users claiming a request and simultaneous approve versus deny;
+  duplicate approval and final-poll races are covered.
 - Add operator visibility for abandoned/slow-down-heavy device requests without exposing user codes.
 - Define maximum device-name/platform lengths at the protocol boundary if not already constrained.
