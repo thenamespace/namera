@@ -132,6 +132,17 @@ closed, not used to create test history.
 
 ## Commands
 
+The CLI's opt-in `NAMERA_TEST_OS_KEYRING=1` test exercises its actual encrypted
+session storage with `@napi-rs/keyring`, a random credential-service namespace,
+and a temporary directory. It verifies import, reopening through a new store
+instance, absence of plaintext material in the file and POSIX permissions, then
+removes the credentials and files. It passed on macOS; Windows/Linux remain
+unverified. This is not a packaged CLI prompt or OAuth/MCP journey test.
+
+```sh
+NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts
+```
+
 ```sh
 pnpm --filter @namera-ai/server test
 pnpm --filter @namera-ai/server typecheck:test

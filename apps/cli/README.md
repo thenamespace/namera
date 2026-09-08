@@ -99,8 +99,12 @@ Execution and message/typed-data signing resolve the imported wallet/session/cha
 binding locally and use the SDK's validated prepare/sign/complete flows. `sign`
 requires an explicit session key ID and locally exported signature consent;
 older exports without `allowSignatures: true` cannot sign messages. Browser
-export and local MCP integration remain migration work. Storage tests use a
-substitute keyring; packaged OS-keyring and live-chain journeys remain pending.
+export and local MCP integration remain migration work. Normal storage tests use a
+substitute keyring. Opt in to the real platform-keyring test with
+`NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts`.
+It uses an isolated credential namespace and temporary files and cleans both up.
+Import and reopening passed on macOS; Windows/Linux and the packaged CLI prompt
+and OAuth/MCP journeys remain pending.
 
 `--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
 colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact

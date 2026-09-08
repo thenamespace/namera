@@ -2,14 +2,13 @@ import { mkdtemp, readFile, readdir, rm, stat, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { Redacted, Schema } from "effect";
+import { Redacted } from "effect";
 
-import { LocalSessionKeyMaterial } from "@namera-ai/protocol/local";
 import { sealLocalSessionKey } from "@namera-ai/sdk";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createSessionKeystore } from "../../src/services/session-keystore/storage.js";
+import { makeLocalSessionMaterial } from "../fixtures/local-session.js";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -29,29 +28,7 @@ const setup = async () => {
       secrets.delete(id);
     },
   };
-  const privateKey = generatePrivateKey();
-  const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
-    version: 1,
-    namespace: "eip155",
-    apiOrigin: "http://localhost:8080",
-    privateKey,
-    bindings: [
-      {
-        walletId: "01950000-0000-7000-8000-000000000001",
-        sessionKeyId: "01950000-0000-7000-8000-000000000002",
-        signingKeyId: "01950000-0000-7000-8000-000000000003",
-        installationId: "01950000-0000-7000-8000-000000000004",
-        walletAddress: `0x${"11".repeat(20)}`,
-        signerAddress: privateKeyToAccount(privateKey).address,
-        chainId: "eip155:11155111",
-        entityId: 7,
-        isGlobal: true,
-        hasExecutionHooks: false,
-        validAfter: "2026-09-08T00:00:00Z",
-        validUntil: "2026-10-08T00:00:00Z",
-      },
-    ],
-  });
+  const material = makeLocalSessionMaterial();
   const password = Redacted.make("test-only portable export passphrase");
   const encrypted = await sealLocalSessionKey(material, password);
   const store = createSessionKeystore(directory, keyring);
