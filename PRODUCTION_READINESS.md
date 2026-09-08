@@ -225,6 +225,10 @@ not required for the beta.
 
 ### Eight-network capability test
 
+Owner: user. Live verification across the eight chains is explicitly excluded
+from the agent's remaining work. The checks below are a manual handoff, not
+verified passes. Local contract, integration, and regression tests remain in scope.
+
 - [ ] Run the same live capability suite on all four mainnets and four testnets:
       account derivation and reconstruction, deployment, simulation, sponsored
       and unsponsored execution, receipt normalization, message and typed-data
@@ -262,7 +266,7 @@ The application is ready for beta when:
       from the beta product surface;
 - [ ] `pnpm check` and `pnpm test` remain green;
 - [ ] the required PostgreSQL concurrency and recovery tests pass;
-- [ ] all eight networks pass the capability suite;
+- [ ] user confirms the eight-network capability suite (user-owned manual gate);
 - [ ] the five critical dashboard journeys pass against a production build; and
 - [ ] any unresolved wallet-recovery limitation is enforced in product behavior,
       not only described in documentation.

@@ -56,6 +56,14 @@ permits only `passkey`; authenticated managed requests receive HTTP 403
 provider, or persistence work. The dashboard offers only passkey creation.
 Managed construction remains internal for future use and is not a beta feature.
 
+The dashboard requires an unchecked-by-default recovery acknowledgement before
+starting WebAuthn registration. It explains that email login cannot restore the
+owner passkey and that losing every copy may lock funds and prevent onchain
+session removal. The account overview repeats this notice for local owners.
+This is a presentation safeguard, not a recovery implementation or server-side
+attestation. No acknowledgement is added to wallet metadata or the public DTO.
+Owner replacement/recovery and the associated mainnet safety decision remain open.
+
 Owner variants:
 
 - `passkey` includes the one-time verification ID and browser registration

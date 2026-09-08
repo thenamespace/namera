@@ -63,6 +63,11 @@ textarea keeps an empty string when cleared; neither creation flow requires a
 description. Form resolver tests exercise blank and populated descriptions and
 verify that the decoded session request can be encoded by the public API schema.
 
+Account creation also requires a form-only recovery acknowledgement before the
+passkey ceremony starts. The shared passkey recovery notice remains visible on
+local account overviews; it never claims that email login or a session key can
+restore owner access. The acknowledgement is not sent to the API or persisted.
+
 ## State and mutations
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch

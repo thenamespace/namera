@@ -6,6 +6,7 @@ import { Schema } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   Button,
+  Checkbox,
   Field,
   FieldError,
   FieldGroup,
@@ -26,6 +27,7 @@ import {
   DashboardCardRoot,
   DashboardCardRow,
 } from "@/components/dashboard-card";
+import { PasskeyRecoveryNotice } from "@/components/passkey-recovery-notice";
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -177,7 +179,7 @@ export function CreateAccountForm() {
               <div>
                 <Typography.Paragraph size="sm">User-owned passkey</Typography.Paragraph>
                 <Typography.Paragraph size="xs" color="muted">
-                  Namera never holds your owner key. Keep a backup of your passkey.
+                  Namera never holds your owner key.
                 </Typography.Paragraph>
               </div>
             </DashboardCardRow>
@@ -210,6 +212,34 @@ export function CreateAccountForm() {
           </FieldGroup>
         </DashboardCardContent>
       </DashboardCardRoot>
+
+      <div className="mt-5 space-y-4">
+        <PasskeyRecoveryNotice />
+        <Controller
+          control={form.control}
+          name="acknowledgeRecovery"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <Checkbox
+                name={field.name}
+                isInvalid={fieldState.invalid}
+                isRequired
+                isSelected={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              >
+                <Checkbox.Content className="items-start">
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  I understand that Namera cannot recover my owner passkey.
+                </Checkbox.Content>
+                {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+              </Checkbox>
+            </Field>
+          )}
+        />
+      </div>
 
       <Button
         className="mt-4"
