@@ -37,12 +37,15 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
     onError: (error) =>
       showErrorToast(error, {
         title: "Couldn’t revoke session key",
-        description: "The session key is still active. Try again.",
+        description: "Check its current status and try again.",
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       showSuccessToast({
-        title: "Session key revoked",
-        description: "Its active grants can no longer authorize new operations.",
+        title: result.status === "revoked" ? "Session key revoked" : "API access revoked",
+        description:
+          result.status === "revoked"
+            ? "This session no longer authorizes operations."
+            : "Open the session to remove its onchain permissions with your passkey.",
       });
       setIsRevokeOpen(false);
     },
@@ -51,7 +54,8 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
     currentUser.data?.role.permissions ?? [],
     sessionKeyRevokePermission,
   );
-  const showRevoke = canRevoke && sessionKey.status === "active";
+  const showRevoke =
+    canRevoke && (sessionKey.status === "active" || sessionKey.status === "pending");
 
   const handleAction = useEventCallback((key: Key) => {
     if (key === "open-session-key") {
@@ -114,9 +118,9 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
                 <AlertDialog.Heading>Revoke {sessionKey.metadata.name}?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                This session key will stop authorizing new executions and signatures immediately.
-                All active API key, CLI, and MCP grants to it will be revoked. This action cannot be
-                undone.
+                Namera will immediately revoke its API, CLI, and MCP grants. Onchain permissions
+                remain until you approve their removal on every installed network using the account
+                owner’s passkey. Revoked grants cannot be restored.
               </AlertDialog.Body>
               <AlertDialog.Footer>
                 <Button slot="close" variant="tertiary">

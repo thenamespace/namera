@@ -2,6 +2,7 @@ import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { Typography } from "@namera-ai/ui";
 
 import { EvmPolicyDisplayCard } from "@/components/policy/evm";
+import { SessionKeyInstallations } from "@/components/session-key-installations";
 
 type SessionKeyPoliciesProps = {
   sessionKey: SessionKeyResponse;
@@ -15,9 +16,11 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
           Policies
         </Typography.Heading>
         <Typography.Paragraph className="mt-2 text-muted" size="sm">
-          Every request must satisfy these rules before Namera can use this session key.
+          API rules apply to requests through Namera. Onchain permissions also constrain direct use
+          of the session signer.
         </Typography.Paragraph>
       </div>
+      <SessionKeyInstallations key={sessionKey.id} sessionKey={sessionKey} />
 
       <div className="mt-8 grid max-w-3xl gap-3">
         {sessionKey.policies.map((policy) => (

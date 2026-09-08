@@ -21,6 +21,7 @@ import {
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
 import { useForm, type DefaultValues } from "react-hook-form";
 
+import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -153,7 +154,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
       {registration ? (
         <div className="grid gap-6">
           <Typography.Paragraph color="muted" size="sm">
-            Registered, awaiting onchain approval. This session cannot execute yet.
+            Save your local key, then approve each network with the account owner’s passkey.
           </Typography.Paragraph>
           {registrationError ? (
             <Typography.Paragraph role="alert" className="text-danger">
@@ -179,8 +180,11 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               })
             }
           >
-            View pending session
+            View session
           </Button>
+          {!registrationError && !needsBackup ? (
+            <SessionKeyInstallations key={registration.id} sessionKey={registration} />
+          ) : null}
         </div>
       ) : (
         <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>

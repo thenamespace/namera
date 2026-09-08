@@ -115,8 +115,10 @@ list, and revoke atoms/hooks live under `src/atoms/api-key` and
 atoms/hooks live under `src/atoms/auth/oauth` and `src/hooks/auth/oauth`.
 Session-key `operation` modules also expose owner-approval prepare/complete
 mutations and a status query. These are typed data adapters, not a completed
-browser approval flow: callers must retain retry identity and poll receipts
-before presenting an installation as active.
+browser approval flow by themselves. The shared `session-key-installations`
+component combines them with public owner lookup, EVM reconstruction/compilation,
+SDK envelope validation and SimpleWebAuthn authentication. It polls receipts before
+presenting confirmation and refreshes billing/session queries at terminal states.
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
@@ -124,8 +126,11 @@ The session creation form generates its local secp256k1 draft through the SDK,
 submits only the public signer, validates returned installation configuration,
 and offers an encrypted CLI export. The draft is held outside form/atom state.
 Passphrase fields clear after encryption; leaving with an unsaved key requires
-confirmation. Registration is shown as pending. Owner approval, receipt polling
-and ambiguous-registration recovery remain unfinished.
+confirmation. Registration is shown as pending. The installation panel becomes
+available after backup acknowledgement and also appears on overview/policies.
+It supports sponsored install and removal with the owner's passkey. Approval
+retry identity and assertions remain in memory only; reload recovery and the
+full browser/live-chain journey remain unfinished.
 `/session-key/$sessionKeyId` redirects to its overview and owns a shared detail
 shell with Overview, Policies, and Executions navigation. The overview presents
 the session key identity and its core status, account, namespace, creator,

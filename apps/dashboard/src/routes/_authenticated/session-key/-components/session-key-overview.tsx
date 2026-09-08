@@ -13,6 +13,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { SessionKeyActions } from "@/components/session-keys-table/actions";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -128,6 +129,7 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
           ) : null}
         </div>
       </section>
+      <SessionKeyInstallations key={sessionKey.id} sessionKey={sessionKey} />
     </div>
   );
 }

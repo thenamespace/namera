@@ -14,7 +14,8 @@ constrain ERC-1271 signatures; only onchain uninstall removes that authority.
 See [onchain session compilation](../evm/accounts/onchain-sessions.md).
 
 The SDK and local MCP sign delegated operations using client-held session keys.
-The dashboard creation and owner-approval UI remain incomplete.
+The dashboard can register/export a local signer and approve installation/removal.
+Browser and live-chain end-to-end verification remain pending.
 
 ## Persistence and policy references
 
@@ -166,17 +167,20 @@ reviewed chain, account, owner entity, factory arguments and compiled self-call.
 It rejects altered authority, undeclared gas charges, expired approvals and
 WebAuthn challenge/credential/RP substitutions. Its hash uses the canonical
 EntryPoint and personal-sign encoding used by the deployed passkey adapter.
-The guard is unit-tested; the EVM package now supplies read-only account
-reconstruction and session compilation. Browser integration and prompt wiring
-are still required. A caller must not treat the server's calldata as the locally
+The guard is unit-tested; the EVM package supplies read-only account
+reconstruction and session compilation. The dashboard uses it before opening
+SimpleWebAuthn's authentication prompt. A caller must not treat the server's calldata as the locally
 reviewed action.
 
 Dashboard atoms and hooks expose preparation, completion and operation status
 through the shared typed client. Completion invalidates session and billing
 data; it does not optimistically activate a session. Status queries have a
-five-second cache lifetime, not automatic polling. The upcoming approval UI must
-poll while pending, refresh session/billing data after terminal receipts, and
-retain the preparation idempotency key across retries. Typed approval failures
+five-second cache lifetime. The installation component refreshes operation status
+every three seconds while pending and refreshes session/billing data on terminal
+receipts. It retains the preparation idempotency key and the accepted browser
+assertion in component memory across retries, without signing again after an
+ambiguous completion response. These values do not survive navigation/reload.
+Typed approval failures
 use the shared feedback registry; provider and assertion payloads are not shown.
 
 Creation now separates onchain permissions from optional API policies. The
@@ -206,7 +210,19 @@ and browser unload warn while the local key has not been acknowledged as saved.
 The encrypted export was exercised with a disposable browser-only test key;
 this does not prove the full registration/import/approval journey.
 
-Owner passkey approval and receipt polling still need to be connected. A lost
+The shared installation panel appears in overview, policies, and creation after
+the key is acknowledged as saved. It shows the signer, lifetime, onchain grants
+and signature authority per network. Approval is BSO-sponsored and checks the
+locally reconstructed account/factory, compiled call and expected WebAuthn
+challenge before prompting. The public RPC proxy remains a trusted chain-data
+source. Removal is offered only after API revocation; pending sessions can also
+be revoked. Receipt confirmation, not successful HTTP completion, establishes
+onchain installation. Network/state/credential errors leave a retry action.
+
+The browser boundary has owner/account substitution regressions, and SDK/EVM
+unit tests exercise compilation and envelope validation. The actual browser
+prompt, encrypted import and live receipt journey still require verification.
+A lost
 registration response also needs a public-signer lookup recovery path so retrying
 the same local draft can recover its existing pending registration.
 
@@ -214,9 +230,9 @@ the same local draft can recover its existing pending registration.
 
 - Complete stuck signed-operation cancellation/replacement recovery and connect
   the status endpoint to browser polling.
-- Wire browser generation, encrypted export, and owner-approved creation UI.
-- Wire dashboard revocation to owner-approved uninstall on every installed chain
-  and clearly distinguish immediate API cutoff from pending onchain removal.
+- Verify browser generation, encrypted export/import and owner-approved creation
+  end to end; recover pending approval identities after navigation/reload.
+- Verify dashboard removal on every installed chain, including partial failures.
 - Add retention behavior for expired/revoked keys and historical grants.
 - Per-grant editing is intentionally unsupported; revoke/replace the parent
   credential or authorization instead.
