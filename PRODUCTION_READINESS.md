@@ -257,8 +257,11 @@ build/typecheck tasks, not just test suites.
 - [ ] Provide clear states for disabled networks, sponsorship exhaustion,
       insufficient unsponsored funds, unavailable signing, submitted execution,
       reconciliation, revert, and unknown terminal outcome.
-- [ ] Surface the wallet recovery limitation or recovery controls on account
+- [x] Surface the wallet recovery limitation or recovery controls on account
       overview before mainnet use.
+      Passkey creation requires a form acknowledgement, and local-wallet
+      overviews render the shared recovery notice. This is disclosure, not
+      implemented key recovery or a restriction on mainnet funding.
 - [ ] Keep policy create, edit, display, duplicate detection, and validation
       consistent for every policy available in the beta.
 

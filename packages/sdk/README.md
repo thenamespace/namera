@@ -105,8 +105,8 @@ storage: its public installation binding, an EIP-191 signing callback, and an
 explicit `maxGasCostWei` allowance for self-funded operations. The SDK never
 receives private key bytes through this interface. Do not populate the binding
 from the preparation response: it must originate from the owner-approved
-installation/export. The CLI keystore and dashboard export integration remain
-pending.
+installation/export. The dashboard produces encrypted exports of these bindings;
+the CLI resolves them from its encrypted local keystore.
 
 `sign` requires `sessionKeyId` and uses the same local resolver. Its binding must
 explicitly set `allowSignatures: true`, and the signer must provide a
@@ -167,8 +167,9 @@ installation/removal calldata, sponsorship or an explicit native-gas ceiling,
 expiry, RP and credential. It recomputes the ERC-4337 hash and its WebAuthn
 personal-sign challenge before the authenticator is opened. It does not compile
 permissions, reconstruct the wallet, invoke WebAuthn or establish receipt state.
-Never populate `reviewed` from the preparation being checked. Dashboard wiring
-and independent compilation remain pending.
+Never populate `reviewed` from the preparation being checked. The dashboard uses
+the EVM package to reconstruct the account and compile the reviewed permissions
+independently before invoking this guard and the passkey authenticator.
 
 ## Structure
 

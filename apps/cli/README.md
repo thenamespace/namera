@@ -15,8 +15,10 @@ revocation races. OAuth routes, transport guards, SDK-backed tools, and live
 authorization/session isolation are tested through the in-memory HTTP boundary.
 `mcp start` runs the loopback HTTP listener. The integrated HTTP test covers local
 OAuth, encrypted key import/unlock, the CLI signer resolver and SDK signature
-completion with substituted upstream services and keyring. Secure broker
-persistence and the live browser-to-local-signing journey remain pending. See
+completion with substituted upstream services and keyring. A live Sepolia journey
+also verified browser export, packaged CLI import with the macOS keyring, OAuth,
+execution, typed-data signing and onchain removal. Secure broker persistence
+remains deferred; restarting requires reauthorization. See
 [local MCP integration status](../../architecture/clients/local-mcp.md).
 
 Run `pnpm --filter @namera-ai/cli typecheck:test` to typecheck both source and
@@ -101,12 +103,12 @@ Execution and message/typed-data signing resolve the imported wallet/session/cha
 binding locally and use the SDK's validated prepare/sign/complete flows. `sign`
 requires an explicit session key ID and locally exported signature consent;
 older exports without `allowSignatures: true` cannot sign messages. Browser
-export and local MCP integration remain migration work. Normal storage tests use a
+export and local MCP use this same binding. Normal storage tests use a
 substitute keyring. Opt in to the real platform-keyring test with
 `NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts`.
 It uses an isolated credential namespace and temporary files and cleans both up.
-Import and reopening passed on macOS; Windows/Linux and OAuth/MCP journeys
-remain pending. The built CLI prompt has separate coverage below.
+Import and reopening passed on macOS; Windows/Linux remain unverified.
+The built CLI prompt has separate coverage below.
 
 For the built command's hidden-passphrase prompt and real macOS keyring import,
 build first, then run the opt-in terminal test (requires `python3` for its

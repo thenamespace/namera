@@ -114,9 +114,8 @@ shared atom registry. It presents priced portfolio totals and allocation summari
 then renders the provider-neutral balances through a reusable searchable,
 filterable, sortable, and chain-groupable asset table with explorer actions.
 The Session Keys tab prefetches the wallet-scoped session-key list and renders it
-through the same table used by the organization session-key page. Usage currently
-retains the detail shell with focused placeholder content for its later
-implementation.
+through the same table used by the organization session-key page. Usage renders
+the shared execution table scoped to that wallet, without another page heading.
 
 Session-key create, detail, organization-list, wallet-list, and revoke atoms/hooks live
 under `src/atoms/session-key` and `src/hooks/session-key`. API-key create, detail,
@@ -145,16 +144,18 @@ It supports sponsored install and removal with the owner's passkey. Approval
 assertions remain in memory only. Reloads look up the active operation: owned,
 unsigned sponsored approvals resume their original retry identity; signed
 operations are tracked without another passkey prompt. Recovery read errors
-disable approval until retried. The full browser/live-chain journey remains
-unfinished.
+disable approval until retried. A production-preview journey with a virtual
+passkey verified creation, encrypted CLI import, OAuth, Sepolia execution,
+typed-data signing and onchain removal. Physical authenticators and the full
+eight-chain live matrix remain unverified.
 `/session-key/$sessionKeyId` redirects to its overview and owns a shared detail
-shell with Overview, Policies, and Executions navigation. The overview presents
+shell with Overview, Policies, and Usage navigation. The overview presents
 the session key identity and its core status, account, namespace, creator,
 identifier, and lifecycle metadata. Actors with `session-key:revoke` can revoke
 an active key from either its overview actions or table row actions after
 confirming that all active grants will also be revoked. Policies renders the persisted EVM rules as
-read-only cards through the shared policy summaries; Executions intentionally
-retains a focused placeholder until session-key-scoped history is available. Session
+read-only cards through the shared policy summaries; Usage renders the shared
+execution table scoped to that session key. Session
 key names and row actions open the overview, and the pinned action column can
 copy or revoke the session key according to its lifecycle and the actor's permissions.
 Session-key tables initially show active keys; revoked keys remain available through
@@ -168,8 +169,8 @@ wallet and session-key identities, namespace and chain displays, initiating
 actor type, explorer-aware transaction hashes, execution timestamps, and copy
 actions. The grid supports search, controlled sorting, display properties,
 multi-select facets, and grouping by account, session key, namespace, chain, or
-actor. The same component is ready for future account- and session-key-scoped
-history once those backend query boundaries exist. Execution and session-key
+actor. Account and session-key Usage tabs reuse it with scoped queries.
+Execution and session-key
 tables keep columns, cells, sorting, and grouping row contracts separate from
 their query, filtering, and view state.
 Activity facet choices come from organization wallet/session-key queries and the

@@ -1055,17 +1055,21 @@ The migration is complete for beta when:
 
 ## Migration completion checklist
 
-- [ ] Finalize the beta custody model: local passkey wallet owners, local session keys, and managed signing disabled by default.
+Implementation checkpoint: 2026-09-09. Checked entries below describe implemented
+boundaries, not a claim that every provider/network or launch decision is verified.
+Current test evidence and remaining beta gates live in `PRODUCTION_READINESS.md`.
+
+- [x] Finalize the beta custody model: local passkey wallet owners, local session keys, and managed signing disabled at the public wallet creation boundary.
 - [x] Replace wallet root references with provider-neutral signing keys and support managed or passkey-owned wallet creation. The legacy wallet-key table remains only until session migration removes its final consumers.
-- [ ] Make session keys cryptographic onchain permissions with per-chain installation and revocation state.
-- [ ] Support both API-level and onchain policy enforcement with clear, fail-closed semantics.
-- [ ] Implement two-phase prepare, local sign, and complete workflows for executions and signatures.
-- [ ] Update EVM account construction, session installation, execution, signing, and verification for the new model.
-- [ ] Update database schemas, repositories, billing, audit events, notifications, telemetry, and recovery workers.
-- [ ] Update the public API, SDK, CLI, local HTTP MCP and dashboard; remove hosted MCP transport.
-- [ ] Add encrypted local session-key storage and OAuth-backed local MCP operation without exposing key material to the model.
-- [ ] Remove routine root-key signing and all legacy assumptions that session keys are policy-only API grants.
-- [ ] Add focused security, concurrency, lifecycle, provider, CLI, MCP, API, and dashboard tests.
-- [ ] Update the architecture knowledge base and package documentation to match the implemented system.
-- [ ] Validate the complete create, install, execute, sign, revoke, recover, and reconcile flows on all beta networks.
+- [x] Make session keys cryptographic onchain permissions with per-chain installation and revocation state.
+- [x] Support both API-level and onchain policy enforcement with clear, fail-closed semantics. API-only restrictions do not constrain direct signing outside Namera; the dashboard discloses that boundary.
+- [x] Implement two-phase prepare, local sign, and complete workflows for executions and signatures.
+- [x] Update EVM account construction, session installation, execution, signing, and verification for the new model.
+- [x] Update database schemas, repositories, billing, audit events, notifications, telemetry, and recovery workers. Unknown signed outcomes retain their holds; operator force-resolution is not implemented.
+- [x] Update the public API, SDK, CLI, local HTTP MCP and dashboard; remove hosted MCP transport.
+- [x] Add encrypted local session-key storage and OAuth-backed local MCP operation without exposing key material to the model.
+- [x] Remove routine root-key signing. Legacy synchronous execute/sign routes remain fail-closed stubs, not signing fallbacks; current clients use prepare/complete.
+- [x] Add focused security, concurrency, lifecycle, provider, CLI, MCP, API, and dashboard tests.
+- [x] Update the architecture knowledge base and package documentation to describe implemented boundaries and distinguish remaining verification from missing implementation.
+- [ ] Validate the complete create, install, execute, sign, revoke, recover, and reconcile flows on all beta networks. The user owns the eight-network live check. The agent verified one real Sepolia create/install/import/OAuth/execute/typed-data/uninstall journey plus local contract and HTTP recovery tests.
 - [ ] Complete the final security and legal review before enabling the beta.
