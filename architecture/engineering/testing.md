@@ -80,6 +80,13 @@ database. Registration remains pending until that receipt; revocation tests
 distinguish immediate grant removal from confirmed onchain uninstallation.
 This covers application/transport lifecycle behavior, not live chain enforcement.
 
+Execution, history, and overview tests submit through prepare/complete and run
+worker iterations explicitly. They cover idempotent settlement, failed-receipt
+reservation release, actor-scoped reads, and pagination. Simulation assertions
+compare usage after the installation baseline: installing a session is itself a
+metered operation. The obsolete synchronous execute endpoint is asserted to fail
+closed, not used to create test history.
+
 ## Commands
 
 ```sh

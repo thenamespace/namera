@@ -10,10 +10,9 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestServerLayer } from "../../fixtures/layers/index.js";
-import { createExecutionFixture, executeFixture } from "../execution/fixture.js";
+import { createExecutionFixture, executeFixture, executionFixture } from "../execution/fixture.js";
 
-layer(TestServerLayer)("dashboard overview route", (it) => {
+layer(executionFixture.layer)("dashboard overview route", (it) => {
   it.effect("returns a namespace-aware organization snapshot", () =>
     Effect.gen(function* () {
       // Persisted operation timestamps use the database clock, so the overview
@@ -44,7 +43,7 @@ layer(TestServerLayer)("dashboard overview route", (it) => {
       const fixture = yield* createExecutionFixture(client, "overview");
       yield* setAuthToken();
       yield* setApiKey(fixture.apiKey.key);
-      yield* executeFixture(client, fixture.wallet, "dashboard-overview-execution");
+      yield* executeFixture(client, fixture, "dashboard-overview-execution");
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);
 

@@ -1,8 +1,9 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { Duration, Effect } from "effect";
+import { TestClock } from "effect/testing";
 
+import { Application } from "@namera-ai/application";
 import { TestEvmExecution } from "@namera-ai/evm";
-import type { ConfirmedEvmExecutionResponse } from "@namera-ai/protocol/dto";
 
 import {
   makeTestApiClient,
@@ -12,10 +13,14 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestServerLayer } from "../../fixtures/layers/index.js";
-import { createExecutionFixture, executeFixture } from "./fixture.js";
+import {
+  createExecutionFixture,
+  executeFixture,
+  executionFixture,
+  queueExecution,
+} from "./fixture.js";
 
-layer(TestServerLayer)("execution read routes", (it) => {
+layer(executionFixture.layer)("execution read routes", (it) => {
   it.effect("only lets the creating API-key actor read its submission", () =>
     Effect.gen(function* () {
       yield* resetTestState();
@@ -34,7 +39,18 @@ layer(TestServerLayer)("execution read routes", (it) => {
 
       yield* setAuthToken();
       yield* setApiKey(fixture.apiKey.key);
-      const executed = yield* executeFixture(client, fixture.wallet, "submission-owner");
+      const executed = yield* queueExecution(client, {
+        headers: { "idempotency-key": "submission-owner" },
+        payload: {
+          namespace: "eip155",
+          walletId: fixture.wallet.id,
+          sessionKeyId: fixture.sessionKey.id,
+          chainId: "eip155:1",
+          calls: [{ to: fixture.wallet.address, value: 0n, data: "0x" }],
+        },
+      });
+      yield* TestClock.adjust(Duration.seconds(2));
+      yield* (yield* Application).execution.reconcile();
       const submission = yield* client.execution.getSubmission({
         params: { submissionId: executed.submissionId },
       });
@@ -79,12 +95,10 @@ layer(TestServerLayer)("execution read routes", (it) => {
       yield* setApiKey(fixture.apiKey.key);
       const executions = yield* Effect.forEach(
         Array.from({ length: 51 }, (_, index) => index),
-        (index) => executeFixture(client, fixture.wallet, `list-${index}`),
+        (index) => executeFixture(client, fixture, `list-${index}`),
         { concurrency: 1 },
       );
-      const confirmed = executions.filter(
-        (execution): execution is ConfirmedEvmExecutionResponse => execution.status === "confirmed",
-      );
+      const confirmed = executions.filter((execution) => execution.status === "confirmed");
       expect(confirmed).toHaveLength(51);
       const firstExecution = confirmed[0];
       if (firstExecution === undefined) return yield* Effect.die("Expected an execution");

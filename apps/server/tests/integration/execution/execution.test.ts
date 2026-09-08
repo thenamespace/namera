@@ -15,11 +15,13 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestEmails, TestServerLayer } from "../../fixtures/layers/index.js";
+import { TestEmails } from "../../fixtures/layers/index.js";
+import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { executionFixture, executeRequest, queueExecution } from "./fixture.js";
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 
-layer(TestServerLayer)("execution routes", (it) => {
+layer(executionFixture.layer)("execution routes", (it) => {
   it.effect(
     "simulates calls and policy eligibility without consuming limits or billing usage",
     () =>
@@ -27,17 +29,10 @@ layer(TestServerLayer)("execution routes", (it) => {
         yield* resetTestState();
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("execution-simulation@example.com"));
-        const wallet = yield* client.wallet.create({
-          payload: {
-            namespace: "eip155",
-            owner: { type: "namera-managed", protectionLevel: "software" },
-            metadata: metadata("Simulation treasury"),
-          },
-        });
+        const wallet = yield* createTestPasskeyWallet(client, "Simulation treasury");
         const sessionKey = yield* client.sessionKey.create({
           payload: {
-            namespace: "eip155",
-            walletId: wallet.id,
+            ...(yield* localSessionRequest(wallet.id)),
             metadata: metadata("Simulation agent"),
             policies: [
               {
@@ -58,6 +53,9 @@ layer(TestServerLayer)("execution routes", (it) => {
           (policy) => policy.type === "evm.native-spend-limit",
         );
         if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
+        expect(
+          (yield* executionFixture.confirmOperation(client, sessionKey, "install")).status,
+        ).toBe("active");
         const apiKey = yield* client.apiKey.create({
           payload: {
             metadata: metadata("Simulation API key"),
@@ -73,6 +71,7 @@ layer(TestServerLayer)("execution routes", (it) => {
             payload: {
               namespace: "eip155",
               walletId: wallet.id,
+              sessionKeyId: sessionKey.id,
               chainId: "eip155:1",
               calls: [{ to: wallet.address, value, data: "0x" }],
             },
@@ -82,11 +81,11 @@ layer(TestServerLayer)("execution routes", (it) => {
         expect(allowed).toMatchObject({
           namespace: "eip155",
           walletId: wallet.id,
+          sessionKeyId: sessionKey.id,
           chainId: "eip155:1",
           account: wallet.address,
           callsSucceeded: true,
           allowed: true,
-          sessionKeyId: sessionKey.id,
         });
         const denied = yield* simulate(2n);
         expect(denied).toMatchObject({
@@ -114,7 +113,7 @@ layer(TestServerLayer)("execution routes", (it) => {
         expect(
           (yield* client.billing.get()).meters.find(({ key }) => key === "execution.mainnet")
             ?.consumedAmount,
-        ).toBe(0n);
+        ).toBe(1n);
       }),
   );
 
@@ -125,17 +124,10 @@ layer(TestServerLayer)("execution routes", (it) => {
         yield* resetTestState();
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("execution-owner@example.com"));
-        const wallet = yield* client.wallet.create({
-          payload: {
-            namespace: "eip155",
-            owner: { type: "namera-managed", protectionLevel: "software" },
-            metadata: metadata("Treasury"),
-          },
-        });
+        const wallet = yield* createTestPasskeyWallet(client, "Treasury");
         const sessionKey = yield* client.sessionKey.create({
           payload: {
-            namespace: "eip155",
-            walletId: wallet.id,
+            ...(yield* localSessionRequest(wallet.id)),
             metadata: metadata("Treasury automation"),
             policies: [
               {
@@ -152,6 +144,9 @@ layer(TestServerLayer)("execution routes", (it) => {
             ],
           },
         });
+        expect(
+          (yield* executionFixture.confirmOperation(client, sessionKey, "install")).status,
+        ).toBe("active");
         const apiKey = yield* client.apiKey.create({
           payload: {
             metadata: metadata("Execution agent"),
@@ -167,6 +162,7 @@ layer(TestServerLayer)("execution routes", (it) => {
           payload: {
             namespace: "eip155" as const,
             walletId: wallet.id,
+            sessionKeyId: sessionKey.id,
             chainId: "eip155:1" as const,
             calls: [
               {
@@ -177,14 +173,17 @@ layer(TestServerLayer)("execution routes", (it) => {
             ],
           },
         };
-        const result = yield* client.execution.execute(request);
+        expect(yield* client.execution.execute(request).pipe(Effect.flip)).toMatchObject({
+          code: "EXECUTION_UNAVAILABLE",
+        });
+        const result = yield* executeRequest(client, request);
         expect(result.status).toBe("confirmed");
         if (result.status !== "confirmed") return yield* Effect.die("Expected a receipt");
         expect(result.receipt.success).toBe(true);
-        const replay = yield* client.execution.execute(request);
+        const replay = yield* executeRequest(client, request);
         if (replay.status !== "confirmed") return yield* Effect.die("Expected a receipt");
         expect(replay.executionId).toBe(result.executionId);
-        const explicitSponsoredReplay = yield* client.execution.execute({
+        const explicitSponsoredReplay = yield* executeRequest(client, {
           ...request,
           payload: { ...request.payload, sponsor: true },
         });
@@ -193,7 +192,7 @@ layer(TestServerLayer)("execution routes", (it) => {
         }
         expect(explicitSponsoredReplay.executionId).toBe(result.executionId);
 
-        const unsponsored = yield* client.execution.execute({
+        const unsponsored = yield* executeRequest(client, {
           headers: { "idempotency-key": "execution-unsponsored" },
           payload: {
             ...request.payload,
@@ -228,7 +227,7 @@ layer(TestServerLayer)("execution routes", (it) => {
         yield* setAuthToken(owner.cookie.value);
         const billing = yield* client.billing.get();
         expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
-          2n,
+          3n,
         );
         expect(billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount).toBe(
           32_400n,
@@ -264,17 +263,10 @@ layer(TestServerLayer)("execution routes", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("execution-denied@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Restricted"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Restricted");
       const sessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Restricted key"),
           policies: [
             {
@@ -291,6 +283,9 @@ layer(TestServerLayer)("execution routes", (it) => {
           ],
         },
       });
+      expect((yield* executionFixture.confirmOperation(client, sessionKey, "install")).status).toBe(
+        "active",
+      );
       const apiKey = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Restricted agent"),
@@ -301,11 +296,12 @@ layer(TestServerLayer)("execution routes", (it) => {
       yield* setAuthToken();
       yield* setApiKey(apiKey.key);
       const execute = (value: bigint, idempotencyKey: string) =>
-        client.execution.execute({
+        executeRequest(client, {
           headers: { "idempotency-key": idempotencyKey },
           payload: {
             namespace: "eip155",
             walletId: wallet.id,
+            sessionKeyId: sessionKey.id,
             chainId: "eip155:1",
             calls: [{ to: wallet.address, value, data: "0x" }],
           },
@@ -324,24 +320,17 @@ layer(TestServerLayer)("execution routes", (it) => {
     }),
   );
 
-  it.effect("settles a submitted execution after the HTTP receipt wait times out", () =>
+  it.effect("settles locally signed executions through the background worker", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const testExecution = yield* TestEvmExecution;
       yield* testExecution.setReceiptMode("pending");
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("execution-worker@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Worker treasury"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Worker treasury");
       const sessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Worker automation"),
           policies: [
             {
@@ -358,6 +347,9 @@ layer(TestServerLayer)("execution routes", (it) => {
           ],
         },
       });
+      expect((yield* executionFixture.confirmOperation(client, sessionKey, "install")).status).toBe(
+        "active",
+      );
       const apiKey = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Worker agent"),
@@ -367,28 +359,32 @@ layer(TestServerLayer)("execution routes", (it) => {
       });
       yield* setAuthToken();
       yield* setApiKey(apiKey.key);
-      const submitted = yield* client.execution.execute({
+      const submitted = yield* queueExecution(client, {
         headers: { "idempotency-key": "worker-execution" },
         payload: {
           namespace: "eip155",
           walletId: wallet.id,
+          sessionKeyId: sessionKey.id,
           chainId: "eip155:1",
           calls: [{ to: wallet.address, value: 4n, data: "0x" }],
         },
       });
-      expect(submitted.status).toBe("submitted");
-      const second = yield* client.execution.execute({
+      expect(submitted.status).toBe("prepared");
+      const second = yield* queueExecution(client, {
         headers: { "idempotency-key": "worker-execution-2" },
         payload: {
           namespace: "eip155",
           walletId: wallet.id,
+          sessionKeyId: sessionKey.id,
           chainId: "eip155:1",
           calls: [{ to: wallet.address, value: 0n, data: "0x" }],
         },
       });
-      expect(second.status).toBe("submitted");
+      expect(second.status).toBe("prepared");
 
-      yield* TestClock.adjust(Duration.seconds(46));
+      yield* TestClock.adjust(Duration.seconds(2));
+      yield* (yield* Application).execution.reconcile();
+      yield* TestClock.adjust(Duration.seconds(16));
       const app = yield* Application;
       expect(yield* app.execution.reconcile()).toBe(2);
 
@@ -422,17 +418,10 @@ layer(TestServerLayer)("execution routes", (it) => {
       yield* testExecution.setReceiptMode("pending");
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("execution-worker-failed@example.com"));
-      const wallet = yield* client.wallet.create({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Failed worker treasury"),
-        },
-      });
+      const wallet = yield* createTestPasskeyWallet(client, "Failed worker treasury");
       const sessionKey = yield* client.sessionKey.create({
         payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
+          ...(yield* localSessionRequest(wallet.id)),
           metadata: metadata("Failed worker automation"),
           policies: [
             {
@@ -449,6 +438,9 @@ layer(TestServerLayer)("execution routes", (it) => {
           ],
         },
       });
+      expect((yield* executionFixture.confirmOperation(client, sessionKey, "install")).status).toBe(
+        "active",
+      );
       const apiKey = yield* client.apiKey.create({
         payload: {
           metadata: metadata("Failed worker agent"),
@@ -458,16 +450,19 @@ layer(TestServerLayer)("execution routes", (it) => {
       });
       yield* setAuthToken();
       yield* setApiKey(apiKey.key);
-      const submitted = yield* client.execution.execute({
+      const submitted = yield* queueExecution(client, {
         headers: { "idempotency-key": "worker-failed-execution" },
         payload: {
           namespace: "eip155",
           walletId: wallet.id,
+          sessionKeyId: sessionKey.id,
           chainId: "eip155:1",
           calls: [{ to: wallet.address, value: 4n, data: "0x" }],
         },
       });
-      yield* TestClock.adjust(Duration.seconds(46));
+      yield* TestClock.adjust(Duration.seconds(2));
+      yield* (yield* Application).execution.reconcile();
+      yield* TestClock.adjust(Duration.seconds(16));
       yield* testExecution.setReceiptMode("failed");
       const app = yield* Application;
       expect(yield* app.execution.reconcile()).toBe(1);
@@ -509,7 +504,7 @@ layer(TestServerLayer)("execution routes", (it) => {
           period.id,
           "execution.mainnet",
         ),
-      ).toMatchObject({ consumedAmount: 0n, reservedAmount: 0n });
+      ).toMatchObject({ consumedAmount: 1n, reservedAmount: 0n });
       expect(
         yield* repository.billing.meterBalance.find(
           owner.actor.organization.id,
