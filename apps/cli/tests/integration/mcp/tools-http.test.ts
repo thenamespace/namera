@@ -1,15 +1,24 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { NodeCrypto } from "@effect/platform-node";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Redacted, Schema } from "effect";
 import { HttpRouter } from "effect/unstable/http";
 
 import { PrepareSignatureRequest, PrepareSignatureResponse } from "@namera-ai/protocol/dto";
-import type { NameraFetch, ResolveSessionSigner } from "@namera-ai/sdk";
-import type { TypedDataDefinition } from "viem";
+import { LocalEvmSessionBinding, LocalSessionKeyMaterial } from "@namera-ai/protocol/local";
+import { sealLocalSessionKey, type NameraFetch, type ResolveSessionSigner } from "@namera-ai/sdk";
+import { verifyTypedData, type TypedDataDefinition } from "viem";
+import { generatePrivateKey } from "viem/accounts";
 import { describe, expect, it, vi } from "vitest";
 
 import { LocalMcpApi } from "../../../src/services/mcp/api-client.js";
 import { LocalMcpOAuth } from "../../../src/services/mcp/oauth-broker.js";
 import { localMcpRoutes } from "../../../src/services/mcp/routes.js";
+import { makeSessionSignerResolver } from "../../../src/services/session-keystore/resolver.js";
+import { createSessionKeystore } from "../../../src/services/session-keystore/storage.js";
+import { authorizeMcpHttp } from "../../fixtures/mcp-http.js";
 import { apiOrigin, makeMcpOAuthFixture, urls } from "../../fixtures/mcp-oauth.js";
 import { mcpSignatureFixture } from "../../fixtures/mcp-signature.js";
 
@@ -75,7 +84,7 @@ const withTools = async (
   const fixture = await Effect.runPromise(
     makeMcpOAuthFixture().pipe(Effect.provide(NodeCrypto.layer)),
   );
-  const tokens = await Effect.runPromise(fixture.login);
+  let accessToken = "";
   const routes = localMcpRoutes(urls).pipe(
     Layer.provideMerge(
       Layer.mergeAll(
@@ -86,12 +95,7 @@ const withTools = async (
   );
   const server = HttpRouter.toWebHandler(routes, { disableLogger: true });
   let requestId = 0;
-  const rpc = (
-    method: string,
-    params: unknown = {},
-    sessionId?: string,
-    token = tokens.access_token,
-  ) =>
+  const rpc = (method: string, params: unknown = {}, sessionId?: string, token = accessToken) =>
     server.handler(
       new Request(urls.resource, {
         method: "POST",
@@ -108,6 +112,7 @@ const withTools = async (
       }),
     );
   try {
+    accessToken = (await authorizeMcpHttp(server.handler, fixture.authorization)).access_token;
     await test({
       rpc,
       fetch,
@@ -144,6 +149,88 @@ const initialize = async (rpc: Parameters<Parameters<typeof withTools>[0]>[0]["r
 };
 
 describe("SDK-backed local MCP HTTP tools", () => {
+  it("opens an encrypted imported key through the CLI resolver and fails closed without its unlock secret", async () => {
+    const privateKey = generatePrivateKey();
+    const fixture = mcpSignatureFixture(privateKey);
+    const directory = await mkdtemp(join(tmpdir(), "namera-mcp-signing-"));
+    const secrets = new Map<string, string>();
+    let unlocked = false;
+    const store = createSessionKeystore(directory, {
+      get: (key) => (unlocked ? (secrets.get(key) ?? null) : null),
+      set: (key, value) => {
+        secrets.set(key, value);
+      },
+      delete: (key) => {
+        secrets.delete(key);
+      },
+    });
+    try {
+      const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
+        version: 1,
+        namespace: "eip155",
+        apiOrigin,
+        privateKey,
+        bindings: [Schema.encodeSync(LocalEvmSessionBinding)(fixture.binding)],
+      });
+      const passphrase = Redacted.make("test-only encrypted export passphrase");
+      const encrypted = await sealLocalSessionKey(material, passphrase);
+      await store.importKey(encrypted, passphrase, apiOrigin);
+      let completions = 0;
+      await withTools(
+        async ({ rpc, fetch }) => {
+          const sessionId = await initialize(rpc);
+          const params = {
+            name: "sign",
+            arguments: { request: Schema.encodeSync(PrepareSignatureRequest)(fixture.request) },
+          };
+          const locked = await rpc("tools/call", params, sessionId);
+          expect(await locked.json()).toMatchObject({
+            result: {
+              isError: true,
+              structuredContent: { error: { code: "LOCAL_SIGNER_UNAVAILABLE" } },
+            },
+          });
+          expect(fetch.mock.calls.every(([url]) => url.toString().endsWith("/actor"))).toBe(true);
+          expect(completions).toBe(0);
+          unlocked = true;
+          const signed = await rpc("tools/call", params, sessionId);
+          expect(await signed.json()).toMatchObject({
+            result: {
+              structuredContent: {
+                signature: { walletId: fixture.binding.walletId, type: "message" },
+              },
+            },
+          });
+          expect(completions).toBe(1);
+        },
+        {
+          grants: fixture.grants,
+          resolveSigner: makeSessionSignerResolver(store, apiOrigin),
+          fetch: async (input, init) => {
+            if (input.toString().endsWith("/signatures/prepare"))
+              return Response.json(Schema.encodeSync(PrepareSignatureResponse)(fixture.response));
+            expect(input.toString()).toContain("/signatures/complete");
+            const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
+              signature: `0x${string}`;
+            };
+            expect(
+              await verifyTypedData({
+                ...fixture.response.signing.typedData,
+                address: fixture.account.address,
+                signature: payload.signature,
+              }),
+            ).toBe(true);
+            completions += 1;
+            return Response.json(fixture.complete(payload.signature));
+          },
+        },
+      );
+    } finally {
+      secrets.clear();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("returns a non-retryable paused-network error without signing", async () => {
     const fixture = mcpSignatureFixture();
     const signTypedData = vi.fn(async (value) =>

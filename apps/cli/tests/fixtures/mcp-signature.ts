@@ -6,8 +6,8 @@ import { concatHex, hashMessage, toHex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 /** Independent wire fixture for Alchemy's replay-safe hash and ERC-1271 envelope. */
-export const mcpSignatureFixture = () => {
-  const account = privateKeyToAccount(generatePrivateKey());
+export const mcpSignatureFixture = (privateKey = generatePrivateKey()) => {
+  const account = privateKeyToAccount(privateKey);
   const id = "01a00407-5961-75cf-933e-9cfd0336ec16";
   const sessionKeyId = "01a00407-5961-75cf-933e-9cfd0336ec17";
   const now = DateTime.nowUnsafe();

@@ -100,6 +100,15 @@ wallet-binding substitution. Each fails before opening the local signer or
 requesting signature preparation. The API responses are injected in this test;
 it verifies the local HTTP authorization boundary, not server-side revocation
 persistence or a live OAuth journey.
+
+The tool suite obtains its bearer through the composed local authorization,
+callback and token HTTP routes. Its encrypted-key case imports a portable export
+into temporary private files, uses the same signer resolver as the CLI, and checks
+the resulting signature cryptographically before completing the SDK flow. A
+missing unlock credential fails before signature preparation or completion.
+Upstream OAuth/API responses and the keyring are substituted; this joins local
+OAuth, MCP, encrypted storage and SDK signing, not browser consent, an OS keyring,
+or live-chain verification.
 A separate real-socket regression holds 32 token requests at the broker boundary,
 checks that the next discovery request returns 503 with Retry-After/no-store,
 then releases the requests and verifies discovery succeeds. The broker exchange

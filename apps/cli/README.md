@@ -13,8 +13,10 @@ The local MCP OAuth broker and upstream adapter live in `services/mcp/`.
 They keep local and API credentials separate and test replay, expiry and refresh
 revocation races. OAuth routes, transport guards, SDK-backed tools, and live
 authorization/session isolation are tested through the in-memory HTTP boundary.
-`mcp start` runs the loopback HTTP listener; secure broker persistence and the
-browser-to-local-signing journey remain pending. See
+`mcp start` runs the loopback HTTP listener. The integrated HTTP test covers local
+OAuth, encrypted key import/unlock, the CLI signer resolver and SDK signature
+completion with substituted upstream services and keyring. Secure broker
+persistence and the live browser-to-local-signing journey remain pending. See
 [local MCP integration status](../../architecture/clients/local-mcp.md).
 
 Run `pnpm --filter @namera-ai/cli typecheck:test` to typecheck both source and
