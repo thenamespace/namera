@@ -215,6 +215,9 @@ build/typecheck tasks, not just test suites.
       Unauthorized/Forbidden result or its pending retry. This does not yet
       invalidate the complete registry, refresh route capabilities, or remove
       independently held loader/form data.
+      Denied hook queries/mutations now refresh the shared current-user atom;
+      the bootstrap excludes itself to avoid loops. Full browser lifecycle
+      verification, redirects and loader-capability refresh remain open.
 
 ### Wallet operations
 

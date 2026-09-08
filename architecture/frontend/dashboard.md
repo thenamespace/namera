@@ -52,8 +52,13 @@ The shared query adapter makes an exception for typed `Unauthorized` and
 `Forbidden` failures: it exposes no cached data for that denied result, including
 while retrying it. Initial loading and ordinary network/server errors retain
 their existing behavior. This is a presentation safeguard, not cache erasure or
-an authorization boundary. Session-wide revalidation and route-loader fallback
-data still need separate handling when authority changes.
+an authorization boundary. Denied queries and mutations trigger a shared
+current-user refresh so atom-based permission guards receive the latest role or
+signed-out result. The bootstrap query cannot invalidate itself; temporary
+transport/server failures do not request session revalidation. Unit tests cover
+this decision, not the full browser lifecycle. Route-loader fallback data,
+full-registry invalidation, redirects and independently held form state still
+need separate handling when authority changes.
 
 Profile form initialization and refresh normalize absent avatar/name fields to
 controlled values. React Hook Form otherwise introduces an explicit undefined

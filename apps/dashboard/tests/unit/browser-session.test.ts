@@ -3,9 +3,27 @@ import { HttpApiError } from "effect/unstable/httpapi";
 
 import { describe, expect, it } from "vitest";
 
-import { recoverSignedOutSession } from "../../src/atoms/auth/browser-session";
+import {
+  recoverSignedOutSession,
+  revalidateRejectedAccess,
+} from "../../src/atoms/auth/browser-session";
 
 describe("browser session recovery", () => {
+  it("revalidates denied access but never loops on the bootstrap request", () => {
+    let refreshes = 0;
+    const refresh = () => {
+      refreshes += 1;
+    };
+    for (const error of [new HttpApiError.Unauthorized(), new HttpApiError.Forbidden()]) {
+      revalidateRejectedAccess(error, refresh);
+      revalidateRejectedAccess(error, refresh, true);
+    }
+    expect(refreshes).toBe(2);
+    for (const error of [null, new Error("offline"), new HttpApiError.InternalServerError()]) {
+      revalidateRejectedAccess(error, refresh);
+    }
+    expect(refreshes).toBe(2);
+  });
   it("treats only Unauthorized as signed out", async () => {
     expect(
       await Effect.runPromise(

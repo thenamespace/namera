@@ -1,9 +1,11 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
+import { revalidateRejectedAccess } from "@/atoms/auth/browser-session";
+import { currentUserAtom } from "@/atoms/auth/session";
 import type { QueryKey } from "@/atoms/query-keys";
 import { queryData } from "@/lib/query-data";
 
@@ -30,14 +32,20 @@ export const toQuery = <Args extends readonly unknown[], A, E>(
     const atom = getAtom(...args);
     const result = useAtomValue(atom);
     const refetch = useAtomRefresh(atom);
+    const refreshSession = useAtomRefresh(currentUserAtom);
+    const error = Option.getOrNull(AsyncResult.error(result));
     const isPending = AsyncResult.isInitial(result);
     const isError = AsyncResult.isFailure(result);
     const isSuccess = AsyncResult.isSuccess(result);
 
+    useEffect(() => {
+      revalidateRejectedAccess(error, refreshSession, atom === currentUserAtom);
+    }, [atom, error, refreshSession]);
+
     return {
       cause: isError ? result.cause : null,
       data: queryData(result),
-      error: Option.getOrNull(AsyncResult.error(result)),
+      error,
       isError,
       isFetching: result.waiting,
       isLoading: isPending && result.waiting,
@@ -77,6 +85,7 @@ export const toMutation = <
   return function useMutation(callbacks: MutationOptions<MutationVariables<Input>, A, E> = {}) {
     const [result, set] = useAtom(atom);
     const setAsync = useAtomSet(atom, { mode: "promise" });
+    const refreshSession = useAtomRefresh(currentUserAtom);
     const callbacksRef = useRef(callbacks);
     callbacksRef.current = callbacks;
 
@@ -102,6 +111,7 @@ export const toMutation = <
         try {
           data = await setAsync(withInvalidation(variables));
         } catch (error) {
+          revalidateRejectedAccess(error, refreshSession);
           await callbacksRef.current.onError?.(error as E, variables);
           await callbacksRef.current.onSettled?.(undefined, error as E, variables);
 
@@ -113,7 +123,7 @@ export const toMutation = <
 
         return data;
       },
-      [setAsync, withInvalidation],
+      [refreshSession, setAsync, withInvalidation],
     );
     const mutate = useCallback(
       (...args: MutationArguments<Input>) => {
