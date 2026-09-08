@@ -9,7 +9,6 @@ import type {
 import {
   DataGrid,
   SearchField,
-  Typography,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
@@ -25,6 +24,7 @@ import {
   uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/components/display";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
@@ -54,6 +54,8 @@ export function SessionKeysTable({ initialSessionKeys }: SessionKeysTableProps) 
   return (
     <SessionKeysTableContent
       ariaLabel="Organization session keys"
+      onRetry={sessionKeys.refetch}
+      isRetrying={sessionKeys.isFetching}
       data={sessionKeys.data ?? initialSessionKeys ?? emptySessionKeys}
       isError={sessionKeys.isError}
       isInitialLoading={
@@ -76,6 +78,8 @@ export function WalletSessionKeysTable({
   return (
     <SessionKeysTableContent
       ariaLabel="Account session keys"
+      onRetry={sessionKeys.refetch}
+      isRetrying={sessionKeys.isFetching}
       data={sessionKeys.data ?? initialSessionKeys ?? emptySessionKeys}
       isError={sessionKeys.isError}
       isInitialLoading={
@@ -86,6 +90,8 @@ export function WalletSessionKeysTable({
 }
 
 type SessionKeysTableContentProps = {
+  onRetry: () => void;
+  isRetrying: boolean;
   ariaLabel: string;
   data: ReadonlyArray<SessionKeyResponse>;
   isError: boolean;
@@ -93,6 +99,8 @@ type SessionKeysTableContentProps = {
 };
 
 function SessionKeysTableContent({
+  onRetry,
+  isRetrying,
   ariaLabel,
   data,
   isError,
@@ -289,7 +297,7 @@ function SessionKeysTableContent({
       </div>
 
       {isError ? (
-        <Typography className="text-danger">Couldn’t load session keys.</Typography>
+        <DataError compact label="session keys" onRetry={onRetry} isRetrying={isRetrying} />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading session keys" />

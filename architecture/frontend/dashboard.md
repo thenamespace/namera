@@ -44,6 +44,13 @@ to the overview. They never render exception messages or request URLs. A child
 route failure stays in that route's boundary under its loaded parent layout;
 failure of the authentication layout itself cannot retain that layout's sidebar.
 Component-owned query errors still need their own local feedback states.
+Accounts, organization/account session keys, executions, API keys, CLI/MCP
+authorizations, invitations, members/assignable roles and login sessions use the
+shared compact `DataError` with the owning query's refresh action. Retry is
+disabled during the request and preserves table filters and already-loaded rows.
+Production-preview Chromium verifies failure then successful local retry on
+Accounts, Session Keys and Activity while the sidebar remains mounted. These are
+transport-intercepted browser checks, not provider outage certification.
 Execution details, workspace settings, notification preferences and session-key
 creation also use local retry feedback when their initial data request fails.
 Already-loaded form data is retained on background refresh failure so unsaved

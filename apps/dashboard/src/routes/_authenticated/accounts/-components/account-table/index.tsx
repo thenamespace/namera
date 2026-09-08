@@ -8,7 +8,6 @@ import type { ListWalletsResponse, WalletResponse } from "@namera-ai/protocol/dt
 import {
   DataGrid,
   SearchField,
-  Typography,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
@@ -16,6 +15,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import type { TableOption } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
@@ -343,7 +343,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
       </div>
 
       {accounts.isError ? (
-        <Typography className="text-danger">Couldn’t load accounts.</Typography>
+        <DataError
+          compact
+          label="accounts"
+          onRetry={accounts.refetch}
+          isRetrying={accounts.isFetching}
+        />
       ) : null}
 
       {isInitialLoading ? (

@@ -7,7 +7,6 @@ import {
   Button,
   DataGrid,
   SearchField,
-  Typography,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
@@ -23,6 +22,7 @@ import {
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
@@ -352,7 +352,12 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
         </div>
       </div>
       {invitations.isError ? (
-        <Typography className="text-danger">Couldn’t load organization invitations.</Typography>
+        <DataError
+          compact
+          label="organization invitations"
+          onRetry={invitations.refetch}
+          isRetrying={invitations.isFetching}
+        />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading invitations" />

@@ -7,7 +7,6 @@ import type { ActorType } from "@namera-ai/protocol/model";
 import {
   DataGrid,
   SearchField,
-  Typography,
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
@@ -29,6 +28,7 @@ import {
   toTableSelection,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import {
   ChainDisplay,
@@ -68,6 +68,8 @@ type ScopedExecutionsTableProps = {
 };
 
 type ExecutionsQueryState = {
+  readonly refetch: () => void;
+  readonly isFetching: boolean;
   readonly data: ListExecutionsResponse | undefined;
   readonly isError: boolean;
   readonly isLoading: boolean;
@@ -475,7 +477,12 @@ function ExecutionsTableContent({
       ) : null}
 
       {executions.isError ? (
-        <Typography className="text-danger">Couldn’t load executions.</Typography>
+        <DataError
+          compact
+          label="executions"
+          onRetry={executions.refetch}
+          isRetrying={executions.isFetching}
+        />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading executions" />

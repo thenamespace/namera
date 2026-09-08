@@ -10,7 +10,6 @@ import type {
 import {
   DataGrid,
   SearchField,
-  Typography,
   type DataGridColumn,
   type DataGridSelection,
   type DataGridSortDescriptor,
@@ -18,6 +17,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import { TableViewOptions, type TableOption } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
@@ -130,6 +130,7 @@ type MembersTableContentProps = {
   roleData: ReadonlyArray<GetOrganizationRoleResponse>;
   rolesError: boolean;
   rolesLoading: boolean;
+  rolesQuery?: ReturnType<typeof useAssignableOrganizationRoles>;
 };
 
 export function MembersTable(props: MembersTableProps) {
@@ -184,6 +185,7 @@ function MembersTableWithRoles({
       membersInitialLoading={membersInitialLoading}
       roleData={roleData}
       rolesError={roles.isError}
+      rolesQuery={roles}
       rolesLoading={roles.isLoading && roles.data === undefined && initialRoles === undefined}
     />
   );
@@ -197,6 +199,7 @@ function MembersTableContent({
   roleData,
   rolesError,
   rolesLoading,
+  rolesQuery,
 }: MembersTableContentProps) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<DataGridSortDescriptor>({
@@ -285,8 +288,21 @@ function MembersTableContent({
         </div>
       </div>
 
-      {members.isError || rolesError ? (
-        <Typography className="text-danger">Couldn’t load organization members.</Typography>
+      {members.isError ? (
+        <DataError
+          compact
+          label="organization members"
+          onRetry={members.refetch}
+          isRetrying={members.isFetching}
+        />
+      ) : null}
+      {rolesError && rolesQuery ? (
+        <DataError
+          compact
+          label="assignable roles"
+          onRetry={rolesQuery.refetch}
+          isRetrying={rolesQuery.isFetching}
+        />
       ) : null}
       {membersInitialLoading || rolesLoading ? (
         <DataLoading className="min-h-64" label="Loading members" />

@@ -23,6 +23,7 @@ import {
   toTableSelection,
   type TableFilterFacet,
 } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import {
   DateDisplay,
@@ -260,7 +261,12 @@ export function CliAuthorizationsTable({
         </div>
       </div>
       {authorizations.isError ? (
-        <Typography className="text-danger">Couldn’t load CLI authorizations.</Typography>
+        <DataError
+          compact
+          label="CLI authorizations"
+          onRetry={authorizations.refetch}
+          isRetrying={authorizations.isFetching}
+        />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading CLI authorizations" />

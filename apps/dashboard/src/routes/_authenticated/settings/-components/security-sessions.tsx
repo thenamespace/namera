@@ -3,9 +3,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { DateTime } from "effect";
 
 import type { ListSessionsResponse } from "@namera-ai/protocol/dto";
-import { Button, Typography } from "@namera-ai/ui";
+import { Button } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { useLogout, useRevokeOtherSessions, useSessions } from "@/hooks/auth";
@@ -80,7 +81,12 @@ export function SecuritySessions({ currentSessionId, initialSessions }: Security
         ) : null}
       </div>
       {sessions.isError ? (
-        <Typography className="text-danger">Couldn’t load your sessions.</Typography>
+        <DataError
+          compact
+          label="your sessions"
+          onRetry={sessions.refetch}
+          isRetrying={sessions.isFetching}
+        />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading sessions" />

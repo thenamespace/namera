@@ -8,7 +8,7 @@ const retry = () => {};
 
 describe("query failure presentation", () => {
   it("announces the failed resource and offers local retry", () => {
-    const markup = renderToStaticMarkup(<DataError label="account" onRetry={retry} />);
+    const markup = renderToStaticMarkup(<DataError compact label="account" onRetry={retry} />);
     expect(markup).toContain('role="alert"');
     expect(markup).toContain("Couldn’t load account");
     expect(markup).toContain("Try again");

@@ -32,6 +32,7 @@ import {
   type TableFilterFacet,
   type TableOption,
 } from "@/components/common/table";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { DateDisplay, MetadataDisplay, StatusDisplay } from "@/components/display";
 import { useApiKeys } from "@/hooks/api-key";
@@ -355,7 +356,12 @@ export function ApiKeysTable({
         </div>
       </div>
       {apiKeys.isError ? (
-        <Typography className="text-danger">Couldn’t load API keys.</Typography>
+        <DataError
+          compact
+          label="API keys"
+          onRetry={apiKeys.refetch}
+          isRetrying={apiKeys.isFetching}
+        />
       ) : null}
       {isInitialLoading ? (
         <DataLoading className="min-h-64" label="Loading API keys" />
