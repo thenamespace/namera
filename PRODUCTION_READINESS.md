@@ -89,8 +89,11 @@ build/typecheck tasks, not just test suites.
       The composed billing worker performs this recovery; the signature HTTP
       suite verifies expiry, rejection of late completion, and restored quota.
       Current signature policies do not reserve stateful policy capacity.
-- [ ] Verify signature completion racing expiry recovery on PostgreSQL; the
-      sequential expiry regression does not prove the concurrent lock boundary.
+- [x] Verify concurrent late signature completions and expiry recovery on
+      PostgreSQL: eight completion attempts fail and eight recovery passes
+      release exactly one hold without consumed or reserved signature quota.
+- [ ] Verify an in-flight signature completion crosses expiry while provider
+      verification is pending; the late-request race does not cover this boundary.
 - [ ] Restrict EIP-712 signing by domain, verifying contract, and primary type
       before general typed-data signing is enabled on mainnet.
 - [ ] Confirm wallet creation, reconstruction, message signing, typed-data

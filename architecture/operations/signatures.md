@@ -66,6 +66,11 @@ and success write `signature.prepared` and `signature.created` audit events
 inside their transactions. Existing signature duration, result, policy and
 verification metrics use bounded attributes.
 
+The HTTP integration suite races eight late completions against eight recovery
+passes after expiry. PostgreSQL coverage verifies one recovered hold, no late
+success, one failed operation, and no retained or consumed signature quota.
+This does not cover a completion paused in provider verification across expiry.
+
 These quotas govern Namera API completions, not signatures made directly by a
 local key holder. Alchemy's time hook does not expire ERC-1271 signature
 authority: onchain uninstall is required to revoke it. API expiry is not an

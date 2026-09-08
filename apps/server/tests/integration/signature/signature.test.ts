@@ -166,7 +166,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
       }),
   );
 
-  it.effect("expires unsigned attempts and recovers quota without accepting late signatures", () =>
+  it.effect("concurrent expiry recovery releases quota once and rejects late signatures", () =>
     Effect.gen(function* () {
       const { client, payload, signer, owner, apiKey } = yield* setup();
       const prepared = yield* client.signature.prepare({
@@ -175,14 +175,37 @@ layer(fixture.layer)("detached signature routes", (it) => {
       });
       const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
       yield* TestClock.adjust(Duration.minutes(6));
-      expect(
-        yield* client.signature
-          .complete({
-            payload: { namespace: "eip155", operationId: prepared.operationId, signature },
-          })
-          .pipe(Effect.flip),
-      ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
-      yield* (yield* Application).billing.reconcile();
+      const application = yield* Application;
+      const attempts = Array.from({ length: 8 });
+      const raced = yield* Effect.all(
+        {
+          completions: Effect.forEach(
+            attempts,
+            () =>
+              client.signature
+                .complete({
+                  payload: { namespace: "eip155", operationId: prepared.operationId, signature },
+                })
+                .pipe(Effect.flip),
+            { concurrency: "unbounded" },
+          ),
+          recoveries: Effect.forEach(attempts, () => application.billing.reconcile(), {
+            concurrency: "unbounded",
+          }),
+        },
+        { concurrency: "unbounded" },
+      );
+      for (const failure of raced.completions)
+        expect(failure).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
+      expect(raced.recoveries.reduce((total, result) => total + result.recovered, 0)).toBe(1);
+      expect(yield* application.billing.reconcile()).toMatchObject({ recovered: 0 });
+      const holds = yield* (yield* Repository).billing.usageReservation.listBySource(
+        owner.actor.organization.id,
+        "signature-operation",
+        prepared.operationId,
+      );
+      expect(holds).toHaveLength(1);
+      expect(holds[0]).toMatchObject({ status: "expired" });
       expect(
         yield* (yield* Repository).core.signatureOperation.findByIdForActor(
           prepared.operationId,
