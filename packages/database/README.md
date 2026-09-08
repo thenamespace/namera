@@ -129,9 +129,11 @@ lock so concurrent server starts serialize safely.
 
 `TestDatabase.layer` creates an in-memory PGlite database with the bundled
 `pg_trgm` extension, applies the real Drizzle migrations, seeds system roles,
-and exposes a reset operation for integration-test isolation. PostgreSQL-only
-locking, concurrency, and query-plan behavior still require the production
-PostgreSQL test lane.
+and exposes a reset operation for integration-test isolation.
+`TestDatabase.postgresLayer(port)` reuses that reset service with the production
+driver and advisory-locked migrator against a disposable loopback `namera_test`
+database. See the [PostgreSQL test lane](../../architecture/engineering/testing.md)
+for setup and destructive-reset isolation requirements.
 
 ## Organization persistence
 

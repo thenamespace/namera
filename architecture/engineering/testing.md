@@ -51,6 +51,31 @@ repositories, transactions, authorization, and route encoding with:
 Use PostgreSQL rather than PGlite for behavior depending on advisory locks,
 isolation, extensions, query plans, concurrency, or driver parsing.
 
+### Disposable PostgreSQL lane
+
+Set `NAMERA_TEST_POSTGRES_PORT` to run the server suites through `Database.layer`
+and the production advisory-locked migrator instead of PGlite. The test layer
+always targets `127.0.0.1`, database `namera_test`, user `postgres`, with no
+password; port 5432 is rejected. Use a dedicated trust-authenticated container,
+never an existing database: each test deletes its contents. Test files run
+serially in this mode; do not run multiple test commands against the same port.
+
+```sh
+docker run --detach --rm --name namera-billing-concurrency-test \
+  --publish 127.0.0.1::5432 --env POSTGRES_DB=namera_test \
+  --env POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine
+docker port namera-billing-concurrency-test 5432/tcp
+# Substitute the assigned port below after pg_isready succeeds.
+docker exec namera-billing-concurrency-test pg_isready -U postgres -d namera_test
+NAMERA_TEST_POSTGRES_PORT=<assigned-port> pnpm --filter @namera-ai/server test
+docker stop namera-billing-concurrency-test
+```
+
+The billing concurrency suite runs only in this lane. It exercises eight-way
+meter admission, idempotent reservation/settlement, release after settlement,
+and anniversary rollover against real PostgreSQL transactions. Provider calls
+remain deterministic substitutes; this lane does not verify live bundlers.
+
 ## Isolation rules
 
 - Reset database and captured provider state at the start of every test.

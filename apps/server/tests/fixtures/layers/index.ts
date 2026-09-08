@@ -4,7 +4,7 @@ import { HttpRouter, HttpServer } from "effect/unstable/http";
 
 import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
-import { Repository, TestDatabase, TransactionService } from "@namera-ai/database";
+import { type Database, Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { EnsTestLayer } from "@namera-ai/ens";
 import { Evm, type EvmTestOptions } from "@namera-ai/evm";
@@ -43,8 +43,17 @@ export { TestEns } from "@namera-ai/ens";
 
 const TestAuthTokenStateLayer = TestAuthToken.layer;
 
+const TestDatabaseLayer: Layer.Layer<
+  Database | TestDatabase,
+  | Layer.Error<typeof TestDatabase.layer>
+  | Layer.Error<ReturnType<typeof TestDatabase.postgresLayer>>
+> =
+  process.env.NAMERA_TEST_POSTGRES_PORT === undefined
+    ? TestDatabase.layer
+    : TestDatabase.postgresLayer(Number(process.env.NAMERA_TEST_POSTGRES_PORT));
+
 const TestPersistenceLayer = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(TestDatabase.layer),
+  Layer.provideMerge(TestDatabaseLayer),
 );
 
 const TestCryptoLayer = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));

@@ -39,8 +39,12 @@ Verified on 2026-09-08:
       extension.
 - [x] The dashboard and server production builds complete.
 
-These checks do not certify live networks, browser journeys or PostgreSQL
-concurrency. The default EVM run skips four opt-in Anvil account-abstraction
+An additional PostgreSQL 17 run passed all 37 server suites and 151 tests,
+including the three billing concurrency scenarios. This proves the tested
+driver/migration and billing boundaries, not every possible race.
+
+These checks do not certify live networks or browser journeys.
+The default EVM run skips four opt-in Anvil account-abstraction
 tests. A separate Sepolia-fork run on 2026-09-08 passed all four: detached passkey
 deployment, session installation/native limits/revocation, execution lifetime,
 and ERC-1271 message/typed-data authority. This does not certify bundler/BSO
@@ -107,8 +111,13 @@ build/typecheck tasks, not just test suites.
 
 ### Billing and data reads
 
-- [ ] Prove Free-plan wallet, signature, mainnet execution, testnet execution,
-      and sponsored-gas limits cannot be exceeded by concurrent requests.
+- [x] Verify concurrent admission at the Free signature, mainnet execution,
+      testnet execution, and sponsored-gas meter limits on PostgreSQL.
+- [ ] Verify concurrent wallet creation at the Free local-wallet resource cap.
+- [x] Verify concurrent billing reservation/settlement retries produce one hold
+      and one ledger debit; release after settlement does not return used quota.
+- [x] Verify concurrent anniversary rollover creates one new period and one
+      set of balances on PostgreSQL.
 - [ ] Verify anniversary rollover and stale-reservation recovery preserve the
       ledger-derived balance for every Free-plan meter.
 

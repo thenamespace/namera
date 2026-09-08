@@ -380,6 +380,9 @@ subscription, and item state. Checkout redirects never grant product access.
   contribution margins;
 - permission-aware dashboard billing page with the current Free plan,
   anniversary date, resource capacity, and settled/reserved meter usage.
+- opt-in PostgreSQL tests for concurrent admission on all four Free meters,
+  duplicate reservation/settlement, release after settlement, and anniversary
+  rollover. These use the production driver and migrations, not PGlite locks.
 
 Deliberately inactive until paid plans:
 
@@ -396,5 +399,7 @@ Deliberately inactive until paid plans:
   provider invoices expose a more exact billable amount.
 - Add production alerts for repeated recovery failures, projection repairs,
   hard-limit denial spikes, stale reservations, and pricing outages.
-- Add PostgreSQL concurrency stress tests and future paid-path tests for credit
-  corrections, webhook replay, delivery retries, and overage reporting.
+- Extend PostgreSQL coverage to concurrent recovery/settlement and resource
+  creation at capacity; the current tests cover meter admission and rollover.
+- Add future paid-path tests for credit corrections, webhook replay, delivery
+  retries, and overage reporting.

@@ -75,6 +75,11 @@ concurrency, and query-plan verification. The pre-production database is
 disposable; current migrations optimize for a clean initial deployment rather
 than legacy backfills.
 
+The opt-in server PostgreSQL lane uses `TestDatabase.postgresLayer(port)` and
+the production driver/migrator, with the same reset ordering as PGlite. It is
+restricted to a separate loopback port and the disposable `namera_test` database.
+See [testing](../engineering/testing.md) for commands and coverage boundaries.
+
 ## Pending
 
 - Rehearse the migration chain against the exact production PostgreSQL version.
