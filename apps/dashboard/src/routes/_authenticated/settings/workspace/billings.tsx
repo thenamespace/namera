@@ -1,5 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { Button } from "@namera-ai/ui";
+
 import { currentUserAtom } from "@/atoms/auth/session";
 import { billingAtom } from "@/atoms/billing";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
@@ -52,12 +54,17 @@ function BillingPage() {
 
         {canRead ? (
           billing.data ? (
-            <BillingOverview initialBilling={billing.data} />
+            <BillingOverview billing={billing.data} />
           ) : billing.isError ? (
-            <PermissionDenied
-              description="Billing data could not be loaded. Try refreshing this page."
-              title="Couldn't load billing"
-            />
+            <div
+              className="grid min-h-64 place-content-center justify-items-center gap-3 text-center"
+              role="alert"
+            >
+              <p className="text-sm text-muted">Billing data could not be loaded.</p>
+              <Button variant="tertiary" onPress={billing.refetch}>
+                Try again
+              </Button>
+            </div>
           ) : (
             <DataLoading className="min-h-64" label="Loading billing" />
           )

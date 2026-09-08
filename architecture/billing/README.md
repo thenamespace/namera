@@ -68,6 +68,12 @@ are also hard limits because Free has no overage path.
 The gas meter stores `$3.00` as `3,000,000` micro-USD. Meter versions and units
 are part of the registry and are snapshotted into each period balance.
 
+Software/HSM entitlements remain in the internal model for future managed
+custody. The beta API rejects managed wallet creation, and the dashboard does
+not advertise those entitlements. Its plan and usage cards show members,
+user-owned accounts, and all four operation/gas meters from the billing response.
+Resource counts do not reset with the anniversary period; operation meters do.
+
 ### Subscription component keys
 
 Subscription components identify independently priced provider subscription

@@ -14,16 +14,6 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
     planLabel: "members",
   },
   {
-    key: "software-wallets",
-    label: "Software accounts",
-    planLabel: "software accounts",
-  },
-  {
-    key: "hsm-wallets",
-    label: "HSM accounts",
-    planLabel: "HSM accounts",
-  },
-  {
     key: "local-wallets",
     label: "User-owned accounts",
     planLabel: "user-owned accounts",

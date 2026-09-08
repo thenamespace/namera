@@ -9,12 +9,11 @@ import { Meter, Surface, Typography } from "@namera-ai/ui";
 import { CheckIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
-import { useBilling } from "@/hooks/billing";
 
 import { formatBillingAmount, getMeterColor, meterDefinitions, resourceDefinitions } from "./data";
 
 type BillingOverviewProps = {
-  initialBilling: GetBillingResponse;
+  billing: GetBillingResponse;
 };
 
 type UsageRowProps = {
@@ -175,7 +174,7 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
         <HeadingGroup>
           <HeadingGroup.Title id="current-usage-heading">Current usage</HeadingGroup.Title>
           <HeadingGroup.Description>
-            Completed and reserved usage for this billing period.
+            Current accounts and members, plus this period’s operation usage.
           </HeadingGroup.Description>
         </HeadingGroup>
         <span className="shrink-0 pb-0.5 text-xs tabular-nums text-muted">Resets {resetDate}</span>
@@ -195,10 +194,7 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
   );
 }
 
-export function BillingOverview({ initialBilling }: BillingOverviewProps) {
-  const query = useBilling();
-  const billing = query.data ?? initialBilling;
-
+export function BillingOverview({ billing }: BillingOverviewProps) {
   return (
     <div className="space-y-9">
       <CurrentPlan billing={billing} />
