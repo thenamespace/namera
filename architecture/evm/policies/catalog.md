@@ -36,8 +36,11 @@ from different rules cannot be combined. Both the operation chain and the
 payload's domain chain must match the rule. Contract comparison ignores hex case;
 domain names, versions, and primary types are case-sensitive. Missing required
 domain fields or no matching rule returns `TYPED_DATA_NOT_ALLOWED` with the
-policy ID. An omitted rule list retains type-only authorization; an empty list
-is invalid. Message requests are unaffected by typed-data rules.
+policy ID. Session creation requires a nonempty rule list when typed data is
+enabled, including when messages are also enabled. Existing stored policies
+without rules remain readable and retain their original type-only authority;
+they must be revoked and replaced to narrow it. Message requests are unaffected
+by typed-data rules.
 
 These are API policies, not onchain EIP-712 validation hooks. A user-controlled
 key can still sign outside Namera, and domain matching does not constrain values
@@ -46,7 +49,7 @@ rule when typed data is selected and displays all rule tuples in the shared
 summary. Existing unrestricted policies show an explicit warning. Domain matching
 checkboxes distinguish unrestricted fields from exact values, including an empty
 string; editing preserves that distinction. Message types are entered as a comma-separated
-list. Enforcing restricted consent at the API creation boundary remains pending.
+list. The shared creation contract enforces these rules for API callers as well.
 
 ## `evm.native-spend-limit`
 

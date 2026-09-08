@@ -108,8 +108,13 @@ build/typecheck tasks, not just test suites.
 - [x] Verify an in-flight signature completion crosses expiry while provider
       verification is pending: recovery releases the hold, and late verification
       cannot settle it. The delayed-provider HTTP regression passes on PostgreSQL.
-- [ ] Restrict EIP-712 signing by domain, verifying contract, and primary type
-      before general typed-data signing is enabled on mainnet.
+- [x] Restrict EIP-712 signing by domain, verifying contract, and primary type.
+      New typed-data policies require explicit rules in the shared creation
+      contract. The HTTP suite verifies denial before quota admission and valid
+      completion; the dashboard editor preserves exact domain restrictions.
+      These are API restrictions, not limits on direct local signing. Existing
+      unrestricted development sessions must be revoked/replaced or the dev DB
+      wiped before beta. Browser editor verification remains pending.
 - [ ] Confirm wallet creation, reconstruction, message signing, typed-data
       signing, ERC-1271/ERC-6492 verification, and revocation behave identically
       on every enabled network.

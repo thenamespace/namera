@@ -35,7 +35,20 @@ const typedData = {
 };
 const setup = Effect.fn("test.signature.setup")(function* (
   policies: CreateSessionKeyRequest["policies"] = [
-    { type: "evm.signature", version: 1, allowedTypes: ["message", "typed-data"] },
+    {
+      type: "evm.signature",
+      version: 1,
+      allowedTypes: ["message", "typed-data"],
+      typedDataRules: [
+        {
+          chainId: "eip155:1",
+          verifyingContract: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
+          name: "Namera",
+          version: "1",
+          primaryTypes: ["Authorization"],
+        },
+      ],
+    },
   ],
   allowSignatures = true,
   sessionFixture: typeof fixture = fixture,
@@ -246,7 +259,19 @@ layer(fixture.layer)("detached signature routes", (it) => {
         expect(yield* client.signature.complete({ payload: complete })).toEqual(result);
         const typed = yield* client.signature.prepare({
           headers: { "idempotency-key": "typed" },
-          payload: { ...payload, type: "typed-data", typedData },
+          payload: {
+            ...payload,
+            type: "typed-data",
+            typedData: {
+              ...typedData,
+              domain: {
+                ...typedData.domain,
+                verifyingContract: EthereumAddress.make(
+                  "0x1111111111111111111111111111111111111111",
+                ),
+              },
+            },
+          },
         });
         expect(
           yield* client.signature.complete({

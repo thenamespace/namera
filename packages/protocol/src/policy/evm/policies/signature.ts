@@ -23,7 +23,7 @@ const EvmSignaturePolicyFields = {
   typedDataRules: Schema.optionalKey(
     Schema.Array(TypedDataRule).check(Schema.isMinLength(1)).annotate({
       description:
-        "Optional API-level EIP-712 allowlist. One complete rule must match the request chain, domain chain, verifying contract and primary type. Names and versions match exactly when specified. These checks do not restrict direct local signing outside Namera.",
+        "API-level EIP-712 allowlist, required when enabling typed-data in a new policy. One complete rule must match the request chain, domain chain, verifying contract and primary type. Names and versions match exactly when specified. These checks do not restrict direct local signing outside Namera.",
     }),
   ),
 };
@@ -34,10 +34,19 @@ export const EvmSignaturePolicy = Schema.Struct({
   ...EvmSignaturePolicyFields,
 });
 
-export const CreateEvmSignaturePolicy = Schema.Struct(EvmSignaturePolicyFields).annotate({
-  identifier: "CreateEvmSignaturePolicy",
-  description: "Allow selected EVM smart-account signature operations",
-});
+export const CreateEvmSignaturePolicy = Schema.Struct(EvmSignaturePolicyFields)
+  .check(
+    Schema.makeFilter((policy) =>
+      policy.allowedTypes.includes("typed-data") && policy.typedDataRules === undefined
+        ? { path: ["typedDataRules"], issue: "Typed-data signing requires an explicit allowlist" }
+        : undefined,
+    ),
+  )
+  .annotate({
+    identifier: "CreateEvmSignaturePolicy",
+    description:
+      "Allow selected EVM smart-account signature operations. Typed-data permission requires at least one explicit domain, contract and primary-type rule.",
+  });
 
 export type EvmSignaturePolicy = typeof EvmSignaturePolicy.Type;
 export type CreateEvmSignaturePolicy = typeof CreateEvmSignaturePolicy.Type;
