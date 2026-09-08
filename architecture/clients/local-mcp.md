@@ -98,6 +98,8 @@ ERC-1271 verification accepted the original and rejected the altered payload.
 A message request not enabled by its API policy returned
 `POLICY_DENIED` / `SIGNATURE_TYPE_NOT_ALLOWED`. Physical passkey authenticators,
 unsponsored calls and the eight-network matrix are not certified by this run.
+Both test sessions were subsequently revoked through the dashboard and removed
+onchain with the owner's passkey; no test session authority was left installed.
 
 CLI tests exercise real crypto with a controlled clock, a provider substitute
 for broker races, and the actual HTTP adapter with injected Fetch. They cover

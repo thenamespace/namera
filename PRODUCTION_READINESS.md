@@ -36,7 +36,7 @@ Workspace verification refreshed on 2026-09-09:
 - [x] `pnpm test` passes all 37 task-graph entries. The default server lane passes
       49 suites / 176 tests and skips seven opt-in tests in three suites.
       Database: 11; SDK: 51; CLI: 47 passing / two opt-in skipped;
-      dashboard: 50; EVM: 62 passing / six opt-in skipped.
+      dashboard: 50; EVM: 63 passing / six opt-in skipped.
       Cached tasks are included in the task-graph total.
 - [x] A clean PGlite database loads the full schema and bundled `pg_trgm`
       extension.
@@ -47,6 +47,13 @@ including the three billing concurrency scenarios. This proves the tested
 driver/migration and billing boundaries, not every possible race.
 
 These checks do not certify live networks or browser journeys.
+Separately, a live Sepolia journey used dashboard passkey creation, encrypted
+export, packaged CLI import into macOS Keychain, real local MCP OAuth, simulation
+and a confirmed sponsored zero-value execution. A second session installed on
+the deployed wallet signed typed data: ERC-1271 accepted the original and rejected
+an altered payload. Its disallowed message type was denied before signing.
+Dashboard passkey removal of both test sessions confirmed onchain. This is not
+an eight-network, unsponsored, or physical-authenticator certification.
 The default EVM run skips six opt-in Anvil account-abstraction
 tests. A separate Sepolia-fork run on 2026-09-08 passed four: detached passkey
 deployment, session installation/native limits/revocation, execution lifetime,
@@ -111,7 +118,8 @@ build/typecheck tasks, not just test suites.
       redemption and rejects replay. Opaque consent state round-trips unchanged.
       Local broker tests cover callback replay, client/redirect/resource/PKCE
       binding, ambiguous exchange failure, and consent expiry during exchange.
-      The full browser-to-broker consent/signing journey remains open.
+      A live browser-to-broker consent/signing journey now passes on Sepolia as
+      described above; the exhaustive substitution matrix remains broader work.
 
 ### Wallet and signing safety
 
