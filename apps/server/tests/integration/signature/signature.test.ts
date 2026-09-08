@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Duration, Effect } from "effect";
+import { Duration, Effect, Fiber } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
@@ -22,6 +22,10 @@ const fixture = makeOwnerSessionTestFixture(
   {},
   { sessionSignatures: makeTestEvmSessionSignatureService() },
 );
+const delayedFixture = makeOwnerSessionTestFixture(
+  {},
+  { sessionSignatures: makeTestEvmSessionSignatureService({ verificationDelay: "10 minutes" }) },
+);
 const typedData = {
   domain: { name: "Namera", version: "1", chainId: 1 },
   types: { Authorization: [{ name: "action", type: "string" }] },
@@ -33,6 +37,7 @@ const setup = Effect.fn("test.signature.setup")(function* (
     { type: "evm.signature", version: 1, allowedTypes: ["message", "typed-data"] },
   ],
   allowSignatures = true,
+  sessionFixture: typeof fixture = fixture,
 ) {
   yield* resetTestState();
   const client = yield* makeTestApiClient;
@@ -48,7 +53,7 @@ const setup = Effect.fn("test.signature.setup")(function* (
       policies,
     },
   });
-  const session = yield* fixture.confirmOperation(client, pending, "install");
+  const session = yield* sessionFixture.confirmOperation(client, pending, "install");
   const apiKey = yield* client.apiKey.create({
     payload: {
       metadata: { version: 1, name: "Signing agent" },
@@ -67,6 +72,38 @@ const setup = Effect.fn("test.signature.setup")(function* (
     message: "Authorize this action",
   } as const;
   return { client, owner, wallet, signer, session, apiKey, payload };
+});
+
+layer(delayedFixture.layer)("signature verification across expiry", (it) => {
+  it.effect("does not settle a recovered hold when provider verification returns late", () =>
+    Effect.gen(function* () {
+      const { client, signer, payload, owner } = yield* setup(undefined, true, delayedFixture);
+      const prepared = yield* client.signature.prepare({
+        headers: { "idempotency-key": "slow-verification" },
+        payload,
+      });
+      const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+      const completion = yield* client.signature
+        .complete({
+          payload: { namespace: "eip155", operationId: prepared.operationId, signature },
+        })
+        .pipe(Effect.flip, Effect.forkChild);
+
+      // TestClock waits for the completion fiber to suspend in provider work.
+      yield* TestClock.adjust(Duration.minutes(6));
+      expect(yield* Effect.sync(() => completion.pollUnsafe())).toBeUndefined();
+      const application = yield* Application;
+      expect(yield* application.billing.reconcile()).toMatchObject({ recovered: 1 });
+      yield* TestClock.adjust(Duration.minutes(4));
+      expect(yield* Fiber.join(completion)).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
+      expect(yield* application.billing.reconcile()).toMatchObject({ recovered: 0 });
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      expect(
+        (yield* client.billing.get()).meters.find(({ key }) => key === "signature"),
+      ).toMatchObject({ consumedAmount: 0n, reservedAmount: 0n });
+    }),
+  );
 });
 
 layer(fixture.layer)("detached signature routes", (it) => {

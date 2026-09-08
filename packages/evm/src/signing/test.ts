@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { type Duration, Effect, Schema } from "effect";
 
 import { EvmSignatureError, EvmTypedData, Hex } from "@namera-ai/protocol";
 import { verifyTypedData, type TypedDataDefinition } from "viem";
@@ -17,7 +17,9 @@ export const createTestEvmSessionSigner = () => {
 };
 
 /** HTTP/persistence fixture: real ECDSA, substituted chain/validation envelope. */
-export const makeTestEvmSessionSignatureService = (): EvmSessionSignatureService => {
+export const makeTestEvmSessionSignatureService = (
+  options: { readonly verificationDelay?: Duration.Input } = {},
+): EvmSessionSignatureService => {
   const prepare: EvmSessionSignatureService["prepare"] = Effect.fnUntraced(function* (input) {
     const hash = yield* digestEvmSignature(input);
     return Schema.decodeUnknownSync(EvmTypedData)({
@@ -33,6 +35,7 @@ export const makeTestEvmSessionSignatureService = (): EvmSessionSignatureService
   return {
     prepare,
     complete: Effect.fnUntraced(function* (input) {
+      if (options.verificationDelay !== undefined) yield* Effect.sleep(options.verificationDelay);
       const typedData = yield* prepare(input);
       const valid = yield* Effect.tryPromise({
         try: () =>

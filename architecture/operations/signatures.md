@@ -69,7 +69,9 @@ verification metrics use bounded attributes.
 The HTTP integration suite races eight late completions against eight recovery
 passes after expiry. PostgreSQL coverage verifies one recovered hold, no late
 success, one failed operation, and no retained or consumed signature quota.
-This does not cover a completion paused in provider verification across expiry.
+A separate delayed-provider case starts completion before expiry, confirms it
+is still in flight after expiry, recovers the hold, then lets verification
+finish. Settlement rejects the recovered operation and quota remains unchanged.
 
 These quotas govern Namera API completions, not signatures made directly by a
 local key holder. Alchemy's time hook does not expire ERC-1271 signature

@@ -92,8 +92,9 @@ build/typecheck tasks, not just test suites.
 - [x] Verify concurrent late signature completions and expiry recovery on
       PostgreSQL: eight completion attempts fail and eight recovery passes
       release exactly one hold without consumed or reserved signature quota.
-- [ ] Verify an in-flight signature completion crosses expiry while provider
-      verification is pending; the late-request race does not cover this boundary.
+- [x] Verify an in-flight signature completion crosses expiry while provider
+      verification is pending: recovery releases the hold, and late verification
+      cannot settle it. The delayed-provider HTTP regression passes on PostgreSQL.
 - [ ] Restrict EIP-712 signing by domain, verifying contract, and primary type
       before general typed-data signing is enabled on mainnet.
 - [ ] Confirm wallet creation, reconstruction, message signing, typed-data
