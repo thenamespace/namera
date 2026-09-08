@@ -24,6 +24,14 @@ check the active API origin and installation lifecycle before use.
 
 ## Encryption
 
+The SDK's `createLocalSessionKeyDraft` is a client-only generation handle. A
+secp256k1 private scalar stays in a redacted closure; its public registration
+descriptor and address can enter UI/API state. `seal` delegates to the shared
+codec using caller-supplied owner-approved bindings. Keep the handle in a ref,
+not a form, atom, URL or storage entry. `dispose` drops the redacted reference
+and prevents new or pending exports from being returned. This is lifecycle
+control, not guaranteed memory erasure or proof of owner approval.
+
 `sealLocalSessionKey` and `openLocalSessionKey` in the SDK use platform WebCrypto:
 
 - AES-256-GCM with a random 96-bit nonce and 128-bit authentication tag.
@@ -65,6 +73,9 @@ CLI tests exercise actual temporary files with a substitute keyring, including
 duplicate-import preservation, origin mismatch, unavailable unlock, private file
 modes, and encrypted round trips. The CLI build and import help smoke test pass.
 
-- Pending: browser generation and owner-approved export.
+- Generation-handle tests cover real encrypted round trips, signer mismatch,
+  corrected retry, and disposal during encryption. No private material is part
+  of the handle's serialized shape.
+- Pending: connect browser generation, owner approval and export UI.
 - Pending: real OS-keyring and owner-approved import-to-execution journeys.
 - Pending: local MCP reuse, removal/backup UX, and packaged platform tests.

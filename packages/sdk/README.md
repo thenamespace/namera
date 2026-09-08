@@ -135,6 +135,18 @@ redacted passwords, use WebCrypto, and validate signer/key correspondence.
 They do not read files, contact the API, or prove installation approval. The
 client-only schemas live in `@namera-ai/protocol/local`, not API DTOs.
 
+`createLocalSessionKeyDraft()` generates a secp256k1 key in the calling browser
+or Node process. Its handle exposes `signer` (the public registration DTO),
+`signerAddress`, `seal(apiOrigin, approvedBindings, redactedPassword)`, and
+`dispose()`. Keep the handle in a component ref, not form state, API atoms or
+browser storage. Only send `draft.signer` to registration. Seal using bindings
+from the owner's reviewed installation; this helper does not verify onchain
+installation or turn an API response into trusted authority.
+
+Dispose after export or when abandoning the flow. Disposal prevents future and
+in-flight exports from returning, but cannot guarantee erasure of JavaScript or
+WebCrypto intermediate memory. The handle performs no network or storage access.
+
 ## Structure
 
 - `src/client.ts` — public `NameraClient` facade.
