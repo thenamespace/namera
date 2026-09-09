@@ -1,5 +1,0 @@
-ALTER TABLE "core"."session_key_policy_reservation" RENAME COLUMN "execution_id" TO "execution_submission_id";--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" ADD COLUMN "lease_token" text;--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" RENAME CONSTRAINT "session_key_policy_reservation_execution_scope_unique" TO "session_key_policy_reservation_submission_scope_unique";--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" ADD CONSTRAINT "execution_submission_id_organization_unique" UNIQUE("id","organization_id");--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" ADD CONSTRAINT "session_key_policy_reservation_submission_organization_fk" FOREIGN KEY ("execution_submission_id","organization_id") REFERENCES "core"."execution_submission"("id","organization_id") ON DELETE RESTRICT;

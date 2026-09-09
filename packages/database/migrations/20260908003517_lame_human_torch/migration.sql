@@ -1,8 +1,0 @@
-ALTER TABLE "core"."execution_submission" ADD COLUMN "session_key_id" text NOT NULL;--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" ADD COLUMN "installation_id" text NOT NULL;--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" ADD COLUMN "expires_at" timestamp with time zone NOT NULL;--> statement-breakpoint
-ALTER TABLE "core"."session_key_installation" ADD CONSTRAINT "session_installation_id_session_org_unique" UNIQUE("id","session_key_id","organization_id");--> statement-breakpoint
-CREATE INDEX "execution_submission_status_expiry_idx" ON "core"."execution_submission" ("status","expires_at");--> statement-breakpoint
-CREATE INDEX "execution_submission_installation_org_idx" ON "core"."execution_submission" ("installation_id","organization_id");--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" ADD CONSTRAINT "execution_submission_installation_session_org_fk" FOREIGN KEY ("installation_id","session_key_id","organization_id") REFERENCES "core"."session_key_installation"("id","session_key_id","organization_id") ON DELETE RESTRICT;--> statement-breakpoint
-ALTER TABLE "core"."execution_submission" DROP CONSTRAINT "execution_submission_grant_organization_fk", ADD CONSTRAINT "execution_submission_grant_organization_fk" FOREIGN KEY ("session_key_grant_id","session_key_id","actor_id","organization_id") REFERENCES "core"."session_key_grant"("id","session_key_id","actor_id","organization_id") ON DELETE RESTRICT;

@@ -1,8 +1,8 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "9479674d-2ab2-40f3-832d-a3f71f44c75d",
-  "prevIds": ["c8ee0868-ea17-48ac-b112-0241fb722129"],
+  "id": "278cc098-dac6-4437-a7fa-3fae199501f3",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "audit",
@@ -4801,6 +4801,45 @@
       "generated": null,
       "identity": null,
       "name": "session_key_grant_id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "session_key_id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "installation_id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
       "entityType": "columns",
       "schema": "core",
       "table": "execution_submission"
@@ -9657,6 +9696,62 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "status",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "execution_submission_status_expiry_idx",
+      "entityType": "indexes",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "installation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "organization_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "execution_submission_installation_org_idx",
+      "entityType": "indexes",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "organization_id",
           "isExpression": false,
           "asc": true,
@@ -11660,13 +11755,26 @@
     },
     {
       "nameExplicit": true,
-      "columns": ["session_key_grant_id", "actor_id", "organization_id"],
+      "columns": ["session_key_grant_id", "session_key_id", "actor_id", "organization_id"],
       "schemaTo": "core",
       "tableTo": "session_key_grant",
-      "columnsTo": ["id", "actor_id", "organization_id"],
+      "columnsTo": ["id", "session_key_id", "actor_id", "organization_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "RESTRICT",
       "name": "execution_submission_grant_organization_fk",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "execution_submission"
+    },
+    {
+      "nameExplicit": true,
+      "columns": ["installation_id", "session_key_id", "organization_id"],
+      "schemaTo": "core",
+      "tableTo": "session_key_installation",
+      "columnsTo": ["id", "session_key_id", "organization_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "execution_submission_installation_session_org_fk",
       "entityType": "fks",
       "schema": "core",
       "table": "execution_submission"
@@ -12720,6 +12828,15 @@
       "columns": ["id", "organization_id"],
       "nullsNotDistinct": false,
       "name": "session_installation_id_org_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "session_key_installation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": ["id", "session_key_id", "organization_id"],
+      "nullsNotDistinct": false,
+      "name": "session_installation_id_session_org_unique",
       "entityType": "uniques",
       "schema": "core",
       "table": "session_key_installation"

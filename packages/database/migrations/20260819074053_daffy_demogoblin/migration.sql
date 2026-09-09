@@ -1,8 +1,0 @@
-ALTER TABLE "core"."session_key_policy_reservation" DROP CONSTRAINT "session_key_policy_reservation_submission_scope_unique";--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" ADD COLUMN "signature_operation_id" text;--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" ALTER COLUMN "execution_submission_id" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "core"."signature_operation" ADD CONSTRAINT "signature_operation_id_organization_unique" UNIQUE("id","organization_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "session_key_policy_reservation_execution_scope_uidx" ON "core"."session_key_policy_reservation" ("organization_id","execution_submission_id","policy_id","state_key") WHERE "execution_submission_id" IS NOT NULL;--> statement-breakpoint
-CREATE UNIQUE INDEX "session_key_policy_reservation_signature_scope_uidx" ON "core"."session_key_policy_reservation" ("organization_id","signature_operation_id","policy_id","state_key") WHERE "signature_operation_id" IS NOT NULL;--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" ADD CONSTRAINT "session_key_policy_reservation_signature_organization_fk" FOREIGN KEY ("signature_operation_id","organization_id") REFERENCES "core"."signature_operation"("id","organization_id") ON DELETE RESTRICT;--> statement-breakpoint
-ALTER TABLE "core"."session_key_policy_reservation" ADD CONSTRAINT "session_key_policy_reservation_operation_check" CHECK (num_nonnulls("execution_submission_id", "signature_operation_id") = 1);
