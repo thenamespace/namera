@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+--> statement-breakpoint
 CREATE SCHEMA "audit";
 --> statement-breakpoint
 CREATE SCHEMA "billing";
