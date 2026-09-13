@@ -71,6 +71,14 @@ do not import application workflows.
 
 ## Source organization
 
+`apps/web` owns the public website scaffold using TanStack Start and Fumadocs.
+Its `/` landing route is empty, `/docs` serves the local MDX collection, and
+`/api/search` searches that public content. It consumes `packages/ui` styles
+and has no backend API, authentication, persistence, or telemetry integration.
+These read-only routes do not create audit events. See the
+[web README](../../apps/web/README.md) for local commands and content structure.
+Production hosting and website content remain pending.
+
 - Internal package imports use `#/*`; cross-package imports use package exports.
 - Relative ESM imports include `.js`.
 - Domain folders own their service, models, helpers, repositories, and tests.

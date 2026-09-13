@@ -1,0 +1,39 @@
+{
+  "name": "@namera-ai/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite dev --port 3001",
+    "format": "oxfmt . --write --no-error-on-unmatched-pattern",
+    "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
+    "generate-routes": "tsr generate",
+    "lint": "oxlint . --no-error-on-unmatched-pattern",
+    "preview": "vite preview --port 3001",
+    "typecheck": "pnpm generate-routes && tsc -p tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "catalog:",
+    "@namera-ai/ui": "workspace:*",
+    "@tanstack/react-router": "catalog:web",
+    "@tanstack/react-start": "catalog:",
+    "fumadocs-core": "catalog:",
+    "fumadocs-mdx": "catalog:",
+    "fumadocs-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-cli": "catalog:web",
+    "@types/mdx": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:web",
+    "klarity": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:web"
+  }
+}

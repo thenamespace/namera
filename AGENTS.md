@@ -10,6 +10,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   middleware, API handlers, authorization, and live layer composition.
 - [`apps/dashboard`](apps/dashboard/README.md) — Vite React dashboard using
   TanStack Router and the shared UI package.
+- [`apps/web`](apps/web/README.md) — TanStack Start public website scaffold
+  with Fumadocs documentation and the shared UI theme.
 - [`apps/email-templates`](apps/email-templates/README.md) — preview harness and
   email-safe asset generator for package-owned React Email templates.
 - [`apps/cli`](apps/cli/README.md) — Effect CLI using OAuth device authorization
