@@ -34,14 +34,22 @@ function NotificationListItem({
       <button
         aria-current={isSelected ? "true" : undefined}
         className={cn(
-          "group relative flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors",
-          "hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
-          isSelected ? "bg-secondary" : "bg-transparent",
+          "group relative flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors",
+          "hover:bg-default focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
+          isSelected ? "bg-default" : "bg-transparent",
         )}
         type="button"
         onClick={selectItem}
       >
-        <NotificationIcon className="size-9" type={item.notification.type} />
+        <span className="relative shrink-0">
+          <NotificationIcon className="size-9" type={item.notification.type} />
+          {item.readAt === null ? (
+            <span
+              aria-label="Unread"
+              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-accent ring-2 ring-background"
+            />
+          ) : null}
+        </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex h-5 items-start gap-2">
@@ -59,13 +67,6 @@ function NotificationListItem({
           </div>
           <p className="truncate text-xs leading-4 text-muted">{presentation.preview}</p>
         </div>
-
-        {item.readAt === null ? (
-          <span
-            aria-label="Unread"
-            className="absolute bottom-3 left-1 size-1.5 rounded-full bg-accent"
-          />
-        ) : null}
       </button>
     </li>
   );
@@ -80,17 +81,17 @@ export function NotificationList({
   onSelect,
 }: NotificationListProps) {
   return (
-    <div className="px-2 pb-3">
+    <div className={cn("px-2 pb-3", items.length === 0 && "flex min-h-full flex-col")}>
       {items.length === 0 ? (
-        <div className="grid min-h-72 place-items-center px-6 py-12 text-center">
-          <div>
-            <div className="mx-auto grid size-10 place-items-center rounded-lg bg-secondary text-muted">
+        <div className="grid min-h-72 flex-1 place-items-center px-6 py-8">
+          <div className="flex max-w-56 flex-col items-center gap-1 text-center">
+            <div className="mb-2 grid size-10 place-items-center rounded-lg bg-default text-muted">
               <HugeiconsIcon className="size-5" icon={InboxIcon} />
             </div>
-            <Typography className="mt-3 text-sm!" weight="medium">
+            <Typography align="center" className="text-sm! leading-5!" weight="medium">
               No notifications
             </Typography>
-            <Typography className="mt-1 text-xs!" color="muted">
+            <Typography align="center" className="text-xs! leading-5!" color="muted">
               New account and workspace activity will appear here.
             </Typography>
           </div>

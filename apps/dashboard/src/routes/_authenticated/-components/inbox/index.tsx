@@ -58,14 +58,14 @@ function NotificationPageLoader({
 function NotificationEmptyDetail() {
   return (
     <div className="grid h-full min-h-80 place-items-center px-6 py-12 text-center">
-      <div>
-        <div className="mx-auto grid size-12 place-items-center rounded-xl border bg-secondary text-muted shadow-sm">
+      <div className="flex max-w-64 flex-col items-center gap-1">
+        <div className="mb-2 grid size-12 place-items-center rounded-xl border bg-default text-muted">
           <HugeiconsIcon className="size-6" icon={InboxIcon} />
         </div>
-        <Typography className="mt-4 text-sm!" weight="medium">
+        <Typography align="center" className="text-sm! leading-5!" weight="medium">
           Select a notification
         </Typography>
-        <Typography className="mt-1 max-w-64 text-xs!" color="muted">
+        <Typography align="center" className="text-xs! leading-5!" color="muted">
           Choose an item from the inbox to review its details and related resource.
         </Typography>
       </div>

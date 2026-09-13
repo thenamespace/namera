@@ -181,6 +181,12 @@ approving a new installation; a failed removal does not restore API access.
 - `@namera-ai/ui`: cross-application primitives, icons, hooks, and theme.
 
 Shared copy controls transition to a check state with reduced-motion support.
+The shared stylesheet excludes the document root from UIKit toast view transitions
+and makes the transition overlay non-interactive, preserving page hover and cursor
+state when copy feedback appears. Keyboard badges use compact outlined styling
+and normal word spacing so modifier combinations remain legible. Inbox rows use
+theme-backed hover/selection fills, an icon-anchored unread dot and centered empty
+states with explicit typography alignment.
 Tooltip exits hide as soon as an anchor is released, avoiding detached overlays
 at the viewport origin. Interactive controls retain accessible names and
 keyboard/focus behavior.

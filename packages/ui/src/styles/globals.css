@@ -9,6 +9,8 @@
 
 :root {
   color-scheme: dark;
+  /* Toasts animate independently; a page snapshot would interrupt hover/cursors. */
+  view-transition-name: none;
 
   --background: #121213; /* * Final  */
   --foreground: #f7f8f8; /* * Final  */
@@ -70,6 +72,19 @@
 }
 
 @layer components {
+  ::view-transition {
+    pointer-events: none;
+  }
+
+  .kbd {
+    @apply h-5 min-w-5 gap-1 rounded-md border-1 border-separator px-1.5 text-xs;
+    word-spacing: normal;
+  }
+
+  .kbd__content {
+    @apply gap-1 leading-none;
+  }
+
   .dropdown__popover {
     @apply rounded-xl;
   }
