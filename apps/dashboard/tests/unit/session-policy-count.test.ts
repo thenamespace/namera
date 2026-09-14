@@ -14,10 +14,18 @@ describe("authorization session policy count", () => {
   it("adds both enforcement types without multiplying identical network copies", () => {
     expect(
       sessionKeyPolicyCount({
-        policies: [{}],
+        policies: [{ type: "evm.time-window" }],
         installations: [{ authorization }, { authorization }],
       }),
     ).toBe(3);
+  });
+  it("counts a combined signing configuration once", () => {
+    expect(
+      sessionKeyPolicyCount({
+        policies: [{ type: "evm.signature" }],
+        installations: [{ authorization }, { authorization }],
+      }),
+    ).toBe(2);
   });
   it("counts distinct onchain rules and supports empty policies", () => {
     expect(sessionKeyPolicyCount({ policies: [], installations: [] })).toBe(0);

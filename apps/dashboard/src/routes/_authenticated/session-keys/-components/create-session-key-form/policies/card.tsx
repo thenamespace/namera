@@ -3,8 +3,6 @@ import type { ComponentProps, ReactNode } from "react";
 import { Button, ItemCard } from "@namera-ai/ui";
 import { Delete02Icon, HugeiconsIcon, PencilEdit02Icon } from "@namera-ai/ui/icons";
 
-import type { Enforcement } from "./catalog";
-
 export function SessionPolicyCard({
   name,
   icon,
@@ -15,7 +13,7 @@ export function SessionPolicyCard({
 }: {
   name: string;
   icon: ComponentProps<typeof HugeiconsIcon>["icon"];
-  enforcement: Enforcement;
+  enforcement: "Onchain" | "Namera rules + onchain authority";
   children: ReactNode;
   onEdit?: (() => void) | undefined;
   onRemove?: (() => void) | undefined;
@@ -29,7 +27,7 @@ export function SessionPolicyCard({
         <div className="flex flex-wrap items-center gap-2">
           <ItemCard.Title>{name}</ItemCard.Title>
           <span className="text-muted bg-default rounded-md px-1.5 py-0.5 text-xs">
-            {enforcement === "onchain" ? "Onchain" : "Offchain"}
+            {enforcement}
           </span>
         </div>
         <ItemCard.Description>{children}</ItemCard.Description>
@@ -42,7 +40,7 @@ export function SessionPolicyCard({
               type="button"
               size="sm"
               variant="tertiary"
-              aria-label={`Edit ${enforcement} ${name.toLowerCase()}`}
+              aria-label={`Edit ${name.toLowerCase()}`}
               onPress={onEdit}
             >
               <HugeiconsIcon icon={PencilEdit02Icon} />
@@ -54,7 +52,7 @@ export function SessionPolicyCard({
               type="button"
               size="sm"
               variant="tertiary"
-              aria-label={`Remove ${enforcement} ${name.toLowerCase()}`}
+              aria-label={`Remove ${name.toLowerCase()}`}
               onPress={onRemove}
             >
               <HugeiconsIcon icon={Delete02Icon} />

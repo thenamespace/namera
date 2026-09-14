@@ -4,7 +4,7 @@ import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { EvmSessionPermission } from "@namera-ai/protocol/evm";
 
 export function sessionKeyPolicyCount(session: {
-  policies: readonly unknown[];
+  policies: ReadonlyArray<{ type: string }>;
   installations: ReadonlyArray<{
     authorization: Pick<
       SessionKeyResponse["installations"][number]["authorization"],
@@ -17,7 +17,11 @@ export function sessionKeyPolicyCount(session: {
     for (const permission of installation.authorization.permissions) {
       onchain.add(JSON.stringify(Schema.encodeSync(EvmSessionPermission)(permission)));
     }
-    if (installation.authorization.allowSignatures) onchain.add("signature");
+    if (
+      installation.authorization.allowSignatures &&
+      !session.policies.some((policy) => policy.type === "evm.signature")
+    )
+      onchain.add("signature");
   }
   // Network copies are one configured policy. Mandatory lifetime/network
   // settings are not entries in the optional policy list.

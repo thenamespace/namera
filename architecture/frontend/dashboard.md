@@ -125,40 +125,45 @@ title and website presentation; existing passkeys are not renamed by this flow.
 
 ## State and mutations
 
-Session creation has one searchable policy picker and one card list. Each policy
-appears once; the editor's bottom-left Onchain/Offchain toggle selects enforcement.
-Identical contract/selector/token parameters share a mounted form, as do time
-windows. Different budget/signature forms keep independent drafts while switching.
-Editor titles contain only the policy name. Generic
-enforcement paragraphs are omitted. Address fields disable browser text correction,
-and summaries reuse the shared truncated address display with copy and tooltip.
-Per-policy folders own their definitions and
-specialized forms; shared field renderers are reused for matching contract and
-selector shapes. Catalog metadata maps overlapping rules once. Call restrictions,
-token spend, time windows, native spend, gas budgets and signatures expose both
-variants. Root remains onchain-only; API network restrictions remain offchain-only,
-separate from installation networks. The
-existing DTO still stores API policies and onchain authorization separately.
+Session creation has six capabilities in one searchable picker, grouped by Access,
+Limits and Advanced: Contract access, Token spending, Native spending limit, Gas
+budget, Signatures and Unrestricted account access. There is no enforcement toggle.
+Contract access has three modes: all functions on one address, selected functions
+on one address, or selected functions on any contract. Hidden address/function
+drafts survive mode changes but are omitted from the submitted permission.
+Transaction capabilities use the existing onchain compiler; no duplicate offchain
+call, token, network, lifetime or budget rules are offered in this beta form.
+The lower-level public DTOs/evaluators remain unchanged. This is a dashboard
+configuration model, not a change to how existing API policies are enforced.
+Address fields disable text correction, and draft/detail summaries reuse the
+shared truncated address display. Native spending and gas editors accept native
+token decimal amounts and serialize exact 18-decimal integer base units. Token
+allowances remain explicit token base units. All budgets are lifetime per network,
+not shared balances, reset periods, transaction counts or USD limits.
+
+Signatures is one user-visible configuration. Saving it adds the signature rule
+and explicit owner-reviewed `onchain.allowSignatures` together; removing it from
+the draft clears both. The form rejects mismatched layers and duplicate signing
+rules. The server still requires both independently and never infers owner consent.
+The editor discloses that Namera-only content/expiry rules do not restrict direct
+local signing, and onchain removal is required to revoke signature authority.
+Installed configurations are read-only; changing authority requires a new session
+and removal of the old one, not an offchain edit of an installed permission.
 Installation networks, optional start date, and required expiry share a row-based
 card immediately after metadata, introduced by a Networks and lifetime heading
-and short description. Onchain lifetime is not repeated in the policy
-list; it uses the same date-only editor as API time windows and maps ISO instants
-to Unix seconds. The onchain time-window picker edits these same fields.
-Dates denote local midnight at the start of the selected date. Onchain signature
-authority is explicitly added through the picker and is never inferred from an API
-signature policy. Onchain budgets remain
-cumulative per network; only API budgets support reset periods. Saving an enforcement
-change replaces the original policy; cancelling leaves it unchanged. Root consent,
-duplicate-target validation, and the requirement for onchain permissions remain.
-Unavailable variants are disabled in the toggle; a picker entry is disabled only
-when neither variant is available. Cards
-expose edit/remove actions. Target-specific onchain rules can be repeated for
-different addresses, but case-insensitive target duplicates across rule types
-are rejected inside the editor before saving. Offchain restrictions intersect;
-the token editor explicitly states that unrelated calls are blocked.
+and short description. Dates denote local midnight at the start of the selected
+date and are not repeated as policies. Cards expose edit/remove actions. Changing
+a contract mode replaces that draft entry; cancelling leaves it unchanged.
+Target-specific rules can repeat for different addresses, but case-insensitive
+target duplicates across contract/token rules and duplicate wildcard rules are
+rejected before saving. Root requires explicit acknowledgement, remains exclusive
+with all other transaction permissions and does not implicitly enable signatures.
+Unavailable choices explain the conflict. Limits alone do not grant transaction
+access; inline guidance and form validation expose this before registration.
 
 The shared session-key selector used in authorization forms counts offchain rules
-plus distinct onchain permissions and explicitly enabled signature authority.
+plus distinct onchain permissions. Signature rules and their accompanying onchain
+authority count as one configuration, not two.
 Identical copies on multiple networks count once. Mandatory network/lifetime
 configuration is separate from this policy count.
 

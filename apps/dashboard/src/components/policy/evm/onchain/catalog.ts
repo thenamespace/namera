@@ -12,12 +12,12 @@ export const onchainPermissionCatalog = {
     initial: { type: "contract-access", address: "0x" },
   },
   "functions-on-contract": {
-    name: "Contract functions",
+    name: "Contract access",
     description: "Call only the selected function selectors on one contract.",
     initial: { type: "functions-on-contract", address: "0x", functions: [] },
   },
   "functions-on-all-contracts": {
-    name: "Functions on any contract",
+    name: "Contract access",
     description: "Allow selected functions across contracts, without choosing a target.",
     initial: { type: "functions-on-all-contracts", functions: [] },
   },
@@ -27,13 +27,13 @@ export const onchainPermissionCatalog = {
     initial: { type: "account-functions", functions: [] },
   },
   "native-token-transfer": {
-    name: "Native spend",
+    name: "Native spending limit",
     description:
       "Cap cumulative native value per network. Pair this with a target or function grant.",
     initial: { type: "native-token-transfer", allowance: "0" },
   },
   "erc20-token-transfer": {
-    name: "Token spend limit",
+    name: "Token spending",
     description: "Allow transfers and approvals for one token within a lifetime allowance.",
     initial: { type: "erc20-token-transfer", address: "0x", allowance: "0" },
   },
@@ -44,7 +44,8 @@ export const onchainPermissionCatalog = {
   },
   root: {
     name: "Unrestricted account access",
-    description: "Grant full account authority. This cannot be combined with other permissions.",
+    description:
+      "Grant full account authority. This cannot be combined with other transaction policies or limits.",
     initial: { type: "root" },
   },
 } satisfies Record<

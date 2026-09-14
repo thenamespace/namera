@@ -1,59 +1,113 @@
+import { Schema } from "effect";
+
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { describe, expect, it } from "vitest";
 
 import {
-  isOnchainChoiceUnavailable,
+  hasTransactionAccess,
+  policyChoiceFor,
+  policyUnavailableReason,
   sessionPolicyCatalog,
   permissionConflict,
 } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/catalog";
+import { ContractAccessForm } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/contract-access/form";
 import {
-  toOnchainLifetime,
-  toTimeWindowPolicy,
-} from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/lifetime";
-import {
-  toSharedPermission,
-  toOffchainPermission,
-} from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/shared-permission";
+  NativeBudgetForm,
+  nativeBudgetAmount,
+  toNativeBudgetPermission,
+} from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/native-budget/form";
+import { signatureConfiguration } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/signature-configuration";
 
-describe("unified session policies", () => {
-  it("preserves shared contract fields when changing enforcement", () => {
-    const policy = {
-      type: "evm.functions-on-contract",
-      version: 1,
-      address: "0x1111111111111111111111111111111111111111",
-      functions: ["0xa9059cbb"],
-    } as const;
-    const shared = toSharedPermission(policy);
-    expect(shared).toMatchObject({
-      type: "functions-on-contract",
-      address: policy.address,
-      functions: policy.functions,
-    });
-    expect(shared && toOffchainPermission(shared)).toEqual(policy);
-    expect(toOffchainPermission({ type: "gas-limit", limit: "100" })).toBeUndefined();
-  });
-  it("offers overlapping rules once with distinct enforcement choices", () => {
-    for (const [api, onchain] of [
-      ["evm.time-window", "time-window"],
-      ["evm.native-spend-limit", "native-token-transfer"],
-      ["evm.gas-budget", "gas-limit"],
-      ["evm.signature", "signature"],
-      ["evm.contract-access", "contract-access"],
-      ["evm.functions-on-contract", "functions-on-contract"],
-      ["evm.functions-on-all-contracts", "functions-on-all-contracts"],
-      ["evm.account-functions", "account-functions"],
-      ["evm.erc20-token-transfer", "erc20-token-transfer"],
-    ]) {
-      const choices = sessionPolicyCatalog.filter(
-        (choice) => choice.api === api || choice.onchain === onchain,
-      );
-      expect(choices).toHaveLength(1);
-      expect(choices[0]).toMatchObject({ api, onchain });
-    }
+const address = "0x1111111111111111111111111111111111111111";
+const options = { fields: {}, shouldUseNativeValidation: false };
+const resolveContract = standardSchemaResolver(Schema.toStandardSchemaV1(ContractAccessForm));
+
+describe("beta session policies", () => {
+  it("offers six capabilities, with contract modes sharing one picker entry", () => {
+    expect(sessionPolicyCatalog.map((entry) => entry.id)).toEqual([
+      "contract-access",
+      "erc20-token-transfer",
+      "native-token-transfer",
+      "gas-limit",
+      "signature",
+      "root",
+    ]);
+    for (const mode of [
+      "contract-access",
+      "functions-on-contract",
+      "functions-on-all-contracts",
+    ] as const)
+      expect(policyChoiceFor(mode).id).toBe("contract-access");
   });
 
-  it("rejects duplicate targets across grant types but permits another target", () => {
-    const address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
-    const existing = [{ type: "contract-access", address }] as const;
+  it("serializes each contract mode and ignores irrelevant hidden drafts", async () => {
+    const draft = { address, functions: "0xa9059cbb,\n0x095ea7b3\n" };
+    await Promise.all(
+      (["contract-access", "functions-on-contract", "functions-on-all-contracts"] as const).map(
+        async (type) => {
+          const result = await resolveContract({ ...draft, type }, undefined, options);
+          expect(result.errors).toEqual({});
+          expect(result.values).toEqual({
+            type,
+            ...(type !== "functions-on-all-contracts" ? { address } : {}),
+            ...(type !== "contract-access" ? { functions: ["0xa9059cbb", "0x095ea7b3"] } : {}),
+          });
+        },
+      ),
+    );
+    expect(
+      (
+        await resolveContract(
+          { type: "contract-access", address, functions: "invalid hidden draft" },
+          undefined,
+          options,
+        )
+      ).errors,
+    ).toEqual({});
+    expect(
+      (
+        await resolveContract(
+          {
+            type: "functions-on-all-contracts",
+            address: "invalid hidden draft",
+            functions: "0xa9059cbb",
+          },
+          undefined,
+          options,
+        )
+      ).errors,
+    ).toEqual({});
+  });
+
+  it.each(["", "0x12", "0xa9059cbb\n0xA9059CBB", "not a selector"])(
+    "rejects invalid/duplicate selected functions: %s",
+    async (functions) => {
+      expect(
+        (
+          await resolveContract(
+            { type: "functions-on-contract", address, functions },
+            undefined,
+            options,
+          )
+        ).errors,
+      ).not.toEqual({});
+    },
+  );
+
+  it("rejects invalid target addresses", async () => {
+    expect(
+      (
+        await resolveContract(
+          { type: "contract-access", address: "bad", functions: "" },
+          undefined,
+          options,
+        )
+      ).errors,
+    ).not.toEqual({});
+  });
+
+  it("rejects repeated targets across grant types and duplicate wildcard rules", () => {
+    const target = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
     expect(
       permissionConflict(
         {
@@ -61,35 +115,81 @@ describe("unified session policies", () => {
           address: "0xABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCD",
           functions: ["0xa9059cbb"],
         },
-        existing,
+        [{ type: "contract-access", address: target }],
       ),
     ).toBeDefined();
     expect(
-      permissionConflict(
-        { type: "contract-access", address: "0x1111111111111111111111111111111111111111" },
-        existing,
+      permissionConflict({ type: "contract-access", address }, [
+        { type: "contract-access", address: target },
+      ]),
+    ).toBeUndefined();
+    expect(
+      permissionConflict({ type: "functions-on-all-contracts", functions: ["0xa9059cbb"] }, [
+        { type: "functions-on-all-contracts", functions: ["0x095ea7b3"] },
+      ]),
+    ).toBeDefined();
+  });
+
+  it("keeps root exclusive without blocking signatures and permits repeatable contracts", () => {
+    expect(
+      policyUnavailableReason(
+        policyChoiceFor("gas-limit"),
+        [{ type: "gas-limit", limit: "100" }],
+        false,
+      ),
+    ).toBe("Already added");
+    expect(
+      policyUnavailableReason(
+        policyChoiceFor("contract-access"),
+        [{ type: "contract-access", address }],
+        false,
       ),
     ).toBeUndefined();
-    expect(permissionConflict(existing[0], [])).toBeUndefined();
+    expect(
+      policyUnavailableReason(
+        policyChoiceFor("root"),
+        [{ type: "gas-limit", limit: "100" }],
+        false,
+      ),
+    ).toBeDefined();
+    expect(
+      policyUnavailableReason(policyChoiceFor("gas-limit"), [{ type: "root" }], false),
+    ).toBeDefined();
+    expect(
+      policyUnavailableReason(policyChoiceFor("signature"), [{ type: "root" }], false),
+    ).toBeUndefined();
+    expect(policyUnavailableReason(policyChoiceFor("signature"), [], true)).toBe("Already added");
+    expect(
+      permissionConflict({ type: "root" }, [{ type: "contract-access", address }]),
+    ).toBeDefined();
   });
 
-  it("prevents duplicate singleton grants and root combinations without blocking target-specific rules", () => {
-    expect(isOnchainChoiceUnavailable("gas-limit", ["gas-limit"], false)).toBe(true);
-    expect(isOnchainChoiceUnavailable("contract-access", ["contract-access"], false)).toBe(false);
-    expect(isOnchainChoiceUnavailable("root", ["contract-access"], false)).toBe(true);
-    expect(isOnchainChoiceUnavailable("contract-access", ["root"], false)).toBe(true);
-    expect(isOnchainChoiceUnavailable("signature", [], true)).toBe(true);
-    expect(isOnchainChoiceUnavailable("time-window", ["root"], false)).toBe(false);
+  it("does not mistake limits for access", () => {
+    expect(hasTransactionAccess([{ type: "gas-limit" }, { type: "native-token-transfer" }])).toBe(
+      false,
+    );
+    expect(hasTransactionAccess([{ type: "erc20-token-transfer" }])).toBe(true);
+    expect(hasTransactionAccess([{ type: "root" }])).toBe(true);
   });
 
-  it("round trips lifetime seconds without changing the instant or immediate-start sentinel", () => {
-    for (const validAfter of [0, 1_900_000_000]) {
-      const validUntil = 2_000_000_000;
-      expect(toOnchainLifetime(toTimeWindowPolicy(validAfter, validUntil))).toEqual({
-        validAfter,
-        validUntil,
-      });
-    }
-    expect(toTimeWindowPolicy(0, 0)).toMatchObject({ startsAt: null, expiresAt: "" });
+  it("adds and removes both signature requirements together", () => {
+    const policy = { type: "evm.signature", version: 1, allowedTypes: ["message"] } as const;
+    expect(signatureConfiguration(policy)).toEqual({ policies: [policy], allowSignatures: true });
+    expect(signatureConfiguration()).toEqual({ policies: [], allowSignatures: false });
+  });
+
+  it("converts human native budgets without losing precision", () => {
+    const amount = "0.010000000000000001";
+    expect(toNativeBudgetPermission("gas-limit", amount)).toEqual({
+      type: "gas-limit",
+      limit: "10000000000000001",
+    });
+    expect(nativeBudgetAmount(toNativeBudgetPermission("native-token-transfer", amount))).toBe(
+      amount,
+    );
+    const decode = Schema.decodeUnknownSync(NativeBudgetForm);
+    expect(decode({ amount: "0" })).toEqual({ amount: "0" });
+    for (const invalid of ["", "-1", "1e6", "0.0000000000000000001", "9".repeat(80)])
+      expect(() => decode({ amount: invalid })).toThrow();
   });
 });

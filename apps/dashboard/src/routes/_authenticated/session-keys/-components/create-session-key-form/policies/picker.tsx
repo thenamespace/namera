@@ -10,7 +10,7 @@ export function PolicyPicker({
   unavailable,
   onSelect,
 }: {
-  unavailable: (choice: PolicyChoice) => boolean;
+  unavailable: (choice: PolicyChoice) => string | undefined;
   onSelect: (choice: PolicyChoice) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -30,29 +30,43 @@ export function PolicyPicker({
         />
       </div>
       <div className="grid max-h-[45vh] gap-2 overflow-y-auto p-0.5">
-        {choices.map((entry) => {
-          const disabled = unavailable(entry);
+        {(["Access", "Limits", "Advanced"] as const).map((group) => {
+          const entries = choices.filter((entry) => entry.group === group);
+          if (!entries.length) return null;
           return (
-            <Button
-              key={entry.id}
-              type="button"
-              variant="ghost"
-              className="border-separator h-20 w-full justify-start gap-3 rounded-lg border px-3 py-3 text-left whitespace-normal"
-              isDisabled={disabled}
-              aria-label={`${disabled ? "Already configured or incompatible:" : "Configure"} ${entry.name}`}
-              onPress={() => onSelect(entry)}
-            >
-              <span className="bg-default text-muted grid size-9 shrink-0 place-items-center rounded-lg">
-                <HugeiconsIcon icon={entry.icon} size={18} />
-              </span>
-              <span className="grid min-w-0 flex-1 gap-1">
-                <span className="truncate text-sm font-medium">{entry.name}</span>
-                <span className="text-muted line-clamp-2 text-xs leading-4 font-normal">
-                  {entry.description}
-                </span>
-              </span>
-              {disabled ? <span className="text-muted shrink-0 text-xs">Unavailable</span> : null}
-            </Button>
+            <section key={group} className="grid gap-2 sm:grid-cols-2" aria-label={group}>
+              <Typography.Heading
+                level={3}
+                className="col-span-full pt-2 text-xs font-medium text-muted"
+              >
+                {group}
+              </Typography.Heading>
+              {entries.map((entry) => {
+                const reason = unavailable(entry);
+                const disabled = reason !== undefined;
+                return (
+                  <Button
+                    key={entry.id}
+                    type="button"
+                    variant="ghost"
+                    className="border-separator h-20 w-full justify-start gap-3 rounded-lg border px-3 py-3 text-left whitespace-normal"
+                    isDisabled={disabled}
+                    aria-label={`${disabled ? `${reason}:` : "Configure"} ${entry.name}`}
+                    onPress={() => onSelect(entry)}
+                  >
+                    <span className="bg-default text-muted grid size-9 shrink-0 place-items-center rounded-lg">
+                      <HugeiconsIcon icon={entry.icon} size={18} />
+                    </span>
+                    <span className="grid min-w-0 flex-1 gap-1">
+                      <span className="truncate text-sm font-medium">{entry.name}</span>
+                      <span className="text-muted line-clamp-2 text-xs leading-4 font-normal">
+                        {reason ?? entry.description}
+                      </span>
+                    </span>
+                  </Button>
+                );
+              })}
+            </section>
           );
         })}
         {!choices.length ? (

@@ -1,68 +1,92 @@
 import { ShieldUserIcon } from "@namera-ai/ui/icons";
 
-import { evmPolicyCatalog, type EvmPolicyType } from "@/components/policy/evm";
-import {
-  onchainPermissionCatalog,
-  type OnchainPermissionType,
-  type OnchainPermissionInput,
+import { evmPolicyDefinitions } from "@/components/policy/evm";
+import type {
+  OnchainPermissionInput,
+  OnchainPermissionType,
 } from "@/components/policy/evm/onchain/catalog";
 
-export type Enforcement = "onchain" | "offchain";
-export type OnchainPolicyType = OnchainPermissionType | "time-window" | "signature";
-export type PolicyChoice = {
-  id: string;
-  name: string;
-  description: string;
-  icon: (typeof evmPolicyCatalog)[number]["icon"];
-  api?: EvmPolicyType;
-  onchain?: OnchainPolicyType | undefined;
-};
+export const sessionPolicyCatalog = [
+  {
+    id: "contract-access",
+    name: "Contract access",
+    group: "Access",
+    description: "Choose a contract, function selectors, or both.",
+    icon: ShieldUserIcon,
+  },
+  {
+    id: "erc20-token-transfer",
+    name: "Token spending",
+    group: "Access",
+    description: "Allow token transfers and approvals within a lifetime allowance.",
+    icon: evmPolicyDefinitions["evm.erc20-token-transfer"].icon,
+  },
+  {
+    id: "native-token-transfer",
+    name: "Native spending limit",
+    group: "Limits",
+    description: "Cap the native value sent over this key’s lifetime.",
+    icon: evmPolicyDefinitions["evm.native-spend-limit"].icon,
+  },
+  {
+    id: "gas-limit",
+    name: "Gas budget",
+    group: "Limits",
+    description: "Cap total native-token gas costs over this key’s lifetime.",
+    icon: evmPolicyDefinitions["evm.gas-budget"].icon,
+  },
+  {
+    id: "signature",
+    name: "Signatures",
+    group: "Advanced",
+    description: "Sign messages and typed data with Namera.",
+    icon: evmPolicyDefinitions["evm.signature"].icon,
+  },
+  {
+    id: "root",
+    name: "Unrestricted account access",
+    group: "Advanced",
+    description: "Full account authority, including permission management.",
+    icon: ShieldUserIcon,
+  },
+] as const;
 
-const overlappingPermissions = new Set<OnchainPolicyType>(
-  evmPolicyCatalog.flatMap((definition) => ("onchain" in definition ? [definition.onchain] : [])),
-);
+export type PolicyChoice = (typeof sessionPolicyCatalog)[number];
 
-const sharedDescriptions: Partial<Record<EvmPolicyType, string>> = {
-  "evm.contract-access": "Choose a contract this key can call.",
-  "evm.functions-on-contract": "Choose permitted functions on one contract.",
-  "evm.functions-on-all-contracts": "Choose permitted functions across contracts.",
-  "evm.account-functions": "Choose permitted functions on the account itself.",
-  "evm.erc20-token-transfer": "Set a lifetime transfer and approval budget for one token.",
-};
+export function policyChoiceFor(type: OnchainPermissionType | "signature") {
+  const id =
+    type === "functions-on-contract" ||
+    type === "functions-on-all-contracts" ||
+    type === "account-functions"
+      ? "contract-access"
+      : type;
+  const choice = sessionPolicyCatalog.find((entry) => entry.id === id);
+  if (!choice) throw new Error(`No session policy editor for ${type}`);
+  return choice;
+}
 
-export const sessionPolicyCatalog: ReadonlyArray<PolicyChoice> = [
-  ...evmPolicyCatalog.map((definition) => ({
-    id: definition.type,
-    name: definition.name,
-    description: sharedDescriptions[definition.type] ?? definition.description,
-    icon: definition.icon,
-    api: definition.type,
-    onchain: "onchain" in definition ? definition.onchain : undefined,
-  })),
-  ...Object.entries(onchainPermissionCatalog)
-    .filter(([type]) => !overlappingPermissions.has(type as OnchainPolicyType))
-    .map(([type, definition]) => ({
-      id: type,
-      name: definition.name,
-      description: definition.description,
-      icon: ShieldUserIcon,
-      onchain: type as OnchainPermissionType,
-    })),
-];
+export function hasTransactionAccess(permissions: ReadonlyArray<{ type: OnchainPermissionType }>) {
+  return permissions.some(
+    (permission) => permission.type !== "gas-limit" && permission.type !== "native-token-transfer",
+  );
+}
 
-export function isOnchainChoiceUnavailable(
-  type: OnchainPolicyType,
-  existing: ReadonlyArray<OnchainPermissionType>,
+export function policyUnavailableReason(
+  choice: PolicyChoice,
+  permissions: ReadonlyArray<OnchainPermissionInput>,
   signatures: boolean,
 ) {
-  if (type === "time-window") return false;
-  if (type === "signature") return signatures;
-  if (existing.includes("root")) return true;
-  if (type === "root") return existing.length > 0;
-  return (
-    !["contract-access", "functions-on-contract", "erc20-token-transfer"].includes(type) &&
-    existing.includes(type)
-  );
+  if (choice.id === "signature") return signatures ? "Already added" : undefined;
+  if (permissions.some((permission) => permission.type === "root"))
+    return "Unrestricted access is configured";
+  if (choice.id === "root" && permissions.length) return "Remove other transaction policies first";
+  if (
+    choice.id !== "contract-access" &&
+    choice.id !== "erc20-token-transfer" &&
+    permissions.some((permission) => permission.type === choice.id)
+  )
+    return "Already added";
+  return undefined;
 }
 
 export function permissionConflict(
@@ -73,24 +97,13 @@ export function permissionConflict(
     existing.length &&
     (candidate.type === "root" || existing.some((permission) => permission.type === "root"))
   )
-    return "Unrestricted access cannot be combined with another onchain permission.";
+    return "Unrestricted access cannot be combined with another transaction policy.";
   const duplicate = existing.some((permission) =>
     "address" in candidate && "address" in permission
       ? candidate.address.toLowerCase() === permission.address.toLowerCase()
       : !("address" in candidate) && permission.type === candidate.type,
   );
   return duplicate
-    ? "This target or permission is already configured. Edit the existing policy instead."
+    ? "This target or policy is already configured. Edit the existing policy instead."
     : undefined;
-}
-
-export function policyDescription(choice: PolicyChoice, enforcement: Enforcement) {
-  if (enforcement === "offchain" || !choice.onchain)
-    return (
-      evmPolicyCatalog.find((entry) => entry.type === choice.api)?.description ?? choice.description
-    );
-  if (choice.onchain === "time-window") return "Set the start and expiry for onchain executions.";
-  if (choice.onchain === "signature")
-    return "Allow message and typed-data signatures outside Namera as well.";
-  return onchainPermissionCatalog[choice.onchain].description;
 }

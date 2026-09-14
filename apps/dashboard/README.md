@@ -179,19 +179,20 @@ organization has a confirmed execution.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.
-The creation picker has search and one entry per policy, with uniform bordered
-rows. A bottom-left Onchain/Offchain toggle in the editor selects enforcement.
-Matching parameters share a form; differing parameters retain separate drafts.
-Added policies can be edited, switched between supported variants, or removed;
-onchain target collisions are checked before saving. Offchain call/selector and
-direct-token restrictions share the same catalog with their onchain counterparts.
+The beta creation picker has six entries grouped into Access, Limits and Advanced:
+Contract access, Token spending, Native spending limit, Gas budget, Signatures and
+Unrestricted account access. Enforcement is fixed, not selectable. Contract access
+combines address-only, address-plus-selectors and selectors-on-any-contract modes.
+Added policies can be edited or removed; duplicate targets and singleton policies
+are checked before saving. Native/gas budgets accept decimal native-token amounts
+and are lifetime ceilings per network. Root remains exclusive and requires consent.
+Signatures configures Namera signing rules and owner-reviewed onchain authority
+together, counts once in authorization selectors, and discloses direct-signing
+limitations. The existing lower-level API policy contract is unchanged.
 Shared EVM policy components under `src/components/policy/evm/` own the policy
-catalog, summaries, cards, and editors. Session-key creation supports time
-windows, execution-and-signature chain allowlists, shared-amount multi-network
-native-spend allowances scoped per operation, UTC hour/day/week/month, or
-session-key lifetime, per-chain native gas-cost budgets for UTC hour/day/week or
-lifetime, and message or EIP-712 typed-data signature permissions without
-duplicating their presentation in the route. Chain-based editors share one
+catalog, summaries, cards, and editors. Installation networks and lifetime remain
+in the setup card, not the policy picker. Existing API policy summaries remain
+readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
 
 ## Settings routes

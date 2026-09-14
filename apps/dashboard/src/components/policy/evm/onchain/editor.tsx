@@ -57,7 +57,13 @@ export function OnchainPermissionEditor({
   });
   const textFields = [
     ...("address" in definition.initial
-      ? [{ name: "permission.address" as const, label: "Contract address", placeholder: "0x…" }]
+      ? [
+          {
+            name: "permission.address" as const,
+            label: type === "erc20-token-transfer" ? "Token address" : "Contract address",
+            placeholder: "0x…",
+          },
+        ]
       : []),
     ...("allowance" in definition.initial
       ? [
@@ -127,8 +133,9 @@ export function OnchainPermissionEditor({
         ))}
         {"allowance" in definition.initial || "limit" in definition.initial ? (
           <Typography.Paragraph color="muted" size="xs">
-            Use whole base units: 0.01 ETH is 10000000000000000 wei; 1 USDC with 6 decimals is
-            1000000. Each network gets its own allowance.
+            {type === "erc20-token-transfer"
+              ? "Use token base units: 1 USDC with 6 decimals is 1000000. Each network gets its own lifetime allowance for transfers and approvals."
+              : "Use whole base units: 0.01 ETH is 10000000000000000 wei. Each network gets its own lifetime allowance."}
           </Typography.Paragraph>
         ) : null}
         {"functions" in definition.initial ? (

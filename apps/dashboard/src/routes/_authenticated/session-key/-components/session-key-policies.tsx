@@ -1,7 +1,12 @@
+import { Schema } from "effect";
+
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
-import { Typography } from "@namera-ai/ui";
+import { EvmSessionPermission } from "@namera-ai/protocol/evm";
+import { ItemCard, Typography } from "@namera-ai/ui";
 
 import { EvmPolicyDisplayCard } from "@/components/policy/evm";
+import { onchainPermissionCatalog } from "@/components/policy/evm/onchain/catalog";
+import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summary";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
 
 type SessionKeyPoliciesProps = {
@@ -9,6 +14,14 @@ type SessionKeyPoliciesProps = {
 };
 
 export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
+  const permissions = new Map(
+    sessionKey.installations.flatMap((installation) =>
+      installation.authorization.permissions.map((permission) => {
+        const encoded = Schema.encodeSync(EvmSessionPermission)(permission);
+        return [JSON.stringify(encoded), encoded] as const;
+      }),
+    ),
+  );
   return (
     <section className="mx-auto w-full max-w-5xl py-4 sm:px-2 sm:py-8">
       <div className="max-w-2xl">
@@ -16,17 +29,26 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
           Policies
         </Typography.Heading>
         <Typography.Paragraph className="mt-2 text-muted" size="sm">
-          API rules apply to requests through Namera. Onchain permissions also constrain direct use
-          of the session signer.
+          Transaction access and limits are enforced onchain. Signature rules apply through Namera;
+          removing the onchain permission is required to stop signing outside Namera.
         </Typography.Paragraph>
       </div>
-      <SessionKeyInstallations key={sessionKey.id} sessionKey={sessionKey} />
-
       <div className="mt-8 grid max-w-3xl gap-3">
+        {[...permissions].map(([key, permission]) => (
+          <ItemCard key={key} variant="outline" className="rounded-lg border border-separator">
+            <ItemCard.Content>
+              <ItemCard.Title>{onchainPermissionCatalog[permission.type].name}</ItemCard.Title>
+              <ItemCard.Description>
+                <OnchainPermissionSummary permission={permission} />
+              </ItemCard.Description>
+            </ItemCard.Content>
+          </ItemCard>
+        ))}
         {sessionKey.policies.map((policy) => (
           <EvmPolicyDisplayCard key={policy.id} policy={policy} />
         ))}
       </div>
+      <SessionKeyInstallations key={sessionKey.id} sessionKey={sessionKey} />
     </section>
   );
 }
