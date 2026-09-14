@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { McpOAuthUpstream } from "../../../src/services/mcp/oauth-contracts.js";
 import { mcpOAuthUpstreamLayer } from "../../../src/services/mcp/oauth-upstream.js";
-import { apiOrigin, urls } from "../../fixtures/mcp-oauth.js";
+const apiOrigin = "https://api.namera.test";
+const urls = { callback: "http://127.0.0.1:3847/oauth/callback" };
 
 const upstreamLayer = (fetch: typeof globalThis.fetch) =>
-  mcpOAuthUpstreamLayer({ urls, apiOrigin }).pipe(
+  mcpOAuthUpstreamLayer({ callback: urls.callback, apiOrigin }).pipe(
     Layer.provide(FetchHttpClient.layer),
     Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch)),
   );

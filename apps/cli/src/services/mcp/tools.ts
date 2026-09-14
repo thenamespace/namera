@@ -25,7 +25,7 @@ import {
 import type { NameraClient } from "@namera-ai/sdk";
 import { mcpToolCalls } from "@namera-ai/telemetry";
 
-import { CurrentLocalMcpPrincipal } from "./api-client.js";
+import { McpAuthentication } from "./api-client.js";
 import { localToolError, toolErrorResult, unwrapMcpSdk } from "./tool-errors.js";
 
 const rootObject = (schema: ReturnType<typeof Tool.getJsonSchema>) => {
@@ -48,6 +48,7 @@ const register = Effect.fn("LocalMcp.registerTool")(function* <T extends Tool.An
   destructive: boolean,
   handle: (input: Tool.Parameters<T>, client: NameraClient) => Effect.Effect<Tool.Success<T>, E>,
 ) {
+  const authentication = yield* McpAuthentication;
   yield* (yield* McpServer.McpServer).addTool({
     tool: new McpSchema.Tool({
       name: tool.name,
@@ -64,8 +65,7 @@ const register = Effect.fn("LocalMcp.registerTool")(function* <T extends Tool.An
     annotations: Context.empty(),
     handle: (payload) =>
       Effect.gen(function* () {
-        const principal = yield* CurrentLocalMcpPrincipal;
-        if (!principal) return toolErrorResult(localToolError("UNAUTHORIZED"));
+        const principal = yield* authentication.principal;
         if (!principal.scopes.includes(scope))
           return toolErrorResult(localToolError("INSUFFICIENT_SCOPE"));
         const input = yield* Schema.decodeUnknownEffect(

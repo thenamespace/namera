@@ -9,20 +9,14 @@ authorization, credential, retry, and command architecture. See
 [client workspace architecture](../../architecture/packages/clients.md) for
 the CLI/SDK responsibility split.
 
-The local MCP OAuth broker and upstream adapter live in `services/mcp/`.
-They keep local and API credentials separate and test replay, expiry and refresh
-revocation races. OAuth routes, transport guards, SDK-backed tools, and live
-authorization/session isolation are tested through the in-memory HTTP boundary.
-`mcp start` runs the loopback HTTP listener. The integrated HTTP test covers local
-OAuth, encrypted key import/unlock, the CLI signer resolver and SDK signature
-completion with substituted upstream services and keyring. A live Sepolia journey
-also verified browser export, packaged CLI import with the macOS keyring, OAuth,
-execution, typed-data signing and onchain removal. Secure broker persistence
-remains deferred; restarting requires reauthorization. See
-[local MCP integration status](../../architecture/clients/local-mcp.md).
+The stdio MCP transport, persistent OAuth session and callback adapter live in
+`services/mcp/`. The agent launches `mcp serve`; credentials remain in the OS
+keyring across restarts. Tests cover callback security, refresh/logout races,
+stdio discovery and encrypted-keystore signing with substituted API/keyring.
+See [local MCP integration status](../../architecture/clients/local-mcp.md).
 
 Run `pnpm --filter @namera-ai/cli typecheck:test` to typecheck both source and
-tests, including HTTP request-context composition.
+tests, including stdio request authorization.
 
 ## Commands
 
@@ -41,7 +35,10 @@ namera execution list [--cursor <execution-id>]
 namera sign
 namera verify-signature --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","type":"message","message":"hello","signature":"0x..."}'
 namera logout
-namera mcp start --host http://localhost:8080 --port 3847
+namera mcp serve --profile codex --host http://localhost:8080
+namera mcp login --profile codex
+namera mcp status --profile codex
+namera mcp logout --profile codex
 ```
 
 The development build targets `http://localhost:8080` by default, so `namera
@@ -72,23 +69,34 @@ that budget before signing.
 
 ## Local MCP
 
-Run `namera mcp start`, then connect your agent to `http://127.0.0.1:3847/mcp`.
-The agent completes OAuth through Namera's consent page; ordinary CLI login or
-`NAMERA_API_KEY` does not grant MCP access. Select only the sessions that agent
-should use, and import their encrypted keys on this machine before signing.
+Register once in your local agent client:
 
-`--host` selects the API origin, not the bind address. HTTPS is required except
-for local development. The listener always binds `127.0.0.1`; it cannot be exposed
-on a public interface through flags. `--port` changes all local discovery and
-callback URLs consistently. `--max-gas-cost-wei` sets a user-owned per-operation
-fee ceiling for self-funded transactions; without it, those transactions fail
-local validation. Agents cannot override this ceiling through tool arguments.
+```sh
+codex mcp add namera -- namera mcp serve --profile codex
+claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude
+```
 
-Keep the process running. OAuth broker state is currently in memory and restarting
-requires reauthorization; local signing keys remain in the encrypted keystore.
-Ctrl-C closes the listener. JSON/NDJSON print one readiness object after binding;
-`--quiet` suppresses it. Request URL logging is disabled to avoid logging OAuth
-callback credentials.
+Other clients use command `namera` and arguments `["mcp", "serve", "--profile",
+"agent"]`. The client launches the process; no manual server or permanent port
+is needed. First use opens Namera consent without blocking MCP initialization.
+Select installed session keys and retry the tool after consent. If browser opening
+fails, run `namera mcp login --profile agent`. Ordinary CLI login and API keys do
+not authorize MCP. Import encrypted keys on this machine before signing.
+
+All MCP commands accept `--host` (API origin, default local development) and
+`--profile` (default `default`). Use the same flags for login, serve, status and
+logout. HTTPS is required except for loopback development. Each origin/profile
+stores a separate OAuth bundle in the OS keyring under `namera-mcp`. A private
+SQLite lock file contains no credentials and serializes cross-process refresh.
+No additional dependency is needed: SQLite is built into the required Node 24.
+
+`--max-gas-cost-wei` sets the user-owned fee ceiling for self-funded operations;
+omission permits sponsored operations only. Tools cannot change this ceiling.
+Stdout is reserved for MCP; diagnostics and login URLs use stderr. Closing stdin
+stops MCP and cancels pending consent. Tokens refresh across restarts; revocation
+or ambiguous refresh failure requires fresh login, not repeated token replay.
+`mcp status` reports local state. Logout disables that profile and revokes its
+server grant without deleting signing keys or other profiles.
 
 ## Local session keys
 

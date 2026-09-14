@@ -89,14 +89,13 @@ not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
 
 ## MCP tools
 
-`namera mcp start` runs the SDK-backed tools and OAuth broker on literal loopback,
-with URL/Host/Origin/PKCE guards and live API authorization checks. See
-[local MCP authorization](local-mcp.md) for the separate audiences, lifetimes,
-replay guarantees and remaining persistence/end-to-end integration. Native MCP
-clients may omit Origin, but must still authenticate; an
-absent Origin is not authorization.
+`namera mcp serve` runs SDK-backed tools over stdio, launched by the agent client.
+Browser OAuth uses a temporary loopback callback and persists refreshable MCP
+credentials in the OS keyring. CLI login is separate. See
+[local MCP authorization](local-mcp.md) for profile isolation, callback security,
+cross-process refresh and verification boundaries.
 
-The `/mcp` transport exposes a deliberately compact tool set:
+The stdio transport exposes a deliberately compact tool set:
 
 | Tool                                   | Purpose                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------ |

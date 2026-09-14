@@ -7,8 +7,9 @@ import { env } from "@/env";
 
 export function McpSetup() {
   const apiOrigin = new URL(env.backendUrl).origin;
-  const command = `namera mcp start --host '${apiOrigin.replaceAll("'", "'\\''")}'`;
-  const endpoint = "http://127.0.0.1:3847/mcp";
+  const host = `'${apiOrigin.replaceAll("'", "'\\''")}'`;
+  const command = `codex mcp add namera -- namera mcp serve --profile codex --host ${host}`;
+  const claudeCommand = `claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude --host ${host}`;
 
   return (
     <DashboardCardRoot className="mb-8">
@@ -23,20 +24,18 @@ export function McpSetup() {
         </HeadingGroup>
         <div className="space-y-2">
           <Typography className="text-sm!">
-            With the Namera CLI installed, run this in your terminal.
+            With the Namera CLI installed, add it to Codex:
           </Typography>
           <div className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2">
             <code className="min-w-0 flex-1 break-all text-sm">{command}</code>
-            <CopyIconButton label="MCP start command" value={command} />
+            <CopyIconButton label="Codex setup command" value={command} />
           </div>
         </div>
         <div className="space-y-2">
-          <Typography className="text-sm!">
-            Add this HTTP server URL in your agent’s MCP settings.
-          </Typography>
+          <Typography className="text-sm!">Or add it to Claude Code:</Typography>
           <div className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2">
-            <code className="min-w-0 flex-1 break-all text-sm">{endpoint}</code>
-            <CopyIconButton label="Local MCP URL" value={endpoint} />
+            <code className="min-w-0 flex-1 break-all text-sm">{claudeCommand}</code>
+            <CopyIconButton label="Claude Code setup command" value={claudeCommand} />
           </div>
         </div>
         <Typography className="text-sm!" color="muted">
@@ -45,8 +44,10 @@ export function McpSetup() {
           signing. CLI login and API keys do not authorize MCP access.
         </Typography>
         <Typography className="text-sm!" color="muted">
-          Keep the terminal running. Restarting requires connecting and approving access again; your
-          imported keys are retained.
+          Your agent starts Namera automatically. Authorization is saved in your OS keyring and
+          refreshed when needed. If browser login does not open, run{" "}
+          <code>{`namera mcp login --profile codex --host ${host}`}</code> (use <code>claude</code>{" "}
+          for Claude Code).
         </Typography>
       </DashboardCardContent>
     </DashboardCardRoot>

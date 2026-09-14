@@ -1,72 +1,151 @@
-import { NodeCrypto } from "@effect/platform-node";
-import { Effect, Layer, Option, Schema } from "effect";
+import {
+  Effect,
+  Layer,
+  Option,
+  Redacted,
+  Schema,
+  Stdio,
+  Stream,
+  Deferred,
+  Logger,
+  Fiber,
+} from "effect";
 import { Command, Flag } from "effect/unstable/cli";
-import { FetchHttpClient } from "effect/unstable/http";
 
-import { LocalMcpApi } from "#/services/mcp/api-client";
-import { localMcpListener } from "#/services/mcp/listener";
-import { LocalMcpOAuth } from "#/services/mcp/oauth-broker";
-import { mcpOAuthUpstreamLayer } from "#/services/mcp/oauth-upstream";
-import { LocalMcpApiOrigin, localMcpUrls } from "#/services/mcp/transport-security";
+import { makeMcpApiClient, McpAuthentication } from "#/services/mcp/api-client";
+import { mcpCredentialStore, McpProfile } from "#/services/mcp/credential-store";
+import { createMcpSession } from "#/services/mcp/session";
+import { mcpStdio } from "#/services/mcp/stdio";
+import { localToolError } from "#/services/mcp/tool-errors";
+import { LocalMcpApiOrigin } from "#/services/mcp/transport-security";
 import { printValue } from "#/services/output";
 import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 
-const start = Command.make(
-  "start",
+const flags = {
+  profile: Flag.string("profile").pipe(Flag.withDefault("default")),
+  host: Flag.string("host").pipe(
+    Flag.withDefault("http://localhost:8080"),
+    Flag.withDescription("Namera API origin"),
+  ),
+};
+const session = Effect.fn("Mcp.session")(function* (options: { host: string; profile: string }) {
+  const apiOrigin = new URL(yield* Schema.decodeUnknownEffect(LocalMcpApiOrigin)(options.host))
+    .origin;
+  const profile = yield* Schema.decodeUnknownEffect(McpProfile)(options.profile);
+  return yield* Effect.acquireRelease(
+    Effect.try(() =>
+      createMcpSession({ apiOrigin, profile, store: mcpCredentialStore(apiOrigin, profile) }),
+    ),
+    (value) => Effect.sync(() => value.close()),
+  );
+});
+
+const serve = Command.make(
+  "serve",
   {
-    port: Flag.integer("port").pipe(
-      Flag.withDefault(3847),
-      Flag.withDescription("Loopback MCP port (1024–65535)"),
-    ),
-    host: Flag.string("host").pipe(
-      Flag.withDefault("http://localhost:8080"),
-      Flag.withDescription("Namera API origin, not a listener bind address"),
-    ),
+    ...flags,
     maxGasCost: Flag.string("max-gas-cost-wei").pipe(
       Flag.optional,
-      Flag.withDescription(
-        "Maximum fee per self-funded operation; omission permits sponsored operations only",
-      ),
+      Flag.withDescription("Fee ceiling for self-funded operations; default is sponsored only"),
     ),
   },
-  Effect.fn("cli.mcp.start")(function* ({ port, host, maxGasCost }) {
-    const apiOrigin = new URL(yield* Schema.decodeUnknownEffect(LocalMcpApiOrigin)(host)).origin;
-    const urls = yield* Effect.try(() => localMcpUrls(port));
-    const maxGasCostWei = Option.isSome(maxGasCost)
-      ? yield* Schema.decodeUnknownEffect(
-          Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n)),
-        )(maxGasCost.value)
-      : undefined;
-    const broker = LocalMcpOAuth.layer({ urls, apiOrigin }).pipe(
-      Layer.provide(
-        mcpOAuthUpstreamLayer({ urls, apiOrigin }).pipe(Layer.provide(FetchHttpClient.layer)),
-      ),
-      Layer.provide(NodeCrypto.layer),
-    );
-    const runtime = localMcpListener(urls).pipe(
-      Layer.provide(
-        Layer.mergeAll(
-          broker,
-          LocalMcpApi.layer({
-            apiOrigin,
-            resolveSessionSigner: resolveCliSessionSigner(apiOrigin, maxGasCostWei),
-          }),
+  Effect.fn("Mcp.serve")(
+    function* (options) {
+      const connection = yield* session(options);
+      const apiOrigin = new URL(options.host).origin;
+      const maxGasCostWei = Option.isSome(options.maxGasCost)
+        ? yield* Schema.decodeUnknownEffect(
+            Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n)),
+          )(options.maxGasCost.value)
+        : undefined;
+      const principal = Effect.gen(function* () {
+        const credentials = yield* Effect.tryPromise({
+          try: connection.credentials,
+          catch: () => localToolError("UNAUTHORIZED"),
+        });
+        if (!credentials) {
+          connection.requestLogin();
+          return yield* Effect.fail({
+            ...localToolError("UNAUTHORIZED"),
+            message: `Authorize Namera in your browser, or run namera mcp login --profile ${options.profile} --host ${apiOrigin}. Then retry.`,
+          });
+        }
+        return yield* makeMcpApiClient(
+          { apiOrigin, resolveSessionSigner: resolveCliSessionSigner(apiOrigin, maxGasCostWei) },
+          {
+            accessToken: Redacted.make(credentials.accessToken),
+            clientId: credentials.clientId,
+            scopes: credentials.scopes,
+          },
+        ).pipe(
+          Effect.mapError((error) =>
+            localToolError(
+              error.code === "temporarily_unavailable" ? "UPSTREAM_UNAVAILABLE" : "UNAUTHORIZED",
+            ),
+          ),
+        );
+      });
+      const io = yield* Stdio.Stdio;
+      const ended = yield* Deferred.make<void>();
+      const transport = Stdio.make({
+        ...io,
+        stdin: io.stdin.pipe(Stream.ensuring(Deferred.succeed(ended, undefined))),
+      });
+      // The stdio protocol interrupts its construction fiber on EOF. Isolate
+      // that fiber so the command can finish normally after stdin closes.
+      yield* Layer.build(
+        mcpStdio.pipe(
+          Layer.provide(Layer.succeed(McpAuthentication, { principal })),
+          Layer.provide(Layer.succeed(Stdio.Stdio, transport)),
         ),
-      ),
-    );
-    // Build before reporting readiness, and close the listener on interruption.
-    yield* Layer.build(runtime);
-    yield* printValue({
-      endpoint: urls.resource,
-      apiOrigin,
-      authentication: "OAuth required; connect from your agent to authorize selected session keys",
-      credentials: "In memory; restarting requires reauthorization",
+      ).pipe(Effect.forkScoped, Effect.flatMap(Fiber.join));
+      yield* Deferred.await(ended);
+    },
+    Effect.scoped,
+    Effect.provide(Logger.layer([Logger.withConsoleError(Logger.formatSimple)])),
+  ),
+);
+
+const login = Command.make(
+  "login",
+  flags,
+  Effect.fn("Mcp.login")(function* (options) {
+    const connection = yield* session(options);
+    yield* Effect.tryPromise({
+      try: connection.login,
+      catch: () =>
+        new Error(
+          "MCP login failed. Check the browser consent and API connection, then try again.",
+        ),
     });
-    return yield* Effect.never;
+    yield* printValue(connection.status());
+  }, Effect.scoped),
+);
+const status = Command.make(
+  "status",
+  flags,
+  Effect.fn("Mcp.status")(function* (options) {
+    const connection = yield* session(options);
+    yield* printValue(yield* Effect.try(connection.status));
+  }, Effect.scoped),
+);
+const logout = Command.make(
+  "logout",
+  flags,
+  Effect.fn("Mcp.logout")(function* (options) {
+    const connection = yield* session(options);
+    yield* Effect.tryPromise({
+      try: connection.logout,
+      catch: () =>
+        new Error(
+          "MCP logout could not be completed. Check your OS keyring and revoke the connection in Namera settings.",
+        ),
+    });
+    yield* printValue({ profile: options.profile, status: "signed-out" });
   }, Effect.scoped),
 );
 
 export const mcpCommand = Command.make("mcp").pipe(
-  Command.withDescription("Run MCP locally with OAuth and imported session keys"),
-  Command.withSubcommands([start]),
+  Command.withDescription("Local stdio MCP with persistent OAuth authorization"),
+  Command.withSubcommands([serve, login, status, logout]),
 );

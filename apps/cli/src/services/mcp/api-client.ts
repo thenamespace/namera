@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Redacted } from "effect";
+import { Context, Effect, Redacted } from "effect";
 
 import type { McpActor } from "@namera-ai/protocol/dto";
 import { NameraClient, type NameraFetch, type ResolveSessionSigner } from "@namera-ai/sdk";
@@ -8,14 +8,15 @@ import { LocalOAuthError } from "./oauth-contracts.js";
 export interface LocalMcpPrincipal {
   readonly client: NameraClient;
   readonly actor: McpActor;
-  readonly localClientId: string;
   readonly scopes: readonly string[];
 }
 
-export const CurrentLocalMcpPrincipal = Context.Reference<LocalMcpPrincipal | null>(
-  "@namera-ai/cli/CurrentLocalMcpPrincipal",
-  { defaultValue: () => null },
-);
+export class McpAuthentication extends Context.Service<
+  McpAuthentication,
+  {
+    readonly principal: Effect.Effect<LocalMcpPrincipal, unknown>;
+  }
+>()("@namera-ai/cli/McpAuthentication") {}
 
 export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* (
   config: {
@@ -74,6 +75,8 @@ export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* 
     });
   if (result.data.type !== "mcp") return yield* new LocalOAuthError({ code: "invalid_token" });
   const actor = result.data;
+  if (actor.data.authorization.clientId !== authorization.clientId)
+    return yield* new LocalOAuthError({ code: "invalid_token" });
   const scopes = authorization.scopes.filter((scope) =>
     actor.data.authorization.scopes.some((allowed) => allowed === scope),
   );
@@ -82,21 +85,5 @@ export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* 
     client,
     actor,
     scopes,
-    localClientId: authorization.clientId,
   } satisfies LocalMcpPrincipal;
 });
-
-export class LocalMcpApi extends Context.Service<
-  LocalMcpApi,
-  {
-    readonly authenticate: (
-      authorization: Parameters<typeof makeMcpApiClient>[1],
-    ) => ReturnType<typeof makeMcpApiClient>;
-  }
->()("@namera-ai/cli/LocalMcpApi") {
-  static layer(config: Parameters<typeof makeMcpApiClient>[0]) {
-    return Layer.succeed(LocalMcpApi, {
-      authenticate: (authorization) => makeMcpApiClient(config, authorization),
-    });
-  }
-}

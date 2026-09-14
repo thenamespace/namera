@@ -12,10 +12,9 @@ import {
 } from "@namera-ai/protocol/dto";
 
 import { LocalOAuthError, McpOAuthUpstream, type UpstreamCredentials } from "./oauth-contracts.js";
-import type { LocalMcpUrls } from "./transport-security.js";
 
 export const mcpOAuthUpstreamLayer = (config: {
-  readonly urls: LocalMcpUrls;
+  readonly callback: string;
   readonly apiOrigin: string;
 }) =>
   Layer.effect(
@@ -76,7 +75,7 @@ export const mcpOAuthUpstreamLayer = (config: {
             HttpClientRequest.post(`${config.apiOrigin}/oauth/register`).pipe(
               HttpClientRequest.bodyJsonUnsafe({
                 client_name: `Namera local MCP: ${name}`.slice(0, 128),
-                redirect_uris: [config.urls.callback],
+                redirect_uris: [config.callback],
                 token_endpoint_auth_method: "none",
                 grant_types: ["authorization_code", "refresh_token"],
                 response_types: ["code"],
@@ -91,7 +90,7 @@ export const mcpOAuthUpstreamLayer = (config: {
           );
           if (
             registered.redirect_uris.length !== 1 ||
-            registered.redirect_uris[0] !== config.urls.callback ||
+            registered.redirect_uris[0] !== config.callback ||
             registered.token_endpoint_auth_method !== "none"
           ) {
             return yield* new LocalOAuthError({ code: "temporarily_unavailable" });
@@ -102,7 +101,7 @@ export const mcpOAuthUpstreamLayer = (config: {
           tokenRequest({
             grant_type: "authorization_code",
             client_id: clientId,
-            redirect_uri: config.urls.callback,
+            redirect_uri: config.callback,
             code,
             code_verifier: Redacted.value(verifier),
           }),

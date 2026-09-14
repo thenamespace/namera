@@ -206,8 +206,8 @@ client. They retain their MCP actor identity and require `mcp:read` or
 `mcp:execute` on delegated resource routes. API middleware checks client status,
 active authorization, exact audience, and the current token's narrowed scopes.
 Only API-origin resources are issued. Hosted `/mcp` transport and its resource
-metadata are removed. `namera mcp start` owns Streamable HTTP, independent local
-OAuth credentials, SDK tool adapters, and local signing. The API retains MCP
+metadata are removed. `namera mcp serve` owns stdio, persistent MCP OAuth
+credentials, SDK tool adapters, and local signing. The API retains MCP
 consent, registration, tokens, and authorization list/get/revoke routes.
 See [local MCP](../../architecture/clients/local-mcp.md) for the client boundary.
 
