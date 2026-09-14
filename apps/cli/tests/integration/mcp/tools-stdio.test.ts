@@ -85,7 +85,7 @@ const harness = async (options?: {
             { apiOrigin: "https://api.namera.test", fetch, resolveSessionSigner: signer },
             {
               accessToken: Redacted.make("access"),
-              clientId: id,
+              clientId: "namera_mcp_test_public_client",
               scopes: ["mcp:read", "mcp:execute"],
             },
           ).pipe(Effect.mapError(() => localToolError("UNAUTHORIZED"))),
@@ -221,7 +221,7 @@ describe("stdio MCP authorization and tools", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  it("initializes and lists ten tools without API authentication, then rechecks live authority on every call", async () => {
+  it("accepts an internal actor client UUID distinct from the public OAuth ID and rechecks live authority", async () => {
     const server = await harness();
     try {
       await server.rpc("initialize", {

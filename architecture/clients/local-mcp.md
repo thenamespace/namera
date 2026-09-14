@@ -63,6 +63,9 @@ the user to revoke through settings. Signing keys are not deleted.
 
 Every tool call obtains current credentials and reloads the API actor and live
 grants. Effective scopes intersect the token's scopes with live authorization.
+The actor's `authorization.clientId` is an internal database UUID, not the public
+OAuth `client_id` used for registration and token exchange. The API validates the
+bearer token's binding; the CLI must not compare those different identifiers.
 Before opening any key, the resolver verifies the requested session, wallet,
 namespace and active status against those grants. The SDK checks the prepared
 payload against the imported binding before signing; the API rechecks authority

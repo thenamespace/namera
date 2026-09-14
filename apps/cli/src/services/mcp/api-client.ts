@@ -75,8 +75,8 @@ export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* 
     });
   if (result.data.type !== "mcp") return yield* new LocalOAuthError({ code: "invalid_token" });
   const actor = result.data;
-  if (actor.data.authorization.clientId !== authorization.clientId)
-    return yield* new LocalOAuthError({ code: "invalid_token" });
+  // The actor contains the database client UUID, not OAuth's public client_id.
+  // The API authenticates the bearer token and returns its bound authorization.
   const scopes = authorization.scopes.filter((scope) =>
     actor.data.authorization.scopes.some((allowed) => allowed === scope),
   );
