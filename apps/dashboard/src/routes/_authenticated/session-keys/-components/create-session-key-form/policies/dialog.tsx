@@ -211,26 +211,19 @@ export function SessionPolicyDialog(props: Props) {
             </Modal.Body>
             {choice ? (
               <Modal.Footer className="flex-wrap gap-2">
-                <fieldset
-                  aria-label="Policy enforcement"
-                  className="bg-default mr-auto flex self-center rounded-lg p-1"
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mr-auto h-7 min-h-0 self-center px-2.5 py-0 text-xs"
+                  aria-label={`${enforcement === "onchain" ? "Onchain" : "Offchain"} enforcement. Switch to ${enforcement === "onchain" ? "offchain" : "onchain"}`}
+                  isDisabled={
+                    enforcement === "onchain" ? apiUnavailable(choice) : onchainUnavailable(choice)
+                  }
+                  onPress={() => setEnforcement(enforcement === "onchain" ? "offchain" : "onchain")}
                 >
-                  {(["onchain", "offchain"] as const).map((variant) => (
-                    <Button
-                      key={variant}
-                      type="button"
-                      size="sm"
-                      variant={enforcement === variant ? "secondary" : "ghost"}
-                      aria-pressed={enforcement === variant}
-                      isDisabled={
-                        variant === "onchain" ? onchainUnavailable(choice) : apiUnavailable(choice)
-                      }
-                      onPress={() => setEnforcement(variant)}
-                    >
-                      {variant === "onchain" ? "Onchain" : "Offchain"}
-                    </Button>
-                  ))}
-                </fieldset>
+                  {enforcement === "onchain" ? "Onchain" : "Offchain"}
+                </Button>
                 <Button
                   type="button"
                   variant="tertiary"
