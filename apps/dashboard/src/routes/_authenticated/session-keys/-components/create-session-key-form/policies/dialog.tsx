@@ -1,7 +1,7 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import { useId, useState } from "react";
 
-import { Button, Modal } from "@namera-ai/ui";
+import { Button, Modal, Typography } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import {
@@ -10,21 +10,27 @@ import {
   type EvmPolicyType,
   type TimeWindowPolicyInput,
 } from "@/components/policy/evm";
-import type { OnchainPermissionInput } from "@/components/policy/evm/onchain/catalog";
+import {
+  onchainPermissionCatalog,
+  type OnchainPermissionInput,
+} from "@/components/policy/evm/onchain/catalog";
 import { OnchainPermissionEditor } from "@/components/policy/evm/onchain/editor";
 
 import {
   isOnchainChoiceUnavailable,
   permissionConflict,
+  policyDescription,
   sessionPolicyCatalog,
   type Enforcement,
   type PolicyChoice,
 } from "./catalog";
 import { PolicyPicker } from "./picker";
+import { toSharedPermission, toOffchainPermission } from "./shared-permission";
 
 export type PolicyEdit =
   | { enforcement: "offchain"; policy: EvmPolicyInput; index: number }
   | { enforcement: "onchain"; policy: OnchainPermissionInput; index: number }
+  | { enforcement: "onchain"; policy: { type: "signature" }; index?: never }
   | { enforcement: "onchain"; policy: TimeWindowPolicyInput; index?: never };
 
 type Props = {
@@ -39,6 +45,7 @@ type Props = {
   onSavePermission: (policy: OnchainPermissionInput, index?: number) => void;
   onSaveLifetime: (policy: TimeWindowPolicyInput) => void;
   onEnableSignatures: () => void;
+  onRemoveEdit: (edit: PolicyEdit) => void;
 };
 
 export function SessionPolicyDialog(props: Props) {
@@ -59,22 +66,60 @@ export function SessionPolicyDialog(props: Props) {
     !entry.onchain ||
     isOnchainChoiceUnavailable(
       entry.onchain,
-      props.permissions.map((permission) => permission.type),
-      props.allowSignatures,
+      props.permissions
+        .filter((_, index) => edit?.enforcement !== "onchain" || edit.index !== index)
+        .map((permission) => permission.type),
+      props.allowSignatures &&
+        !(edit?.enforcement === "onchain" && edit.policy.type === "signature"),
     );
-  const apiUnavailable = (entry: PolicyChoice) => !entry.api || props.apiTypes.includes(entry.api);
+  const apiUnavailable = (entry: PolicyChoice) =>
+    !entry.api ||
+    props.apiTypes.some(
+      (type, index) =>
+        type === entry.api && !(edit?.enforcement === "offchain" && edit.index === index),
+    );
   const close = () => props.onOpenChange(false);
   const select = (entry: PolicyChoice) => {
     setChoice(entry);
+    setEnforcement(onchainUnavailable(entry) ? "offchain" : "onchain");
+  };
+  const finish = () => {
+    if (edit && edit.enforcement !== enforcement) props.onRemoveEdit(edit);
+    close();
   };
   const saveApi = (policy: EvmPolicyInput) => {
     props.onSaveApi(policy, edit?.enforcement === "offchain" ? edit.index : undefined);
-    close();
+    finish();
   };
   const savePermission = (policy: OnchainPermissionInput) => {
     props.onSavePermission(policy, edit?.enforcement === "onchain" ? edit.index : undefined);
-    close();
+    finish();
   };
+
+  const permissionType =
+    choice?.onchain && choice.onchain !== "signature" && choice.onchain !== "time-window"
+      ? choice.onchain
+      : undefined;
+  const shared = permissionType
+    ? toOffchainPermission(onchainPermissionCatalog[permissionType].initial) !== undefined
+    : false;
+  const initialPermission =
+    edit?.enforcement === "offchain"
+      ? toSharedPermission(edit.policy)
+      : edit?.policy.type !== "evm.time-window" && edit?.policy.type !== "signature"
+        ? edit?.policy
+        : undefined;
+  const activeFormId =
+    shared || choice?.onchain === "time-window" ? formId : `${formId}-${enforcement}`;
+  const validatePermission = (permission: OnchainPermissionInput) =>
+    enforcement === "onchain"
+      ? permissionConflict(
+          permission,
+          props.permissions.filter(
+            (_, index) => edit?.enforcement !== "onchain" || edit.index !== index,
+          ),
+        )
+      : undefined;
 
   return (
     <Modal isOpen={props.open} onOpenChange={props.onOpenChange}>
@@ -88,62 +133,104 @@ export function SessionPolicyDialog(props: Props) {
             <Modal.Body className="grid max-h-[60vh] min-h-0 gap-4 overflow-y-auto">
               {!choice ? (
                 <PolicyPicker
-                  enforcement={enforcement}
-                  onEnforcementChange={setEnforcement}
-                  unavailable={enforcement === "onchain" ? onchainUnavailable : apiUnavailable}
+                  unavailable={(entry) => onchainUnavailable(entry) && apiUnavailable(entry)}
                   onSelect={select}
                 />
               ) : (
                 <>
-                  {enforcement === "offchain" && choice.api ? (
-                    <EvmPolicyEditor
-                      key={`${choice.id}-api`}
-                      type={choice.api}
+                  {shared && permissionType ? (
+                    <OnchainPermissionEditor
+                      key={choice.id}
+                      type={permissionType}
                       formId={formId}
-                      {...(edit?.enforcement === "offchain" ? { initialValue: edit.policy } : {})}
-                      onSave={saveApi}
-                    />
-                  ) : choice.onchain === "time-window" ? (
-                    <EvmPolicyEditor
-                      key="lifetime"
-                      type="evm.time-window"
-                      formId={formId}
-                      initialValue={props.lifetime}
-                      onSave={(policy) => {
-                        if (policy.type === "evm.time-window") {
-                          props.onSaveLifetime(policy);
-                          close();
+                      hideSubmit
+                      description={policyDescription(choice, enforcement)}
+                      {...(initialPermission ? { initialValue: initialPermission } : {})}
+                      validatePermission={validatePermission}
+                      onSave={(permission) => {
+                        if (enforcement === "onchain") savePermission(permission);
+                        else {
+                          const policy = toOffchainPermission(permission);
+                          if (policy) saveApi(policy);
                         }
                       }}
                     />
-                  ) : choice.onchain && choice.onchain !== "signature" ? (
-                    <OnchainPermissionEditor
-                      key={choice.onchain}
-                      type={choice.onchain}
+                  ) : choice.onchain === "time-window" ? (
+                    <EvmPolicyEditor
+                      key={choice.id}
+                      type="evm.time-window"
                       formId={formId}
-                      hideSubmit
-                      validatePermission={(permission) =>
-                        permissionConflict(
-                          permission,
-                          props.permissions.filter(
-                            (_, index) => edit?.enforcement !== "onchain" || edit.index !== index,
-                          ),
-                        )
+                      initialValue={
+                        edit?.policy.type === "evm.time-window" ? edit.policy : props.lifetime
                       }
-                      {...(edit?.enforcement === "onchain" && edit.policy.type !== "evm.time-window"
-                        ? { initialValue: edit.policy }
-                        : {})}
-                      onSave={savePermission}
+                      onSave={(policy) => {
+                        if (policy.type !== "evm.time-window") return;
+                        if (enforcement === "offchain") saveApi(policy);
+                        else {
+                          props.onSaveLifetime(policy);
+                          finish();
+                        }
+                      }}
                     />
-                  ) : null}
+                  ) : (
+                    <>
+                      {choice.api ? (
+                        <div hidden={enforcement !== "offchain"}>
+                          <EvmPolicyEditor
+                            key={`${choice.id}-api`}
+                            type={choice.api}
+                            formId={`${formId}-offchain`}
+                            {...(edit?.enforcement === "offchain"
+                              ? { initialValue: edit.policy }
+                              : {})}
+                            onSave={saveApi}
+                          />
+                        </div>
+                      ) : null}
+                      {permissionType ? (
+                        <div hidden={enforcement !== "onchain"}>
+                          <OnchainPermissionEditor
+                            key={permissionType}
+                            type={permissionType}
+                            formId={`${formId}-onchain`}
+                            hideSubmit
+                            validatePermission={validatePermission}
+                            {...(initialPermission ? { initialValue: initialPermission } : {})}
+                            onSave={savePermission}
+                          />
+                        </div>
+                      ) : choice.onchain === "signature" && enforcement === "onchain" ? (
+                        <Typography.Paragraph size="sm" color="muted">
+                          Allow messages and typed-data signatures.
+                        </Typography.Paragraph>
+                      ) : null}
+                    </>
+                  )}
                 </>
               )}
             </Modal.Body>
             {choice ? (
-              <Modal.Footer>
-                <span className="text-muted bg-default mr-auto self-center rounded-md px-2 py-1 text-xs">
-                  {enforcement === "onchain" ? "Onchain" : "Offchain"}
-                </span>
+              <Modal.Footer className="flex-wrap gap-2">
+                <fieldset
+                  aria-label="Policy enforcement"
+                  className="bg-default mr-auto flex self-center rounded-lg p-1"
+                >
+                  {(["onchain", "offchain"] as const).map((variant) => (
+                    <Button
+                      key={variant}
+                      type="button"
+                      size="sm"
+                      variant={enforcement === variant ? "secondary" : "ghost"}
+                      aria-pressed={enforcement === variant}
+                      isDisabled={
+                        variant === "onchain" ? onchainUnavailable(choice) : apiUnavailable(choice)
+                      }
+                      onPress={() => setEnforcement(variant)}
+                    >
+                      {variant === "onchain" ? "Onchain" : "Offchain"}
+                    </Button>
+                  ))}
+                </fieldset>
                 <Button
                   type="button"
                   variant="tertiary"
@@ -156,13 +243,13 @@ export function SessionPolicyDialog(props: Props) {
                     type="button"
                     onPress={() => {
                       props.onEnableSignatures();
-                      close();
+                      finish();
                     }}
                   >
                     Allow signatures
                   </Button>
                 ) : (
-                  <Button form={formId} type="submit">
+                  <Button form={activeFormId} type="submit">
                     {edit || (choice.onchain === "time-window" && enforcement === "onchain")
                       ? "Save policy"
                       : "Add policy"}

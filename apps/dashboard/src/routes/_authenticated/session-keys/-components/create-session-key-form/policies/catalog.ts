@@ -22,11 +22,19 @@ const overlappingPermissions = new Set<OnchainPolicyType>(
   evmPolicyCatalog.flatMap((definition) => ("onchain" in definition ? [definition.onchain] : [])),
 );
 
+const sharedDescriptions: Partial<Record<EvmPolicyType, string>> = {
+  "evm.contract-access": "Choose a contract this key can call.",
+  "evm.functions-on-contract": "Choose permitted functions on one contract.",
+  "evm.functions-on-all-contracts": "Choose permitted functions across contracts.",
+  "evm.account-functions": "Choose permitted functions on the account itself.",
+  "evm.erc20-token-transfer": "Set a lifetime transfer and approval budget for one token.",
+};
+
 export const sessionPolicyCatalog: ReadonlyArray<PolicyChoice> = [
   ...evmPolicyCatalog.map((definition) => ({
     id: definition.type,
     name: definition.name,
-    description: definition.description,
+    description: sharedDescriptions[definition.type] ?? definition.description,
     icon: definition.icon,
     api: definition.type,
     onchain: "onchain" in definition ? definition.onchain : undefined,
@@ -77,7 +85,10 @@ export function permissionConflict(
 }
 
 export function policyDescription(choice: PolicyChoice, enforcement: Enforcement) {
-  if (enforcement === "offchain" || !choice.onchain) return choice.description;
+  if (enforcement === "offchain" || !choice.onchain)
+    return (
+      evmPolicyCatalog.find((entry) => entry.type === choice.api)?.description ?? choice.description
+    );
   if (choice.onchain === "time-window") return "Set the start and expiry for onchain executions.";
   if (choice.onchain === "signature")
     return "Allow message and typed-data signatures outside Namera as well.";

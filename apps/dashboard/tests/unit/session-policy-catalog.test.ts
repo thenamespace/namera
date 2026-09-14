@@ -9,8 +9,28 @@ import {
   toOnchainLifetime,
   toTimeWindowPolicy,
 } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/lifetime";
+import {
+  toSharedPermission,
+  toOffchainPermission,
+} from "../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/shared-permission";
 
 describe("unified session policies", () => {
+  it("preserves shared contract fields when changing enforcement", () => {
+    const policy = {
+      type: "evm.functions-on-contract",
+      version: 1,
+      address: "0x1111111111111111111111111111111111111111",
+      functions: ["0xa9059cbb"],
+    } as const;
+    const shared = toSharedPermission(policy);
+    expect(shared).toMatchObject({
+      type: "functions-on-contract",
+      address: policy.address,
+      functions: policy.functions,
+    });
+    expect(shared && toOffchainPermission(shared)).toEqual(policy);
+    expect(toOffchainPermission({ type: "gas-limit", limit: "100" })).toBeUndefined();
+  });
   it("offers overlapping rules once with distinct enforcement choices", () => {
     for (const [api, onchain] of [
       ["evm.time-window", "time-window"],

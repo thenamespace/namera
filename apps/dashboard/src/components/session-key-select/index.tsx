@@ -6,6 +6,8 @@ import { useEventCallback } from "usehooks-ts";
 
 import { MetadataDisplay } from "@/components/display";
 
+import { sessionKeyPolicyCount } from "./policy-count";
+
 type SessionKeyGroup = {
   id: string;
   sessionKeys: ReadonlyArray<SessionKeyResponse>;
@@ -108,24 +110,26 @@ export function SessionKeySelect({
                 </div>
               </Header>
               <Collection items={group.sessionKeys}>
-                {(sessionKey) => (
-                  <ListBox.Item
-                    id={sessionKey.id}
-                    textValue={`${sessionKey.metadata.name} ${group.wallet.metadata.name}`}
-                  >
-                    <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pl-2">
-                      <MetadataDisplay
-                        fallbackName="Unnamed session key"
-                        metadata={sessionKey.metadata}
-                      />
-                      <Typography className="shrink-0 text-xs! pr-6" color="muted">
-                        {sessionKey.policies.length} polic
-                        {sessionKey.policies.length === 1 ? "y" : "ies"}
-                      </Typography>
-                    </div>
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                )}
+                {(sessionKey) => {
+                  const count = sessionKeyPolicyCount(sessionKey);
+                  return (
+                    <ListBox.Item
+                      id={sessionKey.id}
+                      textValue={`${sessionKey.metadata.name} ${group.wallet.metadata.name}`}
+                    >
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pl-2">
+                        <MetadataDisplay
+                          fallbackName="Unnamed session key"
+                          metadata={sessionKey.metadata}
+                        />
+                        <Typography className="shrink-0 text-xs! pr-6" color="muted">
+                          {count} {count === 1 ? "policy" : "policies"}
+                        </Typography>
+                      </div>
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  );
+                }}
               </Collection>
             </ListBox.Section>
           ))}

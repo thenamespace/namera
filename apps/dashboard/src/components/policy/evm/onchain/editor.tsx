@@ -30,6 +30,7 @@ type Props = {
   initialValue?: OnchainPermissionInput;
   formId?: string;
   hideSubmit?: boolean;
+  description?: string;
   validatePermission?: (permission: OnchainPermissionInput) => string | undefined;
   onSave: (permission: OnchainPermissionInput) => void;
 };
@@ -39,6 +40,7 @@ export function OnchainPermissionEditor({
   initialValue,
   formId,
   hideSubmit = false,
+  description,
   validatePermission,
   onSave,
 }: Props) {
@@ -95,7 +97,7 @@ export function OnchainPermissionEditor({
       <FieldGroup>
         <FieldError errors={[form.formState.errors.root]} />
         <Typography.Paragraph color="muted" size="sm">
-          {definition.description}
+          {description ?? definition.description}
         </Typography.Paragraph>
         {textFields.map(({ name, label, placeholder }) => (
           <Controller

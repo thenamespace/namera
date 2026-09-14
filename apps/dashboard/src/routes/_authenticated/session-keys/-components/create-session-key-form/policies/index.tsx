@@ -55,6 +55,9 @@ export function PolicySection({
           name="Signatures"
           icon={evmPolicyDefinitions["evm.signature"].icon}
           enforcement="onchain"
+          onEdit={() =>
+            setDialog({ edit: { enforcement: "onchain", policy: { type: "signature" } } })
+          }
           onRemove={() =>
             form.setValue("onchain.allowSignatures", false, {
               shouldDirty: true,
@@ -139,6 +142,15 @@ export function PolicySection({
           permissions={permissions}
           allowSignatures={onchain?.allowSignatures ?? false}
           lifetime={lifetime}
+          onRemoveEdit={(edit) => {
+            if (edit.enforcement === "offchain") apiFields.remove(edit.index);
+            else if (edit.policy.type === "signature")
+              form.setValue("onchain.allowSignatures", false, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+            else if (edit.index !== undefined) permissionFields.remove(edit.index);
+          }}
           onSaveApi={(policy, index) =>
             index === undefined ? apiFields.append(policy) : apiFields.update(index, policy)
           }

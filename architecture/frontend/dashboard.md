@@ -125,10 +125,11 @@ title and website presentation; existing passkeys are not renamed by this flow.
 
 ## State and mutations
 
-Session creation has one searchable policy picker and one card list. Its top-right
-Onchain/Offchain filter chooses enforcement before opening an editor; individual
-editors have no enforcement toggle. Editor titles contain only the policy name;
-the footer shows a neutral enforcement badge beside the action group. Generic
+Session creation has one searchable policy picker and one card list. Each policy
+appears once; the editor's bottom-left Onchain/Offchain toggle selects enforcement.
+Identical contract/selector/token parameters share a mounted form, as do time
+windows. Different budget/signature forms keep independent drafts while switching.
+Editor titles contain only the policy name. Generic
 enforcement paragraphs are omitted. Address fields disable browser text correction,
 and summaries reuse the shared truncated address display with copy and tooltip.
 Per-policy folders own their definitions and
@@ -146,14 +147,20 @@ to Unix seconds. The onchain time-window picker edits these same fields.
 Dates denote local midnight at the start of the selected date. Onchain signature
 authority is explicitly added through the picker and is never inferred from an API
 signature policy. Onchain budgets remain
-cumulative per network; only API budgets support reset periods. Editing retains
-the policy's enforcement; remove and add to change enforcement. Root consent,
+cumulative per network; only API budgets support reset periods. Saving an enforcement
+change replaces the original policy; cancelling leaves it unchanged. Root consent,
 duplicate-target validation, and the requirement for onchain permissions remain.
-Already-added singleton variants stay visible but disabled in the picker. Cards
+Unavailable variants are disabled in the toggle; a picker entry is disabled only
+when neither variant is available. Cards
 expose edit/remove actions. Target-specific onchain rules can be repeated for
 different addresses, but case-insensitive target duplicates across rule types
 are rejected inside the editor before saving. Offchain restrictions intersect;
 the token editor explicitly states that unrelated calls are blocked.
+
+The shared session-key selector used in authorization forms counts offchain rules
+plus distinct onchain permissions and explicitly enabled signature authority.
+Identical copies on multiple networks count once. Mandatory network/lifetime
+configuration is separate from this policy count.
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch
   helpers.
