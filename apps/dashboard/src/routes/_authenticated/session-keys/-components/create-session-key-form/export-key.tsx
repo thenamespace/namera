@@ -18,6 +18,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 
 import { CopyIconButton } from "@/components/copy-icon-button";
+import { HeadingGroup } from "@/components/heading-group";
 import { env } from "@/env";
 import { showErrorToast } from "@/lib/toasts";
 
@@ -54,64 +55,73 @@ export function ExportSessionKey({
   });
 
   return (
-    <section className="grid gap-4">
-      <Typography.Heading level={2}>Save your session key</Typography.Heading>
-      <Typography.Paragraph color="muted" size="sm">
-        This key exists only in this browser tab. Namera cannot recover it. Encrypt it with a strong
-        passphrase, then import it into your local CLI. Keep the passphrase separately.
-      </Typography.Paragraph>
-      {command ? (
-        <div className="grid gap-3">
-          <div className="flex items-start gap-2 rounded-lg bg-surface p-3">
-            <code className="max-h-32 min-w-0 flex-1 overflow-auto break-all text-xs">
-              {command}
-            </code>
-            <CopyIconButton label="import command" value={command} />
-          </div>
-          <Typography.Paragraph color="muted" size="sm">
-            Run this command with the CLI profile for {new URL(env.backendUrl).origin}. The CLI asks
-            for your passphrase privately. Only the encrypted export is in the command.
-          </Typography.Paragraph>
-          <Button variant="tertiary" onPress={onSaved}>
-            I imported the key and saved my backup
-          </Button>
+    <div className="grid gap-6">
+      <section className="grid gap-3">
+        <HeadingGroup.Title size="sm">Install the CLI</HeadingGroup.Title>
+        <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
+          <code className="min-w-0 flex-1 truncate text-xs">npm i -g @namera-ai/cli</code>
+          <CopyIconButton label="CLI install command" value="npm i -g @namera-ai/cli" />
         </div>
-      ) : (
-        <form id="export-session-key" noValidate onSubmit={submit}>
-          <FieldGroup>
-            {(["password", "confirmation"] as const).map((name) => (
-              <Controller
-                key={name}
-                control={form.control}
-                name={name}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`export-${name}`}>
-                      {name === "password" ? "Export passphrase" : "Confirm passphrase"}
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id={`export-${name}`}
-                      type="password"
-                      autoComplete="new-password"
-                      variant="secondary"
-                      fullWidth
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
-            ))}
-            <Typography.Paragraph color="muted" size="xs">
-              Use at least 12 characters; a generated passphrase is recommended.
+      </section>
+      <section className="grid min-w-0 gap-4">
+        <HeadingGroup.Title size="sm">Save your session key</HeadingGroup.Title>
+        <Typography.Paragraph color="muted" size="sm">
+          Encrypt and save your key before closing this tab. Namera cannot recover it.
+        </Typography.Paragraph>
+        {command ? (
+          <div className="grid gap-3">
+            <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
+              <code className="min-w-0 flex-1 truncate text-xs">{command}</code>
+              <CopyIconButton label="import command" value={command} />
+            </div>
+            <Typography.Paragraph color="muted" size="sm">
+              Run this command to import your key. Enter your passphrase when asked.
             </Typography.Paragraph>
-            <Button form="export-session-key" type="submit" isPending={form.formState.isSubmitting}>
-              Encrypt key
+            <Button variant="tertiary" onPress={onSaved}>
+              I imported the key and saved my backup
             </Button>
-          </FieldGroup>
-        </form>
-      )}
-    </section>
+          </div>
+        ) : (
+          <form id="export-session-key" noValidate onSubmit={submit}>
+            <FieldGroup>
+              {(["password", "confirmation"] as const).map((name) => (
+                <Controller
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`export-${name}`}>
+                        {name === "password" ? "Export passphrase" : "Confirm passphrase"}
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id={`export-${name}`}
+                        type="password"
+                        autoComplete="new-password"
+                        variant="secondary"
+                        fullWidth
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+              ))}
+              <Typography.Paragraph color="muted" size="xs">
+                Use at least 12 characters; a generated passphrase is recommended.
+              </Typography.Paragraph>
+              <Button
+                form="export-session-key"
+                type="submit"
+                isPending={form.formState.isSubmitting}
+              >
+                Encrypt key
+              </Button>
+            </FieldGroup>
+          </form>
+        )}
+      </section>
+    </div>
   );
 }

@@ -1,10 +1,11 @@
 import { DateTime } from "effect";
 
+import { EthereumAddress } from "@namera-ai/protocol/evm";
 import type { EvmSessionKeyPolicy } from "@namera-ai/protocol/model";
 import { ChainIcon } from "@namera-ai/ui/icons";
 import { formatUnits } from "viem";
 
-import { formatDateTime } from "@/lib/helpers/date";
+import { EvmAddressDisplay } from "@/components/display/evm-address-display";
 
 import { evmChainById, gasBudgetPeriodById, nativeSpendPeriodById } from "./data";
 import type { EvmPolicyInput, SignaturePolicyInput } from "./types";
@@ -32,8 +33,8 @@ type SignaturePolicySummaryValue = Extract<PolicySummaryValue, { readonly type: 
 
 function formatPolicyDate(value: string | DateTime.DateTime) {
   return typeof value === "string"
-    ? formatDateTime(value)
-    : DateTime.formatLocal(value, { dateStyle: "medium", timeStyle: "short" });
+    ? new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" })
+    : DateTime.formatLocal(value, { dateStyle: "medium" });
 }
 
 function TimeWindowPolicySummary({ policy }: { policy: TimeWindowPolicySummaryValue }) {
@@ -164,7 +165,7 @@ function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValu
                 {evmChainById.get(rule.chainId)?.name ?? rule.chainId} ·{" "}
                 {rule.primaryTypes.join(", ")}
               </span>
-              <span className="break-all font-mono">{rule.verifyingContract}</span>
+              <EvmAddressDisplay address={EthereumAddress.make(rule.verifyingContract)} />
               <span className="text-muted">
                 {rule.name === undefined ? "Any domain name" : `Name: ${rule.name}`} ·{" "}
                 {rule.version === undefined ? "Any version" : `Version: ${rule.version}`}
@@ -178,6 +179,26 @@ function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValu
 
 export function EvmPolicySummary({ policy }: { policy: PolicySummaryValue }) {
   switch (policy.type) {
+    case "evm.contract-access":
+    case "evm.functions-on-contract":
+    case "evm.functions-on-all-contracts":
+    case "evm.account-functions":
+    case "evm.erc20-token-transfer":
+      return (
+        <span className="grid gap-1">
+          {"address" in policy ? (
+            <EvmAddressDisplay address={EthereumAddress.make(policy.address)} />
+          ) : null}
+          {"functions" in policy ? (
+            <span className="break-all font-mono text-xs">{policy.functions.join(", ")}</span>
+          ) : null}
+          {"allowance" in policy ? (
+            <span>
+              {String(policy.allowance)} base units · Lifetime per network · Direct token calls only
+            </span>
+          ) : null}
+        </span>
+      );
     case "evm.chain-allowlist":
       return <ChainAllowlistPolicySummary policy={policy} />;
     case "evm.gas-budget":

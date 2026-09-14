@@ -8,7 +8,7 @@ export type OnchainPermissionType = OnchainPermissionInput["type"];
 export const onchainPermissionCatalog = {
   "contract-access": {
     name: "Contract access",
-    description: "Call any function on one contract. Add a spend limit to restrict native value.",
+    description: "Call any function on one contract. Spend limits are separate.",
     initial: { type: "contract-access", address: "0x" },
   },
   "functions-on-contract": {
@@ -18,7 +18,7 @@ export const onchainPermissionCatalog = {
   },
   "functions-on-all-contracts": {
     name: "Functions on any contract",
-    description: "Allow these selectors on any target. This is broader than choosing one contract.",
+    description: "Allow selected functions across contracts, without choosing a target.",
     initial: { type: "functions-on-all-contracts", functions: [] },
   },
   "account-functions": {
@@ -27,21 +27,19 @@ export const onchainPermissionCatalog = {
     initial: { type: "account-functions", functions: [] },
   },
   "native-token-transfer": {
-    name: "Native spend limit",
+    name: "Native spend",
     description:
       "Cap cumulative native value per network. Pair this with a target or function grant.",
     initial: { type: "native-token-transfer", allowance: "0" },
   },
   "erc20-token-transfer": {
     name: "Token spend limit",
-    description:
-      "Allow transfers and approvals for one ERC-20 token, within a cumulative allowance.",
+    description: "Allow transfers and approvals for one token within a lifetime allowance.",
     initial: { type: "erc20-token-transfer", address: "0x", allowance: "0" },
   },
   "gas-limit": {
     name: "Gas budget",
-    description:
-      "Cap cumulative native-token gas expenditure per network, not transaction count or USD.",
+    description: "Limit total native-token gas costs on each network.",
     initial: { type: "gas-limit", limit: "0" },
   },
   root: {

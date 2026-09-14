@@ -9,9 +9,9 @@ import { Field, FieldGroup, FieldLabel, Typography } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { evmChainOptions, evmPolicyFormIds } from "./data";
-import { EvmNetworkMultiSelect } from "./network-multi-select";
-import type { ChainAllowlistPolicyInput, EvmPolicyInput } from "./types";
+import { evmChainOptions, evmPolicyFormIds } from "../data";
+import { EvmNetworkMultiSelect } from "../network-multi-select";
+import type { ChainAllowlistPolicyInput, EvmPolicyInput } from "../types";
 
 const ChainAllowlistForm = Schema.Struct({
   chainIds: Schema.Array(Schema.Literals(evmChainOptions.map((chain) => chain.id))).check(

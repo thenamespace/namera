@@ -25,7 +25,6 @@ import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
 import { ExportSessionKey } from "./export-key";
-import { OnchainPermissions } from "./onchain-permissions";
 import { OnchainSettings } from "./onchain-settings";
 import { PolicySection } from "./policies";
 import { CreateSessionKeyFormSchema } from "./schema";
@@ -179,9 +178,6 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     <>
       {registration ? (
         <div className="grid gap-6">
-          <Typography.Paragraph color="muted" size="sm">
-            Save your local key, then approve each network with the account owner’s passkey.
-          </Typography.Paragraph>
           {registrationError ? (
             <Typography.Paragraph role="alert" className="text-danger">
               The returned configuration differs from your choices. No export or approval is
@@ -217,7 +213,6 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
           <div className="grid gap-8">
             <SessionKeyDetailsCard control={form.control} wallets={wallets} />
             <OnchainSettings form={form} />
-            <OnchainPermissions form={form} />
             <PolicySection form={form} wallets={wallets} />
           </div>
           {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (

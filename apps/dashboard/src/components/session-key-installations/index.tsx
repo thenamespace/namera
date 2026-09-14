@@ -12,9 +12,8 @@ import { Button, Typography } from "@namera-ai/ui";
 import { useInterval } from "usehooks-ts";
 
 import { billingAtom } from "@/atoms/billing";
-import { ChainDisplay } from "@/components/display";
+import { ChainDisplay, EvmAddressDisplay } from "@/components/display";
 import { PermissionGuard } from "@/components/permission";
-import { OnchainAuthorizationSummary } from "@/components/policy/evm/onchain/summary";
 import {
   useActiveSessionKeyOperation,
   useSessionKey,
@@ -129,48 +128,53 @@ function Installation({
     if (beginApproval()) void approval.approve(retryRequest).finally(endApproval);
   };
   return (
-    <article className="rounded-xl bg-surface p-4">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <ChainDisplay chainId={installation.chainId} />
-        <Typography.Paragraph size="xs" color="muted">
-          {installation.status}
-        </Typography.Paragraph>
-      </header>
-      <OnchainAuthorizationSummary authorization={installation.authorization} />
-      {eligible ? (
-        <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>
-          <div className="mt-4 grid gap-2">
-            <Button
-              variant={kind === "uninstall" ? "danger" : "tertiary"}
-              size="sm"
-              isPending={approval.pending}
-              isDisabled={
-                !networkAvailable ||
-                working ||
-                !owner?.owner ||
-                !active.isSuccess ||
-                active.isFetching ||
-                Boolean(recovered && !resumable) ||
-                (Boolean(approval.operationId) && !approval.error)
-              }
-              onPress={approve}
+    <article className="rounded-lg border border-separator p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="grid min-w-0 flex-1 gap-1.5">
+          <header className="flex flex-wrap items-center gap-2">
+            <ChainDisplay chainId={installation.chainId} />
+            <Typography.Paragraph
+              size="xs"
+              color="muted"
+              className="rounded-md bg-default px-1.5 py-0.5 capitalize"
             >
-              {approval.pending
-                ? "Checking approval…"
-                : approval.error || resumable
-                  ? kind === "uninstall"
-                    ? "Retry removal"
-                    : "Retry approval"
-                  : kind === "uninstall"
-                    ? "Remove with passkey"
-                    : "Approve with passkey"}
-            </Button>
-            <Typography.Paragraph size="xs" color="muted">
-              Gas sponsored by Namera. This operation counts toward your plan’s usage.
+              {installation.status}
             </Typography.Paragraph>
-          </div>
-        </PermissionGuard>
-      ) : null}
+          </header>
+          <EvmAddressDisplay address={installation.authorization.signerAddress} />
+        </div>
+        {eligible ? (
+          <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>
+            <div className="shrink-0">
+              <Button
+                variant={kind === "uninstall" ? "danger" : "tertiary"}
+                size="sm"
+                isPending={approval.pending}
+                isDisabled={
+                  !networkAvailable ||
+                  working ||
+                  !owner?.owner ||
+                  !active.isSuccess ||
+                  active.isFetching ||
+                  Boolean(recovered && !resumable) ||
+                  (Boolean(approval.operationId) && !approval.error)
+                }
+                onPress={approve}
+              >
+                {approval.pending
+                  ? "Checking approval…"
+                  : approval.error || resumable
+                    ? kind === "uninstall"
+                      ? "Retry removal"
+                      : "Retry approval"
+                    : kind === "uninstall"
+                      ? "Remove with passkey"
+                      : "Approve"}
+              </Button>
+            </div>
+          </PermissionGuard>
+        ) : null}
+      </div>
       {!networkAvailable ? (
         <Typography.Paragraph className="mt-3" size="xs" color="muted">
           Network paused. New approvals are unavailable; already signed operations continue to
@@ -247,7 +251,7 @@ export function SessionKeyInstallations({ sessionKey }: { sessionKey: SessionKey
           </Button>
         </Typography.Paragraph>
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3">
         {session.installations.map((installation) => (
           <Installation
             key={`${installation.id}:${session.status === "revoking"}`}

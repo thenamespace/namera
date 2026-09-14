@@ -15,8 +15,10 @@ the UI package boundary.
 - `src/components/*.tsx` — direct proxies for UIKit component subpaths.
 - `src/components/field.tsx` — shared `Field`, `FieldGroup`, `FieldLabel`, and
   resolver-friendly `FieldError` form composition primitives.
-  Explicit errors render as UIKit typography alerts independently of React Aria
+  Explicit errors render as native paragraph alerts with semantic typography tokens, independently of React Aria
   validation context, because dashboard forms use React Hook Form with native inputs.
+  They do not inherit React Aria text slots, so explicit messages render
+  safely both inside checkboxes and inside modal dialogs with description-only slots.
 - `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
 - `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.

@@ -52,7 +52,7 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
   });
 
   return (
-    <Tooltip delay={300}>
+    <Tooltip delay={300} shouldCloseOnPress={false}>
       <Tooltip.Trigger
         aria-label={`Copy account address ${address}`}
         className="text-muted hover:text-foreground inline-flex cursor-copy items-center gap-2 transition-colors"
@@ -73,7 +73,7 @@ export function EvmAddressDisplay({ address }: EvmAddressDisplayProps) {
           </span>
         )}
       </Tooltip.Trigger>
-      <Tooltip.Content className="font-mono text-xs" showArrow>
+      <Tooltip.Content className="max-w-none whitespace-nowrap font-mono text-xs" showArrow>
         <Tooltip.Arrow />
         {address}
       </Tooltip.Content>

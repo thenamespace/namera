@@ -10,6 +10,7 @@ import {
   WalletId,
 } from "#/common/index";
 import { EthereumAddress, SupportedEvmChainId, TransactionHash } from "#/evm/index";
+import { EvmSessionPolicyType } from "#/model/core/session-key";
 import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
 
 const NewSignInNotificationType = Schema.Literal("auth.new-sign-in");
@@ -89,15 +90,7 @@ export const SessionKeyCreatedNotificationPayload = Schema.Struct({
     version: Schema.Literal(1),
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
-    policyTypes: Schema.Array(
-      Schema.Literals([
-        "evm.chain-allowlist",
-        "evm.gas-budget",
-        "evm.native-spend-limit",
-        "evm.signature",
-        "evm.time-window",
-      ]),
-    ),
+    policyTypes: Schema.Array(EvmSessionPolicyType),
   }),
 });
 

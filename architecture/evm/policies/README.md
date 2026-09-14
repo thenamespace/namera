@@ -16,13 +16,18 @@ Application materialization copies code-owned applicability into the persisted p
 
 ## Deterministic order
 
-| Priority | Policy                   | Applicability | Cardinality | Stateful                      |
-| -------: | ------------------------ | ------------- | ----------- | ----------------------------- |
-|      100 | `evm.time-window`        | both          | singleton   | No                            |
-|      200 | `evm.chain-allowlist`    | both          | singleton   | No                            |
-|      400 | `evm.gas-budget`         | execution     | singleton   | Yes                           |
-|      500 | `evm.native-spend-limit` | execution     | singleton   | Yes for non-operation periods |
-|      600 | `evm.signature`          | signature     | singleton   | No                            |
+| Priority | Policy                           | Applicability | Cardinality | Stateful                      |
+| -------: | -------------------------------- | ------------- | ----------- | ----------------------------- |
+|      100 | `evm.time-window`                | both          | singleton   | No                            |
+|      200 | `evm.chain-allowlist`            | both          | singleton   | No                            |
+|      300 | `evm.contract-access`            | execution     | singleton   | No                            |
+|      310 | `evm.functions-on-contract`      | execution     | singleton   | No                            |
+|      320 | `evm.functions-on-all-contracts` | execution     | singleton   | No                            |
+|      330 | `evm.account-functions`          | execution     | singleton   | No                            |
+|      400 | `evm.gas-budget`                 | execution     | singleton   | Yes                           |
+|      500 | `evm.native-spend-limit`         | execution     | singleton   | Yes for non-operation periods |
+|      510 | `evm.erc20-token-transfer`       | execution     | singleton   | Yes                           |
+|      600 | `evm.signature`                  | signature     | singleton   | No                            |
 
 Equal-priority instances sort by policy ID. This makes the first denial stable across processes and retries.
 
@@ -72,5 +77,5 @@ flowchart TD
 ## Pending before production
 
 - Add comprehensive handler law tests: deterministic decision, reserve atomicity, settle bounds, and release inverse.
-- Add policies for contract/selector allowlists and token spend only after simulation context semantics are fixed across chains.
+- Broader token-spend tracking through routers requires a separate design proving complete asset discovery; the current token rule deliberately allows direct token calls only.
 - Define stable external policy-code documentation for SDK/MCP consumers.

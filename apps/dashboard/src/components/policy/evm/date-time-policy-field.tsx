@@ -9,6 +9,7 @@ import { encodeDateValue, parseDateValue } from "@/lib/helpers/date";
 type DateTimeFieldProps = {
   error: { readonly message?: ReactNode } | undefined;
   isRequired?: boolean;
+  hideLabel?: boolean;
   granularity?: "day" | "minute";
   label: string;
   name: string;
@@ -20,6 +21,7 @@ type DateTimeFieldProps = {
 export function DateTimePolicyField({
   error,
   isRequired = false,
+  hideLabel = false,
   granularity = "day",
   label,
   name,
@@ -42,7 +44,7 @@ export function DateTimePolicyField({
         onBlur={onBlur}
         onChange={(date) => onChange(encodeDateValue(date))}
       >
-        <FieldLabel>{label}</FieldLabel>
+        <FieldLabel className={hideLabel ? "sr-only" : undefined}>{label}</FieldLabel>
         <DateField.Group fullWidth variant="secondary">
           <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
           <DateField.Suffix>

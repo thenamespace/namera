@@ -9,9 +9,9 @@ import { FieldGroup } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { evmPolicyFormIds } from "./data";
-import { DateTimePolicyField } from "./date-time-policy-field";
-import type { EvmPolicyInput, TimeWindowPolicyInput } from "./types";
+import { evmPolicyFormIds } from "../data";
+import { DateTimePolicyField } from "../date-time-policy-field";
+import type { EvmPolicyInput, TimeWindowPolicyInput } from "../types";
 
 type TimeWindowPolicyValues = typeof CreateEvmTimeWindowPolicy.Type;
 
@@ -54,7 +54,7 @@ export function TimeWindowPolicyEditor({
           render={({ field, fieldState }) => (
             <DateTimePolicyField
               error={fieldState.error}
-              label="Starts at"
+              label="Starts on"
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}
@@ -70,7 +70,7 @@ export function TimeWindowPolicyEditor({
             <DateTimePolicyField
               isRequired
               error={fieldState.error}
-              label="Expires at"
+              label="Expires on"
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}

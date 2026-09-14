@@ -92,6 +92,46 @@ analogous state keys. Missing chain returns
 
 Settlement charges `actualGasCost` and removes the full pessimistic reservation. It rejects a result whose actual cost exceeds the reservation because that would violate the authorization assumption.
 
+## Offchain call restrictions
+
+`evm.contract-access` allows only calls to its `address`.
+`evm.functions-on-contract` additionally requires a listed four-byte selector.
+`evm.functions-on-all-contracts` allows listed selectors on non-management targets.
+`evm.account-functions` allows listed non-management selectors on the account itself.
+Every call in a batch must match; otherwise the decision is `CALL_NOT_ALLOWED`.
+The existing session permission safety rules reject account self-dispatch through
+external-target rules and known management modules/selectors. Selector lists are
+nonempty, bounded to 64, and case-insensitively unique.
+
+These are singleton, intersecting API restrictions, not additive grants. For
+example, contract access for A plus contract functions for B denies every call
+when A and B differ. They do not grant missing onchain authority or restrict calls
+submitted outside Namera. Root authority has no offchain counterpart: omitting an
+API restriction already leaves that dimension unrestricted.
+
+## `evm.erc20-token-transfer`
+
+An offchain token-only restriction with a cumulative `allowance` in base units,
+separate per chain. Only canonical direct `transfer`, `approve`, and
+wallet-owned `transferFrom` calls to `address`, with zero native value, are allowed.
+Other targets, unknown selectors, malformed/trailing calldata, and transferFrom
+using another source address return `TOKEN_CALL_NOT_ALLOWED`. This deliberately
+does not infer spending from potentially incomplete simulation asset changes.
+
+All amounts in the batch are summed, including the full amount of each approval.
+`spent + reserved + amount` must not exceed the allowance; otherwise return
+`TOKEN_SPEND_LIMIT_EXCEEDED`. The state key is `<chain>:<lowercase-token>:lifetime`.
+Successful settlement consumes the reservation; failure releases it. Approval
+reductions do not refund the budget. Existing approvals, routers, permit-based
+spending, and operations outside Namera are not tracked. Use an onchain token
+permission for enforcement outside the API.
+
+The protocol union feeds creation, persisted JSONB, SDK transport, audit and
+notification policy types. No new table is needed. Handler tests cover mixed
+batches, canonical encoding, pending budget exhaustion, settlement, release and
+chain separation. The server registration test covers public API round-trip,
+persistence, audit payloads and duplicate rejection.
+
 ## Policy interaction examples
 
 | Session-key policies                                     | Example operation                             | Result                                                  |

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   SignaturePolicyForm,
   toSignatureFormInput,
-} from "../../src/components/policy/evm/signature-form";
+} from "../../src/components/policy/evm/signature/form";
 
 const rule = {
   chainId: "eip155:1" as const,

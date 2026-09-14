@@ -114,11 +114,46 @@ description. Form resolver tests exercise blank and populated descriptions and
 verify that the decoded session request can be encoded by the public API schema.
 
 Account creation also requires a form-only recovery acknowledgement before the
-passkey ceremony starts. The shared passkey recovery notice remains visible on
-local account overviews; it never claims that email login or a session key can
-restore owner access. The acknowledgement is not sent to the API or persisted.
+passkey ceremony starts. Recovery warnings are not shown on account overviews.
+The acknowledgement is not sent to the API or persisted.
+Before opening registration, the dashboard sets WebAuthn `user.name` and
+`user.displayName` to `<account name> - Namera`. These are password-manager display
+labels only; the server-issued user handle, challenge and RP ID remain unchanged.
+The RP ID comes from `AUTH_DASHBOARD_PUBLIC_ORIGIN` (hostname only), while origin
+verification uses its full origin. Password managers control the final saved-item
+title and website presentation; existing passkeys are not renamed by this flow.
 
 ## State and mutations
+
+Session creation has one searchable policy picker and one card list. Its top-right
+Onchain/Offchain filter chooses enforcement before opening an editor; individual
+editors have no enforcement toggle. Editor titles contain only the policy name;
+the footer shows a neutral enforcement badge beside the action group. Generic
+enforcement paragraphs are omitted. Address fields disable browser text correction,
+and summaries reuse the shared truncated address display with copy and tooltip.
+Per-policy folders own their definitions and
+specialized forms; shared field renderers are reused for matching contract and
+selector shapes. Catalog metadata maps overlapping rules once. Call restrictions,
+token spend, time windows, native spend, gas budgets and signatures expose both
+variants. Root remains onchain-only; API network restrictions remain offchain-only,
+separate from installation networks. The
+existing DTO still stores API policies and onchain authorization separately.
+Installation networks, optional start date, and required expiry share a row-based
+card immediately after metadata, introduced by a Networks and lifetime heading
+and short description. Onchain lifetime is not repeated in the policy
+list; it uses the same date-only editor as API time windows and maps ISO instants
+to Unix seconds. The onchain time-window picker edits these same fields.
+Dates denote local midnight at the start of the selected date. Onchain signature
+authority is explicitly added through the picker and is never inferred from an API
+signature policy. Onchain budgets remain
+cumulative per network; only API budgets support reset periods. Editing retains
+the policy's enforcement; remove and add to change enforcement. Root consent,
+duplicate-target validation, and the requirement for onchain permissions remain.
+Already-added singleton variants stay visible but disabled in the picker. Cards
+expose edit/remove actions. Target-specific onchain rules can be repeated for
+different addresses, but case-insensitive target duplicates across rule types
+are rejected inside the editor before saving. Offchain restrictions intersect;
+the token editor explicitly states that unrelated calls are blocked.
 
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch
   helpers.

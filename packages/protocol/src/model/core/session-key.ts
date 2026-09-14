@@ -4,6 +4,16 @@ import { ActorId, OrganizationId, SessionKeyId, SigningKeyId, WalletId } from "#
 import { MetadataDescription, MetadataLogo, MetadataName } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 import {
+  CreateEvmContractAccessPolicy,
+  EvmContractAccessPolicy,
+  CreateEvmContractFunctionsPolicy,
+  EvmContractFunctionsPolicy,
+  CreateEvmWildcardFunctionsPolicy,
+  EvmWildcardFunctionsPolicy,
+  CreateEvmAccountFunctionsPolicy,
+  EvmAccountFunctionsPolicy,
+  CreateEvmTokenSpendPolicy,
+  EvmTokenSpendPolicy,
   CreateEvmChainAllowlistPolicy,
   CreateEvmGasBudgetPolicy,
   CreateEvmNativeSpendLimitPolicy,
@@ -26,6 +36,11 @@ export const SessionKeyMetadata = Schema.Struct({
 });
 
 export const EvmSessionKeyPolicy = Schema.Union([
+  EvmContractAccessPolicy,
+  EvmContractFunctionsPolicy,
+  EvmWildcardFunctionsPolicy,
+  EvmAccountFunctionsPolicy,
+  EvmTokenSpendPolicy,
   EvmTimeWindowPolicy,
   EvmChainAllowlistPolicy,
   EvmGasBudgetPolicy,
@@ -33,6 +48,11 @@ export const EvmSessionKeyPolicy = Schema.Union([
   EvmSignaturePolicy,
 ]);
 export const CreateEvmSessionKeyPolicy = Schema.Union([
+  CreateEvmContractAccessPolicy,
+  CreateEvmContractFunctionsPolicy,
+  CreateEvmWildcardFunctionsPolicy,
+  CreateEvmAccountFunctionsPolicy,
+  CreateEvmTokenSpendPolicy,
   CreateEvmTimeWindowPolicy,
   CreateEvmChainAllowlistPolicy,
   CreateEvmGasBudgetPolicy,
@@ -40,6 +60,9 @@ export const CreateEvmSessionKeyPolicy = Schema.Union([
   CreateEvmSignaturePolicy,
 ]);
 export const EvmSessionKeyPolicies = Schema.Array(EvmSessionKeyPolicy);
+export const EvmSessionPolicyType = Schema.Literals(
+  CreateEvmSessionKeyPolicy.members.map((policy) => policy.fields.type.literal),
+);
 
 export const SessionKeyPolicy = EvmSessionKeyPolicy;
 export const SessionKeyPolicies = EvmSessionKeyPolicies;

@@ -7,7 +7,15 @@ const Amount = Schema.BigIntFromString.check(
   Schema.isLessThanOrEqualToBigInt(2n ** 256n - 1n),
 );
 const Selector = Hex.check(Schema.isPattern(/^0x[0-9a-fA-F]{8}$/));
-const Functions = Schema.Array(Selector).check(Schema.isMinLength(1));
+const Functions = Schema.Array(Selector).check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(64),
+  Schema.makeFilter((values) =>
+    new Set(values.map((value) => value.toLowerCase())).size === values.length
+      ? undefined
+      : "Duplicate function selector",
+  ),
+);
 
 /** Amounts are base units, never floating-point token values or USD. */
 export const EvmSessionPermission = Schema.Union([

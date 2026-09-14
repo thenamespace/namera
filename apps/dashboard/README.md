@@ -179,6 +179,10 @@ organization has a confirmed execution.
 The session-key policy catalog declares singleton or repeatable cardinality per
 policy. The picker disables only an already-added singleton and uses stable
 React Hook Form field identities for repeatable instances.
+The creation picker has search and an Onchain/Offchain filter, uniform bordered
+rows and variant-specific descriptions. Added policies can be edited or removed;
+onchain target collisions are checked before saving. Offchain call/selector and
+direct-token restrictions share the same catalog with their onchain counterparts.
 Shared EVM policy components under `src/components/policy/evm/` own the policy
 catalog, summaries, cards, and editors. Session-key creation supports time
 windows, execution-and-signature chain allowlists, shared-amount multi-network

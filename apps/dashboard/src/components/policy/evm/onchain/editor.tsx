@@ -27,18 +27,30 @@ import {
 
 type Props = {
   type: OnchainPermissionType;
+  initialValue?: OnchainPermissionInput;
+  formId?: string;
+  hideSubmit?: boolean;
+  validatePermission?: (permission: OnchainPermissionInput) => string | undefined;
   onSave: (permission: OnchainPermissionInput) => void;
 };
 
-export function OnchainPermissionEditor({ type, onSave }: Props) {
-  const id = useId();
+export function OnchainPermissionEditor({
+  type,
+  initialValue,
+  formId,
+  hideSubmit = false,
+  validatePermission,
+  onSave,
+}: Props) {
+  const generatedId = useId();
+  const id = formId ?? generatedId;
   const definition = onchainPermissionCatalog[type];
   const form = useForm<
     typeof OnchainPermissionForm.Encoded,
     unknown,
     typeof OnchainPermissionForm.Type
   >({
-    defaultValues: { permission: definition.initial, acknowledgeRoot: false },
+    defaultValues: { permission: initialValue ?? definition.initial, acknowledgeRoot: false },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(OnchainPermissionForm)),
   });
   const textFields = [
@@ -64,9 +76,15 @@ export function OnchainPermissionEditor({ type, onSave }: Props) {
         ]
       : []),
   ];
-  const submit = form.handleSubmit(({ permission }) =>
-    onSave(Schema.encodeSync(EvmSessionPermission)(permission)),
-  );
+  const submit = form.handleSubmit(({ permission }) => {
+    const encoded = Schema.encodeSync(EvmSessionPermission)(permission);
+    const conflict = validatePermission?.(encoded);
+    if (conflict) {
+      form.setError("root", { message: conflict });
+      return;
+    }
+    onSave(encoded);
+  });
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.stopPropagation();
     void submit(event);
@@ -75,6 +93,7 @@ export function OnchainPermissionEditor({ type, onSave }: Props) {
   return (
     <form id={id} noValidate onSubmit={handleSubmit}>
       <FieldGroup>
+        <FieldError errors={[form.formState.errors.root]} />
         <Typography.Paragraph color="muted" size="sm">
           {definition.description}
         </Typography.Paragraph>
@@ -92,6 +111,9 @@ export function OnchainPermissionEditor({ type, onSave }: Props) {
                   id={`${id}-${name}`}
                   aria-invalid={fieldState.invalid}
                   autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   fullWidth
                   placeholder={placeholder}
                   variant="secondary"
@@ -158,14 +180,18 @@ export function OnchainPermissionEditor({ type, onSave }: Props) {
             )}
           />
         ) : null}
-        {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
+        {form.formState.isSubmitted &&
+        !form.formState.errors.root &&
+        Object.keys(form.formState.errors).length > 0 ? (
           <Typography.Paragraph className="text-danger" size="sm" role="alert">
             Check the permission fields and acknowledge unrestricted access if selected.
           </Typography.Paragraph>
         ) : null}
-        <Button form={id} type="submit">
-          Add permission
-        </Button>
+        {!hideSubmit ? (
+          <Button form={id} type="submit">
+            Save policy
+          </Button>
+        ) : null}
       </FieldGroup>
     </form>
   );

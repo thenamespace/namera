@@ -7,6 +7,7 @@ import {
   SessionKeyOperationId,
 } from "#/common/index";
 import { SupportedEvmChainId } from "#/evm/chains";
+import { EvmSessionPolicyType } from "#/model/core/session-key";
 
 export const SessionKeyOperationEventData = Schema.Struct({
   event: Schema.Literals([
@@ -34,15 +35,7 @@ export const SessionKeyCreatedEventData = Schema.Struct({
     version: Schema.Literal(1),
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
-    policyTypes: Schema.Array(
-      Schema.Literals([
-        "evm.chain-allowlist",
-        "evm.gas-budget",
-        "evm.native-spend-limit",
-        "evm.signature",
-        "evm.time-window",
-      ]),
-    ),
+    policyTypes: Schema.Array(EvmSessionPolicyType),
   }),
 });
 

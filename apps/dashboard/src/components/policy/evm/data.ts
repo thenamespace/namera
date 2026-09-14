@@ -3,15 +3,19 @@ import type { ComponentProps } from "react";
 import { chains } from "@namera-ai/evm/chains";
 import type { EvmGasBudgetPeriod, EvmNativeSpendLimitPeriod } from "@namera-ai/protocol";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
-import {
-  CalendarClockIcon,
-  Coins01Icon,
-  FuelStationIcon,
-  GlobalIcon,
-  type HugeiconsIcon,
-  SignatureIcon,
-} from "@namera-ai/ui/icons";
+import type { HugeiconsIcon } from "@namera-ai/ui/icons";
 
+import { definition as accountFunctions } from "./account-functions/definition";
+import { definition as chainAllowlistDefinition } from "./chain-allowlist/definition";
+import { definition as contractAccess } from "./contract-access/definition";
+import { definition as tokenSpend } from "./erc20-token-transfer/definition";
+import { definition as wildcardFunctions } from "./functions-on-all-contracts/definition";
+import { definition as contractFunctions } from "./functions-on-contract/definition";
+import { definition as gasBudgetDefinition } from "./gas-budget/definition";
+import { definition as nativeSpendLimitDefinition } from "./native-spend-limit/definition";
+import type { OnchainPermissionType } from "./onchain/catalog";
+import { definition as signatureDefinition } from "./signature/definition";
+import { definition as timeWindowDefinition } from "./time-window/definition";
 import type { EvmPolicyType } from "./types";
 
 export const evmChainOptions = Object.values(chains)
@@ -67,6 +71,7 @@ export const gasBudgetPeriodById = new Map<
 >(gasBudgetPeriodOptions.map((period) => [period.id, period]));
 
 type PolicyDefinition = {
+  readonly onchain?: OnchainPermissionType | "time-window" | "signature";
   readonly type: EvmPolicyType;
   readonly name: string;
   readonly description: string;
@@ -75,46 +80,26 @@ type PolicyDefinition = {
 };
 
 export const evmPolicyDefinitions = {
-  "evm.chain-allowlist": {
-    type: "evm.chain-allowlist",
-    name: "Allowed networks",
-    description: "Choose the networks allowed for this session key.",
-    cardinality: "singleton",
-    icon: GlobalIcon,
-  },
-  "evm.gas-budget": {
-    type: "evm.gas-budget",
-    name: "Gas budget",
-    description: "Limit native gas costs by network and reset period.",
-    cardinality: "singleton",
-    icon: FuelStationIcon,
-  },
-  "evm.time-window": {
-    type: "evm.time-window",
-    name: "Time window",
-    description: "Choose when this session key starts and expires.",
-    cardinality: "singleton",
-    icon: CalendarClockIcon,
-  },
-  "evm.native-spend-limit": {
-    type: "evm.native-spend-limit",
-    name: "Native spend",
-    description: "Limit native-token spending for the session key.",
-    cardinality: "singleton",
-    icon: Coins01Icon,
-  },
-  "evm.signature": {
-    type: "evm.signature",
-    name: "Signatures",
-    description: "Allow message signing, typed-data signing, or both.",
-    cardinality: "singleton",
-    icon: SignatureIcon,
-  },
+  "evm.contract-access": contractAccess,
+  "evm.functions-on-contract": contractFunctions,
+  "evm.functions-on-all-contracts": wildcardFunctions,
+  "evm.account-functions": accountFunctions,
+  "evm.erc20-token-transfer": tokenSpend,
+  "evm.chain-allowlist": chainAllowlistDefinition,
+  "evm.gas-budget": gasBudgetDefinition,
+  "evm.time-window": timeWindowDefinition,
+  "evm.native-spend-limit": nativeSpendLimitDefinition,
+  "evm.signature": signatureDefinition,
 } satisfies Record<EvmPolicyType, PolicyDefinition>;
 
 export const evmPolicyCatalog = Object.values(evmPolicyDefinitions);
 
 export const evmPolicyFormIds = {
+  "evm.contract-access": "evm-contract-access-policy-form",
+  "evm.functions-on-contract": "evm-contract-functions-policy-form",
+  "evm.functions-on-all-contracts": "evm-wildcard-functions-policy-form",
+  "evm.account-functions": "evm-account-functions-policy-form",
+  "evm.erc20-token-transfer": "evm-token-spend-policy-form",
   "evm.chain-allowlist": "evm-chain-allowlist-policy-form",
   "evm.gas-budget": "evm-gas-budget-policy-form",
   "evm.time-window": "evm-time-window-policy-form",

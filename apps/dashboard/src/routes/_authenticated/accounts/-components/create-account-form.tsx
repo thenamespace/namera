@@ -27,7 +27,7 @@ import {
   DashboardCardRoot,
   DashboardCardRow,
 } from "@/components/dashboard-card";
-import { PasskeyRecoveryNotice } from "@/components/passkey-recovery-notice";
+import { WalletOwnerDisplay } from "@/components/display/wallet-owner-display";
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -70,8 +70,13 @@ export function CreateAccountForm() {
   const handleSubmit = form.handleSubmit(async (values) => {
     const ceremony = await registrationOptions.mutateAsync().catch(() => undefined);
     if (ceremony === undefined) return;
+    const passkeyName = `${values.metadata.name} - Namera`;
     const response = await startRegistration({
-      optionsJSON: ceremony.options as Parameters<typeof startRegistration>[0]["optionsJSON"],
+      optionsJSON: {
+        ...ceremony.options,
+        // Labels describe this wallet; the server-issued user handle and RP stay unchanged.
+        user: { ...ceremony.options.user, name: passkeyName, displayName: passkeyName },
+      } as Parameters<typeof startRegistration>[0]["optionsJSON"],
     }).catch((error: unknown) => {
       showErrorToast(error, {
         title: "Passkey setup was not completed",
@@ -176,11 +181,13 @@ export function CreateAccountForm() {
 
             <DashboardCardRow>
               <Typography.Paragraph size="sm">Ownership</Typography.Paragraph>
-              <div>
-                <Typography.Paragraph size="sm">User-owned passkey</Typography.Paragraph>
-                <Typography.Paragraph size="xs" color="muted">
-                  Namera never holds your owner key.
-                </Typography.Paragraph>
+              <div
+                className={cn(
+                  inputVariants({ variant: "secondary" }),
+                  "flex flex-row items-center gap-2",
+                )}
+              >
+                <WalletOwnerDisplay custody="local" />
               </div>
             </DashboardCardRow>
 
@@ -214,7 +221,6 @@ export function CreateAccountForm() {
       </DashboardCardRoot>
 
       <div className="mt-5 space-y-4">
-        <PasskeyRecoveryNotice />
         <Controller
           control={form.control}
           name="acknowledgeRecovery"

@@ -6,7 +6,7 @@ import {
   SupportedEvmChainId,
 } from "@namera-ai/protocol";
 
-import type { SignaturePolicyInput } from "./types";
+import type { SignaturePolicyInput } from "../types";
 
 const SignatureFields = Schema.Struct({
   allowedTypes: CreateEvmSignaturePolicy.fields.allowedTypes,

@@ -27,9 +27,9 @@ import {
   evmPolicyFormIds,
   nativeSpendPeriodById,
   nativeSpendPeriodOptions,
-} from "./data";
-import { EvmNetworkMultiSelect } from "./network-multi-select";
-import type { EvmPolicyInput, NativeSpendLimitPolicyInput } from "./types";
+} from "../data";
+import { EvmNetworkMultiSelect } from "../network-multi-select";
+import type { EvmPolicyInput, NativeSpendLimitPolicyInput } from "../types";
 
 const NativeAmount = Schema.String.check(
   Schema.isPattern(/^(?:0|[1-9]\d*)(?:\.\d+)?$/, {

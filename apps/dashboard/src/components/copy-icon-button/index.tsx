@@ -93,7 +93,7 @@ export function CopyIconButton({
   const { copy, isCopied } = useCopyFeedback({ value, onCopyError, onCopySuccess });
 
   return (
-    <Tooltip delay={300}>
+    <Tooltip delay={300} shouldCloseOnPress={false}>
       <Tooltip.Trigger>
         <Button
           aria-label={isCopied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
@@ -126,10 +126,7 @@ export function CopyDropdownItem({
 
   return (
     <Dropdown.Item id={id} shouldCloseOnSelect={false} textValue={label} onAction={copy}>
-      <CopyFeedbackIcon
-        className={isCopied ? "size-4 text-success" : "size-4 text-muted"}
-        isCopied={isCopied}
-      />
+      <CopyFeedbackIcon className="size-4 text-muted" isCopied={isCopied} />
       <Label>{label}</Label>
     </Dropdown.Item>
   );

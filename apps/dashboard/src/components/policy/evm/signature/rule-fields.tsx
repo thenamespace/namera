@@ -12,8 +12,8 @@ import {
 import { Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, type Control } from "react-hook-form";
 
-import { evmChainOptions } from "./data";
-import type { SignatureFormInput, SignaturePolicyForm } from "./signature-form";
+import { evmChainOptions } from "../data";
+import type { SignatureFormInput, SignaturePolicyForm } from "./form";
 
 const textFields = [
   { key: "verifyingContract", label: "Verifying contract", placeholder: "0x…" },
@@ -90,6 +90,9 @@ export function SignatureRuleFields({
                 {...field}
                 aria-invalid={fieldState.invalid}
                 autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 id={`typed-data-${index}-${key}`}
                 placeholder={placeholder}
                 variant="secondary"

@@ -17,14 +17,10 @@ import { HugeiconsIcon, Message01Icon, SourceCodeIcon } from "@namera-ai/ui/icon
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
-import { evmPolicyFormIds } from "./data";
-import {
-  SignaturePolicyForm,
-  toSignatureFormInput,
-  type SignatureFormInput,
-} from "./signature-form";
-import { SignatureRuleFields } from "./signature-rule-fields";
-import type { EvmPolicyInput, SignaturePolicyInput } from "./types";
+import { evmPolicyFormIds } from "../data";
+import type { EvmPolicyInput, SignaturePolicyInput } from "../types";
+import { SignaturePolicyForm, toSignatureFormInput, type SignatureFormInput } from "./form";
+import { SignatureRuleFields } from "./rule-fields";
 
 type SignaturePolicyValues = typeof CreateEvmSignaturePolicy.Type;
 

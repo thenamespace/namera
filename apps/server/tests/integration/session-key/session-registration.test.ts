@@ -4,15 +4,63 @@ import { TestClock } from "effect/testing";
 
 import { Repository } from "@namera-ai/database";
 import { makeTestEvmSessionService } from "@namera-ai/evm";
-import { Hex } from "@namera-ai/protocol";
+import { Hex, EthereumAddress } from "@namera-ai/protocol";
 
 import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
-import { registerPendingLocalSession } from "../../fixtures/local-session.js";
+import {
+  registerPendingLocalSession,
+  createTestPasskeyWallet,
+  localSessionRequest,
+} from "../../fixtures/local-session.js";
 
 layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
   "local session registration",
   (it) => {
+    it.effect(
+      "round trips offchain call and token rules through registration, storage and audit",
+      () =>
+        Effect.gen(function* () {
+          yield* resetTestState();
+          const client = yield* makeTestApiClient;
+          const owner = yield* signIn(client, testEmail("local-session-policies@namera.test"));
+          const wallet = yield* createTestPasskeyWallet(client);
+          const request = yield* localSessionRequest(wallet.id);
+          const address = EthereumAddress.make("0x2222222222222222222222222222222222222222");
+          const policy = { version: 1 as const, type: "evm.contract-access" as const, address };
+          const created = yield* client.sessionKey.create({
+            payload: {
+              ...request,
+              policies: [
+                policy,
+                { version: 1, type: "evm.erc20-token-transfer", address, allowance: 10n },
+              ],
+            },
+          });
+          expect(created.policies).toMatchObject([
+            { type: "evm.contract-access", address, appliesTo: "execution" },
+            { type: "evm.erc20-token-transfer", address, allowance: 10n, appliesTo: "execution" },
+          ]);
+          expect((yield* client.sessionKey.listForOrganization())[0]?.policies).toEqual(
+            created.policies,
+          );
+          const repository = yield* Repository;
+          const audit = (yield* repository.audit.organization.findForOrganization(
+            owner.actor.organization.id,
+          )).find(
+            (event) => event.event === "session_key.created" && event.resourceId === created.id,
+          );
+          expect(audit?.data).toMatchObject({
+            policyTypes: ["evm.contract-access", "evm.erc20-token-transfer"],
+          });
+          const duplicateRequest = yield* localSessionRequest(wallet.id);
+          expect(
+            yield* client.sessionKey
+              .create({ payload: { ...duplicateRequest, policies: [policy, policy] } })
+              .pipe(Effect.flip),
+          ).toMatchObject({ code: "POLICY_CARDINALITY_EXCEEDED" });
+        }),
+    );
     it.effect(
       "persists a local signer and pending installations without granting execution authority",
       () =>

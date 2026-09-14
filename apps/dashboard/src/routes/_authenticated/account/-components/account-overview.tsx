@@ -13,7 +13,6 @@ import {
   WalletOwnerDisplay,
   WalletStatusDisplay,
 } from "@/components/display";
-import { PasskeyRecoveryNotice } from "@/components/passkey-recovery-notice";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const fallbackAccountIcon: MetadataIcon = { type: "emoji", value: "👛" };
@@ -115,11 +114,6 @@ export function AccountOverview({ account }: AccountOverviewProps) {
           </Property>
         </div>
       </section>
-      {account.owner.custody === "local" ? (
-        <div className="mt-8 max-w-2xl">
-          <PasskeyRecoveryNotice />
-        </div>
-      ) : null}
     </div>
   );
 }

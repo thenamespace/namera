@@ -7,6 +7,7 @@ import {
   notApplicable,
   signatureStateless,
 } from "./operations.js";
+import { callAccessHandler } from "./policies/call-access.js";
 import {
   EvmChainAllowlistPolicyHandler,
   EvmChainAllowlistSignaturePolicyHandler,
@@ -18,6 +19,7 @@ import {
   EvmTimeWindowPolicyHandler,
   EvmTimeWindowSignaturePolicyHandler,
 } from "./policies/time-window.js";
+import { tokenSpendHandler } from "./policies/token-spend-limit.js";
 
 type EvmPolicyType = EvmSessionKeyPolicy["type"];
 export type EvmPolicyCardinality = "singleton" | "repeatable";
@@ -35,6 +37,46 @@ const timeWindowSignatureHandler = new EvmTimeWindowSignaturePolicyHandler();
 const signatureHandler = new EvmSignaturePolicyHandler();
 
 export const evmPolicyRegistry = {
+  "evm.contract-access": {
+    type: "evm.contract-access",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 300,
+    execution: executionStateless(callAccessHandler("evm.contract-access")),
+    signature: notApplicable,
+  },
+  "evm.functions-on-contract": {
+    type: "evm.functions-on-contract",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 310,
+    execution: executionStateless(callAccessHandler("evm.functions-on-contract")),
+    signature: notApplicable,
+  },
+  "evm.functions-on-all-contracts": {
+    type: "evm.functions-on-all-contracts",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 320,
+    execution: executionStateless(callAccessHandler("evm.functions-on-all-contracts")),
+    signature: notApplicable,
+  },
+  "evm.account-functions": {
+    type: "evm.account-functions",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 330,
+    execution: executionStateless(callAccessHandler("evm.account-functions")),
+    signature: notApplicable,
+  },
+  "evm.erc20-token-transfer": {
+    type: "evm.erc20-token-transfer",
+    applicability: "execution",
+    cardinality: "singleton",
+    priority: 510,
+    execution: executionStateful(tokenSpendHandler),
+    signature: notApplicable,
+  },
   "evm.chain-allowlist": {
     type: "evm.chain-allowlist",
     applicability: "both",

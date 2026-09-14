@@ -12,6 +12,9 @@ export const EvmPolicyDenialCode = Schema.Literals([
   "NATIVE_SPEND_LIMIT_EXCEEDED",
   "SIGNATURE_TYPE_NOT_ALLOWED",
   "TYPED_DATA_NOT_ALLOWED",
+  "CALL_NOT_ALLOWED",
+  "TOKEN_CALL_NOT_ALLOWED",
+  "TOKEN_SPEND_LIMIT_EXCEEDED",
 ]);
 
 export const EvmPolicyAllowedDecision = Schema.Struct({ allowed: Schema.Literal(true) });

@@ -192,6 +192,12 @@ Each registry definition also declares whether its type is singleton or
 repeatable. The registry materializes persisted policy IDs and applicability,
 so application workflows do not branch on policy names.
 
+Offchain contract, contract-function, wildcard-function and account-function
+restrictions inspect every call in a batch. The token-only policy tracks direct
+ERC-20 transfers and approvals with a per-chain lifetime reservation. It rejects
+unrelated or unsupported calls instead of assuming simulation asset discovery is
+complete. See [policy semantics](../../architecture/evm/policies/catalog.md).
+
 `evm.sign` reconstructs the stored Alchemy Modular Account V2 on the requested
 supported chain and delegates either UTF-8 message signing or EIP-712 typed-data
 signing to the smart account. Callers provide the provider-neutral account
