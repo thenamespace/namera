@@ -27,4 +27,8 @@ export const BetaInviteResponse = Schema.Struct({
 export const CreateBetaInvitesResponse = Schema.Struct({
   invites: Schema.Array(BetaInviteResponse),
 }).annotate({ identifier: "CreateBetaInvitesResponse" });
+export const RedeemBetaInviteRequest = Schema.Struct({ inviteCode: BetaInviteCode }).annotate({
+  identifier: "RedeemBetaInviteRequest",
+  description: "Complete signup using an invite after email verification",
+});
 export type CreateBetaInvitesRequest = typeof CreateBetaInvitesRequest.Type;

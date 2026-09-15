@@ -40,6 +40,10 @@ export const verification = authSchema.table(
         AND ${table.tokenHash} IS NOT NULL
         AND ${table.codeHmac} IS NOT NULL
       ) OR (
+        ${table.purpose} = 'beta-admission'
+        AND ${table.tokenHash} IS NOT NULL
+        AND ${table.codeHmac} IS NULL
+      ) OR (
         ${table.purpose} = 'passkey-registration'
         AND ${table.tokenHash} IS NULL
         AND ${table.codeHmac} IS NULL

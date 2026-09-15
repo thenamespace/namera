@@ -1,5 +1,5 @@
 import { Config, Context, Effect, Layer } from "effect";
-import { HttpApiBuilder } from "effect/unstable/httpapi";
+import { HttpApiBuilder, HttpApiSecurity } from "effect/unstable/httpapi";
 
 import { AuthTokenSecurity } from "@namera-ai/api";
 import { authPolicy } from "@namera-ai/application";
@@ -40,4 +40,13 @@ export const clearAuthCookie = (secure: boolean) =>
   HttpApiBuilder.securitySetCookie(AuthTokenSecurity, "", {
     ...cookieOptions(secure),
     maxAge: 0,
+  });
+
+export const betaSignupCookieName = "beta-signup";
+const BetaSignupSecurity = HttpApiSecurity.apiKey({ key: betaSignupCookieName, in: "cookie" });
+export const setBetaSignupCookie = (token: string, secure: boolean) =>
+  HttpApiBuilder.securitySetCookie(BetaSignupSecurity, token, {
+    ...cookieOptions(secure),
+    path: "/auth/magic-link",
+    maxAge: token === "" ? 0 : authPolicy.magicLink.timeToLive,
   });

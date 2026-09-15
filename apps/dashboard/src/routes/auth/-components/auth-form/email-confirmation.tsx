@@ -36,7 +36,7 @@ export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
       </Typography.Heading>
       <output className="mt-3 block">
         <Typography.Paragraph className="text-pretty" color="muted" size="sm">
-          If this email has access, a sign-in link and email code are on their way to
+          Use the sign-in link or enter the eight-digit code sent to
           <span className="text-foreground mt-1 block text-center">{email}</span>
         </Typography.Paragraph>
       </output>
@@ -107,10 +107,6 @@ export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
           </Typography.Paragraph>
         ) : null}
       </form>
-      <Typography.Paragraph className="mt-3" color="muted" size="sm">
-        New members need a valid invite code. If no email arrives, go back and check your invite and
-        email address.
-      </Typography.Paragraph>
 
       <Button
         className="mt-4"

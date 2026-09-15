@@ -1,5 +1,6 @@
 export const cryptoPurpose = {
   betaInvite: "auth.beta-invite.code",
+  betaAdmissionToken: "auth.beta-admission.token",
   magicLinkToken: "auth.magic-link.token",
   magicLinkCode: "auth.magic-link.code",
   sessionToken: "auth.session.token",

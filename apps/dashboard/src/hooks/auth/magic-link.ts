@@ -1,8 +1,13 @@
-import { requestMagicLinkMutation, verifyMagicLinkMutation } from "@/atoms/auth/magic-link";
+import {
+  requestMagicLinkMutation,
+  verifyMagicLinkMutation,
+  redeemBetaInviteMutation,
+} from "@/atoms/auth/magic-link";
 import { QueryKeys } from "@/atoms/query-keys";
 import { toMutation } from "@/hooks/atom";
 
 export const useRequestMagicLink = toMutation(requestMagicLinkMutation);
+export const useRedeemBetaInvite = toMutation(redeemBetaInviteMutation);
 
 export const useVerifyMagicLink = toMutation(verifyMagicLinkMutation, {
   invalidates: [

@@ -16,6 +16,7 @@ import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as AuthInviteRouteImport } from './routes/auth/invite'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthenticatedAccountAccountIdRouteRouteImport } from './routes/_authenticated/account/$accountId/route'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts/index'
@@ -80,6 +81,11 @@ const AuthenticatedMcpRoute = AuthenticatedMcpRouteImport.update({
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthInviteRoute = AuthInviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
@@ -274,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof AuthenticatedActivityRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
+  '/auth/invite': typeof AuthInviteRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/auth/': typeof AuthIndexRoute
   '/account/$accountId': typeof AuthenticatedAccountAccountIdRouteRouteWithChildren
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
+  '/auth/invite': typeof AuthInviteRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
+  '/auth/invite': typeof AuthInviteRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
@@ -392,6 +401,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/inbox'
     | '/mcp'
+    | '/auth/invite'
     | '/auth/verify'
     | '/auth/'
     | '/account/$accountId'
@@ -429,6 +439,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/inbox'
     | '/mcp'
+    | '/auth/invite'
     | '/auth/verify'
     | '/'
     | '/auth'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activity'
     | '/_authenticated/inbox'
     | '/_authenticated/mcp'
+    | '/auth/invite'
     | '/auth/verify'
     | '/_authenticated/'
     | '/auth/'
@@ -556,6 +568,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/auth/'
       preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/auth/invite': {
+      id: '/auth/invite'
+      path: '/invite'
+      fullPath: '/auth/invite'
+      preLoaderRoute: typeof AuthInviteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/auth/verify': {
@@ -901,11 +920,13 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface AuthRouteRouteChildren {
+  AuthInviteRoute: typeof AuthInviteRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthInviteRoute: AuthInviteRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   AuthIndexRoute: AuthIndexRoute,
 }

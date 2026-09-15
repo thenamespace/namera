@@ -7,6 +7,8 @@ import {
   BetaInviteRequiredError,
   MagicLinkAttemptsExceededError,
   type MagicLinkError,
+  type VerificationId,
+  type DatabaseError,
 } from "@namera-ai/protocol";
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
 import { magicLinkVerificationResults } from "@namera-ai/telemetry";
@@ -21,9 +23,17 @@ import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 
 export interface VerifyMagicLinkResult {
-  readonly sessionToken: string;
+  readonly sessionToken?: string;
+  readonly admissionToken?: string;
   readonly returnTo: string;
 }
+
+type RedeemInviteInput = {
+  readonly type: "invite";
+  readonly id: VerificationId;
+  readonly token: string;
+  readonly inviteCode: string;
+};
 
 export interface VerifyMagicLinkContext {
   readonly ipAddress: string | null;
@@ -32,7 +42,7 @@ export interface VerifyMagicLinkContext {
 
 export interface VerifyMagicLinkApplication {
   readonly verify: (
-    input: VerifyMagicLinkRequest,
+    input: VerifyMagicLinkRequest | RedeemInviteInput,
     context: VerifyMagicLinkContext,
   ) => Effect.Effect<VerifyMagicLinkResult, MagicLinkError>;
 }
@@ -46,10 +56,13 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const createNotification = yield* makeCreateNotification;
 
   const verify = Effect.fn("application.magicLink.verify")(
-    function* (input: VerifyMagicLinkRequest, context: VerifyMagicLinkContext) {
+    function* (
+      input: VerifyMagicLinkRequest | RedeemInviteInput,
+      context: VerifyMagicLinkContext,
+    ): Effect.fn.Return<VerifyMagicLinkResult, MagicLinkError | DatabaseError> {
       const now = yield* DateTime.now;
       const verification =
-        input.type === "token"
+        input.type !== "code"
           ? yield* repository.auth.verification.findById(input.id)
           : yield* repository.auth.verification.findPendingByIdentifier({
               purpose: config.magicLink.purpose,
@@ -60,7 +73,11 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
 
       if (
         !verification ||
-        verification.purpose !== config.magicLink.purpose ||
+        (verification.purpose !== "magic-link-signin" &&
+          verification.purpose !== "beta-admission") ||
+        verification.purpose !==
+          (input.type === "invite" ? "beta-admission" : config.magicLink.purpose) ||
+        verification.attempts >= config.magicLink.maximumAttempts ||
         verification.consumedAt !== null ||
         verification.revokedAt !== null ||
         DateTime.toEpochMillis(verification.expiresAt) <= DateTime.toEpochMillis(now)
@@ -76,15 +93,18 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
       }
 
       const matches =
-        input.type === "token"
+        input.type !== "code"
           ? (yield* crypto.hash({
-              purpose: cryptoPurpose.magicLinkToken,
+              purpose:
+                input.type === "invite"
+                  ? cryptoPurpose.betaAdmissionToken
+                  : cryptoPurpose.magicLinkToken,
               value: input.token,
             })) === verification.tokenHash
           : yield* crypto.verifyHmac({
               purpose: cryptoPurpose.magicLinkCode,
               value: input.code,
-              expected: verification.codeHmac,
+              expected: verification.codeHmac ?? "",
             });
       if (!matches) {
         if (input.type === "code") {
@@ -102,6 +122,28 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
         return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
       }
 
+      const requestedInvite =
+        input.type === "invite"
+          ? yield* repository.auth.betaInvite.findByHmac(
+              yield* crypto.hmac({ purpose: cryptoPurpose.betaInvite, value: input.inviteCode }),
+            )
+          : undefined;
+      if (
+        input.type === "invite" &&
+        (!requestedInvite ||
+          requestedInvite.redeemedAt !== null ||
+          requestedInvite.revokedAt !== null ||
+          DateTime.toEpochMillis(requestedInvite.expiresAt) <= DateTime.toEpochMillis(now) ||
+          (requestedInvite.email !== null && requestedInvite.email !== verification.identifier))
+      ) {
+        yield* repository.auth.verification.incrementAttempts({
+          verificationId: verification.id,
+          now,
+          maxAttempts: config.magicLink.maximumAttempts,
+        });
+        return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+      }
+
       const sessionToken = yield* crypto.randomToken(config.session.tokenBytes);
       const sessionTokenHash = yield* crypto.hash({
         purpose: cryptoPurpose.sessionToken,
@@ -110,7 +152,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
       // Consuming the one-time verification and creating the session are one
       // atomic transition. Concurrent clicks can never mint multiple sessions
       // from the same link or code.
-      yield* transaction.run(
+      const result = yield* transaction.run(
         Effect.gen(function* () {
           const consumed = yield* repository.auth.verification.consume({
             verificationId: verification.id,
@@ -122,17 +164,46 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           }
 
           const existingUser = yield* repository.auth.user.findByEmail(verification.identifier);
-          const inviteId = verification.data.betaInviteId;
-          const invite =
+          const inviteId = requestedInvite?.id ?? verification.data.betaInviteId;
+          const candidateInvite =
             !existingUser && inviteId
               ? yield* repository.auth.betaInvite.lockActive(inviteId, now)
               : undefined;
+          const invite =
+            candidateInvite &&
+            (candidateInvite.email === null || candidateInvite.email === verification.identifier)
+              ? candidateInvite
+              : undefined;
           if (
             !existingUser &&
-            (config.inviteRequired || inviteId !== undefined) &&
+            config.inviteRequired &&
             (!invite || (invite.email !== null && invite.email !== verification.identifier))
           ) {
-            return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+            if (input.type === "invite")
+              return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+            const pendingToken = yield* crypto.randomToken(config.session.tokenBytes);
+            yield* repository.auth.verification.revokePending({
+              purpose: "beta-admission",
+              identifier: verification.identifier,
+              revokedAt: now,
+            });
+            const pending = yield* repository.auth.verification.create({
+              purpose: "beta-admission",
+              identifier: verification.identifier,
+              data:
+                verification.data.returnTo === undefined
+                  ? {}
+                  : { returnTo: verification.data.returnTo },
+              tokenHash: yield* crypto.hash({
+                purpose: cryptoPurpose.betaAdmissionToken,
+                value: pendingToken,
+              }),
+              codeHmac: null,
+              expiresAt: DateTime.addDuration(now, config.magicLink.timeToLive),
+            });
+            if (!pending)
+              return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
+            return { admissionToken: `${pending.id}.${pendingToken}`, returnTo: "/auth/invite" };
           }
           const initialized = existingUser
             ? { user: existingUser, organization: undefined }
@@ -206,6 +277,10 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
               },
             ],
           });
+          return {
+            sessionToken,
+            returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,
+          };
         }),
       );
 
@@ -213,10 +288,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
       yield* Effect.logInfo("magic_link.verified").pipe(
         Effect.annotateLogs({ method: input.type }),
       );
-      return {
-        sessionToken,
-        returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,
-      };
+      return result;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

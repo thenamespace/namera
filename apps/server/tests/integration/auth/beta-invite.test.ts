@@ -29,12 +29,15 @@ const createInvite = Effect.gen(function* () {
   return invite;
 });
 const challenge = Effect.fn("test.betaInvite.challenge")(function* (
-  code: string,
+  code: string | undefined,
   emailValue: string,
+  returnTo?: "/oauth/authorize?request=beta-test",
 ) {
   const client = yield* handledApi(NameraApi);
   const email = testEmail(emailValue);
-  yield* client.magicLink.request({ payload: { email, inviteCode: code } });
+  yield* client.magicLink.request({
+    payload: { email, inviteCode: code, ...(returnTo === undefined ? {} : { returnTo }) },
+  });
   const jobs = yield* EmailJobs;
   yield* jobs.processOnce;
   const emails = yield* TestEmails;
@@ -56,6 +59,151 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
 });
 
 layer(BetaLayer)("private-beta invites", (it) => {
+  it.effect("serializes two pending signups claiming one invite", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const invite = yield* createInvite;
+      const clients = [];
+      for (const email of ["pending-first@example.com", "pending-second@example.com"]) {
+        const registration = yield* challenge(undefined, email);
+        const response = yield* registration.client.magicLink.verify({
+          payload: registration.payload,
+          responseMode: "response-only",
+        });
+        clients.push(
+          yield* handledApi(NameraApi, {
+            headers: { cookie: `beta-signup=${response.cookies.cookies["beta-signup"]?.value}` },
+          }),
+        );
+      }
+      const responses = yield* Effect.all(
+        clients.map((client) =>
+          client.magicLink.redeemInvite({
+            payload: { inviteCode: invite.code },
+            responseMode: "response-only",
+          }),
+        ),
+        { concurrency: "unbounded" },
+      );
+      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 403]);
+      expect(responses.filter((response) => response.cookies.cookies["auth-token"])).toHaveLength(
+        1,
+      );
+    }),
+  );
+  it.effect("bounds invite guesses and rejects signup cookies as email-link credentials", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const registration = yield* challenge(undefined, "guesses@example.com");
+      const response = yield* registration.client.magicLink.verify({
+        payload: registration.payload,
+        responseMode: "response-only",
+      });
+      const credential = response.cookies.cookies["beta-signup"]?.value ?? "";
+      const [id, token] = credential.split(".");
+      expect(
+        (yield* registration.client.magicLink.verify({
+          payload: {
+            type: "token",
+            id: Schema.decodeUnknownSync(VerificationId)(id),
+            token: Schema.decodeUnknownSync(MagicLinkToken)(token),
+          },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(400);
+      const client = yield* handledApi(NameraApi, {
+        headers: { cookie: `beta-signup=${credential}` },
+      });
+      for (let attempt = 0; attempt < 5; attempt++) {
+        expect(
+          (yield* client.magicLink.redeemInvite({
+            payload: { inviteCode: "AAAAAA" },
+            responseMode: "response-only",
+          })).status,
+        ).toBe(403);
+      }
+      const invite = yield* createInvite;
+      expect(
+        (yield* client.magicLink.redeemInvite({
+          payload: { inviteCode: invite.code },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(400);
+      expect(yield* (yield* Repository).auth.user.findByEmail(registration.email)).toBeUndefined();
+    }),
+  );
+  it.effect("requires an invite after email verification without granting a normal session", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const registration = yield* challenge(
+        undefined,
+        "pending@example.com",
+        "/oauth/authorize?request=beta-test",
+      );
+      const result = yield* registration.client.magicLink.verify({
+        payload: registration.payload,
+        responseMode: "decoded-and-response",
+      });
+      const [body, response] = result;
+      expect(body.body.returnTo).toBe("/auth/invite");
+      expect(response.cookies.cookies["auth-token"]).toBeUndefined();
+      const pending = response.cookies.cookies["beta-signup"];
+      expect(pending?.options?.httpOnly).toBe(true);
+      expect(pending?.options?.path).toBe("/auth/magic-link");
+      const repository = yield* Repository;
+      expect(yield* repository.auth.user.findByEmail(registration.email)).toBeUndefined();
+      const client = yield* handledApi(NameraApi, {
+        headers: { cookie: `beta-signup=${pending?.value}` },
+      });
+      expect((yield* client.session.currentUser({ responseMode: "response-only" })).status).toBe(
+        401,
+      );
+      const invite = yield* createInvite;
+      const [destination, admitted] = yield* client.magicLink.redeemInvite({
+        payload: { inviteCode: invite.code },
+        responseMode: "decoded-and-response",
+      });
+      expect(destination.body.returnTo).toBe("/oauth/authorize?request=beta-test");
+      expect(admitted.status).toBe(200);
+      expect(admitted.cookies.cookies["auth-token"]).toBeDefined();
+      expect(admitted.cookies.cookies["beta-signup"]?.value).toBe("");
+      expect(yield* repository.auth.user.findByEmail(registration.email)).toBeDefined();
+      expect(
+        (yield* client.magicLink.redeemInvite({
+          payload: { inviteCode: invite.code },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(400);
+    }),
+  );
+  it.effect("rejects missing signup cookies and expires pending email proof", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const invite = yield* createInvite;
+      const registration = yield* challenge(undefined, "expires-pending@example.com");
+      expect(
+        (yield* registration.client.magicLink.redeemInvite({
+          payload: { inviteCode: invite.code },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(400);
+      const response = yield* registration.client.magicLink.verify({
+        payload: { type: "code", email: registration.email, code: registration.code },
+        responseMode: "response-only",
+      });
+      const client = yield* handledApi(NameraApi, {
+        headers: { cookie: `beta-signup=${response.cookies.cookies["beta-signup"]?.value}` },
+      });
+      yield* TestClock.adjust("11 minutes");
+      expect(
+        (yield* client.magicLink.redeemInvite({
+          payload: { inviteCode: invite.code },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(400);
+      expect(yield* (yield* Repository).auth.user.findByEmail(registration.email)).toBeUndefined();
+    }),
+  );
   it.effect("redeems an invite through the email code and prevents link reuse", () =>
     Effect.gen(function* () {
       yield* resetTestState();
@@ -127,7 +275,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
       ).toBeDefined();
     }),
   );
-  it.effect("does not send signup email without an invite, but returns the generic response", () =>
+  it.effect("sends verification email before asking for an invite", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* handledApi(NameraApi);
@@ -136,7 +284,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
         responseMode: "response-only",
       });
       expect(response.status).toBe(202);
-      expect(yield* (yield* EmailJobs).processOnce).toBe(0);
+      expect(yield* (yield* EmailJobs).processOnce).toBe(1);
     }),
   );
   it.effect("rejects revoked and expired invites, including after sending the email", () =>
@@ -150,7 +298,9 @@ layer(BetaLayer)("private-beta invites", (it) => {
         payload: registration.payload,
         responseMode: "response-only",
       });
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(200);
+      expect(response.cookies.cookies["auth-token"]).toBeUndefined();
+      expect(response.cookies.cookies["beta-signup"]).toBeDefined();
       expect(yield* (yield* Repository).auth.user.findByEmail(registration.email)).toBeUndefined();
       const expired = yield* createInvite;
       yield* TestClock.adjust("8 days");
@@ -158,7 +308,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
         payload: { email: registration.email, inviteCode: expired.code },
         responseMode: "response-only",
       });
-      expect(invalid.status).toBe(403);
+      expect(invalid.status).toBe(202);
     }),
   );
   it.effect("allows only one verified signup when two emails redeem the same invite", () =>
@@ -173,7 +323,13 @@ layer(BetaLayer)("private-beta invites", (it) => {
         ),
         { concurrency: "unbounded" },
       );
-      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 403]);
+      expect(responses.map((response) => response.status)).toEqual([200, 200]);
+      expect(responses.filter((response) => response.cookies.cookies["auth-token"])).toHaveLength(
+        1,
+      );
+      expect(
+        responses.filter((response) => response.cookies.cookies["beta-signup"]?.value),
+      ).toHaveLength(1);
       const repository = yield* Repository;
       const users = yield* Effect.all(
         [first, second].map(({ email }) => repository.auth.user.findByEmail(email)),
@@ -195,13 +351,21 @@ layer(BetaLayer)("private-beta invites", (it) => {
       });
       const invite = result.invites[0];
       if (!invite) return yield* Effect.die("Missing invite");
-      const client = yield* handledApi(NameraApi);
-      const response = yield* client.magicLink.request({
-        payload: { email: testEmail("wrong@example.com"), inviteCode: invite.code },
+      const registration = yield* challenge(invite.code, "wrong@example.com");
+      const response = yield* registration.client.magicLink.verify({
+        payload: registration.payload,
         responseMode: "response-only",
       });
-      expect(response.status).toBe(403);
-      expect(yield* (yield* EmailJobs).processOnce).toBe(0);
+      expect(response.status).toBe(200);
+      expect(response.cookies.cookies["auth-token"]).toBeUndefined();
+      const pendingClient = yield* handledApi(NameraApi, {
+        headers: { cookie: `beta-signup=${response.cookies.cookies["beta-signup"]?.value}` },
+      });
+      const rejected = yield* pendingClient.magicLink.redeemInvite({
+        payload: { inviteCode: invite.code },
+        responseMode: "response-only",
+      });
+      expect(rejected.status).toBe(403);
     }),
   );
 });

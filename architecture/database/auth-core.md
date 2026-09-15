@@ -111,6 +111,9 @@ digests; passkey registration stores its public challenge and tenant binding in
 - Identifier normalization: `identifier = lower(btrim(identifier))`.
 - Attempt count: `attempts >= 0`.
 - `magic-link-signin` requires `token_hash` and `code_hmac`.
+- `beta-admission` requires `token_hash` and a null `code_hmac`; its identifier
+  is the verified email and its data preserves the approved return destination.
+  Its ten-minute, five-attempt proof grants no ordinary session authority.
 - `passkey-registration` requires both magic-link credential columns to be null.
 
 ### Indexes

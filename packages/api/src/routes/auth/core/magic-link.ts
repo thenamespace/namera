@@ -7,6 +7,7 @@ import {
   RequestMagicLinkResponse,
   VerifyMagicLinkRequest,
   VerifyMagicLinkResponse,
+  RedeemBetaInviteRequest,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -17,6 +18,14 @@ const NoStoreHeaders = {
 
 export class MagicLinkGroup extends HttpApiGroup.make("magicLink")
   .add(
+    HttpApiEndpoint.post("redeemInvite", "/redeem-invite", {
+      payload: RedeemBetaInviteRequest,
+      error: [...MagicLinkErrors, ...CommonErrors],
+      success: HttpApiSchema.WithHeaders(VerifyMagicLinkResponse, NoStoreHeaders),
+    }).annotate(
+      OpenApi.Summary,
+      "Complete email-verified signup using the restricted signup cookie",
+    ),
     HttpApiEndpoint.post("request", "/request", {
       payload: RequestMagicLinkRequest,
       error: [...MagicLinkErrors, ...CommonErrors],

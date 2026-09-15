@@ -119,7 +119,9 @@ public API. Test helpers may assemble workflows but must not hide assertions.
 
 The typed API authentication-boundary suite reflects every endpoint from
 `NameraApi`. Only health, ENS availability and magic-link request/verification
-are public. Every other endpoint must declare authorization and return 401 with
+plus restricted-cookie invite redemption are authentication entry points. Invite
+redemption has dedicated tests for missing/expired proof and cannot use a normal
+session or unverified email in its place. Every other endpoint must declare authorization and return 401 with
 no-store for a credential-free request, before payload decoding. This guard
 automatically includes new typed routes; raw OAuth protocol routes have separate
 tests. It does not replace actor-permission or tenant-isolation tests.

@@ -18,9 +18,11 @@ The link token uses `cryptoPurpose.magicLinkToken`; the code uses `cryptoPurpose
 ## Request contract
 
 New-user admission is protected by [private-beta invites](beta-invites.md).
-Requests accept an optional six-character `inviteCode`; verified signup rechecks
-and redeems it in the same transaction as account creation. Existing users do
-not need a code. Supplied unavailable codes return a generic invite error.
+Requests accept an optional six-character `inviteCode` carried by an invite link;
+the email screen itself does not ask for it. Email verification grants existing
+users a normal session. New users without a usable invite get only a restricted
+signup cookie and `/auth/invite`, not a user or normal session. Invite redemption
+then atomically completes account creation. See beta admission for that branch.
 
 `POST /auth/magic-link/request` accepts a normalized email and optional application-relative `returnTo`. It always returns the same `202 Accepted` message with `Cache-Control: no-store`, whether the identity exists or cooldown suppresses a new email.
 

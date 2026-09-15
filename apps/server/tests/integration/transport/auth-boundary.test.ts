@@ -19,6 +19,7 @@ const publicEndpoints = new Set([
   "ens.isNameAvailable",
   "magicLink.request",
   "magicLink.verify",
+  "magicLink.redeemInvite",
 ]);
 const protectedEndpoints: Array<{ name: string; method: string; path: string }> = [];
 HttpApi.reflect(NameraApi, {

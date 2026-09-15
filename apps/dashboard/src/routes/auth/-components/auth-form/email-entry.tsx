@@ -39,36 +39,6 @@ export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: Emai
       <FieldGroup>
         <Controller
           control={control}
-          name="inviteCode"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="beta-invite-code">Invite code</FieldLabel>
-              <Input
-                {...field}
-                value={field.value ?? ""}
-                onChange={(event) => field.onChange(event.target.value.trim().toUpperCase())}
-                id="beta-invite-code"
-                aria-invalid={fieldState.invalid}
-                aria-describedby="beta-invite-help"
-                maxLength={6}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                placeholder="Six-character code"
-                variant="secondary"
-                fullWidth
-              />
-              <Typography.Paragraph id="beta-invite-help" color="muted" size="sm">
-                New to Namera? Enter your private-beta invite. Existing members can leave this
-                blank.
-              </Typography.Paragraph>
-              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-            </Field>
-          )}
-        />
-        <Controller
-          control={control}
           name="email"
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>

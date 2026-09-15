@@ -10,7 +10,11 @@ import {
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
-export const VerificationPurpose = Schema.Literals(["magic-link-signin", "passkey-registration"]);
+export const VerificationPurpose = Schema.Literals([
+  "magic-link-signin",
+  "passkey-registration",
+  "beta-admission",
+]);
 
 export const MagicLinkVerificationData = Schema.Struct({
   betaInviteId: Schema.optionalKey(Schema.String),
@@ -58,7 +62,20 @@ export const PasskeyRegistrationVerification = Schema.Struct({
   codeHmac: Schema.Null,
 });
 
-export const Verification = Schema.Union([MagicLinkVerification, PasskeyRegistrationVerification]);
+export const BetaAdmissionVerification = Schema.Struct({
+  ...VerificationLifecycleFields,
+  purpose: Schema.Literal("beta-admission"),
+  identifier: Email,
+  data: MagicLinkVerificationData,
+  tokenHash: NonEmptyString,
+  codeHmac: Schema.Null,
+});
+
+export const Verification = Schema.Union([
+  MagicLinkVerification,
+  PasskeyRegistrationVerification,
+  BetaAdmissionVerification,
+]);
 
 export const VerificationUpdate = createUpdateSchema(Verification);
 export const VerificationInsert = createInsertSchema(

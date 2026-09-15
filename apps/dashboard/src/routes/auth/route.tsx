@@ -4,6 +4,7 @@ import { Schema } from "effect";
 
 import {
   MagicLinkReturnTo,
+  BetaInviteCode,
   type MagicLinkReturnTo as MagicLinkReturnToType,
 } from "@namera-ai/protocol/dto";
 
@@ -13,8 +14,9 @@ import { prefetchQuery } from "@/atoms/prefetch";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search): { returnTo?: MagicLinkReturnToType; invite?: string } => ({
     ...(Schema.is(MagicLinkReturnTo)(search.returnTo) ? { returnTo: search.returnTo } : {}),
-    ...(typeof search.invite === "string"
-      ? { invite: search.invite.slice(0, 64).trim().toUpperCase() }
+    ...(typeof search.invite === "string" &&
+    Schema.is(BetaInviteCode)(search.invite.trim().toUpperCase())
+      ? { invite: search.invite.trim().toUpperCase() }
       : {}),
   }),
   loaderDeps: ({ search }) => ({ returnTo: search.returnTo }),
