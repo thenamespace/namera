@@ -1,12 +1,12 @@
 import type { SVGProps } from "react";
 
-/** Third-party mark, shown to identify the client. Takes the surrounding text colour. */
+/** Claude's brand mark; pass fill="currentColor" for a monochrome version. */
 export const BrandClaudeIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"
     height="1em"
-    fill="currentColor"
+    fill="#D97757"
     viewBox="0 0 24 24"
     {...props}
   >
