@@ -46,6 +46,7 @@ export const meterDefinitions: ReadonlyArray<UsageDefinition<BillingMeterKey>> =
 const countFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 const usdFormatter = new Intl.NumberFormat(undefined, {
   currency: "USD",
+  currencyDisplay: "narrowSymbol",
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
   style: "currency",

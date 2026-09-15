@@ -6,16 +6,13 @@ import { ChatGptIcon, ClaudeIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { CopyIconButton } from "@/components/copy-icon-button";
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
 import { HeadingGroup } from "@/components/heading-group";
-import { env } from "@/env";
 
 export function McpSetup() {
   const [client, setClient] = useState<string | number | null>("codex");
-  const apiOrigin = new URL(env.backendUrl).origin;
-  const host = `'${apiOrigin.replaceAll("'", "'\\''")}'`;
   const command =
     client === "claude"
-      ? `claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude --host ${host}`
-      : `codex mcp add namera -- namera mcp serve --profile codex --host ${host}`;
+      ? "claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude"
+      : "codex mcp add namera -- namera mcp serve --profile codex";
   const clientName = client === "claude" ? "Claude Code" : "Codex";
 
   return (
@@ -59,7 +56,7 @@ export function McpSetup() {
             </Select.Popover>
           </Select>
         </div>
-        <div className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2">
+        <div className="flex min-w-0 items-center gap-3 rounded-lg border border-separator bg-background px-3 py-3">
           <code className="min-w-0 flex-1 break-all text-sm">{command}</code>
           <CopyIconButton key={client} label={`${clientName} setup command`} value={command} />
         </div>
