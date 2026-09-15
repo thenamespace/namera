@@ -46,6 +46,7 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
   return {
     client,
     email,
+    code: mail.variables.code,
     payload: {
       type: "token" as const,
       id: Schema.decodeSync(VerificationId)(url.searchParams.get("id") ?? ""),
@@ -55,6 +56,24 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
 });
 
 layer(BetaLayer)("private-beta invites", (it) => {
+  it.effect("redeems an invite through the email code and prevents link reuse", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const invite = yield* createInvite;
+      const registration = yield* challenge(invite.code, "otp-beta@example.com");
+      const response = yield* registration.client.magicLink.verify({
+        payload: { type: "code", email: registration.email, code: registration.code },
+        responseMode: "response-only",
+      });
+      expect(response.status).toBe(200);
+      expect(response.cookies.cookies["auth-token"]).toBeDefined();
+      const replay = yield* registration.client.magicLink.verify({
+        payload: registration.payload,
+        responseMode: "response-only",
+      });
+      expect(replay.status).toBe(400);
+    }),
+  );
   it.effect("protects management from missing and wrong credentials", () =>
     Effect.gen(function* () {
       yield* resetTestState();

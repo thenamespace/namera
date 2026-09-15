@@ -1,4 +1,20 @@
-import { Button, Typography } from "@namera-ai/ui";
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import {
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  InputOTP,
+  REGEXP_ONLY_DIGITS,
+  Typography,
+} from "@namera-ai/ui";
+import { Controller, useForm } from "react-hook-form";
+
+import { useVerifyMagicLink } from "@/hooks/auth";
+import { getErrorMessage } from "@/lib/error-messages";
+
+import { EmailCodeValidator, type EmailCodeInput, type EmailCodeOutput } from "./email-code-schema";
 
 type EmailConfirmationProps = {
   email: string;
@@ -6,6 +22,13 @@ type EmailConfirmationProps = {
 };
 
 export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
+  const form = useForm<EmailCodeInput, unknown, EmailCodeOutput>({
+    defaultValues: { email, code: "" },
+    resolver: standardSchemaResolver(EmailCodeValidator),
+  });
+  const verify = useVerifyMagicLink({
+    onSuccess: (response) => window.location.replace(response.body.returnTo),
+  });
   return (
     <div className="text-center flex flex-col items-center justify-center">
       <Typography.Heading className="text-balance text-xl" level={1}>
@@ -17,12 +40,85 @@ export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
           <span className="text-foreground mt-1 block text-center">{email}</span>
         </Typography.Paragraph>
       </output>
+      <form
+        id="email-code-form"
+        className="mt-6 w-full"
+        noValidate
+        onSubmit={form.handleSubmit((payload) =>
+          verify.mutate({ payload: { type: "code", ...payload } }),
+        )}
+      >
+        <Controller
+          control={form.control}
+          name="code"
+          render={({ field, fieldState }) => (
+            <Field className="justify-items-center">
+              <FieldLabel htmlFor="email-signin-code">Email sign-in code</FieldLabel>
+              <InputOTP
+                {...field}
+                id="email-signin-code"
+                aria-label="Email sign-in code"
+                aria-describedby={fieldState.error ? "email-code-error" : undefined}
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={8}
+                pattern={REGEXP_ONLY_DIGITS}
+                variant="secondary"
+                isInvalid={fieldState.invalid}
+                isDisabled={verify.isPending}
+                onChange={(value) => {
+                  field.onChange(value);
+                  verify.reset();
+                }}
+              >
+                <InputOTP.Group className="gap-1">
+                  {[0, 1, 2, 3].map((index) => (
+                    <InputOTP.Slot key={index} index={index} className="h-10 w-6 min-[380px]:w-8" />
+                  ))}
+                </InputOTP.Group>
+                <InputOTP.Separator />
+                <InputOTP.Group className="gap-1">
+                  {[4, 5, 6, 7].map((index) => (
+                    <InputOTP.Slot key={index} index={index} className="h-10 w-6 min-[380px]:w-8" />
+                  ))}
+                </InputOTP.Group>
+              </InputOTP>
+              <FieldError id="email-code-error" errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Button
+          className="mt-4"
+          form="email-code-form"
+          fullWidth
+          type="submit"
+          isDisabled={verify.isPending}
+        >
+          {verify.isPending ? "Signing in..." : "Sign in"}
+        </Button>
+        {verify.isError ? (
+          <Typography.Paragraph className="mt-3 text-danger" role="alert" size="sm">
+            {
+              getErrorMessage(verify.error, {
+                title: "Couldn’t sign in",
+                description: "Check your code or request a new email.",
+              }).description
+            }
+          </Typography.Paragraph>
+        ) : null}
+      </form>
       <Typography.Paragraph className="mt-3" color="muted" size="sm">
         New members need a valid invite code. If no email arrives, go back and check your invite and
         email address.
       </Typography.Paragraph>
 
-      <Button className="mt-8" fullWidth onPress={onBack} variant="tertiary">
+      <Button
+        className="mt-4"
+        fullWidth
+        isDisabled={verify.isPending}
+        onPress={onBack}
+        variant="tertiary"
+      >
         Back to login
       </Button>
     </div>

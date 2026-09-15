@@ -58,6 +58,12 @@ The worker never responds to the browser; provider delivery happens after the HT
 
 ## Verification contract and sequence
 
+The dashboard confirmation step accepts the eight-digit email code using UIKit
+InputOTP (two groups of four), with paste, numeric keyboard, and one-time-code
+autofill support. Explicit submission uses the same verification endpoint and
+approved return destination as the email link. A code and link share one challenge;
+using either invalidates the other. The six-character beta invite is separate.
+
 `POST /auth/magic-link/verify` accepts either verification ID + raw token or normalized email + code. Opening the dashboard GET page does not consume the credential; the page explicitly posts it, preventing crawlers/prefetchers from using a one-time link.
 
 ```mermaid

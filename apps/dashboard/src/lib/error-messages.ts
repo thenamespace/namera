@@ -58,11 +58,11 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "MagicLinkError:INVALID_OR_EXPIRED_LINK": {
     title: "This link is no longer valid",
-    description: "Request a new magic link to continue.",
+    description: "Check your code or request a new sign-in email.",
   },
   "MagicLinkError:TOO_MANY_ATTEMPTS": {
     title: "Too many attempts",
-    description: "Request a new magic link and try again.",
+    description: "Request a new sign-in email and try again.",
   },
   "OrganizationError:ORGANIZATION_NOT_FOUND": {
     title: "Workspace not found",

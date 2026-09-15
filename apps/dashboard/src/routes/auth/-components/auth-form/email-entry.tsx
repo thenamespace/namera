@@ -46,9 +46,7 @@ export function EmailEntry({ errorMessage, isPending, onBack, onContinue }: Emai
               <Input
                 {...field}
                 value={field.value ?? ""}
-                onChange={(event) =>
-                  field.onChange(event.target.value.trim().toUpperCase() || undefined)
-                }
+                onChange={(event) => field.onChange(event.target.value.trim().toUpperCase())}
                 id="beta-invite-code"
                 aria-invalid={fieldState.invalid}
                 aria-describedby="beta-invite-help"

@@ -6,6 +6,13 @@ import { describe, expect, it } from "vitest";
 import { EmailFormValidator } from "../../src/routes/auth/-components/auth-form/schema";
 
 describe("beta invite signup form", () => {
+  it("omits a cleared invite instead of restoring a link's prefilled code", async () => {
+    const result = await EmailFormValidator["~standard"].validate({
+      email: "member@example.com",
+      inviteCode: "",
+    });
+    expect(result).toEqual({ value: { email: "member@example.com" } });
+  });
   it("lets existing users leave the controlled invite field blank", async () => {
     const result = await EmailFormValidator["~standard"].validate({
       email: "member@example.com",
