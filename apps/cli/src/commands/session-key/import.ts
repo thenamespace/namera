@@ -6,6 +6,7 @@ import { EncryptedLocalSessionKey } from "@namera-ai/protocol/local";
 import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue } from "#/services/output";
+import { recordView } from "#/services/output/document";
 import { sessionKeystore } from "#/services/session-keystore/index";
 import { SessionKeystoreError } from "#/services/session-keystore/storage";
 
@@ -33,7 +34,7 @@ export const importSessionKeyCommand = Command.make(
         sessionKeystore.importKey(envelope, password, new URL(activeProfile.baseUrl).origin),
       catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
     });
-    yield* printValue({ status: "imported", ...result });
+    yield* printValue({ status: "imported", ...result }, recordView("Session key imported"));
   }),
 ).pipe(
   Command.withDescription(

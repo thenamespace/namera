@@ -9,6 +9,7 @@ import {
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { verificationView } from "#/services/output/execution";
 import { CliPrompts } from "#/services/prompts";
 
 const promptVerifySignatureRequest = Effect.fn("cli.verifySignature.promptRequest")(function* () {
@@ -48,6 +49,6 @@ export const verifySignatureCommand = Command.make(
       promptVerifySignatureRequest(),
     );
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.verifySignature(request)));
+    yield* printValue(yield* runPromise(client.verifySignature(request)), verificationView);
   }),
 ).pipe(Command.withDescription("Verify an EVM smart-account signature"));

@@ -4,6 +4,8 @@ import type { NameraResult } from "@namera-ai/sdk";
 
 import { nameraCommand } from "#/commands/root";
 
+import type { PrettyPrinter } from "./output/document.js";
+
 export type OutputFormat = "pretty" | "json" | "ndjson";
 
 const replacer = (_: string, item: unknown) => (typeof item === "bigint" ? item.toString() : item);
@@ -50,22 +52,31 @@ const prettyValue = (value: unknown, colors: boolean, depth = 0): string => {
   return `${indentation}${prettyScalar(value, colors)}`;
 };
 
-export const formatValue = (
-  value: unknown,
+export const formatValue = <A>(
+  value: A,
   output: OutputFormat,
-  options: { readonly colors?: boolean } = {},
+  options: { readonly colors?: boolean; readonly pretty?: PrettyPrinter<A> } = {},
 ): ReadonlyArray<string> => {
-  if (output === "pretty") return [prettyValue(value, options.colors ?? false)];
+  if (output === "pretty")
+    return [
+      options.pretty
+        ? options.pretty(value, options.colors ?? false)
+        : prettyValue(value, options.colors ?? false),
+    ];
   if (output === "json") return [JSON.stringify(value, replacer)];
   if (Array.isArray(value)) return value.map((item) => JSON.stringify(item, replacer));
   return [JSON.stringify(value, replacer)];
 };
 
-export const printValue = Effect.fn("cli.output.printValue")(function* (value: unknown) {
+export const printValue = Effect.fn("cli.output.printValue")(function* <A>(
+  value: A,
+  pretty?: PrettyPrinter<A>,
+) {
   const { output, quiet } = yield* nameraCommand;
   if (quiet) return;
   const colors = output === "pretty" && process.stdout.isTTY && process.env.NO_COLOR === undefined;
-  for (const line of formatValue(value, output, { colors })) yield* Console.log(line);
+  for (const line of formatValue(value, output, { colors, ...(pretty ? { pretty } : {}) }))
+    yield* Console.log(line);
 });
 
 export const printLine = Effect.fn("cli.output.printLine")(function* (value: string) {

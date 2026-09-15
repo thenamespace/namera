@@ -4,6 +4,7 @@ import { Command } from "effect/unstable/cli";
 import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { authView } from "#/services/output/auth";
 
 export const authStatusCommand = Command.make(
   "status",
@@ -11,6 +12,6 @@ export const authStatusCommand = Command.make(
   Effect.fn(function* ({ profile }) {
     const { client, profileName } = yield* Effect.tryPromise(() => makeCliClient(profile));
     const actor = yield* runPromise(client.auth.currentActor());
-    yield* printValue({ profile: profileName, actor });
+    yield* printValue({ profile: profileName, actor }, authView);
   }),
 ).pipe(Command.withDescription("Show the current delegated CLI actor"));

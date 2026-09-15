@@ -83,8 +83,12 @@ packaged-platform verification. The same keystore resolves message/typed-data
 signers and the local MCP listener. End-to-end browser/local signing verification
 remains pending.
 
-Global output is `pretty`, `json`, or `ndjson`. Pretty is a colored human view,
-not formatted JSON. `--quiet` suppresses normal stdout. Development defaults to
+Global output is `pretty`, `json`, or `ndjson`. CLI-only typed presenters render
+named summaries and labeled sections for wallets, session keys, authorizations,
+execution, simulation, and signatures. Shared terminal primitives handle headings,
+dates, nested policy fields, and control-character sanitization. Pretty mode is a
+human summary; JSON/NDJSON serialize the original result, never the presentation.
+MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to
 `http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
 
 ## MCP tools

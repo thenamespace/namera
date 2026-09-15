@@ -6,6 +6,7 @@ import { SessionKeyId, WalletId } from "@namera-ai/protocol";
 import { profileFlag } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { sessionKeyView, sessionKeysView } from "#/services/output/session-key";
 
 import { importSessionKeyCommand } from "./import.js";
 
@@ -27,7 +28,7 @@ const list = Command.make(
           : {},
       ),
     );
-    yield* printValue(result);
+    yield* printValue(result, sessionKeysView);
   }),
 );
 
@@ -37,7 +38,7 @@ const get = Command.make(
   Effect.fn(function* ({ sessionKeyId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(SessionKeyId)(sessionKeyId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.sessionKeys.get(id)));
+    yield* printValue(yield* runPromise(client.sessionKeys.get(id)), sessionKeyView);
   }),
 );
 

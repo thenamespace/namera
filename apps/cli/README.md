@@ -131,8 +131,18 @@ This test uses an isolated config directory and an unused random API credential;
 import is local and makes no API call. It does not test login, OAuth or onchain
 signing. Temporary files and keyring entries are removed afterward.
 
-`--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output is an indented,
-colorized terminal view with readable labels and values; it is not JSON. JSON emits one compact
+`--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output uses
+command-specific summaries: named wallets, compact session-key lists, network-by-network
+authorization in `session-key get`, execution outcomes, simulation decisions, and signature
+results. It keeps addresses, IDs, signatures, and integer amounts complete. Dates include UTC;
+network displays include their CAIP-2 ID. Empty lists say what was not found, and pending
+executions and paginated history include the next command. Add your original `--profile`
+when following these commands if you are not using the default profile.
+
+Headings use terminal bold only on a TTY; `NO_COLOR` disables styling. The terminal's normal
+foreground/background and wrapping remain in control, without fixed-width tables or truncation.
+Untrusted metadata cannot inject terminal escape sequences. Pretty output is a human summary;
+use JSON for complete implementation data and response fields. JSON emits one compact
 document, while NDJSON emits one compact document per top-level array item. `--quiet` (or `-q`)
 suppresses normal command output. Execution and signing commands rely on the SDK to generate one
 idempotency key and reuse it across transient retries; no retry-key flag is exposed.

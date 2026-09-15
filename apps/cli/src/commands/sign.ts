@@ -9,6 +9,7 @@ import {
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { signatureView } from "#/services/output/execution";
 import { CliPrompts } from "#/services/prompts";
 
 const promptSignRequest = Effect.fn("cli.sign.promptRequest")(function* () {
@@ -44,6 +45,6 @@ export const signCommand = Command.make(
   Effect.fn(function* ({ params, profile }) {
     const request = yield* resolveParams(params, SignRequest, promptSignRequest());
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.sign(request)));
+    yield* printValue(yield* runPromise(client.sign(request)), signatureView);
   }),
 ).pipe(Command.withDescription("Sign an EVM message or typed-data request"));

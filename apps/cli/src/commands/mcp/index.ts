@@ -19,6 +19,7 @@ import { mcpStdio } from "#/services/mcp/stdio";
 import { localToolError } from "#/services/mcp/tool-errors";
 import { LocalMcpApiOrigin } from "#/services/mcp/transport-security";
 import { printValue } from "#/services/output";
+import { recordView } from "#/services/output/document";
 import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 
 const flags = {
@@ -118,7 +119,7 @@ const login = Command.make(
           "MCP login failed. Check the browser consent and API connection, then try again.",
         ),
     });
-    yield* printValue(connection.status());
+    yield* printValue(connection.status(), recordView("MCP connection"));
   }, Effect.scoped),
 );
 const status = Command.make(
@@ -126,7 +127,7 @@ const status = Command.make(
   flags,
   Effect.fn("Mcp.status")(function* (options) {
     const connection = yield* session(options);
-    yield* printValue(yield* Effect.try(connection.status));
+    yield* printValue(yield* Effect.try(connection.status), recordView("MCP connection"));
   }, Effect.scoped),
 );
 const logout = Command.make(
@@ -141,7 +142,10 @@ const logout = Command.make(
           "MCP logout could not be completed. Check your OS keyring and revoke the connection in Namera settings.",
         ),
     });
-    yield* printValue({ profile: options.profile, status: "signed-out" });
+    yield* printValue(
+      { profile: options.profile, status: "signed-out" },
+      recordView("MCP signed out"),
+    );
   }, Effect.scoped),
 );
 

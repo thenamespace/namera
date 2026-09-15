@@ -12,6 +12,7 @@ import {
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
+import { executionStatusView, executionsView, simulationView } from "#/services/output/execution";
 import { CliPrompts } from "#/services/prompts";
 
 const promptTransactionRequest = Effect.fn("cli.execution.promptTransactionRequest")(function* () {
@@ -73,7 +74,7 @@ const execute = Command.make(
       maxGasCostWei = yield* prompts.ethereumValue("Maximum total gas cost (wei)");
     }
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile, maxGasCostWei));
-    yield* printValue(yield* runPromise(client.executions.execute(request)));
+    yield* printValue(yield* runPromise(client.executions.execute(request)), executionStatusView);
   }),
 ).pipe(Command.withDescription("Execute EVM calls after validating an inline or prompted request"));
 
@@ -87,7 +88,7 @@ const simulate = Command.make(
       promptTransactionRequest(),
     );
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.simulate(request)));
+    yield* printValue(yield* runPromise(client.executions.simulate(request)), simulationView);
   }),
 ).pipe(
   Command.withDescription(
@@ -101,7 +102,7 @@ const status = Command.make(
   Effect.fn(function* ({ submissionId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.getStatus(id)));
+    yield* printValue(yield* runPromise(client.executions.getStatus(id)), executionStatusView);
   }),
 );
 
@@ -120,6 +121,7 @@ const list = Command.make(
       yield* runPromise(
         client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
       ),
+      executionsView,
     );
   }),
 );
