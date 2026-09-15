@@ -34,6 +34,7 @@ export function ExportSessionKey({
   onSaved: () => void;
 }) {
   const [command, setCommand] = useState<string>();
+  const loginCommand = `namera login --host '${new URL(env.backendUrl).origin.replaceAll("'", "'\\''")}'`;
   const form = useForm<typeof SessionExportForm.Encoded>({
     defaultValues: { password: "", confirmation: "" },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(SessionExportForm)),
@@ -56,26 +57,34 @@ export function ExportSessionKey({
 
   return (
     <div className="grid gap-6">
-      <section className="grid gap-3">
-        <HeadingGroup.Title size="sm">Install the CLI</HeadingGroup.Title>
-        <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
-          <code className="min-w-0 flex-1 truncate text-xs">npm i -g @namera-ai/cli</code>
-          <CopyIconButton label="CLI install command" value="npm i -g @namera-ai/cli" />
-        </div>
-      </section>
       <section className="grid min-w-0 gap-4">
         <HeadingGroup.Title size="sm">Save your session key</HeadingGroup.Title>
         <Typography.Paragraph color="muted" size="sm">
-          Encrypt and save your key before closing this tab. Namera cannot recover it.
+          {command
+            ? "Your key is encrypted. Complete these steps in your terminal."
+            : "Encrypt and save your key before closing this tab. Namera cannot recover it."}
         </Typography.Paragraph>
         {command ? (
           <div className="grid gap-3">
-            <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
-              <code className="min-w-0 flex-1 truncate text-xs">{command}</code>
-              <CopyIconButton label="import command" value={command} />
-            </div>
+            <ol className="grid list-none gap-5 p-0">
+              {[
+                { title: "Install the CLI", command: "npm i -g @namera-ai/cli" },
+                { title: "Log in", command: loginCommand },
+                { title: "Import your key", command },
+              ].map((step, index) => (
+                <li key={step.title} className="grid min-w-0 gap-3">
+                  <HeadingGroup.Title level={3} size="sm">
+                    {index + 1}. {step.title}
+                  </HeadingGroup.Title>
+                  <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
+                    <code className="min-w-0 flex-1 truncate text-xs">{step.command}</code>
+                    <CopyIconButton label={`${step.title} command`} value={step.command} />
+                  </div>
+                </li>
+              ))}
+            </ol>
             <Typography.Paragraph color="muted" size="sm">
-              Run this command to import your key. Enter your passphrase when asked.
+              Enter your passphrase when importing the key.
             </Typography.Paragraph>
             <Button variant="tertiary" onPress={onSaved}>
               I imported the key and saved my backup
