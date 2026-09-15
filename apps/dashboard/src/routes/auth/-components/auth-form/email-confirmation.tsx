@@ -1,14 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import {
-  Button,
-  Field,
-  FieldError,
-  FieldLabel,
-  InputOTP,
-  REGEXP_ONLY_DIGITS,
-  Typography,
-} from "@namera-ai/ui";
+import { Button, Field, FieldError, InputOTP, REGEXP_ONLY_DIGITS, Typography } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import { useVerifyMagicLink } from "@/hooks/auth";
@@ -35,9 +27,9 @@ export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
         Check your email
       </Typography.Heading>
       <output className="mt-3 block">
-        <Typography.Paragraph className="text-pretty" color="muted" size="sm">
-          Use the sign-in link or enter the eight-digit code sent to
-          <span className="text-foreground mt-1 block text-center">{email}</span>
+        <Typography.Paragraph align="center" className="text-pretty" color="muted" size="sm">
+          Use the sign-in link or enter the eight-digit code sent to{" "}
+          <span className="text-foreground wrap-anywhere">{email}</span>
         </Typography.Paragraph>
       </output>
       <form
@@ -53,7 +45,6 @@ export function EmailConfirmation({ email, onBack }: EmailConfirmationProps) {
           name="code"
           render={({ field, fieldState }) => (
             <Field className="justify-items-center">
-              <FieldLabel htmlFor="email-signin-code">Email sign-in code</FieldLabel>
               <InputOTP
                 {...field}
                 id="email-signin-code"
