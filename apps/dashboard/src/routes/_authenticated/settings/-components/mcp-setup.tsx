@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { ListBox, Select } from "@namera-ai/ui";
-import { ChatGptIcon, ClaudeIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { BrandClaudeIcon, BrandOpenaiIcon } from "@namera-ai/ui/icons";
 
 import { CopyIconButton } from "@/components/copy-icon-button";
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
@@ -42,13 +42,13 @@ export function McpSetup() {
               <ListBox>
                 <ListBox.Item id="codex" textValue="Codex">
                   <span className="flex items-center gap-2">
-                    <HugeiconsIcon aria-hidden icon={ChatGptIcon} size={18} />
+                    <BrandOpenaiIcon aria-hidden className="size-[18px]" />
                     Codex
                   </span>
                 </ListBox.Item>
                 <ListBox.Item id="claude" textValue="Claude Code">
                   <span className="flex items-center gap-2">
-                    <HugeiconsIcon aria-hidden icon={ClaudeIcon} size={18} />
+                    <BrandClaudeIcon aria-hidden className="size-[18px]" />
                     Claude Code
                   </span>
                 </ListBox.Item>

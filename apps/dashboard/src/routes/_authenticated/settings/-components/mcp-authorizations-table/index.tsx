@@ -30,6 +30,7 @@ import {
   OAuthAuthorizationStatusDisplay,
   OAuthClientDisplay,
 } from "@/components/display";
+import { getOAuthClientName } from "@/components/display/oauth-client-name";
 import { useMcpAuthorizations } from "@/hooks/auth";
 
 import { McpAuthorizationActions } from "./actions";
@@ -124,7 +125,11 @@ const sorters: Record<
   string,
   (left: OAuthAuthorizationResponse, right: OAuthAuthorizationResponse) => number
 > = {
-  client: (left, right) => collator.compare(left.client.clientName, right.client.clientName),
+  client: (left, right) =>
+    collator.compare(
+      getOAuthClientName(left.client.clientName),
+      getOAuthClientName(right.client.clientName),
+    ),
   access: (left, right) => left.sessionKeys.length - right.sessionKeys.length,
   authorizedBy: (left, right) =>
     collator.compare(
@@ -167,7 +172,9 @@ export function McpAuthorizationsTable({
         const authorizerName = authorization.authorizedBy.user.metadata.name?.toLowerCase() ?? "";
         const matchesQuery =
           normalizedQuery.length === 0 ||
-          authorization.client.clientName.toLowerCase().includes(normalizedQuery) ||
+          getOAuthClientName(authorization.client.clientName)
+            .toLowerCase()
+            .includes(normalizedQuery) ||
           authorization.client.clientId.toLowerCase().includes(normalizedQuery) ||
           authorizerName.includes(normalizedQuery) ||
           authorization.authorizedBy.user.email.toLowerCase().includes(normalizedQuery);

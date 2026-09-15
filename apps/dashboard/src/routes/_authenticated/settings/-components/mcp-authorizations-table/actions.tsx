@@ -6,6 +6,7 @@ import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import { CopyDropdownItem } from "@/components/copy-icon-button";
+import { getOAuthClientName } from "@/components/display/oauth-client-name";
 import { useRevokeMcpAuthorization } from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -24,6 +25,7 @@ export function McpAuthorizationActions({
   canRevoke,
 }: McpAuthorizationActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const clientName = getOAuthClientName(authorization.client.clientName);
   const revoke = useRevokeMcpAuthorization({
     onError: (error) =>
       showErrorToast(error, {
@@ -33,7 +35,7 @@ export function McpAuthorizationActions({
     onSuccess: () => {
       showSuccessToast({
         title: "MCP access revoked",
-        description: `${authorization.client.clientName} can no longer access Namera.`,
+        description: `${clientName} can no longer access Namera.`,
       });
       setIsOpen(false);
     },
@@ -48,12 +50,7 @@ export function McpAuthorizationActions({
   return (
     <>
       <Dropdown>
-        <Button
-          isIconOnly
-          aria-label={`Actions for ${authorization.client.clientName}`}
-          size="sm"
-          variant="tertiary"
-        >
+        <Button isIconOnly aria-label={`Actions for ${clientName}`} size="sm" variant="tertiary">
           <HugeiconsIcon icon={MoreHorizontalIcon} />
         </Button>
         <Dropdown.Popover className="min-w-48">
@@ -81,9 +78,7 @@ export function McpAuthorizationActions({
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
                 <AlertDialog.Icon status="danger" />
-                <AlertDialog.Heading>
-                  Revoke access for {authorization.client.clientName}?
-                </AlertDialog.Heading>
+                <AlertDialog.Heading>Revoke access for {clientName}?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
                 This client will stop working immediately and lose access to every session key
