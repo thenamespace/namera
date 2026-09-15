@@ -24,8 +24,9 @@ import {
   type OnchainPermissionInput,
   type OnchainPermissionType,
 } from "./catalog";
+import { TokenAllowanceEditor } from "./token-allowance/editor";
 
-type Props = {
+export type OnchainPermissionEditorProps = {
   type: OnchainPermissionType;
   initialValue?: OnchainPermissionInput;
   formId?: string;
@@ -35,7 +36,15 @@ type Props = {
   onSave: (permission: OnchainPermissionInput) => void;
 };
 
-export function OnchainPermissionEditor({
+export function OnchainPermissionEditor(props: OnchainPermissionEditorProps) {
+  return props.type === "erc20-token-transfer" ? (
+    <TokenAllowanceEditor {...props} />
+  ) : (
+    <BasePermissionEditor {...props} />
+  );
+}
+
+function BasePermissionEditor({
   type,
   initialValue,
   formId,
@@ -43,7 +52,7 @@ export function OnchainPermissionEditor({
   description,
   validatePermission,
   onSave,
-}: Props) {
+}: OnchainPermissionEditorProps) {
   const generatedId = useId();
   const id = formId ?? generatedId;
   const definition = onchainPermissionCatalog[type];
