@@ -82,11 +82,6 @@ export function SessionPolicyDialog(props: Props) {
                       close();
                     }}
                   />
-                  <Typography.Paragraph size="xs" color="muted">
-                    These signing rules and expiry apply through Namera only. The local key can sign
-                    both messages and typed data outside Namera until its onchain permission is
-                    removed.
-                  </Typography.Paragraph>
                 </>
               ) : choice.id === "contract-access" ? (
                 <ContractAccessEditor
