@@ -191,18 +191,23 @@ and `role="alert"`. It must not delegate to React Aria's context-dependent
 validation context, so messages would be silently hidden. Render coverage checks
 both explicit children and resolver errors outside a React Aria form.
 
-The signature policy editor requires at least one EIP-712 rule for typed-data
-selection. Each rule includes a network, verifying contract, optional exact
+The signature policy editor allows typed-data selection without EIP-712 rules
+and explicitly displays that all typed data is allowed. Each optional rule includes a network, verifying contract, optional exact
 domain name/version, and comma-separated primary types. Its Effect form schema
 converts these to the public policy contract and rejects duplicate types. Shared
-summaries display each tuple and warn on existing unrestricted policies. API-only
+summaries display each tuple and identify unrestricted policies. API-only
 scope and the absence of message-value limits are disclosed in the editor.
 
-Production-preview browser verification covered empty-rule and duplicate-type
+Earlier production-preview browser verification covered duplicate-type
 errors, keyboard toggling of exact domain matching, saving and reopening a rule,
 and preserving an exact empty name. This exercised a local draft only: it did
 not create or install an onchain session. Full session creation/approval journeys
 remain separate gates.
+
+Regression tests cover unrestricted creation with omitted rules, form round-trips,
+continued validation of supplied rules, and policy evaluation that still requires
+typed-data permission. Empty editor rules serialize as an omitted allowlist;
+an explicitly supplied empty API allowlist remains invalid.
 
 Session network selection reads the EVM registry's `operationsEnabled` flag.
 Paused networks remain visible with a Paused label but cannot be selected for

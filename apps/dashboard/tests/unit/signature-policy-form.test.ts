@@ -31,8 +31,14 @@ describe("signature policy form", () => {
       rules: [{ primaryTypes: { message: "Message types must be unique" } }],
     });
   });
-  it("requires restrictions for typed data but not for messages", () => {
-    expect(() => decode({ allowedTypes: ["typed-data"], rules: [] })).toThrow();
+  it("omits restrictions when no typed-data rules are added", () => {
+    const unrestricted = decode({ allowedTypes: ["typed-data"], rules: [] });
+    expect(unrestricted).toEqual({
+      type: "evm.signature",
+      version: 1,
+      allowedTypes: ["typed-data"],
+    });
+    expect(decode(toSignatureFormInput(unrestricted))).toEqual(unrestricted);
     expect(decode({ allowedTypes: ["message"], rules: [] })).toEqual({
       type: "evm.signature",
       version: 1,

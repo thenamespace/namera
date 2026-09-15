@@ -14,9 +14,9 @@ const rule = {
 };
 
 describe("signature policy creation contract", () => {
-  it("requires a nonempty typed-data allowlist even when messages are also allowed", () => {
-    expect(() => decode([policy])).toThrow(/explicit allowlist/);
-    expect(() => decode([{ ...policy, allowedTypes: ["message", "typed-data"] }])).toThrow();
+  it("allows typed data without restrictions but rejects an explicit empty allowlist", () => {
+    expect(decode([policy])).toEqual([policy]);
+    expect(decode([{ ...policy, allowedTypes: ["message", "typed-data"] }])).toHaveLength(1);
     expect(() => decode([{ ...policy, typedDataRules: [] }])).toThrow();
     expect(decode([{ ...policy, allowedTypes: ["message"] }])).toHaveLength(1);
   });

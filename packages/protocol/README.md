@@ -141,10 +141,10 @@ import { User, UserInsert } from "@namera-ai/protocol/model";
   EIP-712 `typed-data` operations. Raw digest signing is intentionally absent.
   Signature authorization uses its own `EvmSignatureContext` and requires an
   explicit `evm.signature` policy listing the allowed operation types. New
-  policies enabling typed data also require a nonempty `typedDataRules` allowlist
-  specifying chain, verifying contract and primary types; domain name/version
-  are optional exact matches. Persisted unrestricted policies remain readable
-  with their original authority and must be revoked/replaced to narrow it. Matching
+  policies enabling typed data may omit `typedDataRules` to allow all typed data.
+  When supplied, the allowlist must be nonempty and specifies chain, verifying
+  contract and primary types; domain name/version are optional exact matches.
+  The dashboard omits the allowlist when no rules are added. Matching
   verification DTOs include the original payload and signature and return the
   resolved smart-account address with a boolean validity result.
 - EVM chain contracts distinguish the stable supported-network key, the chain

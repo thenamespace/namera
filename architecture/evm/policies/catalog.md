@@ -36,11 +36,12 @@ from different rules cannot be combined. Both the operation chain and the
 payload's domain chain must match the rule. Contract comparison ignores hex case;
 domain names, versions, and primary types are case-sensitive. Missing required
 domain fields or no matching rule returns `TYPED_DATA_NOT_ALLOWED` with the
-policy ID. Session creation requires a nonempty rule list when typed data is
-enabled, including when messages are also enabled. Existing stored policies
-without rules remain readable and retain their original type-only authority;
-they must be revoked and replaced to narrow it. Message requests are unaffected
-by typed-data rules.
+policy ID. Omitting `typedDataRules` allows all typed data when that signature
+type is enabled, subject to the session's other authorization checks. An explicit
+rule list must be nonempty. The dashboard omits the field when no rules are added
+and displays “All typed data is allowed.” Adding rules narrows access; malformed
+rules remain invalid rather than becoming unrestricted. Message requests are
+unaffected by typed-data rules.
 
 These are API policies, not onchain EIP-712 validation hooks. A user-controlled
 key can still sign outside Namera, and domain matching does not constrain values

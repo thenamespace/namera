@@ -120,9 +120,11 @@ export function SignaturePolicyEditor({
         {allowedTypes.includes("typed-data") ? (
           <>
             <Typography.Paragraph color="muted" size="xs">
-              Allow only matching networks, contracts and message types. Names and versions are
-              exact when matching is enabled. These API rules do not restrict signing outside Namera
-              or amounts inside a message.
+              {rules.fields.length === 0
+                ? "All typed data is allowed. Add a rule to restrict networks, contracts and message types. "
+                : "Only typed data matching a rule is allowed. "}
+              Names and versions are exact when matching is enabled. These API rules do not restrict
+              signing outside Namera or amounts inside a message.
             </Typography.Paragraph>
             {rules.fields.map((rule, index) => (
               <SignatureRuleFields

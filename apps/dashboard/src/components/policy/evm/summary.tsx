@@ -171,7 +171,7 @@ function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValu
                 {rule.version === undefined ? "Any version" : `Version: ${rule.version}`}
               </span>
             </span>
-          )) ?? <span className="text-warning text-xs">No typed-data domain restrictions</span>)
+          )) ?? <span className="text-warning text-xs">All typed data is allowed</span>)
         : null}
     </span>
   );

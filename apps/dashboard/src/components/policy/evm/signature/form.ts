@@ -29,13 +29,7 @@ const SignatureFields = Schema.Struct({
       ),
     }),
   ),
-}).check(
-  Schema.makeFilter((value) =>
-    value.allowedTypes.includes("typed-data") && value.rules.length === 0
-      ? { path: ["rules"], issue: "Add at least one allowed typed-data rule" }
-      : undefined,
-  ),
-);
+});
 
 export const toSignatureFormInput = (policy: SignaturePolicyInput) => ({
   allowedTypes: policy.allowedTypes,
@@ -56,7 +50,7 @@ export const SignaturePolicyForm = SignatureFields.pipe(
       type: "evm.signature" as const,
       version: 1 as const,
       allowedTypes: value.allowedTypes,
-      ...(value.allowedTypes.includes("typed-data")
+      ...(value.allowedTypes.includes("typed-data") && value.rules.length > 0
         ? {
             typedDataRules: value.rules.map((rule) => ({
               chainId: rule.chainId,

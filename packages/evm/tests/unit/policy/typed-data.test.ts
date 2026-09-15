@@ -47,6 +47,29 @@ const context = Schema.decodeUnknownSync(EvmSignatureContext)({
   },
 });
 
+it.effect("allows typed data without rules but still requires the signature type", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const { typedDataRules: _rules, ...unrestricted } = policy;
+    expect(yield* evm.policy.evaluateSignature({ policies: [unrestricted], context })).toEqual({
+      allowed: true,
+    });
+    expect(
+      yield* evm.policy.evaluateSignature({
+        policies: [{ ...unrestricted, allowedTypes: ["message"] }],
+        context,
+      }),
+    ).toEqual({
+      allowed: false,
+      policyId: policy.id,
+      code: "SIGNATURE_TYPE_NOT_ALLOWED",
+    });
+    expect(yield* evm.policy.evaluateSignature({ policies: [], context })).toMatchObject({
+      allowed: false,
+    });
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
 it.effect("matches one complete typed-data rule and rejects missing or substituted fields", () =>
   Effect.gen(function* () {
     const evm = yield* Evm;
