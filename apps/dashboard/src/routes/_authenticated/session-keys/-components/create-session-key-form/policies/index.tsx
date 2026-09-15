@@ -2,7 +2,7 @@
 import { useState } from "react";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import { FieldError, Typography } from "@namera-ai/ui";
+import { FieldError } from "@namera-ai/ui";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
@@ -11,7 +11,7 @@ import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summar
 
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
 import { SessionPolicyCard } from "./card";
-import { hasTransactionAccess, policyChoiceFor } from "./catalog";
+import { policyChoiceFor } from "./catalog";
 import { AddPolicyButton, SessionPolicyDialog, type PolicyEdit } from "./dialog";
 import { signatureConfiguration } from "./signature-configuration";
 
@@ -91,12 +91,6 @@ export function PolicySection({
           form.formState.errors.policies,
         ]}
       />
-      {!hasTransactionAccess(permissions) ? (
-        <Typography.Paragraph size="xs" color="muted">
-          Add Contract access, Token spending or Unrestricted account access to allow transactions.
-          Limits alone do not grant access.
-        </Typography.Paragraph>
-      ) : null}
       {dialog ? (
         <SessionPolicyDialog
           open
