@@ -18,7 +18,19 @@ export class MagicLinkAttemptsExceededError extends Schema.TaggedError<MagicLink
   { httpApiStatus: 429 },
 ) {}
 
-export const MagicLinkErrors = [InvalidMagicLinkError, MagicLinkAttemptsExceededError] as const;
+export class BetaInviteRequiredError extends Schema.TaggedError<BetaInviteRequiredError>()(
+  "BetaInviteError",
+  {
+    code: Schema.Literal("INVITE_REQUIRED_OR_UNAVAILABLE"),
+  },
+  { httpApiStatus: 403 },
+) {}
+
+export const MagicLinkErrors = [
+  InvalidMagicLinkError,
+  MagicLinkAttemptsExceededError,
+  BetaInviteRequiredError,
+] as const;
 export const MagicLinkError = Schema.Union(MagicLinkErrors);
 export type MagicLinkError = typeof MagicLinkError.Type;
 

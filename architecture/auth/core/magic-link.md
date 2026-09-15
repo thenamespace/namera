@@ -17,6 +17,11 @@ The link token uses `cryptoPurpose.magicLinkToken`; the code uses `cryptoPurpose
 
 ## Request contract
 
+New-user admission is protected by [private-beta invites](beta-invites.md).
+Requests accept an optional six-character `inviteCode`; verified signup rechecks
+and redeems it in the same transaction as account creation. Existing users do
+not need a code. Supplied unavailable codes return a generic invite error.
+
 `POST /auth/magic-link/request` accepts a normalized email and optional application-relative `returnTo`. It always returns the same `202 Accepted` message with `Cache-Control: no-store`, whether the identity exists or cooldown suppresses a new email.
 
 `returnTo` is resolved against the dashboard origin, then reduced to path/query/hash only when its path equals or descends from an allowed prefix. Unapproved values are discarded.

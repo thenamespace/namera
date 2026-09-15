@@ -2,6 +2,8 @@ import { Schema } from "effect";
 
 import { ApplicationRelativePath, Email, VerificationId } from "#/common/index";
 
+import { BetaInviteCode } from "./beta-invite.js";
+
 export const MagicLinkToken = Schema.String.check(
   Schema.isPattern(/^[A-Za-z0-9_-]+$/, {
     message: "Magic-link token must be base64url encoded",
@@ -24,6 +26,7 @@ export const MagicLinkReturnTo = ApplicationRelativePath;
 
 export const RequestMagicLinkRequest = Schema.Struct({
   email: Email,
+  inviteCode: Schema.optional(BetaInviteCode),
   returnTo: Schema.optionalKey(MagicLinkReturnTo),
 }).annotate({
   identifier: "RequestMagicLinkRequest",

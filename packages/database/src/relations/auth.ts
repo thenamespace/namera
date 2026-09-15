@@ -3,6 +3,10 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const authRelations = defineRelationsPart(schema, (r) => ({
+  betaInvite: {
+    // A redeemed invite identifies the verified account it admitted.
+    redeemedUser: r.one.user({ from: r.betaInvite.redeemedBy, to: r.user.id }),
+  },
   actor: {
     // Each actor belongs to one organization.
     organization: r.one.organization({

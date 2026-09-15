@@ -13,6 +13,7 @@ import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 export const VerificationPurpose = Schema.Literals(["magic-link-signin", "passkey-registration"]);
 
 export const MagicLinkVerificationData = Schema.Struct({
+  betaInviteId: Schema.optionalKey(Schema.String),
   returnTo: Schema.optionalKey(ApplicationRelativePath),
 });
 

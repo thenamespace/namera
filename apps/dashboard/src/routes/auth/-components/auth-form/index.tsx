@@ -15,12 +15,17 @@ import { EmailFormValidator, type EmailFormInput, type EmailFormOutput } from ".
 const totalSteps = 3;
 
 type AuthFormProps = {
+  invite?: string | undefined;
   returnTo?: EmailFormOutput["returnTo"];
 };
 
-export function AuthForm({ returnTo }: AuthFormProps) {
+export function AuthForm({ returnTo, invite }: AuthFormProps) {
   const form = useForm<EmailFormInput, unknown, EmailFormOutput>({
-    defaultValues: { email: "", ...(returnTo === undefined ? {} : { returnTo }) },
+    defaultValues: {
+      email: "",
+      ...(invite === undefined ? {} : { inviteCode: invite }),
+      ...(returnTo === undefined ? {} : { returnTo }),
+    },
     resolver: standardSchemaResolver(EmailFormValidator),
   });
   const [step, { goToNextStep, goToPrevStep, reset: resetStep }] = useStep(totalSteps);
@@ -38,7 +43,11 @@ export function AuthForm({ returnTo }: AuthFormProps) {
 
   const backToLogin = useEventCallback(() => {
     requestMagicLink.reset();
-    form.reset({ email: "", ...(returnTo === undefined ? {} : { returnTo }) });
+    form.reset({
+      email: "",
+      ...(invite === undefined ? {} : { inviteCode: invite }),
+      ...(returnTo === undefined ? {} : { returnTo }),
+    });
     resetStep();
   });
 

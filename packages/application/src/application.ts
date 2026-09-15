@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
 import { Audit } from "#/audit/layer";
+import { makeBetaInviteApplication } from "#/auth/beta-invite";
 import { makeApiKeyApplication, type ApiKeyApplication } from "#/auth/core/api-key";
 import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
 import { makeUserApplication, type UserApplication } from "#/auth/core/user";
@@ -36,6 +37,7 @@ import { makeSignatureApplication, type SignatureApplication } from "#/signature
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
+  readonly betaInvite: Effect.Success<typeof makeBetaInviteApplication>;
   readonly apiKey: ApiKeyApplication;
   readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
@@ -66,6 +68,7 @@ export class Application extends Context.Service<Application, ApplicationService
     Application,
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
+      const betaInvite = yield* makeBetaInviteApplication;
       const apiKey = yield* makeApiKeyApplication;
       const user = yield* makeUserApplication;
       const magicLinkRequest = yield* makeRequestMagicLinkApplication;
@@ -85,6 +88,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const signature = yield* makeSignatureApplication;
 
       return Application.of({
+        betaInvite,
         apiKey,
         billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },

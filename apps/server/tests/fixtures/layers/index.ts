@@ -13,8 +13,10 @@ import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AuthorizationLive } from "#/middlewares/authorization";
+import { InviteAdminLive } from "#/middlewares/invite-admin";
 import { RateLimiterLive } from "#/rate-limit";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
+import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import {
   InvitationRoutes,
   MagicLinkRoutes,
@@ -61,6 +63,7 @@ const TestCryptoLayer = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer)
 export const makeTestServerLayer = (
   evmOptions: EvmTestOptions = {},
   passkeysLayer: Layer.Layer<Passkeys> = Passkeys.testLayer,
+  configLayer = TestConfigLayer,
 ) => {
   const TestServicesLayer = Layer.mergeAll(
     EmailJobs.layer,
@@ -75,6 +78,7 @@ export const makeTestServerLayer = (
   );
 
   const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
+  const TestInviteAdminLayer = InviteAdminLive.pipe(Layer.provide(RateLimiterLive));
 
   const TestAuthorizationLayer = AuthorizationLive.pipe(
     Layer.provide(TestServicesLayer),
@@ -82,6 +86,7 @@ export const makeTestServerLayer = (
   );
 
   const TestHandlersLayer = Layer.mergeAll(
+    BetaInviteRoutes,
     AddressMetadataRoutes,
     ApiKeyRoutes,
     BillingRoutes,
@@ -103,6 +108,7 @@ export const makeTestServerLayer = (
     WalletRoutes,
   ).pipe(
     Layer.provide(TestAuthorizationLayer),
+    Layer.provide(TestInviteAdminLayer),
     Layer.provide(TestApplicationLayer),
     Layer.provide(TestServicesLayer),
     Layer.provide(AuthCookieConfig.testLayer),
@@ -113,12 +119,13 @@ export const makeTestServerLayer = (
     TestHandlersLayer,
     TestApplicationLayer,
     TestAuthorizationLayer,
+    TestInviteAdminLayer,
     RateLimiterLive,
     TestServicesLayer,
     TestAuthTokenStateLayer,
     TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
     HttpServer.layerServices,
-  ).pipe(Layer.provide(TestConfigLayer));
+  ).pipe(Layer.provide(configLayer));
 };
 
 export const TestServerLayer = makeTestServerLayer();

@@ -244,6 +244,11 @@ parallel API-key route for the same resource.
 
 ## Environment
 
+For private beta, set `AUTH_INVITE_REQUIRED=true` (default) and supply a random
+`INVITE_ADMIN_TOKEN` of at least 32 characters. The token protects
+`POST /internal/invites` and `DELETE /internal/invites/:id`; it grants no normal
+user or machine authority. See the [operator and signup flow](../../architecture/auth/core/beta-invites.md).
+
 Copy `.env.example` to `apps/server/.env` for local development. Server-owned
 values have defaults; composed package configuration remains required unless its
 own README documents a default.

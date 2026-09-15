@@ -242,3 +242,15 @@ Tenant-scoped principal used by authorization, audit, executions, signatures, an
 - Add a documented cleanup worker for expired and terminal verification rows.
 - Define session concurrency and forced-global-logout policy.
 - Review whether captured IP addresses require truncation or a shorter retention window.
+
+# Beta invite admission
+
+`auth.beta_invite`: text primary key `id`, unique non-null `code_hmac`, nullable
+normalized `email`, non-null `created_at` (default now) and `expires_at`, nullable
+`redeemed_at`, `redeemed_by` (FK to auth.user), and `revoked_at`. All timestamps
+are timezone-aware. Checks require expiry after creation, paired redemption
+time/user, and mutually exclusive redeemed/revoked state. HMAC uniqueness retains
+all historical codes. Reads use the HMAC index or primary key; redemption uses
+row locks and conditional updates. Magic-link verification JSON can contain
+`betaInviteId`; this is resolved and checked at verified signup, never trusted
+as proof of admission by itself.

@@ -3,6 +3,7 @@ import { DateTime, Duration, Effect, Metric } from "effect";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
+import { BetaInviteRequiredError } from "@namera-ai/protocol";
 import type { RequestMagicLinkRequest, RequestMagicLinkResponse } from "@namera-ai/protocol/dto";
 import { magicLinkRequestDuration, magicLinkRequests } from "@namera-ai/telemetry";
 
@@ -13,7 +14,9 @@ const accepted: RequestMagicLinkResponse = {
 };
 
 export interface RequestMagicLinkApplication {
-  readonly request: (input: RequestMagicLinkRequest) => Effect.Effect<RequestMagicLinkResponse>;
+  readonly request: (
+    input: RequestMagicLinkRequest,
+  ) => Effect.Effect<RequestMagicLinkResponse, BetaInviteRequiredError>;
 }
 
 export const makeRequestMagicLinkApplication = Effect.gen(function* () {
@@ -27,6 +30,25 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
     function* (input: RequestMagicLinkRequest) {
       yield* Metric.update(magicLinkRequests, 1);
       const now = yield* DateTime.now;
+      const existingUser = yield* repository.auth.user.findByEmail(input.email);
+      const invite =
+        input.inviteCode === undefined
+          ? undefined
+          : yield* repository.auth.betaInvite.findByHmac(
+              yield* crypto.hmac({ purpose: cryptoPurpose.betaInvite, value: input.inviteCode }),
+            );
+      const usableInvite =
+        invite &&
+        invite.redeemedAt === null &&
+        invite.revokedAt === null &&
+        DateTime.toEpochMillis(invite.expiresAt) > DateTime.toEpochMillis(now) &&
+        (invite.email === null || invite.email === input.email)
+          ? invite
+          : undefined;
+      if (input.inviteCode !== undefined && !usableInvite)
+        return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+      // Keep the request enumeration-resistant. Verification remains authoritative.
+      if (config.inviteRequired && !existingUser && !usableInvite) return accepted;
       const current = yield* repository.auth.verification.findPendingByIdentifier({
         purpose: config.magicLink.purpose,
         identifier: input.email,
@@ -69,7 +91,10 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
           const verification = yield* repository.auth.verification.create({
             purpose: config.magicLink.purpose,
             identifier: input.email,
-            data: allowedReturnTo === undefined ? {} : { returnTo: allowedReturnTo },
+            data: {
+              ...(allowedReturnTo === undefined ? {} : { returnTo: allowedReturnTo }),
+              ...(!existingUser && usableInvite ? { betaInviteId: usableInvite.id } : {}),
+            },
             tokenHash,
             codeHmac,
             expiresAt: DateTime.addDuration(now, config.magicLink.timeToLive),
@@ -97,7 +122,9 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
       yield* Effect.logInfo("magic_link.requested");
       return accepted;
     },
-    Effect.orDie,
+    Effect.catch((error) =>
+      error instanceof BetaInviteRequiredError ? Effect.fail(error) : Effect.die(error),
+    ),
     Effect.trackDuration(magicLinkRequestDuration),
   );
 

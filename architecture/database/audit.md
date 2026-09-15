@@ -91,3 +91,12 @@ When a successful state mutation requires an audit event, the domain rows and au
 - Add privileged audit search/export endpoints and record their own audit access.
 - Decide whether cryptographic append/tamper evidence is required for enterprise plans.
 - Review every mutation for transactional audit coverage and document intentional omissions.
+
+# Beta invite operator events
+
+`audit.beta_invite_events` is append-only: text primary key `id`, non-null
+`invite_id` (FK to auth.beta_invite), non-null `event` (`created`, `revoked`,
+`redeemed`), and timezone-aware `created_at` defaulting to now. Operator actions
+have no tenant actor. State transitions and events share a transaction; neither
+codes nor the shared operator token are recorded. The invite's redeemed user
+provides identity for signup events.

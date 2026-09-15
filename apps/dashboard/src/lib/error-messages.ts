@@ -13,6 +13,10 @@ const networkPaused: FeedbackMessage = {
 };
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "BetaInviteError:INVITE_REQUIRED_OR_UNAVAILABLE": {
+    title: "Invite unavailable",
+    description: "Check your invite code and email, or ask your teammate for a new invite.",
+  },
   "ExecutionError:NETWORK_PAUSED": networkPaused,
   "SignatureError:NETWORK_PAUSED": networkPaused,
   "SessionKeyCreationError:NETWORK_PAUSED": networkPaused,

@@ -3,6 +3,14 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const auditRelations = defineRelationsPart(schema, (r) => ({
+  betaInviteEvent: {
+    // Operator and redemption history remains attached to the retained invite.
+    invite: r.one.betaInvite({
+      from: r.betaInviteEvent.inviteId,
+      to: r.betaInvite.id,
+      optional: false,
+    }),
+  },
   userEvent: {
     // Each user audit event belongs to one user.
     user: r.one.user({ from: r.userEvent.userId, to: r.user.id, optional: false }),

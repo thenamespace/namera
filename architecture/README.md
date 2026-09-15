@@ -63,6 +63,7 @@ application contracts are the extension point for future chain families.
 
 - [Auth model](auth/README.md)
 - [Magic-link authentication](auth/core/magic-link.md)
+- [Private-beta invites](auth/core/beta-invites.md)
 - [Browser sessions](auth/core/sessions.md)
 - [Organizations, members, roles, and invitations](auth/organization/README.md)
 - [API keys](auth/core/api-keys.md)

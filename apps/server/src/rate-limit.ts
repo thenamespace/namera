@@ -12,6 +12,11 @@ export const rateLimitPolicy = {
     algorithm: "token-bucket",
   },
   magicLink: {
+    inviteAttemptsGlobal: {
+      limit: 120,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
     requestByIp: {
       limit: 10,
       window: Duration.minutes(15),

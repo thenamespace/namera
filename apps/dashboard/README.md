@@ -54,6 +54,10 @@ the client bundle without duplicating account review logic.
 
 ## Authentication routes
 
+Private-beta signup accepts a six-character invite code. `/auth?invite=CODE`
+prefills it. The same email form supports existing users without an invite;
+verification, admission and one-time redemption are enforced by the API.
+
 - `/auth` contains the magic-link request UI.
 - `/auth/verify` contains the browser-session confirmation UI.
 - `/invitations/$invitationId` is an authenticated, sidebar-free invitation

@@ -4,6 +4,7 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
   InvalidMagicLinkError,
+  BetaInviteRequiredError,
   MagicLinkAttemptsExceededError,
   type MagicLinkError,
 } from "@namera-ai/protocol";
@@ -121,10 +122,32 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           }
 
           const existingUser = yield* repository.auth.user.findByEmail(verification.identifier);
+          const inviteId = verification.data.betaInviteId;
+          const invite =
+            !existingUser && inviteId
+              ? yield* repository.auth.betaInvite.lockActive(inviteId, now)
+              : undefined;
+          if (
+            !existingUser &&
+            (config.inviteRequired || inviteId !== undefined) &&
+            (!invite || (invite.email !== null && invite.email !== verification.identifier))
+          ) {
+            return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+          }
           const initialized = existingUser
             ? { user: existingUser, organization: undefined }
             : yield* createUserWithPersonalOrganization(repository, audit, verification.identifier);
           const user = initialized.user;
+          if (invite) {
+            const redeemed = yield* repository.auth.betaInvite.redeem(
+              invite.id,
+              user.id,
+              yield* DateTime.now,
+            );
+            if (!redeemed)
+              return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
+            yield* repository.auth.betaInvite.appendEvent(invite.id, "redeemed");
+          }
           yield* repository.auth.user.markEmailVerifiedAndLogin(user.id, now);
           const memberships = yield* repository.auth.member.findMembershipsForUser(user.id);
           const organization =

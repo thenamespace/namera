@@ -28,6 +28,13 @@ export const MagicLinkRoutes = HttpApiBuilder.group(NameraApi, "magicLink", (han
             rateLimitPolicy.magicLink.requestByEmail,
           );
 
+          if (payload.inviteCode !== undefined) {
+            yield* consumeRateLimit(
+              "beta-invite.request.global",
+              "signup",
+              rateLimitPolicy.magicLink.inviteAttemptsGlobal,
+            );
+          }
           const body = yield* app.magicLink.request(payload);
 
           return HttpApiSchema.withHeaders({

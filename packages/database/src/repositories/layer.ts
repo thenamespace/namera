@@ -4,6 +4,7 @@ import type { Database } from "#/core/index";
 import { OrganizationEventRepository, UserEventRepository } from "#/repositories/audit/index";
 import {
   ActorRepository,
+  BetaInviteRepository,
   ApiKeyRepository,
   OAuthAuthorizationRepository,
   OAuthAuthorizationCodeRepository,
@@ -59,6 +60,7 @@ export interface RepositoryService {
     user: UserEventRepository["Service"];
   };
   auth: {
+    betaInvite: BetaInviteRepository["Service"];
     actor: ActorRepository["Service"];
     apiKey: ApiKeyRepository["Service"];
     oauth: {
@@ -121,6 +123,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const betaInvite = yield* BetaInviteRepository;
       const apiKey = yield* ApiKeyRepository;
       const oauthAuthorization = yield* OAuthAuthorizationRepository;
       const oauthAuthorizationCode = yield* OAuthAuthorizationCodeRepository;
@@ -171,6 +174,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           user: userEvent,
         },
         auth: {
+          betaInvite,
           actor,
           apiKey,
           oauth: {
@@ -230,6 +234,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        BetaInviteRepository.layer,
         AddressMetadataRepository.layer,
         DashboardOverviewRepository.layer,
         ApiKeyRepository.layer,
