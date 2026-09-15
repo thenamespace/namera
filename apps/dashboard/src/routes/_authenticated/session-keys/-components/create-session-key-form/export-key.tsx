@@ -12,9 +12,10 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  Input,
+  InputGroup,
   Typography,
 } from "@namera-ai/ui";
+import { HugeiconsIcon, ViewIcon, ViewOffIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 
 import { CopyIconButton } from "@/components/copy-icon-button";
@@ -34,6 +35,7 @@ export function ExportSessionKey({
   onSaved: () => void;
 }) {
   const [command, setCommand] = useState<string>();
+  const [visible, setVisible] = useState({ password: false, confirmation: false });
   const loginCommand = `namera login --host '${new URL(env.backendUrl).origin.replaceAll("'", "'\\''")}'`;
   const form = useForm<typeof SessionExportForm.Encoded>({
     defaultValues: { password: "", confirmation: "" },
@@ -45,6 +47,7 @@ export function ExportSessionKey({
       const envelope = await draft.seal(new URL(env.backendUrl).origin, bindings, secret);
       setCommand(`namera session-key import ${Encoding.encodeBase64Url(JSON.stringify(envelope))}`);
       form.reset();
+      setVisible({ password: false, confirmation: false });
     } catch (error) {
       showErrorToast(error, {
         title: "Couldn’t encrypt session key",
@@ -103,15 +106,34 @@ export function ExportSessionKey({
                       <FieldLabel htmlFor={`export-${name}`}>
                         {name === "password" ? "Export passphrase" : "Confirm passphrase"}
                       </FieldLabel>
-                      <Input
-                        {...field}
-                        id={`export-${name}`}
-                        type="password"
-                        autoComplete="new-password"
-                        variant="secondary"
-                        fullWidth
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <InputGroup fullWidth variant="secondary">
+                        <InputGroup.Input
+                          {...field}
+                          id={`export-${name}`}
+                          type={visible[name] ? "text" : "password"}
+                          autoComplete="new-password"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <InputGroup.Suffix>
+                          <Button
+                            type="button"
+                            isIconOnly
+                            size="sm"
+                            variant="ghost"
+                            aria-label={`${visible[name] ? "Hide" : "Show"} ${name === "password" ? "export" : "confirmation"} passphrase`}
+                            aria-controls={`export-${name}`}
+                            onPress={() =>
+                              setVisible((current) => ({ ...current, [name]: !current[name] }))
+                            }
+                          >
+                            <HugeiconsIcon
+                              aria-hidden
+                              icon={visible[name] ? ViewOffIcon : ViewIcon}
+                              size={18}
+                            />
+                          </Button>
+                        </InputGroup.Suffix>
+                      </InputGroup>
                       {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
                     </Field>
                   )}
