@@ -7,6 +7,10 @@
     "build": "turbo run build",
     "billing:margin": "node script/calculate-margin.ts",
     "check": "oxfmt --check . && turbo run lint typecheck typecheck:test build",
+    "changeset": "changeset",
+    "pack:check": "node script/check-packages.mjs",
+    "version-packages": "changeset version && pnpm install --lockfile-only --ignore-scripts",
+    "release": "pnpm version-packages && pnpm pack:check && changeset publish",
     "dev": "turbo run dev",
     "dev:services:down": "docker compose down",
     "dev:services:logs": "docker compose logs -f",
@@ -24,10 +28,12 @@
     "typecheck:test": "turbo run typecheck:test"
   },
   "dependencies": {
-    "@namera-ai/cli": "link:apps/cli"
+    "@namera-ai/cli": "workspace:*"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@arethetypeswrong/core": "catalog:",
+    "@changesets/cli": "3.0.3",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/language-service": "catalog:",

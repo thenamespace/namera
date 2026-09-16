@@ -1,0 +1,21 @@
+name: Setup pnpm and Node.js
+description: Install pinned tooling and workspace dependencies.
+inputs:
+  registry-url:
+    description: Optional registry for token-based npm authentication.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        run_install: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .node-version
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+        registry-url: ${{ inputs.registry-url }}
+    - shell: bash
+      run: pnpm install --frozen-lockfile
