@@ -1,5 +1,5 @@
 ---
-name: Deploy - Namera Server
+name: Deploy - Server
 
 on:
   workflow_dispatch:
@@ -20,13 +20,15 @@ on:
 
 jobs:
   call-build:
-    uses: ./.github/workflows/build-and-push.yml
+    uses: ./.github/workflows/build-and-push.yaml
     secrets: inherit
     permissions:
       contents: "read"
       id-token: "write"
     with:
-      app_name: namera-server
+      app_name: namera-core-server
       dockerfile: apps/server/Dockerfile
       environment: ${{ inputs.environment }}
       ref: ${{ inputs.ref }}
+      # No dotenv: database and API secrets are runtime values supplied by the
+      # infra app, and must not be baked into the image.
