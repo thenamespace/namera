@@ -12,3 +12,4 @@ export * from "./session-key.js";
 export * from "./signature.js";
 export * from "./wallet.js";
 export * from "./oauth.js";
+export * from "./waitlist.js";

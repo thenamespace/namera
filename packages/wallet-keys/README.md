@@ -93,3 +93,7 @@ const program = Effect.gen(function* () {
 `WalletKeys.layer` uses Google Cloud KMS, `WalletKeys.devLayer` uses local
 mode-`0600` key files, and `WalletKeys.testLayer` is deterministic. Composition
 roots select one of these layers; provider layers are not separate public APIs.
+
+`WalletKeys.disabledLayer` requires no configuration or provider resources and
+fails every operation with `WalletKeyError`. The self-custodial server uses this
+layer in all environments; it does not load local key storage or GCP credentials.

@@ -33,7 +33,7 @@ the encrypted EmailJobs service, the selected email provider, selected
 WalletKeys provider, EVM clients, application workflows, route handlers, and
 telemetry. Provider selection is environment-owned:
 
-- wallet keys: local files for development, Google Cloud KMS for production;
+- wallet keys: disabled in every server environment for the self-custodial beta;
 - email: development logger in development, Resend otherwise;
 - telemetry: local LGTM outside production, Axiom datasets in production.
 

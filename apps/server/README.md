@@ -126,6 +126,16 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 2 MiB, apply a 10-second upstream timeout, disable caching, and use a dedicated
 600 requests-per-minute per-IP limit.
 
+## Waitlist API
+
+`POST /waitlist` accepts an email publicly. `GET /internal/waitlist` lists entries
+with bounded pagination/search/status filters, and `PATCH /internal/waitlist/:id`
+sets `pending` or `completed`; both require `ADMIN_TOKEN`. Joining never creates
+an account or sends an email. Set optional `WAITLIST_CORS_ORIGIN` to the landing
+page's exact origin; only the public submission route allows it, without cookies.
+See [waitlist architecture](../../architecture/auth/waitlist.md) for commands,
+constraints, audit, counters, and rate limits. Landing-page wiring is separate.
+
 ## Rate limiting
 
 Request bodies are capped at 2 MiB (64 KiB for `/oauth/*`) before unbounded
@@ -257,9 +267,9 @@ own README documents a default.
 
 For production, start from [`.env.prod.example`](.env.prod.example), replace all
 example origins and fill every required credential through your secret manager
-or a private runtime env file. It includes Namespace ENS, Resend, Axiom, GCP KMS,
-PostgreSQL, cryptographic keys, and admin configuration. Production uses GCP
-Application Default Credentials, not the development local-key directory.
+or a private runtime env file. It includes Namespace ENS, Resend, Axiom,
+PostgreSQL, cryptographic keys, and admin configuration. Self-custodial deployments
+do not require GCP KMS credentials or server-side wallet-key storage.
 The template is safe to commit; populated env files remain ignored and excluded
 from container images.
 
@@ -276,7 +286,7 @@ The composition root also loads:
 - authentication origins from `@namera-ai/application`;
 - cryptographic secrets from `@namera-ai/crypto`;
 - Alchemy RPC credentials and BSO policy configuration from `@namera-ai/evm`;
-- local or GCP signer configuration from `@namera-ai/wallet-keys`;
+- a disabled managed signer from `@namera-ai/wallet-keys` (no configuration);
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.
 
@@ -287,11 +297,12 @@ service's variables.
 Only one exact CORS origin is allowed because credentialed requests must not use
 a wildcard origin.
 
-Development uses `WalletKeys.devLayer` with local key files. Other environments
-use `WalletKeys.layer` with Google Cloud KMS, so set `GCP_PROJECT_ID`,
-`GCP_KMS_LOCATION`, and `GCP_KMS_KEY_RING`. Authenticate with Application Default
-Credentials; locally, `GOOGLE_APPLICATION_CREDENTIALS` may point to a credential
-file. The configured key ring must already exist.
+All server environments use `WalletKeys.disabledLayer`. Owner passkeys and local
+session keys sign on the client; managed-key operations fail closed. Local and
+KMS provider implementations remain available for explicit package use and tests.
+Set `TELEMETRY_SERVICE_VERSION` to the deployed release tag or Git SHA to identify
+the version producing logs, traces, and metrics. It defaults to `development`
+when omitted, so supply a meaningful value in production.
 
 ## Commands
 

@@ -1,6 +1,6 @@
-import { Context, Layer, type Effect } from "effect";
+import { Context, Effect, Layer } from "effect";
 
-import type { WalletKeyError } from "@namera-ai/protocol";
+import { WalletKeyError } from "@namera-ai/protocol";
 import type {
   CreatedWalletKey,
   CreateWalletKeyInput,
@@ -13,6 +13,15 @@ import type {
 import { makeGcpWalletKeys } from "./gcp.js";
 import { makeLocalWalletKeys } from "./local.js";
 import { makeTestWalletKeys } from "./test.js";
+
+const unavailable = Effect.fn("wallet-keys.disabled")(function* (
+  operation: WalletKeyError["operation"],
+) {
+  return yield* new WalletKeyError({
+    operation,
+    cause: new Error("Managed wallet keys are disabled in this self-custodial deployment"),
+  });
+});
 
 export interface WalletKeysService {
   readonly create: (input: CreateWalletKeyInput) => Effect.Effect<CreatedWalletKey, WalletKeyError>;
@@ -35,4 +44,12 @@ export class WalletKeys extends Context.Service<WalletKeys, WalletKeysService>()
   static readonly devLayer = Layer.effect(WalletKeys, makeLocalWalletKeys);
 
   static readonly testLayer = Layer.succeed(WalletKeys, makeTestWalletKeys());
+
+  static readonly disabledLayer = Layer.succeed(WalletKeys, {
+    create: () => unavailable("create"),
+    signMessage: () => unavailable("sign"),
+    signHash: () => unavailable("sign"),
+    disable: () => unavailable("disable"),
+    destroy: () => unavailable("destroy"),
+  });
 }

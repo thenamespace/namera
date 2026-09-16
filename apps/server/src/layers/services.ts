@@ -35,12 +35,6 @@ const EmailJobsLive = EmailJobs.layer.pipe(
   Layer.provide(EmailProviderLive),
 );
 
-const WalletKeysLive = Layer.unwrap(
-  Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
-    environment === "development" ? WalletKeys.devLayer : WalletKeys.layer,
-  ),
-);
-
 const EvmLive = Layer.unwrap(
   Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
     environment === "development" ? Evm.devLayer : Evm.layer,
@@ -51,7 +45,7 @@ export const ServicesLive = Layer.mergeAll(
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,
-  WalletKeysLive,
+  WalletKeys.disabledLayer,
   EvmLive,
   Ens.layer,
   Passkeys.layer,

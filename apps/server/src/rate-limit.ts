@@ -6,6 +6,10 @@ import { RateLimiter } from "effect/unstable/persistence";
 import { RateLimitExceeded } from "@namera-ai/protocol";
 
 export const rateLimitPolicy = {
+  waitlist: {
+    byIp: { limit: 5, window: Duration.minutes(15), algorithm: "fixed-window" },
+    global: { limit: 500, window: Duration.hours(1), algorithm: "fixed-window" },
+  },
   admin: {
     byIp: {
       limit: 10,

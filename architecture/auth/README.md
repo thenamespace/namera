@@ -9,6 +9,7 @@ Namera has four principal types and two independent questions for every protecte
 
 Platform operators have a separate [admin authorization boundary](admin.md),
 outside organization actors and delegated wallet authority.
+The public [waitlist](waitlist.md) records interest without admitting users.
 
 | Area          | Responsibility                                                                  | Documentation                           |
 | ------------- | ------------------------------------------------------------------------------- | --------------------------------------- |

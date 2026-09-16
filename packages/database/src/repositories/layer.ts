@@ -5,6 +5,7 @@ import { OrganizationEventRepository, UserEventRepository } from "#/repositories
 import {
   ActorRepository,
   BetaInviteRepository,
+  WaitlistRepository,
   ApiKeyRepository,
   OAuthAuthorizationRepository,
   OAuthAuthorizationCodeRepository,
@@ -61,6 +62,7 @@ export interface RepositoryService {
   };
   auth: {
     betaInvite: BetaInviteRepository["Service"];
+    waitlist: WaitlistRepository["Service"];
     actor: ActorRepository["Service"];
     apiKey: ApiKeyRepository["Service"];
     oauth: {
@@ -124,6 +126,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
       const betaInvite = yield* BetaInviteRepository;
+      const waitlist = yield* WaitlistRepository;
       const apiKey = yield* ApiKeyRepository;
       const oauthAuthorization = yield* OAuthAuthorizationRepository;
       const oauthAuthorizationCode = yield* OAuthAuthorizationCodeRepository;
@@ -175,6 +178,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         auth: {
           betaInvite,
+          waitlist,
           actor,
           apiKey,
           oauth: {
@@ -235,6 +239,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       Layer.mergeAll(
         ActorRepository.layer,
         BetaInviteRepository.layer,
+        WaitlistRepository.layer,
         AddressMetadataRepository.layer,
         DashboardOverviewRepository.layer,
         ApiKeyRepository.layer,

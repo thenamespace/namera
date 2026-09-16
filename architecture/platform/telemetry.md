@@ -81,6 +81,15 @@ metrics are operational signals and may reflect an attempted transition that
 is later rolled back by a wider domain transaction. The billing worker logs
 only nonzero aggregate run counts and one bounded failure event.
 
+### Waitlist signals
+
+`namera.waitlist.joins` counts new entries only. `namera.waitlist.status_changes`
+counts actual committed transitions with destination `status` (`pending` or
+`completed`). Duplicate joins and unchanged statuses increment neither counter.
+HTTP route labels strip search queries and replace entry IDs with `:id`.
+Emails, IDs, and admin tokens are never metric attributes. No payload logs are
+added. See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
+
 ### Dashboard signals
 
 Owner session operations expose `namera.session_key.operation.results` with

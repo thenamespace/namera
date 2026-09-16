@@ -27,6 +27,7 @@ import {
   SessionRoutes,
   UserRoutes,
 } from "#/routes/auth/index";
+import { WaitlistRoutes } from "#/routes/auth/waitlist";
 import { BillingRoutes } from "#/routes/billing/index";
 import { HealthRoutes } from "#/routes/core/health";
 import { DashboardRoutes } from "#/routes/dashboard/index";
@@ -87,6 +88,7 @@ export const makeTestServerLayer = (
 
   const TestHandlersLayer = Layer.mergeAll(
     BetaInviteRoutes,
+    WaitlistRoutes,
     AddressMetadataRoutes,
     ApiKeyRoutes,
     BillingRoutes,

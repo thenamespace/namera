@@ -246,6 +246,18 @@ Tenant-scoped principal used by authorization, audit, executions, signatures, an
 - Define session concurrency and forced-global-logout policy.
 - Review whether captured IP addresses require truncation or a shorter retention window.
 
+## Waitlist
+
+`auth.waitlist` stores unverified interest independently of users and tenants.
+Columns: text UUIDv7 primary key `id`, non-null normalized `email`, non-null
+`status` defaulting to `pending`, non-null timezone-aware `created_at` and
+`updated_at` defaulting to now, and nullable timezone-aware `completed_at`.
+The email has a unique index and a lowercase/trimmed check. Checks limit status
+to `pending`/`completed` and require completion time exactly when completed.
+The primary key supports descending-ID cursor scans; `(status, id)` supports
+filtered pages. Literal email substring search is a scan initially. There are
+no user/organization foreign keys. See [workflow](../auth/waitlist.md).
+
 # Beta invite admission
 
 `auth.beta_invite`: text primary key `id`, unique non-null `code_hmac`, nullable

@@ -92,6 +92,17 @@ When a successful state mutation requires an audit event, the domain rows and au
 - Decide whether cryptographic append/tamper evidence is required for enterprise plans.
 - Review every mutation for transactional audit coverage and document intentional omissions.
 
+## Waitlist operator events
+
+`audit.waitlist_events` is append-only: text UUIDv7 primary key `id`, non-null
+`waitlist_id` referencing `auth.waitlist.id`, non-null `previous_status` and
+`status`, and timezone-aware `created_at` defaulting to now. A check requires
+both statuses to be pending/completed and different. `waitlist_id` is indexed.
+The foreign key retains history without cascading deletion. Events and status
+changes share one transaction; no-op updates add nothing. No email, credential,
+or invented tenant actor is stored. The shared admin token cannot attribute
+actions to individual operators.
+
 # Beta invite operator events
 
 `audit.beta_invite_events` is append-only: text primary key `id`, non-null

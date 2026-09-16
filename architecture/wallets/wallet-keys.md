@@ -60,13 +60,17 @@ values.
 
 ## Runtime configuration
 
-| Variable                      | Purpose                                |
-| ----------------------------- | -------------------------------------- |
-| `WALLET_KEYS_PROVIDER`        | Select local or GCP KMS in the server. |
-| `WALLET_KEYS_LOCAL_DIRECTORY` | Development key directory.             |
-| `GCP_PROJECT_ID`              | KMS project.                           |
-| `GCP_KMS_LOCATION`            | KMS location, default `global`.        |
-| `GCP_KMS_KEY_RING`            | Existing key ring.                     |
+The self-custodial server composes `WalletKeys.disabledLayer` in every environment.
+It needs no wallet-key provider configuration and rejects all managed-key operations
+with `WalletKeyError`. Passkey and session signing happen on clients. The local and
+GCP providers below remain available only through explicit layer composition.
+
+| Variable                      | Purpose                         |
+| ----------------------------- | ------------------------------- |
+| `WALLET_KEYS_LOCAL_DIRECTORY` | Development key directory.      |
+| `GCP_PROJECT_ID`              | KMS project.                    |
+| `GCP_KMS_LOCATION`            | KMS location, default `global`. |
+| `GCP_KMS_KEY_RING`            | Existing key ring.              |
 
 ## Pending
 

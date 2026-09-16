@@ -23,6 +23,7 @@ import {
   makeOrganizationApplication,
   type OrganizationApplication,
 } from "#/auth/organization/organization";
+import { makeWaitlistApplication } from "#/auth/waitlist";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
 import {
   makeDashboardOverviewApplication,
@@ -38,6 +39,7 @@ import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
   readonly betaInvite: Effect.Success<typeof makeBetaInviteApplication>;
+  readonly waitlist: Effect.Success<typeof makeWaitlistApplication>;
   readonly apiKey: ApiKeyApplication;
   readonly billing: BillingApplication;
   readonly magicLink: RequestMagicLinkApplication & VerifyMagicLinkApplication;
@@ -69,6 +71,7 @@ export class Application extends Context.Service<Application, ApplicationService
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
       const betaInvite = yield* makeBetaInviteApplication;
+      const waitlist = yield* makeWaitlistApplication;
       const apiKey = yield* makeApiKeyApplication;
       const user = yield* makeUserApplication;
       const magicLinkRequest = yield* makeRequestMagicLinkApplication;
@@ -89,6 +92,7 @@ export class Application extends Context.Service<Application, ApplicationService
 
       return Application.of({
         betaInvite,
+        waitlist,
         apiKey,
         billing,
         magicLink: { ...magicLinkRequest, ...magicLinkVerify },

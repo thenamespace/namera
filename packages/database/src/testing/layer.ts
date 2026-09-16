@@ -54,6 +54,8 @@ import {
   verification,
   betaInvite,
   betaInviteEvent,
+  waitlist,
+  waitlistEvent,
   wallet,
   walletKey,
 } from "#/schema/index";
@@ -93,6 +95,8 @@ export class TestDatabase extends Context.Service<
       const reset = Effect.fn("database.testDatabase.reset")(function* () {
         yield* database.delete(notificationRecipient);
         yield* database.delete(betaInviteEvent);
+        yield* database.delete(waitlistEvent);
+        yield* database.delete(waitlist);
         yield* database.delete(betaInvite);
         yield* database.delete(notificationPreference);
         yield* database.delete(notification);
