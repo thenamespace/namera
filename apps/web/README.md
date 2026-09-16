@@ -14,8 +14,19 @@ pnpm --filter @namera-ai/web build
 pnpm --filter @namera-ai/web preview
 ```
 
-Development and preview use port 4000. No environment variables or backend
-services are required.
+Development and preview use port 4000. Copy `.env.example` to `.env` and set
+`VITE_API_URL` to the backend origin (defaults to `https://api.namera.ai`). It is
+public configuration embedded at build time; rebuild after changing it.
+
+The CTA sends email to `POST /waitlist` without cookies or tokens. For local
+testing use `VITE_API_URL=http://localhost:8080` and set the server's
+`WAITLIST_CORS_ORIGIN=http://localhost:4000`. In production, use the exact public
+website origin for that server setting. Never put `ADMIN_TOKEN` in this app.
+
+The form validates with the shared email schema, disables duplicate submissions,
+and shows success only after an accepted API response. Rate limits, network
+failures and unexpected responses leave the form available for retry.
+Run `pnpm --filter @namera-ai/web test` for transport and validation tests.
 
 ## Structure
 

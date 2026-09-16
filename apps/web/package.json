@@ -10,19 +10,24 @@
     "generate-routes": "tsr generate",
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "preview": "vite preview --port 4000",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
     "typecheck": "pnpm generate-routes && tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
     "@fontsource-variable/inter": "catalog:",
+    "@hookform/resolvers": "catalog:",
+    "@namera-ai/protocol": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@number-flow/react": "^0.6.2",
     "@paper-design/shaders-react": "^0.0.80",
     "@tanstack/react-router": "catalog:web",
     "@tanstack/react-start": "catalog:",
     "@xyflow/react": "^12.11.6",
+    "effect": "catalog:",
     "motion": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
@@ -35,6 +40,7 @@
     "klarity": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:web"
+    "vite": "catalog:web",
+    "vitest": "catalog:"
   }
 }

@@ -298,7 +298,12 @@ export const SourceCard = ({
   const item = SOURCES.find((entry) => entry.id === source) ?? SOURCES[0];
   return (
     <div className={shell(state)}>
-      <Head title={item.label} note={item.note} state={state} Mark={item.Glyph} />
+      <Head
+        title={item.label}
+        note={item.note}
+        state={state}
+        renderMark={(props) => <item.Glyph {...props} />}
+      />
     </div>
   );
 };

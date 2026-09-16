@@ -1,29 +1,29 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
 import { ArrowRight02Icon, Icon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
+import { Controller, useForm } from "react-hook-form";
 
 import { Container, Reveal, Section } from "#/components/marketing/primitives";
 import { ShaderField } from "#/components/marketing/shader-field";
 
-/*
- * TODO: point this at the waitlist endpoint. While it is null the form does
- * not send anywhere, and it says so rather than showing a thank-you that would
- * be untrue to anyone who typed their address in. Setting it turns the sent
- * state on; nothing else here needs to change.
- */
-const WAITLIST_ENDPOINT: string | null = null;
-
-type Status = "idle" | "sent" | "unwired";
+import { useJoinWaitlist } from "./use-join-waitlist";
+import {
+  WaitlistFormValidator,
+  type WaitlistFormInput,
+  type WaitlistFormOutput,
+} from "./waitlist-schema";
 
 export const ClosingCta = () => {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStatus(WAITLIST_ENDPOINT === null ? "unwired" : "sent");
-  };
+  const [joinedEmail, setJoinedEmail] = useState<string>();
+  const [error, setError] = useState<string>();
+  const form = useForm<WaitlistFormInput, unknown, WaitlistFormOutput>({
+    resolver: standardSchemaResolver(WaitlistFormValidator),
+    defaultValues: { email: "" },
+  });
+  const join = useJoinWaitlist({ onSuccess: setJoinedEmail, onError: setError });
 
   return (
     <Section id="waitlist" className="relative isolate overflow-hidden border-t-1 border-border">
@@ -62,12 +62,21 @@ export const ClosingCta = () => {
               and we will write to you the day Namera opens.
             </p>
 
-            {status === "sent" ? (
+            {joinedEmail ? (
               <output className="mt-10 block text-[0.9375rem] text-foreground">
-                You are on the list. We will write to {email} the day it opens.
+                You are on the list. We will write to {joinedEmail} when Namera opens.
               </output>
             ) : (
-              <form onSubmit={onSubmit} className="mt-10 w-full max-w-[28rem]">
+              <form
+                id="waitlist-form"
+                noValidate
+                onSubmit={form.handleSubmit((payload) => {
+                  setError(undefined);
+                  return join.mutate(payload);
+                })}
+                className="mt-10 w-full max-w-[28rem]"
+                aria-busy={join.isPending}
+              >
                 <div
                   className={cn(
                     "edge-top flex items-center gap-2 rounded-xl border-1 border-hairline-strong",
@@ -76,47 +85,67 @@ export const ClosingCta = () => {
                     "focus-within:border-accent/50",
                   )}
                 >
-                  <label htmlFor="waitlist-email" className="sr-only">
-                    Email address
-                  </label>
-                  <input
-                    id="waitlist-email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      setStatus("idle");
-                    }}
-                    className={cn(
-                      "min-w-0 flex-1 bg-transparent px-3 text-[0.9375rem] text-foreground",
-                      "placeholder:text-ink-subtle focus:outline-none",
+                  <Controller
+                    control={form.control}
+                    name="email"
+                    render={({ field, fieldState }) => (
+                      <Field className="min-w-0 flex-1">
+                        <FieldLabel htmlFor="waitlist-email" className="sr-only">
+                          Email address
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="waitlist-email"
+                          type="email"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          placeholder="you@company.com"
+                          maxLength={254}
+                          disabled={join.isPending}
+                          aria-invalid={fieldState.invalid}
+                          aria-describedby={fieldState.invalid ? "waitlist-email-error" : undefined}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            setError(undefined);
+                          }}
+                          className="w-full min-w-0 bg-transparent px-3 text-foreground shadow-none"
+                        />
+                      </Field>
                     )}
                   />
-                  <button
+                  <Button
+                    form="waitlist-form"
                     type="submit"
-                    className={cn(
-                      "tap-target group/join inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-4",
-                      "bg-foreground text-[0.875rem] font-medium text-background",
-                      "transition-[background-color,transform] duration-150 ease-out-quad",
-                      "hover:bg-foreground/90 active:scale-[0.98]",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
-                    )}
+                    isDisabled={join.isPending}
+                    className={
+                      cn(
+                        "tap-target group/join inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-4",
+                        "bg-foreground text-[0.875rem] font-medium text-background",
+                        "transition-[background-color,transform] duration-150 ease-out-quad",
+                        "hover:bg-foreground/90 active:scale-[0.98]",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
+                      ) ?? ""
+                    }
                   >
-                    Join the waitlist
+                    {join.isPending ? "Joining..." : "Join the waitlist"}
                     <Icon
                       icon={ArrowRight02Icon}
                       aria-hidden
                       strokeWidth={2}
                       className="size-3.5 transition-transform duration-150 ease-out-quad group-hover/join:translate-x-0.5"
                     />
-                  </button>
+                  </Button>
                 </div>
 
-                <output className="mt-3 block h-5 text-[0.8125rem] text-ink-subtle">
-                  {status === "unwired" ? "Not wired up yet, so nothing was sent." : null}
+                <FieldError
+                  id="waitlist-email-error"
+                  errors={
+                    form.formState.errors.email ? [{ message: "Enter a valid email address." }] : []
+                  }
+                />
+                <output className="mt-3 block min-h-5 text-[0.8125rem] text-ink-subtle">
+                  {error}
                 </output>
               </form>
             )}

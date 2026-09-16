@@ -2,7 +2,11 @@
 
 The waitlist is a platform-level interest list, not an account or admission grant.
 Addresses are unverified. Joining does not create a user, organization, session,
-invite, notification, or email job. The landing-page form is not wired yet.
+invite, notification, or email job. The landing-page CTA posts to this endpoint
+using the shared request/response schemas and `VITE_API_URL` (public build-time
+configuration). It omits credentials, bounds requests to 15 seconds, prevents
+duplicate in-flight submissions, and handles validation, rate-limit and network
+errors without claiming a successful join. It does not call admin endpoints.
 
 ## API
 
