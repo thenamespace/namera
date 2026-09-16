@@ -74,21 +74,29 @@ const run = (args: string[]) =>
     },
   );
 
-describe("CLI command output", () => {
-  it("renders real wallet list/get commands without JSON nesting or ANSI in pipes", async () => {
+// Allow cold CLI startup on shared CI runners. Keep this above the subprocess
+// deadline so a hung command reports its captured output before Vitest times out.
+describe("CLI command output", { timeout: 20000 }, () => {
+  it("renders wallet lists without JSON nesting or ANSI in pipes", async () => {
     const listed = await run(["wallet", "list"]);
     expect(listed.stdout).toContain("Found 1 delegated wallet:");
     expect(listed.stdout).toContain("💳 Output test wallet");
     expect(listed.stdout).not.toContain("\u001b");
+  });
+  it("renders wallet details", async () => {
     const detail = await run(["wallet", "get", wallet.id]);
     expect(detail.stdout).toContain(`Wallet ID: ${wallet.id}`);
     expect(detail.stdout).toContain(`Address: ${wallet.address}`);
   });
-  it("preserves raw JSON/NDJSON and suppresses pretty output with quiet", async () => {
+  it("preserves raw JSON", async () => {
     const json = await run(["--output", "json", "wallet", "list"]);
     expect(JSON.parse(json.stdout)).toMatchObject([wallet]);
+  });
+  it("preserves raw NDJSON", async () => {
     const ndjson = await run(["--output", "ndjson", "wallet", "list"]);
     expect(JSON.parse(ndjson.stdout)).toMatchObject(wallet);
+  });
+  it("suppresses pretty output with quiet", async () => {
     const quiet = await run(["--quiet", "wallet", "list"]);
     expect(quiet.stdout).toBe("");
   });
