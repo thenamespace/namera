@@ -15,17 +15,16 @@ does not preserve removed experimental schemas.
 
 ### Wallet keys and chain providers
 
-- Run live Google Cloud KMS create/sign/disable tests with Workload Identity for
-  every production algorithm/protection combination.
-- Add reconciliation or an operator repair queue for KMS keys created before a
-  failed wallet persistence transaction.
+- Verify passkey account creation, encrypted key export/import, local signing,
+  owner-approved session installation and onchain revocation. The self-custodial
+  runtime uses no server-side wallet-key provider or GCP KMS configuration.
 - Smoke test every advertised Alchemy chain and Rundler/BSO prepare/submit/receipt/
   reconciliation path.
 
 ### Secrets and external services
 
 - Inject PostgreSQL, independent HMAC/encryption keys, Resend, Alchemy,
-  Axiom, and GCP configuration from the deployment secret manager.
+  and Axiom configuration from the deployment secret manager.
 - Set final HTTPS API/dashboard origins, credentialed CORS, secure cookies, and
   `NODE_ENV=production`.
 - Verify Resend domain authentication and delivery, Axiom ingestion, and
@@ -45,7 +44,7 @@ does not preserve removed experimental schemas.
   except explicit writable paths, port 8080, `/health`, resource limits, and a
   sufficient termination grace period.
 - Add alerts for HTTP 5xx/latency, authorization anomalies, execution failure
-  and reconciliation age, terminal email jobs, KMS/RPC/bundler errors, database
+  and reconciliation age, terminal email jobs, RPC/bundler errors, database
   saturation, worker liveness, and telemetry export.
 - Add browser accessibility tests, load tests, packaged CLI/keyring tests, and
   live-provider smoke tests.
@@ -60,7 +59,7 @@ Each owning feature document records its exact pending boundary.
 ## Deployment order
 
 1. Validate all migrations on a clean production-shaped database.
-2. Verify Workload Identity and disposable GCP KMS operations.
+2. Verify passkey and local session-key lifecycle on the target clients.
 3. Configure final origins, secrets, providers, and telemetry.
 4. Deploy one staging replica and exercise auth, organizations, invitations,
    wallets, session keys, API-key/MCP/CLI delegation, execution, signing,

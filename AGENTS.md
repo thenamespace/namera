@@ -48,6 +48,15 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   packages.
 
 Read the relevant package README before changing that package.
+Publishable package READMEs (`api`, `protocol`, `sdk`, and `cli`) are for npm users,
+not internal contributors. Start with a clear description and requirements,
+include npm/pnpm/yarn/bun installation commands, then runnable quick-start and
+practical usage examples. Explain authentication, configuration, and important
+safety limits where relevant. Use absolute documentation links that work on npm.
+Keep internal folder inventories and contributor rules in `architecture/` or
+this guide instead of applying the private-package README template. Verify code
+examples against current public exports and keep them synchronized with releases.
+
 Read the relevant feature document in [`architecture/`](architecture/README.md)
 before changing a cross-package flow. Read
 [`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)

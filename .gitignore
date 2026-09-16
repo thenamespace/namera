@@ -196,6 +196,8 @@ broadcast/**/31337
 # Research
 research
 
-# Local migration handoff and audit notes
-/MIGRATION_HANDOFF.local.md
-/PRODUCTION_AUDIT.local.md
+# Personal notes (maintained project documentation belongs in architecture/)
+/*.local.md
+
+# Package publication artifacts
+*.tgz

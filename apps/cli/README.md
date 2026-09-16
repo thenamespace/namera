@@ -1,159 +1,137 @@
-# `@namera-ai/cli`
+# @namera-ai/cli
 
-Effect CLI client for Namera. It authorizes a local profile through OAuth 2.1
-device authorization, stores refreshable credentials in the operating-system
-keyring, and uses `@namera-ai/sdk` for typed wallet operations.
+Use Namera from your terminal, Codex, or Claude Code. Import encrypted session
+keys and execute within the permissions you approved. The CLI includes a local
+**stdio MCP server** that your agent client starts automatically.
 
-See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
-authorization, credential, retry, and command architecture. See
-[client workspace architecture](../../architecture/packages/clients.md) for
-the CLI/SDK responsibility split.
+## Installation
 
-The stdio MCP transport, persistent OAuth session and callback adapter live in
-`services/mcp/`. The agent launches `mcp serve`; credentials remain in the OS
-keyring across restarts. Tests cover callback security, refresh/logout races,
-stdio discovery and encrypted-keystore signing with substituted API/keyring.
-See [local MCP integration status](../../architecture/clients/local-mcp.md).
+Requires **Node.js 24.14+** and an available operating-system keyring.
 
-Run `pnpm --filter @namera-ai/cli typecheck:test` to typecheck both source and
-tests, including stdio request authorization.
+```sh
+npm install -g @namera-ai/cli
+pnpm add -g @namera-ai/cli
+yarn global add @namera-ai/cli
+bun add -g @namera-ai/cli
+```
 
-## Commands
+Choose one command. `yarn global` requires Yarn Classic; with modern Yarn use
+`yarn dlx @namera-ai/cli --help` or install globally with npm/pnpm.
+Bun can install the package, but the executable runs on Node.js.
+
+```sh
+namera --help
+namera --version
+```
+
+## Sign in and inspect wallets
 
 ```sh
 namera login
-namera --output json auth status --profile personal
-namera --output ndjson wallet list
+namera wallet list
+namera session-key list
 namera wallet get <wallet-id>
-namera session-key list [--wallet <wallet-id>]
 namera session-key get <session-key-id>
-namera session-key import <encrypted-export> --profile personal
-namera execution simulate
-namera execution execute --params '{"namespace":"eip155","walletId":"...","sessionKeyId":"...","chainId":"eip155:1","calls":[...],"sponsor":false}'
-namera execution status <submission-id>
-namera execution list [--cursor <execution-id>]
-namera sign
-namera verify-signature --params '{"namespace":"eip155","walletId":"...","chainId":"eip155:1","type":"message","message":"hello","signature":"0x..."}'
-namera logout
-namera mcp serve --profile codex --host http://localhost:8080
-namera mcp login --profile codex
-namera mcp status --profile codex
-namera mcp logout --profile codex
 ```
 
-The development build targets `http://localhost:8080` by default, so `namera
-login` connects directly to the local API. Pass `--host <origin>` during login
-to target another server. For API-key automation, `NAMERA_API_URL` overrides the
-same local default.
+Login opens browser consent to choose access. Credentials persist in the OS
+keyring, so you do not sign in for every command. The default API is
+`https://api.namera.ai`.
 
-## Local installation
-
-From the repository root:
+For local development:
 
 ```sh
-pnpm --filter @namera-ai/cli build
-(cd apps/cli && npm link)
-namera --help
+namera login --profile dev --host http://localhost:8080
+namera wallet list --profile dev
 ```
 
-Execution, simulation, signing, and verification prompt for their request fields by default. Pass
-the same public request shape inline with `--params '<json>'` for non-interactive use; the CLI
-decodes both paths through the public protocol schema and does not read request files.
-Interactive execution asks whether Namera should sponsor gas and defaults to yes.
-Execution and simulation require the same explicit session key ID; interactive
-commands prompt for it separately from the wallet ID.
-Inline execution params may set `sponsor` to `false`; omission remains sponsored.
-Self-funded execution also requires `--max-gas-cost-wei <amount>` (or the
-interactive fee-budget prompt). The local signer rejects preparations above
-that budget before signing.
+## Import a session key
 
-## Local MCP
-
-Register once in your local agent client:
+Create a key in the dashboard, approve its networks, and encrypt its export.
+Run the command shown in the dashboard:
 
 ```sh
+namera session-key import <encrypted-export>
+```
+
+The export passphrase is entered privately. The CLI re-encrypts the key with an
+independent OS-keyring secret and stores an encrypted local file. It never falls
+back to plaintext storage. Keep your encrypted backup and passphrase safe.
+Importing does not install the key onchain or grant a client access to it.
+
+## Connect an agent
+
+Register once with your chosen client:
+
+```sh
+# Codex
 codex mcp add namera -- namera mcp serve --profile codex
+
+# Claude Code
 claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude
 ```
 
-Other clients use command `namera` and arguments `["mcp", "serve", "--profile",
-"agent"]`. The client launches the process; no manual server or permanent port
-is needed. First use opens Namera consent without blocking MCP initialization.
-Select installed session keys and retry the tool after consent. If browser opening
-fails, run `namera mcp login --profile agent`. Ordinary CLI login and API keys do
-not authorize MCP. Import encrypted keys on this machine before signing.
+Other MCP clients use command `namera` and arguments
+`["mcp", "serve", "--profile", "agent"]`.
 
-All MCP commands accept `--host` (API origin, default local development) and
-`--profile` (default `default`). Use the same flags for login, serve, status and
-logout. HTTPS is required except for loopback development. Each origin/profile
-stores a separate OAuth bundle in the OS keyring under `namera-mcp`. A private
-SQLite lock file contains no credentials and serializes cross-process refresh.
-No additional dependency is needed: SQLite is built into the required Node 24.
-
-`--max-gas-cost-wei` sets the user-owned fee ceiling for self-funded operations;
-omission permits sponsored operations only. Tools cannot change this ceiling.
-Stdout is reserved for MCP; diagnostics and login URLs use stderr. Closing stdin
-stops MCP and cancels pending consent. Tokens refresh across restarts; revocation
-or ambiguous refresh failure requires fresh login, not repeated token replay.
-`mcp status` reports local state. Logout disables that profile and revokes its
-server grant without deleting signing keys or other profiles.
-
-## Local session keys
-
-`session-key import` accepts a base64url-encoded encrypted export and prompts
-for its passphrase without echoing it. The export must match the active API
-origin. Import re-encrypts the key with an independent OS-keyring unlock secret
-and atomically installs a non-overwriting encrypted file under `session-keys`
-beside the CLI configuration. POSIX directory/file permissions are 0700/0600;
-there is no plaintext or keyring-unavailable fallback.
-
-Execution and message/typed-data signing resolve the imported wallet/session/chain
-binding locally and use the SDK's validated prepare/sign/complete flows. `sign`
-requires an explicit session key ID and locally exported signature consent;
-older exports without `allowSignatures: true` cannot sign messages. Browser
-export and local MCP use this same binding. Normal storage tests use a
-substitute keyring. Opt in to the real platform-keyring test with
-`NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.test.ts`.
-It uses an isolated credential namespace and temporary files and cleans both up.
-Import and reopening passed on macOS; Windows/Linux remain unverified.
-The built CLI prompt has separate coverage below.
-
-For the built command's hidden-passphrase prompt and real macOS keyring import,
-build first, then run the opt-in terminal test (requires `python3` for its
-standard-library pseudo-terminal):
+Your client starts the process: no manual daemon or HTTP MCP endpoint is needed.
+First tool use opens browser authorization. Approve access to installed session
+keys and retry the tool after consent. If the browser cannot open:
 
 ```sh
-pnpm --filter @namera-ai/cli build
-NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/packaged-import.test.ts
+namera mcp login --profile codex
+namera mcp status --profile codex
 ```
 
-This test uses an isolated config directory and an unused random API credential;
-import is local and makes no API call. It does not test login, OAuth or onchain
-signing. Temporary files and keyring entries are removed afterward.
+MCP authorization is separate from ordinary CLI login. Use the same profile and
+`--host` for serve/login/status/logout. Import signing keys on this machine
+before executing or signing. Credentials survive restarts. The CLI does not
+automatically export telemetry from your machine.
 
-`--output pretty|json|ndjson` is global and defaults to `pretty`. Pretty output uses
-command-specific summaries: named wallets, compact session-key lists, network-by-network
-authorization in `session-key get`, execution outcomes, simulation decisions, and signature
-results. It keeps addresses, IDs, signatures, and integer amounts complete. Dates include UTC;
-network displays include their CAIP-2 ID. Empty lists say what was not found, and pending
-executions and paginated history include the next command. Add your original `--profile`
-when following these commands if you are not using the default profile.
+## Simulate, execute, and sign
 
-Headings use terminal bold only on a TTY; `NO_COLOR` disables styling. The terminal's normal
-foreground/background and wrapping remain in control, without fixed-width tables or truncation.
-Untrusted metadata cannot inject terminal escape sequences. Pretty output is a human summary;
-use JSON for complete implementation data and response fields. JSON emits one compact
-document, while NDJSON emits one compact document per top-level array item. `--quiet` (or `-q`)
-suppresses normal command output. Execution and signing commands rely on the SDK to generate one
-idempotency key and reuse it across transient retries; no retry-key flag is exposed.
+```sh
+namera execution simulate
+namera execution execute
+namera execution status <submission-id>
+namera execution list
+namera sign
+namera verify-signature
+```
 
-## Credentials
+Commands prompt for inputs. For automation, pass `--params '<json>'` using the
+public request shape. Execution/signing requires an imported key, active grant,
+and appropriate authority. Gas is sponsored by default. Self-funded operations
+also require `--max-gas-cost-wei <amount>`; MCP tools cannot raise that ceiling.
 
-Profile metadata is stored in the platform configuration directory. Access and
-refresh tokens are stored only through `@napi-rs/keyring`. The CLI does not
-silently fall back to plaintext credentials. `NAMERA_API_KEY` is supported for
-headless automation and takes precedence over profile credentials.
+## Script-friendly output
 
-Refresh-token rotation is guarded by a cross-process profile lock. Commands
-re-read the keyring after acquiring that lock before deciding whether a refresh
-is necessary.
+```sh
+namera --output json wallet list
+namera --output ndjson session-key list
+namera --quiet auth status
+```
+
+Human-readable summaries are the default. JSON includes complete response fields;
+NDJSON emits one document per top-level list item. `NO_COLOR` disables styling.
+MCP reserves stdout for the protocol and writes diagnostics to stderr.
+
+For headless API-key use, supply `NAMERA_API_KEY` through the environment;
+`NAMERA_API_URL` overrides the default host. API keys take precedence over
+ordinary CLI profile credentials, but do not authorize MCP.
+
+## Sign out
+
+```sh
+namera logout
+namera mcp logout --profile codex
+```
+
+Logout revokes that authorization, not other profiles or signing keys. macOS
+Keychain integration is tested; Windows/Linux still need platform verification.
+Headless Linux needs an accessible Secret Service/keyring. There is no plaintext
+or in-memory fallback.
+
+See [local MCP](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-mcp.md)
+and [key storage](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-keystore.md).
+The four public packages share a release version starting with 1.0.0.

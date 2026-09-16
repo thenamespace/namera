@@ -1,195 +1,121 @@
 # @namera-ai/sdk
 
-Browser- and Node-compatible client for API-key and OAuth-bearer access to the Namera API.
-The SDK uses the schema-derived `@namera-ai/api` HTTP client internally, but its
-public methods return ordinary promises and do not expose Effect programs.
+A TypeScript client for Namera's self-custodial agent wallets. Inspect accounts
+and session keys, simulate transactions, and execute or sign using a local
+session signer. Methods return promises with typed success/error results.
 
-See [SDK, CLI, and MCP tools](../../architecture/clients/sdk-cli-mcp.md) for the
-shared capability surface, authentication modes, and retry contract. See
-[client workspace architecture](../../architecture/packages/clients.md) for
-SDK/CLI ownership and extension rules.
+## Installation
 
-## Usage
+```sh
+npm install @namera-ai/sdk
+pnpm add @namera-ai/sdk
+yarn add @namera-ai/sdk
+bun add @namera-ai/sdk
+```
+
+Choose one command. Requires Node.js 24.14+ or a modern browser with Fetch and
+Web Crypto. Never embed an API key in public frontend code.
+
+## Quick start
 
 ```ts
 import { NameraClient } from "@namera-ai/sdk";
 
-const namera = new NameraClient({
-  apiKey: process.env.NAMERA_API_KEY!,
-});
+const apiKey = process.env.NAMERA_API_KEY;
+if (!apiKey) throw new Error("Set NAMERA_API_KEY");
 
-const wallets = await namera.wallets.list();
+const namera = new NameraClient({ apiKey });
+const result = await namera.wallets.list();
 
-if (!wallets.success) {
-  console.error(wallets.error.message);
-  return;
+if (result.success) {
+  console.log(result.data);
+} else {
+  console.error(result.error.message);
 }
-
-console.log(wallets.data);
 ```
 
-Interactive clients may instead provide a bearer token or an asynchronous token
-supplier. The latter lets the caller refresh credentials without rebuilding the
-client:
+The default API is `https://api.namera.ai`. For another deployment:
+
+```ts
+const local = new NameraClient({ apiKey, baseUrl: "http://localhost:8080" });
+```
+
+## OAuth authentication
+
+Supply a bearer token or an asynchronous token supplier. The supplier can refresh
+credentials from your own store without rebuilding the client.
 
 ```ts
 const namera = new NameraClient({
-  baseUrl: "http://localhost:8080",
-  getAccessToken: refreshAccessToken,
+  getAccessToken: async () => {
+    const token = process.env.NAMERA_ACCESS_TOKEN;
+    if (!token) throw new Error("No access token available");
+    return token;
+  },
 });
+
+const sessions = await namera.sessionKeys.list();
+if (sessions.success) console.log(sessions.data);
 ```
 
-Every operation resolves to `NameraResult<A, E>`:
+Authentication does not grant unrestricted access. Namera checks the actor's
+session-key grants and the selected key's policies.
+
+## Operations
+
+| Method                      | Purpose                                                       |
+| --------------------------- | ------------------------------------------------------------- |
+| `wallets.list/get`          | Available accounts                                            |
+| `sessionKeys.list/get`      | Authorized session keys                                       |
+| `executions.simulate`       | Simulate calls and check policy eligibility                   |
+| `executions.execute`        | Prepare, validate, sign locally, and submit                   |
+| `executions.getStatus/list` | Submission status and execution history                       |
+| `sign`                      | Authorized message or EIP-712 signing                         |
+| `verifySignature`           | Verify a smart-account signature against its original payload |
+
+Execution and simulation require a wallet and session key. Gas sponsorship
+defaults to `true`; self-funded execution requires an explicit local fee ceiling.
+Submission is not confirmation: check the returned submission's status.
+
+## Local signing
+
+Configure `resolveSessionSigner` to execute or sign. It returns a
+`LocalSessionSigner` with a trusted installation binding and callbacks backed
+by your local key store. The interface does not require exposing private-key bytes.
+
+Bindings must come from the owner-reviewed configuration, **not** the server's
+preparation response. Before signing, the SDK validates identity, chain, calls,
+authority, expiry, operation hash, and gas consent. Missing signers fail closed;
+there is no root-key fallback.
+
+The CLI provides a ready-made encrypted local key store and resolver. Custom
+integrations can implement `ResolveSessionSigner` and use
+`sealLocalSessionKey` / `openLocalSessionKey` for portable encrypted exports.
+
+Low-level `executions.prepare/complete` and `signatures.prepare/complete` provide
+transport only; their callers must independently validate what they sign.
+
+Namera's signature rules do not constrain direct local signing. Transaction
+expiry does not itself expire ERC-1271 signature authority; uninstall that
+authority onchain to revoke it.
+
+## Errors and retries
 
 ```ts
-type NameraResult<A, E> =
-  | { success: true; data: A; error: null }
-  | { success: false; data: null; error: NameraSdkError<E> };
-```
-
-For declared API failures, `error.kind === "api"` preserves the endpoint's
-exact error union in `error.cause`. Narrow its `_tag` to get the corresponding
-typed `code` and fields without casting:
-
-```ts
-const wallet = await namera.wallets.get(walletId);
-
-if (!wallet.success && wallet.error.kind === "api") {
-  if (wallet.error.cause._tag === "WalletError") {
-    console.error(wallet.error.cause.code); // "WALLET_NOT_FOUND"
+const result = await namera.sessionKeys.list();
+if (!result.success) {
+  if (result.error.kind === "api") {
+    console.error(result.error.cause._tag, result.error.message);
+  } else {
+    console.error(result.error.kind, result.error.message);
   }
 }
 ```
 
-The current development default is `http://localhost:8080`. Use `baseUrl` to
-target another self-hosted or deployed server. A Fetch-compatible runtime is
-used automatically; `fetch` may be supplied explicitly for nonstandard
-runtimes and tests.
+Declared errors preserve their typed cause. Transient execution/signature retries
+reuse one idempotency key; completion retries do not sign again. Validation,
+authorization and policy failures are not retried automatically.
 
-## Supported API-key operations
-
-- `wallets.list`, `wallets.get`
-- `sessionKeys.list({ walletId? })`, `sessionKeys.get`
-- `executions.simulate`, `executions.execute`, `executions.getStatus`,
-  `executions.list`
-- `executions.prepare`, `executions.complete` — detached execution transport
-- `signatures.prepare`, `signatures.complete` — detached signature transport
-- `sign`, `verifySignature`
-
-Resource operations are intentionally grouped. Signing and verification remain
-at the root because they are cross-resource signature capabilities rather than
-collections. Verification is read-only and does not consume signature usage.
-
-Simulation is read-only and reports call success separately from session-key
-policy eligibility. Simulation and execution requests require `sessionKeyId`
-separately from `walletId`, identifying the installed session to use.
-`executions.execute` sponsors gas by default; callers may set
-`sponsor: false` to pay gas from the smart account without consuming sponsored-gas
-credits. Both modes consume execution usage. Execution and signing methods generate an idempotency key internally before
-the first request. The same key is reused for up to three retries with bounded
-exponential backoff when the failure is a network interruption, HTTP 408, or
-HTTP 5xx response. Validation, authorization, policy, rate-limit, billing, and
-other declared API failures are returned immediately and are never retried.
-Callers do not supply or manage idempotency keys.
-
-Detached execution uses `prepare` to obtain an unsigned operation and `complete`
-to return the local session signature. Preparation retries reuse one generated
-key; completion retries reuse the same submission and signature. `prepared` in
-the completion response means queued, not broadcast or confirmed. These methods
-only provide transport: callers must independently validate the prepared hash,
-chain, account, calls, and session authority before signing.
-
-`executions.execute` performs this orchestration when `resolveSessionSigner` is
-configured. The resolver returns a `LocalSessionSigner` from trusted local
-storage: its public installation binding, an EIP-191 signing callback, and an
-explicit `maxGasCostWei` allowance for self-funded operations. The SDK never
-receives private key bytes through this interface. Do not populate the binding
-from the preparation response: it must originate from the owner-approved
-installation/export. The dashboard produces encrypted exports of these bindings;
-the CLI resolves them from its encrypted local keystore.
-
-`sign` requires `sessionKeyId` and uses the same local resolver. Its binding must
-explicitly set `allowSignatures: true`, and the signer must provide a
-`signTypedData` callback. The SDK reconstructs Alchemy's replay-safe challenge
-from the original payload and trusted wallet/chain binding, checks preparation
-identity and expiry, verifies the local ECDSA signer, then completes. It checks
-the returned ERC-1271 envelope against the signature it submitted. Completion
-retries never sign again. The optional low-level `signatures.prepare/complete`
-methods provide transport only; direct callers own these validation checks.
-
-API signature policy and expiry do not constrain direct local signing. Alchemy's
-TimeRange hook does not expire ERC-1271 authority; onchain uninstall revokes it.
-
-Before invoking the signer, the SDK checks wallet/session/installation/chain,
-validity, canonical EntryPoint, session nonce selector, requested calldata,
-execution-hook wrapper, and sponsorship/fee consent. It recomputes the hash
-locally with Viem and checks the returned signature's address. Completion
-retries never invoke the signer again. Local signing failures use `kind:
-"signer"` and stable codes without exposing keystore exceptions. A missing
-resolver fails before any request; there is no root-key fallback.
-
-`sealLocalSessionKey` / `openLocalSessionKey` provide the browser-compatible
-encrypted export codec described in
-[local keystores](../../architecture/clients/local-keystore.md). They accept
-redacted passwords, use WebCrypto, and validate signer/key correspondence.
-They do not read files, contact the API, or prove installation approval. The
-client-only schemas live in `@namera-ai/protocol/local`, not API DTOs.
-
-`createLocalSessionKeyDraft()` generates a secp256k1 key in the calling browser
-or Node process. Its handle exposes `signer` (the public registration DTO),
-`signerAddress`, `seal(apiOrigin, approvedBindings, redactedPassword)`, and
-`dispose()`. Keep the handle in a component ref, not form state, API atoms or
-browser storage. Only send `draft.signer` to registration. Seal using bindings
-from the owner's reviewed installation; this helper does not verify onchain
-installation or turn an API response into trusted authority.
-
-Dispose after export or when abandoning the flow. Disposal prevents future and
-in-flight exports from returning, but cannot guarantee erasure of JavaScript or
-WebCrypto intermediate memory. The handle performs no network or storage access.
-
-`createLocalSessionBindings({ request, wallet, registration })` checks the public
-registration against the original local request and previously selected wallet.
-It rejects changed wallet/signer identity, missing/repeated/substituted networks,
-and changed onchain permissions, lifetime or signature consent. Amounts remain
-exact integers. It derives the local execution-wrapper flags from those checked
-permissions rather than a later signing challenge.
-
-This helper accepts decoded DTOs and does not contact a provider. Its output is
-a reviewed configuration, **not proof of owner approval or installation**. Keep
-it for approval validation and encrypted backup, but never present a registered
-key as active until its installation receipt is confirmed. Owner approval must
-still verify the prepared operation against this reviewed configuration.
-
-`validateOwnerApproval({ reviewed, response, now })` is the browser-compatible
-passkey approval guard. It checks a decoded preparation against independently
-reconstructed wallet/factory data, the owner validator entity, locally compiled
-installation/removal calldata, sponsorship or an explicit native-gas ceiling,
-expiry, RP and credential. It recomputes the ERC-4337 hash and its WebAuthn
-personal-sign challenge before the authenticator is opened. It does not compile
-permissions, reconstruct the wallet, invoke WebAuthn or establish receipt state.
-Never populate `reviewed` from the preparation being checked. The dashboard uses
-the EVM package to reconstruct the account and compile the reviewed permissions
-independently before invoking this guard and the passkey authenticator.
-
-## Structure
-
-- `src/client.ts` — public `NameraClient` facade.
-- `src/wallets.ts`, `src/session-keys.ts`, `src/executions.ts` — focused resource
-  clients.
-- `src/transport.ts` — internal generated HttpApi client, authentication
-  middleware, and transient retry boundary.
-- `src/result.ts` — promise result and SDK error contracts.
-- `src/signing/` — local signer contract and independent execution validation.
-- `src/index.ts` — intentional public exports.
-- `tests/` — transport-boundary contract tests using an injected Fetch function.
-- `package.json` — package metadata, scripts, source condition, and publish exports.
-- `tsconfig.json` — Node package TypeScript configuration.
-- `tsdown.config.ts` — unbundled ESM build and declaration output.
-
-## Development
-
-Add only operations supported by API-key actors. Call the generated
-`@namera-ai/api` client instead of hand-building paths or repeating schema
-encoding. Keep Effect inside the package boundary and convert each operation to
-`NameraResult` in the shared transport. Preserve the `namera-source` condition
-and run the package tests and build before publishing.
+See [client behavior](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/sdk-cli-mcp.md)
+and [local key storage](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-keystore.md).
+API, protocol, SDK and CLI share a release version starting with 1.0.0.

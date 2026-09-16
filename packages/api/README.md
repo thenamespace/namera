@@ -1,71 +1,58 @@
 # @namera-ai/api
 
-Public-facing HTTP API definition for Namera, built with Effect `HttpApi`. This
-package defines endpoint contracts, groups, middleware requirements, and OpenAPI
-metadata. It does not start a server or implement backend workflows.
+The typed HTTP contract for Namera, built with Effect `HttpApi`. Generate OpenAPI
+documentation and derive client types from the same endpoint schemas used by the
+server. This package defines the API; it does not start a server.
 
-See [contract package architecture](../../architecture/packages/contracts.md)
-for endpoint ownership, schema boundaries, and the contract-to-handler change
-sequence.
+For ordinary application integration, use [@namera-ai/sdk](https://www.npmjs.com/package/@namera-ai/sdk).
 
-## Structure
+## Installation
 
-- `src/index.ts` — complete `NameraApi` definition and OpenAPI metadata.
-- `src/routes/health.ts` — health endpoint group.
-- `src/routes/billing.ts` — read-only active-organization billing and entitlements.
-- `src/routes/dashboard.ts` — active-organization operational overview with
-  global resource totals and namespace-discriminated operation totals and
-  daily, weekly, and monthly activity projections plus execution actor-source
-  distribution.
-- `src/routes/auth/core/` — core authentication endpoints such as magic links,
-  sessions, and users.
-- `src/routes/auth/organization/` — organization, membership, and invitation
-  endpoints.
-- `src/routes/auth/notification.ts` — authenticated inbox and preference endpoints.
-- `src/routes/auth/oauth.ts` — authenticated browser/device consent and
-  MCP/CLI authorization management endpoints. OAuth wire endpoints remain raw
-  server routes.
-- `src/routes/wallet.ts` — create, list, get, update organization wallet metadata,
-  list paginated all-chain fungible assets, and user-only public passkey owner
-  details for independent approval review.
-- `src/routes/session-key.ts` — register/get/list session keys and prepare/complete
-  passkey owner approvals for stored onchain installation/removal operations.
-  Member-authorized operation status reads expose no signed envelope or lease.
-  Receipt processing is required before activation. Revocation removes API
-  grants immediately and finishes after owner-approved onchain removal.
-- `src/routes/api-key.ts` — create, get, list, and revoke organization API keys
-  with their authorized session keys.
-- `src/routes/execution.ts` — read-only execution simulation, API-key execution,
-  actor-owned submission status, and member-authorized confirmed execution
-  history with expanded account, session-key, and initiating-actor list items.
-- `src/routes/ens.ts` — public ENSIP-normalized Namera subname availability.
-- `src/routes/signature.ts` — machine-actor message/typed-data preparation and
-  local signature completion (`/signatures/prepare`, `/signatures/complete`),
-  plus read-only verification. Legacy synchronous signing fails closed.
-- `src/middlewares/` — middleware contracts such as authorization context.
-  `AdminAuthorization` provides `CurrentAdmin` only on explicitly protected
-  platform-admin groups, independently of tenant `Authorization`/`CurrentActor`.
-- `src/common.ts` — errors shared by API groups.
+Requires Node.js 24.14+ for Node applications. Use the matching Effect 4 beta.
 
-## Usage
-
-```ts
-import { NameraApi } from "@namera-ai/api";
+```sh
+npm install @namera-ai/api effect@4.0.0-beta.105
+pnpm add @namera-ai/api effect@4.0.0-beta.105
+yarn add @namera-ai/api effect@4.0.0-beta.105
+bun add @namera-ai/api effect@4.0.0-beta.105
 ```
 
-`apps/server` supplies handlers, middleware implementations, application
-services, runtime layers, and the HTTP server.
+Choose the command for your package manager.
 
-## Adding an endpoint
+## Generate OpenAPI documentation
 
-1. Define its request, response, and public error schemas in
-   `@namera-ai/protocol`.
-2. Add one declarative endpoint to the appropriate `HttpApiGroup`, including
-   method, path, payload/query, success status, errors, middleware, and OpenAPI
-   annotations.
-3. Export the group through its existing barrels and add it to `NameraApi`.
-4. Implement the use case in `application` and the adapter in `apps/server`.
+```ts
+import { writeFile } from "node:fs/promises";
+import { OpenApi } from "effect/unstable/httpapi";
+import { NameraApi } from "@namera-ai/api";
 
-Keep route definitions declarative. Do not query repositories, read environment
-variables, set cookies, rate-limit, or implement business logic in this package.
-Reuse protocol DTOs rather than defining transport shapes inline.
+const document = OpenApi.fromApi(NameraApi);
+await writeFile("openapi.json", JSON.stringify(document, null, 2));
+```
+
+The contract covers wallets, session keys, executions, signatures, authorization,
+organizations, billing, and the public waitlist. Authentication is defined per
+endpoint; installing this package grants no access.
+
+## Derive client types
+
+```ts
+import type { HttpApiClient } from "effect/unstable/httpapi";
+import { NameraApi } from "@namera-ai/api";
+
+type Client = HttpApiClient.ForApi<typeof NameraApi>;
+type WalletClient = Client["wallet"];
+```
+
+Effect integrations can construct clients with `HttpApiClient.make` and supply
+the required client middleware layers. Most consumers should use the SDK, which
+handles authentication and returns promise-based results.
+
+## Related packages
+
+- [protocol](https://www.npmjs.com/package/@namera-ai/protocol): runtime schemas and types.
+- [sdk](https://www.npmjs.com/package/@namera-ai/sdk): application client.
+- [cli](https://www.npmjs.com/package/@namera-ai/cli): terminal commands and local MCP.
+
+Use matching versions of the four packages starting with 1.0.0.
+[Contributor architecture](https://github.com/thenamespace/namera-core/blob/main/architecture/packages/contracts.md).
