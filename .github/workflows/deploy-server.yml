@@ -20,13 +20,13 @@ on:
 
 jobs:
   call-build:
-    uses: ./.github/workflows/build-and-push.yaml
+    uses: ./.github/workflows/build-and-push.yml
     secrets: inherit
     permissions:
       contents: "read"
       id-token: "write"
     with:
       app_name: namera-server
-      dockerfile: Dockerfile
+      dockerfile: apps/server/Dockerfile
       environment: ${{ inputs.environment }}
       ref: ${{ inputs.ref }}

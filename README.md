@@ -89,7 +89,7 @@ for the manual GitHub release-PR and npm publication workflow.
 
 ## Server deployment
 
-The root `Dockerfile` builds only the server runtime. Use
+`apps/server/Dockerfile` builds only the server runtime, with the repository root as its build context. Use
 [`apps/server/.env.prod.example`](apps/server/.env.prod.example) for production
 configuration and [server instructions](apps/server/README.md) to build/run it.
 Review the maintained [deployment gates](architecture/platform/production.md);

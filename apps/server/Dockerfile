@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.7
+# Build from the repository root: docker build -f apps/server/Dockerfile .
 
 FROM node:24-bookworm-slim AS base
 

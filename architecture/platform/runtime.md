@@ -82,11 +82,18 @@ magic links, invitations, API-key creation, OAuth/device flow, MCP, execution,
 signatures, RPC, and telemetry proxy traffic. Actor- or authorization-scoped
 limits supplement IP limits where appropriate.
 
+## Deployment
+
+`apps/server/Dockerfile` builds the server-only production image from the repository
+root. The manual `deploy-server.yml` workflow calls `build-and-push.yml` with app
+name `namera-server`, pushes to Artifact Registry, and dispatches the image tag to
+`thenamespace/infra`, which owns Helm values and ArgoCD deployment. Server secrets
+are supplied at runtime, not baked into the image.
+
 ## Pending
 
 - Replace the process-local limiter with an atomic shared store before running
   multiple server replicas.
 - Resolve client addresses only through the trusted headers of the deployed
   ingress; never trust arbitrary forwarded headers.
-- Add production image/manifests or document the external deployment repository.
 - Add worker-liveness and queue-age alerts.

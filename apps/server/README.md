@@ -316,12 +316,12 @@ pnpm --filter @namera-ai/server typecheck:test
 
 ## Container image
 
-Build the production server image from the workspace root. The root
-`Dockerfile` uses Turborepo's pruned-workspace flow and includes only the
+Build the production server image from the workspace root.
+`apps/server/Dockerfile` uses Turborepo's pruned-workspace flow and includes only the
 server's production workspace graph in the final Node.js 24 image.
 
 ```sh
-docker build --tag namera-server .
+docker build --file apps/server/Dockerfile --tag namera-server .
 docker run --rm --publish 8080:8080 --env-file /path/to/server.env namera-server
 ```
 
