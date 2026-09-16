@@ -1,0 +1,38 @@
+---
+name: Deploy - Namera Website
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or SHA to build
+        required: false
+        type: string
+        default: "main"
+      environment:
+        description: Target environment
+        required: false
+        type: choice
+        options:
+          - prod
+          - staging
+        default: "prod"
+      api_url:
+        description: Public API URL embedded in the browser bundle
+        required: true
+        type: string
+        default: "https://api.namera.ai"
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build-and-push.yml
+    secrets: inherit
+    permissions:
+      contents: "read"
+      id-token: "write"
+    with:
+      app_name: namera-web
+      dockerfile: apps/web/Dockerfile
+      environment: ${{ inputs.environment }}
+      ref: ${{ inputs.ref }}
+      dotenv: VITE_API_URL=${{ inputs.api_url }}

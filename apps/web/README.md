@@ -28,7 +28,33 @@ and shows success only after an accepted API response. Rate limits, network
 failures and unexpected responses leave the form available for retry.
 Run `pnpm --filter @namera-ai/web test` for transport and validation tests.
 
-## Vercel deployment
+## Node container deployment
+
+The primary infra deployment uses Nitro's `node-server` preset on Node.js 24.
+Build from the repository root:
+
+```sh
+docker build -f apps/web/Dockerfile -t namera-web .
+docker run --rm -p 4000:8080 namera-web
+```
+
+The non-root runtime serves the standalone `.output` bundle on port 8080,
+including SSR, static assets, and `/sitemap.xml`. No workspace source or pnpm
+installation is needed at runtime. `NITRO_HOST` and `NITRO_PORT` control binding.
+
+The public API defaults to `https://api.namera.ai`. To change it, build with
+`--build-arg DOTENV='VITE_API_URL=https://your-api.example'`. This is browser
+configuration, not a secret; changing the runtime environment cannot update it.
+Set the API's `WAITLIST_CORS_ORIGIN` to the exact deployed website origin.
+
+Run **Deploy - Namera Website** manually in GitHub Actions with the ref,
+environment, and API URL. It builds/pushes through the existing GCP workflow
+and dispatches the `namera-web` image tag to `thenamespace/infra`. Infra must
+provide that application, port 8080 routing, and HTTPS termination. The workflow
+uses the server workflow's GCP identity and `REPOSITORY_DISPATCH_PAT`; it does
+not provision infra resources.
+
+## Temporary Vercel deployment
 
 Import this repository into Vercel with **Root Directory `apps/web`** and enable
 **Include source files outside of the Root Directory** so the shared workspace

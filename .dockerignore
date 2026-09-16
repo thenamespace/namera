@@ -3,6 +3,9 @@
 .turbo
 **/.turbo
 **/dist
+**/.output
+**/.nitro
+**/.vercel
 **/node_modules
 **/.env*
 gha-creds-*.json

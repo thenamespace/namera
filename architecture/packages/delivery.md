@@ -56,6 +56,20 @@ Dashboard is a Vite React/TanStack Router application. It uses Effect Atom for s
 
 This app previews package-owned runtime templates and generates email-safe PNG assets. It is not imported by the server at runtime and does not own delivery/provider behavior.
 
+## Frontend deployment boundary
+
+Each frontend owns a Dockerfile built with the repository root as context.
+Dashboard uses unprivileged Nginx with SPA fallback and the security headers
+emitted by its Vite build. Website uses Nitro's standalone Node server, retaining
+Vercel as an alternative preset. Both listen on port 8080 behind infra HTTPS.
+Public `VITE_API_URL` is fixed at build time, defaults to `https://api.namera.ai`,
+and must match the API's corresponding origin configuration.
+
+Manual `deploy-dashboard.yml` and `deploy-web.yml` workflows reuse the server's
+Artifact Registry builder and infra dispatch, targeting `namera-dashboard` and
+`namera-web`. Infra provisioning and real-domain browser verification remain
+outside these image builds. Package READMEs document build/run commands.
+
 ## Pending before production
 
 - Add dashboard accessibility and critical-flow browser tests.
