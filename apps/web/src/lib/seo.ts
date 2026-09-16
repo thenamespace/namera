@@ -7,9 +7,14 @@
  * one exception, where the name leads.
  */
 
+const siteUrl = new URL(import.meta.env.VITE_SITE_URL || "https://namera.ai");
+if (!["http:", "https:"].includes(siteUrl.protocol) || siteUrl.username || siteUrl.password) {
+  throw new Error("VITE_SITE_URL must be an HTTP(S) URL without credentials");
+}
+
 export const SITE = {
   name: "Namera",
-  origin: "https://namera.ai",
+  origin: siteUrl.origin,
   tagline: "Programmable wallets for autonomous agents",
   /*
    * Longer than a meta description: this is what the Organization and WebSite

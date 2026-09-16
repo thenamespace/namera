@@ -18,6 +18,13 @@ Development and preview use port 4000. Copy `.env.example` to `.env` and set
 `VITE_API_URL` to the backend origin (defaults to `https://api.namera.ai`). It is
 public configuration embedded at build time; rebuild after changing it.
 
+Set `VITE_SITE_URL` to the public website URL. It defaults to `https://namera.ai`
+and controls canonical URLs, Open Graph/Twitter images, structured data,
+the sitemap, and the sitemap link in `robots.txt`. Trailing slashes are normalized.
+For the current Vercel deployment, set
+`VITE_SITE_URL=https://namera-landing.vercel.app` in Vercel's environment settings
+and redeploy. This is a build-time setting for both Node and Vercel.
+
 The CTA sends email to `POST /waitlist` without cookies or tokens. For local
 testing use `VITE_API_URL=http://localhost:8080` and set the server's
 `WAITLIST_CORS_ORIGIN=http://localhost:4000`. In production, use the exact public
@@ -48,7 +55,7 @@ configuration, not a secret; changing the runtime environment cannot update it.
 Set the API's `WAITLIST_CORS_ORIGIN` to the exact deployed website origin.
 
 Run **Deploy - Namera Website** manually in GitHub Actions with the ref,
-environment, and API URL. It builds/pushes through the existing GCP workflow
+environment, API URL, and public site URL. It builds/pushes through the existing GCP workflow
 and dispatches the `namera-web` image tag to `thenamespace/infra`. Infra must
 provide that application, port 8080 routing, and HTTPS termination. The workflow
 uses the server workflow's GCP identity and `REPOSITORY_DISPATCH_PAT`; it does
