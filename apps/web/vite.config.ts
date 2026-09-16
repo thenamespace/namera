@@ -2,6 +2,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
 import { defaultClientConditions, defineConfig } from "vite";
 
 export default defineConfig({
@@ -16,5 +17,11 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
     tsconfigPaths: true,
   },
-  plugins: [tailwindcss(), tanstackStart(), viteReact()],
+  plugins: [
+    tailwindcss(),
+    tanstackStart(),
+    // Keep Shiki's JS WASM loader; native unwasm exports conflict with Vite 8.
+    nitro({ wasm: false }),
+    viteReact(),
+  ],
 });

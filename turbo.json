@@ -6,6 +6,8 @@
       "dependsOn": ["^build", "typecheck"],
       "env": [
         "CI",
+        "NITRO_PRESET",
+        "VERCEL",
         "POSTHOG_API_HOST",
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",
@@ -15,7 +17,7 @@
         "VERCEL_GIT_COMMIT_SHA"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", ".output/**", ".vercel/output/**"]
     },
     "dev": {
       "cache": false,

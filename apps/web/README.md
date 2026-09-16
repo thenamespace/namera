@@ -28,6 +28,33 @@ and shows success only after an accepted API response. Rate limits, network
 failures and unexpected responses leave the form available for retry.
 Run `pnpm --filter @namera-ai/web test` for transport and validation tests.
 
+## Vercel deployment
+
+Import this repository into Vercel with **Root Directory `apps/web`** and enable
+**Include source files outside of the Root Directory** so the shared workspace
+packages are available. Use Node.js **24.x** and the **TanStack Start** framework
+preset. `vercel.json` supplies the install and build commands; leave the Output
+Directory override disabled.
+
+The Nitro Vite plugin packages SSR and server routes as Vercel functions and
+static assets in `.vercel/output`. Do not deploy `dist/client` as a plain SPA or
+add a catch-all rewrite to `index.html`; `/sitemap.xml` is a server route.
+
+Set `VITE_API_URL=https://api.namera.ai` in the Vercel project's environment
+variables before building. Configure the API server's `WAITLIST_CORS_ORIGIN`
+to the exact production website origin. Preview domains need a separately
+configured test backend/origin to submit the waitlist; do not allow arbitrary
+preview origins on the production API. No backend secrets belong in Vercel.
+
+Verify the deployment output locally without publishing:
+
+```sh
+pnpm --filter @namera-ai/web build:vercel
+```
+
+Ordinary `pnpm --filter @namera-ai/web build` uses Nitro's local Node target.
+See the [official Vercel setup](https://vercel.com/docs/frameworks/full-stack/tanstack-start).
+
 ## Structure
 
 - `src/routes` , the root document and one file per page.
