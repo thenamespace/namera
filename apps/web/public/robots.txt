@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Written while these pages still say "coming soon".
+Disallow: /docs
+Disallow: /blog
+
+Sitemap: https://namera.ai/sitemap.xml

@@ -6,24 +6,21 @@ import { SiteHeader } from "#/components/marketing/site-header";
 import { seo } from "#/lib/seo";
 
 /*
- * The docs are not written yet, so this route says so rather than serving a
- * one-page stub behind a "Docs" link. The MDX setup it replaced (Fumadocs, a
- * `content/docs` collection and a search route) is in git history.
- *
+ * Nothing is published yet, so this says so and is kept out of the index.
  * Nothing in the site's navigation points here while it reads like this.
  */
-export const Route = createFileRoute("/docs/$")({
-  component: DocsComingSoon,
+export const Route = createFileRoute("/blog")({
+  component: BlogComingSoon,
   head: () =>
     seo({
-      title: "Documentation",
-      description: "Namera's documentation is being written and will be here when Namera opens.",
-      path: "/docs",
+      title: "Blog",
+      description: "Writing from the team building Namera. Nothing published yet.",
+      path: "/blog",
       noindex: true,
     }),
 });
 
-function DocsComingSoon() {
+function BlogComingSoon() {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <SiteHeader />
@@ -31,12 +28,13 @@ function DocsComingSoon() {
       <main id="main" className="flex flex-1 items-center pt-14">
         <Section className="w-full">
           <Container>
-            <p className="type-eyebrow text-ink-subtle">Documentation</p>
+            <p className="type-eyebrow text-ink-subtle">Blog</p>
             <h1 className="type-display-lg mt-5 max-w-[14ch] text-balance text-foreground">
-              Coming soon
+              Nothing here yet
             </h1>
             <p className="type-lead mt-6 max-w-[46ch] text-pretty text-muted">
-              The reference is being written and will be here when Namera opens.
+              We would rather publish nothing than publish filler. The first post lands when there
+              is something worth reading.
             </p>
           </Container>
         </Section>

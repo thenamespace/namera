@@ -1,9 +1,8 @@
 # @namera-ai/web
 
-Namera's public website scaffold, built with TanStack Start, React, and Fumadocs
-MDX. `/` is an empty landing page. `/docs` renders a title-only MDX index;
-additional `.mdx` files in `content/docs` become documentation pages.
-`/api/search` serves Fumadocs search for that collection.
+Namera's public website, built with TanStack Start and React. `/` is the
+marketing landing page, `/pricing` the plan comparison, and `/docs` and `/blog`
+are placeholders until there is something behind them.
 
 ## Development
 
@@ -15,25 +14,90 @@ pnpm --filter @namera-ai/web build
 pnpm --filter @namera-ai/web preview
 ```
 
-Development and preview use port 3001. No environment variables or backend
-services are required. Vite builds the client and SSR bundles into `dist`;
-a production hosting adapter has not been selected.
+Development and preview use port 4000. No environment variables or backend
+services are required.
 
 ## Structure
 
-- `src/routes` — the root document, empty home, docs catch-all, and search route.
-- `src/lib/source.ts` — Fumadocs MDX collection and source loader.
-- `content/docs` — public documentation content.
-- `src/styles.css` — the same Inter font and `@namera-ai/ui/styles.css` entry
-  used by dashboard, with Fumadocs semantic colors mapped to UIKit tokens.
+- `src/routes` , the root document and one file per page.
+- `src/components/marketing` , landing-page sections. These are page
+  composition, not shared UI; anything reused across applications belongs in
+  `@namera-ai/ui`.
+- `src/components/pricing` , the plan columns, the comparison table, and the
+  plan data.
+- `src/lib/seo.ts` , every page's head.
+- `src/lib/site-links.ts` , every destination the page can link to.
+- `src/marketing.css` , the marketing-only presentation layer.
+- `public/` , icons, the manifest, `robots.txt` and the Open Graph card.
 
-Use `@namera-ai/ui` for shared UI components. Its stylesheet supplies Tailwind
-CSS and scans shared components. Fumadocs supplies the documentation shell.
-The shared Namera theme is dark, so the document uses that theme without a
-separate theme switcher.
+## Links
+
+`src/lib/site-links.ts` is the single source of truth for outbound
+destinations. A link renders only when its entry is a string; entries left
+`null` are destinations nobody has confirmed, and the corresponding nav item,
+footer link, or button does not render at all. Fill one in and it appears. Do
+not replace a `null` with a guess: a link that 404s costs more trust than a
+missing one.
+
+## SEO
+
+Every route calls `seo()` from `src/lib/seo.ts`, which returns the title, the
+description, the canonical, the Open Graph and Twitter cards, and a robots
+directive together, so a page cannot ship with one and not the others. Titles
+read `Page | Namera`; the home page leads with the name and a dash.
+
+Structured data is JSON-LD in each route's `scripts`. `Organization` and
+`WebSite` come from the root route, the landing page adds `SoftwareApplication`
+and a `FAQPage` generated from the FAQ component's own questions, and pricing
+adds `BreadcrumbList`, `Product` and its own `FAQPage`. Offers are `PreOrder`
+while nothing is purchasable.
+
+`/docs` and `/blog` carry `noindex`, are absent from `/sitemap.xml` and are
+disallowed in `robots.txt`. All four change together when those pages get
+content.
+
+## Motion
+
+Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
+behind an `@supports` guard, not JavaScript. Where the feature is unsupported
+the content is simply visible and does not animate. This matters more than the
+animation does: the failure mode of a reveal has to be "it did not move", never
+"the page is blank". An earlier observer-driven version failed the other way
+whenever the observer did not run, which includes hidden tabs, prerenders, and
+offscreen captures. Nothing in the server HTML is hidden.
+
+`motion` is used only for state transitions inside components (the FAQ, the
+mobile nav, the hero visual's run), where a script is already required for the
+interaction itself.
+
+The closing section renders Paper Design's `NeuroNoise` shader, masked so it
+fades before the section's edges and scrimmed in the middle so body copy keeps
+its contrast ratio. It draws a static frame under `prefers-reduced-motion`.
+
+## Accessibility
+
+Contrast is verified against the rendered page, not against tokens. Note that
+`--accent` (`#5e6ad2`) measures 3.98:1 on the canvas and cannot carry body
+text; it is a fill and border colour only, and accent text uses
+`--color-accent-text` (`#828fff`, 6.53:1).
+
+Touch targets use the `tap-target` utility, which lifts the hit box to 44px
+under `@media (pointer: coarse)` at any viewport width. A width breakpoint gets
+tablets wrong in both directions. `tap-halo` does the same for controls whose
+drawn size is the design.
+
+## Conventions
 
 The workspace default catalog supplies shared React, Tailwind, and TypeScript
 versions. The `web` catalog isolates current Vite and Router tooling from the
-existing dashboard. New Start and Fumadocs dependencies use the default catalog.
-Routes are generated by Start during development/build and by `generate-routes`
-before typechecking. Commit `src/routeTree.gen.ts` when routes change.
+dashboard. Routes are generated by Start during development and build, and by
+`generate-routes` before typechecking. Commit `src/routeTree.gen.ts` when
+routes change.
+
+`resolve.dedupe` in `vite.config.ts` pins React and React DOM to one copy.
+Without it a pre-bundled dependency resolves its own peer React out of
+`.vite/deps` and every hook it calls throws "Invalid hook call".
+
+Use `@namera-ai/ui` for shared UI components. Its stylesheet supplies Tailwind
+CSS and scans shared components. The shared Namera theme is dark, so the
+document uses that theme without a separate theme switcher.

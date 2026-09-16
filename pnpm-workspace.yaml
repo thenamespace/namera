@@ -24,6 +24,7 @@ catalog:
   "@simplewebauthn/browser": 14.0.0
   "@types/node": 26.1.2
   "klarity": 0.2.0
+  "motion": 13.0.0
   "lefthook": 2.1.10
   "oxfmt": 0.62.0
   "oxlint": 1.76.0

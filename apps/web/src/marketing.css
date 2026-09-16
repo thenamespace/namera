@@ -1,0 +1,352 @@
+/*
+ * Marketing surface layer.
+ *
+ * The shared `@namera-ai/ui` theme owns every colour used here. This file adds
+ * only what a public page needs and the product design system does not ship: a
+ * display type scale, two surface treatments, and the boundary motif described
+ * in DESIGN.md.
+ *
+ * Deliberately absent: background grids, page-wide glow, and film grain over
+ * the whole document. Each was here and each was decoration without a job.
+ */
+
+@theme inline {
+  --color-canvas: var(--background);
+  --color-elevated: #202124;
+  --color-hairline-strong: #34343a;
+  --color-ink-subtle: #8a8f98;
+
+  /*
+   * `--accent` (#5e6ad2) measures 3.98:1 on the canvas, under the 4.5:1 floor
+   * for body text. It stays a fill and border colour; accent TEXT uses this
+   * lighter step, which measures 6.53:1.
+   */
+  --color-accent-text: #828fff;
+
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@layer base {
+  /*
+   * Selection.
+   *
+   * Sampled off Linear's own hero: the highlight reads #555fbb against their
+   * near-black page, which is this design system's accent at 0.9 alpha over
+   * the canvas. Text stays pure white so the contrast holds at display sizes.
+   */
+  ::selection {
+    background-color: rgb(94 106 210 / 0.9);
+    color: #fff;
+  }
+
+  ::-moz-selection {
+    background-color: rgb(94 106 210 / 0.9);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------------
+   * Display type scale
+   *
+   * Tracking tightens as size grows. Flat tracking across a page is the tell
+   * of type that was never set.
+   * ------------------------------------------------------------------- */
+  .type-display-xl {
+    font-size: clamp(2.375rem, 1.35rem + 4.3vw, 4.75rem);
+    font-weight: 560;
+    line-height: 1.04;
+    letter-spacing: -0.036em;
+  }
+
+  .type-display-lg {
+    font-size: clamp(2rem, 1.45rem + 2.2vw, 3.25rem);
+    font-weight: 560;
+    line-height: 1.08;
+    letter-spacing: -0.032em;
+  }
+
+  .type-display-md {
+    font-size: clamp(1.625rem, 1.3rem + 1.3vw, 2.25rem);
+    font-weight: 560;
+    line-height: 1.16;
+    letter-spacing: -0.026em;
+  }
+
+  .type-card-title {
+    font-size: 1.0625rem;
+    font-weight: 510;
+    line-height: 1.35;
+    letter-spacing: -0.014em;
+  }
+
+  .type-lead {
+    font-size: clamp(1rem, 0.94rem + 0.3vw, 1.1875rem);
+    line-height: 1.55;
+    letter-spacing: -0.008em;
+  }
+
+  .type-body {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+  }
+
+  .type-eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 510;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+
+  .type-mono {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    font-variant-ligatures: none;
+  }
+
+  /* ---------------------------------------------------------------------
+   * Surfaces
+   * ------------------------------------------------------------------- */
+
+  /* A one-pixel light catch on the top edge of a lifted panel. Dark UI reads
+     a bevel better than it reads a drop shadow at this size. */
+  .edge-top {
+    position: relative;
+  }
+
+  .edge-top::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.11) 28%,
+      rgb(255 255 255 / 0.11) 72%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* ---------------------------------------------------------------------
+   * The boundary motif (DESIGN.md)
+   *
+   * A rule that runs and then stops against a hard tick. It is the product
+   * drawn at its smallest: authority that extends exactly so far. Used under
+   * section headings, and at full size in the limit section.
+   * ------------------------------------------------------------------- */
+  .rule-stop {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border) 22%, var(--border));
+  }
+
+  .rule-stop::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    right: 0;
+    width: 2px;
+    height: 9px;
+    background: var(--accent);
+  }
+
+  /* Grain, scoped to the one shader panel. Dithering a wide gradient on a dark
+     screen is the difference between a surface and visible banding. */
+  .grain-local {
+    position: relative;
+  }
+
+  .grain-local::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------------------------------------------------------------------
+   * Scroll reveal
+   *
+   * A scroll-driven CSS animation. No JavaScript, no IntersectionObserver,
+   * and nothing hidden in the server HTML.
+   *
+   * The whole thing sits behind `@supports (animation-timeline: view())`, so
+   * where it is unsupported the content is simply visible with no animation.
+   * That is the property that matters: the failure mode of a reveal must be
+   * "it did not animate", never "the page is blank". An observer-driven
+   * version fails the other way whenever the observer does not run, which
+   * includes hidden documents, prerenders and offscreen captures.
+   * ------------------------------------------------------------------- */
+
+  @keyframes reveal-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal-init,
+      .reveal-group > * {
+        animation: reveal-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 22%;
+      }
+
+      /* Children of a group arrive in sequence rather than together. */
+      .reveal-group > *:nth-child(2) {
+        animation-range: entry 0% cover 27%;
+      }
+      .reveal-group > *:nth-child(3) {
+        animation-range: entry 0% cover 32%;
+      }
+      .reveal-group > *:nth-child(n + 4) {
+        animation-range: entry 0% cover 37%;
+      }
+    }
+  }
+
+  .mask-fade-r {
+    mask-image: linear-gradient(90deg, #000 78%, transparent 100%);
+  }
+
+  /*
+   * 44px minimum hit box wherever the pointer is a finger, at any viewport
+   * width. The drawn size is unchanged; only the target grows.
+   */
+  @media (pointer: coarse) {
+    .tap-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /*
+     * For controls whose size is the design — a switch, a small round button.
+     * Growing them to 44px would deform them, so the hit area grows instead,
+     * as an invisible halo around the control.
+     */
+    .tap-halo::after {
+      content: "";
+      position: absolute;
+      inset: -0.75rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Section 7: the execution canvas */
+.ep-trail {
+  transition: stroke-dashoffset 640ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes ep-pulse {
+  from {
+    stroke-dashoffset: 18;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+.ep-pulse {
+  stroke-dasharray: 18 100;
+  animation: ep-pulse 760ms linear 1 both;
+}
+@keyframes ep-travel {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+.ep-head {
+  offset-rotate: 0deg;
+  animation: ep-travel 760ms linear 1 both;
+}
+/* a wire's endpoint, which turns accent once that hop has run */
+.ep-dot {
+  transition: fill 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-trail {
+    transition: none;
+  }
+  .ep-pulse,
+  .ep-head {
+    display: none;
+  }
+}
+
+/*
+ * React Flow tags its own container with a theme class, and the component
+ * library declares its whole palette on that class. Inside the canvas that
+ * shadows this app's overrides, so the cards and wires came out in the
+ * library's colours instead of Namera's. `inherit` sends each token back to
+ * the value the page root computed, with nothing duplicated here.
+ */
+/*
+ * The wire colours are resolved out here, on the canvas wrapper, which sits
+ * outside React Flow's themed container. Whatever that container does to the
+ * palette, these four have already been computed from the page's own tokens.
+ */
+.ep-canvas {
+  --ep-wire: var(--color-hairline-strong);
+  --ep-live: var(--accent);
+  --ep-charge: var(--color-accent-text);
+  --ep-stop: var(--danger);
+}
+
+.ep-canvas .react-flow {
+  --background: inherit;
+  --surface: inherit;
+  --surface-foreground: inherit;
+  --default: inherit;
+  --default-foreground: inherit;
+  --foreground: inherit;
+  --muted: inherit;
+  --border: inherit;
+  --accent: inherit;
+  --accent-foreground: inherit;
+  --danger: inherit;
+  --success: inherit;
+  --focus: inherit;
+}
+
+/* React Flow, stripped back to the page's own surface */
+.ep-canvas .react-flow__pane,
+.ep-canvas .react-flow__renderer,
+.ep-canvas .react-flow {
+  background: transparent;
+}
+.ep-canvas .react-flow__node {
+  font-size: inherit;
+  cursor: grab;
+}
+.ep-canvas .react-flow__node.dragging {
+  cursor: grabbing;
+}
+.ep-canvas .react-flow__pane {
+  cursor: default;
+}
+.ep-canvas .react-flow__edge {
+  pointer-events: none;
+}
+.ep-canvas .react-flow__handle {
+  opacity: 0;
+}

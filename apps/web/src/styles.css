@@ -1,33 +1,7 @@
 @import "@fontsource-variable/inter";
 @import "@namera-ai/ui/styles.css";
-@import "fumadocs-ui/css/preset.css";
+@import "./marketing.css";
 
 @theme inline {
   --font-inter: "Inter Variable", sans-serif;
-  --color-fd-background: var(--background);
-  --color-fd-foreground: var(--foreground);
-  --color-fd-muted: var(--default);
-  --color-fd-muted-foreground: var(--muted);
-  --color-fd-popover: var(--overlay);
-  --color-fd-popover-foreground: var(--overlay-foreground);
-  --color-fd-card: var(--surface);
-  --color-fd-card-foreground: var(--surface-foreground);
-  --color-fd-border: var(--border);
-  --color-fd-primary: var(--accent);
-  --color-fd-primary-foreground: var(--accent-foreground);
-  --color-fd-secondary: var(--default);
-  --color-fd-secondary-foreground: var(--default-foreground);
-  --color-fd-accent: var(--default);
-  --color-fd-accent-foreground: var(--default-foreground);
-  --color-fd-diff-remove: color-mix(in srgb, var(--danger) 15%, transparent);
-  --color-fd-diff-remove-symbol: var(--danger);
-  --color-fd-diff-add: color-mix(in srgb, var(--success) 15%, transparent);
-  --color-fd-diff-add-symbol: var(--success);
-  --color-fd-info: var(--accent);
-  --color-fd-warning: var(--warning);
-  --color-fd-error: var(--danger);
-  --color-fd-success: var(--success);
-  --color-fd-idea: var(--accent);
-  --color-fd-overlay: color-mix(in srgb, var(--background) 50%, transparent);
-  --color-fd-ring: var(--focus);
 }
