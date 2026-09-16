@@ -78,8 +78,3 @@ export const mcpAuthenticationResults = Metric.counter("namera.mcp.authenticatio
   description: "MCP bearer authentication outcomes",
   incremental: true,
 });
-
-export const mcpToolCalls = Metric.counter("namera.mcp.tool.calls", {
-  description: "MCP tool call outcomes",
-  incremental: true,
-});

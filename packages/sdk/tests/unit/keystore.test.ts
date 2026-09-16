@@ -23,22 +23,30 @@ const fixture = () => {
 };
 
 describe("portable local session keystore", () => {
-  it("round-trips key and authority with random salt and nonce, without plaintext in the envelope", async () => {
-    const material = fixture();
-    const password = Redacted.make("test-only export passphrase");
-    const first = await sealLocalSessionKey(material, password);
-    const second = await sealLocalSessionKey(material, password);
-    expect(first.salt).not.toBe(second.salt);
-    expect(first.iv).not.toBe(second.iv);
-    expect(first.ciphertext).not.toBe(second.ciphertext);
-    const serialized = JSON.stringify(first);
-    expect(serialized).not.toContain(Redacted.value(material.privateKey));
-    expect(serialized).not.toContain(material.apiOrigin);
-    const opened = await openLocalSessionKey(JSON.parse(serialized), password);
-    expect(opened.bindings).toEqual(material.bindings);
-    expect(Redacted.value(opened.privateKey)).toBe(Redacted.value(material.privateKey));
-    expect(JSON.stringify(opened)).not.toContain(Redacted.value(material.privateKey));
-  });
+  it.each(["test-only export passphrase", "test-only café 🔐 passphrase"])(
+    "round-trips key and authority with random salt and nonce (%#)",
+    async (passphrase) => {
+      const material = fixture();
+      const password = Redacted.make(passphrase);
+      const first = await sealLocalSessionKey(material, password);
+      const second = await sealLocalSessionKey(material, password);
+      expect(first.salt).not.toBe(second.salt);
+      expect(first.iv).not.toBe(second.iv);
+      expect(first.ciphertext).not.toBe(second.ciphertext);
+      for (const encoded of [first.salt, first.iv, first.ciphertext]) {
+        expect(Buffer.from(encoded, "base64url").toString("base64url")).toBe(encoded);
+      }
+      expect(Buffer.from(first.salt, "base64url")).toHaveLength(16);
+      expect(Buffer.from(first.iv, "base64url")).toHaveLength(12);
+      const serialized = JSON.stringify(first);
+      expect(serialized).not.toContain(Redacted.value(material.privateKey));
+      expect(serialized).not.toContain(material.apiOrigin);
+      const opened = await openLocalSessionKey(JSON.parse(serialized), password);
+      expect(opened.bindings).toEqual(material.bindings);
+      expect(Redacted.value(opened.privateKey)).toBe(Redacted.value(material.privateKey));
+      expect(JSON.stringify(opened)).not.toContain(Redacted.value(material.privateKey));
+    },
+  );
 
   it("rejects wrong passwords and authenticated ciphertext tampering with a sanitized error", async () => {
     const password = Redacted.make("test-only export passphrase");

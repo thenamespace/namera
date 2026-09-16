@@ -12,7 +12,6 @@ import {
   type PrepareExecutionRequest,
   CompleteExecutionRequest,
 } from "@namera-ai/protocol/dto";
-import { generateUniqueId } from "@namera-ai/utils";
 import { verifyMessage } from "viem";
 
 import { failure } from "#/result";
@@ -33,7 +32,7 @@ export class ExecutionClient {
   ) {}
 
   prepare(request: PrepareExecutionRequest) {
-    const idempotencyKey = generateUniqueId();
+    const idempotencyKey = globalThis.crypto.randomUUID();
 
     return this.transport.requestWithRetry(
       this.transport.client.execution.prepare({

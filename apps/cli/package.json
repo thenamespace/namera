@@ -29,7 +29,6 @@
     "@effect/platform-node": "catalog:",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/sdk": "workspace:*",
-    "@namera-ai/telemetry": "workspace:*",
     "@napi-rs/keyring": "catalog:",
     "effect": "catalog:",
     "viem": "catalog:"

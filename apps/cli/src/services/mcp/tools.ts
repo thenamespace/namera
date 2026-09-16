@@ -1,4 +1,4 @@
-import { Context, Effect, Metric, Schema } from "effect";
+import { Context, Effect, Schema } from "effect";
 import { McpSchema, McpServer, Tool } from "effect/unstable/ai";
 
 import {
@@ -23,7 +23,6 @@ import {
   VerifySignatureResponse,
 } from "@namera-ai/protocol/dto";
 import type { NameraClient } from "@namera-ai/sdk";
-import { mcpToolCalls } from "@namera-ai/telemetry";
 
 import { McpAuthentication } from "./api-client.js";
 import { localToolError, toolErrorResult, unwrapMcpSdk } from "./tool-errors.js";
@@ -81,15 +80,6 @@ const register = Effect.fn("LocalMcp.registerTool")(function* <T extends Tool.An
         });
       }).pipe(
         Effect.catch((error) => Effect.succeed(toolErrorResult(error))),
-        Effect.tap((result) =>
-          Metric.update(
-            Metric.withAttributes(mcpToolCalls, {
-              tool: tool.name,
-              result: result.isError ? "error" : "success",
-            }),
-            1,
-          ),
-        ),
         Effect.withSpan("cli.mcp.tool", { attributes: { tool: tool.name } }),
       ),
   });

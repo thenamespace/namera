@@ -51,7 +51,6 @@
     "@alchemy/smart-accounts": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
-    "@namera-ai/utils": "workspace:*",
     "effect": "catalog:",
     "viem": "catalog:"
   },

@@ -2,7 +2,6 @@ import { DateTime, Schema } from "effect";
 
 import { pack1271Signature } from "@alchemy/smart-accounts";
 import { CompleteSignatureRequest, type PrepareSignatureRequest } from "@namera-ai/protocol/dto";
-import { generateUniqueId } from "@namera-ai/utils";
 import { verifyTypedData } from "viem";
 
 import { failure } from "#/result";
@@ -17,7 +16,7 @@ export class SignatureClient {
   ) {}
 
   prepare(request: PrepareSignatureRequest) {
-    const headers = { "idempotency-key": generateUniqueId() };
+    const headers = { "idempotency-key": globalThis.crypto.randomUUID() };
     return this.transport.requestWithRetry(
       request.type === "message"
         ? this.transport.client.signature.prepare({ payload: request, headers })

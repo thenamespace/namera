@@ -62,10 +62,10 @@ messages are prohibited metric labels.
 HTTP metrics exclude `/t/*` to prevent an exporter feedback loop. No-op
 mutations do not increment successful mutation metrics.
 
-The CLI-local MCP tools update `namera.mcp.tool.calls` with fixed tool names and
-`success`/`error` outcomes, and create `cli.mcp.tool` spans without payloads.
-These signals are local in-process by default: the CLI does not automatically
-send telemetry from the user's machine. The API no longer hosts MCP tools.
+CLI-local MCP tools create `cli.mcp.tool` spans without payloads using Effect.
+The CLI has no telemetry-package dependency, counter, or configured exporter;
+it does not automatically send telemetry from the user's machine. The API no
+longer hosts MCP tools.
 
 ### Billing signals
 
