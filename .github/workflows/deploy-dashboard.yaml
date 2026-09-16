@@ -1,5 +1,5 @@
 ---
-name: Deploy - Namera Dashboard
+name: Deploy - Dashboard
 
 on:
   workflow_dispatch:
@@ -17,22 +17,28 @@ on:
           - prod
           - staging
         default: "prod"
-      api_url:
-        description: Public API URL embedded in the browser bundle
-        required: true
-        type: string
-        default: "https://api.namera.ai"
+
 
 jobs:
   call-build:
-    uses: ./.github/workflows/build-and-push.yml
+    name: build
+    # A one-entry matrix is the only static map a reusable-workflow call can
+    # read in `with`. Vite bakes these into the bundle at build time.
+    strategy:
+      matrix:
+        dotenv:
+          - prod: |
+              VITE_API_URL=https://api.namera.ai
+            staging: |
+              VITE_API_URL=https://staging.api.namera.ai
+    uses: ./.github/workflows/build-and-push.yaml
     secrets: inherit
     permissions:
       contents: "read"
       id-token: "write"
     with:
-      app_name: namera-dashboard
+      app_name: namera-core-dashboard
       dockerfile: apps/dashboard/Dockerfile
       environment: ${{ inputs.environment }}
       ref: ${{ inputs.ref }}
-      dotenv: VITE_API_URL=${{ inputs.api_url }}
+      dotenv: ${{ matrix.dotenv[inputs.environment] }}
