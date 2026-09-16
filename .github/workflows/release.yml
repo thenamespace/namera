@@ -12,6 +12,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.namera.ai' }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v7

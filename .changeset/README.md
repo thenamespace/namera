@@ -24,6 +24,8 @@ For later changes, run `pnpm changeset` and commit the resulting release note.
 The shared setup action pins Node/pnpm. CI runs checks, tests, tarball validation,
 and a separate disposable PostgreSQL integration lane. No production credentials
 are needed for CI. Release uses npm OIDC and provenance, not a committed token.
+CI and Release dashboard builds use `https://api.namera.ai` unless the repository
+variable `VITE_API_URL` overrides it; no local `.env` file is required.
 
 ## Local commands
 
