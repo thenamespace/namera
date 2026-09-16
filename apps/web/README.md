@@ -39,6 +39,8 @@ Directory override disabled.
 The Nitro Vite plugin packages SSR and server routes as Vercel functions and
 static assets in `.vercel/output`. Do not deploy `dist/client` as a plain SPA or
 add a catch-all rewrite to `index.html`; `/sitemap.xml` is a server route.
+Both Vite and Nitro resolve workspace packages through `namera-source`, so clean
+deployments do not require prebuilt `packages/protocol/dist` artifacts.
 
 Set `VITE_API_URL=https://api.namera.ai` in the Vercel project's environment
 variables before building. Configure the API server's `WAITLIST_CORS_ORIGIN`

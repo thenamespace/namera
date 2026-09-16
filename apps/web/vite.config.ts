@@ -21,7 +21,11 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart(),
     // Keep Shiki's JS WASM loader; native unwasm exports conflict with Vite 8.
-    nitro({ wasm: false }),
+    nitro({
+      wasm: false,
+      // Nitro owns server resolution separately from Vite's client conditions.
+      exportConditions: ["namera-source"],
+    }),
     viteReact(),
   ],
 });
