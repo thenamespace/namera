@@ -38,6 +38,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!/apps/server/.env.prod.example
 
 # Local development data
 .data/

@@ -255,6 +255,14 @@ Copy `.env.example` to `apps/server/.env` for local development. Server-owned
 values have defaults; composed package configuration remains required unless its
 own README documents a default.
 
+For production, start from [`.env.prod.example`](.env.prod.example), replace all
+example origins and fill every required credential through your secret manager
+or a private runtime env file. It includes Namespace ENS, Resend, Axiom, GCP KMS,
+PostgreSQL, cryptographic keys, and admin configuration. Production uses GCP
+Application Default Credentials, not the development local-key directory.
+The template is safe to commit; populated env files remain ignored and excluded
+from container images.
+
 | Variable             | Default                 | Purpose                                         |
 | -------------------- | ----------------------- | ----------------------------------------------- |
 | `NODE_ENV`           | `development`           | Runtime environment and cookie security policy. |
