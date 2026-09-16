@@ -7,6 +7,9 @@ Namera has four principal types and two independent questions for every protecte
 
 ## Subsystems
 
+Platform operators have a separate [admin authorization boundary](admin.md),
+outside organization actors and delegated wallet authority.
+
 | Area          | Responsibility                                                                  | Documentation                           |
 | ------------- | ------------------------------------------------------------------------------- | --------------------------------------- |
 | Core identity | Users, reusable verification challenges, magic-link login, and browser sessions | [Core](core/README.md)                  |

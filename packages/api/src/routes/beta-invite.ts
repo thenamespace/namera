@@ -4,7 +4,7 @@ import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import { CreateBetaInvitesRequest, CreateBetaInvitesResponse } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
-import { InviteAdmin } from "#/middlewares/invite-admin";
+import { AdminAuthorization } from "#/middlewares/admin";
 
 export class BetaInviteGroup extends HttpApiGroup.make("betaInvite")
   .add(
@@ -19,4 +19,4 @@ export class BetaInviteGroup extends HttpApiGroup.make("betaInvite")
       error: CommonErrors,
     }),
   )
-  .middleware(InviteAdmin) {}
+  .middleware(AdminAuthorization) {}

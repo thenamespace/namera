@@ -1,2 +1,2 @@
 export * from "./auth.js";
-export * from "./invite-admin.js";
+export * from "./admin.js";

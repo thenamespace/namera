@@ -6,6 +6,18 @@ import { RateLimiter } from "effect/unstable/persistence";
 import { RateLimitExceeded } from "@namera-ai/protocol";
 
 export const rateLimitPolicy = {
+  admin: {
+    byIp: {
+      limit: 10,
+      window: Duration.minutes(1),
+      algorithm: "fixed-window",
+    },
+    global: {
+      limit: 30,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
+  },
   global: {
     limit: 120,
     window: Duration.minutes(1),

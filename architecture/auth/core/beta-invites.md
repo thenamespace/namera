@@ -7,24 +7,25 @@ Organization invitations do not bypass beta admission.
 
 ## Operator API
 
-Set `INVITE_ADMIN_TOKEN` to a randomly generated secret of at least 32 characters
+Set `ADMIN_TOKEN` to a randomly generated secret of at least 32 characters
 in the server secret manager. Missing or shorter values disable management.
 Generate a value with `openssl rand -hex 32`; never put it in frontend variables,
 source control, URLs, telemetry, or shared shell history. Rotate it by changing
-the secret and restarting the server. It authorizes only these two endpoints,
-not wallets or delegated operations. A shared operator credential cannot identify
+the secret and restarting the server. It authorizes routes explicitly protected by
+`AdminAuthorization`, currently these two endpoints, not wallets or delegated operations.
+See [platform admin authorization](../admin.md). A shared operator credential cannot identify
 individual operators; keep distribution narrow and restrict these routes at ingress.
 
 ```sh
 # Run from a trusted operator machine with the secret supplied securely.
 curl --fail-with-body "$API_ORIGIN/internal/invites" \
-  -H "Authorization: Bearer $INVITE_ADMIN_TOKEN" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H 'Content-Type: application/json' \
   --data '{"count":6,"expiresInDays":7}'
 
 # Revoke an unused invite using the ID returned at creation, not its code.
 curl --fail-with-body -X DELETE "$API_ORIGIN/internal/invites/$INVITE_ID" \
-  -H "Authorization: Bearer $INVITE_ADMIN_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 Creation accepts 1–50 invites, an optional 1–30-day lifetime (default seven), and

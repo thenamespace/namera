@@ -43,6 +43,8 @@ sequence.
   local signature completion (`/signatures/prepare`, `/signatures/complete`),
   plus read-only verification. Legacy synchronous signing fails closed.
 - `src/middlewares/` — middleware contracts such as authorization context.
+  `AdminAuthorization` provides `CurrentAdmin` only on explicitly protected
+  platform-admin groups, independently of tenant `Authorization`/`CurrentActor`.
 - `src/common.ts` — errors shared by API groups.
 
 ## Usage

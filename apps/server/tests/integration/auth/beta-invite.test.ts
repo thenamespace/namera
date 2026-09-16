@@ -18,7 +18,7 @@ const adminToken = "test-only-invite-admin-token-32-characters";
 const BetaLayer = makeTestServerLayer(
   {},
   Passkeys.testLayer,
-  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true", INVITE_ADMIN_TOKEN: adminToken }),
+  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true", ADMIN_TOKEN: adminToken }),
 );
 const adminClient = handledApi(NameraApi, { headers: { authorization: `Bearer ${adminToken}` } });
 const createInvite = Effect.gen(function* () {
@@ -59,6 +59,14 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
 });
 
 layer(BetaLayer)("private-beta invites", (it) => {
+  it.effect("does not accept the admin token as a tenant actor", () =>
+    Effect.gen(function* () {
+      const admin = yield* adminClient;
+      expect((yield* admin.session.currentActor({ responseMode: "response-only" })).status).toBe(
+        401,
+      );
+    }),
+  );
   it.effect("serializes two pending signups claiming one invite", () =>
     Effect.gen(function* () {
       yield* resetTestState();
@@ -215,6 +223,18 @@ layer(BetaLayer)("private-beta invites", (it) => {
       });
       expect(response.status).toBe(200);
       expect(response.cookies.cookies["auth-token"]).toBeDefined();
+      const ownerClient = yield* handledApi(NameraApi, {
+        headers: { cookie: `auth-token=${response.cookies.cookies["auth-token"]?.value}` },
+      });
+      expect(
+        (yield* ownerClient.session.currentActor({ responseMode: "response-only" })).status,
+      ).toBe(200);
+      expect(
+        (yield* ownerClient.betaInvite.create({
+          payload: { count: 1 },
+          responseMode: "response-only",
+        })).status,
+      ).toBe(401);
       const replay = yield* registration.client.magicLink.verify({
         payload: registration.payload,
         responseMode: "response-only",

@@ -12,8 +12,8 @@ import { Passkeys } from "@namera-ai/passkeys";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
+import { AdminAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
-import { InviteAdminLive } from "#/middlewares/invite-admin";
 import { RateLimiterLive } from "#/rate-limit";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
 import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
@@ -78,7 +78,7 @@ export const makeTestServerLayer = (
   );
 
   const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
-  const TestInviteAdminLayer = InviteAdminLive.pipe(Layer.provide(RateLimiterLive));
+  const TestAdminAuthorizationLayer = AdminAuthorizationLive.pipe(Layer.provide(RateLimiterLive));
 
   const TestAuthorizationLayer = AuthorizationLive.pipe(
     Layer.provide(TestServicesLayer),
@@ -108,7 +108,7 @@ export const makeTestServerLayer = (
     WalletRoutes,
   ).pipe(
     Layer.provide(TestAuthorizationLayer),
-    Layer.provide(TestInviteAdminLayer),
+    Layer.provide(TestAdminAuthorizationLayer),
     Layer.provide(TestApplicationLayer),
     Layer.provide(TestServicesLayer),
     Layer.provide(AuthCookieConfig.testLayer),
@@ -119,7 +119,7 @@ export const makeTestServerLayer = (
     TestHandlersLayer,
     TestApplicationLayer,
     TestAuthorizationLayer,
-    TestInviteAdminLayer,
+    TestAdminAuthorizationLayer,
     RateLimiterLive,
     TestServicesLayer,
     TestAuthTokenStateLayer,
