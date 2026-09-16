@@ -1,12 +1,6 @@
 ---
 name: Workflow - Build and Push Docker Image
 
-# Reusable builder following the org deployment pattern (see thenamespace/
-# .github-private and the awakened/webapp repos): build the app image, push it
-# to GCP Artifact Registry under <repo>/<app_name>, then dispatch an
-# image-tag-update event to thenamespace/infra so it PRs the new tag into the
-# helm values for ArgoCD.
-
 on:
   workflow_call:
     secrets:
