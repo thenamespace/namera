@@ -41,7 +41,7 @@ describe("detached execution transport", () => {
     });
     expect(fetch).toHaveBeenCalledTimes(2);
     const requests = fetch.mock.calls.map(([url, init]) => {
-      expect(url.toString()).toBe("http://localhost:8080/executions/prepare");
+      expect(url.toString()).toBe("https://api.namera.ai/executions/prepare");
       expect(init?.method).toBe("POST");
       expect(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array))).toEqual(
         Schema.encodeSync(PrepareExecutionRequest)(prepare),
@@ -72,7 +72,7 @@ describe("detached execution transport", () => {
     });
     expect(fetch).toHaveBeenCalledTimes(2);
     for (const [url, init] of fetch.mock.calls) {
-      expect(url.toString()).toBe("http://localhost:8080/executions/complete");
+      expect(url.toString()).toBe("https://api.namera.ai/executions/complete");
       expect(new Headers(init?.headers).has("idempotency-key")).toBe(false);
       expect(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array))).toEqual(complete);
     }

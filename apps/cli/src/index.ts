@@ -12,6 +12,7 @@ import { signCommand } from "#/commands/sign";
 import { verifySignatureCommand } from "#/commands/verify-signature";
 import { walletCommand } from "#/commands/wallet/index";
 import { CliPrompts } from "#/services/prompts";
+import { version } from "#/version";
 
 const namera = nameraCommand.pipe(
   Command.withSubcommands([
@@ -28,7 +29,7 @@ const namera = nameraCommand.pipe(
 );
 
 namera.pipe(
-  Command.run({ version: "0.1.0" }),
+  Command.run({ version }),
   Effect.provide(CliPrompts.layer),
   Effect.provide(NodeServices.layer),
   NodeRuntime.runMain,

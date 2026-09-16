@@ -12,6 +12,8 @@ import {
 } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
+import { NAMERA_API_ORIGIN } from "@namera-ai/sdk";
+
 import { makeMcpApiClient, McpAuthentication } from "#/services/mcp/api-client";
 import { mcpCredentialStore, McpProfile } from "#/services/mcp/credential-store";
 import { createMcpSession } from "#/services/mcp/session";
@@ -25,7 +27,7 @@ import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 const flags = {
   profile: Flag.string("profile").pipe(Flag.withDefault("default")),
   host: Flag.string("host").pipe(
-    Flag.withDefault("http://localhost:8080"),
+    Flag.withDefault(NAMERA_API_ORIGIN),
     Flag.withDescription("Namera API origin"),
   ),
 };

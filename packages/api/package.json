@@ -1,15 +1,27 @@
 {
   "name": "@namera-ai/api",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Schema-derived Effect HttpApi contract for Namera.",
   "keywords": [
     "effect",
+    "ethereum",
     "http-api",
     "namera",
+    "session-keys",
+    "smart-account",
     "typescript",
     "wallet"
   ],
+  "homepage": "https://namera.ai",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera-core/issues"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera-core.git",
+    "directory": "packages/api"
+  },
   "files": [
     "dist"
   ],
@@ -33,7 +45,8 @@
       ".": "./dist/index.js",
       "./package.json": "./package.json"
     },
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
@@ -52,5 +65,8 @@
     "klarity": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.14.0"
   }
 }

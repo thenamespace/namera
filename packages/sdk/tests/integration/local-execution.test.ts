@@ -66,9 +66,9 @@ describe("local execution orchestration", () => {
       raw: fixture.response.signing.message,
     });
     expect(fixture.fetch.mock.calls.map(([url]) => String(url))).toEqual([
-      "http://localhost:8080/executions/prepare",
-      "http://localhost:8080/executions/complete",
-      "http://localhost:8080/executions/complete",
+      "https://api.namera.ai/executions/prepare",
+      "https://api.namera.ai/executions/complete",
+      "https://api.namera.ai/executions/complete",
     ]);
     expect(fixture.fetch.mock.calls[1]?.[1]?.body).toEqual(fixture.fetch.mock.calls[2]?.[1]?.body);
   });

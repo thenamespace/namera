@@ -1,15 +1,27 @@
 {
   "name": "@namera-ai/protocol",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Runtime schemas, DTOs, models, and typed errors for the Namera API.",
   "keywords": [
     "effect",
+    "ethereum",
     "namera",
     "schemas",
+    "session-keys",
+    "smart-account",
     "typescript",
     "wallet"
   ],
+  "homepage": "https://namera.ai",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera-core/issues"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera-core.git",
+    "directory": "packages/protocol"
+  },
   "files": [
     "dist"
   ],
@@ -53,7 +65,8 @@
       "./model": "./dist/model.js",
       "./package.json": "./package.json"
     },
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
@@ -76,5 +89,8 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.14.0"
   }
 }

@@ -15,6 +15,8 @@ import {
 } from "#/result";
 import type { ResolveSessionSigner } from "#/signing/local-session";
 
+import { NAMERA_API_ORIGIN } from "./defaults.js";
+
 type NameraClientBaseConfig = {
   readonly baseUrl?: string;
   readonly fetch?: NameraFetch;
@@ -146,7 +148,7 @@ export class NameraTransport {
 
     this.client = Effect.runSync(
       HttpApiClient.make(NameraApi, {
-        baseUrl: config.baseUrl ?? "http://localhost:8080",
+        baseUrl: config.baseUrl ?? NAMERA_API_ORIGIN,
       }).pipe(Effect.provide(Layer.merge(FetchHttpClient.layer, authorizationLayer))),
     );
     this.#fetch = config.fetch;

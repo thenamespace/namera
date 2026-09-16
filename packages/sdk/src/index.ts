@@ -1,4 +1,5 @@
 export * from "./client.js";
+export { NAMERA_API_ORIGIN } from "./defaults.js";
 export * from "./executions.js";
 export * from "./signatures.js";
 export * from "./result.js";

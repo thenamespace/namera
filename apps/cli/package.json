@@ -1,8 +1,26 @@
 {
   "name": "@namera-ai/cli",
-  "version": "0.1.0",
-  "description": "Command-line client for Namera programmable wallets.",
+  "version": "0.1.5",
+  "description": "Namera CLI and local stdio MCP server for self-custodial agent wallets.",
+  "keywords": [
+    "ai-agents",
+    "cli",
+    "ethereum",
+    "mcp",
+    "namera",
+    "session-keys",
+    "smart-account"
+  ],
+  "homepage": "https://namera.ai",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera-core/issues"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera-core.git",
+    "directory": "apps/cli"
+  },
   "bin": {
     "namera": "dist/index.js"
   },
@@ -12,6 +30,10 @@
   "type": "module",
   "imports": {
     "#/*": "./src/*.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
@@ -23,7 +45,8 @@
     "start": "node dist/index.js",
     "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
     "typecheck": "tsc -p tsconfig.json --pretty false",
-    "typecheck:test": "tsc -p tsconfig.test.json --pretty false"
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",

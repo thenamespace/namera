@@ -4,13 +4,14 @@ import { platform } from "node:os";
 import { Effect } from "effect";
 import { Command, Flag } from "effect/unstable/cli";
 
-import { NameraClient } from "@namera-ai/sdk";
+import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 
 import { profileFlag } from "#/commands/common";
 import { saveProfile } from "#/services/config";
 import { writeCredentials } from "#/services/credentials";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
 import { printLine, runPromise } from "#/services/output";
+import { version } from "#/version";
 
 const openBrowser = (url: string) => {
   const command =
@@ -53,7 +54,7 @@ export const loginCommand = Command.make(
     profile: profileFlag,
     host: Flag.string("host").pipe(
       Flag.withDescription("Namera API origin"),
-      Flag.withDefault("http://localhost:8080"),
+      Flag.withDefault(NAMERA_API_ORIGIN),
     ),
     deviceName: Flag.string("device-name").pipe(
       Flag.withDescription("Friendly name shown on the consent screen"),
@@ -65,7 +66,7 @@ export const loginCommand = Command.make(
     const request = yield* Effect.tryPromise(() =>
       startDeviceAuthorization(baseUrl, {
         deviceName,
-        cliVersion: "0.1.0",
+        cliVersion: version,
         platform: platform(),
       }),
     );

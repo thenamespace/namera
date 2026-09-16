@@ -63,12 +63,12 @@ export class NameraApi extends HttpApi.make("NameraAPI")
   )
   .annotate(OpenApi.Servers, [
     {
-      url: "http://0.0.0.0:8080",
-      description: "Development server",
-    },
-    {
       url: "https://api.namera.ai",
       description: "Production server",
+    },
+    {
+      url: "http://localhost:8080",
+      description: "Local development server",
     },
   ])
   .annotate(OpenApi.License, {
