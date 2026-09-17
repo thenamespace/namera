@@ -42,6 +42,7 @@ node_modules/
 
 # Local development data
 .data/
+/admin-scripts/
 
 # Generated/uploadable assets
 /assets/
