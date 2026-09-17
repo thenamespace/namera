@@ -33,8 +33,9 @@ variable `VITE_API_URL` overrides it; no local `.env` file is required.
 - `pnpm version-packages`: apply changesets and update the lockfile; review and
   commit the version/changelog changes before publishing.
 - `pnpm pack:check`: build and validate public tarballs without publishing.
-- `pnpm release`: apply any pending version changes, validate tarballs, and
-  publish unpublished versions. **This really publishes** and needs npm authority.
+- `pnpm release`: validate tarballs and publish already-versioned, unpublished
+  versions. **This really publishes** and needs npm authority. Versioning runs
+  separately through `pnpm version-packages`, before the release PR is merged.
 
 Both **CI** and **Release** intentionally require manual dispatch. Neither runs
 on a pull request or an ordinary push.
