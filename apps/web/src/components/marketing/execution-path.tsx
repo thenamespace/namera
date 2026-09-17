@@ -676,9 +676,9 @@ export const ExecutionPath = () => {
     <Section id="stack" className="border-t-1 border-border">
       <Container>
         <Reveal>
-          <SectionIntro title="The life of one transaction">
-            A swap on Uniswap, from the agent that asks to the block that confirms. Change what the
-            agent wants and run it again. This is a walkthrough, not live data.
+          <SectionIntro title="The life of a transaction">
+            A swap on Uniswap, from agent intent to onchain execution. See how Namera prepares,
+            checks, signs, and submits every transaction.
           </SectionIntro>
         </Reveal>
 

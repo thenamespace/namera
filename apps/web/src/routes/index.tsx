@@ -7,10 +7,10 @@ import { ClosingCta } from "#/components/marketing/closing-cta";
 import { ExecutionPath } from "#/components/marketing/execution-path";
 import { Faq, FAQ_QUESTIONS } from "#/components/marketing/faq";
 import { Hero } from "#/components/marketing/hero";
+import { Industries } from "#/components/marketing/industries";
 import { KeyAnatomy } from "#/components/marketing/key-anatomy";
 import { Pillars } from "#/components/marketing/pillars";
 import { Playground } from "#/components/marketing/playground";
-import { PolicyGrid } from "#/components/marketing/policy-grid";
 import { SiteFooter } from "#/components/marketing/site-footer";
 import { SiteHeader } from "#/components/marketing/site-header";
 import { jsonLd, seo, SITE } from "#/lib/seo";
@@ -89,9 +89,11 @@ function HomePage() {
           <Pillars />
           <Playground />
           <KeyAnatomy />
-          <PolicyGrid />
-          <Clients />
+          {/* Hidden for now — "Four things the policy stops" */}
+          {/* <PolicyGrid /> */}
           <ExecutionPath />
+          <Clients />
+          <Industries />
           <Faq />
           <ClosingCta />
         </main>

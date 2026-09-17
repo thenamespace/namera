@@ -119,9 +119,9 @@ export const Clients = () => (
   <Section id="clients" className="border-t-1 border-border">
     <Container>
       <Reveal>
-        <SectionIntro title="Every client gets its own grant">
-          Register Namera once in the client you already use. Each one authorizes separately, keeps
-          its credentials in your OS keyring, and can be cut off on its own.
+        <SectionIntro title="Every agent gets its own permissions">
+          Connect Namera to Claude, Codex, or any MCP client. Each gets its own credentials and
+          permissions, and can be revoked independently.
         </SectionIntro>
       </Reveal>
 
@@ -135,6 +135,7 @@ export const Clients = () => (
             >
               <client.mark
                 aria-hidden
+                fill="currentColor"
                 className="size-7 shrink-0"
                 style={{ color: client.markColor }}
               />

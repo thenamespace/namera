@@ -28,8 +28,6 @@ const project = ([x, y, z]: Pt) =>
 
 const poly = (points: readonly Pt[]) => points.map(project).join(" ");
 
-const path = (points: readonly Pt[]) => `M${poly(points).replaceAll(" ", "L")}Z`;
-
 /** A solid block: three faces, lit from above so it reads as an object. */
 const Box = ({
   x,
@@ -79,86 +77,6 @@ const Box = ({
   </g>
 );
 
-/** A flat plate with a square opening cut through it. */
-const Plate = ({
-  z,
-  half,
-  gap,
-  thickness = 4,
-}: {
-  readonly z: number;
-  readonly half: number;
-  readonly gap: number;
-  readonly thickness?: number;
-}) => {
-  const outer: Pt[] = [
-    [-half, -half, z],
-    [half, -half, z],
-    [half, half, z],
-    [-half, half, z],
-  ];
-  const inner: Pt[] = [
-    [-gap, -gap, z],
-    [gap, -gap, z],
-    [gap, gap, z],
-    [-gap, gap, z],
-  ];
-  const t = z - thickness;
-
-  return (
-    <g>
-      <path d={`${path(outer)} ${path(inner)}`} fillRule="evenodd" fill="url(#face-top)" />
-      <polygon
-        points={poly([
-          [-half, half, t],
-          [half, half, t],
-          [half, half, z],
-          [-half, half, z],
-        ])}
-        fill="url(#face-left)"
-      />
-      <polygon
-        points={poly([
-          [half, -half, t],
-          [half, half, t],
-          [half, half, z],
-          [half, -half, z],
-        ])}
-        fill="url(#face-right)"
-      />
-      {/* the opening is cut, not printed: show its depth */}
-      <g className="opacity-50">
-        <polygon
-          points={poly([
-            [-gap, -gap, t],
-            [gap, -gap, t],
-            [gap, gap, t],
-            [-gap, gap, t],
-          ])}
-        />
-        <polyline
-          points={poly([
-            [-gap, gap, z],
-            [-gap, gap, t],
-          ])}
-        />
-        <polyline
-          points={poly([
-            [gap, gap, z],
-            [gap, gap, t],
-          ])}
-        />
-        <polyline
-          points={poly([
-            [gap, -gap, z],
-            [gap, -gap, t],
-          ])}
-        />
-      </g>
-    </g>
-  );
-};
-
 /* ------------------------------- figures ---------------------------------- */
 
 const Frame = ({
@@ -201,87 +119,53 @@ const Frame = ({
 );
 
 /**
- * 0.1 — the gates.
+ * 0.1 — the check.
  *
- * Three plates, each with a narrower opening than the one above it. A request
- * only reaches the network if it fits through every one; the block that does
- * not fit stops on the first plate and never goes further.
+ * A request runs into the policy — a shield with a check — and only a request
+ * that fits comes out the other side, signed.
  */
-const CheckFigure = () => {
-  const GATES = [
-    { z: 30, half: 58, gap: 20 },
-    { z: -2, half: 50, gap: 16 },
-    { z: -34, half: 42, gap: 12 },
-  ] as const;
+const CheckFigure = () => (
+  <svg
+    viewBox="0 0 300 170"
+    aria-label="A transaction is checked against a policy shield, and only then signed."
+    className="h-auto w-full max-w-[22rem] text-[#4b4f58]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ maskImage: "linear-gradient(to bottom,#000 62%,rgb(0 0 0/0.45) 100%)" }}
+  >
+    {/* the request */}
+    <g>
+      <rect x="28" y="58" width="52" height="54" rx="8" />
+      <line x1="40" y1="74" x2="68" y2="74" className="opacity-60" />
+      <line x1="40" y1="84" x2="62" y2="84" className="opacity-40" />
+      <line x1="40" y1="94" x2="68" y2="94" className="opacity-40" />
+    </g>
 
-  return (
-    <Frame label="Three stacked plates, each with a smaller square opening than the one above. A small block falls through all three openings; a larger block rests on the top plate, stopped.">
-      {/* corner posts, the way an exploded diagram carries the eye down */}
-      <g className="opacity-25" strokeDasharray="1 5">
-        {(
-          [
-            [-1, -1],
-            [1, -1],
-            [1, 1],
-            [-1, 1],
-          ] as const
-        ).map(([sx, sy]) => (
-          <polyline
-            key={`${String(sx)}${String(sy)}`}
-            points={poly([
-              [sx * GATES[0].half, sy * GATES[0].half, GATES[0].z],
-              [sx * GATES[2].half, sy * GATES[2].half, GATES[2].z - 16],
-            ])}
-          />
-        ))}
-      </g>
+    <g className="opacity-70">
+      <line x1="88" y1="85" x2="110" y2="85" />
+      <polyline points="104,80 110,85 104,90" />
+    </g>
 
-      {/* bottom plate first, so the stack occludes correctly */}
-      {GATES.toReversed().map((gate) => (
-        <Plate key={gate.z} z={gate.z} half={gate.half} gap={gate.gap} />
-      ))}
+    {/* the policy check */}
+    <path d="M150 40 L184 53 V90 C184 112 170 127 150 136 C130 127 116 112 116 90 V53 Z" />
+    <polyline points="134,86 146,99 170,71" stroke="var(--color-accent-text)" strokeWidth="2.6" />
 
-      {/* the shaft every allowed request travels */}
-      <g className="opacity-40" strokeDasharray="2 4">
-        <polyline
-          points={poly([
-            [-7, -7, 30],
-            [-7, -7, -52],
-          ])}
-        />
-        <polyline
-          points={poly([
-            [7, 7, 30],
-            [7, 7, -52],
-          ])}
-        />
-        <polyline
-          points={poly([
-            [7, -7, 30],
-            [7, -7, -52],
-          ])}
-        />
-      </g>
+    <g className="opacity-70">
+      <line x1="190" y1="85" x2="212" y2="85" />
+      <polyline points="206,80 212,85 206,90" />
+    </g>
 
-      {/* refused: too wide for the first opening, so it rests there */}
-      <g className="opacity-65">
-        <polygon
-          points={poly([
-            [16, -46, 30],
-            [44, -46, 30],
-            [44, -18, 30],
-            [16, -18, 30],
-          ])}
-          strokeDasharray="2 4"
-        />
-        <Box x={16} y={-46} z={30} w={28} h={24} />
-      </g>
-
-      {/* allowed: sized to fit all three, on its way through */}
-      <Box x={-7} y={-7} z={54} w={14} h={14} accent />
-    </Frame>
-  );
-};
+    {/* signed */}
+    <g>
+      <rect x="220" y="58" width="52" height="54" rx="8" />
+      <path d="M231 92 q7 -14 14 -4 t14 -4" className="opacity-70" />
+      <line x1="231" y1="100" x2="261" y2="100" className="opacity-40" />
+    </g>
+  </svg>
+);
 
 /**
  * 0.2 — the fences.
@@ -454,12 +338,12 @@ const PILLARS = [
   {
     figure: CheckFigure,
     title: "Checked before signing",
-    body: "A request that breaks a rule returns an error instead of a transaction. Nothing reaches the network and no gas is spent.",
+    body: "Every action is checked against your rules first. If it’s outside the agent’s permissions, it doesn’t execute.",
   },
   {
     figure: ScopeFigure,
     title: "Scoped to one job",
-    body: "Each key carries a spend cap, the chains it may touch and a date it stops working. It cannot reach anything you did not name.",
+    body: "Give each agent only the access it needs — spending limits, allowed contracts and networks, and an expiration date.",
   },
   {
     figure: CustodyFigure,
@@ -473,8 +357,8 @@ export const Pillars = () => (
     <Container>
       <Reveal>
         <SectionIntro title="Wallets built for agents, not people">
-          Every agent gets its own key with a spend cap, a network list and an end date. Nothing is
-          signed without checking it.
+          Give each agent its own key with specific permissions — what it can spend, where it can
+          transact, and for how long. Every action is checked before it executes.
         </SectionIntro>
       </Reveal>
 
@@ -491,10 +375,6 @@ export const Pillars = () => (
               ) ?? ""
             }
           >
-            <p className="type-mono text-[0.6875rem] tracking-[0.14em] text-ink-subtle/60">
-              FIG 0.{index + 1}
-            </p>
-
             <div className="flex grow items-center justify-center py-10 md:py-12">
               <pillar.figure />
             </div>

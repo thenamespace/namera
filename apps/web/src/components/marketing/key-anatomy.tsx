@@ -126,7 +126,7 @@ export const KeyAnatomy = () => (
   <Section id="policy" className="border-t-1 border-border">
     <Container>
       <Reveal>
-        <SectionIntro title="Every key is issued with limits">
+        <SectionIntro title="Every agent operates within limits">
           You set the account, chains, expiry and cap when you create it. The agent gets the key,
           never the policy.
         </SectionIntro>
@@ -138,8 +138,8 @@ export const KeyAnatomy = () => (
             <Note label="Scope" align="right">
               One account. Nothing else in the workspace is reachable.
             </Note>
-            <Note label="Lifetime" align="right">
-              Every key has an end date. Forgotten agents stop working on their own.
+            <Note label="Expiry" align="right">
+              Set an expiration date. Access automatically ends when time runs out.
             </Note>
           </div>
 
@@ -148,11 +148,11 @@ export const KeyAnatomy = () => (
           </div>
 
           <div className="flex w-full flex-col gap-12 lg:gap-28">
-            <Note label="Reach" align="left">
-              Named chains only. A request anywhere else fails.
+            <Note label="Networks" align="left">
+              Choose which networks the agent can use. Everything else is blocked.
             </Note>
-            <Note label="Grants" align="left">
-              Each grant names one contract. Limits apply per network.
+            <Note label="Spending" align="left">
+              Set spending limits for each token, contract, or network.
             </Note>
           </div>
         </div>
