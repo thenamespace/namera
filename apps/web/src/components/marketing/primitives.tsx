@@ -147,7 +147,7 @@ export const SectionIntro = ({
   readonly aside?: ReactNode;
   readonly className?: string;
 }) => (
-  <div className={cn("flex flex-col gap-5", className)}>
+  <div className={cn("flex flex-col items-center gap-5 text-center", className)}>
     <h2 className="type-display-lg max-w-[36ch] text-balance text-foreground">{title}</h2>
     {children ? <p className="type-lead max-w-[56ch] text-pretty text-muted">{children}</p> : null}
     {aside ? <div className="text-[0.8125rem] text-ink-subtle">{aside}</div> : null}

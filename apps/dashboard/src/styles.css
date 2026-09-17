@@ -6,6 +6,17 @@
 }
 
 @layer components {
+  /* Sidebar nav rows: make it obvious they're clickable. */
+  .sidebar__menu-item .sidebar__menu-item-content {
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .sidebar__menu-item:not([data-current="true"]):hover .sidebar__menu-item-content,
+  .sidebar__menu-item:not([data-current="true"])[data-hovered="true"] .sidebar__menu-item-content {
+    background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
   .accounts-data-grid .table__row:has([data-account-group]) .table__cell {
     @apply bg-default/60 py-2;
     border-block: 4px solid transparent;
