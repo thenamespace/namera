@@ -71,6 +71,19 @@
   --chart-5: oklch(70% 0.13 322);
 }
 
+@layer base {
+  /* Tailwind v4 no longer defaults interactive elements to a pointer cursor. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer components {
   ::view-transition {
     pointer-events: none;

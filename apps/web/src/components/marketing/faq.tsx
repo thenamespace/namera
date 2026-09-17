@@ -33,20 +33,20 @@ export const FAQ_QUESTIONS: readonly AccordionItem[] = [
 ];
 
 /*
- * The heading is set at display size and left to sit on its own line, with the
- * questions below it at full width. A narrow column of questions beside a
- * narrow heading wastes the page; this gives the answers room to be read.
+ * A centred heading over a single, width-capped column of questions. Capping the
+ * list keeps every row and every answer a comfortable reading measure rather
+ * than stretching them across the full page.
  */
 export const Faq = () => (
   <Section className="border-t-1 border-border">
     <Container>
       <Reveal>
-        <h2 className="type-display-lg max-w-[16ch] text-balance text-foreground">
-          Questions worth asking first
+        <h2 className="type-display-lg mx-auto max-w-[20ch] text-balance text-center text-foreground">
+          Questions, answered.
         </h2>
       </Reveal>
 
-      <Reveal delay={0.06} className="mt-12 md:mt-16">
+      <Reveal delay={0.06} className="mx-auto mt-12 max-w-[46rem] md:mt-16">
         <Accordion items={FAQ_QUESTIONS} idPrefix="faq" />
       </Reveal>
     </Container>

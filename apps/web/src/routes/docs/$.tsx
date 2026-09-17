@@ -31,11 +31,11 @@ function DocsComingSoon() {
       <main id="main" className="flex flex-1 items-center pt-14">
         <Section className="w-full">
           <Container>
-            <p className="type-eyebrow text-ink-subtle">Documentation</p>
-            <h1 className="type-display-lg mt-5 max-w-[14ch] text-balance text-foreground">
+            <p className="type-eyebrow text-center text-ink-subtle">Documentation</p>
+            <h1 className="type-display-lg mx-auto mt-5 max-w-[14ch] text-balance text-center text-foreground">
               Coming soon
             </h1>
-            <p className="type-lead mt-6 max-w-[46ch] text-pretty text-muted">
+            <p className="type-lead mx-auto mt-6 max-w-[46ch] text-pretty text-center text-muted">
               The reference is being written and will be here when Namera opens.
             </p>
           </Container>
