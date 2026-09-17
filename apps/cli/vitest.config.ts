@@ -9,5 +9,9 @@ export default defineNodeVitestConfig({
       externalConditions: ["namera-source", "node"],
     },
   },
-  test: { server: { deps: { inline: [/^@namera-ai\//] } } },
+  test: {
+    // Crypto-heavy keystore tests compete with cold CLI subprocess startup.
+    fileParallelism: false,
+    server: { deps: { inline: [/^@namera-ai\//] } },
+  },
 });
