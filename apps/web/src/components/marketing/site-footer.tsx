@@ -27,7 +27,6 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
       { label: "Playground", href: "/#playground" },
       { label: "Limits", href: "/#limits" },
       { label: "Clients", href: "/#clients" },
-      { label: "How it works", href: "/#stack" },
       { label: "Pricing", href: "/pricing", internal: true },
     ],
   },
@@ -37,9 +36,9 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
       { label: "Changelog", href: SITE_LINKS.changelog },
       { label: "API reference", href: SITE_LINKS.apiReference },
       { label: "Status", href: SITE_LINKS.status },
-      { label: "Terms", href: SITE_LINKS.terms },
-      { label: "Privacy", href: SITE_LINKS.privacy },
       { label: "Contact", href: SITE_LINKS.contact },
+      { label: "Terms of Service", href: SITE_LINKS.terms },
+      { label: "Privacy Policy", href: SITE_LINKS.privacy },
     ],
   },
 ];
@@ -65,8 +64,8 @@ export const SiteFooter = () => {
   const socials = linked(SOCIALS);
 
   return (
-    <footer className="border-t-1 border-border">
-      <Container className="py-16 md:py-20">
+    <footer className="relative overflow-hidden border-t-1 border-border">
+      <Container className="pt-16 pb-10 md:pt-20 md:pb-12">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-24">
           <div className="flex flex-col gap-4">
             <span className="inline-flex items-center gap-2.5 text-foreground">
@@ -76,15 +75,37 @@ export const SiteFooter = () => {
               </span>
             </span>
             <p className="max-w-[26ch] text-[0.8125rem] text-pretty text-ink-subtle">
-              Programmable wallets for autonomous agents.
+              The permission layer for agent wallets.
             </p>
+
+            {socials.length > 0 ? (
+              <ul className="-ml-2.5 mt-1 flex items-center gap-1">
+                {socials.map((social) => (
+                  <li key={social.label}>
+                    <a
+                      href={social.href}
+                      aria-label={social.label}
+                      className={cn(
+                        "grid size-10 place-items-center rounded-lg text-ink-subtle",
+                        "transition-colors duration-150 ease-out-quad hover:bg-default/60 hover:text-foreground",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
+                      )}
+                    >
+                      <Icon icon={social.icon} aria-hidden strokeWidth={1.6} className="size-4" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-x-10 gap-y-10 lg:gap-x-24">
+          <div className="grid grid-cols-2 gap-x-10 gap-y-10 lg:gap-x-20">
             {columns.map((column) => (
               <nav key={column.title} aria-label={column.title}>
-                <h2 className="text-[0.8125rem] font-medium text-foreground">{column.title}</h2>
-                <ul className="mt-3 flex flex-col">
+                <h2 className="text-[0.6875rem] font-medium uppercase tracking-[0.1em] text-ink-subtle">
+                  {column.title}
+                </h2>
+                <ul className="mt-4 flex flex-col">
                   {column.links.map((link) => (
                     <li key={link.label}>
                       {link.internal === true ? (
@@ -104,30 +125,22 @@ export const SiteFooter = () => {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col-reverse gap-6 border-t-1 border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[0.75rem] text-ink-subtle">© {new Date().getFullYear()} Namera</p>
-
-          {socials.length > 0 ? (
-            <ul className="flex items-center gap-1">
-              {socials.map((social) => (
-                <li key={social.label}>
-                  <a
-                    href={social.href}
-                    aria-label={social.label}
-                    className={cn(
-                      "grid size-11 place-items-center rounded-lg text-ink-subtle",
-                      "transition-colors duration-150 ease-out-quad hover:bg-default/60 hover:text-foreground",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
-                    )}
-                  >
-                    <Icon icon={social.icon} aria-hidden strokeWidth={1.6} className="size-4" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+        <div className="mt-16 border-t-1 border-border pt-6">
+          <p className="text-[0.75rem] text-ink-subtle">
+            © {new Date().getFullYear()} Namespace Inc. All rights reserved.
+          </p>
         </div>
       </Container>
+
+      {/* Oversized wordmark sitting below the copy, bleeding off the bottom edge
+          so it reads as texture. Kept clear of the text above it — nothing
+          overlaps. */}
+      <p
+        aria-hidden
+        className="pointer-events-none -mb-[0.3em] select-none text-center font-semibold leading-none tracking-[-0.05em] text-transparent [-webkit-text-stroke:1.5px_rgb(247_248_248/0.05)] text-[clamp(3.5rem,25vw,18rem)]"
+      >
+        namera
+      </p>
     </footer>
   );
 };

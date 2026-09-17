@@ -945,7 +945,7 @@ const ActivityPanel = () => (
 /* --------------------------------- object --------------------------------- */
 
 export const HeroObject = () => {
-  const [section, setSection] = useState<Section>("Session Keys");
+  const [section, setSection] = useState<Section>("Overview");
   const [tab, setTab] = useState<Tab>("Policies");
   const tabsId = useId();
 
@@ -1006,9 +1006,9 @@ export const HeroObject = () => {
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.75rem]",
                     "transition-colors duration-150 ease-out-quad",
                     "focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-focus/60",
-                    active
-                      ? "bg-default/80 text-foreground"
-                      : "text-ink-subtle hover:bg-default/40 hover:text-muted",
+                    selectable ? "cursor-pointer" : "cursor-default",
+                    active ? "bg-default/80 text-foreground" : "text-ink-subtle",
+                    !active && selectable && "hover:bg-default/40 hover:text-muted",
                   )}
                 >
                   <Icon

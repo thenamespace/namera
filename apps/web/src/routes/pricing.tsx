@@ -101,7 +101,7 @@ function PricingPage() {
         <Section>
           <Container>
             <Reveal>
-              <h1 className="type-display-lg text-foreground">Pricing</h1>
+              <h1 className="type-display-lg text-center text-foreground">Pricing</h1>
             </Reveal>
 
             <div className="mt-20 md:mt-28">
@@ -119,11 +119,11 @@ function PricingPage() {
         <Section className="border-t-1 border-border">
           <Container>
             <Reveal>
-              <h2 className="type-display-lg max-w-[14ch] text-balance text-foreground">
+              <h2 className="type-display-lg mx-auto max-w-[20ch] text-balance text-center text-foreground">
                 How the counting works
               </h2>
             </Reveal>
-            <Reveal delay={0.06} className="mt-12 md:mt-16">
+            <Reveal delay={0.06} className="mx-auto mt-12 max-w-[46rem] md:mt-16">
               <Accordion items={QUESTIONS} idPrefix="pricing-faq" />
             </Reveal>
           </Container>

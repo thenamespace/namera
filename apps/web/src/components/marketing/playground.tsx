@@ -266,8 +266,8 @@ export const Playground = () => {
       <Container>
         <Reveal>
           <SectionIntro title="Try to spend past the limit">
-            Change the amount or the network, then run it. The same swap passes on Base and is
-            refused on Ethereum.
+            Change the amount or the network, then run it. The same swap passes for the default
+            amount but fails when increased.
           </SectionIntro>
         </Reveal>
 
