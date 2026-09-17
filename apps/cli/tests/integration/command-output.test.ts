@@ -70,13 +70,26 @@ const run = (args: string[]) =>
         NAMERA_API_URL: origin,
         NO_COLOR: "1",
       },
-      timeout: 15000,
+      timeout: 60_000,
     },
-  );
+  ).catch((error: unknown) => {
+    if (!(error instanceof Error)) throw error;
+    const failure = error as Error & {
+      code?: string | number;
+      signal?: string;
+      killed?: boolean;
+      stdout?: string;
+      stderr?: string;
+    };
+    throw new Error(
+      `${failure.message}\ncode=${failure.code} signal=${failure.signal} killed=${failure.killed}\nstdout: ${failure.stdout ?? ""}\nstderr: ${failure.stderr ?? ""}`,
+      { cause: error },
+    );
+  });
 
 // Allow cold CLI startup on shared CI runners. Keep this above the subprocess
 // deadline so a hung command reports its captured output before Vitest times out.
-describe("CLI command output", { timeout: 20000 }, () => {
+describe("CLI command output", { timeout: 65_000 }, () => {
   it("renders wallet lists without JSON nesting or ANSI in pipes", async () => {
     const listed = await run(["wallet", "list"]);
     expect(listed.stdout).toContain("Found 1 delegated wallet:");
