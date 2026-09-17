@@ -31,7 +31,8 @@ describe("MCP command lifecycle", () => {
       child.stdin.write(
         `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } } })}\n`,
       );
-      await vi.waitFor(() => expect(stdout).toContain('"id":1'), { timeout: 10_000 });
+      // Source loading competes with other packages on shared CI runners.
+      await vi.waitFor(() => expect(stdout, stderr).toContain('"id":1'), { timeout: 60_000 });
       child.stdin.write(
         `${JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} })}\n`,
       );
@@ -49,5 +50,5 @@ describe("MCP command lifecycle", () => {
     } finally {
       if (child.exitCode === null) child.kill("SIGKILL");
     }
-  }, 15_000);
+  }, 70_000);
 });
