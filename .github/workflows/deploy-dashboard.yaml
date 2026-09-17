@@ -27,7 +27,7 @@ jobs:
       matrix:
         dotenv:
           - prod: |
-              VITE_API_URL=https://namera-core-server.namespace.ninja
+              VITE_API_URL=https://api.namera.ai
             staging: |
               VITE_API_URL=https://staging.api.namera.ai
     uses: ./.github/workflows/build-and-push.yaml
