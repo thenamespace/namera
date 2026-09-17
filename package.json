@@ -37,6 +37,8 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/language-service": "catalog:",
+    "@effect/platform-node": "catalog:",
+    "@namera-ai/api": "workspace:*",
     "@types/node": "catalog:",
     "effect": "catalog:",
     "klarity": "catalog:",
@@ -44,6 +46,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "publint": "catalog:",
+    "tsx": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"
   },
