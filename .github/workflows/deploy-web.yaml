@@ -28,8 +28,8 @@ jobs:
       matrix:
         dotenv:
           - prod: |
-              VITE_API_URL=https://api.namera.ai
-              VITE_SITE_URL=https://namera.ai
+              VITE_API_URL=https://namera-core-server.namespace.ninja
+              VITE_SITE_URL=https://namera-web.namespace.ninja
             staging: |
               VITE_API_URL=https://staging.api.namera.ai
               VITE_SITE_URL=https://staging.namera.ai
