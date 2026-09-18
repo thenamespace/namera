@@ -7,6 +7,7 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   Button,
   Checkbox,
+  Chip,
   Field,
   FieldError,
   FieldGroup,
@@ -103,6 +104,9 @@ export function CreateAccountForm() {
   });
   const isPending =
     form.formState.isSubmitting || registrationOptions.isPending || createWallet.isPending;
+  // The button stays disabled (and dimmed) until the recovery acknowledgement is
+  // checked, so the required step is obvious before anyone can submit.
+  const acknowledged = form.watch("acknowledgeRecovery") === true;
 
   return (
     <form id="create-account-form" noValidate onSubmit={handleSubmit}>
@@ -192,7 +196,7 @@ export function CreateAccountForm() {
             </DashboardCardRow>
 
             <DashboardCardRow>
-              <Typography className="text-sm!">Namespace</Typography>
+              <Typography className="text-sm!">Network</Typography>
               <div
                 className={cn(
                   inputVariants({ variant: "secondary" }),
@@ -238,7 +242,14 @@ export function CreateAccountForm() {
                   <Checkbox.Control>
                     <Checkbox.Indicator />
                   </Checkbox.Control>
-                  I understand that Namera cannot recover my owner passkey.
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    I understand that Namera cannot recover my owner passkey.
+                    {field.value === true ? null : (
+                      <Chip color="warning" size="sm" variant="soft">
+                        <Chip.Label>Required</Chip.Label>
+                      </Chip>
+                    )}
+                  </span>
                 </Checkbox.Content>
                 {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
               </Checkbox>
@@ -251,7 +262,7 @@ export function CreateAccountForm() {
         className="mt-4"
         form="create-account-form"
         fullWidth
-        isDisabled={isPending}
+        isDisabled={isPending || !acknowledged}
         type="submit"
       >
         {isPending ? "Waiting for passkey…" : "Create account"}
