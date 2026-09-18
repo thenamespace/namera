@@ -34,6 +34,12 @@ type checked, body bounded, timed out, rate limited, and untraced.
 
 ## Logs
 
+HTTP spans retain Effect's `client.address` socket peer. The trusted-proxy
+middleware adds `namera.client.address` for the resolved rate-limit identity and
+`namera.client.ip_source` (`socket` or `forwarded`) to verify ingress behavior.
+Client IPs are not metric labels or additional log fields. Treat these trace
+attributes as personal data under the deployment's access and retention policy.
+
 Emit one event message with structured snake-case annotations. Log only concise
 decisions or lifecycle transitions. Never log credentials, email addresses,
 signed messages, transaction calls, signatures, arbitrary payloads, raw URLs,

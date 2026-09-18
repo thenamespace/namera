@@ -16,6 +16,8 @@ import {
 } from "#/layers/services";
 import {
   CorsMiddleware,
+  ClientAddressMiddleware,
+  TrustedProxies,
   RateLimitMiddleware,
   RequestBodyLimitMiddleware,
   SecurityHeadersMiddleware,
@@ -78,7 +80,9 @@ export const ServerLive = HttpRouter.serve(Routes, {
   disableLogger: true,
   middleware: (httpEffect) =>
     SecurityHeadersMiddleware(
-      TelemetryMiddleware(RateLimitMiddleware(RequestBodyLimitMiddleware(httpEffect))),
+      ClientAddressMiddleware(
+        TelemetryMiddleware(RateLimitMiddleware(RequestBodyLimitMiddleware(httpEffect))),
+      ),
     ),
 }).pipe(
   Layer.provide(
@@ -96,6 +100,7 @@ export const ServerLive = HttpRouter.serve(Routes, {
     ),
   ),
   Layer.provide(RateLimiterLive),
+  Layer.provide(TrustedProxies.layer),
   Layer.provide(ServicesLive),
   Layer.provide(TelemetryLive),
   Layer.provide(NodeServerLive),
