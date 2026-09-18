@@ -251,7 +251,7 @@ export function Inbox() {
               : "hidden min-h-0 flex-col border-r lg:flex"
           }
         >
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
             <Sidebar.Trigger />
             <HeadingGroup.Title className="text-sm" level={1} weight="normal">
               Inbox
@@ -291,7 +291,7 @@ export function Inbox() {
             </div>
           </header>
 
-          <div className="shrink-0 border-b p-3">
+          <div className="shrink-0 border-b px-4 py-3">
             <SearchField
               aria-label="Search notifications"
               className="w-full"

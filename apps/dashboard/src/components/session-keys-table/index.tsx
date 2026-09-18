@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { useNavigate } from "@tanstack/react-router";
+
 import type { WalletId } from "@namera-ai/protocol";
 import type {
   ListSessionKeysForOrganizationResponse,
@@ -27,6 +29,7 @@ import {
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/components/display";
+import { ResourceEmptyState } from "@/components/resource-empty-state";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
 
 import {
@@ -238,8 +241,22 @@ function SessionKeysTableContent({
     ],
     [accountOptions, accounts, namespaceOptions, namespaces, statusCounts, statuses],
   );
+  const navigate = useNavigate();
+  const createSessionKey = useEventCallback(() => {
+    void navigate({ to: "/session-keys/new" });
+  });
   const renderEmptyState = useEventCallback(() =>
-    data.length === 0 ? "No session keys yet." : "No session keys match these filters.",
+    data.length === 0 ? (
+      <ResourceEmptyState
+        actionLabel="Create session key"
+        description="Grant an agent a scoped key — limited to the spend, contracts, networks, and expiry you set."
+        icon={Key01Icon}
+        onCreate={createSessionKey}
+        title="No session keys yet"
+      />
+    ) : (
+      "No session keys match these filters."
+    ),
   );
   const resetView = useEventCallback(() => {
     setGrouping("none");
