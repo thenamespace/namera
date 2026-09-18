@@ -45,11 +45,11 @@ function SessionKeysPage() {
         <DashboardPage.Side>
           {canCreate ? (
             <Link
-              aria-label="Create session key"
-              className={cn(buttonVariants({ isIconOnly: true, size: "sm", variant: "tertiary" }))}
+              className={cn(buttonVariants({ size: "sm", variant: "tertiary" }))}
               to="/session-keys/new"
             >
               <HugeiconsIcon icon={Add01Icon} />
+              Create session key
             </Link>
           ) : null}
         </DashboardPage.Side>
