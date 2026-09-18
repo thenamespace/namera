@@ -54,7 +54,7 @@ function RootComponent() {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-background font-sans text-foreground">
+      <body className="min-h-screen overflow-x-clip bg-background font-sans text-foreground">
         <Outlet />
         <Scripts />
       </body>

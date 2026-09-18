@@ -384,7 +384,7 @@ const Row = ({
 /* --------------------------------- overview -------------------------------- */
 
 const Sparkline = ({ up }: { readonly up: boolean }) => (
-  <svg viewBox="0 0 120 24" aria-hidden className="h-5 w-24 shrink-0 overflow-visible">
+  <svg viewBox="0 0 120 24" aria-hidden className="h-5 w-24 max-w-full">
     <path
       d={
         up ? "M0 20 L28 17 L52 12 L78 13 L100 6 L120 3" : "M0 8 L26 10 L50 7 L76 14 L102 12 L120 18"
@@ -433,7 +433,7 @@ const StatCard = ({
         <span className="shrink-0 text-[0.6875rem] text-ink-subtle">
           <span className="text-muted">{delta}</span> last 7d
         </span>
-        <span className="text-accent">
+        <span className="flex min-w-0 flex-1 justify-end text-accent">
           <Sparkline up={up ?? true} />
         </span>
       </div>

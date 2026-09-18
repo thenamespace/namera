@@ -60,7 +60,7 @@ const Field = ({
 const KeyCard = () => (
   <div
     className={cn(
-      "edge-top relative w-[24rem] shrink-0 overflow-hidden rounded-lg border-1 border-hairline-strong",
+      "edge-top relative w-full shrink-0 overflow-hidden rounded-lg border-1 border-hairline-strong sm:max-w-[24rem]",
       "bg-[linear-gradient(168deg,#17181c_0%,#121316_52%,#0d0e11_100%)]",
       "shadow-[0_18px_40px_-24px_rgb(0_0_0/0.9)]",
     )}
@@ -143,7 +143,7 @@ export const KeyAnatomy = () => (
             </Note>
           </div>
 
-          <div className="order-first sm:order-none sm:col-span-2 lg:col-span-1">
+          <div className="w-full sm:w-auto order-first sm:order-none sm:col-span-2 lg:col-span-1">
             <KeyCard />
           </div>
 
