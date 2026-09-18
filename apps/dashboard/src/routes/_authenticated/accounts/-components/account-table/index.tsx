@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { DateTime } from "effect";
 
@@ -12,6 +12,7 @@ import {
   type DataGridSelection,
   type DataGridSortDescriptor,
 } from "@namera-ai/ui";
+import { Wallet01Icon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 import type { TableOption } from "@/components/common/table";
@@ -26,6 +27,7 @@ import {
   WalletOwnerDisplay,
   WalletStatusDisplay,
 } from "@/components/display";
+import { ResourceEmptyState } from "@/components/resource-empty-state";
 import { useWallets } from "@/hooks/wallet";
 
 import { AccountActions } from "./actions";
@@ -299,8 +301,22 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
 
     return counts;
   }, [accountData]);
+  const navigate = useNavigate();
+  const createAccount = useEventCallback(() => {
+    void navigate({ to: "/accounts/new" });
+  });
   const renderEmptyState = useEventCallback(() =>
-    accountData.length === 0 ? "No accounts yet." : "No accounts match these filters.",
+    accountData.length === 0 ? (
+      <ResourceEmptyState
+        actionLabel="Create account"
+        description="Create a smart account for your agents to transact through, with the limits you set."
+        icon={Wallet01Icon}
+        onCreate={createAccount}
+        title="No accounts yet"
+      />
+    ) : (
+      "No accounts match these filters."
+    ),
   );
   const resetView = useEventCallback(() => {
     setGrouping("none");
