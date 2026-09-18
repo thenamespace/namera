@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
@@ -14,43 +14,11 @@ import {
 } from "./waitlist-schema";
 
 /*
- * The hero call to action: a countdown to launch, then the ask.
- *
- * Namera opens on 1 October. The clock does the persuading — a fixed date the
- * reader can feel getting closer — and the field underneath turns that urgency
- * into a single, low-friction action: leave an email, hear from us the day it
- * opens. Kept compact and left-aligned so it sits under the sentence without
- * competing with the product window below it.
+ * The hero call to action: the ask. Leave an email, hear from us the day
+ * Namera opens. Kept compact and left-aligned so it sits under the sentence
+ * without competing with the product window below it.
  */
-const LAUNCH_MS = Date.UTC(2026, 9, 1, 0, 0, 0); // 1 October 2026, 00:00 UTC
-
-type Remaining = {
-  readonly days: number;
-  readonly hours: number;
-  readonly minutes: number;
-  readonly seconds: number;
-  readonly done: boolean;
-};
-
-const ZERO: Remaining = { days: 0, hours: 0, minutes: 0, seconds: 0, done: false };
-
-const remainingFrom = (now: number): Remaining => {
-  const diff = LAUNCH_MS - now;
-  if (diff <= 0) return { ...ZERO, done: true };
-  const total = Math.floor(diff / 1000);
-  return {
-    days: Math.floor(total / 86_400),
-    hours: Math.floor((total % 86_400) / 3600),
-    minutes: Math.floor((total % 3600) / 60),
-    seconds: total % 60,
-    done: false,
-  };
-};
-
-const pad2 = (value: number) => String(value).padStart(2, "0");
-
 export const HeroCta = () => {
-  const [remaining, setRemaining] = useState<Remaining>(ZERO);
   const [joinedEmail, setJoinedEmail] = useState<string>();
   const [error, setError] = useState<string>();
 
@@ -60,36 +28,12 @@ export const HeroCta = () => {
   });
   const join = useJoinWaitlist({ onSuccess: setJoinedEmail, onError: setError });
 
-  /* Server render is a still clock at zero; the client starts it and the digits
-     animate up from zero on mount, then tick once a second. */
-  useEffect(() => {
-    const tick = () => {
-      setRemaining(remainingFrom(Date.now()));
-    };
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => {
-      window.clearInterval(id);
-    };
-  }, []);
-
   return (
     <div className="flex flex-col gap-6">
-      <p className="flex flex-wrap items-baseline gap-x-2 text-[0.8125rem]">
+      <p className="text-[0.8125rem]">
         <span className="font-medium uppercase tracking-[0.14em] text-ink-subtle">
-          {remaining.done ? "Namera is live" : "Launching 1 October"}
+          Launching soon
         </span>
-        {remaining.done ? null : (
-          <>
-            <span aria-hidden className="text-separator">
-              ·
-            </span>
-            <span className="tabular-nums text-muted">
-              {remaining.days}d {pad2(remaining.hours)}h {pad2(remaining.minutes)}m{" "}
-              {pad2(remaining.seconds)}s
-            </span>
-          </>
-        )}
       </p>
 
       {joinedEmail ? (

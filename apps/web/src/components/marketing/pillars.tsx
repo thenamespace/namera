@@ -369,7 +369,7 @@ export const Pillars = () => (
             delay={index * 0.06}
             className={
               cn(
-                "flex flex-col",
+                "flex flex-col items-center text-center",
                 index > 0 && "md:border-l-1 md:border-border md:pl-8 lg:pl-12",
                 index < PILLARS.length - 1 && "md:pr-8 lg:pr-12",
               ) ?? ""

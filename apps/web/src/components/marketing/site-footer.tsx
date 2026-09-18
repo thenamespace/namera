@@ -65,7 +65,7 @@ export const SiteFooter = () => {
 
   return (
     <footer className="relative overflow-hidden border-t-1 border-border">
-      <Container className="pt-16 pb-10 md:pt-20 md:pb-12">
+      <Container className="pt-16 pb-3 md:pt-20 md:pb-4">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-24">
           <div className="flex flex-col gap-4">
             <span className="inline-flex items-center gap-2.5 text-foreground">
