@@ -135,3 +135,7 @@ or in-memory fallback.
 See [local MCP](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-mcp.md)
 and [key storage](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-keystore.md).
 The four public packages share a release version starting with 1.0.0.
+
+The CLI includes an npm shrinkwrap to keep its tested runtime dependencies together.
+Update with `npm install -g @namera-ai/cli@latest`; no separate Effect installation
+is needed. This does not change your saved profiles or local keys.

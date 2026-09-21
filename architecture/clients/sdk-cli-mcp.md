@@ -123,10 +123,21 @@ active grant and passing policies. The tool adapter generates internal
 idempotency keys. `execute_transaction.sponsor` defaults to `true`; setting it
 to `false` avoids sponsored-gas usage but does not avoid execution usage.
 
+## Published dependency checks
+
+The four public packages share a fixed Changesets release group. Effect runtime
+dependencies use exact catalog versions. The CLI additionally ships an npm
+shrinkwrap: transitive Effect prerelease ranges must not float independently of
+the tested core version. `pnpm cli:lock` refreshes it; versioning/prepack only
+synchronize sibling versions and reject stale direct dependency declarations.
+
+`pnpm pack:check` serves candidate tarballs from a temporary loopback registry and
+performs clean npm installs outside the workspace. It tests CLI startup, login/MCP
+help, SDK request decoding, protocol schemas and API OpenAPI generation. No login,
+keyring mutation or production request is performed. Both CI and Release run it.
+
 ## Pending
 
-- Define npm/versioning/release/provenance automation for protocol, API, SDK,
-  and CLI packages.
 - Test packaged CLI profiles and keyrings on macOS, Windows, and Linux and test
   two-process refresh contention against a live server.
 - Add convenience SDK polling only after real client usage validates the

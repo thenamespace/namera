@@ -3,9 +3,7 @@
 Only `api`, `protocol`, `sdk`, and `cli` publish to npm. Changesets keeps them in
 one fixed version group. Utilities and telemetry stay private.
 
-The baseline reflects npm: SDK `0.1.1`, CLI `0.1.5`, and the unpublished API and
-protocol `0.0.0`. The pending major changeset moves all four to **1.0.0**, not beta.
-Do not remove it or publish the baseline versions.
+All four packages are released together, starting with 1.0.0.
 
 For later changes, run `pnpm changeset` and commit the resulting release note.
 
@@ -32,7 +30,14 @@ variable `VITE_API_URL` overrides it; no local `.env` file is required.
 - `pnpm changeset status`: preview the release plan without changing versions.
 - `pnpm version-packages`: apply changesets and update the lockfile; review and
   commit the version/changelog changes before publishing.
-- `pnpm pack:check`: build and validate public tarballs without publishing.
+- `pnpm pack:check`: build and validate public tarballs, then install them through
+  an isolated local registry using npm. Checks CLI startup/login/MCP help and an
+  SDK request without workspace resolution or production credentials. Run this
+  after other builds, not concurrently with them.
+- `pnpm cli:lock`: regenerate the CLI's published npm shrinkwrap after changing
+  runtime dependencies. Review and commit it with the dependency update.
+  `version-packages` and CLI prepack synchronize sibling release versions without
+  re-resolving third-party dependencies. Libraries do not publish shrinkwraps.
 - `pnpm release`: validate tarballs and publish already-versioned, unpublished
   versions. **This really publishes** and needs npm authority. Versioning runs
   separately through `pnpm version-packages`, before the release PR is merged.
