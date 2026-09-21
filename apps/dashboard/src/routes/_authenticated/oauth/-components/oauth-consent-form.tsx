@@ -223,11 +223,6 @@ export function OAuthConsentForm({
                       onBlur={field.onBlur}
                       onChange={field.onChange}
                     />
-                    {activeSessionKeys.length === 0 ? (
-                      <Typography.Paragraph color="muted" size="xs">
-                        This workspace has no active session keys to grant.
-                      </Typography.Paragraph>
-                    ) : null}
                   </Field>
                 )}
               />

@@ -17,12 +17,12 @@ import {
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
 import { useForm, type DefaultValues } from "react-hook-form";
 
-import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
+import { ActivateSessionKey } from "./activate-key";
 import { SessionKeyDetailsCard } from "./details-card";
 import { ExportSessionKey } from "./export-key";
 import { OnchainSettings } from "./onchain-settings";
@@ -205,7 +205,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
             View session
           </Button>
           {!registrationError && !needsBackup ? (
-            <SessionKeyInstallations key={registration.id} sessionKey={registration} />
+            <ActivateSessionKey key={registration.id} sessionKey={registration} />
           ) : null}
         </div>
       ) : (

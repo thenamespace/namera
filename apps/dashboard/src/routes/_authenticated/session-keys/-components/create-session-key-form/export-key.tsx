@@ -36,7 +36,6 @@ export function ExportSessionKey({
 }) {
   const [command, setCommand] = useState<string>();
   const [visible, setVisible] = useState({ password: false, confirmation: false });
-  const loginCommand = `namera login --host '${new URL(env.backendUrl).origin.replaceAll("'", "'\\''")}'`;
   const form = useForm<typeof SessionExportForm.Encoded>({
     defaultValues: { password: "", confirmation: "" },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(SessionExportForm)),
@@ -45,7 +44,10 @@ export function ExportSessionKey({
     const secret = Redacted.make(password);
     try {
       const envelope = await draft.seal(new URL(env.backendUrl).origin, bindings, secret);
-      setCommand(`namera session-key import ${Encoding.encodeBase64Url(JSON.stringify(envelope))}`);
+      const host = new URL(env.backendUrl).origin.replaceAll("'", "'\\''");
+      setCommand(
+        `namera session-key import ${Encoding.encodeBase64Url(JSON.stringify(envelope))} --host '${host}'`,
+      );
       form.reset();
       setVisible({ password: false, confirmation: false });
     } catch (error) {
@@ -72,7 +74,6 @@ export function ExportSessionKey({
             <ol className="grid list-none gap-5 p-0">
               {[
                 { title: "Install the CLI", command: "npm i -g @namera-ai/cli" },
-                { title: "Log in", command: loginCommand },
                 { title: "Import your key", command },
               ].map((step, index) => (
                 <li key={step.title} className="grid min-w-0 gap-3">
@@ -87,7 +88,7 @@ export function ExportSessionKey({
               ))}
             </ol>
             <Typography.Paragraph color="muted" size="sm">
-              Enter your passphrase when importing the key.
+              Enter your passphrase to import. No login is needed yet. Then approve a network below.
             </Typography.Paragraph>
             <Button variant="tertiary" onPress={onSaved}>
               I imported the key and saved my backup

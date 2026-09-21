@@ -61,7 +61,11 @@ be sent to telemetry, the Namera API, shell arguments, or command history.
 ## CLI storage and resolution
 
 `session-key import` decodes the encrypted export, prompts for a hidden
-passphrase, and checks its exact API origin against the active profile. It
+passphrase, and checks its exact API origin without requiring login. Expected
+origin precedence is `--host`, `NAMERA_API_URL`, then the saved `--profile`
+(default `personal`). A missing personal profile uses the SDK production origin;
+a missing named profile requires an explicit host. Import never creates a grant
+or reads OAuth credentials. It
 re-encrypts the material with a random independent OS-keyring secret. A private
 temporary file is synced and installed through a non-overwriting hard link;
 failed installation attempts remove their own unlock secret, not an existing

@@ -38,6 +38,9 @@ Login opens browser consent to choose access. Credentials persist in the OS
 keyring, so you do not sign in for every command. The default API is
 `https://api.namera.ai`.
 
+For your first session key, complete the import and network approval below
+before logging in. Only active keys can be authorized.
+
 For local development:
 
 ```sh
@@ -47,17 +50,25 @@ namera wallet list --profile dev
 
 ## Import a session key
 
-Create a key in the dashboard, approve its networks, and encrypt its export.
-Run the command shown in the dashboard:
+Create a key in the dashboard and encrypt its export. Import it before logging
+in, using the command shown in the dashboard:
 
 ```sh
-namera session-key import <encrypted-export>
+namera session-key import <encrypted-export> --host https://api.namera.ai
 ```
 
 The export passphrase is entered privately. The CLI re-encrypts the key with an
 independent OS-keyring secret and stores an encrypted local file. It never falls
 back to plaintext storage. Keep your encrypted backup and passphrase safe.
 Importing does not install the key onchain or grant a client access to it.
+Return to the dashboard and approve at least one network, then run `namera login`
+and select the now-active key. Other networks can be approved later.
+
+Import is local and needs no API credentials. Its expected API origin comes from
+`--host`, then `NAMERA_API_URL`, then the saved `--profile` (default `personal`).
+Before the first login, the personal profile defaults to `https://api.namera.ai`.
+For a new custom profile, pass `--host` explicitly. The encrypted export must
+match that origin; importing does not create a login profile.
 
 ## Connect an agent
 

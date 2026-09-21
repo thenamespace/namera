@@ -1,7 +1,7 @@
 import { useMemo, type FocusEventHandler, type Ref } from "react";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
-import { Collection, Header, ListBox, Select, Typography } from "@namera-ai/ui";
+import { Collection, Description, Header, ListBox, Select, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
 import { MetadataDisplay } from "@/components/display";
@@ -83,6 +83,7 @@ export function SessionKeySelect({
     <Select<SessionKeyResponse, "multiple">
       aria-labelledby={ariaLabelledBy}
       fullWidth
+      isDisabled={sessionKeys.length === 0}
       {...(isInvalid === undefined ? {} : { isInvalid })}
       {...(name === undefined ? {} : { name })}
       selectionMode="multiple"
@@ -135,6 +136,11 @@ export function SessionKeySelect({
           ))}
         </ListBox>
       </Select.Popover>
+      {sessionKeys.length === 0 ? (
+        <Description>
+          No active session keys. Create a key and approve a network to make it available here.
+        </Description>
+      ) : null}
     </Select>
   );
 }
