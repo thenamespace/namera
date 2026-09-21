@@ -1,5 +1,15 @@
 # @namera-ai/cli
 
+## 1.0.2
+
+### Patch Changes
+
+- bc3737c: Allow encrypted session-key import before login, with an explicit API host and
+  the existing origin-binding check, so first-time setup can activate a key before
+  granting CLI access.
+- @namera-ai/protocol@1.0.2
+  - @namera-ai/sdk@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
