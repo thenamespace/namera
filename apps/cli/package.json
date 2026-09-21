@@ -25,7 +25,8 @@
     "namera": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "npm-shrinkwrap.json"
   ],
   "type": "module",
   "imports": {
@@ -46,7 +47,7 @@
     "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
     "typecheck": "tsc -p tsconfig.json --pretty false",
     "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build && node ../../script/cli-shrinkwrap.mjs"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
