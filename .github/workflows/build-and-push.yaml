@@ -12,6 +12,11 @@ on:
         description: App/image name, also the infra app directory name
         required: true
         type: string
+      infra_app:
+        description: App group directory under applications/apps in the infra repo
+        required: false
+        type: string
+        default: "namera-core"
       dockerfile:
         description: Path to the app's Dockerfile (build context is repo root)
         required: true
@@ -92,5 +97,6 @@ jobs:
           event-type: image-tag-update
           client-payload: >-
             {"repository": "${{ inputs.app_name }}",
+            "infra_app": "${{ inputs.infra_app }}",
             "image_tag": "${{ needs.build-and-push.outputs.image_tag }}",
             "environment": "${{ inputs.environment }}"}
