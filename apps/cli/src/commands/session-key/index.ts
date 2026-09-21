@@ -13,7 +13,7 @@ import { importSessionKeyCommand } from "./import.js";
 const list = Command.make(
   "list",
   {
-    wallet: Flag.string("wallet").pipe(
+    wallet: Flag.String("wallet").pipe(
       Flag.withDescription("Only list keys for one wallet"),
       Flag.optional,
     ),
@@ -34,7 +34,7 @@ const list = Command.make(
 
 const get = Command.make(
   "get",
-  { sessionKeyId: Argument.string("session-key-id"), profile: profileFlag },
+  { sessionKeyId: Argument.String("session-key-id"), profile: profileFlag },
   Effect.fn(function* ({ sessionKeyId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(SessionKeyId)(sessionKeyId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));

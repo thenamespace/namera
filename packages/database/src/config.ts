@@ -1,11 +1,11 @@
 import { Config } from "effect";
 
 export const databaseConfig = {
-  database: Config.string("POSTGRES_DATABASE"),
-  host: Config.string("POSTGRES_HOST"),
-  port: Config.number("POSTGRES_PORT"),
-  username: Config.string("POSTGRES_USERNAME"),
-  password: Config.redacted("POSTGRES_PASSWORD"),
+  database: Config.String("POSTGRES_DATABASE"),
+  host: Config.String("POSTGRES_HOST"),
+  port: Config.Number("POSTGRES_PORT"),
+  username: Config.String("POSTGRES_USERNAME"),
+  password: Config.Redacted("POSTGRES_PASSWORD"),
 };
 
 export const DatabaseConfig = Config.all(databaseConfig);

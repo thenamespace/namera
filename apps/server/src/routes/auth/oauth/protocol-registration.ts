@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Metric, Result } from "effect";
+import { ByteSize, Effect, Metric, Result } from "effect";
 import { HttpIncomingMessage, HttpRouter, HttpServerResponse } from "effect/unstable/http";
 
 import { Application } from "@namera-ai/application";
@@ -37,7 +37,7 @@ export const OAuthRegistrationRoute = HttpRouter.add("POST", "/oauth/register", 
     const decoded = yield* HttpIncomingMessage.schemaBodyJson(
       OAuthDynamicClientRegistrationRequest,
     )(request).pipe(
-      Effect.provideService(HttpIncomingMessage.MaxBodySize, FileSystem.KiB(32)),
+      Effect.provideService(HttpIncomingMessage.MaxBodySize, ByteSize.kibibytes(32)),
       Effect.result,
     );
     if (Result.isFailure(decoded)) {

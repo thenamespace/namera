@@ -7,13 +7,13 @@ const localWalletKeysDirectory = fileURLToPath(
 );
 
 export const GcpWalletKeysConfig = Config.all({
-  projectId: Config.string("GCP_PROJECT_ID"),
-  location: Config.string("GCP_KMS_LOCATION").pipe(Config.withDefault("global")),
-  keyRing: Config.string("GCP_KMS_KEY_RING"),
+  projectId: Config.String("GCP_PROJECT_ID"),
+  location: Config.String("GCP_KMS_LOCATION").pipe(Config.withDefault("global")),
+  keyRing: Config.String("GCP_KMS_KEY_RING"),
 });
 
 export const LocalWalletKeysConfig = Config.all({
-  directory: Config.string("WALLET_KEYS_LOCAL_DIRECTORY").pipe(
+  directory: Config.String("WALLET_KEYS_LOCAL_DIRECTORY").pipe(
     Config.withDefault(localWalletKeysDirectory),
   ),
 });

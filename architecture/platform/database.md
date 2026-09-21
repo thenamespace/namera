@@ -5,6 +5,11 @@ domains while repositories expose transaction-aware operations to application
 workflows. Migrations are applied by the server under a PostgreSQL advisory lock
 before the HTTP port opens.
 
+Effect SQL rc.117 uses its native PostgreSQL driver. Drizzle owns the SQL casts
+and decoding for dates/timestamps; the old node-postgres `getTypeParser` override
+is no longer part of the driver configuration. Verify driver upgrades in the
+disposable PostgreSQL lane, not just PGlite.
+
 ## Logical schemas
 
 | Schema         | Tables                                                                                                                                             | Responsibility                                                          |
@@ -78,6 +83,9 @@ than legacy backfills.
 The opt-in server PostgreSQL lane uses `TestDatabase.postgresLayer(port)` and
 the production driver/migrator, with the same reset ordering as PGlite. It is
 restricted to a separate loopback port and the disposable `namera_test` database.
+Only the driver's layer receives the live clock, keeping pool/socket lifetimes
+independent of business-time jumps in tests. Application workflows still use
+the test clock.
 See [testing](../engineering/testing.md) for commands and coverage boundaries.
 
 ## Pending

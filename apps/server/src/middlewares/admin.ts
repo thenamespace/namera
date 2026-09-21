@@ -14,7 +14,7 @@ export const AdminAuthorizationLive = Layer.effect(
   AdminAuthorization,
   Effect.gen(function* () {
     const limiter = yield* RateLimiter.RateLimiter;
-    const token = yield* Config.redacted("ADMIN_TOKEN").pipe(Config.withDefault(Redacted.make("")));
+    const token = yield* Config.Redacted("ADMIN_TOKEN").pipe(Config.withDefault(Redacted.make("")));
     const expected = digest(Redacted.value(token));
     return AdminAuthorization.of({
       bearer: Effect.fn("server.admin.authorize")(

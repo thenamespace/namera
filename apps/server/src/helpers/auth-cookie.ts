@@ -10,7 +10,7 @@ export class AuthCookieConfig extends Context.Service<
 >()("@namera-ai/server/AuthCookieConfig") {
   static readonly layer = Layer.effect(
     AuthCookieConfig,
-    Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
+    Effect.map(Config.String("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
       AuthCookieConfig.of({ secure: environment !== "development" }),
     ),
   );

@@ -52,11 +52,11 @@ export const loginCommand = Command.make(
   "login",
   {
     profile: profileFlag,
-    host: Flag.string("host").pipe(
+    host: Flag.String("host").pipe(
       Flag.withDescription("Namera API origin"),
       Flag.withDefault(NAMERA_API_ORIGIN),
     ),
-    deviceName: Flag.string("device-name").pipe(
+    deviceName: Flag.String("device-name").pipe(
       Flag.withDescription("Friendly name shown on the consent screen"),
       Flag.withDefault(`Namera CLI on ${platform()}`),
     ),

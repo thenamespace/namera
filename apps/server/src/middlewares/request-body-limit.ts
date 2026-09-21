@@ -1,4 +1,4 @@
-import { Effect, FileSystem } from "effect";
+import { ByteSize, Effect } from "effect";
 import { HttpMiddleware, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 
 const apiBodyLimit = 2 * 1024 * 1024;
@@ -21,7 +21,7 @@ export const RequestBodyLimitMiddleware = HttpMiddleware.make((httpEffect) =>
     // Node's text/JSON/form/arrayBuffer readers enforce this while consuming
     // chunks, not after allocating the entire body. Content-Length is optional.
     return yield* httpEffect.pipe(
-      Effect.provideService(HttpServerRequest.MaxBodySize, FileSystem.Size(limit)),
+      Effect.provideService(HttpServerRequest.MaxBodySize, ByteSize.bytes(limit)),
     );
   }),
 );

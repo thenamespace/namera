@@ -1,26 +1,15 @@
 import { PgClient } from "@effect/sql-pg";
 import { PgliteClient } from "@effect/sql-pglite";
-import { Config, Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect";
 
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import * as PgliteDrizzle from "drizzle-orm/effect-pglite";
 import * as PgDrizzle from "drizzle-orm/effect-postgres";
-import { types as pgTypes } from "pg";
 
 import { databaseConfig } from "#/config";
 import { relations } from "#/relations/index";
 
-export const PgLive = PgClient.layerConfig({
-  ...databaseConfig,
-  types: {
-    getTypeParser: Config.succeed(((typeId, format) => {
-      if ([1184, 1114, 1082, 1186, 1231, 1115, 1185, 1187, 1182].includes(typeId)) {
-        return (value: string) => value;
-      }
-      return pgTypes.getTypeParser(typeId, format);
-    }) as typeof pgTypes.getTypeParser),
-  },
-});
+export const PgLive = PgClient.layerConfig(databaseConfig);
 
 export type DatabaseService = PgDrizzle.EffectPgDatabase<typeof relations>;
 

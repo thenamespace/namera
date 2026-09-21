@@ -8,13 +8,13 @@ For ordinary application integration, use [@namera-ai/sdk](https://www.npmjs.com
 
 ## Installation
 
-Requires Node.js 24.14+ for Node applications. Use the matching Effect 4 beta.
+Requires Node.js 24.14+ for Node applications. Use the matching Effect 4 release candidate.
 
 ```sh
-npm install @namera-ai/api effect@4.0.0-beta.105
-pnpm add @namera-ai/api effect@4.0.0-beta.105
-yarn add @namera-ai/api effect@4.0.0-beta.105
-bun add @namera-ai/api effect@4.0.0-beta.105
+npm install @namera-ai/api effect@4.0.0-rc.117
+pnpm add @namera-ai/api effect@4.0.0-rc.117
+yarn add @namera-ai/api effect@4.0.0-rc.117
+bun add @namera-ai/api effect@4.0.0-rc.117
 ```
 
 Choose the command for your package manager.

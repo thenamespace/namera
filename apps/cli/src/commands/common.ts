@@ -1,12 +1,12 @@
 import { Option, Schema, type Effect } from "effect";
 import { Flag } from "effect/unstable/cli";
 
-export const profileFlag = Flag.string("profile").pipe(
+export const profileFlag = Flag.String("profile").pipe(
   Flag.withDescription("CLI profile name"),
   Flag.withDefault("personal"),
 );
 
-export const paramsFlag = Flag.string("params").pipe(
+export const paramsFlag = Flag.String("params").pipe(
   Flag.withDescription("Inline JSON command payload"),
   Flag.optional,
 );

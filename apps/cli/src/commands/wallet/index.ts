@@ -19,7 +19,7 @@ const list = Command.make(
 
 const get = Command.make(
   "get",
-  { walletId: Argument.string("wallet-id"), profile: profileFlag },
+  { walletId: Argument.String("wallet-id"), profile: profileFlag },
   Effect.fn(function* ({ walletId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(WalletId)(walletId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
