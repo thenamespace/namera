@@ -57,7 +57,7 @@ const execute = Command.make(
   {
     params: paramsFlag,
     profile: profileFlag,
-    maxGasCost: Flag.string("max-gas-cost-wei").pipe(
+    maxGasCost: Flag.String("max-gas-cost-wei").pipe(
       Flag.withDescription("Local fee ceiling for self-funded operations, in wei"),
       Flag.optional,
     ),
@@ -98,7 +98,7 @@ const simulate = Command.make(
 
 const status = Command.make(
   "status",
-  { submissionId: Argument.string("submission-id"), profile: profileFlag },
+  { submissionId: Argument.String("submission-id"), profile: profileFlag },
   Effect.fn(function* ({ submissionId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
@@ -109,7 +109,7 @@ const status = Command.make(
 const list = Command.make(
   "list",
   {
-    cursor: Flag.string("cursor").pipe(Flag.optional),
+    cursor: Flag.String("cursor").pipe(Flag.optional),
     profile: profileFlag,
   },
   Effect.fn(function* ({ cursor, profile }) {

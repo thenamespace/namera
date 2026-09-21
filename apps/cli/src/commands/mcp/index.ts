@@ -25,8 +25,8 @@ import { recordView } from "#/services/output/document";
 import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 
 const flags = {
-  profile: Flag.string("profile").pipe(Flag.withDefault("default")),
-  host: Flag.string("host").pipe(
+  profile: Flag.String("profile").pipe(Flag.withDefault("default")),
+  host: Flag.String("host").pipe(
     Flag.withDefault(NAMERA_API_ORIGIN),
     Flag.withDescription("Namera API origin"),
   ),
@@ -47,7 +47,7 @@ const serve = Command.make(
   "serve",
   {
     ...flags,
-    maxGasCost: Flag.string("max-gas-cost-wei").pipe(
+    maxGasCost: Flag.String("max-gas-cost-wei").pipe(
       Flag.optional,
       Flag.withDescription("Fee ceiling for self-funded operations; default is sponsored only"),
     ),

@@ -5,7 +5,7 @@ import { ens_normalize } from "@adraffy/ens-normalize";
 const NormalizedEnsLabel = Schema.String.pipe(
   Schema.decodeTo(
     Schema.String,
-    SchemaTransformation.transformOrFail({
+    SchemaTransformation.transformEffect({
       decode: (input, options) => {
         try {
           return Effect.succeed(ens_normalize(input.trim()));

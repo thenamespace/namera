@@ -1,4 +1,4 @@
-import { Clock, Effect, FileSystem, Layer, Redacted, Schema } from "effect";
+import { ByteSize, Clock, Effect, Layer, Redacted, Schema } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
@@ -39,7 +39,7 @@ export const mcpOAuthUpstreamLayer = (config: {
           );
         },
         Effect.provideService(FetchHttpClient.RequestInit, { redirect: "error" }),
-        Effect.provideService(HttpIncomingMessage.MaxBodySize, FileSystem.KiB(32)),
+        Effect.provideService(HttpIncomingMessage.MaxBodySize, ByteSize.kibibytes(32)),
         Effect.timeout("15 seconds"),
         Effect.catchTag("TimeoutError", () =>
           Effect.fail(new LocalOAuthError({ code: "temporarily_unavailable" })),

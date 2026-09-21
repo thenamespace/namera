@@ -1,14 +1,15 @@
 import { Command, Flag } from "effect/unstable/cli";
 
-export const outputFlag = Flag.choice("output", ["pretty", "json", "ndjson"]).pipe(
+export const outputFlag = Flag.Literals("output", ["pretty", "json", "ndjson"]).pipe(
   Flag.withAlias("o"),
   Flag.withDescription("Output format"),
   Flag.withDefault("pretty"),
 );
 
-export const quietFlag = Flag.boolean("quiet").pipe(
+export const quietFlag = Flag.Boolean("quiet").pipe(
   Flag.withAlias("q"),
   Flag.withDescription("Suppress command output"),
+  Flag.withDefault(false),
 );
 
 export const nameraCommand = Command.make("namera").pipe(

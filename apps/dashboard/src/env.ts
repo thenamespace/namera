@@ -1,9 +1,9 @@
 import { Config, ConfigProvider, Effect } from "effect";
 
 const EnvConfig = Config.all({
-  backendUrl: Config.string("VITE_API_URL"),
-  environment: Config.string("MODE").pipe(Config.withDefault("development")),
-  telemetryServiceVersion: Config.string("VITE_TELEMETRY_SERVICE_VERSION").pipe(
+  backendUrl: Config.String("VITE_API_URL"),
+  environment: Config.String("MODE").pipe(Config.withDefault("development")),
+  telemetryServiceVersion: Config.String("VITE_TELEMETRY_SERVICE_VERSION").pipe(
     Config.withDefault("development"),
   ),
 });

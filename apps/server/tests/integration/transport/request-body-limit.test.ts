@@ -2,7 +2,7 @@
 import { request as httpRequest } from "node:http";
 
 import { NodeHttpServer } from "@effect/platform-node";
-import { Effect, Layer, ManagedRuntime, Predicate } from "effect";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import { HttpServer, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 
 import { expect, it } from "vitest";
@@ -64,8 +64,7 @@ it("bounds declared and chunked bodies with the real Node readers and closes the
     const address = await runtime.runPromise(
       Effect.map(HttpServer.HttpServer, (server) => server.address),
     );
-    if (!Predicate.isTagged(address, "TcpAddress")) throw new Error("Expected TCP listener");
-    origin = `http://127.0.0.1:${address.port}`;
+    origin = HttpServer.formatAddress(address);
     const post = (path: string, body: string) =>
       fetch(`${origin}${path}`, {
         method: "POST",

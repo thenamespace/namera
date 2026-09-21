@@ -59,7 +59,7 @@ export const verifyAuthentication = Effect.fn("passkeys.verifyAuthentication")(
     input: VerifyPasskeyAuthenticationInput,
   ): Effect.Effect<VerifiedPasskeyAuthentication, PasskeyError> =>
     Effect.tryPromise({
-      try: async () => {
+      try: async (): Promise<VerifiedPasskeyAuthentication> => {
         const response = input.response as AuthenticationResponseJSON;
         if (response?.id !== input.credentialId)
           throw new Error("Authentication credential does not match the wallet owner");

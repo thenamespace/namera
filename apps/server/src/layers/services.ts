@@ -21,7 +21,7 @@ const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.laye
 const CryptoLive = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
 
 const EmailProviderLive = Layer.unwrap(
-  Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
+  Effect.map(Config.String("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
     environment === "development" ? EmailService.devLayer : EmailService.layer,
   ),
 );
@@ -36,7 +36,7 @@ const EmailJobsLive = EmailJobs.layer.pipe(
 );
 
 const EvmLive = Layer.unwrap(
-  Effect.map(Config.string("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
+  Effect.map(Config.String("NODE_ENV").pipe(Config.withDefault("development")), (environment) =>
     environment === "development" ? Evm.devLayer : Evm.layer,
   ),
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));

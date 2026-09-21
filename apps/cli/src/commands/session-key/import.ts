@@ -13,7 +13,7 @@ import { SessionKeystoreError } from "#/services/session-keystore/storage";
 export const importSessionKeyCommand = Command.make(
   "import",
   {
-    encryptedExport: Argument.string("encrypted-export"),
+    encryptedExport: Argument.String("encrypted-export"),
     profile: profileFlag,
   },
   Effect.fn("cli.sessionKey.import")(function* ({ encryptedExport, profile }) {
@@ -28,7 +28,7 @@ export const importSessionKeyCommand = Command.make(
       catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
     });
     const { profile: activeProfile } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    const password = yield* Prompt.password({ message: "Export passphrase" });
+    const password = yield* Prompt.Password({ message: "Export passphrase" });
     const result = yield* Effect.tryPromise({
       try: () =>
         sessionKeystore.importKey(envelope, password, new URL(activeProfile.baseUrl).origin),

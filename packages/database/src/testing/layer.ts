@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 
-import { ConfigProvider, Context, Effect, Layer, Schema } from "effect";
+import { Clock, ConfigProvider, Context, Effect, Layer, Schema } from "effect";
+import { TestClock } from "effect/testing";
 
 import { SystemRoleInsert } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
@@ -162,7 +163,13 @@ export class TestDatabase extends Context.Service<
       TestDatabase.resetLayer,
       Layer.effectDiscard(runDatabaseMigrations()),
     ).pipe(
-      Layer.provideMerge(Database.layer),
+      // Pool expiry and socket timeouts use real time; business workflows retain
+      // the test clock so advancing an anniversary does not reap live sockets.
+      Layer.provideMerge(
+        Database.layer.pipe(
+          Layer.provide(Layer.effect(Clock.Clock, TestClock.withLive(Clock.Clock))),
+        ),
+      ),
       Layer.provide(
         ConfigProvider.layer(
           ConfigProvider.fromUnknown(

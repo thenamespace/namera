@@ -11,7 +11,7 @@ import {
 } from "@namera-ai/protocol";
 
 const schemaText = (message: string, schema: Schema.Decoder<unknown>, defaultValue?: string) =>
-  Prompt.text({
+  Prompt.String({
     message,
     ...(defaultValue === undefined ? {} : { default: defaultValue }),
     validate: (value) =>
@@ -23,7 +23,7 @@ const schemaText = (message: string, schema: Schema.Decoder<unknown>, defaultVal
 
 const makePrompts = () => ({
   namespace: Prompt.run(
-    Prompt.select({
+    Prompt.Select({
       message: "Namespace",
       choices: [
         { title: "EVM", description: "Ethereum and EVM-compatible networks", value: "eip155" },
@@ -59,10 +59,10 @@ const makePrompts = () => ({
       Effect.flatMap(Schema.decodeUnknownEffect(Hex)),
     ),
   integer: (message: string, options?: { readonly min?: number; readonly default?: number }) =>
-    Prompt.run(Prompt.integer({ message, ...options })),
-  confirm: (message: string, initial = false) => Prompt.run(Prompt.confirm({ message, initial })),
+    Prompt.run(Prompt.Int({ message, ...options })),
+  confirm: (message: string, initial = false) => Prompt.run(Prompt.Confirm({ message, initial })),
   signatureType: Prompt.run(
-    Prompt.select({
+    Prompt.Select({
       message: "Signature type",
       choices: [
         { title: "Message", description: "Sign or verify a UTF-8 message", value: "message" },
@@ -74,9 +74,9 @@ const makePrompts = () => ({
       ],
     }),
   ),
-  message: (message = "Message") => Prompt.run(Prompt.text({ message })),
+  message: (message = "Message") => Prompt.run(Prompt.String({ message })),
   typedData: Prompt.run(
-    Prompt.text({
+    Prompt.String({
       message: "EIP-712 typed data (JSON)",
       validate: (value) =>
         Schema.decodeUnknownEffect(Schema.fromJsonString(EvmTypedData))(value).pipe(
@@ -85,7 +85,7 @@ const makePrompts = () => ({
         ),
     }),
   ).pipe(Effect.flatMap(Schema.decodeUnknownEffect(Schema.fromJsonString(EvmTypedData)))),
-  date: (message: string) => Prompt.run(Prompt.date({ message })),
+  date: (message: string) => Prompt.run(Prompt.Date({ message })),
 });
 
 export type CliPromptsService = ReturnType<typeof makePrompts>;
