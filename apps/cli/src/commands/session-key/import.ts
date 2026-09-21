@@ -1,12 +1,12 @@
-import { Effect, Schema } from "effect";
-import { Argument, Command, Prompt } from "effect/unstable/cli";
+import { Effect, Option, Schema } from "effect";
+import { Argument, Command, Flag, Prompt } from "effect/unstable/cli";
 
 import { EncryptedLocalSessionKey } from "@namera-ai/protocol/local";
 
 import { profileFlag } from "#/commands/common";
-import { makeCliClient } from "#/services/client";
 import { printValue } from "#/services/output";
 import { recordView } from "#/services/output/document";
+import { sessionKeyImportOrigin } from "#/services/session-keystore/import-origin";
 import { sessionKeystore } from "#/services/session-keystore/index";
 import { SessionKeystoreError } from "#/services/session-keystore/storage";
 
@@ -15,8 +15,12 @@ export const importSessionKeyCommand = Command.make(
   {
     encryptedExport: Argument.String("encrypted-export"),
     profile: profileFlag,
+    host: Flag.String("host").pipe(
+      Flag.optional,
+      Flag.withDescription("API host for this key; importing does not require login"),
+    ),
   },
-  Effect.fn("cli.sessionKey.import")(function* ({ encryptedExport, profile }) {
+  Effect.fn("cli.sessionKey.import")(function* ({ encryptedExport, profile, host }) {
     const envelope = yield* Effect.try({
       try: () => {
         if (encryptedExport.length > 128 * 1024 || !/^[A-Za-z0-9_-]+$/.test(encryptedExport))
@@ -27,11 +31,12 @@ export const importSessionKeyCommand = Command.make(
       },
       catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
     });
-    const { profile: activeProfile } = yield* Effect.tryPromise(() => makeCliClient(profile));
+    const apiOrigin = yield* Effect.tryPromise(() =>
+      sessionKeyImportOrigin(profile, Option.getOrUndefined(host)),
+    );
     const password = yield* Prompt.Password({ message: "Export passphrase" });
     const result = yield* Effect.tryPromise({
-      try: () =>
-        sessionKeystore.importKey(envelope, password, new URL(activeProfile.baseUrl).origin),
+      try: () => sessionKeystore.importKey(envelope, password, apiOrigin),
       catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
     });
     yield* printValue({ status: "imported", ...result }, recordView("Session key imported"));

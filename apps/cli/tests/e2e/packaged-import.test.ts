@@ -36,14 +36,16 @@ const runImport = (directory: string, envelope: string, password: string) =>
         "session-key",
         "import",
         envelope,
+        "--host",
+        "http://localhost:8080",
       ],
       {
         env: {
           ...process.env,
           NODE_OPTIONS: "",
           XDG_CONFIG_HOME: directory,
-          NAMERA_API_KEY: crypto.randomUUID(),
-          NAMERA_API_URL: "http://localhost:8080",
+          NAMERA_API_KEY: "",
+          NAMERA_API_URL: "",
           TERM: "xterm-256color",
         },
         stdio: "pipe",
@@ -85,7 +87,7 @@ const runImport = (directory: string, envelope: string, password: string) =>
 describe.skipIf(process.platform !== "darwin" || process.env.NAMERA_TEST_OS_KEYRING !== "1")(
   "built CLI import on macOS",
   () => {
-    it("hides the passphrase and imports through the actual command", async () => {
+    it("imports before login and hides the passphrase through the actual command", async () => {
       const directory = await mkdtemp(join(tmpdir(), "namera-cli-import-"));
       const material = makeLocalSessionMaterial();
       const password = Redacted.make(crypto.randomUUID());

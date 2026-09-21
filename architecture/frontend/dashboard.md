@@ -167,6 +167,14 @@ authority count as one configuration, not two.
 Identical copies on multiple networks count once. Mandatory network/lifetime
 configuration is separate from this policy count.
 
+Empty authorization selectors are disabled and expose an associated description:
+no active session keys are available; create a key and approve a network first.
+Session creation shows install/import commands before network approval, without
+requiring CLI login. After import acknowledgement, the approval panel appears;
+the login command is shown only when the shared session query reports active.
+Import commands carry the dashboard's API origin explicitly. Pending keys remain
+ineligible for CLI/MCP grants.
+
 - Atoms own typed API calls, query keys, invalidation, and loader-prefetch
   helpers.
 - Hooks adapt atoms through shared query/mutation helpers and expose

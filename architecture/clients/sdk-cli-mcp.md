@@ -75,8 +75,11 @@ accept schema-decoded inline `--params` JSON or use reusable typed interactive
 prompts. No request-file input exists.
 
 `session-key import` installs encrypted local signing material with a hidden
-passphrase prompt and OS-keyring-backed unlock. Execution resolves that material
-by API origin/session ID and checks its wallet/chain binding. Self-funded
+passphrase prompt and OS-keyring-backed unlock, without requiring login.
+First-time setup imports the encrypted key,
+approves a network in the dashboard, then logs in to grant the active key.
+Execution resolves local material by API origin/session ID and checks its
+wallet/chain binding. Self-funded
 execution requires an explicit `--max-gas-cost-wei` budget or interactive consent.
 See [local keystore](local-keystore.md) for storage invariants and remaining
 packaged-platform verification. The same keystore resolves message/typed-data
