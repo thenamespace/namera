@@ -27,9 +27,17 @@ export const WaitlistRoutes = Layer.merge(
     Effect.gen(function* () {
       const app = yield* Application;
       return handlers
-        .handle("list", ({ query }) => app.waitlist.list(query))
+        .handle("list", ({ query }) =>
+          Effect.gen(function* () {
+            yield* consumeRateLimit("admin.reads", "operator", rateLimitPolicy.admin.readsGlobal);
+            return yield* app.waitlist.list(query);
+          }),
+        )
         .handle("setStatus", ({ params, payload }) =>
-          app.waitlist.setStatus(params.id, payload.status),
+          Effect.gen(function* () {
+            yield* consumeRateLimit("admin.writes", "operator", rateLimitPolicy.admin.writesGlobal);
+            return yield* app.waitlist.setStatus(params.id, payload.status);
+          }),
         );
     }),
   ),

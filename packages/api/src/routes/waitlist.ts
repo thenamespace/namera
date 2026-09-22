@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
 import { WaitlistNotFoundError } from "@namera-ai/protocol";
 import {
@@ -36,4 +36,5 @@ export class AdminWaitlistGroup extends HttpApiGroup.make("adminWaitlist")
       error: [WaitlistNotFoundError, ...CommonErrors],
     }),
   )
-  .middleware(AdminAuthorization) {}
+  .middleware(AdminAuthorization)
+  .annotate(OpenApi.Exclude, true) {}

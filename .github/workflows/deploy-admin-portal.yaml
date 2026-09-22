@@ -1,0 +1,41 @@
+---
+name: Deploy - Admin portal
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or SHA to build
+        required: false
+        type: string
+        default: "main"
+      environment:
+        description: Target environment
+        required: false
+        type: choice
+        options:
+          - prod
+          - staging
+        default: "prod"
+
+jobs:
+  call-build:
+    name: build
+    strategy:
+      matrix:
+        dotenv:
+          - prod: |
+              VITE_API_URL=https://api.namera.ai
+            staging: |
+              VITE_API_URL=https://staging.api.namera.ai
+    uses: ./.github/workflows/build-and-push.yaml
+    secrets: inherit
+    permissions:
+      contents: "read"
+      id-token: "write"
+    with:
+      app_name: namera-core-admin-portal
+      dockerfile: apps/admin-portal/Dockerfile
+      environment: ${{ inputs.environment }}
+      ref: ${{ inputs.ref }}
+      dotenv: ${{ matrix.dotenv[inputs.environment] }}

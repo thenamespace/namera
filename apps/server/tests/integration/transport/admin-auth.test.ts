@@ -42,15 +42,19 @@ const probeLayer = (config: Record<string, string>) => {
 };
 
 layer(probeLayer({ ADMIN_TOKEN: adminToken }))("admin authorization", (it) => {
-  it.effect("shares the authenticated operation limit across client addresses", () =>
+  // A valid bearer is no longer charged against a global hourly ceiling: the
+  // operator portal is a browser client and would otherwise lock itself out.
+  // Per-operation budgets live in the handlers instead.
+  it.effect("does not exhaust a global ceiling on authenticated reads", () =>
     Effect.gen(function* () {
       yield* TestClock.adjust("2 hours");
-      for (let operation = 0; operation < 31; operation += 1) {
+      for (let operation = 0; operation < 40; operation += 1) {
         const client = yield* handledApi(ProbeApi, {
           headers: { authorization: `Bearer ${adminToken}` },
+          remoteAddress: `192.0.2.${operation + 1}`,
         });
         expect((yield* client.adminProbe.actor({ responseMode: "response-only" })).status).toBe(
-          operation < 30 ? 200 : 429,
+          200,
         );
       }
       yield* TestClock.adjust("2 hours");
@@ -83,7 +87,7 @@ layer(probeLayer({ ADMIN_TOKEN: adminToken }))("admin authorization", (it) => {
         headers: { authorization: "Bearer incorrect" },
         remoteAddress: "192.0.2.200",
       });
-      for (let attempt = 0; attempt < 10; attempt += 1) {
+      for (let attempt = 0; attempt < 60; attempt += 1) {
         expect((yield* client.adminProbe.actor({ responseMode: "response-only" })).status).toBe(
           401,
         );

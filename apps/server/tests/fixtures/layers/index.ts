@@ -15,6 +15,7 @@ import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AdminAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
+import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
 import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import {
@@ -87,6 +88,7 @@ export const makeTestServerLayer = (
   );
 
   const TestHandlersLayer = Layer.mergeAll(
+    AdminUserRoutes,
     BetaInviteRoutes,
     WaitlistRoutes,
     AddressMetadataRoutes,
