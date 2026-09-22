@@ -1,13 +1,23 @@
 import { Schema } from "effect";
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
 
-import { CreateBetaInvitesRequest, CreateBetaInvitesResponse } from "@namera-ai/protocol/dto";
+import {
+  CreateBetaInvitesRequest,
+  CreateBetaInvitesResponse,
+  ListBetaInvitesRequest,
+  ListBetaInvitesResponse,
+} from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
 import { AdminAuthorization } from "#/middlewares/admin";
 
 export class BetaInviteGroup extends HttpApiGroup.make("betaInvite")
   .add(
+    HttpApiEndpoint.get("list", "/internal/invites", {
+      query: ListBetaInvitesRequest,
+      success: ListBetaInvitesResponse,
+      error: CommonErrors,
+    }),
     HttpApiEndpoint.post("create", "/internal/invites", {
       payload: CreateBetaInvitesRequest,
       success: CreateBetaInvitesResponse,
@@ -19,4 +29,6 @@ export class BetaInviteGroup extends HttpApiGroup.make("betaInvite")
       error: CommonErrors,
     }),
   )
-  .middleware(AdminAuthorization) {}
+  .middleware(AdminAuthorization)
+  // Operator surface: kept out of the published spec and the Scalar reference.
+  .annotate(OpenApi.Exclude, true) {}

@@ -2,7 +2,7 @@ import { DateTime, Effect } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
-import type { CreateBetaInvitesRequest } from "@namera-ai/protocol/dto";
+import type { CreateBetaInvitesRequest, ListBetaInvitesRequest } from "@namera-ai/protocol/dto";
 
 import { AuthConfig } from "./config.js";
 
@@ -57,5 +57,16 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
       }),
     );
   }, Effect.orDie);
-  return { create, revoke };
+  const list = Effect.fn("application.betaInvite.list")(function* (input: ListBetaInvitesRequest) {
+    const limit = input.limit ?? 50;
+    const rows = yield* repository.auth.betaInvite.list({
+      ...input,
+      limit,
+      now: yield* DateTime.now,
+      ...(input.email === undefined ? {} : { email: input.email.trim().toLowerCase() }),
+    });
+    const entries = rows.slice(0, limit);
+    return { entries, nextCursor: rows.length > limit ? (entries.at(-1)?.id ?? null) : null };
+  }, Effect.orDie);
+  return { create, list, revoke };
 });

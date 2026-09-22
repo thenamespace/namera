@@ -19,14 +19,19 @@ export const AdminAuthorizationLive = Layer.effect(
     return AdminAuthorization.of({
       bearer: Effect.fn("server.admin.authorize")(
         function* (httpEffect, { credential }) {
-          yield* consumeRateLimit("admin.ip", yield* clientIdentifier, rateLimitPolicy.admin.byIp);
+          yield* consumeRateLimit(
+            "admin.bearer.ip",
+            yield* clientIdentifier,
+            rateLimitPolicy.admin.bearerByIp,
+          );
           if (
             Redacted.value(token).length < 32 ||
             !timingSafeEqual(expected, digest(Redacted.value(credential)))
           ) {
             return yield* new HttpApiError.Unauthorized();
           }
-          yield* consumeRateLimit("admin.global", "operator", rateLimitPolicy.admin.global);
+          // Per-operation budgets are consumed in the handlers, so a valid
+          // bearer is not itself charged against a global ceiling.
           return yield* Effect.provideService(httpEffect, CurrentAdmin, {
             type: "admin",
             credential: "shared-token",

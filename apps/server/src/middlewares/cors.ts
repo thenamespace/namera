@@ -34,15 +34,31 @@ export const CorsMiddleware = Layer.unwrap(
       maxAge: 86400,
     });
 
+    // The operator portal is a separate origin and authenticates with a bearer
+    // token, so it needs `Authorization` allowed on preflight, which the
+    // cookie-based dashboard policy deliberately does not grant.
+    const adminCors = HttpMiddleware.cors({
+      allowedOrigins: Option.toArray(config.adminOrigin).map((url) => url.origin),
+      allowedMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: false,
+      maxAge: 86400,
+    });
+
     return HttpRouter.middleware(
       (httpEffect) =>
         Effect.gen(function* () {
           const request = yield* HttpServerRequest.HttpServerRequest;
           const path = new URL(request.url, "http://localhost").pathname;
-          return yield* path === "/waitlist" &&
-          (request.method === "POST" || request.method === "OPTIONS")
-            ? waitlistCors(httpEffect)
-            : dashboardCors(httpEffect);
+          if (path === "/waitlist" && (request.method === "POST" || request.method === "OPTIONS")) {
+            return yield* waitlistCors(httpEffect);
+          }
+          // With no ADMIN_CORS_ORIGIN set, /internal keeps the previous policy
+          // so curl and the integration tests behave exactly as before.
+          if (path.startsWith("/internal/") && Option.isSome(config.adminOrigin)) {
+            return yield* adminCors(httpEffect);
+          }
+          return yield* dashboardCors(httpEffect);
         }),
       { global: true },
     );

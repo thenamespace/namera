@@ -2,8 +2,9 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, Email, UserId } from "@namera-ai/protocol";
+import { AdminUserEntry } from "@namera-ai/protocol/dto";
 import { User, UserInsert, type UserMetadata, UserUpdate } from "@namera-ai/protocol/model";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, lt, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -22,6 +23,11 @@ export interface UserRepositoryService {
     userId: UserId,
     metadata: UserMetadata,
   ) => Effect.Effect<User | undefined, DatabaseError>;
+  list: (input: {
+    readonly limit: number;
+    readonly cursor?: string;
+    readonly search?: string;
+  }) => Effect.Effect<ReadonlyArray<AdminUserEntry>, DatabaseError>;
 }
 
 export class UserRepository extends Context.Service<UserRepository, UserRepositoryService>()(
@@ -107,6 +113,39 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
           },
           mapRepositoryError,
         ),
+        list: Effect.fn("database.userRepository.list")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const name = sql<string | null>`${user.metadata}->>'name'`;
+          const rows = yield* db
+            .select({
+              id: user.id,
+              email: user.email,
+              emailVerified: user.emailVerified,
+              name,
+              lastLoginAt: user.lastLoginAt,
+              createdAt: user.createdAt,
+              updatedAt: user.updatedAt,
+            })
+            .from(user)
+            .where(
+              and(
+                // id is a uuidv7, so ordering by it is creation order.
+                // The cursor is an opaque id echoed back from a previous page.
+                input.cursor ? lt(user.id, input.cursor as UserId) : undefined,
+                // Literal substring search: '%' and '_' are not wildcards here.
+                input.search
+                  ? or(
+                      sql`strpos(lower(${user.email}), ${input.search}) > 0`,
+                      sql`strpos(lower(coalesce(${name}, '')), ${input.search}) > 0`,
+                    )
+                  : undefined,
+              ),
+            )
+            .orderBy(desc(user.id))
+            .limit(input.limit + 1);
+
+          return Schema.decodeUnknownSync(Schema.Array(AdminUserEntry))(rows);
+        }, mapRepositoryError),
         updateMetadata: Effect.fn("database.userRepository.updateMetadata")(function* (
           userId,
           metadata,
