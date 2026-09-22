@@ -8,10 +8,8 @@ import { env } from "@/env";
 import { clearToken, readToken } from "@/lib/session";
 
 /**
- * The typed client is generated from the same `NameraApi` contract the server
- * implements, so request paths, encoders and decoders cannot drift from it.
  * `OpenApi.Exclude` hides the operator routes from the published spec but not
- * from this contract, which is why the portal still gets full types for them.
+ * from the contract, so the client is still fully typed for them.
  */
 const authorizationLayer = HttpApiMiddleware.layerClient(AdminAuthorization, ({ next, request }) =>
   next(HttpClientRequest.setHeader(request, "authorization", `Bearer ${readToken() ?? ""}`)),
@@ -91,11 +89,6 @@ const failureFrom = (error: unknown): ApiFailure => {
   return { kind: "unexpected", message: "The request failed.", detail };
 };
 
-/**
- * Bridges an Effect into the promise TanStack Query expects, turning declared
- * API errors into a small shape the screens can render. Rejecting with an
- * `ApiFailure` keeps Query's error channel typed for the UI.
- */
 export const run = async <A, E>(effect: Effect.Effect<A, E>): Promise<A> => {
   const exit = await Effect.runPromiseExit(effect);
   if (Exit.isSuccess(exit)) return exit.value;

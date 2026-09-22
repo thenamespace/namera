@@ -1,9 +1,5 @@
 import { Button } from "@namera-ai/ui";
 
-/**
- * Keyset paging, so there is no page count to show and no way to jump. The
- * cursor stack in each screen is what makes "Previous" possible at all.
- */
 export function Pager({
   canGoBack,
   isFetching,

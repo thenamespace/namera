@@ -21,8 +21,6 @@ on:
 jobs:
   call-build:
     name: build
-    # A one-entry matrix is the only static map a reusable-workflow call can
-    # read in `with`. Vite bakes these into the bundle at build time.
     strategy:
       matrix:
         dotenv:

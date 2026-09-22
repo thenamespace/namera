@@ -34,15 +34,11 @@ export const CorsMiddleware = Layer.unwrap(
       maxAge: 86400,
     });
 
-    // The operator portal is a separate origin and authenticates with a bearer
-    // token, so it needs `Authorization` allowed on preflight, which the
-    // cookie-based dashboard policy deliberately does not grant.
     const adminCors = HttpMiddleware.cors({
       allowedOrigins: Option.toArray(config.adminOrigin).map((url) => url.origin),
       allowedMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-      // Authorization is what the cookie-based dashboard policy does not grant.
-      // The tracing headers are added by Effect's HTTP client on every request,
-      // so omitting them fails preflight before the request is ever sent.
+      // Effect's HTTP client sends tracing headers on every request, so
+      // omitting them fails preflight before the request is ever made.
       allowedHeaders: [
         "Content-Type",
         "Authorization",

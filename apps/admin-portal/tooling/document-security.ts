@@ -24,7 +24,6 @@ export const documentSecurity = (apiUrl: string) => {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
-    // An operator tool has no reason to appear in a search index.
     "X-Robots-Tag": "noindex, nofollow",
   };
 

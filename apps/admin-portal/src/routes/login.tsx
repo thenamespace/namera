@@ -40,9 +40,7 @@ function LoginScreen() {
     } catch (cause) {
       clearToken();
       const failure = asApiFailure(cause);
-      // Only a 401 means the token is wrong. Reporting a blocked or
-      // unreachable request as a bad token sends the reader after the wrong
-      // problem, which is exactly the wrong hint when the cause is CORS.
+      // Only a 401 means the token is wrong; a blocked request is not.
       setError(
         failure.kind === "unauthorized"
           ? "That token was rejected. Check it and try again."

@@ -11,11 +11,6 @@ export function DataLoading({ label }: { readonly label: string }) {
   );
 }
 
-/**
- * Error copy names the cause, because the three failures an operator hits here
- * need different responses: a rejected token means sign in again, a rate limit
- * means wait, and a network failure means check the API URL.
- */
 export function DataError({
   error,
   onRetry,
@@ -49,10 +44,6 @@ export function DataError({
   );
 }
 
-/**
- * "Nothing here yet" and "nothing matches your filter" are different problems
- * with different next actions, so they are different messages.
- */
 export function EmptyRows({
   filtered,
   onClearFilters,

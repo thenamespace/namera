@@ -17,11 +17,7 @@ export type BetaInvite = typeof BetaInvite.Type;
 export const BetaInviteEventType = Schema.Literals(["created", "revoked", "redeemed"]);
 export type BetaInviteEventType = typeof BetaInviteEventType.Type;
 
-/**
- * Derived, never stored. Priority is redeemed > revoked > expired > active.
- * The first two are mutually exclusive by `beta_invite_terminal_check`, so the
- * order only matters for readability.
- */
+/** Derived from the timestamps on each read, never stored. */
 export const BetaInviteStatus = Schema.Literals(["active", "redeemed", "revoked", "expired"]);
 export type BetaInviteStatus = typeof BetaInviteStatus.Type;
 

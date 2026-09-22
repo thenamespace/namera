@@ -37,5 +37,4 @@ export class AdminWaitlistGroup extends HttpApiGroup.make("adminWaitlist")
     }),
   )
   .middleware(AdminAuthorization)
-  // Operator surface: kept out of the published spec and the Scalar reference.
   .annotate(OpenApi.Exclude, true) {}

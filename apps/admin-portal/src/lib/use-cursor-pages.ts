@@ -2,8 +2,8 @@ import { useCallback, useState } from "react";
 
 /**
  * Keyset paging only moves forward, so going back means remembering the cursor
- * that produced each page. Changing a filter resets the stack: a cursor from
- * one filter does not describe a position in another.
+ * that produced each page. A cursor from one filter does not describe a
+ * position in another, so callers reset the stack when a filter changes.
  */
 export const useCursorPages = () => {
   const [stack, setStack] = useState<ReadonlyArray<string>>([]);

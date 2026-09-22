@@ -4,9 +4,8 @@ import { buttonVariants } from "@namera-ai/ui";
 import { cn } from "@namera-ai/ui/utils";
 
 /**
- * Navigation is an anchor, styled to match the design system's buttons. An
- * anchor nested inside a `<Button>` would be invalid markup and would give
- * keyboard users two focus stops for one action.
+ * An anchor nested inside a `<Button>` is invalid markup and gives keyboard
+ * users two focus stops for one action, so navigation is a styled anchor.
  */
 export function LinkButton({
   className,

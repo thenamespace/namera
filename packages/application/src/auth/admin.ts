@@ -3,10 +3,7 @@ import { Effect } from "effect";
 import { Repository } from "@namera-ai/database";
 import type { ListUsersRequest } from "@namera-ai/protocol/dto";
 
-/**
- * Operator-facing reads that have no owning domain of their own. Everything
- * here is behind AdminAuthorization and excluded from the public OpenAPI spec.
- */
+/** Operator-facing reads that have no owning domain of their own. */
 export const makeAdminApplication = Effect.gen(function* () {
   const repository = (yield* Repository).auth.user;
 

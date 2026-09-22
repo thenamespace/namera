@@ -14,5 +14,4 @@ export class AdminUserGroup extends HttpApiGroup.make("adminUser")
     }),
   )
   .middleware(AdminAuthorization)
-  // Operator surface: kept out of the published spec and the Scalar reference.
   .annotate(OpenApi.Exclude, true) {}
