@@ -24,41 +24,71 @@ export const client = Effect.runSync(
 );
 
 export type ApiFailure = {
-  readonly kind: "unauthorized" | "rate-limited" | "network" | "unexpected";
+  readonly kind: "unauthorized" | "rate-limited" | "network" | "contract" | "unexpected";
   readonly message: string;
+  /** The underlying error tag, surfaced so a failure can be diagnosed from the UI. */
+  readonly detail?: string;
   readonly retryAfterSeconds?: number;
 };
 
 const failureFrom = (error: unknown): ApiFailure => {
   if (!Predicate.isObject(error)) {
-    return { kind: "unexpected", message: "The request failed. Try again." };
+    return { kind: "unexpected", message: "The request failed.", detail: typeof error };
   }
   const tag = Reflect.get(error, "_tag");
+  const detail = typeof tag === "string" ? tag : "unknown";
 
-  if (tag === "Unauthorized" || tag === "UnauthorizedNoContent") {
-    // The token is wrong, revoked, or the server was restarted with a new one.
-    // Drop it so the app returns to the sign-in screen instead of looping.
+  if (tag === "Unauthorized") {
+    // The token is wrong, revoked, or the server restarted with a new one.
+    // Drop it so the app returns to sign-in instead of looping on a 401.
     clearToken();
-    return { kind: "unauthorized", message: "That admin token was rejected. Sign in again." };
+    return { kind: "unauthorized", message: "That admin token was rejected.", detail };
   }
 
   if (tag === "RateLimitExceeded") {
     const retryAfterSeconds = Reflect.get(error, "retryAfterSeconds");
     return {
       kind: "rate-limited",
-      message: "The operator rate limit is exhausted. Wait before retrying.",
+      message: "The operator rate limit is exhausted.",
+      detail,
       ...(typeof retryAfterSeconds === "number" ? { retryAfterSeconds } : {}),
     };
   }
 
-  if (tag === "RequestError" || tag === "ResponseError") {
+  // The fetch never completed: the server is down, the URL is wrong, or the
+  // browser blocked the response. A blocked cross-origin request is
+  // indistinguishable from an unreachable one here, by design of the fetch API.
+  if (tag === "TransportError" || tag === "InvalidUrlError") {
     return {
       kind: "network",
-      message: "Could not reach the API. Check your connection and the API URL.",
+      message:
+        "Could not reach the API. Check that it is running, that VITE_API_URL is right, " +
+        "and that this page's origin matches ADMIN_CORS_ORIGIN (localhost and 127.0.0.1 " +
+        "are different origins).",
+      detail,
     };
   }
 
-  return { kind: "unexpected", message: "The request failed. Try again." };
+  if (tag === "StatusCodeError" || tag === "HttpClientError") {
+    const status = Reflect.get(error, "status");
+    return {
+      kind: "unexpected",
+      message: `The API returned an unexpected status${typeof status === "number" ? ` (${status})` : ""}.`,
+      detail,
+    };
+  }
+
+  // The call succeeded but the payload did not match the contract, which means
+  // the portal and the server are built from different versions of it.
+  if (tag === "DecodeError" || tag === "EncodeError" || tag === "HttpApiSchemaError") {
+    return {
+      kind: "contract",
+      message: "The API responded in an unexpected shape. The portal and API versions may differ.",
+      detail,
+    };
+  }
+
+  return { kind: "unexpected", message: "The request failed.", detail };
 };
 
 /**
@@ -77,4 +107,4 @@ export const run = async <A, E>(effect: Effect.Effect<A, E>): Promise<A> => {
 export const asApiFailure = (error: unknown): ApiFailure =>
   Predicate.isObject(error) && typeof Reflect.get(error, "kind") === "string"
     ? (error as ApiFailure)
-    : { kind: "unexpected", message: "The request failed. Try again." };
+    : { kind: "unexpected", message: "The request failed." };

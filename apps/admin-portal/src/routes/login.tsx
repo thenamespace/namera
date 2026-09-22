@@ -4,7 +4,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 import { Button, Field, FieldLabel, Input, Typography } from "@namera-ai/ui";
 
-import { client, run } from "@/api/client";
+import { asApiFailure, client, run } from "@/api/client";
 import { MINIMUM_TOKEN_LENGTH, clearToken, readToken, writeToken } from "@/lib/session";
 
 export const Route = createFileRoute("/login")({
@@ -37,9 +37,17 @@ function LoginScreen() {
     try {
       await run(client.adminUser.list({ query: { limit: 1 } }));
       await navigate({ to: "/invites" });
-    } catch {
+    } catch (cause) {
       clearToken();
-      setError("That token was rejected. Check it and try again.");
+      const failure = asApiFailure(cause);
+      // Only a 401 means the token is wrong. Reporting a blocked or
+      // unreachable request as a bad token sends the reader after the wrong
+      // problem, which is exactly the wrong hint when the cause is CORS.
+      setError(
+        failure.kind === "unauthorized"
+          ? "That token was rejected. Check it and try again."
+          : `${failure.message} The token was not checked. (${failure.detail ?? "unknown"})`,
+      );
     } finally {
       setIsChecking(false);
     }
