@@ -40,7 +40,17 @@ export const CorsMiddleware = Layer.unwrap(
     const adminCors = HttpMiddleware.cors({
       allowedOrigins: Option.toArray(config.adminOrigin).map((url) => url.origin),
       allowedMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      // Authorization is what the cookie-based dashboard policy does not grant.
+      // The tracing headers are added by Effect's HTTP client on every request,
+      // so omitting them fails preflight before the request is ever sent.
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "B3",
+        "Traceparent",
+        "Tracestate",
+        "Baggage",
+      ],
       credentials: false,
       maxAge: 86400,
     });
