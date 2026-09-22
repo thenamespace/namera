@@ -16,6 +16,9 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   email-safe asset generator for package-owned React Email templates.
 - [`apps/cli`](apps/cli/README.md) — Effect CLI using OAuth device authorization
   and the public SDK for delegated wallet operations.
+- [`apps/admin-portal`](apps/admin-portal/README.md) — operator SPA for beta
+  invites, users, and the waitlist. Static Vite React build with no server of
+  its own; it calls `apps/server`'s `/internal` API with an admin bearer token.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
@@ -112,6 +115,7 @@ evm              -> protocol
 wallet-keys      -> protocol
 passkeys         -> utils
 apps/dashboard   -> api, protocol, telemetry, ui
+apps/admin-portal -> api, protocol, ui
 email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit
 ```
@@ -144,6 +148,14 @@ Additional rules:
   `application` or `apps/server`.
 - `apps/server` is the composition root. It provides Node/runtime layers,
   implements API handlers and authorization, and reads deployment environment.
+- `apps/admin-portal` is a static SPA with no backend of its own. It holds no
+  database credentials and never touches `database`, `application`, or any
+  repository: every read and write goes over HTTP to `apps/server`'s `/internal`
+  API, typed through `api`. The operator's admin token lives in `sessionStorage`
+  and dies with the tab, so it is never persisted to disk.
+- Every `/internal` route is operator surface: it carries `AdminAuthorization`
+  and `OpenApi.Exclude`, so it stays out of the published spec and the Scalar
+  reference. `tests/integration/transport/openapi-internal.test.ts` enforces it.
 
 ## Effect v4
 
