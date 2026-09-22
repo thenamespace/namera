@@ -45,6 +45,8 @@ const staticHttpRoutes = new Set([
   "/wallets",
   "/waitlist",
   "/internal/waitlist",
+  "/internal/invites",
+  "/internal/users",
 ]);
 
 export const httpRouteTemplate = (url: string): string => {
@@ -55,6 +57,9 @@ export const httpRouteTemplate = (url: string): string => {
   }
   if (/^\/internal\/waitlist\/[^/]+$/.test(pathname)) {
     return "/internal/waitlist/:id";
+  }
+  if (/^\/internal\/invites\/[^/]+$/.test(pathname)) {
+    return "/internal/invites/:id";
   }
   if (/^\/wallets\/[^/]+$/.test(pathname)) {
     return "/wallets/:walletId";
