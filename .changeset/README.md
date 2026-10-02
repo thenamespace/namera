@@ -17,13 +17,17 @@ For later changes, run `pnpm changeset` and commit the resulting release note.
    New package names need initial publication/ownership setup before trusted
    publishing can be configured; do that from an authorized maintainer environment.
 3. Dispatch **Release**. With pending changesets it creates a version/changelog PR.
-4. Review and merge that PR. Dispatch **Release** again to publish and tag.
+4. Review and merge that PR. Dispatch **CI** on the resulting main commit.
+5. After CI passes, dispatch **Release** again to publish and tag that commit.
 
 The shared setup action pins Node/pnpm. CI runs checks, tests, tarball validation,
 and a separate disposable PostgreSQL integration lane. No production credentials
 are needed for CI. Release uses npm OIDC and provenance, not a committed token.
-CI and Release dashboard builds use `https://api.namera.ai` unless the repository
-variable `VITE_API_URL` overrides it; no local `.env` file is required.
+Release does not run lint, type checks, tests, or tarball smoke checks. It builds
+only the public packages and their dependencies before publishing. There is no
+automatic CI gate: the operator must verify CI passed for the current main commit.
+CI dashboard builds use `https://api.namera.ai` unless the repository variable
+`VITE_API_URL` overrides it; no local `.env` file is required.
 
 ## Local commands
 
@@ -38,7 +42,7 @@ variable `VITE_API_URL` overrides it; no local `.env` file is required.
   runtime dependencies. Review and commit it with the dependency update.
   `version-packages` and CLI prepack synchronize sibling release versions without
   re-resolving third-party dependencies. Libraries do not publish shrinkwraps.
-- `pnpm release`: validate tarballs and publish already-versioned, unpublished
+- `pnpm release`: build public packages and publish already-versioned, unpublished
   versions. **This really publishes** and needs npm authority. Versioning runs
   separately through `pnpm version-packages`, before the release PR is merged.
 
