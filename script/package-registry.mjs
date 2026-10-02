@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -15,6 +15,15 @@ export const run = (command, args, cwd, env = process.env) =>
 
 // Serve candidate packages without publishing them. Other dependencies come from npm.
 export const startPackageRegistry = async (packages) => {
+  const shrinkwrapped = new Set(
+    packages
+      .filter(({ tarball }) =>
+        execFileSync("tar", ["-tzf", tarball], { encoding: "utf8" })
+          .split("\n")
+          .includes("package/npm-shrinkwrap.json"),
+      )
+      .map(({ manifest }) => manifest.name),
+  );
   const tarballs = new Map(
     packages.map(({ manifest, tarball }) => [manifest.name, readFileSync(tarball)]),
   );
@@ -40,6 +49,8 @@ export const startPackageRegistry = async (packages) => {
         }
         const version = {
           ...manifest,
+          // npm uses registry metadata to decide whether to load the bundled lock.
+          ...(shrinkwrapped.has(manifest.name) ? { _hasShrinkwrap: true } : {}),
           dist: {
             tarball: `${origin}/${manifest.name}/-/candidate.tgz`,
             integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,

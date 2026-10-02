@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -60,6 +61,12 @@ try {
   };
   const npmOptions = ["--no-audit", "--no-fund", "--registry", registry.origin];
   const cli = candidates.find(({ manifest }) => manifest.name === "@namera-ai/cli").manifest;
+  const cliMetadata = await (await fetch(`${registry.origin}/${cli.name}/${cli.version}`)).json();
+  assert.equal(
+    Reflect.get(cliMetadata, "_hasShrinkwrap"),
+    true,
+    "Candidate registry must advertise the CLI lock",
+  );
   const prefix = join(directory, "global");
   await runAsync(
     "npm",
@@ -68,6 +75,12 @@ try {
     env,
   );
   const executable = join(prefix, "lib/node_modules/@namera-ai/cli/dist/index.js");
+  const cliRequire = createRequire(executable);
+  const platformRequire = createRequire(cliRequire.resolve("@effect/platform-node"));
+  const effectVersion = cliRequire("effect/package.json").version;
+  assert.equal(effectVersion, cli.dependencies.effect);
+  assert.equal(cliRequire("@effect/platform-node/package.json").version, effectVersion);
+  assert.equal(platformRequire("@effect/platform-node-shared/package.json").version, effectVersion);
   for (const args of [["--version"], ["--help"], ["login", "--help"], ["mcp", "serve", "--help"]]) {
     await runAsync(process.execPath, [executable, ...args], consumer, env);
   }
