@@ -81,6 +81,13 @@ stderr. Closing stdin disposes the transport and cancels pending login. The tool
 error boundary returns bounded messages and validated policy diagnostics, not
 raw provider or keystore errors. Existing tool metrics use fixed tool names only.
 
+Successful tool responses use `Schema.toCodecJson` before constructing the MCP
+result. Plain DTO encoding may retain JavaScript Dates, which MCP structured
+content rejects. The JSON codec emits timestamp strings and preserves explicit
+integer-string codecs; text and structured content use the same encoded value.
+Stdio regressions cover nonempty wallet listing and detail responses, including
+dates and integers larger than JavaScript's safe numeric range.
+
 ## Verification
 
 Integration tests cover real loopback callbacks, state/replay/denial guards,
