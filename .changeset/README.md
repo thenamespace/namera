@@ -38,6 +38,9 @@ CI dashboard builds use `https://api.namera.ai` unless the repository variable
   an isolated local registry using npm. Checks CLI startup/login/MCP help and an
   SDK request without workspace resolution or production credentials. Run this
   after other builds, not concurrently with them.
+  The candidate registry advertises bundled npm shrinkwraps, matching npm's
+  metadata. The clean-install check verifies the installed Effect runtime and
+  Node adapter versions agree before testing CLI startup.
 - `pnpm cli:lock`: regenerate the CLI's published npm shrinkwrap after changing
   runtime dependencies. Review and commit it with the dependency update.
   `version-packages` and CLI prepack synchronize sibling release versions without
