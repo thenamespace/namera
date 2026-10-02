@@ -67,14 +67,19 @@ const harness = async (options?: {
               },
             },
           });
-    if (path === "/wallets") return Response.json([]);
     if (options?.fetch) return options.fetch(input, init);
+    if (path === "/wallets") return Response.json([]);
     throw new Error("Unexpected API path");
   });
   const input = await Effect.runPromise(Queue.make<Uint8Array>());
   const output: Array<{
     id: number;
-    result: { tools?: Array<{ name: string }>; isError?: boolean; structuredContent?: unknown };
+    result: {
+      tools?: Array<{ name: string }>;
+      isError?: boolean;
+      structuredContent?: unknown;
+      content?: Array<{ type: string; text: string }>;
+    };
   }> = [];
   let text = "";
   const runtime = ManagedRuntime.make(
@@ -151,6 +156,65 @@ const harness = async (options?: {
 };
 
 describe("stdio MCP authorization and tools", () => {
+  it("serializes wallet dates and large integers consistently in structured and text results", async () => {
+    const wallet = {
+      id,
+      organizationId: id,
+      namespace: "eip155",
+      status: "active",
+      implementation: "alchemy-modular-v2",
+      metadata: { version: 1, name: "MCP test wallet" },
+      address: `0x${"11".repeat(20)}`,
+      owner: { signingKeyId: id, custody: "local", algorithm: "p256" },
+      data: {
+        version: 1,
+        modularAccountVersion: "2.0.0",
+        validatorType: "webauthn_p256",
+        entryPointVersion: "0.7",
+        salt: "9007199254740993123456789",
+        entityId: 1,
+      },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-02T00:00:00.000Z",
+    };
+    const server = await harness({
+      fixture: mcpSignatureFixture(),
+      signer: async () => {
+        throw new Error("Read tools must not access a signer");
+      },
+      fetch: async (input) => {
+        const path = new URL(String(input)).pathname;
+        if (path === "/wallets") return Response.json([wallet]);
+        if (path === `/wallets/${id}`) return Response.json(wallet);
+        throw new Error("Unexpected wallet endpoint");
+      },
+    });
+    try {
+      await server.rpc("initialize", {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "test", version: "1" },
+      });
+      const listed = await server.rpc("tools/call", { name: "list_wallets", arguments: {} });
+      expect(listed.isError).not.toBe(true);
+      expect(listed.structuredContent).toEqual({ wallets: [wallet] });
+      expect(listed.content).toEqual([
+        { type: "text", text: JSON.stringify(listed.structuredContent) },
+      ]);
+      const fetched = await server.rpc("tools/call", {
+        name: "get_wallet",
+        arguments: { walletId: id },
+      });
+      expect(fetched.isError).not.toBe(true);
+      expect(fetched.structuredContent).toEqual({ wallet });
+      expect(fetched.content).toEqual([
+        { type: "text", text: JSON.stringify(fetched.structuredContent) },
+      ]);
+      expect(server.signer).not.toHaveBeenCalled();
+    } finally {
+      await server.runtime.dispose();
+    }
+  });
   it("signs through the imported encrypted keystore and refuses an unavailable unlock secret", async () => {
     const privateKey = generatePrivateKey();
     const fixture = mcpSignatureFixture(privateKey);

@@ -72,7 +72,9 @@ const register = Effect.fn("LocalMcp.registerTool")(function* <T extends Tool.An
         )(payload);
         const value = yield* handle(input, principal.client);
         const encoded = yield* Schema.encodeUnknownEffect(
-          tool.successSchema as Schema.Codec<Tool.Success<T>, unknown, never, never>,
+          Schema.toCodecJson(
+            tool.successSchema as Schema.Codec<Tool.Success<T>, unknown, never, never>,
+          ),
         )(value);
         return new McpSchema.CallToolResult({
           structuredContent: encoded,
