@@ -1,5 +1,5 @@
 import { describe, expect, layer } from "@effect/vitest";
-import { DateTime, Effect, Result } from "effect";
+import { DateTime, Effect, Predicate, Result } from "effect";
 
 import {
   enforceLocalWalletLimit,
@@ -91,10 +91,17 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
           );
           expect(outcomes.filter(Result.isSuccess)).toHaveLength(1);
           for (const outcome of outcomes.filter(Result.isFailure)) {
-            expect(outcome.failure).toMatchObject({
-              code: "LIMIT_EXCEEDED",
-              limit: "localWallets",
-            });
+            // A retry can pass the initial cap check before the winner commits,
+            // then find that its shared registration has already been consumed.
+            if (Predicate.isTagged(outcome.failure, "PasskeyVerificationError")) {
+              expect(outcome.failure).toMatchObject({ code: "REGISTRATION_NOT_FOUND" });
+            } else {
+              expect(outcome.failure).toMatchObject({
+                _tag: "BillingError",
+                code: "LIMIT_EXCEEDED",
+                limit: "localWallets",
+              });
+            }
           }
           expect(
             (yield* client.billing.get()).resources.find(({ key }) => key === "local-wallets"),
