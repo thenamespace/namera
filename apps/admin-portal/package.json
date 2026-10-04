@@ -22,7 +22,7 @@
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/react-query": "5.101.4",
+    "@tanstack/react-query": "5.104.1",
     "@tanstack/react-router": "catalog:",
     "effect": "catalog:",
     "react": "catalog:",

@@ -1,6 +1,6 @@
 import { Option } from "effect";
-import { HttpApiError } from "effect/unstable/httpapi";
-import { AsyncResult } from "effect/unstable/reactivity";
+import { HttpApiError } from "effect/http-api";
+import { AsyncResult } from "effect/reactivity";
 
 import { describe, expect, it } from "vitest";
 

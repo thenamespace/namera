@@ -3,7 +3,7 @@ import { request as httpRequest } from "node:http";
 
 import { NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer, ManagedRuntime } from "effect";
-import { HttpServer, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServer, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { expect, it } from "vitest";
 

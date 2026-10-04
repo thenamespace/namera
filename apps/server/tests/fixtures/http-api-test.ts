@@ -1,7 +1,5 @@
 import { Effect, Layer, Option } from "effect";
 import type { FileSystem } from "effect/FileSystem";
-import type { Path } from "effect/Path";
-import type { Scope } from "effect/Scope";
 import {
   HttpClient,
   HttpEffect,
@@ -9,14 +7,16 @@ import {
   HttpRouter,
   HttpServerRequest,
   HttpServerResponse,
-} from "effect/unstable/http";
-import type { Generator } from "effect/unstable/http/Etag";
-import type { HttpApi } from "effect/unstable/httpapi/HttpApi";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpApiClient from "effect/unstable/httpapi/HttpApiClient";
-import type { Client } from "effect/unstable/httpapi/HttpApiClient";
-import type * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import type * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
+} from "effect/http";
+import type { HttpApi } from "effect/http-api/HttpApi";
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
+import * as HttpApiClient from "effect/http-api/HttpApiClient";
+import type { Client } from "effect/http-api/HttpApiClient";
+import type * as HttpApiEndpoint from "effect/http-api/HttpApiEndpoint";
+import type * as HttpApiGroup from "effect/http-api/HttpApiGroup";
+import type { Generator } from "effect/http/Etag";
+import type { Path } from "effect/Path";
+import type { Scope } from "effect/Scope";
 
 let testClientAddress = 0;
 

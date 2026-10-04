@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { HttpClientResponse } from "effect/unstable/http";
-import type { HttpApiClient } from "effect/unstable/httpapi";
+import type { HttpClientResponse } from "effect/http";
+import type { HttpApiClient } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 

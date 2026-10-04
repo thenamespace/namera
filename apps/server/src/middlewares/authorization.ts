@@ -1,6 +1,6 @@
 import { DateTime, Effect, Layer, Redacted } from "effect";
-import { HttpEffect, HttpServerResponse } from "effect/unstable/http";
-import { HttpApiError } from "effect/unstable/httpapi";
+import { HttpEffect, HttpServerResponse } from "effect/http";
+import { HttpApiError } from "effect/http-api";
 
 import { Authorization, CurrentActor } from "@namera-ai/api";
 import { AuthConfig } from "@namera-ai/application";

@@ -1,4 +1,6 @@
-import { DateTime, Duration, Effect, Encoding, Metric, Result } from "effect";
+import { DateTime, Duration, Effect, Metric, Result } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
+import * as HexEncoding from "effect/encoding/Hex";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
@@ -67,8 +69,8 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
       const assertion = yield* passkeys
         .verifyAuthentication({
           response: input.request.response,
-          expectedChallenge: Encoding.encodeBase64Url(
-            Result.getOrThrow(Encoding.decodeHex(challenge.slice(2))),
+          expectedChallenge: Base64Url.encode(
+            Result.getOrThrow(HexEncoding.decode(challenge.slice(2))),
           ),
           expectedOrigin: config.dashboardPublicOrigin.origin,
           expectedRpId: owner.credential.rpId,

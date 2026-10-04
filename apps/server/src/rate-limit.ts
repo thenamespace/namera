@@ -1,7 +1,7 @@
 import { Duration, Effect, Layer, Option, Predicate } from "effect";
-import { HttpServerRequest } from "effect/unstable/http";
-import { HttpApiError } from "effect/unstable/httpapi";
-import { RateLimiter } from "effect/unstable/persistence";
+import { HttpServerRequest } from "effect/http";
+import { HttpApiError } from "effect/http-api";
+import { RateLimiter } from "effect/persistence";
 
 import { RateLimitExceeded } from "@namera-ai/protocol";
 

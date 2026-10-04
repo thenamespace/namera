@@ -11,10 +11,10 @@ For ordinary application integration, use [@namera-ai/sdk](https://www.npmjs.com
 Requires Node.js 24.14+ for Node applications. Use the matching Effect 4 release candidate.
 
 ```sh
-npm install @namera-ai/api effect@4.0.0-rc.117
-pnpm add @namera-ai/api effect@4.0.0-rc.117
-yarn add @namera-ai/api effect@4.0.0-rc.117
-bun add @namera-ai/api effect@4.0.0-rc.117
+npm install @namera-ai/api effect@4.0.0
+pnpm add @namera-ai/api effect@4.0.0
+yarn add @namera-ai/api effect@4.0.0
+bun add @namera-ai/api effect@4.0.0
 ```
 
 Choose the command for your package manager.
@@ -23,7 +23,7 @@ Choose the command for your package manager.
 
 ```ts
 import { writeFile } from "node:fs/promises";
-import { OpenApi } from "effect/unstable/httpapi";
+import { OpenApi } from "effect/http-api";
 import { NameraApi } from "@namera-ai/api";
 
 const document = OpenApi.fromApi(NameraApi);
@@ -37,7 +37,7 @@ endpoint; installing this package grants no access.
 ## Derive client types
 
 ```ts
-import type { HttpApiClient } from "effect/unstable/httpapi";
+import type { HttpApiClient } from "effect/http-api";
 import { NameraApi } from "@namera-ai/api";
 
 type Client = HttpApiClient.ForApi<typeof NameraApi>;

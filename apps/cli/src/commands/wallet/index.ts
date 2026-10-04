@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect";
-import { Argument, Command } from "effect/unstable/cli";
+import { Argument, Command } from "effect/cli";
 
 import { WalletId } from "@namera-ai/protocol";
 

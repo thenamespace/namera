@@ -1,4 +1,4 @@
-import { Encoding } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
 
 import { SessionKeyOperationId } from "@namera-ai/protocol";
 import type { PrepareSessionKeyOperationResponse } from "@namera-ai/protocol/dto";
@@ -52,7 +52,7 @@ const fixture = () => {
     prepared,
     expiresAt: execution.response.expiresAt,
     options: {
-      challenge: Encoding.encodeBase64Url(hexToBytes(hashMessage({ raw: hash }))),
+      challenge: Base64Url.encode(hexToBytes(hashMessage({ raw: hash }))),
       rpId: reviewed.rpId,
       timeout: 60000,
       userVerification: "required",
@@ -158,7 +158,7 @@ describe("owner approval validation", () => {
         prepared,
         options: {
           ...input.response.options,
-          challenge: Encoding.encodeBase64Url(hexToBytes(hashMessage({ raw: hash }))),
+          challenge: Base64Url.encode(hexToBytes(hashMessage({ raw: hash }))),
         },
       },
     };

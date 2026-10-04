@@ -10,10 +10,10 @@ Requires Node.js 24.14+ for Node applications, or a modern browser bundler.
 Examples use the matching Effect 4 release candidate.
 
 ```sh
-npm install @namera-ai/protocol effect@4.0.0-rc.117
-pnpm add @namera-ai/protocol effect@4.0.0-rc.117
-yarn add @namera-ai/protocol effect@4.0.0-rc.117
-bun add @namera-ai/protocol effect@4.0.0-rc.117
+npm install @namera-ai/protocol effect@4.0.0
+pnpm add @namera-ai/protocol effect@4.0.0
+yarn add @namera-ai/protocol effect@4.0.0
+bun add @namera-ai/protocol effect@4.0.0
 ```
 
 Choose one command.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 
 import { revalidateRejectedAccess } from "@/atoms/auth/browser-session";
 import { currentUserAtom } from "@/atoms/auth/session";

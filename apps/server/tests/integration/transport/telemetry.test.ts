@@ -8,7 +8,7 @@ import {
   HttpServer,
   HttpServerRequest,
   HttpServerResponse,
-} from "effect/unstable/http";
+} from "effect/http";
 
 import { RateLimiterLive } from "#/rate-limit";
 import { TelemetryRoutes } from "#/routes/proxy/telemetry";

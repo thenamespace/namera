@@ -4,8 +4,8 @@ import { Effect, Schema } from "effect";
 
 import { Hex, WalletKeyError } from "@namera-ai/protocol";
 import type { CreateWalletKeyInput, WalletKey } from "@namera-ai/protocol/model";
-import { p256 } from "@noble/curves/p256";
-import { secp256k1 } from "@noble/curves/secp256k1";
+import { p256 } from "@noble/curves/nist.js";
+import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 export const generateLocalKeyPair = Effect.fnUntraced(function* (
   algorithm: CreateWalletKeyInput["algorithm"],
@@ -70,9 +70,12 @@ export const signLocalHash = Effect.fnUntraced(function* (
   const privateKeyBytes = Buffer.from(privateKey.d, "base64url");
   return yield* Effect.try({
     try: () =>
-      (algorithm === "p256" ? p256 : secp256k1)
-        .sign(hash, privateKeyBytes, { lowS: true, extraEntropy: true, prehash: false })
-        .toDERRawBytes(),
+      (algorithm === "p256" ? p256 : secp256k1).sign(hash, privateKeyBytes, {
+        lowS: true,
+        extraEntropy: true,
+        prehash: false,
+        format: "der",
+      }),
     catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
   });
 });

@@ -1,5 +1,5 @@
 import { Effect, Result } from "effect";
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { Application } from "@namera-ai/application";
 

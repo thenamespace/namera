@@ -138,7 +138,7 @@ try {
     import { WalletId } from '@namera-ai/protocol';
     import '@namera-ai/protocol/dto';
     import { Schema } from 'effect';
-    import { OpenApi } from 'effect/unstable/httpapi';
+    import { OpenApi } from 'effect/http-api';
     assert.ok(OpenApi.fromApi(NameraApi).paths['/wallets']);
     assert.equal(Schema.decodeSync(WalletId)('01a00407-5961-75cf-933e-9cfd0336ec16'), '01a00407-5961-75cf-933e-9cfd0336ec16');
     let requested = false;

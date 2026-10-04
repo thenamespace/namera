@@ -1,6 +1,6 @@
 import { NodeCrypto } from "@effect/platform-node";
 import { Layer } from "effect";
-import { HttpRouter, HttpServer } from "effect/unstable/http";
+import { HttpRouter, HttpServer } from "effect/http";
 
 import { Application } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";

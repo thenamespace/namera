@@ -1,10 +1,5 @@
 import { Duration, Effect, Predicate, Result } from "effect";
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpRouter,
-  HttpServerResponse,
-} from "effect/unstable/http";
+import { HttpClient, HttpClientRequest, HttpRouter, HttpServerResponse } from "effect/http";
 
 import { Evm } from "@namera-ai/evm";
 import { UnsupportedChainError } from "@namera-ai/protocol";

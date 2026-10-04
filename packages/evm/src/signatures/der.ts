@@ -1,7 +1,7 @@
 import * as PublicKey from "ox/PublicKey";
 import * as Secp256k1 from "ox/Secp256k1";
 import * as Signature from "ox/Signature";
-import type { Hex } from "viem";
+import { numberToHex, type Hex } from "viem";
 
 export type DerSignatureToEvmSignatureOptions =
   | {
@@ -22,10 +22,11 @@ export const derSignatureToEvmSignature = (options: DerSignatureToEvmSignatureOp
     return Signature.toHex(signature);
   }
 
-  const curveOrder = Secp256k1.noble.CURVE.n;
+  const curveOrder = Secp256k1.noble.Point.Fn.ORDER;
+  const s = BigInt(signature.s);
   const normalizedSignature = {
     r: signature.r,
-    s: signature.s > curveOrder / 2n ? curveOrder - signature.s : signature.s,
+    s: numberToHex(s > curveOrder / 2n ? curveOrder - s : s, { size: 32 }),
   };
   const expectedPublicKey = PublicKey.fromHex(options.publicKey);
   if (expectedPublicKey.y === undefined) {

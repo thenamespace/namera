@@ -1,6 +1,6 @@
 import { Duration, Effect, Redacted, Schema } from "effect";
-import { HttpClientRequest } from "effect/unstable/http";
-import type { HttpClient } from "effect/unstable/http";
+import { HttpClientRequest } from "effect/http";
+import type { HttpClient } from "effect/http";
 
 import { EvmDataProviderError, type SupportedEvmChainId } from "@namera-ai/protocol";
 

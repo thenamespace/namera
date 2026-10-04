@@ -1,5 +1,5 @@
 import { Effect, Layer, Option } from "effect";
-import { HttpMiddleware, HttpRouter, HttpServerRequest } from "effect/unstable/http";
+import { HttpMiddleware, HttpRouter, HttpServerRequest } from "effect/http";
 
 import { ServerConfig } from "#/config";
 

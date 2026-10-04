@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api";
 
 import { PortfolioUnavailableError } from "@namera-ai/protocol";
 import { PortfolioResponse, QueryPortfolioRequest } from "@namera-ai/protocol/dto";

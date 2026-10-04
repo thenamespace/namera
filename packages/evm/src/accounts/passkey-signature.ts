@@ -21,15 +21,16 @@ export const webAuthnSignatureParameters = [
 export const encodeWebAuthnSignature = ({ signature, webauthn }: WebAuthnSignReturnType): Hex => {
   const parsed = Signature.fromHex(signature);
   // Authenticators need not return low-S, but the deployed Solidity verifier requires it.
-  const order = P256.noble.CURVE.n;
+  const order = P256.noble.Point.Fn.ORDER;
+  const s = BigInt(parsed.s);
   return encodeAbiParameters(webAuthnSignatureParameters, [
     {
       authenticatorData: webauthn.authenticatorData,
       clientDataJSON: webauthn.clientDataJSON,
       challengeIndex: BigInt(webauthn.challengeIndex ?? 0),
       typeIndex: BigInt(webauthn.typeIndex ?? 0),
-      r: parsed.r,
-      s: parsed.s > order / 2n ? order - parsed.s : parsed.s,
+      r: BigInt(parsed.r),
+      s: s > order / 2n ? order - s : s,
     },
   ]);
 };
@@ -49,15 +50,16 @@ export const encodeVerifiedOwnerAssertion = (assertion: VerifiedOwnerAssertion):
     return BigInt(stringToBytes(assertion.clientDataJSON.slice(0, index)).length);
   };
   const parsed = Signature.fromDerHex(assertion.signatureDerHex);
-  const order = P256.noble.CURVE.n;
+  const order = P256.noble.Point.Fn.ORDER;
+  const s = BigInt(parsed.s);
   return encodeAbiParameters(webAuthnSignatureParameters, [
     {
       authenticatorData: assertion.authenticatorDataHex,
       clientDataJSON: assertion.clientDataJSON,
       challengeIndex: indexOf("challenge"),
       typeIndex: indexOf("type"),
-      r: parsed.r,
-      s: parsed.s > order / 2n ? order - parsed.s : parsed.s,
+      r: BigInt(parsed.r),
+      s: s > order / 2n ? order - s : s,
     },
   ]);
 };

@@ -1,6 +1,6 @@
 import { expect, layer } from "@effect/vitest";
 import { DateTime, Duration, Effect, Result, Schema } from "effect";
-import { HttpClientRequest } from "effect/unstable/http";
+import { HttpClientRequest } from "effect/http";
 
 import { Application } from "@namera-ai/application";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";

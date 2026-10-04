@@ -9,6 +9,7 @@ import {
   createWalletClient,
   http,
   parseEther,
+  numberToHex,
   type Hex,
   type PublicClient,
   type Chain,
@@ -77,11 +78,12 @@ export const makeAnvilFixture = async (
     validatorType: "webauthn_p256",
     sign: async (payload) => {
       const signature = Signature.fromDerBytes(sign("sha256", payload, privateKey));
-      const order = P256.noble.CURVE.n;
+      const order = P256.noble.Point.Fn.ORDER;
+      const s = BigInt(signature.s);
       // Authenticators may return either half of the curve; exercise high-S deterministically.
       return Signature.toDerBytes({
         ...signature,
-        s: signature.s > order / 2n ? signature.s : order - signature.s,
+        s: numberToHex(s > order / 2n ? s : order - s, { size: 32 }),
       });
     },
   });

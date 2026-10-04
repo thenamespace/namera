@@ -1,7 +1,7 @@
 import { BlockList, isIP, SocketAddress } from "node:net";
 
 import { Config, Context, Effect, Layer, Option, Schema } from "effect";
-import { HttpMiddleware, HttpServerRequest } from "effect/unstable/http";
+import { HttpMiddleware, HttpServerRequest } from "effect/http";
 
 const ipAddress = Schema.String.check(
   Schema.makeFilter(

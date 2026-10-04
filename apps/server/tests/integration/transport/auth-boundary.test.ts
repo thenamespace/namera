@@ -1,12 +1,7 @@
 import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
-import {
-  HttpEffect,
-  HttpRouter,
-  HttpServerRequest,
-  type HttpServerResponse,
-} from "effect/unstable/http";
-import { HttpApi, HttpApiBuilder } from "effect/unstable/httpapi";
+import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
+import { HttpApi, HttpApiBuilder } from "effect/http-api";
 
 import { Authorization, AdminAuthorization, NameraApi } from "@namera-ai/api";
 

@@ -1,7 +1,8 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
 import { useState } from "react";
 
-import { Encoding, Redacted, Schema } from "effect";
+import { Redacted, Schema } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import type { LocalEvmSessionBinding } from "@namera-ai/protocol/local";
@@ -46,7 +47,7 @@ export function ExportSessionKey({
       const envelope = await draft.seal(new URL(env.backendUrl).origin, bindings, secret);
       const host = new URL(env.backendUrl).origin.replaceAll("'", "'\\''");
       setCommand(
-        `namera session-key import ${Encoding.encodeBase64Url(JSON.stringify(envelope))} --host '${host}'`,
+        `namera session-key import ${Base64Url.encode(JSON.stringify(envelope))} --host '${host}'`,
       );
       form.reset();
       setVisible({ password: false, confirmation: false });

@@ -1,5 +1,5 @@
 import { Effect, Option, Schema } from "effect";
-import { Argument, Command, Flag, Prompt } from "effect/unstable/cli";
+import { Argument, Command, Flag, Prompt } from "effect/cli";
 
 import { EncryptedLocalSessionKey } from "@namera-ai/protocol/local";
 
