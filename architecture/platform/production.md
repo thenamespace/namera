@@ -58,6 +58,46 @@ Each owning feature document records its exact pending boundary.
 
 ## Deployment order
 
+### GitHub deployment gates
+
+The four manual deployment workflows use the shared `build-and-push.yaml` job.
+It references the selected GitHub environment (`prod` or `staging`), which is
+separate from runtime environment variables supplied by Google Secret Manager.
+Image publication and the infra-repository dispatch run in the same job so an
+environment approval, when configured, covers both without a second prompt.
+Deployments are serialized per app/environment; running deployments are not
+cancelled by newer requests.
+
+Production requires a dispatch from `main` and accepts only an empty, `main`, or
+`refs/heads/main` checkout input. Checkout uses the workflow's exact commit SHA,
+not the potentially newer branch tip. Staging accepts a selected ref. The GitHub
+`prod` environment must independently allow only the `main` branch; `staging`
+can allow other refs. Rollbacks use previously approved images through the infra
+repository, not arbitrary production source refs. Run CI for the exact deployment
+commit before dispatching; this workflow does not automatically gate on CI.
+
+Repository environment settings are configured outside Git. `prod` currently
+has a main-only branch policy. Required reviewers were unavailable on the current
+private-repository plan; configure them when supported if an approval checkpoint
+is desired. Staging currently has no branch restrictions.
+
+Deployment Actions are pinned to commit SHAs. Callers pass only the named infra
+dispatch token, and checkout does not persist its Git credential. Review and
+update pinned Actions deliberately.
+
+Before using the environment-bound workflow, infra must verify Google Workload
+Identity mappings, provider conditions, and registry IAM. The default GitHub OIDC
+subject now identifies `repo:thenamespace/namera-core:environment:prod` (or
+`:staging`) rather than a branch subject; custom subject templates may differ.
+Restrict trust to the exact repository and intended environment/workflow/ref.
+Scope the build identity to required registry access and the dispatch token to
+the required infra-repository operation; runtime secrets stay in Secret Manager.
+Cloud trust and token scope were not verified locally because `gcloud` had no
+active account. Do not assume a successful configuration edit proves deployment
+authentication or rollout works.
+
+### Runtime rollout
+
 1. Validate all migrations on a clean production-shaped database.
 2. Verify passkey and local session-key lifecycle on the target clients.
 3. Configure final origins, secrets, providers, and telemetry.
