@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest";
 import { ConfigProvider, Effect, Option } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import {
   ClientAddressMiddleware,

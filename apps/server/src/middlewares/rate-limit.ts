@@ -1,5 +1,5 @@
 import { Effect, Predicate } from "effect";
-import { HttpMiddleware, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpMiddleware, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { clientIdentifier, consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 

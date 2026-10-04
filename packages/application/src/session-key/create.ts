@@ -1,4 +1,5 @@
-import { DateTime, Effect, Encoding, Metric, Schema } from "effect";
+import { DateTime, Effect, Metric, Schema } from "effect";
+import * as HexEncoding from "effect/encoding/Hex";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -152,7 +153,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
             return {
               chainId,
               data,
-              configurationHash: Bytes32.make(`0x${Encoding.encodeHex(Base64.toUint8Array(hash))}`),
+              configurationHash: Bytes32.make(`0x${HexEncoding.encode(Base64.toUint8Array(hash))}`),
             };
           }),
         { concurrency: 4 },

@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import { HttpApiBuilder } from "effect/unstable/httpapi";
+import { HttpApiBuilder } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";

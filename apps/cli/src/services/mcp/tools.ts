@@ -1,5 +1,5 @@
 import { Context, Effect, Schema } from "effect";
-import { McpSchema, McpServer, Tool } from "effect/unstable/ai";
+import { McpSchema, McpServer, Tool } from "effect/ai";
 
 import {
   CompleteExecutionResponse,

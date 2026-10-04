@@ -1,11 +1,6 @@
 import { Effect, Layer, type Duration } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import {
-  OtlpLogger,
-  OtlpMetrics,
-  OtlpSerialization,
-  OtlpTracer,
-} from "effect/unstable/observability";
+import { FetchHttpClient } from "effect/http";
+import { OtlpLogger, OtlpMetrics, OtlpSerialization, OtlpTracer } from "effect/observability";
 
 import { telemetryData } from "#/data";
 import { resolveTelemetryExport } from "#/export";

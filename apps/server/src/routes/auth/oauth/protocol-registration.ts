@@ -1,5 +1,5 @@
 import { ByteSize, Effect, Metric, Result } from "effect";
-import { HttpIncomingMessage, HttpRouter, HttpServerResponse } from "effect/unstable/http";
+import { HttpIncomingMessage, HttpRouter, HttpServerResponse } from "effect/http";
 
 import { Application } from "@namera-ai/application";
 import { OAuthDynamicClientRegistrationRequest } from "@namera-ai/protocol/dto";

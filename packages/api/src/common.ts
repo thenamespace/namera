@@ -1,4 +1,4 @@
-import { HttpApiError } from "effect/unstable/httpapi";
+import { HttpApiError } from "effect/http-api";
 
 import { RateLimitExceeded } from "@namera-ai/protocol";
 

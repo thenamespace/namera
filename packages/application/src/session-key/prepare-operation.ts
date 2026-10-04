@@ -1,4 +1,5 @@
-import { DateTime, Duration, Effect, Encoding, Metric, Result, Schema } from "effect";
+import { DateTime, Duration, Effect, Metric, Result, Schema } from "effect";
+import * as HexEncoding from "effect/encoding/Hex";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -77,7 +78,7 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
           .generateAuthenticationOptions({
             rpId: owner.credential.rpId,
             credentialId: owner.credential.credentialId,
-            challenge: new Uint8Array(Result.getOrThrow(Encoding.decodeHex(challenge.slice(2)))),
+            challenge: new Uint8Array(Result.getOrThrow(HexEncoding.decode(challenge.slice(2)))),
             timeoutMs: Math.min(
               Duration.toMillis(config.passkey.timeToLive),
               DateTime.toEpochMillis(operation.expiresAt) - DateTime.toEpochMillis(now),

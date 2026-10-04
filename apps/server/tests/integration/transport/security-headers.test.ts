@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest";
 import { Effect } from "effect";
-import { HttpEffect, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpEffect, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { SecurityHeadersMiddleware } from "../../../src/middlewares/security-headers.js";
 

@@ -5,8 +5,8 @@ import {
   HttpRouter,
   HttpServerRequest,
   HttpServerResponse,
-} from "effect/unstable/http";
-import type { RateLimiter } from "effect/unstable/persistence";
+} from "effect/http";
+import type { RateLimiter } from "effect/persistence";
 
 import type { Application } from "@namera-ai/application";
 

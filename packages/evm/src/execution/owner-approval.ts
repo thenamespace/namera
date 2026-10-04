@@ -1,4 +1,5 @@
-import { Effect, Encoding, Schema } from "effect";
+import { Effect, Schema } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
 
 import { EvmExecutionError } from "@namera-ai/protocol";
 import { concatHex, hashMessage, hexToBytes } from "viem";
@@ -49,7 +50,7 @@ export const makeEvmOwnerApproval = (
       const clientData = yield* Schema.decodeUnknownEffect(ClientData)(
         input.assertion.clientDataJSON,
       ).pipe(Effect.mapError((cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause })));
-      if (clientData.challenge !== Encoding.encodeBase64Url(hexToBytes(challenge))) {
+      if (clientData.challenge !== Base64Url.encode(hexToBytes(challenge))) {
         return yield* new EvmExecutionError({
           code: "SIGNING_FAILED",
           cause: new Error("The owner approval does not match the prepared operation"),

@@ -4,6 +4,30 @@ Namera is a pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and Effect
 v4. Packages expose narrow public entry points and use the `namera-source`
 condition for direct source consumption during development.
 
+## Dependency versions
+
+The workspace uses Effect 4.0.0 stable, with matching runtime, SQL, Atom,
+OpenTelemetry, and Vitest adapters. Import platform modules from `effect/http`,
+`effect/http-api`, `effect/sql`, and the other stable paths, not `effect/unstable/*`.
+Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in sync
+with the pnpm catalog using `pnpm cli:lock`, then run `pnpm pack:check` before release.
+
+Direct dependencies track the latest releases accepted by pnpm's supply-chain
+policies, with these explicit exceptions:
+
+- Drizzle ORM and Kit stay on the standard `rc` channel (1.0.0-rc.4), not
+  experimental snapshot tags. Its existing Effect error-constructor patch remains.
+- TypeScript stays on 6.0.3: the current declaration build rejects TypeScript 7's
+  experimental compiler API.
+- UA Parser stays on the latest MIT-licensed v1 release; v2 changes to AGPL.
+
+Scoped peer exceptions cover Klarity 0.2.0's tested Vitest 5 configuration and
+React Hook Form's Standard Schema resolver with Effect 4. Do not import the
+resolver package's Effect 3-specific adapter.
+
+Oxlint's new React Compiler migration diagnostics are warnings while the compiler
+is not enabled. Existing correctness, Hooks, and accessibility checks remain active.
+
 ## Dependency direction
 
 ```mermaid

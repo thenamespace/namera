@@ -1,6 +1,6 @@
 import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
-import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
+import { HttpMiddleware, HttpRouter } from "effect/http";
 
 import { DatabaseMigration } from "@namera-ai/database";
 import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";

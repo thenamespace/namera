@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Ref } from "effect";
-import { HttpClientRequest } from "effect/unstable/http";
-import { HttpApiMiddleware } from "effect/unstable/httpapi";
+import { HttpClientRequest } from "effect/http";
+import { HttpApiMiddleware } from "effect/http-api";
 
 import { Authorization } from "@namera-ai/api";
 

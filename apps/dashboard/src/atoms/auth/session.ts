@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 
 import { recoverSignedOutSession } from "@/atoms/auth/browser-session";
 import { NameraClient } from "@/atoms/client";

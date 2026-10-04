@@ -40,9 +40,9 @@
   },
   "dependencies": {
     "@aws-crypto/crc32c": "5.2.0",
-    "@google-cloud/kms": "5.7.0",
+    "@google-cloud/kms": "6.2.1",
     "@namera-ai/protocol": "workspace:*",
-    "@noble/curves": "1.9.1",
+    "@noble/curves": "2.4.0",
     "effect": "catalog:"
   },
   "devDependencies": {

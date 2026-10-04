@@ -1,7 +1,7 @@
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 
 import { Effect, Layer, Redacted, Schema } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 
 import { listenForAuthorization, openAuthorizationBrowser } from "./callback.js";
 import { type McpCredential, type McpCredentialStore } from "./credential-store.js";

@@ -2,13 +2,8 @@ import assert from "node:assert/strict";
 
 import { expect, layer } from "@effect/vitest";
 import { Effect, Metric } from "effect";
-import {
-  HttpEffect,
-  HttpRouter,
-  HttpServerRequest,
-  type HttpServerResponse,
-} from "effect/unstable/http";
-import { HttpApiBuilder } from "effect/unstable/httpapi";
+import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
+import { HttpApiBuilder } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 import { Database, Repository } from "@namera-ai/database";

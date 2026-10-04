@@ -1,5 +1,5 @@
 import { Option, Schema, type Effect } from "effect";
-import { Flag } from "effect/unstable/cli";
+import { Flag } from "effect/cli";
 
 export const profileFlag = Flag.String("profile").pipe(
   Flag.withDescription("CLI profile name"),

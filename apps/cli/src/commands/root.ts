@@ -1,4 +1,4 @@
-import { Command, Flag } from "effect/unstable/cli";
+import { Command, Flag } from "effect/cli";
 
 export const outputFlag = Flag.Literals("output", ["pretty", "json", "ndjson"]).pipe(
   Flag.withAlias("o"),

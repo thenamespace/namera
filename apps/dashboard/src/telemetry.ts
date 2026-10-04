@@ -1,6 +1,6 @@
 import { Layer } from "effect";
-import { HttpClient } from "effect/unstable/http";
-import { Atom } from "effect/unstable/reactivity";
+import { HttpClient } from "effect/http";
+import { Atom } from "effect/reactivity";
 
 import { httpRouteTemplate, makeTelemetryLayer, telemetryData } from "@namera-ai/telemetry";
 

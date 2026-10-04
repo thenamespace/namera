@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi";
+import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api";
 
 import { EnsUnavailableError } from "@namera-ai/protocol";
 import { EnsNameAvailabilityRequest, EnsNameAvailabilityResponse } from "@namera-ai/protocol/dto";
