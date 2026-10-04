@@ -15,8 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', '.node-version') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', '.node-version') }}-
       - run: pnpm check
-      - run: pnpm test
+      - name: Test packages (server covered by PostgreSQL job)
+        run: pnpm exec turbo run test --filter='!@namera-ai/server'
       - run: pnpm pack:check
   postgres:
     name: PostgreSQL integration
