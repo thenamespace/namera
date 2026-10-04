@@ -81,8 +81,10 @@ meter admission, local-wallet last-slot admission, idempotent reservation/settle
 release after settlement, and anniversary rollover against real PostgreSQL transactions.
 The wallet-cap case seeds occupancy and calls the production lock/limit helpers
 inside insertion transactions. A second case submits eight HTTP creation retries
-for one ceremony at the final slot: exactly one succeeds, seven return the local
-wallet limit error, and one wallet/signing-key audit pair is added. Occupancy is
+for one ceremony at the final slot: exactly one succeeds, seven are rejected with
+either the local wallet limit error or a consumed-registration error, and one
+wallet/signing-key audit pair is added. Which rejection wins depends on whether
+the retry reads the registration before or after the winner commits. Occupancy is
 seeded and registration verification uses the package test provider.
 `billing/wallet-cap.test.ts` additionally races five separate organization members
 with fixed per-client cookies and distinct challenges/credentials. Package-owned
