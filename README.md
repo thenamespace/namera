@@ -12,6 +12,8 @@ Effect v4.
 
 ## License and security
 
+Copyright 2026 Namespace Inc.
+
 Namera source code is licensed under [Apache License 2.0](LICENSE). See the
 [security policy](SECURITY.md) to report vulnerabilities privately and review
 supported versions.
