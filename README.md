@@ -10,6 +10,14 @@ permissions and Namera-enforced policies have different enforcement boundaries.
 The repository is a pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and
 Effect v4.
 
+## License and security
+
+Copyright 2026 Namespace Inc.
+
+Namera source code is licensed under [Apache License 2.0](LICENSE). See the
+[security policy](SECURITY.md) to report vulnerabilities privately and review
+supported versions.
+
 ## Architecture
 
 Start with the [architecture index](architecture/README.md). It contains the
