@@ -1,5 +1,15 @@
 # @namera-ai/cli
 
+## 1.0.3
+
+### Patch Changes
+
+- 8e11892: Encode MCP tool responses with JSON-compatible schemas so wallet timestamps no
+  longer cause internal errors. Preserve exact integer strings and return matching
+  structured and text results across all tools.
+- @namera-ai/protocol@1.0.3
+  - @namera-ai/sdk@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes

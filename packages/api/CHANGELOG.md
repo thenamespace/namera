@@ -1,5 +1,11 @@
 # @namera-ai/api
 
+## 1.0.3
+
+### Patch Changes
+
+- @namera-ai/protocol@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes
