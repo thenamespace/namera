@@ -26,7 +26,7 @@ on:
         type: string
         default: "prod"
       ref:
-        description: Branch, tag or SHA to build (empty = the calling workflow's ref)
+        description: Staging ref; production accepts main only and builds the dispatch commit
         required: false
         type: string
         default: ""
@@ -44,26 +44,57 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.app_name }}-${{ inputs.environment }}
+      cancel-in-progress: false
     permissions:
       contents: "read"
       id-token: "write"
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
     steps:
+      - name: Validate deployment target
+        env:
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          DEPLOY_REF: ${{ inputs.ref }}
+        run: |
+          case "$DEPLOY_ENVIRONMENT" in
+            prod)
+              if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+                echo "::error::Production deployments must be dispatched from main."
+                exit 1
+              fi
+              case "$DEPLOY_REF" in
+                ""|main|refs/heads/main) ;;
+                *)
+                  echo "::error::Production accepts main only. Roll back through an approved existing image."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            staging) ;;
+            *)
+              echo "::error::Unknown deployment environment."
+              exit 1
+              ;;
+          esac
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.environment == 'prod' && github.sha || inputs.ref || github.sha }}
+          persist-credentials: false
 
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:
           project_id: ${{ env.project_id }}
           workload_identity_provider: ${{ env.workload_identity_provider }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
 
       - name: Configure docker for artifact registry
         run: |
@@ -71,8 +102,10 @@ jobs:
 
       - name: Get metadata for tags
         id: meta
+        env:
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          echo "image_tag=$(git rev-parse --short HEAD)-${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          echo "image_tag=$(git rev-parse --short HEAD)-$DEPLOY_ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         env:
@@ -80,17 +113,15 @@ jobs:
           REPOSITORY: ${{ github.event.repository.name }}
           IMAGE_NAME: ${{ inputs.app_name }}
           DOTENV: ${{ inputs.dotenv }}
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
         run: |
-          IMAGE="$REGISTRY/$REPOSITORY/$IMAGE_NAME:${{ steps.meta.outputs.image_tag }}"
-          docker build -f ${{ inputs.dockerfile }} --build-arg DOTENV="$DOTENV" -t "$IMAGE" .
+          IMAGE="$REGISTRY/$REPOSITORY/$IMAGE_NAME:$IMAGE_TAG"
+          docker build -f "$DOCKERFILE" --build-arg DOTENV="$DOTENV" -t "$IMAGE" .
           docker push "$IMAGE"
 
-  update-image-tag:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
       - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ secrets.REPOSITORY_DISPATCH_PAT }}
           repository: thenamespace/infra
@@ -98,5 +129,5 @@ jobs:
           client-payload: >-
             {"repository": "${{ inputs.app_name }}",
             "infra_app": "${{ inputs.infra_app }}",
-            "image_tag": "${{ needs.build-and-push.outputs.image_tag }}",
+            "image_tag": "${{ steps.meta.outputs.image_tag }}",
             "environment": "${{ inputs.environment }}"}

@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch, tag or SHA to build
+        description: Staging branch, tag or SHA; production builds the main workflow commit
         required: false
         type: string
         default: "main"
@@ -33,7 +33,8 @@ jobs:
               VITE_API_URL=https://staging.api.namera.ai
               VITE_SITE_URL=https://staging.namera.ai
     uses: ./.github/workflows/build-and-push.yaml
-    secrets: inherit
+    secrets:
+      REPOSITORY_DISPATCH_PAT: ${{ secrets.REPOSITORY_DISPATCH_PAT }}
     permissions:
       contents: "read"
       id-token: "write"
