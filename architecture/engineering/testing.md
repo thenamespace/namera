@@ -145,6 +145,27 @@ closed, not used to create test history.
 
 ## Commands
 
+### Continuous integration
+
+The manually dispatched CI workflow runs two independent jobs:
+
+- `check`: formatting, lint, type checks, builds, all package tests except
+  `@namera-ai/server`, and package publication smoke tests.
+- `postgres`: the complete server test suite against disposable PostgreSQL,
+  including the PostgreSQL-only concurrency cases. It runs directly through
+  pnpm on every invocation, without caching test results.
+
+The server suite is not repeated with PGlite in `check`. Local `pnpm test`
+still includes it; database-package PGlite tests also remain in CI.
+
+The `check` job persists `.turbo/cache` through GitHub Actions cache, keyed by runner
+OS/architecture, lockfile, Node version file, and commit. It can restore an older
+cache with matching tooling; Turbo task hashes decide which outputs and results
+are reusable. The first run is cold. The existing pnpm dependency cache is
+separate. No external cache service or additional credentials are required.
+
+### Local commands
+
 CLI subprocess tests load the real TypeScript entry point and workspace sources.
 They allow up to 60 seconds for cold startup on shared runners, where other
 packages run concurrently. Outer test deadlines allow subprocess cleanup, while
