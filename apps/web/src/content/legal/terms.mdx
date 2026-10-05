@@ -1,0 +1,78 @@
+These Terms describe the proposed agreement between you and **Namespace Inc.**, the company behind Namera ("Namera", "we", "us", or "our"). They cover our hosted dashboard and API and the services accessed through our SDK, CLI, and MCP integrations. Our [Privacy Policy](/privacy-policy) explains how we handle information.
+
+## 1. Using Namera
+
+You must be at least 18 years old and legally able to enter into this agreement. If you use Namera for an organization, you must have authority to act for it. You may use the service only where doing so is lawful, including under applicable sanctions and export restrictions.
+
+You are responsible for the accuracy of your account information, the people you invite to your organization, and the permissions you grant. Keep your login credentials secure and notify us promptly if you suspect unauthorized access.
+
+## 2. Your wallets and keys
+
+Namera provides software for creating and managing self-custodial smart accounts and delegating access to agents. Namera is not a bank, exchange, investment adviser, or custodian of your digital assets. We do not provide investment, tax, or legal advice.
+
+- Your passkey controls the account, and delegated signing keys are generated and used on your devices. The self-custodial service does not receive your private signing keys or export passphrases.
+- You are responsible for protecting your devices, passkeys, exported keys, backups, and recovery arrangements. Namera cannot recover a lost local session key or its export passphrase.
+- Importing a key into the CLI does not, by itself, install onchain permissions or authorize an MCP client. Complete and verify the relevant authorization steps before relying on the key.
+- Anyone who obtains a usable signing key may exercise the authority it has. Removing a local copy does not revoke another copy.
+
+## 3. Agents, permissions, and signatures
+
+You choose what your agents may do. Review the account, networks, contracts, functions, spending limits, expiry, and signing permissions before approving a delegation. An authorized agent may act without asking you to approve each operation.
+
+**Onchain permissions and Namera API checks are different enforcement boundaries.** Rules checked by Namera apply to requests made through Namera. They do not become onchain restrictions merely because they appear in the dashboard. Unrestricted account access is broad authority and should be granted only when you understand its scope.
+
+Message and typed-data signatures can authorize actions outside Namera, including approvals or other obligations interpreted by third-party applications. Transaction spending limits and expiry hooks do not necessarily constrain onchain signature authority. Read the request before enabling signing.
+
+Revoking API access stops new authorized requests through Namera, but installed onchain authority must also be removed on each applicable network. Removal depends on successful onchain confirmation. Revocation cannot undo a confirmed transaction or necessarily invalidate previously signed material.
+
+## 4. Blockchain and third-party risks
+
+Blockchain transactions can be irreversible. Smart contracts, networks, tokens, RPC services, bundlers, and other infrastructure can fail, change, become unavailable, or behave unexpectedly. Simulations and displayed quotes do not guarantee an execution result, price, or confirmation time.
+
+You are responsible for reviewing transaction destinations, assets, networks, and permissions. Do not use funds you cannot afford to lose during beta testing.
+
+Third-party agents, MCP clients, protocols, and services have their own terms and privacy practices. Connecting one does not mean Namera endorses it. You decide which clients receive access and what information you share with them.
+
+## 5. Acceptable use
+
+You must not use the hosted service to:
+
+- Steal assets, commit fraud, distribute malware, or carry out unlawful activity.
+- Access another person's account or data without authorization.
+- Bypass authentication, policy enforcement, usage limits, or other security controls.
+- Disrupt the service or submit abusive traffic.
+- Infringe another person's intellectual property, privacy, or other rights.
+
+Report suspected vulnerabilities through the repository's security-reporting process or contact us. Any separately agreed security-testing authorization governs that testing.
+
+## 6. Beta access, limits, and fees
+
+Beta features may be incomplete, change, or become unavailable. An invitation or waitlist submission does not guarantee access, a release date, or continued availability. Unless separately agreed in writing, we do not promise an uptime or support-response commitment.
+
+The current free service has resource, usage, and gas-sponsorship limits. Sponsored gas is limited and is not a promise to pay every network fee. Network fees may be incurred even when an onchain operation fails.
+
+If we offer paid services, the price, billing period, usage terms, and cancellation conditions will be disclosed before you purchase them. A pricing preview or waitlist registration is not an authorization to charge you. Any mandatory rights under applicable law remain unaffected.
+
+## 7. Your content and our software
+
+You retain your rights in the information you submit. You authorize us to process it as needed to provide, secure, and support the service, as described in the Privacy Policy. You must have the rights needed to submit that information.
+
+Namespace Inc. and its licensors retain their rights in Namera's hosted service, branding, and materials. Open-source components are governed by their applicable licenses. These Terms do not take away permissions granted by those licenses.
+
+## 8. Suspension and ending use
+
+You may stop using Namera at any time. Contact us for help closing an account. Before doing so, arrange continued access to your smart accounts and review your active grants, onchain installations, and backups.
+
+We may restrict or suspend access to address unlawful use, security risks, abuse, or material breaches of these Terms. Where reasonably practicable, we will explain the issue and provide an opportunity to resolve it. Closing a Namera account does not erase blockchain records or automatically remove onchain permissions.
+
+## 9. Disclaimers and responsibility
+
+To the extent permitted by applicable law, the service is provided "as is" and "as available", without implied warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that the service will be uninterrupted, error-free, or immune to security incidents, or that an agent will make suitable decisions.
+
+Nothing in these Terms excludes liability or rights that cannot lawfully be excluded. Any additional allocation or limitation of liability must be expressly included in the final agreement or a separate signed agreement; this draft does not introduce a monetary liability cap or mandatory arbitration.
+
+## 10. Changes and contact
+
+We may update these Terms as the service changes. The published version will state its effective date. Material changes will be communicated through the service or appropriate account communications before they take effect where required by law.
+
+For questions about these Terms, contact [hey@namera.ai](mailto:hey@namera.ai). The company's registered address, governing law, and any jurisdiction-specific terms must be confirmed before this draft takes effect.

@@ -1,6 +1,14 @@
+import { fumadocsMdx } from "fumadocs-mdx/vite";
 import defineConfig from "klarity/vitest/node";
 
 export default defineConfig({
+  plugins: [
+    fumadocsMdx({
+      index: false,
+      macro: false,
+      globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
+    }),
+  ],
   resolve: { conditions: ["namera-source"] },
   ssr: {
     noExternal: [/^@namera-ai\//],

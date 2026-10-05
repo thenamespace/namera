@@ -4,6 +4,26 @@ Namera's public website, built with TanStack Start and React. `/` is the
 marketing landing page, `/pricing` the plan comparison, and `/docs` and `/blog`
 are placeholders until there is something behind them.
 
+## Legal pages
+
+`/terms` and `/privacy-policy` render repository-owned MDX through Fumadocs MDX.
+Edit `src/content/legal/*.mdx` for copy and `src/components/legal` for the shared
+reading layout and semantic heading, paragraph, list, and link components.
+The compiler generates heading anchors and the table of contents at build time;
+there is no runtime Markdown fetching or documentation UI dependency.
+
+The initial documents are review drafts, visibly labeled and marked `noindex`.
+They are deliberately absent from the sitemap. Before publishing effective
+policies, obtain legal review and confirm Namespace Inc.'s address/jurisdiction,
+contact mailbox, governing law, liability terms, retention schedule, provider
+locations and transfer safeguards, and any regional privacy requirements.
+The copy describes the self-custodial flow; it does not promise private-key
+recovery, deletion of blockchain records, or purely local CLI operation.
+
+After approval, remove the draft notice, set the actual effective date, remove
+`noindex` from both route definitions, and add them to the sitemap. Adding these
+pages does not implement contractual acceptance tracking or a consent system.
+
 ## Development
 
 ```sh
