@@ -272,8 +272,9 @@ Contrast is verified against the rendered page, not against tokens.
 The homepage's `.landing-home` scope in `marketing.css` uses Linear-inspired
 cool neutrals: `#f7f8f8` primary text, `#d0d6e0` surface text, and `#8a8f98`
 supporting text on a `#08090a` canvas, with `#0f1011`, `#141516`, and `#191a1b`
-panel steps and `#5e6ad2` brand actions. The shared UIKit theme and other
-website routes remain unchanged. Avoid Linear's
+panel steps and `#5e6ad2` brand actions. All public routes share the `#08090a`
+canvas through the website's root token; the shared UIKit theme and other
+routes' panel colors remain unchanged. Avoid Linear's
 lower-contrast `#62666d` for readable text on this canvas.
 Keep `--accent` as a fill/border color and use `--color-accent-text` for accent text.
 

@@ -2,7 +2,7 @@
  * Marketing surface layer.
  *
  * The shared `@namera-ai/ui` theme supplies the defaults; `.landing-home`
- * scopes the homepage palette without changing product or legal pages.
+ * scopes the homepage palette, while all public pages share its dark canvas.
  * This file also adds what the product design system does not ship: a
  * display type scale, two surface treatments, and the boundary motif described
  * in DESIGN.md.
@@ -11,10 +11,14 @@
  * the whole document. Each was here and each was decoration without a job.
  */
 
-/* Homepage-only palette sampled from Linear: dark canvas, cool panel steps,
+/* Keep the public site's canvas consistent across every route. */
+:root {
+  --background: #08090a;
+}
+
+/* Homepage palette sampled from Linear: cool panel steps,
    quiet supporting text and indigo reserved for actions and diagrams. */
 .landing-home {
-  --background: #08090a;
   --foreground: #f7f8f8;
   --accent: #5e6ad2;
   --accent-foreground: #f7f8f8;
