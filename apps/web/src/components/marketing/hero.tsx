@@ -76,9 +76,9 @@ export const Hero = () => {
             data-hero-copy
             className="type-display-xl max-w-[24ch] text-[clamp(1.875rem,1.125rem+2.8vw,3.25rem)] text-balance text-foreground"
           >
-            The wallet for AI agents.
+            Wallets for AI agents
             <br />
-            The rules are yours.
+            with permissions built in
           </h1>
           <p
             data-hero-copy
@@ -86,7 +86,7 @@ export const Hero = () => {
           >
             {SITE.heroDescription}
           </p>
-          <div data-hero-copy className="mt-3">
+          <div data-hero-copy>
             <HeroCta />
           </div>
         </div>
@@ -99,7 +99,7 @@ export const Hero = () => {
         >
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-1/2 -z-10 w-[calc(100vw-12px)] -translate-x-1/2 overflow-hidden rounded-lg"
+            className="pointer-events-none absolute inset-y-0 left-1/2 -z-10 w-[calc(100vw-32px)] -translate-x-1/2 overflow-hidden rounded-lg"
           >
             <div
               className="absolute inset-x-0 top-0 bottom-[var(--floor)]"

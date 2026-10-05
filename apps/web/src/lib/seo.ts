@@ -14,12 +14,11 @@ if (!["http:", "https:"].includes(siteUrl.protocol) || siteUrl.username || siteU
 export const SITE = {
   name: "Namera",
   origin: siteUrl.origin,
-  tagline: "The wallet for AI agents. The rules are yours.",
-  heroDescription:
-    "Give agents the power to transact. You set the permissions and spending limits.",
+  tagline: "Wallets for AI agents with permissions built in",
+  heroDescription: "Give agents the power to transact. You set what they can spend and do.",
   /** Shared search, social and structured-data description. */
   description:
-    "Namera is the wallet for AI agents. You set the permissions, spending limits, and access expiry. Give agents the power to transact on your terms.",
+    "Namera gives AI agents wallets with permissions built in. Set what they can spend and do, with spending limits, scoped permissions, and access expiry.",
   keywords: [
     "agent wallet",
     "AI agent wallets",

@@ -22,7 +22,7 @@ describe("page titles", () => {
 
   it("uses permission-focused copy and connected page structured data", () => {
     const head = seo({ description: SITE.description, path: "/" });
-    expect(SITE.tagline).toBe("The wallet for AI agents. The rules are yours.");
+    expect(SITE.tagline).toBe("Wallets for AI agents with permissions built in");
     expect(head.meta).toContainEqual({ name: "description", content: SITE.description });
     expect(head.meta).toContainEqual({ property: "og:description", content: SITE.description });
     expect(head.meta).toContainEqual({ name: "twitter:description", content: SITE.description });

@@ -6,12 +6,12 @@
   <g font-family="Helvetica, Arial, sans-serif">
     <text x="132" y="87" fill="#f7f8f8" font-size="28" font-weight="700">Namera</text>
     <g fill="#f7f8f8" font-size="64" font-weight="700">
-      <text x="76" y="255">The wallet for AI agents.</text>
-      <text x="76" y="333">The rules are yours.</text>
+      <text x="76" y="255">Wallets for AI agents</text>
+      <text x="76" y="333">with permissions built in</text>
     </g>
     <g fill="#8a8f98" font-size="25">
       <text x="76" y="412">Give agents the power to transact.</text>
-      <text x="76" y="450">You set the permissions and spending limits.</text>
+      <text x="76" y="450">You set what they can spend and do.</text>
     </g>
     <path d="M76 520H1124" stroke="#23252a"/>
     <text x="76" y="569" fill="#8a8f98" font-size="21">Spending limits. Scoped permissions. Time-bound access.</text>

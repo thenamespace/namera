@@ -1,7 +1,7 @@
 {
   "name": "Namera",
   "short_name": "Namera",
-  "description": "The wallet for AI agents. The rules are yours. Set permissions, spending limits, and access expiry with Namera.",
+  "description": "Wallets for AI agents with permissions built in. Set what agents can spend and do with Namera.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
