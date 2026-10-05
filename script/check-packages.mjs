@@ -79,8 +79,20 @@ try {
   const platformRequire = createRequire(cliRequire.resolve("@effect/platform-node"));
   const effectVersion = cliRequire("effect/package.json").version;
   assert.equal(effectVersion, cli.dependencies.effect);
-  assert.equal(cliRequire("@effect/platform-node/package.json").version, effectVersion);
-  assert.equal(platformRequire("@effect/platform-node-shared/package.json").version, effectVersion);
+  assert.equal(
+    cliRequire("@effect/platform-node/package.json").version,
+    cli.dependencies["@effect/platform-node"],
+  );
+  const overrides = JSON.parse(
+    execFileSync("pnpm", ["config", "get", "overrides", "--json"], {
+      cwd: root,
+      encoding: "utf8",
+    }),
+  );
+  assert.equal(
+    platformRequire("@effect/platform-node-shared/package.json").version,
+    overrides["@effect/platform-node-shared"],
+  );
   for (const args of [["--version"], ["--help"], ["login", "--help"], ["mcp", "serve", "--help"]]) {
     await runAsync(process.execPath, [executable, ...args], consumer, env);
   }

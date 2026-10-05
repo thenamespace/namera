@@ -6,7 +6,7 @@ condition for direct source consumption during development.
 
 ## Dependency versions
 
-The workspace uses Effect 4.0.0 stable, with matching runtime, SQL, Atom,
+The workspace uses Effect 4.0.1 stable with compatible platform, SQL, Atom,
 OpenTelemetry, and Vitest adapters. Import platform modules from `effect/http`,
 `effect/http-api`, `effect/sql`, and the other stable paths, not `effect/unstable/*`.
 Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in sync
@@ -17,13 +17,26 @@ policies, with these explicit exceptions:
 
 - Drizzle ORM and Kit stay on the standard `rc` channel (1.0.0-rc.4), not
   experimental snapshot tags. Its existing Effect error-constructor patch remains.
-- TypeScript stays on 6.0.3: the current declaration build rejects TypeScript 7's
-  experimental compiler API.
 - UA Parser stays on the latest MIT-licensed v1 release; v2 changes to AGPL.
 
-Scoped peer exceptions cover Klarity 0.2.0's tested Vitest 5 configuration and
-React Hook Form's Standard Schema resolver with Effect 4. Do not import the
-resolver package's Effect 3-specific adapter.
+TypeScript 7.0.2 uses tsdown's `tsgo` declaration generator. Klarity 0.3.0
+suppresses its known experimental-API warning while keeping other build warnings
+fatal, and supports Vitest 5 without a peer override.
+
+`@effect/tsgo` replaces the JavaScript Effect language-service package. `pnpm
+install` patches the native TypeScript binary through the root `prepare` script;
+installs with `--ignore-scripts` must run `pnpm exec effect-tsgo patch --typescript
+--no-oxlint` to enable the editor integration. VS Code-based editors should use
+the TypeScript 7 extension and workspace compiler, then restart the TS server.
+The plugin configuration still uses the `@effect/language-service` name, as
+required by the native integration. Effect diagnostics remain editor feedback,
+not new CI failure conditions; TypeScript errors still fail checks. Oxlint is
+not patched. Container builds can use the unpatched compiler. Every package
+extends the root config before its Klarity preset; Turbo tracks that shared
+config as a global dependency so editor/compiler changes invalidate cached checks.
+
+A scoped peer exception covers React Hook Form's Standard Schema resolver with
+Effect 4. Do not import the resolver package's Effect 3-specific adapter.
 
 Oxlint's new React Compiler migration diagnostics are warnings while the compiler
 is not enabled. Existing correctness, Hooks, and accessibility checks remain active.
