@@ -20,9 +20,9 @@ export default defineConfig({
   },
   plugins: [
     fumadocsMdx({
-      index: false,
+      index: { target: "vite" },
       macro: false,
-      // Legal pages need headings and TOCs, not code highlighting or search indexing.
+      // Keep the existing legal renderer and use processed Markdown for blog search.
       globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
     }),
     tailwindcss(),

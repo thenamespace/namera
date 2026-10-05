@@ -12,7 +12,7 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "preview": "vite preview --port 4000",
     "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
-    "typecheck": "pnpm generate-routes && tsc -p tsconfig.json --pretty false"
+    "typecheck": "fumadocs-mdx && pnpm generate-routes && tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
     "@fontsource-variable/inter": "catalog:",
@@ -26,6 +26,7 @@
     "@xyflow/react": "^12.12.0",
     "effect": "catalog:",
     "fumadocs-core": "catalog:",
+    "mermaid": "^12.1.0",
     "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
