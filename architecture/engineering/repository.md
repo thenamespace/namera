@@ -14,11 +14,14 @@ Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in syn
 with the pnpm catalog using `pnpm cli:lock`, then run `pnpm pack:check` before release.
 
 Direct dependencies track the latest releases accepted by pnpm's supply-chain
-policies, with these explicit exceptions:
+policies, with this explicit exception:
 
 - Drizzle ORM and Kit stay on the standard `rc` channel (1.0.0-rc.4), not
   experimental snapshot tags. Its existing Effect error-constructor patch remains.
-- UA Parser stays on the latest MIT-licensed v1 release; v2 changes to AGPL.
+
+The dashboard uses UA Parser v2 with its bundled TypeScript declarations. Its
+AGPL/commercial licensing change was accepted for this upgrade; the old v1 hold
+and separate `@types/ua-parser-js` dependency have been removed.
 
 TypeScript 7.0.2 uses tsdown's `tsgo` declaration generator. Klarity 0.3.0
 suppresses its known experimental-API warning while keeping other build warnings

@@ -51,7 +51,6 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/ua-parser-js": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "klarity": "catalog:",
     "typescript": "catalog:",
