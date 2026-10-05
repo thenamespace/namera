@@ -1,4 +1,4 @@
-This draft explains how **Namespace Inc.**, the company behind Namera ("we", "us", or "our"), handles information when you use our website, dashboard, hosted API, and connected developer tools. It also covers beta invitations, the waitlist, and communications with us.
+This Privacy Policy explains how **Namespace Inc.**, incorporated in the British Virgin Islands ("we", "us", or "our"), handles information when you use our website, documentation, dashboard, hosted API, and connected developer tools. It also covers beta invitations, the waitlist, and communications with us. Namespace Inc. is responsible for the processing described in this policy, except where we process information solely on an organization's instructions under a separate data-processing agreement.
 
 It does not describe independent processing by a blockchain network, an AI client you choose, or someone operating their own deployment of our open-source software. Those operators are responsible for their own practices.
 
@@ -17,6 +17,8 @@ Wallet addresses and public transaction records can be associated with you or yo
 ### Technical and service information
 
 Our systems process IP addresses, browser and device information, request timing, response status, errors, traces, and security and audit events. We use these records to operate the service, investigate problems, and prevent abuse. IP addresses and other identifiers in diagnostic records can be personal information.
+
+We use PostHog for product analytics and session replay across our website, documentation, and dashboard. This can include pages visited, interactions, device and browser details, identifiers, and recordings of the interface as you navigate it. We use redaction and masking controls to reduce sensitive information in diagnostics and recordings; this does not make all collected information anonymous.
 
 ### Information you send us
 
@@ -39,10 +41,13 @@ We use information to:
 - Track usage and apply service limits, including gas-sponsorship limits.
 - Deliver sign-in messages, invitations, and relevant service or security notifications.
 - Respond to support requests and follow up on waitlist interest.
+- Send newsletters, blog updates, and other promotional email when you opt in.
 - Diagnose failures, improve reliability, investigate abuse, and maintain audit records.
 - Meet applicable legal obligations and establish or defend legal claims.
 
 Where data-protection law requires a legal basis, the applicable basis depends on the purpose: performing our agreement with you, legitimate interests in operating and protecting the service, compliance with law, or consent where required. Consent can be withdrawn without affecting processing that was lawful before withdrawal.
+
+We do not sell personal information, share it for targeted advertising, or use customer content to train AI models. Disclosure to providers to operate the service is described below.
 
 ## 4. When information is shared
 
@@ -52,7 +57,7 @@ Authorized organization members can access information according to their permis
 
 ### Service providers
 
-We use providers for hosting, infrastructure, email delivery, diagnostics, and blockchain connectivity. The current architecture integrates Resend for email, Axiom for production observability, and blockchain infrastructure such as Alchemy. These providers receive information needed for the relevant function, such as an email recipient, diagnostic event, or operation submitted to a network.
+We use Google Cloud for infrastructure in the European Union, Axiom in the European Union for observability, PostHog's European Union service for analytics and session replay, Resend for transactional and opt-in promotional email, and blockchain infrastructure such as Alchemy. These providers receive information needed for the relevant function, such as an email recipient, diagnostic event, interaction record, or operation submitted to a network.
 
 ### Public networks and legal disclosures
 
@@ -66,13 +71,15 @@ The dashboard uses cookies for authentication and related security flows. Browse
 
 The landing-page waitlist request sends your email to the API without authentication cookies. Dashboard diagnostics are sent through Namera's telemetry proxy rather than exposing provider ingestion credentials in your browser.
 
-This notice does not assume that all analytics or storage is exempt from consent. Any optional tracking introduced later must be disclosed and, where required, enabled only after obtaining consent.
+PostHog may use cookies or similar browser storage to associate interactions with a visitor or session. Analytics and session replay currently start automatically rather than waiting for a consent selection. This policy discloses that behavior; it does not treat visiting the site or reading this policy as consent. You can contact us about analytics processing and your applicable privacy rights. Browser storage controls may limit some tracking, but are not a guaranteed opt-out from all collection.
 
 ## 6. Retention and deletion
 
 Different records serve different purposes. Retention decisions must account for whether an account is active, unresolved operations, security investigations, audit integrity, support needs, backup cycles, and applicable legal obligations.
 
-There is currently no universal automatic deletion schedule for all account, waitlist, audit, and diagnostic records. Contact us to request deletion or information about a particular category. Signing out, revoking a key, or completing a waitlist entry does not itself erase the associated records.
+Axiom diagnostic data is retained for 30 days under our current configuration. PostHog analytics and recordings follow the retention settings applicable to our project and data category; contact us for the current periods. Account, operation, audit, and waitlist records do not have a single automatic expiry. We assess their continued need against the purposes and obligations above and handle deletion requests by email.
+
+Database backups are created manually and do not currently have a fixed automatic expiry. A deletion request therefore needs to address relevant backups as well as live records; deletion from the live database alone does not remove an existing backup. Contact us to request deletion or information about a particular category. Signing out, revoking a key, or completing a waitlist entry does not itself erase the associated records.
 
 We cannot remove or alter records on a public blockchain. Deleting data from Namera does not delete copies held independently by authorized clients, blockchain infrastructure, or other third parties.
 
@@ -80,7 +87,9 @@ We cannot remove or alter records on a public blockchain. Deleting data from Nam
 
 Namera uses access controls, encrypted transport, credential hashing or encryption where appropriate, and operational monitoring. These measures reduce risk but cannot guarantee that information will never be lost, accessed improperly, or disclosed.
 
-Our providers may process information outside your country. The final notice must identify the relevant processing locations and applicable transfer safeguards. This draft does not claim that a particular certification, adequacy decision, or contractual transfer mechanism is already in place.
+Our primary infrastructure and our Axiom and PostHog deployments are in the European Union. Email delivery and other provider operations may involve processing elsewhere, including Japan for our Resend sending region. These deployment locations are not a guarantee that every provider, subprocessor, or support operation processes information only in those locations. Namespace Inc. is incorporated in the British Virgin Islands.
+
+International processing is subject to the applicable data-protection requirements. Contact us for information about the recipients, locations, and safeguards relevant to your information. We do not claim that EU hosting alone establishes compliance or that Namespace Inc. holds a particular privacy certification.
 
 Do not send private keys, recovery material, export passphrases, or authentication tokens in support messages.
 
@@ -92,6 +101,10 @@ To make a request, email [hey@namera.ai](mailto:hey@namera.ai). We may need to v
 
 You can stop using a connected client and revoke its grant through the available access controls. Onchain permission removal is separate and must be confirmed on each relevant network. To stop waitlist follow-up, contact us at the same address.
 
+You can request account closure and deletion of eligible offchain personal information by emailing us. We may retain information where needed to meet legal obligations, address security incidents, or establish or defend legal claims, and will explain relevant limitations when handling your request. Self-custody does not prevent deletion of eligible information held by Namera, but you remain responsible for your keys and onchain permissions.
+
+Promotional emails are opt-in. You can unsubscribe using the link in a promotional email or by contacting us. Unsubscribing from promotions does not stop authentication, security, or other necessary service emails.
+
 ## 9. Children
 
 Namera is intended for adults and is not directed at people under 18. If you believe a child has provided personal information to us, contact us so we can investigate and take appropriate action.
@@ -100,4 +113,7 @@ Namera is intended for adults and is not directed at people under 18. If you bel
 
 We will update this notice when our practices change and identify the date of the published version. Where required, we will provide additional notice of material changes.
 
-For privacy questions, contact **Namespace Inc.** at [hey@namera.ai](mailto:hey@namera.ai). Our registered business address and any required regional representative details must be confirmed before this draft is published as the effective policy.
+For privacy questions or rights requests, contact [hey@namera.ai](mailto:hey@namera.ai) or write to:
+
+**Namespace Inc.**, 2nd Floor, Ellen L. Skelton Building, Fishers Lane,
+Road Town, Tortola, British Virgin Islands VG1110.

@@ -10,6 +10,8 @@ import { SITE } from "#/lib/seo";
 const PAGES = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/pricing", changefreq: "monthly", priority: "0.8" },
+  { path: "/terms", changefreq: "yearly", priority: "0.3" },
+  { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
 ] as const;
 
 export const Route = createFileRoute("/sitemap.xml")({

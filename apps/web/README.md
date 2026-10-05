@@ -12,17 +12,31 @@ reading layout and semantic heading, paragraph, list, and link components.
 The compiler generates heading anchors and the table of contents at build time;
 there is no runtime Markdown fetching or documentation UI dependency.
 
-The initial documents are review drafts, visibly labeled and marked `noindex`.
-They are deliberately absent from the sitemap. Before publishing effective
-policies, obtain legal review and confirm Namespace Inc.'s address/jurisdiction,
-contact mailbox, governing law, liability terms, retention schedule, provider
-locations and transfer safeguards, and any regional privacy requirements.
+The documents are dated October 5, 2026, based on the operator's confirmed
+company details and processing practices, and are included in the sitemap.
+The contact for legal and privacy requests is `hey@namera.ai`.
 The copy describes the self-custodial flow; it does not promise private-key
 recovery, deletion of blockchain records, or purely local CLI operation.
 
-After approval, remove the draft notice, set the actual effective date, remove
-`noindex` from both route definitions, and add them to the sitemap. Adding these
-pages does not implement contractual acceptance tracking or a consent system.
+Publication is not a compliance certification. Open operational/legal items:
+
+- Verify deployed PostHog masking, event/replay retention, and collection
+  controls. No PostHog initialization was found in this checkout. The operator
+  reports collection before consent; the notice does not claim consent gating.
+  Implement appropriate controls or disable nonessential collection where
+  required; policy wording does not supply consent.
+- Confirm Resend's Tokyo sending region and provider/subprocessor transfer
+  arrangements. Review applicable safeguards and regional representative needs.
+- Establish retention/deletion procedures for live data, PostHog, and manual
+  backups. Axiom's 30-day default was confirmed by the operator; do not infer
+  other providers' actual retention from their pricing plans.
+- Obtain counsel review, including applicable law, consumer rights, and data
+  processing roles. No monetary liability cap, chosen dispute venue, or
+  mandatory arbitration was added without approval.
+
+Adding these pages does not implement contractual acceptance tracking, a
+consent system, or automated data deletion. Update the notice whenever the
+actual practices change, including before introducing paid plans.
 
 ## Development
 

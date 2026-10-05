@@ -9,8 +9,7 @@ const DESCRIPTION =
   "The terms for using Namera's programmable wallets, dashboard, API, and developer tools.";
 
 export const Route = createFileRoute("/terms")({
-  head: () =>
-    seo({ title: "Terms of Service", description: DESCRIPTION, path: "/terms", noindex: true }),
+  head: () => seo({ title: "Terms of Service", description: DESCRIPTION, path: "/terms" }),
   component: TermsPage,
 });
 

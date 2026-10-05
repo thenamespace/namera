@@ -14,7 +14,6 @@ export const Route = createFileRoute("/privacy-policy")({
       title: "Privacy Policy",
       description: DESCRIPTION,
       path: "/privacy-policy",
-      noindex: true,
     }),
   component: PrivacyPolicyPage,
 });
