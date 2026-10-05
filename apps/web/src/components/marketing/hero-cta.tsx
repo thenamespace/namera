@@ -47,7 +47,7 @@ export const HeroCta = () => {
         >
           <div
             className={cn(
-              "edge-top flex items-center gap-2 rounded-xl border-1 border-hairline-strong",
+              "edge-top flex items-center gap-2 rounded-[11px] border-1 border-hairline-strong",
               "bg-surface/80 p-1 backdrop-blur-sm",
               "transition-colors duration-150 ease-out-quad",
               "focus-within:border-accent/50",
@@ -77,7 +77,7 @@ export const HeroCta = () => {
                       field.onChange(event);
                       setError(undefined);
                     }}
-                    className="tap-target h-8 w-full min-w-0 bg-transparent px-2 text-sm text-foreground shadow-none"
+                    className="tap-target h-8 w-full min-w-0 rounded-[6px] bg-transparent px-2 text-sm text-foreground shadow-none"
                   />
                 </Field>
               )}
@@ -89,7 +89,7 @@ export const HeroCta = () => {
               isDisabled={join.isPending}
               className={
                 cn(
-                  "tap-target group/join inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3",
+                  "tap-target group/join inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[6px] px-3",
                   "bg-button-light text-[0.8125rem] font-medium text-button-light-foreground",
                   "transition-[background-color,transform] duration-150 ease-out-quad",
                   "hover:bg-white active:scale-[0.98]",
