@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
@@ -15,9 +15,6 @@ import {
   type WaitlistFormInput,
   type WaitlistFormOutput,
 } from "./waitlist-schema";
-
-/* The stack a request travels through, shown as a row of steps above the ask. */
-const PIPELINE = ["Smart Wallets", "Session Keys", "Policies", "Agents"] as const;
 
 export const ClosingCta = () => {
   const [joinedEmail, setJoinedEmail] = useState<string>();
@@ -57,29 +54,6 @@ export const ClosingCta = () => {
       <Container>
         <Reveal>
           <div className="flex flex-col items-center py-12 text-center md:py-24">
-            <div className="mb-9 flex flex-wrap items-center justify-center gap-x-3 gap-y-3 sm:mb-12 sm:gap-x-4">
-              {PIPELINE.map((label, index) => (
-                <Fragment key={label}>
-                  <span
-                    className={cn(
-                      "rounded-full border-1 border-white/10 bg-white/[0.035] px-4 py-1.5",
-                      "text-[0.8125rem] font-medium text-foreground/85 backdrop-blur-sm",
-                      "shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]",
-                    )}
-                  >
-                    {label}
-                  </span>
-                  {index < PIPELINE.length - 1 ? (
-                    <Icon
-                      icon={ArrowRight02Icon}
-                      aria-hidden
-                      strokeWidth={2}
-                      className="size-3.5 shrink-0 text-ink-subtle"
-                    />
-                  ) : null}
-                </Fragment>
-              ))}
-            </div>
             <h2 className="type-display-xl max-w-[15ch] text-balance text-foreground">
               Launching soon!
             </h2>

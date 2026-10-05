@@ -30,12 +30,6 @@ export const HeroCta = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[0.8125rem]">
-        <span className="font-medium uppercase tracking-[0.14em] text-ink-subtle">
-          Launching soon
-        </span>
-      </p>
-
       {joinedEmail ? (
         <output className="block text-[0.9375rem] text-foreground">
           You are on the list. We will write to {joinedEmail} the day Namera opens.

@@ -143,7 +143,7 @@ const EXECUTIONS = [
 const KEY_USAGE = [
   { what: "Swap 40 USDC for ETH", amount: "40 USDC", status: "Allowed", when: "2m ago" },
   { what: "Swap 120 USDC for ETH", amount: "120 USDC", status: "Blocked", when: "5m ago" },
-  { what: "Approve USDC spend", amount: "—", status: "Allowed", when: "18m ago" },
+  { what: "Approve USDC spend", amount: "-", status: "Allowed", when: "18m ago" },
   { what: "Swap 12 USDC for ETH", amount: "12 USDC", status: "Allowed", when: "3h ago" },
 ] as const;
 
