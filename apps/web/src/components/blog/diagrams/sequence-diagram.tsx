@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 /* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- Scrollable diagrams must be keyboard-scrollable. */
 import { Button } from "@namera-ai/ui";
+import { Icon, RefreshIcon } from "@namera-ai/ui/icons";
 
 import { doLayout, parse } from "./sequence-layout";
 import { render } from "./sequence-svg";
@@ -19,7 +20,6 @@ export function SequenceDiagram({
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const host = useRef<HTMLElement>(null);
   const replay = useRef<() => void>(() => {});
-  const skip = useRef<() => void>(() => {});
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -83,10 +83,6 @@ export function SequenceDiagram({
         observer?.disconnect();
         play();
       };
-      skip.current = () => {
-        observer?.disconnect();
-        stop();
-      };
       motion.addEventListener("change", stop);
       observer = new IntersectionObserver(
         ([entry]) => {
@@ -116,25 +112,25 @@ export function SequenceDiagram({
   }, [chart, id, title]);
 
   return (
-    <figure className="my-10">
+    <figure className="relative my-10 pt-12">
       <figcaption className="sr-only">{title}</figcaption>
       <section ref={host} className="overflow-x-auto" tabIndex={0} aria-label={title} />
       {error ? (
-        <output className="text-muted">Diagram unavailable. Read its source below.</output>
-      ) : (
-        <div className="mt-3 flex justify-end gap-2">
-          <Button size="sm" variant="tertiary" onPress={() => skip.current()}>
-            Show all
-          </Button>
-          <Button size="sm" variant="tertiary" onPress={() => replay.current()}>
-            Replay
-          </Button>
+        <div>
+          <output className="text-muted">Diagram unavailable.</output>
+          <pre className="mt-3 overflow-x-auto whitespace-pre text-sm text-muted">{chart}</pre>
         </div>
+      ) : (
+        <Button
+          isIconOnly
+          variant="ghost"
+          aria-label="Replay sequence diagram"
+          className="absolute top-0 right-0 size-11"
+          onPress={() => replay.current()}
+        >
+          <Icon icon={RefreshIcon} aria-hidden className="size-4" />
+        </Button>
       )}
-      <details className="mt-3 text-sm text-muted">
-        <summary className="cursor-pointer">Diagram source</summary>
-        <pre className="mt-3 overflow-x-auto whitespace-pre">{chart}</pre>
-      </details>
     </figure>
   );
 }
