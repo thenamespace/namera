@@ -234,6 +234,11 @@ the sitemap, and externally canonicalized posts are excluded from the sitemap.
 
 ## Motion
 
+The hero uses a one-time Motion entrance after hydration: copy staggers in with
+a small upward blur/fade, followed by the dashboard and its wider light stage.
+Reduced-motion users see the final state immediately. Server HTML remains
+visible without JavaScript, and the hero does not use the scroll-reveal classes.
+
 Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
 behind an `@supports` guard, not JavaScript. Where the feature is unsupported
 the content is simply visible and does not animate. This matters more than the
@@ -242,7 +247,7 @@ animation does: the failure mode of a reveal has to be "it did not move", never
 whenever the observer did not run, which includes hidden tabs, prerenders, and
 offscreen captures. Nothing in the server HTML is hidden.
 
-`motion` is used only for state transitions inside components (the FAQ, the
+`motion` also handles state transitions inside components (the FAQ, the
 mobile nav, the hero visual's run), where a script is already required for the
 interaction itself.
 
