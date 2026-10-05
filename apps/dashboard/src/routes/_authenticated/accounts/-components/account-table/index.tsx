@@ -6,6 +6,7 @@ import { DateTime } from "effect";
 
 import type { ListWalletsResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import {
+  Button,
   DataGrid,
   SearchField,
   type DataGridColumn,
@@ -305,6 +306,10 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const createAccount = useEventCallback(() => {
     void navigate({ to: "/accounts/new" });
   });
+  const clearFilters = useEventCallback(() => {
+    setQuery("");
+    setFilters({ status: new Set(), ownership: new Set() });
+  });
   const renderEmptyState = useEventCallback(() =>
     accountData.length === 0 ? (
       <ResourceEmptyState
@@ -315,7 +320,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
         title="No accounts yet"
       />
     ) : (
-      "No accounts match these filters."
+      <div className="flex flex-col items-center gap-3">
+        <p>No accounts match these filters.</p>
+        <Button size="sm" variant="secondary" onPress={clearFilters}>
+          Clear filters
+        </Button>
+      </div>
     ),
   );
   const resetView = useEventCallback(() => {
