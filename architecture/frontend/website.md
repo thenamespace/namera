@@ -9,7 +9,8 @@ the application database.
 - The server catalog bundles text for search; Nitro requires no source files at
   runtime. Date eligibility is evaluated per request in UTC, not cached forever.
 - `/blog` loads published metadata and searchable text through a read-only
-  server function. Pagination uses URL state; modal search is local.
+  server function. Pagination uses URL state; UIKit command-menu search is local
+  and supports Cmd/Ctrl+K with keyboard result navigation.
 - `/blog/$slug` checks publication eligibility, then preloads the matching
   Fumadocs chunk. Unknown/future slugs return not found. Root-level scheduled
   content is bundled, so confidential drafts must remain in `_drafts`.
