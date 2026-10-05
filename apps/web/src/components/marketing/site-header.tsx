@@ -74,7 +74,7 @@ export const SiteHeader = () => {
               key={link.href}
               href={link.href}
               className={cn(
-                "tap-target inline-flex h-9 items-center rounded-md px-2.5 text-sm text-muted",
+                "tap-target inline-flex h-8 items-center rounded-md px-2 text-[0.8125rem] text-muted",
                 "transition-colors duration-150 ease-out-quad hover:text-foreground",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
               )}
@@ -87,8 +87,12 @@ export const SiteHeader = () => {
         <div className="ml-auto flex items-center gap-1.5 md:ml-0">
           {/* Renders only when site-links.ts has a confirmed destination. */}
           {SITE_LINKS.app === null ? null : (
-            <ActionAnchor href={SITE_LINKS.app} variant="light">
-              Sign in
+            <ActionAnchor
+              href={SITE_LINKS.app}
+              variant="light"
+              className="h-8 rounded-md px-3 text-[0.8125rem]"
+            >
+              Get started
             </ActionAnchor>
           )}
 
@@ -138,7 +142,7 @@ export const SiteHeader = () => {
                   {link.label}
                 </a>
               ))}
-              {/* Sign in stays in the bar at every width, so repeating it
+              {/* Get started stays in the bar at every width, so repeating it
                   inside the sheet would be the same control twice. */}
             </nav>
           </motion.div>

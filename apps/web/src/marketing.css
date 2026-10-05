@@ -1,8 +1,9 @@
 /*
  * Marketing surface layer.
  *
- * The shared `@namera-ai/ui` theme owns every colour used here. This file adds
- * only what a public page needs and the product design system does not ship: a
+ * The shared `@namera-ai/ui` theme supplies the defaults; `.landing-home`
+ * scopes the homepage palette without changing product or legal pages.
+ * This file also adds what the product design system does not ship: a
  * display type scale, two surface treatments, and the boundary motif described
  * in DESIGN.md.
  *
@@ -10,9 +11,45 @@
  * the whole document. Each was here and each was decoration without a job.
  */
 
+/* Homepage-only palette sampled from Linear: dark canvas, cool panel steps,
+   quiet supporting text and indigo reserved for actions and diagrams. */
+.landing-home {
+  --background: #08090a;
+  --foreground: #f7f8f8;
+  --accent: #5e6ad2;
+  --accent-foreground: #f7f8f8;
+  --accent-soft-foreground: #828fff;
+  --focus: #5e69d1;
+  --muted: #8a8f98;
+  --default: #232326;
+  --default-foreground: #d0d6e0;
+  --surface: #0f1011;
+  --surface-foreground: #d0d6e0;
+  --surface-secondary: #141516;
+  --surface-secondary-foreground: #d0d6e0;
+  --surface-tertiary: #191a1b;
+  --surface-tertiary-foreground: #d0d6e0;
+  --field-background: #1c1c1f;
+  --field-placeholder: #8a8f98;
+  --overlay: #1c1c1f;
+  --overlay-foreground: #f7f8f8;
+  --segment: #28282c;
+  --segment-foreground: #f7f8f8;
+  --separator: #202122;
+  --border: #23252a;
+  --marketing-elevated: #1c1c1f;
+  --marketing-button: #e5e5e6;
+  --marketing-button-foreground: #08090a;
+  --marketing-panel-gradient: linear-gradient(168deg, #191a1b, #141516 52%, #0f1011);
+
+  color: var(--foreground);
+}
+
 @theme inline {
   --color-canvas: var(--background);
-  --color-elevated: #202124;
+  --color-elevated: var(--marketing-elevated, #202124);
+  --color-button-light: var(--marketing-button, #e9eaec);
+  --color-button-light-foreground: var(--marketing-button-foreground, #101113);
   --color-hairline-strong: #34343a;
   --color-ink-subtle: #8a8f98;
 
@@ -23,11 +60,6 @@
   --color-accent-text: #828fff;
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-/* Match the shared theme's unlayered tokens, scoped to the website. */
-html.dark {
-  --background: #08090a;
 }
 
 @layer base {

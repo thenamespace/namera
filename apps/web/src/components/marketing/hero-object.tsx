@@ -956,7 +956,7 @@ export const HeroObject = () => {
       className={cn(
         "edge-top relative flex overflow-hidden rounded-xl border-1 border-hairline-strong",
         "h-auto sm:h-[35rem] lg:h-[40rem]",
-        "bg-[linear-gradient(168deg,#141518_0%,#101113_44%,#0c0d0f_100%)]",
+        "[background:var(--marketing-panel-gradient)]",
       )}
     >
       {/* Sidebar */}

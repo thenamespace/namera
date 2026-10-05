@@ -99,7 +99,7 @@ const ACTION_BASE = cn(
 const ACTION_VARIANTS = {
   /** Accent as a FILL is fine; accent as text is not (R-25). */
   primary: "bg-accent text-accent-foreground hover:brightness-[1.18]",
-  light: "bg-[#e9eaec] text-[#101113] hover:bg-white",
+  light: "bg-button-light text-button-light-foreground hover:bg-white",
   secondary:
     "border-1 border-border bg-surface/70 text-foreground hover:border-hairline-strong hover:bg-elevated",
   ghost: "text-muted hover:bg-default/60 hover:text-foreground",

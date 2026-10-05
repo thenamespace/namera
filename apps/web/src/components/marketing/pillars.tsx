@@ -1,6 +1,6 @@
 import { cn } from "@namera-ai/ui/utils";
 
-import { Container, Reveal, Section, SectionIntro } from "#/components/marketing/primitives";
+import { Container, Reveal, Section } from "#/components/marketing/primitives";
 
 /* -------------------------------------------------------------------------
  * The three ideas, drawn.
@@ -356,13 +356,11 @@ export const Pillars = () => (
   <Section className="border-t-1 border-border">
     <Container>
       <Reveal>
-        <SectionIntro
-          title="Wallets built for agents, not people"
-          className="items-start text-left"
-        >
-          Give each agent its own key with specific permissions - what it can spend, where it can
-          transact, and for how long. Every action is checked before it executes.
-        </SectionIntro>
+        <h2 className="max-w-[44ch] text-left text-[clamp(1.75rem,1.15rem+2.4vw,3rem)] leading-[1.15] font-medium tracking-[-0.03em] text-muted">
+          <span className="text-foreground">Wallets built for agents.</span> Give each agent its own
+          key with scoped permissions. You decide what it can spend, where it can transact, and for
+          how long.
+        </h2>
       </Reveal>
 
       <div className="mt-20 grid gap-16 md:mt-28 md:grid-cols-3 md:gap-0 lg:mt-36">
@@ -372,13 +370,13 @@ export const Pillars = () => (
             delay={index * 0.06}
             className={
               cn(
-                "flex flex-col items-center text-center",
+                "flex flex-col items-start text-left",
                 index > 0 && "md:border-l-1 md:border-border md:pl-8 lg:pl-12",
                 index < PILLARS.length - 1 && "md:pr-8 lg:pr-12",
               ) ?? ""
             }
           >
-            <div className="flex grow items-center justify-center py-10 md:py-12">
+            <div className="flex w-full grow items-center justify-center py-10 md:py-12">
               <pillar.figure />
             </div>
 
