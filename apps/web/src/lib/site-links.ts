@@ -30,11 +30,11 @@ export const SITE_LINKS = {
 
   /*
    * Taken from the live site at namera.ai, which is where these already point.
-   * Terms and the changelog were opened and both carry real content.
+   * The changelog remains on the existing site. Legal pages live in this app.
    */
   changelog: "https://www.namera.ai/changelog" as SiteLink,
-  terms: "https://www.namera.ai/terms" as SiteLink,
-  privacy: "https://www.namera.ai/privacy-policy" as SiteLink,
+  terms: "/terms" as SiteLink,
+  privacy: "/privacy-policy" as SiteLink,
 
   github: "https://github.com/thenamespace/namera" as SiteLink,
   x: "https://x.com/namera_ai" as SiteLink,

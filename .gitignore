@@ -101,6 +101,7 @@ next-env.d.ts
 
 # tanstack
 .tanstack
+/apps/web/.source/
 
 # -------------------------------------
 # Rust

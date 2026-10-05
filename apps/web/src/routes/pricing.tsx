@@ -36,16 +36,21 @@ const QUESTIONS: readonly AccordionItem[] = [
 ];
 
 const DESCRIPTION =
-  "What Namera will cost, what each plan includes, and what happens when an agent reaches a limit.";
+  "Compare Namera plans for AI agent wallets with permissions built in. Explore spending limits, session keys, and what happens when an agent reaches a limit.";
 
 export const Route = createFileRoute("/pricing")({
   component: PricingPage,
   head: () => {
-    const { meta, links } = seo({ title: "Pricing", description: DESCRIPTION, path: "/pricing" });
+    const { meta, links, scripts } = seo({
+      title: "Namera Pricing | Agent Wallet Plans",
+      description: DESCRIPTION,
+      path: "/pricing",
+    });
     return {
       meta,
       links,
       scripts: [
+        ...scripts,
         jsonLd({
           "@context": "https://schema.org",
           "@graph": [

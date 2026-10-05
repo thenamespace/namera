@@ -1,8 +1,9 @@
 /*
  * Marketing surface layer.
  *
- * The shared `@namera-ai/ui` theme owns every colour used here. This file adds
- * only what a public page needs and the product design system does not ship: a
+ * The shared `@namera-ai/ui` theme supplies the defaults; `.landing-home`
+ * scopes the homepage palette, while all public pages share its dark canvas.
+ * This file also adds what the product design system does not ship: a
  * display type scale, two surface treatments, and the boundary motif described
  * in DESIGN.md.
  *
@@ -10,16 +11,70 @@
  * the whole document. Each was here and each was decoration without a job.
  */
 
+/* Keep the public site's canvas consistent across every route. */
+:root {
+  --background: #08090a;
+}
+
+/* Homepage palette sampled from Linear: cool panel steps,
+   quiet supporting text and indigo reserved for actions and diagrams. */
+.landing-home {
+  --foreground: #f7f8f8;
+  --accent: #5e6ad2;
+  --accent-foreground: #f7f8f8;
+  --accent-soft-foreground: #828fff;
+  --focus: #5e69d1;
+  --muted: #8a8f98;
+  --default: #232326;
+  --default-foreground: #d0d6e0;
+  --surface: #0f1011;
+  --surface-foreground: #d0d6e0;
+  --surface-secondary: #141516;
+  --surface-secondary-foreground: #d0d6e0;
+  --surface-tertiary: #191a1b;
+  --surface-tertiary-foreground: #d0d6e0;
+  --field-background: #1c1c1f;
+  --field-placeholder: #8a8f98;
+  --overlay: #1c1c1f;
+  --overlay-foreground: #f7f8f8;
+  --segment: #28282c;
+  --segment-foreground: #f7f8f8;
+  --separator: #202122;
+  --border: #23252a;
+  --marketing-elevated: #1c1c1f;
+  --marketing-button: #e5e5e6;
+  --marketing-button-foreground: #08090a;
+  --marketing-panel-gradient: linear-gradient(168deg, #191a1b, #141516 52%, #0f1011);
+
+  color: var(--foreground);
+}
+
+.landing-page-layout .marketing-container {
+  max-width: 1280px;
+}
+
+@media (min-width: 48rem) {
+  .landing-page-layout .marketing-container {
+    width: 92%;
+  }
+
+  .landing-page-layout :is(#clients, #stack) > .marketing-container {
+    width: 100%;
+    max-width: 1440px;
+  }
+}
+
 @theme inline {
   --color-canvas: var(--background);
-  --color-elevated: #202124;
+  --color-elevated: var(--marketing-elevated, #202124);
+  --color-button-light: var(--marketing-button, #e9eaec);
+  --color-button-light-foreground: var(--marketing-button-foreground, #101113);
   --color-hairline-strong: #34343a;
   --color-ink-subtle: #8a8f98;
 
   /*
-   * `--accent` (#5e6ad2) measures 3.98:1 on the canvas, under the 4.5:1 floor
-   * for body text. It stays a fill and border colour; accent TEXT uses this
-   * lighter step, which measures 6.53:1.
+   * Keep the shared accent as a fill/border color. Accent text uses this
+   * lighter step for stronger contrast against the website canvas.
    */
   --color-accent-text: #828fff;
 
@@ -215,6 +270,52 @@
       .reveal-group > *:nth-child(n + 4) {
         animation-range: entry 0% cover 37%;
       }
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+   * Drifting rows
+   *
+   * Two rows of sample keys that travel in opposite directions, under the
+   * industries section. The track carries the row twice and moves exactly half
+   * its own width, which puts the second copy where the first began.
+   *
+   * It pauses under the pointer and whenever something inside it takes focus,
+   * so a reader can stop a card to read it and a keyboard never chases one.
+   * ------------------------------------------------------------------- */
+  @keyframes drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .drift-row {
+    overflow: hidden;
+    /* The rows run to both page edges and fade out rather than being cut. */
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+
+  .drift-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .drift-track {
+      animation: drift 72s linear infinite;
+    }
+
+    .drift-track[data-reverse] {
+      animation-direction: reverse;
+    }
+
+    .drift-row:hover .drift-track,
+    .drift-track:focus-within {
+      animation-play-state: paused;
     }
   }
 

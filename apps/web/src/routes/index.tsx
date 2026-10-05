@@ -18,15 +18,15 @@ import { jsonLd, seo, SITE } from "#/lib/seo";
 export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => {
-    const { meta, links } = seo({
-      description:
-        "Give your agents a wallet they cannot misuse. Set a spend cap, the chains they may touch and an expiry once, and every transaction is checked before it is signed. Opening soon.",
+    const { meta, links, scripts } = seo({
+      description: SITE.description,
       path: "/",
     });
     return {
       meta,
       links,
       scripts: [
+        ...scripts,
         jsonLd({
           "@context": "https://schema.org",
           "@graph": [
@@ -39,13 +39,8 @@ export const Route = createFileRoute("/")({
               url: SITE.origin,
               description: SITE.description,
               publisher: { "@id": `${SITE.origin}/#organization` },
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
-                availability: "https://schema.org/PreOrder",
-                url: `${SITE.origin}/pricing`,
-              },
+              mainEntityOfPage: { "@id": `${SITE.origin}/#webpage` },
+              featureList: ["Spending limits", "Scoped permissions", "Time-bound access"],
             },
             {
               "@type": "FAQPage",
@@ -74,7 +69,7 @@ function HomePage() {
     // `reducedMotion="user"` drops every transform animation on the page when
     // the OS asks for it, leaving opacity transitions intact.
     <MotionConfig reducedMotion="user">
-      <div className="relative min-h-screen bg-background">
+      <div className="landing-home landing-page-layout relative min-h-screen bg-background">
         <a
           href="#main"
           className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-60 focus-visible:rounded-lg focus-visible:border-1 focus-visible:border-border focus-visible:bg-surface focus-visible:px-3.5 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-foreground"
