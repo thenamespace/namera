@@ -2,15 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Schema } from "effect";
 
+import { Icon, RssIcon } from "@namera-ai/ui/icons";
+
 import { PostCard } from "#/components/blog/post-card";
 import { BlogSearch } from "#/components/blog/search-dialog";
-import { BLOG_PAGE_SIZE, filterPosts } from "#/lib/blog/catalog";
+import { BLOG_PAGE_SIZE } from "#/lib/blog/catalog";
 import { getBlogPosts } from "#/lib/blog/queries";
 import { blogFeedLink } from "#/lib/blog/seo";
 import { seo } from "#/lib/seo";
 
 const Search = Schema.Struct({
-  tag: Schema.optional(Schema.String),
   page: Schema.optional(Schema.Int.check(Schema.isGreaterThan(0))),
 });
 export const Route = createFileRoute("/blog/")({
@@ -29,40 +30,21 @@ export const Route = createFileRoute("/blog/")({
 
 function BlogIndex() {
   const posts = Route.useLoaderData();
-  const { tag = "", page = 1 } = Route.useSearch();
-  const tags = [...new Set(posts.flatMap((post) => post.tags))].toSorted();
-  const filtered = filterPosts(posts, "", tag);
-  const pages = Math.max(1, Math.ceil(filtered.length / BLOG_PAGE_SIZE));
-  const visible = filtered.slice((page - 1) * BLOG_PAGE_SIZE, page * BLOG_PAGE_SIZE);
+  const { page = 1 } = Route.useSearch();
+  const pages = Math.max(1, Math.ceil(posts.length / BLOG_PAGE_SIZE));
+  const visible = posts.slice((page - 1) * BLOG_PAGE_SIZE, page * BLOG_PAGE_SIZE);
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-20 md:px-10 md:py-28">
       <h1 className="text-4xl font-medium tracking-tight text-foreground md:text-5xl">Blog</h1>
-      <div className="mt-8 mb-12 flex flex-wrap items-center justify-between gap-6">
-        <nav aria-label="Article categories" className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
-          {["", ...tags].map((category) => (
-            <Link
-              key={category}
-              to="/blog"
-              search={{ tag: category || undefined }}
-              aria-current={category === tag ? "page" : undefined}
-              className={
-                category === tag
-                  ? "tap-target flex items-center text-foreground"
-                  : "tap-target flex items-center text-muted hover:text-foreground"
-              }
-            >
-              {category || "All"}
-            </Link>
-          ))}
-        </nav>
+      <div className="mt-8 mb-12 flex flex-wrap items-center justify-end gap-6">
         <div className="flex items-center gap-4">
           <BlogSearch posts={posts} />
           <a
             href="/blog/rss.xml"
             aria-label="Subscribe via RSS"
-            className="tap-target flex items-center text-sm text-muted hover:text-foreground"
+            className="tap-target flex items-center justify-center rounded-sm text-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
           >
-            RSS
+            <Icon icon={RssIcon} aria-hidden className="size-4" />
           </a>
         </div>
       </div>
@@ -83,7 +65,7 @@ function BlogIndex() {
       {pages > 1 ? (
         <nav aria-label="Blog pages" className="mt-16 flex gap-6">
           {page > 1 ? (
-            <Link to="/blog" search={{ tag: tag || undefined, page: page - 1 }}>
+            <Link to="/blog" search={{ page: page - 1 }}>
               Previous
             </Link>
           ) : null}
@@ -91,7 +73,7 @@ function BlogIndex() {
             Page {page} of {pages}
           </span>
           {page < pages ? (
-            <Link to="/blog" search={{ tag: tag || undefined, page: page + 1 }}>
+            <Link to="/blog" search={{ page: page + 1 }}>
               Next
             </Link>
           ) : null}

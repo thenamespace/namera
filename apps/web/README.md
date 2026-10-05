@@ -35,7 +35,7 @@ images. Optional `updated` dates cannot precede `date`. `seo` also supports
 `noindex`. Dates must be quoted ISO dates. Image paths must be root-relative
 or HTTPS; store local cover images in `public/blog/`.
 
-The discovery page has tag filters, pagination, and a keyboard-accessible search
+The discovery page has pagination and a keyboard-accessible search
 dialog that searches titles, descriptions, authors, tags, and article text.
 Articles render centered headings, covers, bylines, reading time and narrow
 prose. RSS lives at `/blog/rss.xml`; the sitemap includes published articles
