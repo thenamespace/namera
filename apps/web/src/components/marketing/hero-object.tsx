@@ -955,7 +955,7 @@ export const HeroObject = () => {
     <div
       className={cn(
         "edge-top relative flex overflow-hidden rounded-lg border-1 border-hairline-strong",
-        "h-auto sm:h-[35rem] md:aspect-video md:h-auto",
+        "h-auto md:min-h-[44rem]",
         "[background:var(--marketing-panel-gradient)]",
       )}
     >
@@ -1096,7 +1096,7 @@ export const HeroObject = () => {
           })}
         </div>
 
-        <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-5 sm:px-6">
+        <div className="relative flex-1 overflow-x-hidden px-4 pt-3 pb-5 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden">
           {section === "Session Keys" ? (
             <div className="flex">
               <div className="min-w-0 flex-1">
