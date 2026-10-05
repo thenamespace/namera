@@ -209,17 +209,6 @@ export const Clients = () => (
           ))}
         </div>
       </Reveal>
-
-      <Reveal delay={0.12} className="mt-10">
-        <p className="mx-auto max-w-[70ch] text-center text-[0.9375rem] leading-[1.7] text-muted">
-          Each profile keeps its own grant in the OS keyring.{" "}
-          <code className="type-mono text-[0.8125rem] text-foreground">
-            namera mcp logout --profile codex
-          </code>{" "}
-          revokes that one on the server and leaves your other profiles, and your signing keys,
-          exactly as they were.
-        </p>
-      </Reveal>
     </Container>
   </Section>
 );

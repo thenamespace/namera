@@ -954,8 +954,8 @@ export const HeroObject = () => {
   return (
     <div
       className={cn(
-        "edge-top relative flex overflow-hidden rounded-xl border-1 border-hairline-strong",
-        "h-auto sm:h-[35rem] lg:h-[40rem]",
+        "edge-top relative flex overflow-hidden rounded-lg border-1 border-hairline-strong",
+        "h-auto sm:h-[35rem] md:aspect-video md:h-auto",
         "[background:var(--marketing-panel-gradient)]",
       )}
     >
@@ -1026,7 +1026,7 @@ export const HeroObject = () => {
       </nav>
 
       {/* Panel */}
-      <div className="flex min-w-0 flex-1 flex-col border-l-1 border-border bg-canvas/40 md:m-2 md:ml-0 md:rounded-lg md:border-1">
+      <div className="flex min-w-0 flex-1 flex-col border-l-1 border-border bg-canvas/40 md:m-2 md:ml-0 md:rounded-md md:border-1">
         <div className="flex h-11 shrink-0 items-center gap-2 border-b-1 border-border px-4 text-[0.75rem]">
           <Icon
             icon={PanelLeftIcon}
@@ -1096,7 +1096,7 @@ export const HeroObject = () => {
           })}
         </div>
 
-        <div className="relative min-h-0 flex-1 overflow-hidden px-4 pt-3 pb-5 sm:px-6">
+        <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-5 sm:px-6">
           {section === "Session Keys" ? (
             <div className="flex">
               <div className="min-w-0 flex-1">
