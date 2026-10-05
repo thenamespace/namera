@@ -35,7 +35,7 @@ catalog:
   "@effect/sql-pg": "4.0.1"
   "@effect/sql-pglite": "4.0.1"
   "@electric-sql/pglite": "0.5.8"
-  "@effect/platform-node": "4.0.0"
+  "@effect/platform-node": "4.0.1"
   "@effect/opentelemetry": "4.0.1"
   "@effect/atom-react": "4.0.1"
   "@effect/vitest": "4.0.1"
