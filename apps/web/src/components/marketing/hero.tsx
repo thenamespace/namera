@@ -30,14 +30,14 @@ const STAGE_MASK = `${STAGE_MASK_V}, ${STAGE_MASK_H}`;
 
 export const Hero = () => (
   <section className="relative isolate overflow-hidden pt-28 pb-24 md:pt-36 md:pb-32">
-    <Container>
+    <Container className="max-w-[1280px] md:w-[92%]">
       <div className="reveal-init flex flex-col gap-7">
-        <h1 className="type-display-xl max-w-[20ch] text-balance text-foreground">
+        <h1 className="type-display-xl max-w-[24ch] text-[clamp(2rem,1.25rem+3.2vw,3.75rem)] text-balance text-foreground">
           Give your agents a wallet
           <br />
           with limits built in.
         </h1>
-        <p className="type-lead max-w-[64ch] text-pretty text-muted">
+        <p className="type-lead max-w-[64ch] text-base text-pretty text-muted md:text-[1.0625rem]">
           Set what your agent can spend, which contracts it can use, and when its access expires.
           Every action is enforced against those permissions.
         </p>
@@ -52,7 +52,7 @@ export const Hero = () => (
       exactly as wide as every other section's content and the light still spills
       5% past it on each side. The floor is 15.6% of the window's height.
     */}
-    <Container className="reveal-init mt-16 md:mt-20">
+    <Container className="reveal-init mt-16 max-w-[1280px] md:mt-20 md:w-[92%]">
       <div className="relative pb-[var(--floor)] [--floor:7rem] sm:[--floor:9rem] lg:[--floor:11rem]">
         <div
           aria-hidden
