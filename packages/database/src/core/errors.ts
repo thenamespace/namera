@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { SqlError } from "effect/unstable/sql";
+import { SqlError } from "effect/sql";
 
 import { DatabaseError } from "@namera-ai/protocol";
 import {

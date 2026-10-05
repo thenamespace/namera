@@ -10,7 +10,7 @@ import {
   Logger,
   Fiber,
 } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
+import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN } from "@namera-ai/sdk";
 

@@ -1,7 +1,7 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 
 import { RegistryContext, scheduleTask } from "@effect/atom-react";
-import { AtomRegistry } from "effect/unstable/reactivity";
+import { AtomRegistry } from "effect/reactivity";
 
 import { DataLoading } from "@/components/data-loading";
 import { RouterError, RouterNotFound } from "@/components/route-failure";

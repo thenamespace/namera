@@ -1,7 +1,7 @@
 import { Cause, Effect, Layer, Option, Predicate, Schedule, Schema } from "effect";
 import type { Context } from "effect";
-import { FetchHttpClient, HttpClientError, HttpClientRequest } from "effect/unstable/http";
-import { HttpApiClient, HttpApiMiddleware } from "effect/unstable/httpapi";
+import { FetchHttpClient, HttpClientError, HttpClientRequest } from "effect/http";
+import { HttpApiClient, HttpApiMiddleware } from "effect/http-api";
 
 import { Authorization, NameraApi } from "@namera-ai/api";
 

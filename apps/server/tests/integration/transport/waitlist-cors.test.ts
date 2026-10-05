@@ -6,7 +6,7 @@ import {
   HttpServer,
   HttpServerRequest,
   HttpServerResponse,
-} from "effect/unstable/http";
+} from "effect/http";
 
 import { httpRouteTemplate } from "@namera-ai/telemetry";
 

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { platform } from "node:os";
 
 import { Effect } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
+import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 

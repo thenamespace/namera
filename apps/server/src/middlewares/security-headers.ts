@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { HttpEffect, HttpMiddleware, HttpServerResponse } from "effect/unstable/http";
+import { HttpEffect, HttpMiddleware, HttpServerResponse } from "effect/http";
 
 // These apply to the API origin, including OAuth redirects and error responses.
 // Dashboard document CSP and WebAuthn permissions belong to its separate origin.

@@ -13,12 +13,12 @@ export const OAuthScope = Schema.Literals([
 export const OAuthScopes = Schema.Array(OAuthScope);
 
 export const OAuthPkceCodeChallenge = Schema.String.check(
-  Schema.isLengthBetween(43, 43),
+  Schema.isBetweenLength(43, 43),
   Schema.isPattern(/^[A-Za-z0-9_-]+$/),
 );
 
 export const OAuthPkceCodeVerifier = Schema.String.check(
-  Schema.isLengthBetween(43, 128),
+  Schema.isBetweenLength(43, 128),
   Schema.isPattern(/^[A-Za-z0-9._~-]+$/),
 );
 

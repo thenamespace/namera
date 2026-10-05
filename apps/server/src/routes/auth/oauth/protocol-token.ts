@@ -1,5 +1,5 @@
 import { Effect, Result, Schema } from "effect";
-import { HttpRouter, HttpServerResponse } from "effect/unstable/http";
+import { HttpRouter, HttpServerResponse } from "effect/http";
 
 import { Application } from "@namera-ai/application";
 import { OAuthDeviceAuthorizationStartRequest } from "@namera-ai/protocol/dto";

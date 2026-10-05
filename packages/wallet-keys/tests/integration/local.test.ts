@@ -8,8 +8,8 @@ import { ConfigProvider, Effect, Layer, Schema } from "effect";
 
 import { SigningKeyId } from "@namera-ai/protocol";
 import type { CreateWalletKeyInput } from "@namera-ai/protocol/model";
-import { p256 } from "@noble/curves/p256";
-import { secp256k1 } from "@noble/curves/secp256k1";
+import { p256 } from "@noble/curves/nist.js";
+import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 import { WalletKeys } from "../../src/index.js";
 
@@ -120,7 +120,7 @@ it.effect("signs caller-provided hashes without hashing them again", () =>
         });
 
         expect(
-          input.curve.verify(signature, hash, key.publicKeyHex.slice(2), {
+          input.curve.verify(signature, hash, Buffer.from(key.publicKeyHex.slice(2), "hex"), {
             format: "der",
             lowS: true,
             prehash: false,

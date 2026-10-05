@@ -1,5 +1,5 @@
 import { ByteSize, Effect } from "effect";
-import { HttpMiddleware, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpMiddleware, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 const apiBodyLimit = 2 * 1024 * 1024;
 const oauthBodyLimit = 64 * 1024;

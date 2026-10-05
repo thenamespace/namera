@@ -1,5 +1,5 @@
 import { Predicate } from "effect";
-import { HttpServerResponse, type HttpServerRequest } from "effect/unstable/http";
+import { HttpServerResponse, type HttpServerRequest } from "effect/http";
 
 import type { OAuthTokenResult } from "@namera-ai/application";
 

@@ -1,8 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { Config, Effect, Layer, Redacted } from "effect";
-import { HttpApiError } from "effect/unstable/httpapi";
-import { RateLimiter } from "effect/unstable/persistence";
+import { HttpApiError } from "effect/http-api";
+import { RateLimiter } from "effect/persistence";
 
 import { AdminAuthorization, CurrentAdmin } from "@namera-ai/api";
 

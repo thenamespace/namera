@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { HttpApiError } from "effect/unstable/httpapi";
+import { HttpApiError } from "effect/http-api";
 
 import type { ActorId, OrganizationId } from "@namera-ai/protocol";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";

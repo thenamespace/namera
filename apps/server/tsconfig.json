@@ -1,5 +1,5 @@
 {
-  "extends": "klarity/tsconfig/app/node",
+  "extends": ["../../tsconfig.json", "klarity/tsconfig/app/node"],
   "compilerOptions": {
     "customConditions": ["namera-source"],
     "jsx": "react-jsx",

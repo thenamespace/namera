@@ -1,8 +1,8 @@
 import { expect, layer } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
+import { HttpServer } from "effect/http";
+import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api";
 import { TestClock } from "effect/testing";
-import { HttpServer } from "effect/unstable/http";
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 
 import { AdminAuthorization, CurrentAdmin } from "@namera-ai/api";
 
