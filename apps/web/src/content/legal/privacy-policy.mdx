@@ -77,9 +77,13 @@ PostHog may use cookies or similar browser storage to associate interactions wit
 
 Different records serve different purposes. Retention decisions must account for whether an account is active, unresolved operations, security investigations, audit integrity, support needs, backup cycles, and applicable legal obligations.
 
-Axiom diagnostic data is retained for 30 days under our current configuration. PostHog analytics and recordings follow the retention settings applicable to our project and data category; contact us for the current periods. Account, operation, audit, and waitlist records do not have a single automatic expiry. We assess their continued need against the purposes and obligations above and handle deletion requests by email.
+Axiom diagnostic data, PostHog analytics events, and PostHog session recordings are retained for 30 days. Database backups are created manually and retained for no longer than 30 days from creation.
 
-Database backups are created manually and do not currently have a fixed automatic expiry. A deletion request therefore needs to address relevant backups as well as live records; deletion from the live database alone does not remove an existing backup. Contact us to request deletion or information about a particular category. Signing out, revoking a key, or completing a waitlist entry does not itself erase the associated records.
+Account, operation, audit, and waitlist records do not all expire after 30 days. We retain them while needed for the purposes described above. You can request account closure and deletion of eligible offchain personal information by emailing [hey@namera.ai](mailto:hey@namera.ai). We complete deletion within 30 days of receiving your request, subject to identity verification and any applicable legal exceptions. If verification or a legal exception affects completion, we explain the reason and applicable timeframe.
+
+Deleting information from the live database does not immediately remove an existing backup. Relevant backup copies expire within the 30-day backup retention period. If a backup is restored, we reapply completed deletion requests. Information retained under a legal exception is limited to what is necessary for that purpose and retained only while the exception applies.
+
+Signing out, revoking a key, or completing a waitlist entry does not itself erase the associated records. Contact us for information about a particular category or deletion request.
 
 We cannot remove or alter records on a public blockchain. Deleting data from Namera does not delete copies held independently by authorized clients, blockchain infrastructure, or other third parties.
 

@@ -28,12 +28,16 @@ Publication is not a compliance certification. Open operational/legal items:
   required; policy wording does not supply consent.
 - Confirm Resend's Tokyo sending region and provider/subprocessor transfer
   arrangements. Review applicable safeguards and regional representative needs.
-- Establish retention/deletion procedures for live data, PostHog, and manual
-  backups. Axiom's 30-day default was confirmed by the operator; do not infer
-  other providers' actual retention from their pricing plans.
+- The operator confirmed 30-day retention for Axiom, PostHog events/replays,
+  and manual backups, plus deletion of eligible account data within 30 days of
+  an emailed request, subject to verification and legal exceptions. These are
+  operational commitments, not deletion automation implemented by these pages.
+  Independently verify provider settings and backup/deletion procedures,
+  including reapplying deletions after a restore; do not infer them from plans.
 - Obtain counsel review, including applicable law, consumer rights, and data
-  processing roles. No monetary liability cap, chosen dispute venue, or
-  mandatory arbitration was added without approval.
+  processing roles. The operator selected BVI law and courts, with mandatory
+  consumer-rights exceptions. There is no contractual monetary liability cap
+  or mandatory arbitration.
 
 Adding these pages does not implement contractual acceptance tracking, a
 consent system, or automated data deletion. Update the notice whenever the
