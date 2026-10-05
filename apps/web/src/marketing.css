@@ -45,6 +45,16 @@
   color: var(--foreground);
 }
 
+.landing-page-layout .marketing-container {
+  max-width: 1280px;
+}
+
+@media (min-width: 48rem) {
+  .landing-page-layout .marketing-container {
+    width: 92%;
+  }
+}
+
 @theme inline {
   --color-canvas: var(--background);
   --color-elevated: var(--marketing-elevated, #202124);

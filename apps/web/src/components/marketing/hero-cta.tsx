@@ -42,13 +42,13 @@ export const HeroCta = () => {
             setError(undefined);
             return join.mutate(payload);
           })}
-          className="w-full max-w-[28rem]"
+          className="w-full max-w-[25rem]"
           aria-busy={join.isPending}
         >
           <div
             className={cn(
               "edge-top flex items-center gap-2 rounded-xl border-1 border-hairline-strong",
-              "bg-surface/80 p-1.5 backdrop-blur-sm",
+              "bg-surface/80 p-1 backdrop-blur-sm",
               "transition-colors duration-150 ease-out-quad",
               "focus-within:border-accent/50",
             )}
@@ -77,7 +77,7 @@ export const HeroCta = () => {
                       field.onChange(event);
                       setError(undefined);
                     }}
-                    className="w-full min-w-0 bg-transparent px-3 text-foreground shadow-none"
+                    className="tap-target h-8 w-full min-w-0 bg-transparent px-2 text-sm text-foreground shadow-none"
                   />
                 </Field>
               )}
@@ -85,11 +85,12 @@ export const HeroCta = () => {
             <Button
               form="hero-waitlist-form"
               type="submit"
+              size="sm"
               isDisabled={join.isPending}
               className={
                 cn(
-                  "tap-target group/join inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-4",
-                  "bg-button-light text-[0.875rem] font-medium text-button-light-foreground",
+                  "tap-target group/join inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3",
+                  "bg-button-light text-[0.8125rem] font-medium text-button-light-foreground",
                   "transition-[background-color,transform] duration-150 ease-out-quad",
                   "hover:bg-white active:scale-[0.98]",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",

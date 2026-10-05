@@ -74,7 +74,7 @@ function HomePage() {
     // `reducedMotion="user"` drops every transform animation on the page when
     // the OS asks for it, leaving opacity transitions intact.
     <MotionConfig reducedMotion="user">
-      <div className="landing-home relative min-h-screen bg-background">
+      <div className="landing-home landing-page-layout relative min-h-screen bg-background">
         <a
           href="#main"
           className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-60 focus-visible:rounded-lg focus-visible:border-1 focus-visible:border-border focus-visible:bg-surface focus-visible:px-3.5 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-foreground"
