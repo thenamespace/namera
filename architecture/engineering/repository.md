@@ -6,8 +6,9 @@ condition for direct source consumption during development.
 
 ## Dependency versions
 
-The workspace uses Effect 4.0.1 stable with compatible platform, SQL, Atom,
-OpenTelemetry, and Vitest adapters. Import platform modules from `effect/http`,
+The workspace pins Effect and its platform, SQL, Atom, OpenTelemetry, and Vitest
+adapters to 4.0.1. The `@effect/tsgo` editor tool is versioned independently.
+Import platform modules from `effect/http`,
 `effect/http-api`, `effect/sql`, and the other stable paths, not `effect/unstable/*`.
 Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in sync
 with the pnpm catalog using `pnpm cli:lock`, then run `pnpm pack:check` before release.
