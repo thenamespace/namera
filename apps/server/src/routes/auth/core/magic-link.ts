@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
-import { HttpServerRequest } from "effect/unstable/http";
-import { HttpApiBuilder, HttpApiSchema } from "effect/unstable/httpapi";
+import { HttpServerRequest } from "effect/http";
+import { HttpApiBuilder, HttpApiSchema } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";

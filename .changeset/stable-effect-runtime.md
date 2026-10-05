@@ -1,0 +1,14 @@
+---
+"@namera-ai/api": minor
+"@namera-ai/protocol": minor
+"@namera-ai/sdk": minor
+"@namera-ai/cli": minor
+---
+
+Migrate to Effect 4.0.1 stable and refresh runtime dependencies. Effect-based
+consumers must also upgrade from the release candidate to 4.0.1 and use the
+stable module paths, including `effect/http-api` instead of
+`effect/unstable/httpapi`. Public HTTP routes and payloads are unchanged.
+
+Refresh the CLI's pinned npm dependency tree and retain existing signing formats
+and encrypted credential storage behavior across the dependency upgrades.

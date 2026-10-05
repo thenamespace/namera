@@ -1,5 +1,5 @@
 import * as Signature from "ox/Signature";
-import { hashMessage, hashTypedData, hexToBytes, toHex, type Hex, type LocalAccount } from "viem";
+import { hashMessage, hashTypedData, hexToBytes, type Hex, type LocalAccount } from "viem";
 import { publicKeyToAddress } from "viem/accounts";
 import { hashAuthorization } from "viem/utils";
 
@@ -52,8 +52,8 @@ export const createWalletKeySecp256k1Account = (
         address: contractAddress,
         chainId: authorization.chainId,
         nonce: authorization.nonce,
-        r: toHex(signature.r, { size: 32 }),
-        s: toHex(signature.s, { size: 32 }),
+        r: signature.r,
+        s: signature.s,
         yParity: signature.yParity,
       };
     },

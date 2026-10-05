@@ -50,13 +50,13 @@
     "@namera-ai/utils": "workspace:*",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",
-    "pg": "8.22.0"
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@effect/platform-node": "catalog:",
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
-    "@types/pg": "8.20.4",
+    "@types/pg": "8.23.1",
     "drizzle-kit": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",

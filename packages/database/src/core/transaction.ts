@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, Option } from "effect";
-import type { SqlError } from "effect/unstable/sql";
+import type { SqlError } from "effect/sql";
 
 import { mapToDatabaseError, type MapDatabaseError } from "#/core/errors";
 import { Database, type DatabaseService } from "#/core/layer";

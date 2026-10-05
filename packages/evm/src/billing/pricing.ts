@@ -1,5 +1,5 @@
 import { DateTime, Effect, Redacted, Schema } from "effect";
-import { HttpClientRequest, type HttpClient } from "effect/unstable/http";
+import { HttpClientRequest, type HttpClient } from "effect/http";
 
 import { EvmExecutionError, type EvmGasPriceQuote } from "@namera-ai/protocol";
 

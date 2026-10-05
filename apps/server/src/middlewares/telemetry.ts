@@ -1,5 +1,5 @@
 import { Effect, Metric } from "effect";
-import { HttpMiddleware, HttpServerRequest } from "effect/unstable/http";
+import { HttpMiddleware, HttpServerRequest } from "effect/http";
 
 import {
   httpRouteTemplate,

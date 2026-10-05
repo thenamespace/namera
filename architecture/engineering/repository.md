@@ -4,6 +4,47 @@ Namera is a pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and Effect
 v4. Packages expose narrow public entry points and use the `namera-source`
 condition for direct source consumption during development.
 
+## Dependency versions
+
+The workspace pins Effect and its platform, SQL, Atom, OpenTelemetry, and Vitest
+adapters to 4.0.1. The `@effect/tsgo` editor tool is versioned independently.
+Import platform modules from `effect/http`,
+`effect/http-api`, `effect/sql`, and the other stable paths, not `effect/unstable/*`.
+Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in sync
+with the pnpm catalog using `pnpm cli:lock`, then run `pnpm pack:check` before release.
+
+Direct dependencies track the latest releases accepted by pnpm's supply-chain
+policies, with this explicit exception:
+
+- Drizzle ORM and Kit stay on the standard `rc` channel (1.0.0-rc.4), not
+  experimental snapshot tags. Its existing Effect error-constructor patch remains.
+
+The dashboard uses UA Parser v2 with its bundled TypeScript declarations. Its
+AGPL/commercial licensing change was accepted for this upgrade; the old v1 hold
+and separate `@types/ua-parser-js` dependency have been removed.
+
+TypeScript 7.0.2 uses tsdown's `tsgo` declaration generator. Klarity 0.3.0
+suppresses its known experimental-API warning while keeping other build warnings
+fatal, and supports Vitest 5 without a peer override.
+
+`@effect/tsgo` replaces the JavaScript Effect language-service package. `pnpm
+install` patches the native TypeScript binary through the root `prepare` script;
+installs with `--ignore-scripts` must run `pnpm exec effect-tsgo patch --typescript
+--no-oxlint` to enable the editor integration. VS Code-based editors should use
+the TypeScript 7 extension and workspace compiler, then restart the TS server.
+The plugin configuration still uses the `@effect/language-service` name, as
+required by the native integration. Effect diagnostics remain editor feedback,
+not new CI failure conditions; TypeScript errors still fail checks. Oxlint is
+not patched. Container builds can use the unpatched compiler. Every package
+extends the root config before its Klarity preset; Turbo tracks that shared
+config as a global dependency so editor/compiler changes invalidate cached checks.
+
+A scoped peer exception covers React Hook Form's Standard Schema resolver with
+Effect 4. Do not import the resolver package's Effect 3-specific adapter.
+
+Oxlint's new React Compiler migration diagnostics are warnings while the compiler
+is not enabled. Existing correctness, Hooks, and accessibility checks remain active.
+
 ## Dependency direction
 
 ```mermaid

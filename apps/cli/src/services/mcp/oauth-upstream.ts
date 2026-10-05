@@ -1,10 +1,5 @@
 import { ByteSize, Clock, Effect, Layer, Redacted, Schema } from "effect";
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-  HttpIncomingMessage,
-} from "effect/unstable/http";
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpIncomingMessage } from "effect/http";
 
 import {
   OAuthDynamicClientRegistrationResponse,

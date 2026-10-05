@@ -1,3 +1,3 @@
-import { HttpRouter, HttpServerResponse } from "effect/unstable/http";
+import { HttpRouter, HttpServerResponse } from "effect/http";
 
 export const RootRoutes = HttpRouter.add("GET", "/", HttpServerResponse.text("Namera API"));

@@ -1,4 +1,5 @@
-import { Encoding, Redacted, Result, Schema } from "effect";
+import { Redacted, Result, Schema } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
 
 import { EncryptedLocalSessionKey, LocalSessionKeyMaterial } from "@namera-ai/protocol/local";
 import { isAddressEqual } from "viem";
@@ -71,9 +72,9 @@ export const sealLocalSessionKey = async (
       encryption: "AES-256-GCM",
       kdf: "PBKDF2-SHA256",
       iterations: 600_000,
-      salt: Encoding.encodeBase64Url(salt),
-      iv: Encoding.encodeBase64Url(iv),
-      ciphertext: Encoding.encodeBase64Url(new Uint8Array(ciphertext)),
+      salt: Base64Url.encode(salt),
+      iv: Base64Url.encode(iv),
+      ciphertext: Base64Url.encode(new Uint8Array(ciphertext)),
     };
   } catch {
     // Schema and provider errors can include plaintext input. Never expose them.
@@ -92,18 +93,18 @@ export const openLocalSessionKey = async (
     const envelope = Schema.decodeUnknownSync(EncryptedLocalSessionKey)(input);
     const key = await deriveKey(
       password,
-      new Uint8Array(Result.getOrThrow(Encoding.decodeBase64Url(envelope.salt))),
+      new Uint8Array(Result.getOrThrow(Base64Url.decode(envelope.salt))),
     );
     plaintext = new Uint8Array(
       await globalThis.crypto.subtle.decrypt(
         {
           name: "AES-GCM",
-          iv: new Uint8Array(Result.getOrThrow(Encoding.decodeBase64Url(envelope.iv))),
+          iv: new Uint8Array(Result.getOrThrow(Base64Url.decode(envelope.iv))),
           additionalData,
           tagLength: 128,
         },
         key,
-        new Uint8Array(Result.getOrThrow(Encoding.decodeBase64Url(envelope.ciphertext))),
+        new Uint8Array(Result.getOrThrow(Base64Url.decode(envelope.ciphertext))),
       ),
     );
     const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)(

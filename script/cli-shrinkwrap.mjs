@@ -16,6 +16,13 @@ const catalog = JSON.parse(
     encoding: "utf8",
   }),
 );
+const overrides = JSON.parse(
+  execFileSync("pnpm", ["config", "get", "overrides", "--json"], {
+    cwd: root,
+    encoding: "utf8",
+  }),
+);
+const sharedPlatformVersion = overrides["@effect/platform-node-shared"];
 const dependencies = (manifest) =>
   Object.fromEntries(
     Object.entries(manifest.dependencies).map(([name, version]) => [
@@ -50,7 +57,7 @@ if (process.argv.includes("--refresh")) {
         name: cli.name,
         version: cli.version,
         dependencies: dependencies(cli),
-        overrides: { "@effect/platform-node-shared": catalog["@effect/platform-node"] },
+        overrides: { "@effect/platform-node-shared": sharedPlatformVersion },
       }),
     );
     await run(
@@ -86,7 +93,7 @@ const lock = JSON.parse(readFileSync(filename));
 const external = (deps) =>
   Object.entries(deps ?? {})
     .filter(([name]) => !name.startsWith("@namera-ai/"))
-    .sort();
+    .toSorted();
 for (const manifest of manifests) {
   const entry = lock.packages[manifest === cli ? "" : `node_modules/${manifest.name}`];
   if (
@@ -110,8 +117,7 @@ for (const manifest of manifests.slice(0, -1)) {
   delete entry.integrity;
 }
 for (const name of ["effect", "@effect/platform-node", "@effect/platform-node-shared"]) {
-  const expected =
-    name === "@effect/platform-node-shared" ? catalog["@effect/platform-node"] : catalog[name];
+  const expected = name === "@effect/platform-node-shared" ? sharedPlatformVersion : catalog[name];
   for (const [path, entry] of Object.entries(lock.packages)) {
     if (path.endsWith(`node_modules/${name}`) && entry.version !== expected) {
       throw new Error(`Stale ${name} lock; run pnpm cli:lock`);

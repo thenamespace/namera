@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { AtomRegistry } from "effect/unstable/reactivity";
-import type { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AtomRegistry } from "effect/reactivity";
+import type { AsyncResult, Atom } from "effect/reactivity";
 
 export const prefetchQuery = <A, E>(
   registry: AtomRegistry.AtomRegistry,

@@ -1,4 +1,4 @@
-import { HttpApiScalar } from "effect/unstable/httpapi";
+import { HttpApiScalar } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 

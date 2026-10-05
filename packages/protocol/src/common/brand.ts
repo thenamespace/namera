@@ -3,8 +3,8 @@
  */
 import { Schema } from "effect";
 
-export const createBrandedId = <T extends string>(brand: T) =>
-  Schema.String.pipe(Schema.brand(brand), Schema.check(Schema.isUUID(7)));
+export const createBrandedId = <T extends string>(brand: Parameters<typeof Schema.brand<T>>[0]) =>
+  Schema.String.pipe(Schema.brand<T>(brand), Schema.check(Schema.isUUID(7)));
 
 // Auth Core Tables
 export const UserId = createBrandedId("UserId");

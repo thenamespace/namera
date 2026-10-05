@@ -1,4 +1,4 @@
-import type { AtomRegistry } from "effect/unstable/reactivity";
+import type { AtomRegistry } from "effect/reactivity";
 
 export interface RouterContext {
   readonly atomRegistry: AtomRegistry.AtomRegistry;

@@ -9,101 +9,93 @@ allowBuilds:
   protobufjs: true
 
 catalog:
-  "@tanstack/react-start": 1.168.53
+  "@tanstack/react-start": 1.168.60
   "@types/mdx": 2.0.14
   "fumadocs-core": 16.15.10
   "fumadocs-mdx": 15.4.0
   "fumadocs-ui": 16.15.10
   "@adraffy/ens-normalize": 1.11.1
   "@arethetypeswrong/core": 0.18.5
-  "@commitlint/cli": 21.2.1
-  "@commitlint/config-conventional": 21.2.0
-  "@hookform/resolvers": 5.7.1
-  "@napi-rs/keyring": 1.3.0
-  "@simplewebauthn/server": 14.0.0
+  "@commitlint/cli": 21.2.3
+  "@commitlint/config-conventional": 21.2.3
+  "@hookform/resolvers": 5.9.1
+  "@napi-rs/keyring": 2.1.0
+  "@simplewebauthn/server": 14.0.3
   "@simplewebauthn/browser": 14.0.0
-  "@types/node": 26.1.2
-  "klarity": 0.2.0
-  "motion": 13.0.0
-  "lefthook": 2.1.10
-  "oxfmt": 0.62.0
-  "oxlint": 1.76.0
-  "ox": 0.14.33
-  "publint": 0.3.23
-  "effect": "4.0.0-rc.117"
-  "@effect/language-service": "0.87.1"
-  "@effect/sql-pg": "4.0.0-rc.117"
-  "@effect/sql-pglite": "4.0.0-rc.117"
-  "@electric-sql/pglite": "0.5.4"
-  "@effect/platform-node": "4.0.0-rc.117"
-  "@effect/opentelemetry": "4.0.0-rc.117"
-  "@effect/atom-react": "4.0.0-rc.117"
-  "@effect/vitest": "4.0.0-rc.117"
+  "@types/node": 26.6.4
+  "klarity": 0.3.0
+  "motion": 14.0.0
+  "lefthook": 2.1.16
+  "oxfmt": 0.71.0
+  "oxlint": 1.86.0
+  "ox": 1.8.5
+  "publint": 0.3.25
+  "effect": "4.0.1"
+  "@effect/tsgo": "0.48.0"
+  "@effect/sql-pg": "4.0.1"
+  "@effect/sql-pglite": "4.0.1"
+  "@electric-sql/pglite": "0.5.8"
+  "@effect/platform-node": "4.0.1"
+  "@effect/opentelemetry": "4.0.1"
+  "@effect/atom-react": "4.0.1"
+  "@effect/vitest": "4.0.1"
   "@fontsource-variable/inter": 5.3.0
   "@tailwindcss/vite": 4.3.3
-  "@tanstack/devtools-vite": 0.8.3
-  "@tanstack/react-devtools": 0.10.9
-  "@tanstack/react-router": 1.170.24
-  "@tanstack/react-router-devtools": 1.167.1
-  "@tanstack/router-cli": 1.167.26
-  "@tanstack/router-plugin": 1.168.28
-  "@types/react": 19.2.18
-  "@types/react-dom": 19.2.4
-  "@types/ua-parser-js": 0.7.39
-  "@vitejs/plugin-react": 6.0.5
+  "@tanstack/devtools-vite": 0.8.5
+  "@tanstack/react-devtools": 0.10.13
+  "@tanstack/react-router": 1.170.41
+  "@tanstack/react-router-devtools": 1.167.2
+  "@tanstack/router-cli": 1.167.40
+  "@tanstack/router-plugin": 1.168.42
+  "@types/react": 19.3.0
+  "@types/react-dom": 19.3.0
+  "@vitejs/plugin-react": 6.1.1
   "drizzle-orm": "1.0.0-rc.4"
   "drizzle-kit": "1.0.0-rc.4"
-  "resend": "6.18.1"
-  "viem": "2.55.11"
-  "react": 19.2.8
-  "react-dom": 19.2.8
-  "react-hook-form": 7.85.0
-  "react-email": 6.9.2
+  "resend": "6.32.0"
+  "viem": "2.57.2"
+  "react": 19.3.0
+  "react-dom": 19.3.0
+  "react-hook-form": 7.89.0
+  "react-email": 6.11.0
   "tailwindcss": 4.3.3
-  "turbo": 2.10.8
-  "tsdown": "0.22.14"
-  "tsx": 4.23.1
-  "typescript": 6.0.3
-  "ua-parser-js": 1.0.41
-  "vite": 8.2.1
-  "vitest": 4.1.10
-  "@alchemy/aa-infra": 5.2.0
-  "@alchemy/common": 5.2.0
-  "@alchemy/smart-accounts": 5.2.0
+  "turbo": 2.11.7
+  "tsdown": "0.23.0"
+  "tsx": 4.23.15
+  "typescript": 7.0.2
+  "ua-parser-js": 2.0.10
+  "vite": 8.3.2
+  "vitest": 5.0.3
+  "@alchemy/aa-infra": 5.2.7
+  "@alchemy/common": 5.2.7
+  "@alchemy/smart-accounts": 5.2.7
 
 catalogs:
   web:
-    "@tanstack/react-router": 1.170.36
-    "@tanstack/router-cli": 1.167.36
+    "@tanstack/react-router": 1.170.41
+    "@tanstack/router-cli": 1.167.40
     "@vitejs/plugin-react": 6.1.1
-    "vite": 8.3.0
+    "vite": 8.3.2
 
 minimumReleaseAgeExclude:
   - "effect"
   - "@effect/*"
   - "@namera-ai/*"
-  - "@tanstack/react-router@1.170.24 || 1.170.36"
-  - "@tanstack/router-cli@1.167.26 || 1.167.36"
-  - "@tanstack/router-core@1.171.20 || 1.171.30"
-  - "@tanstack/router-generator@1.167.26 || 1.167.36"
-  - "@tanstack/router-plugin@1.168.28 || 1.168.38"
+  - "@tanstack/*"
   - "@simplewebauthn/server@14.0.0"
   - "@simplewebauthn/browser@14.0.0"
-  - "@tanstack/history@1.162.4"
-  - "@tanstack/react-start-client@1.168.34"
-  - "@tanstack/react-start-rsc@0.1.52"
-  - "@tanstack/react-start-server@1.167.41"
-  - "@tanstack/react-start@1.168.53"
-  - "@tanstack/start-client-core@1.170.30"
-  - "@tanstack/start-plugin-core@1.171.43"
-  - "@tanstack/start-server-core@1.169.35"
-  - "@tanstack/start-storage-context@1.167.32"
   - fumadocs-core@16.15.10
   - fumadocs-ui@16.15.10
+  - klarity@0.3.0
 
 overrides:
   "@namera-ai/cli": link:apps/cli
-  "@effect/platform-node-shared": 4.0.0-rc.117
+  "@effect/platform-node-shared": 4.0.1
+
+peerDependencyRules:
+  allowedVersions:
+    # We use the Standard Schema adapter, never its Effect 3-specific adapter.
+    "@hookform/resolvers@5.9.1>effect": "4.0.1"
 
 patchedDependencies:
   drizzle-orm@1.0.0-rc.4: patches/drizzle-orm@1.0.0-rc.4.patch

@@ -79,8 +79,20 @@ try {
   const platformRequire = createRequire(cliRequire.resolve("@effect/platform-node"));
   const effectVersion = cliRequire("effect/package.json").version;
   assert.equal(effectVersion, cli.dependencies.effect);
-  assert.equal(cliRequire("@effect/platform-node/package.json").version, effectVersion);
-  assert.equal(platformRequire("@effect/platform-node-shared/package.json").version, effectVersion);
+  assert.equal(
+    cliRequire("@effect/platform-node/package.json").version,
+    cli.dependencies["@effect/platform-node"],
+  );
+  const overrides = JSON.parse(
+    execFileSync("pnpm", ["config", "get", "overrides", "--json"], {
+      cwd: root,
+      encoding: "utf8",
+    }),
+  );
+  assert.equal(
+    platformRequire("@effect/platform-node-shared/package.json").version,
+    overrides["@effect/platform-node-shared"],
+  );
   for (const args of [["--version"], ["--help"], ["login", "--help"], ["mcp", "serve", "--help"]]) {
     await runAsync(process.execPath, [executable, ...args], consumer, env);
   }
@@ -138,7 +150,7 @@ try {
     import { WalletId } from '@namera-ai/protocol';
     import '@namera-ai/protocol/dto';
     import { Schema } from 'effect';
-    import { OpenApi } from 'effect/unstable/httpapi';
+    import { OpenApi } from 'effect/http-api';
     assert.ok(OpenApi.fromApi(NameraApi).paths['/wallets']);
     assert.equal(Schema.decodeSync(WalletId)('01a00407-5961-75cf-933e-9cfd0336ec16'), '01a00407-5961-75cf-933e-9cfd0336ec16');
     let requested = false;

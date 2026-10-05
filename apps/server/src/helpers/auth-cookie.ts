@@ -1,5 +1,5 @@
 import { Config, Context, Effect, Layer } from "effect";
-import { HttpApiBuilder, HttpApiSecurity } from "effect/unstable/httpapi";
+import { HttpApiBuilder, HttpApiSecurity } from "effect/http-api";
 
 import { AuthTokenSecurity } from "@namera-ai/api";
 import { authPolicy } from "@namera-ai/application";

@@ -46,12 +46,12 @@
   },
   "devDependencies": {
     "@namera-ai/ui": "workspace:*",
-    "@react-email/ui": "6.9.2",
+    "@react-email/ui": "6.11.0",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "klarity": "catalog:",
-    "sharp": "0.35.3",
+    "sharp": "0.35.5",
     "tsdown": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"

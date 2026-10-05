@@ -8,7 +8,7 @@ import { publicKeyToAddress } from "viem/accounts";
 export const resolveEvmSessionSigner = Effect.fn("evm.sessions.resolveSigner")((publicKey: Hex) =>
   Effect.try({
     try: () => {
-      const point = Secp256k1.noble.ProjectivePoint.fromHex(publicKey.slice(2));
+      const point = Secp256k1.noble.Point.fromHex(publicKey.slice(2));
       point.assertValidity();
       const normalized = `0x${point.toHex(false)}` as const;
       return {

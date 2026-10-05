@@ -1,4 +1,4 @@
-import type { HttpClient } from "effect/unstable/http";
+import type { HttpClient } from "effect/http";
 
 import { makeEvmGasPrice } from "../billing/pricing.js";
 import { makeExecutionClients } from "../clients/execution.js";

@@ -1,5 +1,5 @@
 import { Effect, Predicate, Schema } from "effect";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 
 import { McpToolError, McpToolErrorCode } from "@namera-ai/protocol/dto";
 import type { NameraResult } from "@namera-ai/sdk";

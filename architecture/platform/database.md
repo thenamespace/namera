@@ -5,7 +5,7 @@ domains while repositories expose transaction-aware operations to application
 workflows. Migrations are applied by the server under a PostgreSQL advisory lock
 before the HTTP port opens.
 
-Effect SQL rc.117 uses its native PostgreSQL driver. Drizzle owns the SQL casts
+Effect SQL 4.0.0 uses its native PostgreSQL driver. Drizzle owns the SQL casts
 and decoding for dates/timestamps; the old node-postgres `getTypeParser` override
 is no longer part of the driver configuration. Verify driver upgrades in the
 disposable PostgreSQL lane, not just PGlite.

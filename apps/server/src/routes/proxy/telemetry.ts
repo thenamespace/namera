@@ -1,10 +1,5 @@
 import { Effect, Layer, Predicate, Result } from "effect";
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpRouter,
-  HttpServerResponse,
-} from "effect/unstable/http";
+import { HttpClient, HttpClientRequest, HttpRouter, HttpServerResponse } from "effect/http";
 
 import { resolveTelemetryExport, telemetryData } from "@namera-ai/telemetry";
 

@@ -56,7 +56,7 @@ export const CreatedWalletKey = Schema.Union([
 ]);
 
 export const WalletKeyHash = Schema.Uint8Array.check(
-  Schema.isLengthBetween(32, 32, { message: "Wallet key hashes must be 32 bytes" }),
+  Schema.isBetweenLength(32, 32, { message: "Wallet key hashes must be 32 bytes" }),
 );
 
 export const SignWalletKeyMessageInput = Schema.Union([

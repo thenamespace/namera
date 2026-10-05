@@ -7,13 +7,13 @@ using the same Effect schemas as the backend, without importing server code.
 ## Installation
 
 Requires Node.js 24.14+ for Node applications, or a modern browser bundler.
-Examples use the matching Effect 4 release candidate.
+Examples use the matching Effect 4 stable release.
 
 ```sh
-npm install @namera-ai/protocol effect@4.0.0-rc.117
-pnpm add @namera-ai/protocol effect@4.0.0-rc.117
-yarn add @namera-ai/protocol effect@4.0.0-rc.117
-bun add @namera-ai/protocol effect@4.0.0-rc.117
+npm install @namera-ai/protocol effect@4.0.1
+pnpm add @namera-ai/protocol effect@4.0.1
+yarn add @namera-ai/protocol effect@4.0.1
+bun add @namera-ai/protocol effect@4.0.1
 ```
 
 Choose one command.

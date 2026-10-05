@@ -3,6 +3,16 @@ import { defineConfig } from "oxlint";
 
 export default defineConfig({
   extends: [config],
+  // Oxlint now includes React Compiler diagnostics. We do not enable the
+  // compiler yet; surface its migration work without changing the existing lint gate.
+  rules: {
+    "react/capitalized-calls": "warn",
+    "react/incompatible-library": "warn",
+    "react/preserve-manual-memoization": "warn",
+    "react/purity": "warn",
+    "react/refs": "warn",
+    "react/set-state-in-effect": "warn",
+  },
   overrides: [
     {
       // Row handlers built inside a .map() cannot be memoized without wrapping

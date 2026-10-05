@@ -1,4 +1,5 @@
-import { DateTime, Encoding, Schema } from "effect";
+import { DateTime, Schema } from "effect";
+import * as Base64Url from "effect/encoding/Base64Url";
 
 import type { PrepareSessionKeyOperationResponse } from "@namera-ai/protocol/dto";
 import { hashMessage, hexToBytes, isAddressEqual, type Address, type Hex } from "viem";
@@ -99,7 +100,7 @@ export const validateOwnerApproval = ({
     entryPointAddress: entryPoint07Address,
     entryPointVersion: "0.7",
   });
-  const challenge = Encoding.encodeBase64Url(hexToBytes(hashMessage({ raw: hash })));
+  const challenge = Base64Url.encode(hexToBytes(hashMessage({ raw: hash })));
   if (
     options.challenge !== challenge ||
     options.rpId !== reviewed.rpId ||
