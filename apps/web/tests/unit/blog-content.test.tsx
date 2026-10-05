@@ -25,14 +25,15 @@ it("renders the first article with all supplied diagrams and highlighted code", 
   const { body: Article } = await article.load();
   const html = renderToStaticMarkup(<Article components={blogMdxComponents} />);
   expect(html).toContain("Introducing Namera");
-  expect(html.match(/<figure/g)).toHaveLength(3);
+  expect(html.match(/aria-label="Replay sequence diagram"/g)).toHaveLength(3);
+  expect(html).toContain('aria-label="Copy Text"');
+  expect(html).toContain('aria-label="Code example"');
   expect(html).toContain("createSessionKey");
   expect(html).not.toContain("[!code focus]");
   expect(html).toContain("--shiki-dark:");
   expect(html).toContain("github-dark-default");
   expect(html).not.toContain("Diagram source");
   expect(html).not.toContain("Show all");
-  expect(html.match(/aria-label="Replay sequence diagram"/g)).toHaveLength(3);
 });
 
 it("publishes only public collection entries with searchable article text", async () => {
