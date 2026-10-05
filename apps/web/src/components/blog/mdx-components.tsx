@@ -43,7 +43,7 @@ export const blogMdxComponents = {
           "blog-code my-8 border-border bg-surface text-foreground shadow-none",
           className,
         )}
-        viewportProps={{ "aria-label": "Code example" }}
+        viewportProps={{ "aria-label": "Code example", className: "text-[15px]" }}
       >
         <Pre className="leading-6 [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[inherit]">
           {children}
@@ -54,7 +54,7 @@ export const blogMdxComponents = {
   code: ({ children, className, ...props }) => (
     <code
       className={cn(
-        "rounded bg-surface px-1 py-0.5 font-mono text-[0.875em] text-foreground",
+        "blog-inline-code rounded bg-surface px-1 py-0.5 text-[0.875em] text-foreground",
         className,
       )}
       {...props}

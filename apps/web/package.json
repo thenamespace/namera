@@ -15,6 +15,7 @@
     "typecheck": "fumadocs-mdx && pnpm generate-routes && tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/inter": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@namera-ai/protocol": "workspace:*",
