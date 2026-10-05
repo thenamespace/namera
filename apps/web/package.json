@@ -27,6 +27,7 @@
     "effect": "catalog:",
     "feed": "^6.0.0",
     "fumadocs-core": "catalog:",
+    "fumadocs-ui": "catalog:",
     "mermaid": "^12.1.0",
     "motion": "catalog:",
     "react": "catalog:",

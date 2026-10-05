@@ -1,6 +1,7 @@
 import { Children, isValidElement, type ReactNode } from "react";
 
 import { cn } from "@namera-ai/ui/utils";
+import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock";
 import type { MDXComponents } from "mdx/types";
 
 import { legalMdxComponents } from "../legal/mdx-components";
@@ -25,7 +26,7 @@ export const blogMdxComponents = {
     />
   ),
   li: ({ className, ...props }) => <li className={cn("pl-1 [&>p]:my-1", className)} {...props} />,
-  pre: ({ children, className, style, ...props }) => {
+  pre: ({ ref: _ref, children, className, ...props }) => {
     const code = Children.toArray(children).find(isValidElement);
     if (
       code &&
@@ -36,16 +37,18 @@ export const blogMdxComponents = {
       return <MermaidDiagram chart={code.props.children} />;
     }
     return (
-      <pre
+      <CodeBlock
+        {...props}
         className={cn(
-          "blog-code my-8 max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-5 text-sm leading-6 text-foreground [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-sm",
+          "blog-code my-8 border-border bg-surface text-foreground shadow-none",
           className,
         )}
-        style={{ ...style, backgroundColor: "var(--color-surface)" }}
-        {...props}
+        viewportProps={{ "aria-label": "Code example" }}
       >
-        {children}
-      </pre>
+        <Pre className="leading-6 [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[inherit]">
+          {children}
+        </Pre>
+      </CodeBlock>
     );
   },
   code: ({ children, className, ...props }) => (

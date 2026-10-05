@@ -1,0 +1,31 @@
+@import "fumadocs-ui/css/lib/shiki.css";
+
+@source "../node_modules/fumadocs-ui/dist/components/codeblock.js";
+@source "../node_modules/fumadocs-ui/dist/components/ui/button.js";
+
+@theme inline {
+  --color-fd-card: var(--surface);
+  --color-fd-secondary: var(--default);
+  --color-fd-secondary-foreground: var(--foreground);
+  --color-fd-muted-foreground: var(--muted);
+  --color-fd-accent: var(--default);
+  --color-fd-accent-foreground: var(--foreground);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-foreground);
+  --color-fd-ring: var(--focus);
+  --color-fd-diff-add: color-mix(in oklab, var(--success) 12%, transparent);
+  --color-fd-diff-add-symbol: var(--success);
+  --color-fd-diff-remove: color-mix(in oklab, var(--danger) 12%, transparent);
+  --color-fd-diff-remove-symbol: var(--danger);
+}
+
+.blog-code button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-code .line {
+    transition: none !important;
+  }
+}

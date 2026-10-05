@@ -55,11 +55,12 @@ messages, self-calls, numbered messages/notes, notes over a single participant,
 and loops. The top-right replay icon respects reduced motion. Unsupported
 syntax shows the source rather than silently omitting steps.
 
-Use `<MermaidDiagram chart={\`flowchart LR ...\`} title="Flow description" />`or a fenced`mermaid` block for other diagram types or the full Mermaid grammar.
+Use `<MermaidDiagram chart={\`flowchart LR ...\`} title="Flow description" />`or a fenced`mermaid`block for other diagram types or the full Mermaid grammar.
 Mermaid is dynamically imported, uses strict security and the landing theme.
 Both renderers expose source text as an accessible fallback. Code highlighting
-uses GitHub Dark Default at build time, with token colors scoped to blog code
-blocks; ordinary Markdown uses the custom MDX components.
+uses GitHub Dark Default at build time. Fumadocs`CodeBlock`and`Pre` provide
+copying, scrolling, and code styles, with colors mapped to the landing theme;
+ordinary Markdown uses the custom MDX components.
 
 `typecheck` generates the Fumadocs collection and router types before checking.
 Run `pnpm --filter @namera-ai/web test` for schema, search, RSS, SEO, authored
