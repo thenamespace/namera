@@ -6,6 +6,11 @@
 }
 
 @layer components {
+  /* Recharts makes SVG layers focusable; only show outlines for keyboard focus. */
+  .recharts-wrapper :focus:not(:focus-visible) {
+    outline: none;
+  }
+
   /* Sidebar nav rows: make it obvious they're clickable. */
   .sidebar__menu-item .sidebar__menu-item-content {
     cursor: pointer;
