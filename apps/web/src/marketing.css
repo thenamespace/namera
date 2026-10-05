@@ -432,3 +432,8 @@
 .ep-canvas .react-flow__handle {
   opacity: 0;
 }
+
+/* Fumadocs emits Shiki theme variables; the blog does not load its docs CSS. */
+.landing-home .blog-code span[style] {
+  color: var(--shiki-dark);
+}

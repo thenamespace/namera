@@ -12,6 +12,19 @@ export const blogMdxComponents = {
   SequenceDiagram,
   MermaidDiagram,
   Mermaid: MermaidDiagram,
+  ul: ({ className, ...props }) => (
+    <ul
+      className={cn("my-5 list-disc space-y-1 pl-6 text-base leading-7 text-muted", className)}
+      {...props}
+    />
+  ),
+  ol: ({ className, ...props }) => (
+    <ol
+      className={cn("my-5 list-decimal space-y-1 pl-6 text-base leading-7 text-muted", className)}
+      {...props}
+    />
+  ),
+  li: ({ className, ...props }) => <li className={cn("pl-1 [&>p]:my-1", className)} {...props} />,
   pre: ({ children, className, style, ...props }) => {
     const code = Children.toArray(children).find(isValidElement);
     if (
@@ -25,7 +38,7 @@ export const blogMdxComponents = {
     return (
       <pre
         className={cn(
-          "my-8 max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-5 text-sm leading-7 text-foreground [&>code]:bg-transparent [&>code]:p-0",
+          "blog-code my-8 max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-5 text-sm leading-6 text-foreground [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-sm",
           className,
         )}
         style={{ ...style, backgroundColor: "var(--color-surface)" }}
