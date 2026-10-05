@@ -19,6 +19,8 @@ COPY --from=pruner /app/out/json/ .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY --from=pruner /app/out/full/ .
+# Turbo's pruned output omits the root config extended by the web app.
+COPY --from=pruner /app/tsconfig.json ./tsconfig.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline --ignore-scripts
 ARG DOTENV=""
