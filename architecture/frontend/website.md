@@ -15,6 +15,8 @@ the application database.
   content is bundled, so confidential drafts must remain in `_drafts`.
 - `/blog/rss.xml`, sitemap, and article SEO share the catalog. Metadata supports
   multiple authors, image overrides, canonical URLs and noindex.
+  The `feed` library serializes RSS 2.0, served with the RSS XML content type
+  and a five-minute public cache lifetime.
 - MDX is repository-owned executable code, not an untrusted content boundary.
   The supplied sequence renderer escapes labels and scopes SVG IDs per instance;
   generic Mermaid is lazy-loaded with strict security. Both provide source

@@ -42,9 +42,12 @@ describe("blog publishing", () => {
   });
   it("escapes RSS content and includes each author", () => {
     const rss = renderBlogRss([post]);
-    expect(rss).toContain("Build &lt;safe&gt; &amp; scoped agents");
-    expect(rss).toContain("<dc:creator>First Author</dc:creator>");
-    expect(rss).toContain("<dc:creator>Second Author</dc:creator>");
+    expect(rss).toContain("<![CDATA[Build <safe> & scoped agents]]>");
+    expect(rss).toContain("<author>First Author</author>");
+    expect(rss).toContain("<author>Second Author</author>");
+    expect(rss).toContain('rel="self" type="application/rss+xml"');
+    expect(rss).toContain("<pubDate>Tue, 14 Apr 2026 00:00:00 GMT</pubDate>");
+    expect(rss).toContain("<category>Engineering</category>");
     expect(rss).toContain("/blog/permissioned-wallets");
     expect(renderBlogRss([{ ...post, seo: { noindex: true } }])).not.toContain("<item>");
   });
