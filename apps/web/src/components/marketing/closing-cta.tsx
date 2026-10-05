@@ -121,9 +121,9 @@ export const ClosingCta = () => {
                     className={
                       cn(
                         "tap-target group/join inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-4",
-                        "bg-foreground text-[0.875rem] font-medium text-background",
+                        "bg-button-light text-[0.875rem] font-medium text-button-light-foreground",
                         "transition-[background-color,transform] duration-150 ease-out-quad",
-                        "hover:bg-foreground/90 active:scale-[0.98]",
+                        "hover:bg-white active:scale-[0.98]",
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
                       ) ?? ""
                     }

@@ -15,7 +15,7 @@ import { NeuroNoise } from "@paper-design/shaders-react";
  * `closing-cta.tsx` doing the rest.
  */
 
-const BACK = "#121213";
+const BACK = "#08090a";
 const MID = "#5e6ad2";
 const FRONT = "#828fff";
 
