@@ -1,7 +1,7 @@
 {
   "name": "Namera",
   "short_name": "Namera",
-  "description": "Programmable wallets for autonomous agents. Scoped keys, limits that hold, custody you keep.",
+  "description": "The wallet for AI agents. The rules are yours. Set permissions, spending limits, and access expiry with Namera.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

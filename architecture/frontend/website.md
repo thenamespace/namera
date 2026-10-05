@@ -24,6 +24,15 @@ the application database.
   fallbacks; sequence motion respects reduced-motion preferences.
 
 There are no mutations, audit events, or new telemetry events in this flow.
+
+SEO uses a shared permissions-focused site identity. Server-rendered route heads
+connect WebPage, WebSite, Organization, SoftwareApplication and BlogPosting
+entities through stable IDs. The blog index emits CollectionPage, Blog and
+ItemList JSON-LD for only the visible page of articles; pagination has its own
+canonical URL, and empty later pages are noindex. Article metadata retains
+author, publication/update dates, image and canonical/noindex overrides.
+The homepage does not advertise an offer while its primary action is a waitlist.
+
 Tests in `apps/web/tests/unit/blog*.test.*` cover metadata, discovery, RSS,
 SEO escaping, content compilation, and sequence layout/rendering.
 Authoring commands and frontmatter examples live in the package README.

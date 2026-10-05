@@ -31,7 +31,7 @@ seo:
 
 Multiple authors are supported, with optional HTTPS profile URLs and avatar
 images. Optional `updated` dates cannot precede `date`. `seo` also supports
-`title`, `description`, `image` (same shape as cover), `canonical`, and
+`title`, `description`, `image` (fallback when no cover exists), `canonical`, and
 `noindex`. Dates must be quoted ISO dates. Image paths must be root-relative
 or HTTPS; store local cover images in `public/blog/`.
 
@@ -223,10 +223,21 @@ use the supplied page title without a brand suffix; the home page leads with
 the name and a dash.
 
 Structured data is JSON-LD in each route's `scripts`. `Organization` and
-`WebSite` come from the root route, the landing page adds `SoftwareApplication`
-and a `FAQPage` generated from the FAQ component's own questions, and pricing
-adds `BreadcrumbList`, `Product` and its own `FAQPage`. Offers are `PreOrder`
-while nothing is purchasable.
+`WebSite` come from the root route; page entities reference their stable IDs.
+The landing page adds `SoftwareApplication` and a `FAQPage` generated from
+visible questions, without an offer while the CTA is a waitlist. Pricing adds
+`BreadcrumbList`, `Product` and its own `FAQPage`, with planned offers marked
+`PreOrder`. Blog discovery emits `CollectionPage`, `Blog` and a visible-page
+`ItemList`; each pagination URL has its own canonical and empty later pages
+are noindex. Articles retain their authored SEO overrides and `BlogPosting`.
+
+`SITE` in `src/lib/seo.ts` owns the site positioning and hero description.
+The social image source is `public/og.svg`; after changing it, regenerate the
+1200×630 PNG with `magick -font /System/Library/Fonts/Helvetica.ttc -background none public/og.svg public/og.png`
+from `apps/web` on macOS (select an installed font path on other systems).
+Keep its copy and the install manifest aligned with the hero. Blog social
+previews use each article's cover URL directly, without generated images;
+coverless posts use `seo.image` or the static site image as a fallback.
 
 `/docs` carries `noindex`, is absent from `/sitemap.xml` and is disallowed in
 `robots.txt`. The blog is indexable; noindex posts are excluded from RSS and

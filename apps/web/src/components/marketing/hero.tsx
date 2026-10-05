@@ -5,6 +5,7 @@ import { stagger, useAnimate, useReducedMotion } from "motion/react";
 import { HeroCta } from "#/components/marketing/hero-cta";
 import { HeroObject } from "#/components/marketing/hero-object";
 import { Container } from "#/components/marketing/primitives";
+import { SITE } from "#/lib/seo";
 
 // Static side light and a clipped floor restore the original dashboard stage.
 const BACKGLOW =
@@ -65,23 +66,25 @@ export const Hero = () => {
   }, [animate, reducedMotion]);
 
   return (
-    <section ref={scope} className="relative isolate overflow-hidden pt-36 pb-24 md:pt-44 md:pb-32">
+    <section
+      ref={scope}
+      className="relative isolate overflow-hidden pt-40 pb-24 md:pt-56 md:pb-32 lg:pt-64"
+    >
       <Container>
         <div className="flex flex-col gap-7">
           <h1
             data-hero-copy
             className="type-display-xl max-w-[24ch] text-[clamp(1.875rem,1.125rem+2.8vw,3.25rem)] text-balance text-foreground"
           >
-            Give your agents a wallet
+            The wallet for AI agents.
             <br />
-            with limits built in.
+            The rules are yours.
           </h1>
           <p
             data-hero-copy
-            className="type-lead max-w-[64ch] text-[0.9375rem] text-pretty text-muted md:text-base"
+            className="type-lead max-w-[76ch] text-[0.9375rem] text-pretty text-muted md:text-base"
           >
-            Set what your agent can spend, which contracts it can use, and when its access expires.
-            Every action is enforced against those permissions.
+            {SITE.heroDescription}
           </p>
           <div data-hero-copy className="mt-3">
             <HeroCta />

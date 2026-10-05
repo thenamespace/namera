@@ -3,11 +3,12 @@ import { Feed } from "feed";
 import { SITE } from "../seo";
 import { blogPath } from "./catalog";
 import type { BlogPost } from "./schema";
+import { BLOG_DESCRIPTION } from "./seo";
 
 export const renderBlogRss = (posts: readonly BlogPost[]) => {
   const feed = new Feed({
     title: "Namera Blog",
-    description: "Product updates, engineering, and writing from Namera.",
+    description: BLOG_DESCRIPTION,
     id: `${SITE.origin}/blog`,
     link: `${SITE.origin}/blog`,
     language: "en-us",
