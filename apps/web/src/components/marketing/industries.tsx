@@ -282,7 +282,7 @@ export const Industries = () => (
           </h2>
           <div className="flex flex-col items-start gap-5 lg:pt-2">
             <p className="type-lead max-w-[46ch] text-pretty text-muted">
-              A trading desk, a checkout bot, a steward inside a game. The wallet never changes —
+              A trading desk, a checkout bot, a steward inside a game. The wallet never changes -
               the budget, the networks and the expiry do.
             </p>
             <a

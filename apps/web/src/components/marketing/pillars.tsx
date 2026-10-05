@@ -343,7 +343,7 @@ const PILLARS = [
   {
     figure: ScopeFigure,
     title: "Scoped to one job",
-    body: "Give each agent only the access it needs — spending limits, allowed contracts and networks, and an expiration date.",
+    body: "Give each agent only the access it needs - spending limits, allowed contracts and networks, and an expiration date.",
   },
   {
     figure: CustodyFigure,
@@ -356,8 +356,11 @@ export const Pillars = () => (
   <Section className="border-t-1 border-border">
     <Container>
       <Reveal>
-        <SectionIntro title="Wallets built for agents, not people">
-          Give each agent its own key with specific permissions — what it can spend, where it can
+        <SectionIntro
+          title="Wallets built for agents, not people"
+          className="items-start text-left"
+        >
+          Give each agent its own key with specific permissions - what it can spend, where it can
           transact, and for how long. Every action is checked before it executes.
         </SectionIntro>
       </Reveal>
