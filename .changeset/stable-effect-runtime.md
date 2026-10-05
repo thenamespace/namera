@@ -1,8 +1,8 @@
 ---
-"@namera-ai/api": major
-"@namera-ai/protocol": major
-"@namera-ai/sdk": major
-"@namera-ai/cli": major
+"@namera-ai/api": minor
+"@namera-ai/protocol": minor
+"@namera-ai/sdk": minor
+"@namera-ai/cli": minor
 ---
 
 Migrate to Effect 4.0.1 stable and refresh runtime dependencies. Effect-based
