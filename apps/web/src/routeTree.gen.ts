@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -31,6 +33,11 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
@@ -39,6 +46,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsSplatRoute = DocsSplatRouteImport.update({
@@ -51,16 +63,20 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/docs/$': typeof DocsSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/docs/$': typeof DocsSplatRoute
 }
 export interface FileRoutesById {
@@ -68,23 +84,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/docs/$': typeof DocsSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/blog' | '/pricing' | '/robots.txt' | '/sitemap.xml' | '/docs/$'
+    | '/'
+    | '/blog'
+    | '/pricing'
+    | '/privacy-policy'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/docs/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/blog' | '/pricing' | '/robots.txt' | '/sitemap.xml' | '/docs/$'
+  to:
+    | '/'
+    | '/blog'
+    | '/pricing'
+    | '/privacy-policy'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/docs/$'
   id:
     | '__root__'
     | '/'
     | '/blog'
     | '/pricing'
+    | '/privacy-policy'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/terms'
     | '/docs/$'
   fileRoutesById: FileRoutesById
 }
@@ -92,8 +127,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BlogRoute: typeof BlogRoute
   PricingRoute: typeof PricingRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   DocsSplatRoute: typeof DocsSplatRoute
 }
 
@@ -120,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/robots.txt': {
       id: '/robots.txt'
       path: '/robots.txt'
@@ -132,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/$': {
@@ -148,8 +199,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogRoute: BlogRoute,
   PricingRoute: PricingRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   DocsSplatRoute: DocsSplatRoute,
 }
 export const routeTree = rootRouteImport

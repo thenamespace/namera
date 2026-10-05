@@ -1,0 +1,103 @@
+This draft explains how **Namespace Inc.**, the company behind Namera ("we", "us", or "our"), handles information when you use our website, dashboard, hosted API, and connected developer tools. It also covers beta invitations, the waitlist, and communications with us.
+
+It does not describe independent processing by a blockchain network, an AI client you choose, or someone operating their own deployment of our open-source software. Those operators are responsible for their own practices.
+
+## 1. Information we receive
+
+### Account and organization information
+
+We receive your email address, profile details you provide, organization and membership information, and invitations. We store authentication and session records, including public passkey credentials and relevant device, browser, and sign-in information. Private passkey material remains with your authenticator or passkey provider.
+
+### Wallet and operation information
+
+We process public wallet and signer addresses, supported networks, session-key permissions, grants, operation requests, execution results, transaction identifiers, and usage records. Requests to execute or sign may include transaction parameters, messages, or typed data needed for the requested operation.
+
+Wallet addresses and public transaction records can be associated with you or your organization. They should not be treated as anonymous merely because they do not contain your name.
+
+### Technical and service information
+
+Our systems process IP addresses, browser and device information, request timing, response status, errors, traces, and security and audit events. We use these records to operate the service, investigate problems, and prevent abuse. IP addresses and other identifiers in diagnostic records can be personal information.
+
+### Information you send us
+
+We receive your email address when you join the waitlist, along with your registration time and the status of our follow-up. Joining the waitlist does not itself create an account. We also receive information you send through support requests and other communications.
+
+## 2. What stays on your device
+
+In Namera's self-custodial flow, session keys are generated locally. Export passphrases and private session-key material are not sent to the Namera API. The CLI stores imported keys encrypted locally and uses your operating system's credential store to protect the unlocking secret. MCP authorization credentials are also kept locally using the operating system's credential store.
+
+**Local signing does not mean all activity stays local.** The CLI, SDK, and MCP server send authorized requests and the information needed to process them to your configured API. Transactions are submitted to network infrastructure, and their resulting blockchain records are public.
+
+The CLI does not configure an automatic telemetry exporter. Requests it makes to our API are still subject to the API's operational logging and security controls. Your selected AI client has its own data-handling practices.
+
+## 3. How we use information
+
+We use information to:
+
+- Authenticate users and manage organizations, invitations, and access grants.
+- Register wallets and permissions, evaluate requests, and prepare and submit authorized operations.
+- Track usage and apply service limits, including gas-sponsorship limits.
+- Deliver sign-in messages, invitations, and relevant service or security notifications.
+- Respond to support requests and follow up on waitlist interest.
+- Diagnose failures, improve reliability, investigate abuse, and maintain audit records.
+- Meet applicable legal obligations and establish or defend legal claims.
+
+Where data-protection law requires a legal basis, the applicable basis depends on the purpose: performing our agreement with you, legitimate interests in operating and protecting the service, compliance with law, or consent where required. Consent can be withdrawn without affecting processing that was lawful before withdrawal.
+
+## 4. When information is shared
+
+### Your organization and connected clients
+
+Authorized organization members can access information according to their permissions. Clients and agents that you authorize receive the account and session-key access covered by their grants. Consider the client's own privacy practices before connecting it.
+
+### Service providers
+
+We use providers for hosting, infrastructure, email delivery, diagnostics, and blockchain connectivity. The current architecture integrates Resend for email, Axiom for production observability, and blockchain infrastructure such as Alchemy. These providers receive information needed for the relevant function, such as an email recipient, diagnostic event, or operation submitted to a network.
+
+### Public networks and legal disclosures
+
+Transactions and other information written to public blockchains are accessible to third parties. Blockchain explorers, validators, and other independent services may copy and analyze those records.
+
+We may disclose information where required by applicable law, to address fraud or security incidents, or in connection with a corporate transaction subject to applicable privacy requirements. We do not describe diagnostic records as anonymous when they include identifiers.
+
+## 5. Cookies and local storage
+
+The dashboard uses cookies for authentication and related security flows. Browser storage may also retain interface preferences or temporary workflow state. Disabling necessary storage can prevent sign-in or other features from working.
+
+The landing-page waitlist request sends your email to the API without authentication cookies. Dashboard diagnostics are sent through Namera's telemetry proxy rather than exposing provider ingestion credentials in your browser.
+
+This notice does not assume that all analytics or storage is exempt from consent. Any optional tracking introduced later must be disclosed and, where required, enabled only after obtaining consent.
+
+## 6. Retention and deletion
+
+Different records serve different purposes. Retention decisions must account for whether an account is active, unresolved operations, security investigations, audit integrity, support needs, backup cycles, and applicable legal obligations.
+
+There is currently no universal automatic deletion schedule for all account, waitlist, audit, and diagnostic records. Contact us to request deletion or information about a particular category. Signing out, revoking a key, or completing a waitlist entry does not itself erase the associated records.
+
+We cannot remove or alter records on a public blockchain. Deleting data from Namera does not delete copies held independently by authorized clients, blockchain infrastructure, or other third parties.
+
+## 7. Security and international processing
+
+Namera uses access controls, encrypted transport, credential hashing or encryption where appropriate, and operational monitoring. These measures reduce risk but cannot guarantee that information will never be lost, accessed improperly, or disclosed.
+
+Our providers may process information outside your country. The final notice must identify the relevant processing locations and applicable transfer safeguards. This draft does not claim that a particular certification, adequacy decision, or contractual transfer mechanism is already in place.
+
+Do not send private keys, recovery material, export passphrases, or authentication tokens in support messages.
+
+## 8. Your choices and rights
+
+Depending on your location and the applicable law, you may have rights to access, correct, delete, or receive a copy of your personal information; restrict or object to certain processing; withdraw consent; or complain to a data-protection authority. These rights are subject to applicable conditions and exceptions.
+
+To make a request, email [hey@namera.ai](mailto:hey@namera.ai). We may need to verify your identity and your authority over an organization before acting. Do not include private signing material in a request.
+
+You can stop using a connected client and revoke its grant through the available access controls. Onchain permission removal is separate and must be confirmed on each relevant network. To stop waitlist follow-up, contact us at the same address.
+
+## 9. Children
+
+Namera is intended for adults and is not directed at people under 18. If you believe a child has provided personal information to us, contact us so we can investigate and take appropriate action.
+
+## 10. Updates and contact
+
+We will update this notice when our practices change and identify the date of the published version. Where required, we will provide additional notice of material changes.
+
+For privacy questions, contact **Namespace Inc.** at [hey@namera.ai](mailto:hey@namera.ai). Our registered business address and any required regional representative details must be confirmed before this draft is published as the effective policy.

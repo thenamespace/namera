@@ -2,6 +2,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
+import { fumadocsMdx } from "fumadocs-mdx/vite";
 import { nitro } from "nitro/vite";
 import { defaultClientConditions, defineConfig } from "vite";
 
@@ -18,6 +19,12 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
+    fumadocsMdx({
+      index: false,
+      macro: false,
+      // Legal pages need headings and TOCs, not code highlighting or search indexing.
+      globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
+    }),
     tailwindcss(),
     tanstackStart(),
     // Keep Shiki's JS WASM loader; native unwasm exports conflict with Vite 8.

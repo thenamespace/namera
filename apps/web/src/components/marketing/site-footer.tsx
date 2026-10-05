@@ -37,8 +37,8 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
       { label: "API reference", href: SITE_LINKS.apiReference },
       { label: "Status", href: SITE_LINKS.status },
       { label: "Contact", href: SITE_LINKS.contact },
-      { label: "Terms of Service", href: SITE_LINKS.terms },
-      { label: "Privacy Policy", href: SITE_LINKS.privacy },
+      { label: "Terms of Service", href: SITE_LINKS.terms, internal: true },
+      { label: "Privacy Policy", href: SITE_LINKS.privacy, internal: true },
     ],
   },
 ];
