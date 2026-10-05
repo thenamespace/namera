@@ -276,7 +276,10 @@ export const Playground = () => {
             {/* ------------------------------ the swap ----------------------------- */}
             <div className="edge-top relative flex flex-col overflow-hidden rounded-xl border-1 border-border bg-surface/40">
               <div className="flex items-center justify-between gap-3 border-b-1 border-border px-4 py-3 sm:px-5">
-                <p className="text-[0.8125rem] font-medium text-foreground">Uniswap Agent</p>
+                <p className="flex items-center gap-2 text-[0.8125rem] font-medium text-foreground">
+                  <img src="/uniswap.svg" alt="" width={20} height={22} className="w-5 shrink-0" />
+                  Uniswap Agent
+                </p>
                 <div className="flex items-center gap-1">
                   {(Object.keys(NETWORKS) as NetworkId[]).map((id) => (
                     <button

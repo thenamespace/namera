@@ -19,7 +19,12 @@ export const Container = ({
   readonly className?: string;
   readonly rails?: boolean;
 }) => (
-  <div className={cn("relative mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-14", className)}>
+  <div
+    className={cn(
+      "marketing-container relative mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-14",
+      className,
+    )}
+  >
     {rails ? (
       <>
         <span aria-hidden className="rail left-6 md:left-10" />
@@ -99,7 +104,7 @@ const ACTION_BASE = cn(
 const ACTION_VARIANTS = {
   /** Accent as a FILL is fine; accent as text is not (R-25). */
   primary: "bg-accent text-accent-foreground hover:brightness-[1.18]",
-  light: "bg-[#e9eaec] text-[#101113] hover:bg-white",
+  light: "bg-button-light text-button-light-foreground hover:bg-white",
   secondary:
     "border-1 border-border bg-surface/70 text-foreground hover:border-hairline-strong hover:bg-elevated",
   ghost: "text-muted hover:bg-default/60 hover:text-foreground",

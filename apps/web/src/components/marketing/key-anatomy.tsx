@@ -61,7 +61,7 @@ const KeyCard = () => (
   <div
     className={cn(
       "edge-top relative w-full shrink-0 overflow-hidden rounded-lg border-1 border-hairline-strong sm:max-w-[24rem]",
-      "bg-[linear-gradient(168deg,#17181c_0%,#121316_52%,#0d0e11_100%)]",
+      "[background:var(--marketing-panel-gradient)]",
       "shadow-[0_18px_40px_-24px_rgb(0_0_0/0.9)]",
     )}
   >

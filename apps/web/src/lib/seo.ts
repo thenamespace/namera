@@ -3,8 +3,7 @@
  *
  * Every route calls `seo()` rather than hand-writing tags, so a page cannot
  * ship with a title but no description, or an Open Graph card that disagrees
- * with the title above it. Titles read "Page | Namera"; the home page is the
- * one exception, where the name leads.
+ * with the title above it. Page titles are used as written, without a suffix.
  */
 
 const siteUrl = new URL(import.meta.env.VITE_SITE_URL || "https://namera.ai");
@@ -15,15 +14,15 @@ if (!["http:", "https:"].includes(siteUrl.protocol) || siteUrl.username || siteU
 export const SITE = {
   name: "Namera",
   origin: siteUrl.origin,
-  tagline: "Programmable wallets for autonomous agents",
-  /*
-   * Longer than a meta description: this is what the Organization and WebSite
-   * schema carry, and what the install manifest shows.
-   */
+  tagline: "Wallets for AI agents with permissions built in",
+  heroDescription: "Give agents the power to transact. You set what they can spend and do.",
+  /** Shared search, social and structured-data description. */
   description:
-    "Namera gives an autonomous agent a wallet it cannot misuse. Issue a session key with a spend cap, a list of chains and an expiry, and every transaction the agent asks for is priced, simulated and checked against those rules before anything is signed. Signing keys stay on your machine.",
+    "Namera gives AI agents wallets with permissions built in. Set what they can spend and do, with spending limits, scoped permissions, and access expiry.",
   keywords: [
     "agent wallet",
+    "AI agent wallets",
+    "wallet permissions",
     "AI agent payments",
     "session keys",
     "spend limits",
@@ -40,7 +39,7 @@ export const SITE = {
 } as const;
 
 type SeoInput = {
-  /** Left of the separator. Omit on the home page. */
+  /** Page title. Omit to use the home page title. */
   readonly title?: string;
   readonly description: string;
   /** Path with a leading slash, used for the canonical and og:url. */
@@ -57,14 +56,8 @@ type MetaTag =
 
 type LinkTag = { rel: string; href: string };
 
-export const seo = ({
-  title,
-  description,
-  path,
-  noindex = false,
-  type = "website",
-}: SeoInput): { meta: MetaTag[]; links: LinkTag[] } => {
-  const full = title === undefined ? `${SITE.name} - ${SITE.tagline}` : `${title} | ${SITE.name}`;
+export const seo = ({ title, description, path, noindex = false, type = "website" }: SeoInput) => {
+  const full = title ?? `${SITE.name} - ${SITE.tagline}`;
   const url = `${SITE.origin}${path}`;
   const image = `${SITE.origin}${SITE.ogImage}`;
 
@@ -98,15 +91,28 @@ export const seo = ({
         name: "robots",
         content: noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
       },
+    ] as MetaTag[],
+    links: [{ rel: "canonical", href: url }] as LinkTag[],
+    scripts: [
+      jsonLd({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${url}#webpage`,
+        url,
+        name: full,
+        description,
+        isPartOf: { "@id": `${SITE.origin}/#website` },
+        publisher: { "@id": `${SITE.origin}/#organization` },
+        inLanguage: "en-US",
+      }),
     ],
-    links: [{ rel: "canonical", href: url }],
   };
 };
 
 /** Serialises a JSON-LD node for a route's `scripts`. */
 export const jsonLd = (data: Record<string, unknown>) => ({
   type: "application/ld+json",
-  children: JSON.stringify(data),
+  children: JSON.stringify(data).replace(/</g, "\\u003c"),
 });
 
 export const ORGANIZATION = {

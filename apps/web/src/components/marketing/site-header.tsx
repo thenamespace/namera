@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { label: "Playground", href: "/#playground" },
   { label: "Clients", href: "/#clients" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Blog", href: "/blog" },
 ] as const;
 
 /**
@@ -62,10 +63,10 @@ export const SiteHeader = () => {
         "fixed inset-x-0 top-0 z-50 border-b-1 transition-colors duration-200 ease-out-quad",
         scrolled || menuOpen
           ? "border-border bg-background/72 backdrop-blur-xl backdrop-saturate-150"
-          : "border-transparent bg-transparent",
+          : "border-border bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center gap-6 px-6 md:px-10 lg:px-14">
+      <div className="marketing-container mx-auto flex h-14 w-full max-w-[1440px] items-center gap-6 px-6 md:px-10 lg:px-14">
         <Wordmark />
 
         <nav aria-label="Main" className="ml-auto hidden items-center gap-1 md:flex">
@@ -74,7 +75,7 @@ export const SiteHeader = () => {
               key={link.href}
               href={link.href}
               className={cn(
-                "tap-target inline-flex h-9 items-center rounded-md px-2.5 text-sm text-muted",
+                "tap-target inline-flex h-8 items-center rounded-md px-2 text-[0.8125rem] text-muted",
                 "transition-colors duration-150 ease-out-quad hover:text-foreground",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
               )}
@@ -85,10 +86,21 @@ export const SiteHeader = () => {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+          <span aria-hidden="true" className="mr-2 hidden h-4 w-px bg-border md:block" />
+          <a
+            href={SITE_LINKS.docs}
+            className="tap-target mr-2 hidden h-8 items-center rounded-md px-2 text-[0.8125rem] text-muted transition-colors duration-150 ease-out-quad hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60 md:inline-flex"
+          >
+            Docs
+          </a>
           {/* Renders only when site-links.ts has a confirmed destination. */}
           {SITE_LINKS.app === null ? null : (
-            <ActionAnchor href={SITE_LINKS.app} variant="light">
-              Sign in
+            <ActionAnchor
+              href={SITE_LINKS.app}
+              variant="light"
+              className="h-8 rounded-md px-3 text-[0.8125rem]"
+            >
+              Get started
             </ActionAnchor>
           )}
 
@@ -126,7 +138,7 @@ export const SiteHeader = () => {
             transition={{ duration: 0.24, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <nav aria-label="Mobile" className="flex flex-col gap-0.5 px-4 py-3">
-              {NAV_LINKS.map((link) => (
+              {[...NAV_LINKS, { label: "Docs", href: SITE_LINKS.docs }].map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
@@ -138,7 +150,7 @@ export const SiteHeader = () => {
                   {link.label}
                 </a>
               ))}
-              {/* Sign in stays in the bar at every width, so repeating it
+              {/* Get started stays in the bar at every width, so repeating it
                   inside the sheet would be the same control twice. */}
             </nav>
           </motion.div>

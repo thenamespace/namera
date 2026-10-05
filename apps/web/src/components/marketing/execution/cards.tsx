@@ -217,10 +217,10 @@ export const IntentCard = (props: IntentProps) => {
               onClick={() => {
                 props.onSource(item.id);
               }}
-              className={cn(chip(item.id === props.source), "flex-1")}
+              className={cn(chip(item.id === props.source), "shrink-0")}
             >
               <item.Glyph className="size-3 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </Row>

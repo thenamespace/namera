@@ -1,82 +1,119 @@
+import { useEffect } from "react";
+
+import { stagger, useAnimate, useReducedMotion } from "motion/react";
+
 import { HeroCta } from "#/components/marketing/hero-cta";
 import { HeroObject } from "#/components/marketing/hero-object";
 import { Container } from "#/components/marketing/primitives";
+import { SITE } from "#/lib/seo";
 
-/* -------------------------------------------------------------------------
- * The hero: a sentence, and the product.
- *
- * Left-aligned, with no controls in it. The header already carries Sign in
- * and Docs, and the page ends on a call to action; a hero that asks for a
- * decision before it has shown anything is asking too early.
- * ---------------------------------------------------------------------- */
+// Static side light and a clipped floor restore the original dashboard stage.
+const BACKGLOW =
+  "linear-gradient(to bottom," +
+  "rgb(236 243 255/0) 12%," +
+  "rgb(236 243 255/0.012) 16%," +
+  "rgb(236 243 255/0.045) 30%," +
+  "rgb(236 243 255/0.077) 44%," +
+  "rgb(236 243 255/0.109) 58%," +
+  "rgb(236 243 255/0.158) 72%," +
+  "rgb(236 243 255/0.174) 85%," +
+  "rgb(236 243 255/0.194) 100%)";
 
-/*
- * The stage.
- *
- * A single light source low and behind the window: a looping grayscale smoke
- * clip (the same one from the live site), not a static gradient. It fills a
- * frame 5% wider than the window and running its full height plus the floor
- * below. Rather than clip to a hard rectangle — which left a sharp white-to-black
- * seam on every side — the clip is masked on all four edges by intersecting two
- * linear masks (one vertical, one horizontal). It stays solid only through the
- * middle, where the window covers it, and ramps to transparent toward each edge,
- * so the smoke reads as an ambient glow that fades to black with no visible edge.
- */
-const STAGE_MASK_V =
-  "linear-gradient(to bottom, transparent 0%, #000 8%, #000 74%, transparent 99%)";
-const STAGE_MASK_H =
-  "linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)";
-const STAGE_MASK = `${STAGE_MASK_V}, ${STAGE_MASK_H}`;
+const FLOOR =
+  "linear-gradient(to right," +
+  "rgb(236 243 255/0.20) 0%," +
+  "rgb(236 243 255/0.27) 10%," +
+  "rgb(236 243 255/0.32) 20%," +
+  "rgb(236 243 255/0.38) 30%," +
+  "rgb(236 243 255/0.44) 40%," +
+  "rgb(236 243 255/0.47) 50%," +
+  "rgb(236 243 255/0.43) 60%," +
+  "rgb(236 243 255/0.37) 70%," +
+  "rgb(236 243 255/0.31) 80%," +
+  "rgb(236 243 255/0.26) 90%," +
+  "rgb(236 243 255/0.21) 100%)";
 
-export const Hero = () => (
-  <section className="relative isolate overflow-hidden pt-28 pb-24 md:pt-36 md:pb-32">
-    <Container>
-      <div className="reveal-init flex flex-col gap-7">
-        <h1 className="type-display-xl max-w-[20ch] text-balance text-foreground">
-          Give your agents a wallet
-          <br />
-          with limits built in.
-        </h1>
-        <p className="type-lead max-w-[64ch] text-pretty text-muted">
-          Set what your agent can spend, which contracts it can use, and when its access expires.
-          Every action is enforced against those permissions.
-        </p>
-        <div className="mt-3">
-          <HeroCta />
+export const Hero = () => {
+  const [scope, animate] = useAnimate();
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Animate after hydration so server-rendered content never depends on JS to be visible.
+    const reveal = animate([
+      [
+        "[data-hero-copy]",
+        {
+          opacity: [0, 1],
+          filter: ["blur(6px)", "blur(0px)"],
+          transform: ["translateY(14px)", "translateY(0px)"],
+        },
+        { duration: 0.7, delay: stagger(0.08), ease: [0.22, 1, 0.36, 1] },
+      ],
+      [
+        "[data-hero-preview]",
+        {
+          opacity: [0, 1],
+          filter: ["blur(4px)", "blur(0px)"],
+          transform: ["translateY(24px) scale(0.985)", "translateY(0px) scale(1)"],
+        },
+        { at: 0.16, duration: 0.9, ease: [0.22, 1, 0.36, 1] },
+      ],
+    ]);
+
+    return () => reveal.cancel();
+  }, [animate, reducedMotion]);
+
+  return (
+    <section
+      ref={scope}
+      className="relative isolate overflow-hidden pt-40 pb-24 md:pt-56 md:pb-32 lg:pt-64"
+    >
+      <Container>
+        <div className="flex flex-col gap-7">
+          <h1
+            data-hero-copy
+            className="type-display-xl max-w-[24ch] text-[clamp(1.875rem,1.125rem+2.8vw,3.25rem)] text-balance text-foreground"
+          >
+            Wallets for AI agents
+            <br />
+            with permissions built in
+          </h1>
+          <p
+            data-hero-copy
+            className="type-lead max-w-[76ch] text-[0.9375rem] text-pretty text-muted md:text-base"
+          >
+            {SITE.heroDescription}
+          </p>
+          <div data-hero-copy>
+            <HeroCta />
+          </div>
         </div>
-      </div>
-    </Container>
+      </Container>
 
-    {/*
-      The stage sits behind the window rather than around it, so the window is
-      exactly as wide as every other section's content and the light still spills
-      5% past it on each side. The floor is 15.6% of the window's height.
-    */}
-    <Container className="reveal-init mt-16 md:mt-20">
-      <div className="relative pb-[var(--floor)] [--floor:7rem] sm:[--floor:9rem] lg:[--floor:11rem]">
+      <Container className="mt-16 md:mt-20">
         <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-[-6%] inset-y-0 -z-10 overflow-hidden"
+          data-hero-preview
+          className="relative origin-bottom pb-[var(--floor)] [--floor:3.75rem] sm:[--floor:5.5rem] lg:[--floor:6.25rem]"
         >
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/hero-bg-poster.jpg"
-            src="/hero-bg.mp4"
-            className="size-full object-cover"
-            style={{
-              maskImage: STAGE_MASK,
-              maskComposite: "intersect",
-              WebkitMaskImage: STAGE_MASK,
-              WebkitMaskComposite: "source-in",
-            }}
-          />
-        </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-1/2 -z-10 w-[calc(100vw-32px)] -translate-x-1/2 overflow-hidden rounded-lg"
+          >
+            <div
+              className="absolute inset-x-0 top-0 bottom-[var(--floor)]"
+              style={{ background: BACKGLOW }}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 h-[var(--floor)]"
+              style={{ background: FLOOR }}
+            />
+          </div>
 
-        <HeroObject />
-      </div>
-    </Container>
-  </section>
-);
+          <HeroObject />
+        </div>
+      </Container>
+    </section>
+  );
+};
