@@ -97,6 +97,7 @@ application contracts are the extension point for future chain families.
 - [Local session key exports](clients/local-keystore.md)
 - [Local MCP authorization](clients/local-mcp.md)
 - [Dashboard](frontend/dashboard.md)
+- [Public website and blog](frontend/website.md)
 
 ## Documentation contract
 

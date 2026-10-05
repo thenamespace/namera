@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Link } from "@tanstack/react-router";
 
 import { GithubIcon, Icon, LinkedinIcon, NameraIcon, NewTwitterIcon } from "@namera-ai/ui/icons";
@@ -33,6 +35,7 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
   {
     title: "Company",
     links: [
+      { label: "Blog", href: "/blog", internal: true },
       { label: "Changelog", href: SITE_LINKS.changelog },
       { label: "API reference", href: SITE_LINKS.apiReference },
       { label: "Status", href: SITE_LINKS.status },
@@ -56,6 +59,7 @@ const linkClass = cn(
 );
 
 export const SiteFooter = () => {
+  const [year] = useState(() => new Date().getFullYear());
   const columns = COLUMNS.map((column) => ({
     title: column.title,
     links: column.links.filter((link): link is FooterLink & { href: string } => link.href !== null),
@@ -127,7 +131,7 @@ export const SiteFooter = () => {
 
         <div className="mt-16 border-t-1 border-border pt-6">
           <p className="text-[0.75rem] text-ink-subtle">
-            © {new Date().getFullYear()} Namespace Inc. All rights reserved.
+            © {year} Namespace Inc. All rights reserved.
           </p>
         </div>
       </Container>

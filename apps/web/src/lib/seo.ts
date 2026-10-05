@@ -105,7 +105,7 @@ export const seo = ({
 /** Serialises a JSON-LD node for a route's `scripts`. */
 export const jsonLd = (data: Record<string, unknown>) => ({
   type: "application/ld+json",
-  children: JSON.stringify(data),
+  children: JSON.stringify(data).replace(/</g, "\\u003c"),
 });
 
 export const ORGANIZATION = {

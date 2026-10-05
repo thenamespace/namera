@@ -1,8 +1,67 @@
 # @namera-ai/web
 
 Namera's public website, built with TanStack Start and React. `/` is the
-marketing landing page, `/pricing` the plan comparison, and `/docs` and `/blog`
-are placeholders until there is something behind them.
+marketing landing page, `/pricing` the plan comparison, and `/blog` the MDX
+publication. `/docs` is still a placeholder.
+
+## Blog
+
+Write articles in `content/blog/<lowercase-kebab-slug>.mdx`. Fumadocs validates
+the dedicated Effect frontmatter schema in `src/lib/blog/schema.ts` at build time.
+The filename is the permalink: `/blog/<slug>`.
+
+```yaml
+---
+title: "An article title"
+description: "A concise summary for the discovery page and search engines."
+date: "2026-10-05"
+tags: ["Engineering"]
+authors:
+  - name: "Author name"
+    url: "https://example.com"
+cover:
+  src: "/blog/article-cover.png"
+  alt: "Description of the cover"
+  width: 1200
+  height: 630
+seo:
+  keywords: ["agent wallets", "session keys"]
+---
+```
+
+Multiple authors are supported, with optional HTTPS profile URLs and avatar
+images. Optional `updated` dates cannot precede `date`. `seo` also supports
+`title`, `description`, `image` (same shape as cover), `canonical`, and
+`noindex`. Dates must be quoted ISO dates. Image paths must be root-relative
+or HTTPS; store local cover images in `public/blog/`.
+
+The discovery page has tag filters, pagination, and a keyboard-accessible search
+dialog that searches titles, descriptions, authors, tags, and article text.
+Articles render centered headings, covers, bylines, reading time and narrow
+prose. RSS lives at `/blog/rss.xml`; the sitemap includes published articles
+and real publication/update dates. Article heads include Open Graph, Twitter,
+multi-author BlogPosting JSON-LD, and breadcrumbs, using `VITE_SITE_URL`.
+
+Keep unpublished work in `content/blog/_drafts/`: this directory is excluded
+from client and server collections. Future-dated root-level posts are hidden
+until their UTC publication date, but their chunks are still deployed - this is
+scheduling, not a confidentiality boundary. MDX is trusted executable source:
+review it like code and do not accept untrusted user uploads.
+
+Use `<SequenceDiagram chart={\`sequenceDiagram ...\`} />` for the supplied
+animated sequence style. It supports participants/aliases, solid and dashed
+messages, self-calls, numbered messages/notes, notes over a single participant,
+and loops. Replay and Show all controls respect reduced motion. Unsupported
+syntax shows the source rather than silently omitting steps.
+
+Use `<MermaidDiagram chart={\`flowchart LR ...\`} title="Flow description" />`or a fenced`mermaid` block for other diagram types or the full Mermaid grammar.
+Mermaid is dynamically imported, uses strict security and the landing theme.
+Both renderers expose source text as an accessible fallback. Code highlighting
+is build-time; ordinary Markdown uses the custom MDX components.
+
+`typecheck` generates the Fumadocs collection and router types before checking.
+Run `pnpm --filter @namera-ai/web test` for schema, search, RSS, SEO, authored
+content, and sequence-renderer regressions.
 
 ## Legal pages
 
@@ -165,9 +224,9 @@ and a `FAQPage` generated from the FAQ component's own questions, and pricing
 adds `BreadcrumbList`, `Product` and its own `FAQPage`. Offers are `PreOrder`
 while nothing is purchasable.
 
-`/docs` and `/blog` carry `noindex`, are absent from `/sitemap.xml` and are
-disallowed in `robots.txt`. All four change together when those pages get
-content.
+`/docs` carries `noindex`, is absent from `/sitemap.xml` and is disallowed in
+`robots.txt`. The blog is indexable; noindex posts are excluded from RSS and
+the sitemap, and externally canonicalized posts are excluded from the sitemap.
 
 ## Motion
 

@@ -4,7 +4,7 @@ import defineConfig from "klarity/vitest/node";
 export default defineConfig({
   plugins: [
     fumadocsMdx({
-      index: false,
+      index: { target: "vite" },
       macro: false,
       globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
     }),
