@@ -9,7 +9,8 @@ are placeholders until there is something behind them.
 `/terms` and `/privacy-policy` render repository-owned MDX through Fumadocs MDX.
 Edit `src/content/legal/*.mdx` for copy and `src/components/legal` for the shared
 reading layout and semantic heading, paragraph, list, and link components.
-The compiler generates heading anchors and the table of contents at build time;
+The pages use a single reading column without a sidebar or introductory subtitle.
+The compiler generates heading anchors at build time;
 there is no runtime Markdown fetching or documentation UI dependency.
 
 The documents are dated October 5, 2026, based on the operator's confirmed
@@ -151,7 +152,8 @@ missing one.
 Every route calls `seo()` from `src/lib/seo.ts`, which returns the title, the
 description, the canonical, the Open Graph and Twitter cards, and a robots
 directive together, so a page cannot ship with one and not the others. Titles
-read `Page | Namera`; the home page leads with the name and a dash.
+use the supplied page title without a brand suffix; the home page leads with
+the name and a dash.
 
 Structured data is JSON-LD in each route's `scripts`. `Organization` and
 `WebSite` come from the root route, the landing page adds `SoftwareApplication`
@@ -183,10 +185,9 @@ its contrast ratio. It draws a static frame under `prefers-reduced-motion`.
 
 ## Accessibility
 
-Contrast is verified against the rendered page, not against tokens. Note that
-`--accent` (`#5e6ad2`) measures 3.98:1 on the canvas and cannot carry body
-text; it is a fill and border colour only, and accent text uses
-`--color-accent-text` (`#828fff`, 6.53:1).
+Contrast is verified against the rendered page, not against tokens. The website
+overrides its background token to `#08090A`; other apps retain the shared theme.
+Keep `--accent` as a fill/border color and use `--color-accent-text` for accent text.
 
 Touch targets use the `tap-target` utility, which lifts the hit box to 44px
 under `@media (pointer: coarse)` at any viewport width. A width breakpoint gets
