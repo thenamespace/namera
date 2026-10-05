@@ -19,4 +19,16 @@ describe("page titles", () => {
       title: `${SITE.name} - ${SITE.tagline}`,
     });
   });
+
+  it("uses permission-focused copy and connected page structured data", () => {
+    const head = seo({ description: SITE.description, path: "/" });
+    expect(SITE.tagline).toBe("The wallet for AI agents. The rules are yours.");
+    expect(head.meta).toContainEqual({ name: "description", content: SITE.description });
+    expect(head.meta).toContainEqual({ property: "og:description", content: SITE.description });
+    expect(head.meta).toContainEqual({ name: "twitter:description", content: SITE.description });
+    const page = JSON.parse(head.scripts[0]?.children ?? "{}");
+    expect(page["@type"]).toBe("WebPage");
+    expect(page.isPartOf["@id"]).toBe(`${SITE.origin}/#website`);
+    expect(page.publisher["@id"]).toBe(`${SITE.origin}/#organization`);
+  });
 });

@@ -8,8 +8,8 @@ import { sequenceTheme } from "../../src/components/blog/diagrams/theme";
 import { filterPosts } from "../../src/lib/blog/catalog";
 import { renderBlogRss } from "../../src/lib/blog/rss";
 import { BlogFrontmatter, type BlogPost } from "../../src/lib/blog/schema";
-import { articleHead } from "../../src/lib/blog/seo";
-import { jsonLd } from "../../src/lib/seo";
+import { articleHead, blogIndexHead } from "../../src/lib/blog/seo";
+import { jsonLd, SITE } from "../../src/lib/seo";
 
 const post: BlogPost = {
   title: "Permissioned wallets",
@@ -24,6 +24,26 @@ const post: BlogPost = {
 };
 
 describe("blog publishing", () => {
+  it("uses the authored cover directly for Open Graph, Twitter and article images", () => {
+    const cover = { src: "/blog/cover.png", alt: "Article cover", width: 1600, height: 900 };
+    const head = articleHead({
+      ...post,
+      cover,
+      seo: {
+        image: { src: "/other.png", alt: "Other image", width: 1200, height: 630 },
+      },
+    });
+    expect(head.meta).toContainEqual({
+      property: "og:image",
+      content: `${SITE.origin}${cover.src}`,
+    });
+    expect(head.meta).toContainEqual({
+      name: "twitter:image",
+      content: `${SITE.origin}${cover.src}`,
+    });
+    expect(head.meta).toContainEqual({ property: "og:image:width", content: "1600" });
+    expect(JSON.parse(head.scripts[0]?.children ?? "{}").image).toBe(`${SITE.origin}${cover.src}`);
+  });
   it("validates dates, authors, and safe metadata URLs", () => {
     const decode = Schema.decodeUnknownSync(BlogFrontmatter);
     expect(decode(post).authors).toHaveLength(2);
@@ -57,6 +77,53 @@ describe("blog publishing", () => {
     expect(head.meta).toContainEqual({ name: "author", content: "Second Author" });
     expect(JSON.parse(head.scripts[0]?.children ?? "{}").author).toHaveLength(2);
     expect(jsonLd({ headline: "</script><script>alert(1)</script>" }).children).not.toContain("<");
+  });
+
+  it("keeps paginated canonicals and collection markup aligned with visible posts", () => {
+    const posts = Array.from({ length: 13 }, (_, index) => ({ ...post, slug: `post-${index}` }));
+    const head = blogIndexHead(posts, 2);
+    expect(head.links).toContainEqual({ rel: "canonical", href: `${SITE.origin}/blog?page=2` });
+    expect(head.meta).toContainEqual({ property: "og:url", content: `${SITE.origin}/blog?page=2` });
+    const graph = JSON.parse(head.scripts[0]?.children ?? "{}")["@graph"];
+    expect(
+      graph.find((node: Record<string, unknown>) => node["@type"] === "ItemList").itemListElement,
+    ).toEqual([
+      { "@type": "ListItem", position: 13, name: post.title, url: `${SITE.origin}/blog/post-12` },
+    ]);
+    expect(blogIndexHead(posts, 3).meta).toContainEqual({
+      name: "robots",
+      content: "noindex, follow",
+    });
+  });
+
+  it("preserves article overrides and links the article to its publisher and blog", () => {
+    const canonical = "https://example.com/original";
+    const head = articleHead({
+      ...post,
+      updated: "2026-05-01",
+      seo: {
+        canonical,
+        noindex: true,
+        title: "Custom title",
+        description: "Custom description",
+        keywords: ["custom"],
+        image: { src: "/custom.png", alt: "Custom cover", width: 1200, height: 630 },
+      },
+    });
+    expect(head.links).toContainEqual({ rel: "canonical", href: canonical });
+    expect(head.meta).toContainEqual({ title: "Custom title" });
+    expect(head.meta).toContainEqual({ name: "robots", content: "noindex, follow" });
+    expect(head.meta).toContainEqual({
+      property: "og:image",
+      content: `${SITE.origin}/custom.png`,
+    });
+    expect(head.meta).not.toContainEqual({ property: "article:author", content: "First Author" });
+    const article = JSON.parse(head.scripts[0]?.children ?? "{}");
+    expect(article["@id"]).toBe(`${canonical}#article`);
+    expect(article.publisher["@id"]).toBe(`${SITE.origin}/#organization`);
+    expect(article.isPartOf["@id"]).toBe(`${SITE.origin}/blog#blog`);
+    expect(article.dateModified).toBe("2026-05-01T00:00:00Z");
+    expect(article.keywords).toBe("custom");
   });
 });
 

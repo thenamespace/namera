@@ -8,28 +8,22 @@ import { PostCard } from "#/components/blog/post-card";
 import { BlogSearch } from "#/components/blog/search-dialog";
 import { BLOG_PAGE_SIZE } from "#/lib/blog/catalog";
 import { getBlogPosts } from "#/lib/blog/queries";
-import { blogFeedLink } from "#/lib/blog/seo";
-import { seo } from "#/lib/seo";
+import { blogIndexHead } from "#/lib/blog/seo";
 
 const Search = Schema.Struct({
   page: Schema.optional(Schema.Int.check(Schema.isGreaterThan(0))),
 });
 export const Route = createFileRoute("/blog/")({
-  validateSearch: Schema.decodeUnknownSync(Search),
-  loader: () => getBlogPosts(),
-  head: () => {
-    const head = seo({
-      title: "Blog",
-      description: "Product updates, engineering, and ideas for building with agent wallets.",
-      path: "/blog",
-    });
-    return { ...head, links: [...head.links, blogFeedLink] };
-  },
+  validateSearch: (search: Record<string, unknown>): { page?: number | undefined } =>
+    Schema.decodeUnknownSync(Search)(search),
+  loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
+  loader: async ({ deps }) => ({ posts: await getBlogPosts(), page: deps.page }),
+  head: ({ loaderData }) => (loaderData ? blogIndexHead(loaderData.posts, loaderData.page) : {}),
   component: BlogIndex,
 });
 
 function BlogIndex() {
-  const posts = Route.useLoaderData();
+  const { posts } = Route.useLoaderData();
   const { page = 1 } = Route.useSearch();
   const pages = Math.max(1, Math.ceil(posts.length / BLOG_PAGE_SIZE));
   const visible = posts.slice((page - 1) * BLOG_PAGE_SIZE, page * BLOG_PAGE_SIZE);

@@ -14,15 +14,16 @@ if (!["http:", "https:"].includes(siteUrl.protocol) || siteUrl.username || siteU
 export const SITE = {
   name: "Namera",
   origin: siteUrl.origin,
-  tagline: "Programmable wallets for autonomous agents",
-  /*
-   * Longer than a meta description: this is what the Organization and WebSite
-   * schema carry, and what the install manifest shows.
-   */
+  tagline: "The wallet for AI agents. The rules are yours.",
+  heroDescription:
+    "Give agents the power to transact. You set the permissions and spending limits.",
+  /** Shared search, social and structured-data description. */
   description:
-    "Namera gives an autonomous agent a wallet it cannot misuse. Issue a session key with a spend cap, a list of chains and an expiry, and every transaction the agent asks for is priced, simulated and checked against those rules before anything is signed. Signing keys stay on your machine.",
+    "Namera is the wallet for AI agents. You set the permissions, spending limits, and access expiry. Give agents the power to transact on your terms.",
   keywords: [
     "agent wallet",
+    "AI agent wallets",
+    "wallet permissions",
     "AI agent payments",
     "session keys",
     "spend limits",
@@ -56,13 +57,7 @@ type MetaTag =
 
 type LinkTag = { rel: string; href: string };
 
-export const seo = ({
-  title,
-  description,
-  path,
-  noindex = false,
-  type = "website",
-}: SeoInput): { meta: MetaTag[]; links: LinkTag[] } => {
+export const seo = ({ title, description, path, noindex = false, type = "website" }: SeoInput) => {
   const full = title ?? `${SITE.name} - ${SITE.tagline}`;
   const url = `${SITE.origin}${path}`;
   const image = `${SITE.origin}${SITE.ogImage}`;
@@ -97,8 +92,21 @@ export const seo = ({
         name: "robots",
         content: noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
       },
+    ] as MetaTag[],
+    links: [{ rel: "canonical", href: url }] as LinkTag[],
+    scripts: [
+      jsonLd({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${url}#webpage`,
+        url,
+        name: full,
+        description,
+        isPartOf: { "@id": `${SITE.origin}/#website` },
+        publisher: { "@id": `${SITE.origin}/#organization` },
+        inLanguage: "en-US",
+      }),
     ],
-    links: [{ rel: "canonical", href: url }],
   };
 };
 
