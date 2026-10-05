@@ -86,6 +86,13 @@ export const SiteHeader = () => {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+          <span aria-hidden="true" className="mr-2 hidden h-4 w-px bg-border md:block" />
+          <a
+            href={SITE_LINKS.docs}
+            className="tap-target mr-2 hidden h-8 items-center rounded-md px-2 text-[0.8125rem] text-muted transition-colors duration-150 ease-out-quad hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60 md:inline-flex"
+          >
+            Docs
+          </a>
           {/* Renders only when site-links.ts has a confirmed destination. */}
           {SITE_LINKS.app === null ? null : (
             <ActionAnchor
@@ -131,7 +138,7 @@ export const SiteHeader = () => {
             transition={{ duration: 0.24, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <nav aria-label="Mobile" className="flex flex-col gap-0.5 px-4 py-3">
-              {NAV_LINKS.map((link) => (
+              {[...NAV_LINKS, { label: "Docs", href: SITE_LINKS.docs }].map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
