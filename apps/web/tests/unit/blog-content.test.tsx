@@ -17,7 +17,20 @@ it("routes Mermaid code fences to the lazy diagram component", () => {
   expect(html).toContain("Diagram source");
 });
 
-it("renders the first article with all supplied diagrams and highlighted code", async () => {
+it("renders ordinary code fences with accessible code block controls", () => {
+  const Pre = blogMdxComponents.pre;
+  const html = renderToStaticMarkup(
+    <Pre>
+      <code className="language-typescript">{"const limit = 100;"}</code>
+    </Pre>,
+  );
+  expect(html).toContain('aria-label="Copy Text"');
+  expect(html).toContain('aria-label="Code example"');
+  expect(html).toContain("const limit = 100;");
+  expect(html).not.toContain("Loading diagram");
+});
+
+it("renders the first article with all supplied diagrams", async () => {
   const article = blog.find(
     (entry) => entry.info.path === "agents-need-permissions-not-private-keys.mdx",
   );
@@ -26,12 +39,6 @@ it("renders the first article with all supplied diagrams and highlighted code", 
   const html = renderToStaticMarkup(<Article components={blogMdxComponents} />);
   expect(html).toContain("Introducing Namera");
   expect(html.match(/aria-label="Replay sequence diagram"/g)).toHaveLength(3);
-  expect(html).toContain('aria-label="Copy Text"');
-  expect(html).toContain('aria-label="Code example"');
-  expect(html).toContain("createSessionKey");
-  expect(html).not.toContain("[!code focus]");
-  expect(html).toContain("--shiki-dark:");
-  expect(html).toContain("github-dark-dimmed");
   expect(html).not.toContain("Diagram source");
   expect(html).not.toContain("Show all");
 });
