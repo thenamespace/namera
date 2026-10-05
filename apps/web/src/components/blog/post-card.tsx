@@ -21,9 +21,7 @@ export function PostCard({ post }: { post: BlogPost }) {
             className="mb-6 aspect-video w-full rounded-lg border border-border object-cover"
           />
         ) : null}
-        <h2 className="text-lg font-medium tracking-tight text-foreground group-hover:underline underline-offset-4">
-          {post.title}
-        </h2>
+        <h2 className="text-lg font-medium tracking-tight text-foreground">{post.title}</h2>
         <p className="mt-3 text-sm leading-6 text-muted">{post.description}</p>
       </Link>
       <p className="mt-6 text-xs leading-5 text-muted">

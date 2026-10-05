@@ -1,65 +1,84 @@
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
-import { Button, Modal, SearchField } from "@namera-ai/ui";
+import { Button, Command } from "@namera-ai/ui";
 import { Icon, Search01Icon } from "@namera-ai/ui/icons";
 
 import { filterPosts } from "#/lib/blog/catalog";
 import type { BlogPost } from "#/lib/blog/schema";
 
 export function BlogSearch({ posts }: { posts: readonly BlogPost[] }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = filterPosts(posts, useDeferredValue(query));
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOpen((current) => !current);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
   return (
     <>
       <Button variant="tertiary" onPress={() => setOpen(true)} className="min-w-40 justify-start">
         <Icon icon={Search01Icon} aria-hidden className="size-4" />
         Search articles…
       </Button>
-      <Modal isOpen={open} onOpenChange={setOpen}>
-        <Modal.Backdrop>
-          <Modal.Container size="lg">
-            <Modal.Dialog className="landing-home bg-surface text-foreground">
-              <Modal.CloseTrigger />
-              <Modal.Header>
-                <Modal.Heading>Search the blog</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body>
-                <SearchField aria-label="Search articles" value={query} onChange={setQuery}>
-                  <SearchField.Group>
-                    <SearchField.SearchIcon />
-                    <SearchField.Input placeholder="Search articles…" />
-                    <SearchField.ClearButton aria-label="Clear search" />
-                  </SearchField.Group>
-                </SearchField>
-                <output className="mt-4 text-sm text-muted">
-                  {results.length} {results.length === 1 ? "article" : "articles"}
-                </output>
-                <ul className="mt-3 max-h-[50vh] overflow-y-auto">
-                  {results.map((post) => (
-                    <li key={post.slug}>
-                      <Link
-                        to="/blog/$slug"
-                        params={{ slug: post.slug }}
-                        onClick={() => setOpen(false)}
-                        className="block rounded-lg p-3 hover:bg-default focus-visible:outline-2 focus-visible:outline-focus"
-                      >
-                        <span className="font-medium">{post.title}</span>
-                        <p className="mt-1 text-sm text-muted">{post.description}</p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                {!results.length ? (
-                  <p className="py-8 text-muted">No articles match. Try a different phrase.</p>
-                ) : null}
-              </Modal.Body>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <Command>
+        <Command.Backdrop isOpen={open} onOpenChange={setOpen}>
+          <Command.Container size="lg">
+            <Command.Dialog
+              aria-label="Search the blog"
+              className="landing-home max-w-3xl bg-surface text-foreground"
+              inputValue={query}
+              onInputChange={setQuery}
+              filter={() => true}
+            >
+              <Command.InputGroup aria-label="Search articles">
+                <Command.InputGroup.Prefix>
+                  <Icon icon={Search01Icon} aria-hidden />
+                </Command.InputGroup.Prefix>
+                <Command.InputGroup.Input placeholder="Search articles…" />
+                <Command.InputGroup.ClearButton aria-label="Clear search" />
+              </Command.InputGroup>
+              <Command.List
+                aria-label="Articles"
+                items={results}
+                renderEmptyState={() => "No articles match. Try a different phrase."}
+                onAction={(slug) => {
+                  setOpen(false);
+                  void navigate({ to: "/blog/$slug", params: { slug: String(slug) } });
+                }}
+              >
+                {(post) => (
+                  <Command.Item id={post.slug} textValue={post.title} className="gap-4 p-3">
+                    {post.cover ? (
+                      <img
+                        src={post.cover.src}
+                        alt=""
+                        width={post.cover.width}
+                        height={post.cover.height}
+                        className="aspect-video w-20 shrink-0 rounded-md object-cover sm:w-32"
+                      />
+                    ) : null}
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">{post.title}</span>
+                      <span className="mt-1 block line-clamp-2 text-xs leading-5 text-muted sm:text-sm">
+                        {post.description}
+                      </span>
+                    </span>
+                  </Command.Item>
+                )}
+              </Command.List>
+            </Command.Dialog>
+          </Command.Container>
+        </Command.Backdrop>
+      </Command>
     </>
   );
 }
