@@ -1,3 +1,4 @@
+@import "@fontsource-variable/geist-mono";
 @import "fumadocs-ui/css/lib/shiki.css";
 
 @source "../node_modules/fumadocs-ui/dist/components/codeblock.js";
@@ -19,9 +20,19 @@
   --color-fd-diff-remove-symbol: var(--danger);
 }
 
+.blog-inline-code,
+.blog-code pre,
+.blog-code code {
+  font-family: "Geist Mono Variable", ui-monospace, monospace;
+}
+
 .blog-code button {
   min-width: 2.75rem;
   min-height: 2.75rem;
+}
+
+.blog-code code {
+  font-size: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,7 +15,7 @@ export const blog = defineCollections({
   mdxOptions: applyMdxPreset({
     remarkPlugins: [remarkMdxMermaid],
     remarkStructureOptions: false,
-    rehypeCodeOptions: { themes: { light: "github-dark-default", dark: "github-dark-default" } },
+    rehypeCodeOptions: { themes: { light: "github-dark-dimmed", dark: "github-dark-dimmed" } },
   }),
 });
 

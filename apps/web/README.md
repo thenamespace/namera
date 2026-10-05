@@ -58,7 +58,8 @@ syntax shows the source rather than silently omitting steps.
 Use `<MermaidDiagram chart={\`flowchart LR ...\`} title="Flow description" />`or a fenced`mermaid`block for other diagram types or the full Mermaid grammar.
 Mermaid is dynamically imported, uses strict security and the landing theme.
 Both renderers expose source text as an accessible fallback. Code highlighting
-uses GitHub Dark Default at build time. Fumadocs`CodeBlock`and`Pre` provide
+uses GitHub Dark Dimmed at build time, with self-hosted Geist Mono and 15px block text.
+Fumadocs`CodeBlock`and`Pre` provide
 copying, scrolling, and code styles, with colors mapped to the landing theme;
 ordinary Markdown uses the custom MDX components.
 

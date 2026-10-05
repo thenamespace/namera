@@ -31,7 +31,7 @@ it("renders the first article with all supplied diagrams and highlighted code", 
   expect(html).toContain("createSessionKey");
   expect(html).not.toContain("[!code focus]");
   expect(html).toContain("--shiki-dark:");
-  expect(html).toContain("github-dark-default");
+  expect(html).toContain("github-dark-dimmed");
   expect(html).not.toContain("Diagram source");
   expect(html).not.toContain("Show all");
 });
