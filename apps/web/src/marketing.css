@@ -53,6 +53,11 @@
   .landing-page-layout .marketing-container {
     width: 92%;
   }
+
+  .landing-page-layout :is(#clients, #stack) > .marketing-container {
+    width: 100%;
+    max-width: 1440px;
+  }
 }
 
 @theme inline {
