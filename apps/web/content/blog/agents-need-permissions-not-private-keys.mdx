@@ -165,51 +165,6 @@ sequenceDiagram
 
 `} />
 
-Even at the developer level, the model feels more natural. You're not wiring trust into infrastructure anymore. You're defining intent.
-
-```ts
-const sessionKey = await createSessionKey({
-  accountType,
-  clients,
-  entrypointVersion,
-  kernelVersion,
-  policies: [
-    // [!code focus]
-    toCallPolicy({
-      // [!code focus]
-      permissions: [
-        // [!code focus]
-        {
-          // [!code focus]
-          target: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", // vitalik.eth // [!code focus]
-          valueLimit: parseEther("0.05"), // can only send up to 0.05 ETH per call // [!code focus]
-        }, // [!code focus]
-      ], // [!code focus]
-      policyVersion, // [!code focus]
-    }), // [!code focus]
-    toGasPolicy({
-      // [!code focus]
-      allowed: parseEther("0.01"), // total gas budget for the session // [!code focus]
-    }), // [!code focus]
-    toRateLimitPolicy({
-      // [!code focus]
-      count: 1, // one execution // [!code focus]
-      interval: 60 * 60, // per hour // [!code focus]
-    }), // [!code focus]
-    toTimestampPolicy({
-      // [!code focus]
-      validAfter: Math.floor(Date.now() / 1000), // [!code focus]
-      validUntil: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // expires in 24h // [!code focus]
-    }), // [!code focus]
-  ], // [!code focus]
-  sessionPrivateKey,
-  signer,
-  type,
-});
-```
-
-That's the shape of access an agent actually needs.
-
 ---
 
 ## Beyond Private Keys
