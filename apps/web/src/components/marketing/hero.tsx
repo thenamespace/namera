@@ -65,12 +65,12 @@ export const Hero = () => {
   }, [animate, reducedMotion]);
 
   return (
-    <section ref={scope} className="relative isolate overflow-hidden pt-28 pb-24 md:pt-36 md:pb-32">
-      <Container className="max-w-[1280px] md:w-[92%]">
+    <section ref={scope} className="relative isolate overflow-hidden pt-36 pb-24 md:pt-44 md:pb-32">
+      <Container>
         <div className="flex flex-col gap-7">
           <h1
             data-hero-copy
-            className="type-display-xl max-w-[24ch] text-[clamp(2rem,1.25rem+3.2vw,3.75rem)] text-balance text-foreground"
+            className="type-display-xl max-w-[24ch] text-[clamp(1.875rem,1.125rem+2.8vw,3.25rem)] text-balance text-foreground"
           >
             Give your agents a wallet
             <br />
@@ -78,7 +78,7 @@ export const Hero = () => {
           </h1>
           <p
             data-hero-copy
-            className="type-lead max-w-[64ch] text-base text-pretty text-muted md:text-[1.0625rem]"
+            className="type-lead max-w-[64ch] text-[0.9375rem] text-pretty text-muted md:text-base"
           >
             Set what your agent can spend, which contracts it can use, and when its access expires.
             Every action is enforced against those permissions.
@@ -89,14 +89,14 @@ export const Hero = () => {
         </div>
       </Container>
 
-      <Container className="mt-16 max-w-[1280px] md:mt-20 md:w-[92%]">
+      <Container className="mt-16 md:mt-20">
         <div
           data-hero-preview
           className="relative origin-bottom pb-[var(--floor)] [--floor:3.75rem] sm:[--floor:5.5rem] lg:[--floor:6.25rem]"
         >
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-[-12%] inset-y-0 -z-10 overflow-hidden rounded-lg"
+            className="pointer-events-none absolute inset-y-0 left-1/2 -z-10 w-[calc(100vw-12px)] -translate-x-1/2 overflow-hidden rounded-lg"
           >
             <div
               className="absolute inset-x-0 top-0 bottom-[var(--floor)]"

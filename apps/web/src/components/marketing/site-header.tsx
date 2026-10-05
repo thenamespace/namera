@@ -66,7 +66,7 @@ export const SiteHeader = () => {
           : "border-transparent bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center gap-6 px-6 md:px-10 lg:px-14">
+      <div className="marketing-container mx-auto flex h-14 w-full max-w-[1440px] items-center gap-6 px-6 md:px-10 lg:px-14">
         <Wordmark />
 
         <nav aria-label="Main" className="ml-auto hidden items-center gap-1 md:flex">

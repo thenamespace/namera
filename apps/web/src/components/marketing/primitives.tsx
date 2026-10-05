@@ -19,7 +19,12 @@ export const Container = ({
   readonly className?: string;
   readonly rails?: boolean;
 }) => (
-  <div className={cn("relative mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-14", className)}>
+  <div
+    className={cn(
+      "marketing-container relative mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-14",
+      className,
+    )}
+  >
     {rails ? (
       <>
         <span aria-hidden className="rail left-6 md:left-10" />
