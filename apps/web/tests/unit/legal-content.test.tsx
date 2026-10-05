@@ -24,6 +24,8 @@ describe("legal content", () => {
       expect(html).toContain("<li");
       expect(html).toContain('href="mailto:hey@namera.ai"');
       expect(html).not.toContain("—");
+      expect(html).not.toMatch(/this draft|proposed agreement|must be confirmed before/i);
+      expect(html).toContain("British Virgin Islands VG1110");
     });
   }
 

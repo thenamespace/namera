@@ -48,7 +48,7 @@ export const LegalPage = ({
             <h1 className="type-display-lg text-foreground">{title}</h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">{description}</p>
             <p className="mt-6 text-sm text-ink-subtle">
-              Draft updated <time dateTime="2026-10-05">October 5, 2026</time>
+              Effective <time dateTime="2026-10-05">October 5, 2026</time>
             </p>
           </header>
           <div className="mt-10 grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-20">
@@ -75,10 +75,6 @@ export const LegalPage = ({
               aria-label={title}
               className="min-w-0 max-w-[46rem] break-words lg:col-start-1 lg:row-start-1"
             >
-              <p className="mb-8 border-b-1 border-border pb-6 text-sm leading-6 text-ink-subtle">
-                Draft for review. These documents are not yet effective and require confirmation
-                before publication.
-              </p>
               {children}
             </article>
           </div>
