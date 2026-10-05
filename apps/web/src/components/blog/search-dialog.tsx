@@ -3,6 +3,7 @@ import { useDeferredValue, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Button, Modal, SearchField } from "@namera-ai/ui";
+import { Icon, Search01Icon } from "@namera-ai/ui/icons";
 
 import { filterPosts } from "#/lib/blog/catalog";
 import type { BlogPost } from "#/lib/blog/schema";
@@ -13,7 +14,8 @@ export function BlogSearch({ posts }: { posts: readonly BlogPost[] }) {
   const results = filterPosts(posts, useDeferredValue(query));
   return (
     <>
-      <Button variant="secondary" onPress={() => setOpen(true)} className="min-w-40 justify-start">
+      <Button variant="tertiary" onPress={() => setOpen(true)} className="min-w-40 justify-start">
+        <Icon icon={Search01Icon} aria-hidden className="size-4" />
         Search articles…
       </Button>
       <Modal isOpen={open} onOpenChange={setOpen}>

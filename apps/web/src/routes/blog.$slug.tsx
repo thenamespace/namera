@@ -31,9 +31,7 @@ function BlogArticle() {
         >
           <Link to="/blog">Blog</Link>
           <span aria-hidden>/</span>
-          <Link to="/blog" search={{ tag: post.tags[0] }}>
-            {post.tags[0]}
-          </Link>
+          <span>{post.tags[0]}</span>
         </nav>
         <h1 className="mx-auto max-w-[24ch] text-balance text-4xl font-medium leading-[1.1] tracking-tight md:text-6xl">
           {post.title}
