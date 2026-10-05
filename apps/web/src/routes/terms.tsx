@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { LegalPage } from "#/components/legal/legal-page";
 import { legalMdxComponents } from "#/components/legal/mdx-components";
-import Terms, { toc } from "#/content/legal/terms.mdx";
+import Terms from "#/content/legal/terms.mdx";
 import { seo } from "#/lib/seo";
 
 const DESCRIPTION =
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" description={DESCRIPTION} toc={toc}>
+    <LegalPage title="Terms of Service">
       <Terms components={legalMdxComponents} />
     </LegalPage>
   );

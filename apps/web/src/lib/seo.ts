@@ -3,8 +3,7 @@
  *
  * Every route calls `seo()` rather than hand-writing tags, so a page cannot
  * ship with a title but no description, or an Open Graph card that disagrees
- * with the title above it. Titles read "Page | Namera"; the home page is the
- * one exception, where the name leads.
+ * with the title above it. Page titles are used as written, without a suffix.
  */
 
 const siteUrl = new URL(import.meta.env.VITE_SITE_URL || "https://namera.ai");
@@ -40,7 +39,7 @@ export const SITE = {
 } as const;
 
 type SeoInput = {
-  /** Left of the separator. Omit on the home page. */
+  /** Page title. Omit to use the home page title. */
   readonly title?: string;
   readonly description: string;
   /** Path with a leading slash, used for the canonical and og:url. */
@@ -64,7 +63,7 @@ export const seo = ({
   noindex = false,
   type = "website",
 }: SeoInput): { meta: MetaTag[]; links: LinkTag[] } => {
-  const full = title === undefined ? `${SITE.name} - ${SITE.tagline}` : `${title} | ${SITE.name}`;
+  const full = title ?? `${SITE.name} - ${SITE.tagline}`;
   const url = `${SITE.origin}${path}`;
   const image = `${SITE.origin}${SITE.ogImage}`;
 

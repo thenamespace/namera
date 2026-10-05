@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { LegalPage } from "#/components/legal/legal-page";
 import { legalMdxComponents } from "#/components/legal/mdx-components";
-import PrivacyPolicy, { toc } from "#/content/legal/privacy-policy.mdx";
+import PrivacyPolicy from "#/content/legal/privacy-policy.mdx";
 import { seo } from "#/lib/seo";
 
 const DESCRIPTION =
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/privacy-policy")({
 
 function PrivacyPolicyPage() {
   return (
-    <LegalPage title="Privacy Policy" description={DESCRIPTION} toc={toc}>
+    <LegalPage title="Privacy Policy">
       <PrivacyPolicy components={legalMdxComponents} />
     </LegalPage>
   );

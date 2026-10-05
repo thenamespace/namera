@@ -17,13 +17,17 @@
   --color-ink-subtle: #8a8f98;
 
   /*
-   * `--accent` (#5e6ad2) measures 3.98:1 on the canvas, under the 4.5:1 floor
-   * for body text. It stays a fill and border colour; accent TEXT uses this
-   * lighter step, which measures 6.53:1.
+   * Keep the shared accent as a fill/border color. Accent text uses this
+   * lighter step for stronger contrast against the website canvas.
    */
   --color-accent-text: #828fff;
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Match the shared theme's unlayered tokens, scoped to the website. */
+html.dark {
+  --background: #08090a;
 }
 
 @layer base {
