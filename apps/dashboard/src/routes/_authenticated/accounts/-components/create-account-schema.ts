@@ -10,22 +10,11 @@ export const CreateAccountFormValues = Schema.Struct({
     ...fields,
     description: OptionalFormDescription,
   })),
-  acknowledgeRecovery: Schema.Boolean,
-}).check(
-  Schema.makeFilter(({ acknowledgeRecovery }) =>
-    acknowledgeRecovery
-      ? undefined
-      : {
-          path: ["acknowledgeRecovery"],
-          issue: "Acknowledge the passkey recovery limitation before creating an account.",
-        },
-  ),
-);
+});
 export type CreateAccountFormValues = typeof CreateAccountFormValues.Type;
 export type CreateAccountFormValuesEncoded = typeof CreateAccountFormValues.Encoded;
 
 export const defaultAccountValues: CreateAccountFormValuesEncoded = {
-  acknowledgeRecovery: false,
   metadata: {
     version: 1,
     name: "",

@@ -53,15 +53,16 @@ server-owned constants rather than public input.
 The shared owner model is discriminated. The beta HTTP route `POST /wallets`
 permits only `passkey`; authenticated managed requests receive HTTP 403
 `WalletCustodyUnavailableError` / `MANAGED_WALLETS_DISABLED` before any billing,
-provider, or persistence work. The dashboard offers only passkey creation.
+provider, or persistence work. The dashboard offers only passkey creation on EVM;
+its ownership and network selectors display managed custody and Solana
+as disabled coming-soon options.
 Managed construction remains internal for future use and is not a beta feature.
 
-The dashboard requires an unchecked-by-default recovery acknowledgement before
-starting WebAuthn registration. It explains that email login cannot restore the
-owner passkey and that losing every copy may lock funds and prevent onchain
-session removal. The account overview repeats this notice for local owners.
-This is a presentation safeguard, not a recovery implementation or server-side
-attestation. No acknowledgement is added to wallet metadata or the public DTO.
+The creation form starts WebAuthn registration after validating account metadata,
+without a recovery acknowledgement checkbox. The account overview retains the
+notice that email login cannot restore the owner passkey and that losing every
+copy may lock funds and prevent onchain session removal. No acknowledgement is
+added to wallet metadata or the public DTO.
 Owner replacement/recovery and the associated mainnet safety decision remain open.
 
 Owner variants:
