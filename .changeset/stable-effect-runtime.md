@@ -5,8 +5,8 @@
 "@namera-ai/cli": major
 ---
 
-Migrate to Effect 4.0.0 stable and refresh runtime dependencies. Effect-based
-consumers must also upgrade from the release candidate to 4.0.0 and use the
+Migrate to Effect 4.0.1 stable and refresh runtime dependencies. Effect-based
+consumers must also upgrade from the release candidate to 4.0.1 and use the
 stable module paths, including `effect/http-api` instead of
 `effect/unstable/httpapi`. Public HTTP routes and payloads are unchanged.
 

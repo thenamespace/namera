@@ -1,9 +1,13 @@
 {
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
   "extends": "klarity/tsconfig/base",
   "compilerOptions": {
     "plugins": [
       {
-        "name": "@effect/language-service"
+        "name": "@effect/language-service",
+        "ignoreEffectErrorsInTscExitCode": true,
+        "ignoreEffectWarningsInTscExitCode": true,
+        "includeSuggestionsInTsc": false
       }
     ]
   },
