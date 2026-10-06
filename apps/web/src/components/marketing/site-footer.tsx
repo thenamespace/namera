@@ -70,13 +70,11 @@ export const SiteFooter = () => {
       <Container className="pt-16 pb-3 md:pt-20 md:pb-4">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-24">
           <div className="flex flex-col gap-4">
-            <span className="inline-flex items-center gap-2.5 text-foreground">
-              <NameraIcon aria-hidden fill="currentColor" className="h-3.5 w-auto" />
-              <span className="text-[0.9375rem] leading-none font-semibold tracking-[-0.02em]">
-                Namera
-              </span>
+            <span className="inline-flex items-center gap-2.5 font-inter text-lg leading-none font-semibold tracking-[-0.02em] text-foreground">
+              <NameraIcon aria-hidden fill="currentColor" className="h-[1cap] w-auto shrink-0" />
+              <span>Namera</span>
             </span>
-            <p className="max-w-[26ch] text-[0.8125rem] text-pretty text-ink-subtle">
+            <p className="max-w-[26ch] text-[0.8125rem] text-pretty text-ink-subtle lg:max-w-none">
               The permission layer for agent wallets.
             </p>
 

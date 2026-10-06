@@ -277,8 +277,14 @@ export const Playground = () => {
             <div className="edge-top relative flex flex-col overflow-hidden rounded-xl border-1 border-border bg-surface/40">
               <div className="flex items-center justify-between gap-3 border-b-1 border-border px-4 py-3 sm:px-5">
                 <p className="flex items-center gap-2 text-[0.8125rem] font-medium text-foreground">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                    <img src="/uniswap.svg" alt="" width={20} height={22} className="w-5" />
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-white">
+                    <img
+                      src="/uniswap.svg"
+                      alt=""
+                      width={20}
+                      height={22}
+                      className="h-[1cap] w-auto"
+                    />
                   </span>
                   Uniswap Agent
                 </p>

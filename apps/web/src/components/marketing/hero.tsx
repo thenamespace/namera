@@ -52,7 +52,7 @@ export const Hero = () => {
         <div className="flex flex-col gap-7">
           <h1
             data-hero-copy
-            className="type-display-xl max-w-[24ch] text-[clamp(2.125rem,1rem+4vw,4rem)] text-balance text-foreground"
+            className="type-display-xl max-w-[24ch] text-[clamp(2.125rem,1rem+4vw,4rem)] font-medium text-balance text-foreground"
           >
             Wallets for AI agents
             <br />
@@ -60,7 +60,7 @@ export const Hero = () => {
           </h1>
           <p
             data-hero-copy
-            className="type-lead max-w-[76ch] text-[0.9375rem] text-pretty text-muted md:text-base"
+            className="type-lead max-w-[76ch] text-[0.9375rem] font-[350] text-pretty text-muted md:text-base"
           >
             {SITE.heroDescription}
           </p>
