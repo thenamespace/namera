@@ -23,6 +23,14 @@ const feedback = {
     "The command input is invalid.",
     "Run the command with --help and check the required arguments and formats.",
   ],
+  WALLET_REQUIRED: [
+    "Choose a wallet in an interactive terminal, or provide its ID.",
+    "Run namera wallet get <wallet-id>. Find IDs with namera wallet list --output json.",
+  ],
+  SESSION_KEY_REQUIRED: [
+    "Choose a session key in an interactive terminal, or provide its ID.",
+    "Run namera session-key get <session-key-id>. Find IDs with namera session-key list --output json.",
+  ],
   INVALID_EXPORT: [
     "The encrypted session-key export is invalid or incomplete.",
     "Copy the entire import command from the dashboard. Do not paste a private key.",

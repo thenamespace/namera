@@ -84,10 +84,9 @@ export const authView: PrettyPrinter<{
           ...authorization.scopes.map(
             (scope) => `${listArrow(colors)} ${terminalText(permissions[scope] ?? scope)}`,
           ),
-          "Within your session keys' limits.",
         ]
       : []),
-    `\n${heading("Session keys", colors)}`,
+    `\n${heading("Session keys", colors)}\n`,
     ...(groups.size
       ? [
           [...groups.values()]

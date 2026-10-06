@@ -80,6 +80,7 @@ describe("friendly authentication output", () => {
     expect(text).toContain("Send transactions");
     expect(text).toContain("Stay signed in");
     expect(text.match(/Trading Account/g)).toHaveLength(1);
+    expect(text).toContain("\nSession keys\n\nTrading Account\n");
     expect(text).toContain("\nProfile: personal\nOrganization: Personal");
     expect(text).toContain("\nPermissions\n-> View wallets");
     expect(text).toContain(

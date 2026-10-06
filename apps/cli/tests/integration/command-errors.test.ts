@@ -48,6 +48,28 @@ const run = (args: string[], env: Record<string, string> = {}) =>
   });
 
 describe("CLI failure output", { timeout: 65_000 }, () => {
+  it.each([{ flags: [] }, { flags: ["--output", "json"] }, { flags: ["--quiet"] }])(
+    "requires a session key ID without interactive input: $flags",
+    async ({ flags }) => {
+      const result = await run(["session-key", "get", ...flags]);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("namera session-key get <session-key-id>");
+      if (flags.includes("json"))
+        expect(JSON.parse(result.stderr).error.code).toBe("SESSION_KEY_REQUIRED");
+    },
+  );
+  it.each([{ flags: [] }, { flags: ["--output", "json"] }, { flags: ["--quiet"] }])(
+    "requires a wallet ID without interactive input: $flags",
+    async ({ flags }) => {
+      const result = await run(["wallet", "get", ...flags]);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("namera wallet get <wallet-id>");
+      if (flags.includes("json"))
+        expect(JSON.parse(result.stderr).error.code).toBe("WALLET_REQUIRED");
+    },
+  );
   it.each(["pretty", "json"])(
     "reports invalid imports in %s without stacks or secret input",
     async (format) => {

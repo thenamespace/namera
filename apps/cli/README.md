@@ -29,10 +29,24 @@ namera --version
 ```sh
 namera login
 namera wallet list
+namera wallet get
 namera session-key list
+namera session-key get
 namera wallet get <wallet-id>
 namera session-key get <session-key-id>
 ```
+
+`wallet get` opens a keyboard picker with wallet names, status, and addresses.
+Use the arrow keys and Enter to select, or Ctrl+C to cancel. For scripts, JSON
+output, or quiet mode, supply the wallet ID explicitly; the CLI never prompts
+when input or output is redirected.
+
+`session-key get` likewise opens a key picker showing only key names and their
+owning account names. Supply an ID for non-interactive use. Human details start
+with the key name and status, then account, creation, expiry, and installed
+networks. Permissions and API policies follow, without internal IDs or versions.
+Network-specific limits and expiry dates remain visible, and pending approvals
+are distinguished from enabled permissions. JSON retains every field.
 
 Login opens browser consent to choose access. Credentials persist in the OS
 keyring, so you do not sign in for every command. The default API is
@@ -133,6 +147,8 @@ use bold magenta, and key names use bold terminal text. Key summaries include
 status and relative expiry; different network expiries are labeled explicitly.
 Permissions and keys
 use blue arrows, with unindented account headings separated by a blank line.
+Session-key lists show one compact key summary and a names-only Networks row;
+only installed networks within their permission time window are listed as active.
 JSON includes complete response fields and IDs;
 use it when copying IDs for commands or scripts. NDJSON is no longer supported.
 `NO_COLOR` disables styling. Organization names require a server that includes
