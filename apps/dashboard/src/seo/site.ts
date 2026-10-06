@@ -49,7 +49,7 @@ export const structuredData = {
 // Only public, code-owned text belongs here. Never serialize router search,
 // resource identifiers, account names, or credentials into a document head.
 export function pageMetadata(page: PageSeo) {
-  const title = page.title === dashboardSite.title ? page.title : `${page.title} | Namera`;
+  const title = page.title;
   return {
     title,
     meta: {

@@ -14,9 +14,16 @@ import {
 import { documentSeoTags } from "../../tooling/document-seo";
 
 describe("dashboard metadata", () => {
+  it("keeps settings titles free of a settings suffix", () => {
+    for (const [routeId, page] of Object.entries(pageSeo)) {
+      if (routeId.includes("/settings/")) expect(page.title).not.toMatch(/ settings$/i);
+    }
+  });
+
   it.each(Object.entries(pageSeo))("provides complete metadata for %s", (_routeId, page) => {
     const { title, meta } = pageMetadata(page);
-    expect(title).toContain("Namera");
+    expect(title).toBe(page.title);
+    expect(title).not.toMatch(/\| Namera$/);
     expect(page.description.length).toBeGreaterThan(30);
     expect(meta["og:title"]).toBe(title);
     expect(meta["twitter:title"]).toBe(title);

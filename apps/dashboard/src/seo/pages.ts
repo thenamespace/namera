@@ -127,7 +127,7 @@ export const pageSeo = {
     description: "Create a Namera workspace to organize your accounts, agent access, and team.",
   },
   "/_authenticated/settings/profile": {
-    title: "Profile settings",
+    title: "Profile",
     description: "Update your name and profile image in Namera.",
   },
   "/_authenticated/settings/notifications": {
@@ -135,11 +135,11 @@ export const pageSeo = {
     description: "Choose which account, product, and workspace emails you receive from Namera.",
   },
   "/_authenticated/settings/security": {
-    title: "Security settings",
+    title: "Security",
     description: "Review your signed-in devices and manage active Namera login sessions.",
   },
   "/_authenticated/settings/workspace/": {
-    title: "Workspace settings",
+    title: "Workspace",
     description: "Update your Namera workspace name, logo, and details.",
   },
   "/_authenticated/settings/workspace/members": {

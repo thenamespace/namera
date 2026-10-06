@@ -423,7 +423,8 @@ read-only presentation.
 `src/seo/site.ts` owns public branding, social metadata and application JSON-LD.
 `tooling/document-seo.ts` injects these into the built `index.html`, so link
 preview bots do not need JavaScript. `src/seo/pages.ts` exhaustively maps the
-generated route IDs to page titles and descriptions. `DashboardSeo` updates
+generated route IDs to page titles and descriptions. Titles use the page text
+directly, without an automatic brand suffix. `DashboardSeo` updates
 the existing metadata nodes on navigation, including error/not-found states,
 without duplicating the static tags. It runs inside the router context but
 outside route error boundaries. There is no SSR or additional runtime package.
