@@ -15,13 +15,17 @@ import {
   type BillingUsageReservationInsert as BillingUsageReservationInsertModel,
   type BillingUsageSourceType,
 } from "@namera-ai/protocol/model";
-import { and, asc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lte, not, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { billingUsageReservation } from "#/schema/index";
 
 const encodeDate = Schema.encodeSync(Schema.DateTimeUtcFromDate);
+const providerSponsorship = sql`(
+  ${eq(billingUsageReservation.meterKey, "gas-sponsorship")}
+  AND ${inArray(billingUsageReservation.sourceType, ["execution-submission", "session-key-operation"])}
+)`;
 
 export interface BillingUsageReservationRepositoryService {
   readonly reserve: (
@@ -67,6 +71,10 @@ export interface BillingUsageReservationRepositoryService {
     expiresAt: DateTime.Utc,
   ) => Effect.Effect<BillingUsageReservationModel | undefined, DatabaseError>;
   readonly claimExpired: (
+    now: DateTime.Utc,
+    limit: number,
+  ) => Effect.Effect<ReadonlyArray<BillingUsageReservationModel>, DatabaseError>;
+  readonly claimSponsorships: (
     now: DateTime.Utc,
     limit: number,
   ) => Effect.Effect<ReadonlyArray<BillingUsageReservationModel>, DatabaseError>;
@@ -257,6 +265,7 @@ export class BillingUsageReservationRepository extends Context.Service<
                   and(
                     eq(billingUsageReservation.status, "active"),
                     lte(billingUsageReservation.expiresAt, encodeDate(now)),
+                    not(providerSponsorship),
                   ),
                 )
                 .orderBy(asc(billingUsageReservation.expiresAt), asc(billingUsageReservation.id))
@@ -266,6 +275,25 @@ export class BillingUsageReservationRepository extends Context.Service<
             },
             mapRepositoryError,
           ),
+          claimSponsorships: Effect.fn(
+            "database.billingUsageReservationRepository.claimSponsorships",
+          )(function* (now, limit) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select()
+              .from(billingUsageReservation)
+              .where(
+                and(
+                  eq(billingUsageReservation.status, "active"),
+                  lte(billingUsageReservation.expiresAt, encodeDate(now)),
+                  providerSponsorship,
+                ),
+              )
+              .orderBy(asc(billingUsageReservation.expiresAt), asc(billingUsageReservation.id))
+              .limit(Math.min(Math.max(Math.trunc(limit), 1), 100))
+              .for("update", { skipLocked: true });
+            return Schema.decodeUnknownSync(Schema.Array(BillingUsageReservation))(rows);
+          }, mapRepositoryError),
           sumActiveForMeter: Effect.fn(
             "database.billingUsageReservationRepository.sumActiveForMeter",
           )(function* (organizationId, periodId, meterKey) {

@@ -42,7 +42,10 @@ billing workers. They use locked/leased claims safe for multiple instances and
 stop with the server scope. The execution worker claims bounded batches, checks receipts concurrently,
 and settles, releases, or reschedules submissions left pending by HTTP requests.
 The billing worker advances anniversary periods, recovers expired usage holds,
-and repairs balance projections from the immutable ledger.
+and repairs balance projections from the immutable ledger. It also reconciles
+Alchemy BSO gas holds separately from onchain confirmation using the server-only
+`ALCHEMY_ACCESS_TOKEN`. Missing provider costs retain the hold and retry;
+execution confirmation and session activation do not wait for billing.
 HTTP requests only enqueue email work and never wait for background delivery.
 
 Execution submission status is readable only by the API-key actor that created

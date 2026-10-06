@@ -102,6 +102,7 @@ layer(fixture.layer)("interrupted provider submission", (it) => {
       expect(
         yield* client.execution.getSubmission({ params: { submissionId: queued.submissionId } }),
       ).toMatchObject({ status: "confirmed" });
+      yield* app.billing.reconcile();
       expect(
         (yield* repository.billing.usageReservation.listBySource(
           organizationId,

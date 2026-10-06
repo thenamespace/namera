@@ -53,6 +53,7 @@ layer(fixture.layer)("owner approval", (it) => {
         yield* TestClock.adjust(Duration.seconds(2));
         const app = yield* Application;
         expect(yield* app.sessionKey.reconcileOperations()).toBe(1);
+        expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1 });
         const repository = yield* Repository;
         const updated = yield* client.sessionKey.get({ params: { sessionKeyId: session.id } });
         expect(updated.status).toBe("pending");

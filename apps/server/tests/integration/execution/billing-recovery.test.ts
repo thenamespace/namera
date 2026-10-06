@@ -80,6 +80,7 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
                 params: { submissionId: queued.submissionId },
               }),
             ).toMatchObject({ status: "confirmed" });
+            expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1 });
             expect(
               (yield* repository.billing.usageReservation.listBySource(
                 organizationId,

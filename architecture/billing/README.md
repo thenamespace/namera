@@ -247,7 +247,7 @@ the execution billing envelope. Every accepted submission reserves one unit on
 `execution.mainnet` or `execution.testnet`. Confirmation settles one unit;
 signing or definitive pre-inclusion failure releases it. A reverted included
 operation releases the execution unit because Free v1 counts successful
-executions, but still settles sponsored gas from its receipt.
+executions, but still settles sponsored gas from the provider's confirmed cost.
 
 Testnet operations never reserve sponsored-gas allowance. A mainnet operation
 only does so when the caller enables Alchemy Bundler Sponsored Operations (BSO).
@@ -256,9 +256,16 @@ not need to contain a paymaster address. The EVM adapter fetches ETH/USD from
 Alchemy, converts it
 conservatively to integer micro-USD, applies Alchemy's 8% mainnet sponsorship
 administration fee, and reserves the pessimistic maximum UserOperation gas
-envelope from the regular pre-BSO simulation estimate. Settlement uses
-`receipt.actualGasCost` with the exact persisted quote and margin even when the
-receipt paymaster is null. If pricing is unavailable, sponsored mainnet
+envelope from the regular pre-BSO simulation estimate. BSO zeroes the account's
+gas fees, so `receipt.actualGasCost` can be zero despite an Alchemy charge.
+Confirmation settles execution usage immediately and makes the active gas hold
+eligible for asynchronous reconciliation. The EVM adapter queries Alchemy's
+[Get Sponsorships API](https://www.alchemy.com/docs/wallets/api-reference/gas-manager-admin-api/admin-api-endpoints/get-sponsorships)
+under the configured BSO policy. Only a `MINED` record matching the confirmed
+chain, UserOperation hash, transaction hash and sender can settle the hold.
+`confirmedTotalUsd` is converted through decimal arithmetic and rounded upward
+to integer micro-USD. No additional 8% surcharge or estimated ETH conversion is
+applied to that provider total. If pricing is unavailable, sponsored mainnet
 preparation fails closed before signing or submission.
 
 Execution sponsorship defaults to enabled. An explicit `sponsor: false`
@@ -307,19 +314,39 @@ projection.
 The server runs a scoped billing worker every minute after migrations. Each run:
 
 1. advances expired open anniversary periods in bounded batches;
-2. claims expired active reservations with `FOR UPDATE SKIP LOCKED`;
-3. settles terminal successful execution/signature sources, releases terminal
+2. claims up to 20 due sponsored-gas holds with `FOR UPDATE SKIP LOCKED`, defers
+   them by five minutes, commits, then looks up provider costs outside database
+   transactions with concurrency two;
+3. claims other expired active reservations with `FOR UPDATE SKIP LOCKED`;
+4. settles terminal successful execution/signature sources, releases terminal
    failures and manual sources, and defers operations still in flight or whose
    execution/signature source cannot be locked;
-4. locks each open meter balance and recomputes consumed usage from immutable
+5. locks each open meter balance and recomputes consumed usage from immutable
    events plus reserved usage from active reservations;
-5. repairs a divergent projection only when the reconstructed totals remain
+6. repairs a divergent projection only when the reconstructed totals remain
    within the snapshotted hard limit.
 
 Execution receipt reconciliation remains the authority for uncertain onchain
 state. Billing recovery will not guess gas cost for an active submission.
-Included failures remain reserved until an actual receipt provides the gas
-measurement; rejected pre-inclusion work can be released.
+Included failures remain reserved until a bound receipt and matching provider
+cost are available; rejected pre-inclusion work can be released. Session
+operations and successful executions reuse persisted receipt evidence; failed
+executions re-read and validate the chain receipt. Generic expiry recovery never
+releases these gas holds, including across period rollover. Settlement uses the
+existing reservation lock and unique ledger identity, atomically recording the
+provider total and transaction identities while releasing unused capacity.
+No separate audit event is added: the immutable usage event is billing evidence.
+
+The server-only `ALCHEMY_ACCESS_TOKEN` must have management access to the
+configured policy. Missing credentials, missing/pending costs, malformed
+responses and lookup failures retain the hold for retry. A reported zero total
+releases it; a total above the authorized hold stays reserved and emits
+`billing.sponsorship_cost_exceeds_reservation` for investigation rather than
+overcharging or discarding the cost. Lookups have a 30-second deadline and a
+20-page/2,000-record scan bound. Repeated cursors or exhausted scans fail closed.
+Keep policy access unchanged until pending holds settle; policy rotation and
+costs outside the scan window currently require operator follow-up. Existing
+released reservations are not retroactively charged by this worker.
 
 Expiry recovery already owns reservation locks, whereas execution settlement
 owns its submission lock first. Recovery therefore uses `SKIP LOCKED` for the
@@ -387,11 +414,15 @@ subscription, and item state. Checkout redirects never grant product access.
 - anchor-preserving lazy and scheduled anniversary rollover;
 - execution, signature, and sponsored-gas integration;
 - EVM-owned chain classification, Alchemy price quotes, pessimistic gas holds,
-  and receipt-based actual-cost settlement;
+  and provider-confirmed BSO cost settlement;
 - expired-reservation recovery and ledger-to-projection reconciliation worker;
 - normalized authenticated `GET /billing` response;
 - bounded billing metrics and server/EVM tests for lifecycle, limit, rollover,
   recovery, repair, chain classification, and monetary rounding.
+- BSO regressions cover zero-cost receipts, delayed/excessive provider totals,
+  included failures, duplicate reconciliation, decimal rounding, identity
+  matching, pagination bounds and provider errors. PostgreSQL tests also cover
+  competing billing workers, source-lock recovery and period rollover.
 - pricing calculator and generated margin report that separate execution
   infrastructure, signing, sponsored gas, provider allowances, and overage
   contribution margins;
@@ -416,8 +447,10 @@ Deliberately inactive until paid plans:
   trial, grace-period, delinquency, and cancellation semantics.
 - Implement Stripe, verified raw-body webhook processing, Checkout/portal, and
   subscription reconciliation.
-- Confirm Alchemy's production cost basis and replace the configured fee if
-  provider invoices expose a more exact billable amount.
+- Reconcile reported `confirmedTotalUsd` against provider invoices and retain
+  historical policy identities/cursors before introducing policy rotation or
+  volumes beyond the bounded scan window.
+- Add an operator resolution workflow for costs exceeding their reserved amount.
 - Add production alerts for repeated recovery failures, projection repairs,
   hard-limit denial spikes, stale reservations, and pricing outages.
 - Add future paid-path tests for credit corrections, webhook replay, delivery

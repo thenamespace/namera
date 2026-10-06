@@ -65,6 +65,12 @@ the signed execution so receipt settlement uses the same cost basis. Pricing
 failure is a preparation failure; application code never reimplements these EVM
 rules.
 
+Preparation encodes the decoded billing envelope with `EvmExecutionBilling`
+before decoding the complete prepared execution. This preserves decimal-string
+quantities and the ISO quote timestamp at that boundary. Regression tests cover
+sponsored Base/Ethereum, sponsored Sepolia, and self-funded Base with substituted
+provider responses; they do not prove live mainnet approval or submission.
+
 ## Call normalization
 
 For auxiliary `simulateCalls`, empty calldata is omitted rather than sent as `data: "0x"`; Viem otherwise attempts an access-list asset-selector path that can produce provider gas errors. Non-empty calldata remains unchanged.

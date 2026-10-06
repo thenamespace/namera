@@ -105,6 +105,7 @@ layer(executionFixture.layer)("execution lease recovery", (it) => {
         expect(yield* app.execution.reconcile()).toBe(0);
         yield* setApiKey();
         yield* setAuthToken(owner.cookie.value);
+        yield* app.billing.reconcile();
         const billing = yield* client.billing.get();
         expect(billing.meters.find(({ key }) => key === "execution.mainnet")).toMatchObject({
           consumedAmount: 2n,

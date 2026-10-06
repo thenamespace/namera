@@ -97,7 +97,10 @@ layer(executionFixture.layer)("execution read routes", (it) => {
         yield* setApiKey(fixture.apiKey.key);
         const executions = yield* Effect.forEach(
           Array.from({ length: 51 }, (_, index) => index),
-          (index) => executeFixture(client, fixture, `list-${index}`),
+          (index) =>
+            executeFixture(client, fixture, `list-${index}`).pipe(
+              Effect.tap(() => Effect.flatMap(Application, (app) => app.billing.reconcile())),
+            ),
           { concurrency: 1 },
         );
         const confirmed = executions.filter((execution) => execution.status === "confirmed");
