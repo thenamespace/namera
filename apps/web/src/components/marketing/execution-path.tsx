@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 
+import { useIsHydrated, useMediaQuery } from "@namera-ai/ui/hooks";
 import { Icon, Loading03Icon, PlayIcon, RefreshIcon, Tick02Icon } from "@namera-ai/ui/icons";
 
 import "@xyflow/react/dist/base.css";
@@ -413,8 +414,8 @@ export const ExecutionPath = () => {
   const [step, setStep] = useState(-1);
   const [settled, setSettled] = useState(false);
   const [run, setRun] = useState(0);
-  const [ready, setReady] = useState(false);
-  const [wide, setWide] = useState(true);
+  const ready = useIsHydrated();
+  const wide = useMediaQuery("(min-width: 1024px)");
   const [moved, setMoved] = useState(false);
   const frame = useRef<HTMLDivElement | null>(null);
 
@@ -429,19 +430,6 @@ export const ExecutionPath = () => {
   const failAt = capOver ? POLICY_AT : chainInfo.allowed ? null : POLICY_AT + 1;
   const lastBeat = failAt ?? LAST_BEAT;
   const running = step >= 0 && !settled;
-
-  useEffect(() => {
-    setReady(true);
-    const query = window.matchMedia("(min-width: 1024px)");
-    const sync = () => {
-      setWide(query.matches);
-    };
-    sync();
-    query.addEventListener("change", sync);
-    return () => {
-      query.removeEventListener("change", sync);
-    };
-  }, []);
 
   useEffect(() => {
     if (step < 0 || settled) return;

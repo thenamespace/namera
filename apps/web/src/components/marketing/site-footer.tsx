@@ -40,8 +40,6 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
       { label: "API reference", href: SITE_LINKS.apiReference },
       { label: "Status", href: SITE_LINKS.status },
       { label: "Contact", href: SITE_LINKS.contact },
-      { label: "Terms of Service", href: SITE_LINKS.terms, internal: true },
-      { label: "Privacy Policy", href: SITE_LINKS.privacy, internal: true },
     ],
   },
 ];
@@ -72,13 +70,11 @@ export const SiteFooter = () => {
       <Container className="pt-16 pb-3 md:pt-20 md:pb-4">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-24">
           <div className="flex flex-col gap-4">
-            <span className="inline-flex items-center gap-2.5 text-foreground">
-              <NameraIcon aria-hidden fill="currentColor" className="h-3.5 w-auto" />
-              <span className="text-[0.9375rem] leading-none font-semibold tracking-[-0.02em]">
-                Namera
-              </span>
+            <span className="inline-flex items-center gap-2.5 font-inter text-lg leading-none font-semibold tracking-[-0.02em] text-foreground">
+              <NameraIcon aria-hidden fill="currentColor" className="h-[1cap] w-auto shrink-0" />
+              <span>Namera</span>
             </span>
-            <p className="max-w-[26ch] text-[0.8125rem] text-pretty text-ink-subtle">
+            <p className="max-w-[26ch] text-[0.8125rem] text-pretty text-ink-subtle lg:max-w-none">
               The permission layer for agent wallets.
             </p>
 
@@ -129,10 +125,22 @@ export const SiteFooter = () => {
           </div>
         </div>
 
-        <div className="mt-16 border-t-1 border-border pt-6">
+        <div className="mt-16 flex flex-col gap-3 border-t-1 border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[0.75rem] text-ink-subtle">
             © {year} Namespace Inc. All rights reserved.
           </p>
+          <nav aria-label="Legal" className="flex items-center gap-5">
+            {SITE_LINKS.privacy ? (
+              <Link to={SITE_LINKS.privacy} className={cn(linkClass, "tap-target text-xs")}>
+                Privacy Policy
+              </Link>
+            ) : null}
+            {SITE_LINKS.terms ? (
+              <Link to={SITE_LINKS.terms} className={cn(linkClass, "tap-target text-xs")}>
+                Terms
+              </Link>
+            ) : null}
+          </nav>
         </div>
       </Container>
 
@@ -141,7 +149,7 @@ export const SiteFooter = () => {
           overlaps. */}
       <p
         aria-hidden
-        className="pointer-events-none -mb-[0.3em] select-none text-center font-semibold leading-none tracking-[-0.05em] text-transparent [-webkit-text-stroke:1.5px_rgb(247_248_248/0.05)] text-[clamp(3.5rem,25vw,18rem)]"
+        className="pointer-events-none -mb-[0.3em] select-none text-center font-semibold leading-none tracking-[-0.05em] text-transparent [-webkit-text-stroke:1.5px_rgb(247_248_248/0.1)] text-[clamp(3.5rem,25vw,18rem)]"
       >
         namera
       </p>

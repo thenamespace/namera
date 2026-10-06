@@ -1,6 +1,11 @@
+import { useState } from "react";
+
+import { ClientOnly } from "@tanstack/react-router";
+
 import { ChainIcon, CheckmarkCircle02Icon, Icon, TokenIcon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
+import { formatDemoExpiry } from "#/components/marketing/demo-expiry";
 import { Container, Reveal, Section, SectionIntro } from "#/components/marketing/primitives";
 
 /* -------------------------------------------------------------------------
@@ -56,6 +61,11 @@ const Field = ({
   </div>
 );
 
+const DemoExpiry = () => {
+  const [expiry] = useState(() => formatDemoExpiry(new Date()));
+  return expiry;
+};
+
 /** The key itself, drawn as the product draws it. */
 const KeyCard = () => (
   <div
@@ -66,11 +76,8 @@ const KeyCard = () => (
     )}
   >
     <div className="flex items-center gap-3 px-4 py-3.5">
-      <span
-        aria-hidden
-        className="grid size-8 shrink-0 place-items-center rounded-md bg-[#3a2a52] text-[0.875rem]"
-      >
-        🦄
+      <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-lg bg-white">
+        <img src="/uniswap.svg" alt="" width={20} height={22} className="w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[0.875rem] font-medium text-foreground">Uniswap Agent</p>
@@ -104,7 +111,11 @@ const KeyCard = () => (
       <ChainIcon namespace="eip155" chain="base" aria-hidden className="size-3.5 rounded-[3px]" />
     </Field>
 
-    <Field label="Expires">27 Sept 2026</Field>
+    <Field label="Expires">
+      <ClientOnly fallback="In 3 months">
+        <DemoExpiry />
+      </ClientOnly>
+    </Field>
 
     <Field label="Signatures">
       <span className="text-ink-subtle">Off</span>

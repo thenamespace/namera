@@ -68,7 +68,7 @@ export const articleHead = (post: BlogPost) => {
   const description = post.seo?.description ?? post.description;
   const url = post.seo?.canonical ?? `${SITE.origin}${blogPath(post.slug)}`;
   const image = post.cover ??
-    post.seo?.image ?? { src: SITE.ogImage, alt: post.title, width: 1200, height: 630 };
+    post.seo?.image ?? { src: SITE.ogImage, alt: SITE.ogImageAlt, width: 1200, height: 630 };
   const imageUrl = new URL(image.src, SITE.origin).href;
   const base = seo({
     title,
@@ -136,7 +136,7 @@ export const articleHead = (post: BlogPost) => {
           "@id": `${SITE.origin}/#organization`,
           name: SITE.name,
           url: SITE.origin,
-          logo: { "@type": "ImageObject", url: `${SITE.origin}/icon-512.png` },
+          logo: { "@type": "ImageObject", url: SITE.logo },
         },
         keywords: (post.seo?.keywords ?? post.tags).join(", "),
         inLanguage: "en-US",

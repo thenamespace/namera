@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import type { ActorType } from "@namera-ai/protocol/model";
 import { ChartTooltip, PieChart, Typography, Widget } from "@namera-ai/ui";
 
@@ -23,19 +21,18 @@ type ExecutionSourcesChartProps = {
 const formatCount = (value: number | string) => Number(value).toLocaleString();
 const sourceTooltip = <ChartTooltip.Content hideHeader valueFormatter={formatCount} />;
 
+const executionSourceData = (sources: ReadonlyArray<ExecutionSource>) =>
+  sources
+    .filter((source) => source.count > 0)
+    .map((source) => ({
+      fill: sourceColors[source.actorType],
+      name: actorDisplay[source.actorType].label,
+      value: source.count,
+    }));
+
 export function ExecutionSourcesChart({ sources }: ExecutionSourcesChartProps) {
   const total = sources.reduce((sum, source) => sum + source.count, 0);
-  const chartData = useMemo(
-    () =>
-      sources
-        .filter((source) => source.count > 0)
-        .map((source) => ({
-          fill: sourceColors[source.actorType],
-          name: actorDisplay[source.actorType].label,
-          value: source.count,
-        })),
-    [sources],
-  );
+  const chartData = executionSourceData(sources);
 
   return (
     <Widget className="h-full">

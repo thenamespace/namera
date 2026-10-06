@@ -49,18 +49,55 @@
   color: var(--foreground);
 }
 
-.landing-page-layout .marketing-container {
-  max-width: 1280px;
-}
-
-@media (min-width: 48rem) {
-  .landing-page-layout .marketing-container {
-    width: 92%;
+/* CSS starts at first paint, so hydration cannot flash the finished hero first.
+   The entrance also completes without JavaScript. */
+@media (prefers-reduced-motion: no-preference) {
+  .landing-hero :is([data-hero-title-line], [data-hero-copy], [data-hero-cta]) {
+    animation: hero-copy-reveal 1s cubic-bezier(0.25, 0.1, 0.25, 1) backwards;
   }
 
-  .landing-page-layout :is(#clients, #stack) > .marketing-container {
-    width: 100%;
-    max-width: 1440px;
+  .landing-hero [data-hero-title-line] ~ [data-hero-title-line] {
+    animation-delay: 100ms;
+  }
+
+  .landing-hero [data-hero-copy] {
+    animation-delay: 250ms;
+  }
+
+  .landing-hero [data-hero-cta] {
+    animation-delay: 550ms;
+  }
+
+  .landing-hero [data-hero-preview] {
+    animation: hero-preview-reveal 1.3s cubic-bezier(0.25, 0.1, 0.25, 1) 1.05s backwards;
+  }
+
+  .landing-hero :is([data-hero-cta], [data-hero-preview]):focus-within {
+    animation: none;
+  }
+}
+
+@keyframes hero-copy-reveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(20%);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-preview-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

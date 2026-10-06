@@ -20,6 +20,7 @@ import {
   OAuthClientDisplay,
 } from "@/components/display";
 import { chainDataById } from "@/components/display/chain-display";
+import { useCurrentTime } from "@/hooks/use-current-time";
 
 type DetailPropertyProps = {
   children: ReactNode;
@@ -67,6 +68,7 @@ function DetailSection({ children, title }: { children: ReactNode; title: string
 }
 
 function ActorDetails({ actor }: { actor: ExecutionDetailsResponse["actor"] }) {
+  const now = useCurrentTime();
   if (actor.type === "user") {
     return (
       <>
@@ -91,8 +93,7 @@ function ActorDetails({ actor }: { actor: ExecutionDetailsResponse["actor"] }) {
     const status =
       actor.apiKey.revokedAt !== null
         ? "Revoked"
-        : actor.apiKey.expiresAt !== null &&
-            DateTime.toEpochMillis(actor.apiKey.expiresAt) <= Date.now()
+        : actor.apiKey.expiresAt !== null && DateTime.toEpochMillis(actor.apiKey.expiresAt) <= now
           ? "Expired"
           : "Active";
     return (

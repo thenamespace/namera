@@ -2,7 +2,12 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { RegistryContext } from "@effect/atom-react";
 
-import type { FieldValues, SubmitHandler, UseFormReturn } from "react-hook-form";
+import {
+  useWatch,
+  type FieldValues,
+  type SubmitHandler,
+  type UseFormReturn,
+} from "react-hook-form";
 
 import { canSaveInAuthority, sessionAuthority } from "@/atoms/auth/authority";
 import { currentUserAtom } from "@/atoms/auth/session";
@@ -34,13 +39,17 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
   const registry = useContext(RegistryContext);
   const authority = useRef(sessionAuthority(queryData(registry.get(currentUserAtom))));
   const [status, setStatus] = useState<AutoSaveStatus>("idle");
-  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [baselineSignature, setBaselineSignature] = useState(() =>
+    stableStringify(form.getValues()),
+  );
+  const watchedValues = useWatch({ control: form.control });
+  const hasPendingChanges = enabled && stableStringify(watchedValues) !== baselineSignature;
   const onSaveRef = useRef(onSave);
   const enabledRef = useRef(enabled);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const statusResetRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const baselineRef = useRef(stableStringify(form.getValues()));
-  const observedSignatureRef = useRef(baselineRef.current);
+  const baselineRef = useRef(baselineSignature);
+  const observedSignatureRef = useRef(baselineSignature);
   const inFlightRef = useRef(false);
   const rerunAfterSaveRef = useRef(false);
   const mountedRef = useRef(true);
@@ -64,10 +73,6 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
     if (mountedRef.current) setStatus(nextStatus);
   }, []);
 
-  const setPendingIfMounted = useCallback((pending: boolean) => {
-    if (mountedRef.current) setHasPendingChanges(pending);
-  }, []);
-
   const save = useCallback(
     async (options: SaveOptions = {}) => {
       clearSaveTimeout();
@@ -83,7 +88,6 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
       const data = form.getValues();
       const dataSignature = stableStringify(data);
       if (dataSignature === baselineRef.current) {
-        setPendingIfMounted(false);
         return;
       }
 
@@ -116,9 +120,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
         baselineRef.current = dataSignature;
 
-        const currentSignature = stableStringify(form.getValues());
-        const stillPending = currentSignature !== baselineRef.current;
-        setPendingIfMounted(stillPending);
+        if (mountedRef.current) setBaselineSignature(dataSignature);
 
         if (!options.silent) {
           setStatusIfMounted("saved");
@@ -132,11 +134,11 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
         if (rerunAfterSaveRef.current) {
           rerunAfterSaveRef.current = false;
-          void save(options);
+          void saveRef.current(options);
         }
       }
     },
-    [clearSaveTimeout, clearStatusTimeout, form, registry, setPendingIfMounted, setStatusIfMounted],
+    [clearSaveTimeout, clearStatusTimeout, form, registry, setStatusIfMounted],
   );
 
   const queueSave = useCallback(() => {
@@ -153,12 +155,10 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
     if (!enabled) {
       clearSaveTimeout();
-      setHasPendingChanges(false);
       return;
     }
 
     const pending = stableStringify(form.getValues()) !== baselineRef.current;
-    setHasPendingChanges(pending);
     if (pending) queueSave();
   }, [clearSaveTimeout, enabled, form, queueSave]);
 
@@ -176,13 +176,12 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
           observedSignatureRef.current = signature;
           const pending = enabledRef.current && signature !== baselineRef.current;
-          setPendingIfMounted(pending);
 
           if (pending) queueSave();
           else clearSaveTimeout();
         },
       }),
-    [clearSaveTimeout, form, queueSave, setPendingIfMounted],
+    [clearSaveTimeout, form, queueSave],
   );
 
   useEffect(() => {
@@ -213,10 +212,10 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
       observedSignatureRef.current = signature;
       clearSaveTimeout();
       clearStatusTimeout();
-      setPendingIfMounted(false);
+      if (mountedRef.current) setBaselineSignature(signature);
       setStatusIfMounted("idle");
     },
-    [clearSaveTimeout, clearStatusTimeout, form, setPendingIfMounted, setStatusIfMounted],
+    [clearSaveTimeout, clearStatusTimeout, form, setStatusIfMounted],
   );
 
   return { hasPendingChanges, resetBaseline, save, status };

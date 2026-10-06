@@ -31,10 +31,18 @@ export const Route = createRootRoute({
        * browsers that still ask for one, and the touch icon is a PNG because
        * iOS will not take an SVG.
        */
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#5e6ad2" },
+      { rel: "icon", href: "https://cdn.namera.ai/seo/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "https://cdn.namera.ai/seo/favicon.ico", sizes: "48x48" },
+      {
+        rel: "apple-touch-icon",
+        href: "https://cdn.namera.ai/seo/apple-touch-icon.png",
+        sizes: "180x180",
+      },
+      {
+        rel: "mask-icon",
+        href: "https://cdn.namera.ai/seo/safari-pinned-tab.svg",
+        color: "#5e6ad2",
+      },
       { rel: "manifest", href: "/site.webmanifest" },
       { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
     ],

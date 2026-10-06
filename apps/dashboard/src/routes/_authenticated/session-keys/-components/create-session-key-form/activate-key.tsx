@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { Button, Typography } from "@namera-ai/ui";
+import { useEventCallback } from "usehooks-ts";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
@@ -20,6 +21,13 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
   ).length;
   const host = new URL(env.backendUrl).origin.replaceAll("'", "'\\''");
   const command = `namera login --host '${host}'`;
+  const openSession = useEventCallback(
+    () =>
+      void navigate({
+        to: "/session-key/$sessionKeyId/overview",
+        params: { sessionKeyId: sessionKey.id },
+      }),
+  );
 
   return (
     <>
@@ -33,15 +41,7 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
           later.
         </Typography.Paragraph>
         <SessionKeyInstallations sessionKey={sessionKey} compact />
-        <Button
-          variant="tertiary"
-          onPress={() =>
-            void navigate({
-              to: "/session-key/$sessionKeyId/overview",
-              params: { sessionKeyId: sessionKey.id },
-            })
-          }
-        >
+        <Button variant="tertiary" onPress={openSession}>
           View Session key
         </Button>
       </section>

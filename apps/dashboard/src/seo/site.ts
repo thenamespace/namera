@@ -7,8 +7,8 @@ export const dashboardSite = {
     "Manage your Namera accounts, session keys, spending limits, and agent access. Review onchain activity and control what your agents can do.",
   keywords:
     "Namera, agent wallets, programmable wallets, smart accounts, session keys, wallet permissions, spending limits",
-  image: "/og.png",
-  imageAlt: "Namera logo and wordmark on a plain dark background",
+  image: "https://cdn.namera.ai/seo/og.png",
+  imageAlt: "Namera logo and wordmark on a dark charcoal gradient",
   twitter: "@namera_ai",
 } as const;
 
@@ -37,12 +37,12 @@ export const structuredData = {
   operatingSystem: "Web",
   browserRequirements: "Requires JavaScript and a modern browser with passkey support.",
   inLanguage: "en",
-  image: `${dashboardSite.origin}${dashboardSite.image}`,
+  image: dashboardSite.image,
   publisher: {
     "@type": "Organization",
     name: "Namera",
     url: "https://namera.ai",
-    logo: `${dashboardSite.origin}/icon-512.png`,
+    logo: "https://cdn.namera.ai/seo/icon-512.png",
   },
 };
 
@@ -62,7 +62,7 @@ export function pageMetadata(page: PageSeo) {
       "og:title": title,
       "og:description": page.description,
       "og:url": `${dashboardSite.origin}${dashboardSite.publicPath}`,
-      "og:image": `${dashboardSite.origin}${dashboardSite.image}`,
+      "og:image": dashboardSite.image,
       "og:image:type": "image/png",
       "og:image:width": "1200",
       "og:image:height": "630",
@@ -71,7 +71,7 @@ export function pageMetadata(page: PageSeo) {
       "twitter:site": dashboardSite.twitter,
       "twitter:title": title,
       "twitter:description": page.description,
-      "twitter:image": `${dashboardSite.origin}${dashboardSite.image}`,
+      "twitter:image": dashboardSite.image,
       "twitter:image:alt": dashboardSite.imageAlt,
     },
   };

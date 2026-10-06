@@ -42,7 +42,7 @@ const ownershipLabels: Record<WalletResponse["owner"]["custody"], string> = {
   "namera-managed": "Namera managed",
 };
 
-export function AccountFilterMenu({
+export function accountFilterMenu({
   counts,
   filters,
   onChange,

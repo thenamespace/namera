@@ -449,12 +449,13 @@ query-string handling); the security-only `_headers` file does not implement
 these routing rules. Preview/staging hosts should apply a site-wide `noindex`.
 Public canonical URLs intentionally reference `https://dashboard.namera.ai`.
 
-`public/og.svg` is the editable source for the shared 1200×630 `og.png`. It
-reuses the public site's Namera mark and dark palette. The logo and wordmark
-sit together in the center at matching visible heights, with no tagline or
-decoration, as requested. No UI or user data is pictured. Favicons and install icons reuse the
-existing brand assets from `apps/web/public`. Export the SVG as a 1200×630 PNG
-when changing the artwork; asset dimension tests guard the output.
+The website and dashboard share the 1200×630 OG image, favicons, touch and install
+icons in local `assets/seo/` (Git-ignored), served from
+`https://cdn.namera.ai/seo/`. The centered logo and wordmark sit on a dark gradient;
+no UI or user data is pictured. Upload these assets before deploying the CDN
+references. No copies remain in either app's public folder. The app-specific
+manifest remains same-origin and points to CDN icons. Tests guard URL contracts
+without requiring local assets; the existing HTTPS image CSP permits the CDN.
 
 ### Document security
 

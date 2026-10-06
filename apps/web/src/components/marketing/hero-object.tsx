@@ -230,11 +230,11 @@ const INBOX = [
   },
 ] as const;
 
-/* Points for the operations chart, one series per range. */
+/* Illustrative activity counts, not cumulative totals: busy periods alternate with quieter ones. */
 const SERIES: Record<Range, readonly number[]> = {
-  Daily: [4, 9, 6, 14, 11, 19, 16, 24, 21, 28, 26, 34, 31, 38],
-  Weekly: [18, 26, 21, 34, 29, 41, 36, 48, 44, 57, 52, 64, 61, 72],
-  Monthly: [40, 62, 55, 78, 71, 96, 88, 112, 104, 131, 124, 148, 141, 168],
+  Daily: [16, 21, 19, 10, 12, 27, 32, 24, 17, 19, 29, 23, 15, 20],
+  Weekly: [42, 57, 63, 46, 31, 38, 55, 72, 61, 49, 34, 45, 59, 52],
+  Monthly: [96, 118, 105, 78, 92, 143, 128, 110, 82, 97, 136, 154, 121, 132],
 };
 const AXIS = ["27 Aug", "30 Aug", "2 Sept", "5 Sept", "8 Sept"];
 
@@ -413,12 +413,12 @@ const StatCard = ({
   readonly delta?: string;
   readonly up?: boolean;
 }) => (
-  <div className="rounded-xl border-1 border-border bg-surface/40 px-3.5 py-3">
+  <div className="flex flex-col rounded-xl border-1 border-border bg-surface/40 px-3.5 py-3">
     <p className="flex items-center gap-2 text-[0.8125rem] text-foreground">
       <Icon icon={icon} aria-hidden strokeWidth={1.7} className="size-3.5 text-ink-subtle" />
       <span className="truncate">{label}</span>
     </p>
-    <div className="mt-2 flex items-end justify-between gap-2">
+    <div className={cn("flex items-end justify-between gap-2", pill ? "mt-auto pt-5" : "mt-2")}>
       <span className="text-[1.5rem] leading-none tracking-[-0.02em] tabular-nums text-foreground">
         {value}
       </span>
@@ -445,9 +445,19 @@ const OperationsChart = ({ range }: { readonly range: Range }) => {
   const points = SERIES[range];
   const max = Math.max(...points);
   const step = 100 / (points.length - 1);
-  const line = points
-    .map((p, i) => `${String(i * step)},${String(100 - (p / max) * 88)}`)
-    .join(" L");
+  const coordinates = points.map((value, index) => ({
+    x: index * step,
+    y: 100 - (value / max) * 88,
+  }));
+  // Horizontal tangents round the turns without overshooting the sample values.
+  const line = coordinates
+    .map((point, index) => {
+      const previous = coordinates[index - 1];
+      if (!previous) return `M${point.x},${point.y}`;
+      const midpoint = (previous.x + point.x) / 2;
+      return `C${midpoint},${previous.y} ${midpoint},${point.y} ${point.x},${point.y}`;
+    })
+    .join(" ");
 
   return (
     <div className="relative mt-4 h-[9.5rem]">
@@ -468,12 +478,12 @@ const OperationsChart = ({ range }: { readonly range: Range }) => {
             <stop offset="100%" stopColor="#5e6ad2" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={`M${line} L100,100 L0,100 Z`} fill="url(#ops-fill)" />
+        <path d={`${line} L100,100 L0,100 Z`} fill="url(#ops-fill)" />
         <path
-          d={`M${line}`}
+          d={line}
           fill="none"
           stroke="#7d87e8"
-          strokeWidth="0.8"
+          strokeWidth="1.5"
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -663,7 +673,7 @@ const InboxPanel = () => {
         </ul>
       </div>
 
-      <div className="hidden min-w-0 flex-1 px-8 pt-4 lg:block">
+      <div className="hidden min-w-0 flex-1 px-8 pt-8 lg:block">
         <div className="mx-auto max-w-[32rem]">
           <div className="flex items-center gap-3.5">
             <span

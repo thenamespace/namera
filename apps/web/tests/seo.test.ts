@@ -15,8 +15,15 @@ describe("website SEO origin", () => {
       rel: "canonical",
       href: `${SITE.origin}/pricing`,
     });
-    expect(head.meta).toContainEqual({ property: "og:image", content: `${SITE.origin}/og.png` });
-    expect(head.meta).toContainEqual({ name: "twitter:image", content: `${SITE.origin}/og.png` });
+    expect(head.meta).toContainEqual({
+      property: "og:image",
+      content: "https://cdn.namera.ai/seo/og.png",
+    });
+    expect(head.meta).toContainEqual({
+      name: "twitter:image",
+      content: "https://cdn.namera.ai/seo/og.png",
+    });
+    expect(ORGANIZATION.logo).toBe("https://cdn.namera.ai/seo/icon-512.png");
     expect(ORGANIZATION.url).toBe(SITE.origin);
     expect(WEBSITE.url).toBe(SITE.origin);
   });

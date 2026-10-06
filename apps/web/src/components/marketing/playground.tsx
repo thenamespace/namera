@@ -215,12 +215,12 @@ export const Playground = () => {
 
   /** -1 idle, 0..n checking that rule, past the end settled. */
   const [cursor, setCursor] = useState(-1);
-  const [settled, setSettled] = useState(false);
 
   const to: TokenId = from === "ETH" ? "USDC" : "ETH";
   const rules = evaluate(from, value, network);
   const firstFailure = rules.findIndex((rule) => !rule.pass);
   const lastChecked = firstFailure === -1 ? rules.length - 1 : firstFailure;
+  const settled = cursor > lastChecked;
 
   const amount = amountOf(value);
   const receives = amount * (TOKENS[from].usd / TOKENS[to].usd);
@@ -229,16 +229,10 @@ export const Playground = () => {
   /** Any edit invalidates the run on screen. */
   const reset = () => {
     setCursor(-1);
-    setSettled(false);
   };
 
   useEffect(() => {
     if (cursor < 0 || settled) return;
-
-    if (cursor > lastChecked) {
-      setSettled(true);
-      return;
-    }
 
     const timer = setTimeout(
       () => {
@@ -249,7 +243,7 @@ export const Playground = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [cursor, lastChecked, reduced, settled]);
+  }, [cursor, reduced, settled]);
 
   const stateOf = (index: number) => {
     if (cursor < 0) return "idle" as const;
@@ -277,7 +271,15 @@ export const Playground = () => {
             <div className="edge-top relative flex flex-col overflow-hidden rounded-xl border-1 border-border bg-surface/40">
               <div className="flex items-center justify-between gap-3 border-b-1 border-border px-4 py-3 sm:px-5">
                 <p className="flex items-center gap-2 text-[0.8125rem] font-medium text-foreground">
-                  <img src="/uniswap.svg" alt="" width={20} height={22} className="w-5 shrink-0" />
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-white">
+                    <img
+                      src="/uniswap.svg"
+                      alt=""
+                      width={20}
+                      height={22}
+                      className="h-[1cap] w-auto"
+                    />
+                  </span>
                   Uniswap Agent
                 </p>
                 <div className="flex items-center gap-1">
@@ -396,7 +398,6 @@ export const Playground = () => {
                   type="button"
                   disabled={running}
                   onClick={() => {
-                    setSettled(false);
                     setCursor(0);
                   }}
                   className={

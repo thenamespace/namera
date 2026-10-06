@@ -232,10 +232,11 @@ visible questions, without an offer while the CTA is a waitlist. Pricing adds
 are noindex. Articles retain their authored SEO overrides and `BlogPosting`.
 
 `SITE` in `src/lib/seo.ts` owns the site positioning and hero description.
-The social image source is `public/og.svg`; after changing it, regenerate the
-1200×630 PNG with `magick -font /System/Library/Fonts/Helvetica.ttc -background none public/og.svg public/og.png`
-from `apps/web` on macOS (select an installed font path on other systems).
-Keep its copy and the install manifest aligned with the hero. Blog social
+The website and dashboard share the OG image and padded icons in root
+`assets/seo/`, served from `https://cdn.namera.ai/seo/`. The entire `assets/`
+directory is Git-ignored; these are operator-managed CDN source files.
+Sync those assets before deploying; do not duplicate them in app public folders.
+The app-specific install manifest remains local and references the CDN icons. Blog social
 previews use each article's cover URL directly, without generated images;
 coverless posts use `seo.image` or the static site image as a fallback.
 
@@ -245,10 +246,20 @@ the sitemap, and externally canonicalized posts are excluded from the sitemap.
 
 ## Motion
 
-The hero uses a one-time Motion entrance after hydration: copy staggers in with
-a small upward blur/fade, followed by the dashboard and its wider light stage.
+The hero uses a one-time CSS entrance from first paint: title lines stagger
+through an upward blur/fade, supporting copy starts at 250ms, the CTA at 550ms, and the static
+dashboard preview follows at 1050ms. The full entrance settles at 2350ms.
 Reduced-motion users see the final state immediately. Server HTML remains
-visible without JavaScript, and the hero does not use the scroll-reveal classes.
+available without JavaScript, and the hero does not use the scroll-reveal classes.
+
+The hero stage uses `/hero-bg-poster.jpg`, a static smoke frame masked around
+the dashboard. It does not download or play a video and needs no playback
+controls. The original video remains locally staged at
+`assets/web/videos/hero-bg.mp4` for archival/upload use; `assets/` is Git-ignored.
+
+The session key anatomy demo calculates its expiry three calendar months from
+the visitor's current UTC date on mount, clamping to month end when necessary.
+Its server-rendered fallback says "In 3 months" to avoid stale or mismatched dates.
 
 Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
 behind an `@supports` guard, not JavaScript. Where the feature is unsupported

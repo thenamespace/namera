@@ -33,8 +33,10 @@ export const SITE = {
     "MCP wallet",
     "agent custody",
   ],
-  /** 1200x630, served from `public/`. */
-  ogImage: "/og.png",
+  /** Shared 1200x630 artwork, published from assets/seo. */
+  ogImage: "https://cdn.namera.ai/seo/og.png",
+  ogImageAlt: "Namera logo and wordmark on a dark charcoal gradient",
+  logo: "https://cdn.namera.ai/seo/icon-512.png",
   twitter: "@namera_ai",
 } as const;
 
@@ -59,7 +61,7 @@ type LinkTag = { rel: string; href: string };
 export const seo = ({ title, description, path, noindex = false, type = "website" }: SeoInput) => {
   const full = title ?? `${SITE.name} - ${SITE.tagline}`;
   const url = `${SITE.origin}${path}`;
-  const image = `${SITE.origin}${SITE.ogImage}`;
+  const image = SITE.ogImage;
 
   return {
     meta: [
@@ -76,7 +78,7 @@ export const seo = ({ title, description, path, noindex = false, type = "website
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:type", content: "image/png" },
-      { property: "og:image:alt", content: `${SITE.name} - ${SITE.tagline}` },
+      { property: "og:image:alt", content: SITE.ogImageAlt },
       { property: "og:locale", content: "en_US" },
 
       { name: "twitter:card", content: "summary_large_image" },
@@ -84,7 +86,7 @@ export const seo = ({ title, description, path, noindex = false, type = "website
       { name: "twitter:title", content: full },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: image },
-      { name: "twitter:image:alt", content: `${SITE.name} - ${SITE.tagline}` },
+      { name: "twitter:image:alt", content: SITE.ogImageAlt },
       { name: "twitter:creator", content: SITE.twitter },
 
       {
@@ -120,7 +122,7 @@ export const ORGANIZATION = {
   "@id": `${SITE.origin}/#organization`,
   name: SITE.name,
   url: SITE.origin,
-  logo: `${SITE.origin}/icon-512.png`,
+  logo: SITE.logo,
   description: SITE.description,
   sameAs: [
     "https://github.com/thenamespace/namera",

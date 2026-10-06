@@ -10,8 +10,6 @@ import { SITE_LINKS } from "#/lib/site-links";
 
 // Every item resolves to a section that exists on this page (R-24).
 const NAV_LINKS = [
-  { label: "Playground", href: "/#playground" },
-  { label: "Clients", href: "/#clients" },
   { label: "Pricing", href: "/pricing" },
   { label: "Blog", href: "/blog" },
 ] as const;
@@ -62,8 +60,8 @@ export const SiteHeader = () => {
       className={cn(
         "fixed inset-x-0 top-0 z-50 border-b-1 transition-colors duration-200 ease-out-quad",
         scrolled || menuOpen
-          ? "border-border bg-background/72 backdrop-blur-xl backdrop-saturate-150"
-          : "border-border bg-transparent",
+          ? "border-border/60 bg-background/72 backdrop-blur-xl backdrop-saturate-150"
+          : "border-border/60 bg-transparent",
       )}
     >
       <div className="marketing-container mx-auto flex h-14 w-full max-w-[1440px] items-center gap-6 px-6 md:px-10 lg:px-14">
