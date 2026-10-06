@@ -9,21 +9,21 @@ const signIn: PageSeo = {
   indexable: true,
 };
 const account: PageSeo = {
-  title: "Account overview",
+  title: "Overview",
   description:
     "Review your account status, network addresses, ownership, and permissions in Namera.",
 };
 const session: PageSeo = {
-  title: "Session key overview",
+  title: "Overview",
   description:
     "Review your session key status, expiration, account access, and network approvals in Namera.",
 };
 const usage: PageSeo = {
-  title: "Session key usage",
+  title: "Usage",
   description: "Review onchain executions and activity for this Namera session key.",
 };
 const mcp: PageSeo = {
-  title: "MCP connections",
+  title: "MCP",
   description: "Connect your agents to Namera with MCP and manage their authorized session keys.",
 };
 
@@ -70,21 +70,21 @@ export const pageSeo = {
   "/_authenticated/account/$accountId/": account,
   "/_authenticated/account/$accountId/overview": account,
   "/_authenticated/account/$accountId/assets": {
-    title: "Account assets",
+    title: "Assets",
     description:
       "Review token balances and portfolio holdings across your account's supported networks.",
   },
   "/_authenticated/account/$accountId/session-keys": {
-    title: "Account session keys",
+    title: "Session Keys",
     description:
       "Manage the session keys and delegated access associated with this Namera account.",
   },
   "/_authenticated/account/$accountId/usage": {
-    title: "Account usage",
+    title: "Usage",
     description: "Review execution history and onchain activity for this Namera account.",
   },
   "/_authenticated/session-keys/": {
-    title: "Session keys",
+    title: "Session Keys",
     description:
       "Manage agent access with Namera session keys, scoped permissions, spending limits, and expiration dates.",
   },
@@ -97,7 +97,7 @@ export const pageSeo = {
   "/_authenticated/session-key/$sessionKeyId/": session,
   "/_authenticated/session-key/$sessionKeyId/overview": session,
   "/_authenticated/session-key/$sessionKeyId/policies": {
-    title: "Session key policies",
+    title: "Policies",
     description:
       "Review contract access, spending limits, signature permissions, and network approvals for your session key.",
   },
@@ -131,7 +131,7 @@ export const pageSeo = {
     description: "Update your name and profile image in Namera.",
   },
   "/_authenticated/settings/notifications": {
-    title: "Notification preferences",
+    title: "Notifications",
     description: "Choose which account, product, and workspace emails you receive from Namera.",
   },
   "/_authenticated/settings/security": {
@@ -143,7 +143,7 @@ export const pageSeo = {
     description: "Update your Namera workspace name, logo, and details.",
   },
   "/_authenticated/settings/workspace/members": {
-    title: "Members and invitations",
+    title: "Members",
     description: "Manage workspace members, roles, and team invitations in Namera.",
   },
   "/_authenticated/settings/workspace/api-keys": {
@@ -152,11 +152,11 @@ export const pageSeo = {
       "Create and manage API credentials with scoped session-key access for your Namera integrations.",
   },
   "/_authenticated/settings/workspace/billings": {
-    title: "Billing and usage",
+    title: "Billing",
     description: "Review your Namera plan, included allowances, current usage, and reset date.",
   },
   "/_authenticated/settings/workspace/cli-authorizations": {
-    title: "CLI authorizations",
+    title: "CLI access",
     description:
       "Review authorized CLI devices and revoke their access to your Namera session keys.",
   },
