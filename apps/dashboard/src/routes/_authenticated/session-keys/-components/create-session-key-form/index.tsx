@@ -6,7 +6,11 @@ import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { type CreateSessionKeyResponse, type ListWalletsResponse } from "@namera-ai/protocol/dto";
+import {
+  type CreateEvmSessionKeyRequest,
+  type CreateSessionKeyResponse,
+  type ListWalletsResponse,
+} from "@namera-ai/protocol/dto";
 import type { LocalEvmSessionBinding } from "@namera-ai/protocol/local";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
@@ -17,17 +21,17 @@ import {
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
 import { useForm, type DefaultValues } from "react-hook-form";
 
+import { HeadingGroup } from "@/components/heading-group";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-import { ActivateSessionKey } from "./activate-key";
 import { SessionKeyDetailsCard } from "./details-card";
-import { ExportSessionKey } from "./export-key";
 import { OnchainSettings } from "./onchain-settings";
 import { PolicySection } from "./policies";
 import { CreateSessionKeyFormSchema } from "./schema";
+import { SetupSessionKey } from "./setup-key";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
@@ -81,7 +85,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
   });
   const acceptRegistration = (
     created: CreateSessionKeyResponse,
-    payload: CreateSessionKeyFormValues,
+    payload: CreateEvmSessionKeyRequest,
   ) => {
     if (!mounted.current) return;
     setRegistration(created);
@@ -137,16 +141,17 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
   });
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues,
+    mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (submitting.current || createSessionKey.isPending || registration) return;
+    if (submitting.current || createSessionKey.isPending || registration || !form.formState.isValid)
+      return;
     submitting.current = true;
     try {
       draft.current ??= createLocalSessionKeyDraft();
       setNeedsBackup(true);
-      form.setValue("signer", draft.current.signer);
     } catch (error) {
       submitting.current = false;
       showErrorToast(error, {
@@ -159,7 +164,11 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
       .handleSubmit(
         (payload) => {
           reviewedWallet.current = wallets.find((wallet) => wallet.id === payload.walletId);
-          createSessionKey.mutate({ payload });
+          if (!draft.current) {
+            submitting.current = false;
+            return;
+          }
+          createSessionKey.mutate({ payload: { ...payload, signer: draft.current.signer } });
         },
         () => {
           submitting.current = false;
@@ -176,6 +185,16 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
 
   return (
     <>
+      <HeadingGroup className="mb-6">
+        <HeadingGroup.Title level={1} size="lg">
+          {registration ? "Finish setting up your key" : "Create a session key"}
+        </HeadingGroup.Title>
+        <HeadingGroup.Description>
+          {registration
+            ? "Your key is registered. Complete these steps before using it."
+            : "Define scoped access to an account for agents and integrations."}
+        </HeadingGroup.Description>
+      </HeadingGroup>
       {registration ? (
         <div className="grid gap-6">
           {registrationError ? (
@@ -184,7 +203,8 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               available.
             </Typography.Paragraph>
           ) : bindings && draft.current ? (
-            <ExportSessionKey
+            <SetupSessionKey
+              sessionKey={registration}
               draft={draft.current}
               bindings={bindings}
               onSaved={() => {
@@ -193,25 +213,27 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               }}
             />
           ) : null}
-          <Button
-            variant="tertiary"
-            onPress={() =>
-              void navigate({
-                to: "/session-key/$sessionKeyId/overview",
-                params: { sessionKeyId: registration.id },
-              })
-            }
-          >
-            View session
-          </Button>
-          {!registrationError && !needsBackup ? (
-            <ActivateSessionKey key={registration.id} sessionKey={registration} />
+          {registrationError ? (
+            <Button
+              variant="tertiary"
+              onPress={() =>
+                void navigate({
+                  to: "/session-key/$sessionKeyId/overview",
+                  params: { sessionKeyId: registration.id },
+                })
+              }
+            >
+              Open session details
+            </Button>
           ) : null}
         </div>
       ) : (
         <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>
           <div className="grid gap-8">
-            <SessionKeyDetailsCard control={form.control} wallets={wallets} />
+            <section className="grid gap-4">
+              <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
+              <SessionKeyDetailsCard control={form.control} wallets={wallets} />
+            </section>
             <OnchainSettings form={form} />
             <PolicySection form={form} wallets={wallets} />
           </div>
@@ -225,7 +247,9 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
             className="mt-4"
             form="create-session-key-form"
             fullWidth
-            isDisabled={createSessionKey.isPending}
+            isDisabled={
+              createSessionKey.isPending || form.formState.isSubmitting || !form.formState.isValid
+            }
             type="submit"
           >
             {createSessionKey.isPending ? "Creating…" : "Create session key"}
@@ -250,7 +274,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               </AlertDialog.Body>
               <AlertDialog.Footer>
                 <Button variant="tertiary" onPress={() => blocker.reset?.()}>
-                  Keep editing
+                  Stay and save key
                 </Button>
                 <Button variant="danger" onPress={() => blocker.proceed?.()}>
                   Discard local key

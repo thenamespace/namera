@@ -29,7 +29,7 @@ export function PolicyPicker({
           variant="secondary"
         />
       </div>
-      <div className="grid max-h-[45vh] gap-2 overflow-y-auto p-0.5">
+      <div className="grid gap-4 p-0.5">
         {(["Access", "Limits", "Advanced"] as const).map((group) => {
           const entries = choices.filter((entry) => entry.group === group);
           if (!entries.length) return null;
@@ -37,7 +37,7 @@ export function PolicyPicker({
             <section key={group} className="grid gap-2 sm:grid-cols-2" aria-label={group}>
               <Typography.Heading
                 level={3}
-                className="col-span-full pt-2 text-xs font-medium text-muted"
+                className="col-span-full text-xs font-medium text-muted"
               >
                 {group}
               </Typography.Heading>
@@ -49,7 +49,7 @@ export function PolicyPicker({
                     key={entry.id}
                     type="button"
                     variant="ghost"
-                    className="border-separator h-20 w-full justify-start gap-3 rounded-lg border px-3 py-3 text-left whitespace-normal"
+                    className="border-separator h-auto min-h-18 w-full items-start justify-start gap-3 rounded-lg border p-3 text-left whitespace-normal"
                     isDisabled={disabled}
                     aria-label={`${disabled ? `${reason}:` : "Configure"} ${entry.name}`}
                     onPress={() => onSelect(entry)}
@@ -58,8 +58,8 @@ export function PolicyPicker({
                       <HugeiconsIcon icon={entry.icon} size={18} />
                     </span>
                     <span className="grid min-w-0 flex-1 gap-1">
-                      <span className="truncate text-sm font-medium">{entry.name}</span>
-                      <span className="text-muted line-clamp-2 text-xs leading-4 font-normal">
+                      <span className="text-sm font-medium">{entry.name}</span>
+                      <span className="text-muted text-xs leading-4 font-normal">
                         {reason ?? entry.description}
                       </span>
                     </span>

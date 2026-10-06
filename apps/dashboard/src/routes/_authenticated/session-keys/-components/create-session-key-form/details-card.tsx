@@ -68,15 +68,27 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
             control={control}
             name="metadata.name"
             render={({ field, fieldState }) => (
-              <DashboardCardRow className="sm:items-start">
+              <DashboardCardRow className="items-start sm:items-start">
                 <Field className="contents" data-invalid={fieldState.invalid}>
                   <div className="grid min-w-0 gap-1">
-                    <FieldLabel htmlFor="session-key-name">Name</FieldLabel>
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    <FieldLabel htmlFor="session-key-name" isRequired>
+                      Name
+                    </FieldLabel>
+                    <div className="min-h-5" id="session-key-name-error">
+                      {fieldState.invalid ? (
+                        <FieldError>
+                          {field.value?.trim()
+                            ? "Use a name of 255 characters or fewer."
+                            : "Enter a name for this session key."}
+                        </FieldError>
+                      ) : null}
+                    </div>
                   </div>
                   <Input
                     {...field}
                     id="session-key-name"
+                    aria-describedby={fieldState.error ? "session-key-name-error" : undefined}
+                    required
                     aria-invalid={fieldState.invalid}
                     autoComplete="off"
                     fullWidth
@@ -92,15 +104,22 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
             control={control}
             name="metadata.description"
             render={({ field, fieldState }) => (
-              <DashboardCardRow className="sm:items-start">
+              <DashboardCardRow className="items-start sm:items-start">
                 <Field className="contents" data-invalid={fieldState.invalid}>
                   <div className="grid min-w-0 gap-1">
                     <FieldLabel htmlFor="session-key-description">Description</FieldLabel>
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    <div className="min-h-5" id="session-key-description-error">
+                      {fieldState.invalid ? (
+                        <FieldError>Keep the description to 1,024 characters or fewer.</FieldError>
+                      ) : null}
+                    </div>
                   </div>
                   <TextArea
                     {...field}
                     id="session-key-description"
+                    aria-describedby={
+                      fieldState.error ? "session-key-description-error" : undefined
+                    }
                     aria-invalid={fieldState.invalid}
                     autoComplete="off"
                     fullWidth
@@ -120,14 +139,23 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
               const selectedWallet = activeWallets.find((wallet) => wallet.id === field.value);
 
               return (
-                <DashboardCardRow className="sm:items-start">
+                <DashboardCardRow className="items-start sm:items-start">
                   <Field className="contents" data-invalid={fieldState.invalid}>
                     <div className="grid min-w-0 gap-1">
-                      <FieldLabel id="session-key-wallet-label">Account</FieldLabel>
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      <FieldLabel id="session-key-wallet-label" isRequired>
+                        Account
+                      </FieldLabel>
+                      <div className="min-h-5" id="session-key-wallet-error">
+                        {fieldState.invalid ? (
+                          <FieldError>Choose an account for this session key.</FieldError>
+                        ) : null}
+                      </div>
                     </div>
                     <Select
                       aria-labelledby="session-key-wallet-label"
+                      {...(fieldState.error
+                        ? { "aria-describedby": "session-key-wallet-error" }
+                        : {})}
                       fullWidth
                       isDisabled={activeWallets.length === 0}
                       isInvalid={fieldState.invalid}

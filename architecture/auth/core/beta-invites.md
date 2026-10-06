@@ -90,6 +90,11 @@ audit events remain unchanged.
 
 ## Deployment and verification
 
+Committed invite transitions increment `namera.beta_invite.transitions` with
+`result=created|revoked|redeemed`. Creation counts each invite in a batch;
+idempotent revocations do not count again. Codes, recipient addresses, and
+invite IDs never become metric attributes.
+
 Apply the generated migrations through normal startup. No wipe or backfill is
 required. Set `AUTH_INVITE_REQUIRED=true` and the admin secret before admitting
 testers. `false` intentionally enables open signup; use it only when explicitly

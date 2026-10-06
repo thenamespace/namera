@@ -13,3 +13,7 @@ export const emailJobDeliveryResults = Metric.counter("namera.email.jobs.deliver
 export const emailJobDeliveryDuration = Metric.timer("namera.email.jobs.delivery.duration", {
   description: "Duration of email provider delivery attempts",
 });
+
+export const emailJobTimeToSend = Metric.timer("namera.email.jobs.time_to_send", {
+  description: "Elapsed time from enqueue to provider acceptance, including retries",
+});

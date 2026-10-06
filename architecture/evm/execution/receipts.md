@@ -26,7 +26,7 @@ execution HTTP suite covers both successful and failed mismatched receipts.
 
 ## Settlement transaction
 
-For a successful receipt, application settlement locks the submission first, verifies any reconciliation lease, locks policy states in deterministic order, applies handler settlement, marks reservations settled, inserts one final execution, marks submission confirmed, writes `execution.confirmed` audit, and creates permission-filtered notifications/email jobs—all in one transaction.
+For a successful receipt, application settlement locks the submission first, verifies any reconciliation lease, locks policy states in deterministic order, applies handler settlement, marks reservations settled, inserts one final execution, marks submission confirmed, writes `execution.confirmed` audit, and creates permission-filtered in-app notifications—all in one transaction. Execution confirmations do not enqueue email jobs.
 
 If already confirmed, settlement returns the existing execution. If failed or lease ownership was lost, it does nothing.
 

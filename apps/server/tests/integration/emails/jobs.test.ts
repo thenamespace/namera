@@ -1,9 +1,10 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Duration, Effect, Metric } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
+import { emailJobDeliveryResults, workerBacklog, workerOldestAge } from "@namera-ai/telemetry";
 
 import {
   enqueueMagicLink,
@@ -14,6 +15,31 @@ import {
 import { TestEmails, TestServerLayer } from "../../fixtures/layers/index.js";
 
 layer(TestServerLayer)("email jobs", (it) => {
+  it.effect("reports queue depth, clears empty queue gauges, and tags delivery type", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* enqueueMagicLink(client, testEmail("queue-metrics@example.com"));
+      const jobs = yield* EmailJobs;
+      const sent = Metric.withAttributes(emailJobDeliveryResults, {
+        result: "sent",
+        type: "magic-link",
+      });
+      const before = yield* Metric.value(sent);
+      yield* jobs.processOnce;
+      expect(
+        (yield* Metric.value(Metric.withAttributes(workerBacklog, { worker: "email" }))).value,
+      ).toBe(1);
+      expect((yield* Metric.value(sent)).count - before.count).toBe(1);
+      yield* jobs.processOnce;
+      expect(
+        (yield* Metric.value(Metric.withAttributes(workerBacklog, { worker: "email" }))).value,
+      ).toBe(0);
+      expect(
+        (yield* Metric.value(Metric.withAttributes(workerOldestAge, { worker: "email" }))).value,
+      ).toBe(0);
+    }),
+  );
   it.effect("enqueues without blocking on provider delivery", () =>
     Effect.gen(function* () {
       yield* resetTestState();

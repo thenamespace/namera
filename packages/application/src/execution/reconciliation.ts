@@ -4,7 +4,12 @@ import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
 import type { EvmSessionKey, ExecutionSubmission } from "@namera-ai/protocol/model";
-import { executionReconciliations, executionResults } from "@namera-ai/telemetry";
+import {
+  executionReconciliations,
+  executionResults,
+  workerBacklog,
+  workerOldestAge,
+} from "@namera-ai/telemetry";
 
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
 
@@ -268,16 +273,27 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     );
   });
 
-  const reconcile = Effect.fn("application.execution.reconcile")(
+  const reconcile = Effect.fnUntraced(
     function* () {
       const now = yield* DateTime.now;
+      const backlog = yield* repository.core.executionSubmission.getBacklog(now);
+      yield* Metric.update(
+        Metric.withAttributes(workerBacklog, { worker: "execution" }),
+        backlog.count,
+      );
+      yield* Metric.update(
+        Metric.withAttributes(workerOldestAge, { worker: "execution" }),
+        backlog.oldestAgeSeconds,
+      );
       const leaseToken = yield* crypto.randomToken(24);
-      const submissions = yield* repository.core.executionSubmission.claimForReconciliation({
-        now,
-        leaseToken,
-        leaseExpiresAt: DateTime.addDuration(now, reconciliationPolicy.leaseDuration),
-        limit: reconciliationPolicy.batchSize,
-      });
+      const submissions = yield* repository.core.executionSubmission
+        .claimForReconciliation({
+          now,
+          leaseToken,
+          leaseExpiresAt: DateTime.addDuration(now, reconciliationPolicy.leaseDuration),
+          limit: reconciliationPolicy.batchSize,
+        })
+        .pipe(Effect.withTracerEnabled(false));
       if (submissions.length === 0) return 0;
 
       yield* Effect.forEach(

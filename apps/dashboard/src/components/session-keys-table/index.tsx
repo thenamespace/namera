@@ -29,6 +29,7 @@ import {
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/components/display";
+import { sessionKeyDisplayStatus } from "@/components/display/session-key-status-display";
 import { ResourceEmptyState } from "@/components/resource-empty-state";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
 
@@ -48,7 +49,10 @@ import {
 } from "./columns";
 
 const emptySessionKeys: ReadonlyArray<SessionKeyResponse> = [];
-const defaultSessionKeyStatuses: ReadonlySet<SessionKeyResponse["status"]> = new Set(["active"]);
+const defaultSessionKeyStatuses: ReadonlySet<SessionKeyResponse["status"]> = new Set([
+  "pending",
+  "active",
+]);
 
 type SessionKeysTableProps = { initialSessionKeys?: ListSessionKeysForOrganizationResponse };
 
@@ -125,7 +129,10 @@ function SessionKeysTableContent({
   );
   const normalizedQuery = query.trim().toLowerCase();
 
-  const statusCounts = useMemo(() => countTableValues(data, (item) => item.status), [data]);
+  const statusCounts = useMemo(
+    () => countTableValues(data, (item) => sessionKeyDisplayStatus(item.status)),
+    [data],
+  );
   const accountOptions = useMemo(() => {
     const counts = countTableValues(data, (item) => item.wallet.id);
     return [...uniqueTableValues(data, (item) => item.wallet.id).values()].map((item) => ({
@@ -158,7 +165,7 @@ function SessionKeysTableContent({
           ].some((value) => value.toLowerCase().includes(normalizedQuery));
         return (
           matchesQuery &&
-          (statuses.size === 0 || statuses.has(item.status)) &&
+          (statuses.size === 0 || statuses.has(sessionKeyDisplayStatus(item.status))) &&
           (accounts.size === 0 || accounts.has(item.wallet.id)) &&
           (namespaces.size === 0 || namespaces.has(item.namespace))
         );
@@ -175,7 +182,12 @@ function SessionKeysTableContent({
     if (grouping === "none") return sorted;
     const grouped = new Map<string, SessionKeyResponse[]>();
     for (const item of sorted) {
-      const value = grouping === "account" ? item.wallet.metadata.name : String(item[grouping]);
+      const value =
+        grouping === "account"
+          ? item.wallet.metadata.name
+          : grouping === "status"
+            ? sessionKeyDisplayStatus(item.status)
+            : String(item[grouping]);
       grouped.set(value, [...(grouped.get(value) ?? []), item]);
     }
     return [...grouped.entries()].map(([label, children]) => ({
@@ -204,7 +216,7 @@ function SessionKeysTableContent({
         selectedKeys: statuses,
         options: sessionKeyStatusOptions.map((value) => ({
           id: value,
-          label: value === "active" ? "Active" : "Revoked",
+          label: value.charAt(0).toUpperCase() + value.slice(1),
           content: <SessionKeyStatusDisplay status={value} />,
           count: statusCounts.get(value) ?? 0,
         })),

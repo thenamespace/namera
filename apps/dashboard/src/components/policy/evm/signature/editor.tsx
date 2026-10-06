@@ -84,6 +84,11 @@ export function SignaturePolicyEditor({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel>Allowed signatures</FieldLabel>
+              {fieldState.invalid ? (
+                <Typography.Paragraph className="text-danger" role="alert" size="xs">
+                  Choose at least one signature type.
+                </Typography.Paragraph>
+              ) : null}
               <CheckboxButtonGroup
                 aria-label="Allowed signature types"
                 isInvalid={fieldState.invalid}
@@ -109,11 +114,6 @@ export function SignaturePolicyEditor({
                   </CheckboxButtonGroup.Item>
                 ))}
               </CheckboxButtonGroup>
-              {fieldState.invalid ? (
-                <Typography.Paragraph className="text-danger" role="alert" size="xs">
-                  {fieldState.error?.message ?? "Select at least one signature type"}
-                </Typography.Paragraph>
-              ) : null}
             </Field>
           )}
         />

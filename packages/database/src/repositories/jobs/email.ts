@@ -10,6 +10,9 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { emailJob } from "#/schema/index";
 
 export interface EmailJobRepositoryService {
+  readonly getBacklog: (
+    now: DateTime.Utc,
+  ) => Effect.Effect<{ readonly count: number; readonly oldestAgeSeconds: number }, DatabaseError>;
   readonly enqueue: (
     data: EmailJobInsert,
   ) => Effect.Effect<{ readonly job: EmailJob; readonly inserted: boolean }, DatabaseError>;
@@ -58,6 +61,22 @@ export class EmailJobRepository extends Context.Service<
       const database = yield* Database;
 
       return EmailJobRepository.of({
+        getBacklog: Effect.fnUntraced(function* (now: DateTime.Utc) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({
+              count: sql<number>`count(*)`.mapWith(Number),
+              oldestAgeSeconds:
+                sql<number>`coalesce(greatest(0, extract(epoch from ${encodeDate(now)}::timestamptz - min(${emailJob.createdAt}))), 0)`.mapWith(
+                  Number,
+                ),
+            })
+            .from(emailJob)
+            .where(inArray(emailJob.status, ["pending", "processing"]));
+          return Schema.decodeUnknownSync(
+            Schema.Struct({ count: Schema.Number, oldestAgeSeconds: Schema.Number }),
+          )(rows[0]);
+        }, mapRepositoryError),
         enqueue: Effect.fn("database.emailJobRepository.enqueue")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(EmailJobInsert)(data);

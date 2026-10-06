@@ -1,6 +1,7 @@
-import { Duration, Effect, Layer } from "effect";
+import { DateTime, Duration, Effect, Layer, Metric } from "effect";
 
 import { Application } from "@namera-ai/application";
+import { workerLastSuccess, workerPollResults } from "@namera-ai/telemetry";
 
 const workerPollInterval = Duration.minutes(1);
 
@@ -11,6 +12,18 @@ export const BillingWorkerLayer = Layer.effectDiscard(
     yield* Effect.gen(function* () {
       while (true) {
         yield* app.billing.reconcile().pipe(
+          Effect.tap(() =>
+            Effect.gen(function* () {
+              yield* Metric.update(
+                Metric.withAttributes(workerPollResults, { worker: "billing", result: "success" }),
+                1,
+              );
+              yield* Metric.update(
+                Metric.withAttributes(workerLastSuccess, { worker: "billing" }),
+                DateTime.toEpochMillis(yield* DateTime.now) / 1000,
+              );
+            }),
+          ),
           Effect.tap((result) =>
             result.rolledOver + result.recovered + result.repaired === 0
               ? Effect.void
@@ -22,7 +35,19 @@ export const BillingWorkerLayer = Layer.effectDiscard(
                   }),
                 ),
           ),
-          Effect.catch(() => Effect.logError("billing.worker.failed")),
+          Effect.catchCause(() =>
+            Effect.logError("billing.worker.failed").pipe(
+              Effect.andThen(
+                Metric.update(
+                  Metric.withAttributes(workerPollResults, {
+                    worker: "billing",
+                    result: "failure",
+                  }),
+                  1,
+                ),
+              ),
+            ),
+          ),
         );
         yield* Effect.sleep(workerPollInterval);
       }

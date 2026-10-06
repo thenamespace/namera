@@ -5,7 +5,6 @@ import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
-import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
@@ -44,14 +43,6 @@ function CreateSessionKeyPage() {
       <DashboardPage.Content className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-16">
         {canCreate ? (
           <>
-            <HeadingGroup className="mb-6">
-              <HeadingGroup.Title level={1} size="md">
-                Create a session key
-              </HeadingGroup.Title>
-              <HeadingGroup.Description>
-                Define scoped access to an account for agents and integrations.
-              </HeadingGroup.Description>
-            </HeadingGroup>
             {wallets.data ? (
               <CreateSessionKeyForm wallets={wallets.data} />
             ) : wallets.isError ? (

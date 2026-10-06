@@ -56,8 +56,7 @@ export function ContractAccessEditor({
     <form id={formId} noValidate onSubmit={handleSubmit}>
       <FieldGroup>
         <Typography.Paragraph color="muted" size="sm">
-          Choose what this key can call. Add separate policies for other contracts; spending limits
-          are configured separately.
+          Choose which contracts this key can use and what it can do with them.
         </Typography.Paragraph>
         <FieldError errors={[form.formState.errors.root]} />
         <Controller
@@ -103,6 +102,9 @@ export function ContractAccessEditor({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${formId}-address`}>Contract address</FieldLabel>
+                {fieldState.error ? (
+                  <FieldError>Enter a valid contract address starting with 0x.</FieldError>
+                ) : null}
                 <Input
                   {...field}
                   id={`${formId}-address`}
@@ -115,16 +117,10 @@ export function ContractAccessEditor({
                   spellCheck={false}
                   aria-invalid={fieldState.invalid}
                 />
-                <FieldError errors={[fieldState.error]} />
               </Field>
             )}
           />
-        ) : (
-          <Typography.Paragraph size="xs" color="muted">
-            This allows matching selectors on any contract, not just contracts you trust.
-            Account-management functions remain blocked.
-          </Typography.Paragraph>
-        )}
+        ) : null}
         {type !== "contract-access" ? (
           <Controller
             control={form.control}
@@ -132,6 +128,9 @@ export function ContractAccessEditor({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${formId}-functions`}>Function selectors</FieldLabel>
+                {fieldState.error ? (
+                  <FieldError>Enter unique four-byte selectors, such as 0xa9059cbb.</FieldError>
+                ) : null}
                 <TextArea
                   {...field}
                   id={`${formId}-functions`}
@@ -146,10 +145,8 @@ export function ContractAccessEditor({
                   aria-invalid={fieldState.invalid}
                 />
                 <Typography.Paragraph size="xs" color="muted">
-                  One four-byte selector per line, or separated by commas. For example, 0xa9059cbb
-                  is transfer(address,uint256).
+                  Separate selectors with commas or new lines. Example: 0xa9059cbb for transfers.
                 </Typography.Paragraph>
-                <FieldError errors={[fieldState.error]} />
               </Field>
             )}
           />

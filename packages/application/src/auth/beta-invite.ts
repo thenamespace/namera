@@ -1,8 +1,9 @@
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Metric } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import type { CreateBetaInvitesRequest, ListBetaInvitesRequest } from "@namera-ai/protocol/dto";
+import { betaInviteTransitions } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "./config.js";
 
@@ -16,7 +17,7 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
   ) {
     const createdAt = yield* DateTime.now;
     const expiresAt = DateTime.add(createdAt, { days: input.expiresInDays ?? 7 });
-    return yield* transaction.run(
+    const result = yield* transaction.run(
       Effect.gen(function* () {
         const invites = [];
         for (let index = 0; index < input.count; index++) {
@@ -47,15 +48,23 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
         return { invites };
       }),
     );
+    yield* Metric.update(
+      Metric.withAttributes(betaInviteTransitions, { result: "created" }),
+      result.invites.length,
+    );
+    return result;
   }, Effect.orDie);
   const revoke = Effect.fn("application.betaInvite.revoke")(function* (id: string) {
-    return yield* transaction.run(
+    const result = yield* transaction.run(
       Effect.gen(function* () {
         const revoked = yield* repository.auth.betaInvite.revoke(id, yield* DateTime.now);
         if (revoked) yield* repository.auth.betaInvite.appendEvent(id, "revoked");
         return { revoked: revoked !== undefined };
       }),
     );
+    if (result.revoked)
+      yield* Metric.update(Metric.withAttributes(betaInviteTransitions, { result: "revoked" }), 1);
+    return result;
   }, Effect.orDie);
   const list = Effect.fn("application.betaInvite.list")(function* (input: ListBetaInvitesRequest) {
     const limit = input.limit ?? 50;
