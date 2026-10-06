@@ -196,12 +196,24 @@ insert submissions, reserve state, bill usage, audit, notify, or sign.
   projection: execution identity, chain/transaction/date, compact wallet and
   session-key identity, and actor type.
 - History accepts optional wallet and session-key scopes. Repository queries
-  apply these together with organization and optional machine-actor ownership,
+  apply these together with organization and optional machine-actor grants,
   including when validating a pagination cursor.
 - Detail reads expand typed receipt/calls plus a safe discriminated actor:
   member, API key, or OAuth authorization/client.
-- User actors with `execution:read` see organization history. Machine actors see
-  only their own grant-scoped operations.
+- User actors with `execution:read` see organization history. Machine actors
+  (CLI, MCP, and API keys) see all confirmed executions performed by currently
+  granted active session keys, regardless of the original submitting actor.
+  Revoked historical grants still identify the execution's key; a separate
+  current, non-revoked grant authorizes the reader. List, detail, and cursor
+  lookup enforce this in SQL within the same organization. Revoking the reader's
+  grant or session key removes history access immediately. Submission polling
+  and completion remain restricted to the creating actor. Existing OAuth read
+  scopes remain required.
+- HTTP regressions cover a new CLI authorization reading prior API-key history,
+  revocation of the original credential without losing shared history, current
+  grant removal, ungranted keys, cross-organization denial, shared pagination,
+  and unchanged submission ownership. These reads do not mutate state or emit
+  audit events.
 
 ## Pending
 
