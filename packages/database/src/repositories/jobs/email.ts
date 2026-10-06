@@ -73,7 +73,7 @@ export class EmailJobRepository extends Context.Service<
             })
             .from(emailJob)
             .where(inArray(emailJob.status, ["pending", "processing"]));
-          return Schema.decodeSync(
+          return Schema.decodeUnknownSync(
             Schema.Struct({ count: Schema.Number, oldestAgeSeconds: Schema.Number }),
           )(rows[0]);
         }, mapRepositoryError),
