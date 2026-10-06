@@ -13,7 +13,9 @@ cp .env.example .env
 pnpm --filter @namera-ai/admin-portal dev
 ```
 
-`VITE_API_URL` points at namera-core. Its origin is also the only host the page
+`VITE_API_URL` points at namera-core and defaults to `https://api.namera.ai` when
+unset or blank, in both the browser client and build-time security policy.
+Set it to `http://localhost:8080` for local API development. Its origin is the only host the page
 may connect to: the Content-Security-Policy is generated from it at build time.
 
 For the API side, set `ADMIN_TOKEN` (at least 32 characters) on the server, and
