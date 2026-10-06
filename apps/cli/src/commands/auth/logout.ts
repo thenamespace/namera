@@ -4,7 +4,8 @@ import { Command } from "effect/cli";
 import { profileFlag } from "#/commands/common";
 import { removeProfile } from "#/services/config";
 import { deleteCredentials } from "#/services/credentials";
-import { printLine } from "#/services/output";
+import { printValue } from "#/services/output";
+import { logoutView } from "#/services/output/auth";
 
 export const logoutCommand = Command.make(
   "logout",
@@ -12,6 +13,6 @@ export const logoutCommand = Command.make(
   Effect.fn(function* ({ profile }) {
     yield* Effect.sync(() => deleteCredentials(profile));
     yield* Effect.tryPromise(() => removeProfile(profile));
-    yield* printLine(`Logged out profile "${profile}".`);
+    yield* printValue({ profile, status: "signed-out" }, logoutView);
   }),
 ).pipe(Command.withDescription("Sign out of a saved connection on this device"));

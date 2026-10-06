@@ -123,12 +123,15 @@ also require `--max-gas-cost-wei <amount>`; MCP tools cannot raise that ceiling.
 
 ```sh
 namera --output json wallet list
-namera --output ndjson session-key list
+namera --output json session-key list
 namera --quiet auth status
 ```
 
-Human-readable summaries are the default. JSON includes complete response fields;
-NDJSON emits one document per top-level list item. `NO_COLOR` disables styling.
+Human-readable summaries are the default: colored status, wallet-grouped keys,
+and plain-language permissions. JSON includes complete response fields and IDs;
+use it when copying IDs for commands or scripts. NDJSON is no longer supported.
+`NO_COLOR` disables styling. Organization names require a server that includes
+them in its current-actor response; older servers show an unavailable-name notice.
 MCP reserves stdout for the protocol and writes diagnostics to stderr.
 
 Failures exit with a nonzero status and write a concise message and recovery
@@ -136,8 +139,8 @@ step to stderr, without stack traces or raw provider details. Supported terminal
 show red errors, yellow warnings, and blue next steps with symbols. Human output
 does not show error codes or field labels. Pipes, `TERM=dumb`, and legacy
 consoles use plain/ASCII fallbacks; `NO_COLOR` disables colors.
-`--quiet` suppresses successful output, not errors. With `--output json` or
-`--output ndjson`, the failure is one JSON object on stderr:
+`--quiet` suppresses successful output, not errors. With `--output json`,
+the failure is one JSON object on stderr:
 
 ```json
 {
@@ -168,7 +171,9 @@ namera logout
 namera mcp logout --profile codex
 ```
 
-Logout revokes that authorization, not other profiles or signing keys. macOS
+CLI logout removes this device's saved connection, not its imported signing keys
+or server authorization. Revoke the authorization in the dashboard to end its
+server-side access. MCP logout revokes its separate MCP authorization. macOS
 Keychain integration is tested; Windows/Linux still need platform verification.
 Headless Linux needs an accessible Secret Service/keyring. There is no plaintext
 or in-memory fallback.

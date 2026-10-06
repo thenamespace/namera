@@ -1,7 +1,8 @@
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 
 import {
-  collection,
+  fields,
+  heading,
   humanize,
   named,
   network,
@@ -9,6 +10,7 @@ import {
   timestamp,
   type PrettyPrinter,
 } from "./document.js";
+import { statusText } from "./style.js";
 
 type SessionDisplay = Pick<
   SessionKeyResponse,
@@ -26,19 +28,15 @@ type SessionDisplay = Pick<
 
 export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
   [
-    section(
-      named(key.metadata),
+    `${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}\n${fields(
       [
-        ["Status", humanize(key.status)],
-        ["Session key ID", key.id],
         ["Wallet", key.wallet.metadata.name],
-        ["Wallet ID", key.walletId],
         ["Description", key.metadata.description ?? undefined],
         ["Created", key.createdAt],
         ["Revoked", key.revokedAt ?? undefined],
       ],
       colors,
-    ),
+    )}`,
     ...key.installations.map((installation) =>
       section(
         network(installation.chainId),
@@ -89,29 +87,31 @@ export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
     ),
   ].join("\n\n");
 
-export const sessionKeysView: PrettyPrinter<readonly SessionDisplay[]> = (keys, colors) =>
-  collection(
-    keys,
-    "session key",
-    "session keys",
-    (key, useColors) =>
-      section(
-        named(key.metadata),
-        [
-          ["Status", humanize(key.status)],
-          ["Session key ID", key.id],
-          ["Wallet", key.wallet.metadata.name],
-          ["Wallet ID", key.walletId],
+export const sessionKeysView: PrettyPrinter<readonly SessionDisplay[]> = (keys, colors) => {
+  if (!keys.length) return "No session keys found.";
+  const groups = new Map<string, { name: string; keys: SessionDisplay[] }>();
+  for (const key of keys) {
+    const group = groups.get(key.walletId) ?? { name: named(key.wallet.metadata), keys: [] };
+    group.keys.push(key);
+    groups.set(key.walletId, group);
+  }
+  return [
+    heading(`${keys.length} session ${keys.length === 1 ? "key" : "keys"}`, colors),
+    ...[...groups.values()].map((group) =>
+      [
+        heading(group.name, colors),
+        ...group.keys.map((key) =>
           [
-            "Networks",
-            key.installations.map(
-              (installation) =>
-                `${network(installation.chainId)}: ${humanize(installation.status)}`,
-            ),
-          ],
-          ["Created", key.createdAt],
-        ],
-        useColors,
-      ),
-    colors,
-  );
+            `  ${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}`,
+            ...(key.installations.length
+              ? key.installations.map(
+                  (installation) =>
+                    `    ${heading(network(installation.chainId), colors)}  ${statusText(installation.status, colors)}`,
+                )
+              : ["    No networks enabled"]),
+          ].join("\n"),
+        ),
+      ].join("\n"),
+    ),
+  ].join("\n\n");
+};

@@ -89,10 +89,10 @@ describe("command-specific pretty output", () => {
   it("leads with the wallet name and preserves copyable identifiers", () => {
     const text = walletsView([wallet], false);
     expect(text).toContain("Found 1 delegated wallet:");
-    expect(text).toContain("💳 Trading Account\n  Status: Active");
+    expect(text).toContain("💳 Trading Account  Active");
     expect(text).toContain(`Address: ${wallet.address}`);
-    expect(text).toContain(`Wallet ID: ${wallet.id}`);
-    expect(text).toContain("Key custody: Local (user-owned)");
+    expect(text).not.toContain(wallet.id);
+    expect(text).not.toContain("Implementation");
     expect(text).toContain("15 Sept 2026, 12:00:00 UTC");
     expect(text).not.toContain("undefined");
     expect(text).not.toContain("\u001b");
@@ -111,9 +111,6 @@ describe("command-specific pretty output", () => {
     const data = [{ amount: 123456789123456789n }];
     expect(formatValue(data, "json", { pretty: unexpectedPretty })).toEqual([
       '[{"amount":"123456789123456789"}]',
-    ]);
-    expect(formatValue(data, "ndjson", { pretty: unexpectedPretty })).toEqual([
-      '{"amount":"123456789123456789"}',
     ]);
     expect(formatValue(wallet, "pretty", { pretty: walletView })).toEqual([
       walletView(wallet, false),

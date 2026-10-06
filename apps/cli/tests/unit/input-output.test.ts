@@ -60,9 +60,5 @@ describe("CLI input and output", () => {
     expect(formatValue(value, "json")).toEqual([
       '[{"id":"first","amount":"1"},{"id":"second","amount":"2"}]',
     ]);
-    expect(formatValue(value, "ndjson")).toEqual([
-      '{"id":"first","amount":"1"}',
-      '{"id":"second","amount":"2"}',
-    ]);
   });
 });

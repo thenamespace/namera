@@ -105,7 +105,7 @@ describe("CLI error feedback", () => {
 
   it("honors structured format flags without interpreting positional arguments", () => {
     expect(structuredErrors(["--output=json"])).toBe(true);
-    expect(structuredErrors(["wallet", "list", "-o", "ndjson"])).toBe(true);
+    expect(structuredErrors(["wallet", "list", "-o", "json"])).toBe(true);
     expect(structuredErrors(["--", "--output", "json"])).toBe(false);
     expect(structuredErrors(["--output", "json", "--output", "pretty"])).toBe(false);
   });

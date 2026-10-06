@@ -48,7 +48,7 @@ const run = (args: string[], env: Record<string, string> = {}) =>
   });
 
 describe("CLI failure output", { timeout: 65_000 }, () => {
-  it.each(["pretty", "json", "ndjson"])(
+  it.each(["pretty", "json"])(
     "reports invalid imports in %s without stacks or secret input",
     async (format) => {
       const result = await run([

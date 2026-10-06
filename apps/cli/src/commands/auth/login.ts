@@ -1,18 +1,20 @@
 import { spawn } from "node:child_process";
 import { platform } from "node:os";
 
-import { Effect } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 
 import { profileFlag } from "#/commands/common";
+import { nameraCommand } from "#/commands/root";
 import { saveProfile } from "#/services/config";
 import { writeCredentials } from "#/services/credentials";
 import { cliFailure } from "#/services/error-feedback";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
-import { printLine, runPromise } from "#/services/output";
-import { formatFeedback } from "#/services/output/feedback";
+import { printValue, runPromise } from "#/services/output";
+import { loginInstructionsView, loginView } from "#/services/output/auth";
+import { feedbackStyle, formatFeedback } from "#/services/output/feedback";
 import { version } from "#/version";
 
 const openBrowser = (url: string) => {
@@ -80,8 +82,17 @@ export const loginCommand = Command.make(
       }),
     );
 
-    yield* printLine(`Open ${request.verification_uri}`);
-    yield* printLine(`Confirm code: ${request.user_code}`);
+    const { quiet } = yield* nameraCommand;
+    if (!quiet)
+      yield* Console.error(
+        loginInstructionsView(
+          {
+            url: request.verification_uri,
+            code: request.user_code,
+          },
+          feedbackStyle(process.stderr).colors,
+        ),
+      );
     yield* Effect.sync(() => openBrowser(request.verification_uri_complete));
 
     const credentials = yield* Effect.tryPromise(() =>
@@ -101,6 +112,6 @@ export const loginCommand = Command.make(
         organizationId: actor.data.organizationId,
       }),
     );
-    yield* printLine(`Logged in as profile "${profile}".`);
+    yield* printValue({ profile, status: "connected", actor }, loginView);
   }),
 ).pipe(Command.withDescription("Sign in to Namera in your browser"));

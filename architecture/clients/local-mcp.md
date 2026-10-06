@@ -89,7 +89,7 @@ error boundary returns bounded messages and validated policy diagnostics, not
 raw provider or keystore errors. Existing tool metrics use fixed tool names only.
 
 The CLI command boundary owns terminal failure rendering: stderr-only human
-feedback or a single JSON error for JSON/NDJSON mode, nonzero failure exits, and
+feedback or a single JSON error for JSON mode, nonzero failure exits, and
 no runtime stack reporting. A shared local feedback catalog supplies `code`,
 `message`, `nextStep`, and conservative `retryable: false`. MCP tool errors add
 `nextStep` to their existing local result envelope without changing the public

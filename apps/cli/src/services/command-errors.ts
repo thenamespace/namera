@@ -32,7 +32,7 @@ export const structuredErrors = (args: readonly string[]): boolean => {
     else if (arg.startsWith("--output=")) format = arg.slice(9);
     else if (arg.startsWith("-o=")) format = arg.slice(3);
   }
-  return format === "json" || format === "ndjson";
+  return format === "json";
 };
 
 export const reportCommandErrors = Effect.fn("cli.reportCommandErrors")(function* <A, E, R>(

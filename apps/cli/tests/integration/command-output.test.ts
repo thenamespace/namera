@@ -98,16 +98,15 @@ describe("CLI command output", { timeout: 65_000 }, () => {
   });
   it("renders wallet details", async () => {
     const detail = await run(["wallet", "get", wallet.id]);
-    expect(detail.stdout).toContain(`Wallet ID: ${wallet.id}`);
+    expect(detail.stdout).not.toContain(wallet.id);
     expect(detail.stdout).toContain(`Address: ${wallet.address}`);
   });
   it("preserves raw JSON", async () => {
     const json = await run(["--output", "json", "wallet", "list"]);
     expect(JSON.parse(json.stdout)).toMatchObject([wallet]);
   });
-  it("preserves raw NDJSON", async () => {
-    const ndjson = await run(["--output", "ndjson", "wallet", "list"]);
-    expect(JSON.parse(ndjson.stdout)).toMatchObject(wallet);
+  it("rejects the removed NDJSON format", async () => {
+    await expect(run(["--output", "ndjson", "wallet", "list"])).rejects.toThrow();
   });
   it("suppresses pretty output with quiet", async () => {
     const quiet = await run(["--quiet", "wallet", "list"]);

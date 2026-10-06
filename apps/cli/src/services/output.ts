@@ -6,8 +6,9 @@ import { nameraCommand } from "#/commands/root";
 
 import { errorFeedback, type CliFailure } from "./error-feedback.js";
 import type { PrettyPrinter } from "./output/document.js";
+import { feedbackStyle } from "./output/feedback.js";
 
-export type OutputFormat = "pretty" | "json" | "ndjson";
+export type OutputFormat = "pretty" | "json";
 
 const replacer = (_: string, item: unknown) => (typeof item === "bigint" ? item.toString() : item);
 
@@ -64,8 +65,6 @@ export const formatValue = <A>(
         ? options.pretty(value, options.colors ?? false)
         : prettyValue(value, options.colors ?? false),
     ];
-  if (output === "json") return [JSON.stringify(value, replacer)];
-  if (Array.isArray(value)) return value.map((item) => JSON.stringify(item, replacer));
   return [JSON.stringify(value, replacer)];
 };
 
@@ -75,7 +74,7 @@ export const printValue = Effect.fn("cli.output.printValue")(function* <A>(
 ) {
   const { output, quiet } = yield* nameraCommand;
   if (quiet) return;
-  const colors = output === "pretty" && process.stdout.isTTY && process.env.NO_COLOR === undefined;
+  const colors = output === "pretty" && feedbackStyle(process.stdout).colors;
   for (const line of formatValue(value, output, { colors, ...(pretty ? { pretty } : {}) }))
     yield* Console.log(line);
 });

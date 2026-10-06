@@ -1,8 +1,8 @@
 import { Command, Flag } from "effect/cli";
 
-export const outputFlag = Flag.Literals("output", ["pretty", "json", "ndjson"]).pipe(
+export const outputFlag = Flag.Literals("output", ["pretty", "json"]).pipe(
   Flag.withAlias("o"),
-  Flag.withDescription("Choose readable text, JSON, or one JSON object per line"),
+  Flag.withDescription("Choose readable text or full JSON"),
   Flag.withDefault("pretty"),
 );
 

@@ -86,17 +86,22 @@ packaged-platform verification. The same keystore resolves message/typed-data
 signers and the local MCP listener. End-to-end browser/local signing verification
 remains pending.
 
-Global output is `pretty`, `json`, or `ndjson`. CLI-only typed presenters render
+Global output is `pretty` or `json`. CLI-only typed presenters render
 named summaries and labeled sections for wallets, session keys, authorizations,
 execution, simulation, and signatures. Shared terminal primitives handle headings,
 dates, nested policy fields, and control-character sanitization. Pretty mode is a
-human summary; JSON/NDJSON serialize the original result, never the presentation.
+human summary; JSON serializes the original result, never the presentation.
+Authorization summaries resolve wallet names through grant-scoped wallet reads
+only in pretty mode with wallet-read scope. They group keys by wallet ID, translate
+scope labels, and retain raw IDs/scopes in JSON. Login instructions go to stderr
+so successful JSON stdout remains one document. Login/logout successes use green
+feedback and blue next steps; logout still only removes local CLI credentials.
 MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to
 `http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
 
 Command failures use a CLI-owned feedback catalog with stable codes, concise
 messages, recovery steps, and conservative retry guidance. Human errors go to
-stderr; JSON/NDJSON mode emits a JSON error object there. Quiet mode does not
+stderr; JSON mode emits a JSON error object there. Quiet mode does not
 suppress failures. Parser errors avoid echoing user input, help still exits
 successfully, and the runtime does not print stacks. SDK codes are translated
 without rendering raw provider messages or schema inputs. Credential access
