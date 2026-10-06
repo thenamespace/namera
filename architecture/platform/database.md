@@ -88,6 +88,16 @@ independent of business-time jumps in tests. Application workflows still use
 the test clock.
 See [testing](../engineering/testing.md) for commands and coverage boundaries.
 
+## Worker queue snapshots
+
+Worker-only `getBacklog(now)` reads in the email, execution-submission and
+session-operation repositories aggregate count and oldest creation age without
+returning IDs, payloads or tenant data. They include leased/retrying nonterminal
+work, exclude unsigned execution/session preparations, and return zero age for
+empty queues. Application/email workflows publish the gauges; persistence has
+no telemetry dependency. The existing status-leading indexes support filtering;
+measure aggregate-query cost before increasing traffic or worker replicas.
+
 ## Pending
 
 - Rehearse the migration chain against the exact production PostgreSQL version.

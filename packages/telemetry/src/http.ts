@@ -9,6 +9,7 @@ const staticHttpRoutes = new Set([
   "/auth/invitation/reject-invitation",
   "/auth/magic-link/request",
   "/auth/magic-link/verify",
+  "/auth/magic-link/redeem-invite",
   "/auth/member/list-assignable-roles",
   "/auth/member/list-org-members",
   "/auth/member/list-org-roles",
@@ -28,26 +29,78 @@ const staticHttpRoutes = new Set([
   "/auth/organization/set-active-organization",
   "/auth/organization/update-organization",
   "/auth/session/me",
+  "/auth/session/actor",
   "/auth/session/sessions",
   "/auth/session/sessions/logout",
   "/auth/session/sessions/revoke",
   "/auth/user/update-user",
   "/api-keys",
   "/billing",
+  "/dashboard/overview",
+  "/ens/availability",
+  "/executions",
+  "/executions/prepare",
+  "/executions/complete",
+  "/executions/simulate",
+  "/address-metadata/resolve",
+  "/address-metadata/search",
+  "/portfolios/assets/query",
+  "/.well-known/oauth-authorization-server",
+  "/.well-known/oauth-protected-resource",
+  "/oauth/authorize",
+  "/oauth/register",
+  "/oauth/token",
+  "/oauth/revoke",
+  "/oauth/device/authorize",
+  "/oauth/authorization-requests/approve",
+  "/oauth/authorization-requests/deny",
+  "/oauth/device-authorizations",
+  "/oauth/device-authorizations/approve",
+  "/oauth/device-authorizations/deny",
+  "/oauth/authorizations",
+  "/oauth/authorizations/revoke",
+  "/oauth/cli-authorizations",
+  "/oauth/cli-authorizations/revoke",
   "/health",
   "/openapi.json",
   "/reference",
   "/session-keys",
+  "/session-keys/operations/prepare",
+  "/session-keys/operations/complete",
   "/signatures",
+  "/signatures/prepare",
+  "/signatures/complete",
+  "/signatures/verify",
   "/t/logs/v1",
   "/t/metrics/v1",
   "/t/traces/v1",
   "/wallets",
+  "/wallets/passkey/registration-options",
   "/waitlist",
   "/internal/waitlist",
   "/internal/invites",
   "/internal/users",
 ]);
+
+const dynamicHttpRoutes = [
+  "/api-keys/:apiKeyId/revoke",
+  "/auth/session/sessions/:sessionId",
+  "/wallets/:walletId/passkey-owner",
+  "/wallets/:walletId/portfolio",
+  "/wallets/:walletId/update",
+  "/executions/submissions/:submissionId",
+  "/executions/:executionId",
+  "/session-keys/installations/:installationId/operations/:kind",
+  "/session-keys/operations/:operationId",
+  "/session-keys/:sessionKeyId/revoke",
+  "/oauth/authorization-requests/:requestId",
+  "/oauth/authorizations/:authorizationId",
+  "/oauth/cli-authorizations/:authorizationId",
+  "/address-metadata/:namespace/:chainId/:address",
+].map((template) => ({
+  template,
+  pattern: new RegExp(`^${template.replace(/:[^/]+/g, "[^/]+")}$`),
+}));
 
 export const httpRouteTemplate = (url: string): string => {
   const pathname = new URL(url, "http://localhost").pathname.replace(/\/$/, "") || "/";
@@ -55,6 +108,8 @@ export const httpRouteTemplate = (url: string): string => {
   if (staticHttpRoutes.has(pathname)) {
     return pathname;
   }
+  const dynamicRoute = dynamicHttpRoutes.find(({ pattern }) => pattern.test(pathname));
+  if (dynamicRoute) return dynamicRoute.template;
   if (/^\/internal\/waitlist\/[^/]+$/.test(pathname)) {
     return "/internal/waitlist/:id";
   }

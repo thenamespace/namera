@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Metric } from "effect";
 
 import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
@@ -8,6 +8,11 @@ import type {
   SimulateExecutionRequest,
   SimulateExecutionResponse,
 } from "@namera-ai/protocol/dto";
+import {
+  executionDuration,
+  executionResults,
+  executionPolicyDecisions,
+} from "@namera-ai/telemetry";
 
 import { makePrepareExecution } from "./preparation.js";
 
@@ -59,6 +64,13 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
         context: prepared.context,
         states,
       });
+      yield* Metric.update(
+        Metric.withAttributes(executionPolicyDecisions, {
+          stage: "simulate",
+          result: preview.decision.allowed ? "allowed" : "denied",
+        }),
+        1,
+      );
       const response = {
         namespace: "eip155" as const,
         walletId: input.request.walletId,
@@ -79,6 +91,22 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
     },
     Effect.catchTag("DatabaseError", Effect.die),
     Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
+    Effect.tap((result) =>
+      Metric.update(
+        Metric.withAttributes(executionResults, {
+          stage: "simulate",
+          result: result.allowed ? "allowed" : "denied",
+        }),
+        1,
+      ),
+    ),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(executionResults, { stage: "simulate", result: error.code }),
+        1,
+      ),
+    ),
+    Effect.trackDuration(Metric.withAttributes(executionDuration, { stage: "simulate" })),
   );
 
   return { simulate } satisfies ExecutionSimulationApplication;

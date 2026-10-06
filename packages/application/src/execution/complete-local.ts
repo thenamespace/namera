@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Duration, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
@@ -8,6 +8,7 @@ import type {
   CompleteExecutionResponse,
   GrantedActorData,
 } from "@namera-ai/protocol/dto";
+import { executionDuration, executionResults } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 
@@ -150,5 +151,18 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
     },
     Effect.catchTag("DatabaseError", Effect.die),
     Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
+    Effect.tap(() =>
+      Metric.update(
+        Metric.withAttributes(executionResults, { stage: "complete", result: "success" }),
+        1,
+      ),
+    ),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(executionResults, { stage: "complete", result: error.code }),
+        1,
+      ),
+    ),
+    Effect.trackDuration(Metric.withAttributes(executionDuration, { stage: "complete" })),
   );
 });

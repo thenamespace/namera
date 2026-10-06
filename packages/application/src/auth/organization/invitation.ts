@@ -20,7 +20,11 @@ import {
   type UserId,
 } from "@namera-ai/protocol";
 import type { Invitation, Organization, OrganizationRole, User } from "@namera-ai/protocol/model";
-import { organizationInvitationEvents, sessionLifecycleEvents } from "@namera-ai/telemetry";
+import {
+  organizationInvitationEvents,
+  organizationInvitationFailures,
+  sessionLifecycleEvents,
+} from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
@@ -240,6 +244,15 @@ export const makeInvitationApplication = Effect.gen(function* () {
       return invitation.invitation;
     },
     Effect.catchTag("DatabaseError", Effect.die),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(organizationInvitationFailures, {
+          action: "create",
+          result: error.code,
+        }),
+        1,
+      ),
+    ),
   );
 
   const acceptInvitation = Effect.fn("application.organization.invitation.acceptInvitation")(
@@ -324,6 +337,15 @@ export const makeInvitationApplication = Effect.gen(function* () {
       yield* Effect.logInfo("invitation.accepted");
     },
     Effect.catchTag("DatabaseError", Effect.die),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(organizationInvitationFailures, {
+          action: "accept",
+          result: error.code,
+        }),
+        1,
+      ),
+    ),
   );
 
   const rejectInvitation = Effect.fn("application.organization.invitation.rejectInvitation")(
@@ -363,6 +385,15 @@ export const makeInvitationApplication = Effect.gen(function* () {
       yield* Effect.logInfo("invitation.rejected");
     },
     Effect.catchTag("DatabaseError", Effect.die),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(organizationInvitationFailures, {
+          action: "reject",
+          result: error.code,
+        }),
+        1,
+      ),
+    ),
   );
 
   const cancelInvitation = Effect.fn("application.organization.invitation.cancelInvitation")(
@@ -404,6 +435,15 @@ export const makeInvitationApplication = Effect.gen(function* () {
       yield* Effect.logInfo("invitation.canceled");
     },
     Effect.catchTag("DatabaseError", Effect.die),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(organizationInvitationFailures, {
+          action: "cancel",
+          result: error.code,
+        }),
+        1,
+      ),
+    ),
   );
 
   return {
