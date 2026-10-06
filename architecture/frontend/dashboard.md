@@ -21,6 +21,18 @@ scope changes with tenant selection.
 
 ## Routing and authentication
 
+Dashboard SEO remains client-side. An exhaustive route-ID metadata catalog and
+one router-context component update titles, descriptions, Open Graph and Twitter
+tags in place. Build-time document metadata, public WebApplication JSON-LD,
+favicons, a shared OG image and a web manifest are present without JavaScript.
+No per-resource names or identifiers enter metadata. Every canonical/social URL
+points to the public `/auth` entry, the only URL in the sitemap. Private routes,
+error states and auth query strings are noindex. The Nginx container and Vite
+preview enforce this with `X-Robots-Tag`, independent of JavaScript. Other static
+hosts must implement the same response-header rules; `_headers` currently owns
+security headers only. Preview/staging origins need a blanket noindex rule.
+The manifest does not install an offline cache or change authentication.
+
 All product routes live below the pathless `_authenticated` layout. Its loader
 prefetches the current actor and redirects a missing actor to `/auth`. Auth,
 invitation review, OAuth consent, CLI consent, and workspace creation use

@@ -3,6 +3,7 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { RegistryContext, scheduleTask } from "@effect/atom-react";
 import { AtomRegistry } from "effect/reactivity";
 
+import { DashboardSeo } from "@/components/dashboard-seo";
 import { DataLoading } from "@/components/data-loading";
 import { RouterError, RouterNotFound } from "@/components/route-failure";
 import { routeTree } from "@/routeTree.gen";
@@ -29,6 +30,12 @@ export function getRouter() {
     defaultPendingMs: 150,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
+    InnerWrap: ({ children }) => (
+      <>
+        <DashboardSeo />
+        {children}
+      </>
+    ),
     Wrap: ({ children }) => (
       <RegistryContext.Provider value={atomRegistry}>{children}</RegistryContext.Provider>
     ),

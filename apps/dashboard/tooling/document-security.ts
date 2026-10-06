@@ -14,6 +14,7 @@ export const documentSecurity = (apiUrl: string) => {
     // UIKit positioning, charts and Motion set inline styles, not inline scripts.
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
+    "manifest-src 'self'",
     "img-src 'self' https: data: blob:",
     `connect-src 'self' ${api.origin}`,
     "form-action 'self'",
