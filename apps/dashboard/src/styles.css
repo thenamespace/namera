@@ -1,8 +1,10 @@
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist-mono";
 @import "@namera-ai/ui/styles.css";
 
 @theme inline {
   --font-inter: "Inter Variable", sans-serif;
+  --font-geist-mono: "Geist Mono Variable", monospace;
 }
 
 @layer components {

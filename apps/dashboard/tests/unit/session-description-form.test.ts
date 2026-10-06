@@ -9,12 +9,16 @@ import { CreateSessionKeyFormSchema } from "../../src/routes/_authenticated/sess
 
 const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema));
 const options = { fields: {}, shouldUseNativeValidation: false };
+const signer = {
+  custody: "local",
+  algorithm: "secp256k1",
+  publicKey: `0x04${"11".repeat(64)}`,
+} as const;
 afterEach(() => vi.restoreAllMocks());
 const request = {
   namespace: "eip155",
   walletId: "00000000-0000-7000-8000-000000000001",
   metadata: { version: 1, name: "Agent" },
-  signer: { custody: "local", algorithm: "secp256k1", publicKey: `0x04${"11".repeat(64)}` },
   onchain: {
     chains: ["eip155:8453"],
     validAfter: 0,
@@ -38,7 +42,9 @@ describe("optional session description", () => {
       );
       expect(result.errors).toEqual({});
       expect(result.values).not.toHaveProperty("metadata.description");
-      expect(() => Schema.encodeUnknownSync(CreateSessionKeyRequest)(result.values)).not.toThrow();
+      expect(() =>
+        Schema.encodeUnknownSync(CreateSessionKeyRequest)({ ...result.values, signer }),
+      ).not.toThrow();
     },
   );
 

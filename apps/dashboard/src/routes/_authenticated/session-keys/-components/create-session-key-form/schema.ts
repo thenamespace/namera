@@ -7,13 +7,15 @@ import { OptionalFormDescription } from "@/lib/form-description";
 
 import { hasTransactionAccess } from "./policies/catalog";
 
-export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields((fields) => ({
-  ...fields,
-  metadata: fields.metadata.mapFields((metadata) => ({
-    ...metadata,
-    description: OptionalFormDescription,
-  })),
-})).check(
+export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields(
+  ({ signer: _signer, ...fields }) => ({
+    ...fields,
+    metadata: fields.metadata.mapFields((metadata) => ({
+      ...metadata,
+      description: OptionalFormDescription,
+    })),
+  }),
+).check(
   Schema.makeFilter((request) =>
     request.onchain.chains.every(isChainOperationEnabled)
       ? undefined

@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { EvmSessionPermission } from "@namera-ai/protocol/evm";
 import { ItemCard, Typography } from "@namera-ai/ui";
+import { HugeiconsIcon, ShieldUserIcon } from "@namera-ai/ui/icons";
 
 import { EvmPolicyDisplayCard } from "@/components/policy/evm";
 import { onchainPermissionCatalog } from "@/components/policy/evm/onchain/catalog";
@@ -36,6 +37,11 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
       <div className="mt-8 grid max-w-3xl gap-3">
         {[...permissions].map(([key, permission]) => (
           <ItemCard key={key} variant="outline" className="rounded-lg border border-separator">
+            {permission.type === "root" ? (
+              <ItemCard.Icon className="self-start">
+                <HugeiconsIcon icon={ShieldUserIcon} />
+              </ItemCard.Icon>
+            ) : null}
             <ItemCard.Content>
               <ItemCard.Title>{onchainPermissionCatalog[permission.type].name}</ItemCard.Title>
               <ItemCard.Description>

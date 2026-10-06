@@ -67,6 +67,7 @@ export function CreateAccountForm() {
   });
   const form = useForm<CreateAccountFormValuesEncoded, unknown, CreateAccountFormValues>({
     defaultValues: defaultAccountValues,
+    mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateAccountFormValues)),
   });
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -197,11 +198,15 @@ export function CreateAccountForm() {
                       <WalletOwnerDisplay custody="local" />
                     </ListBox.Item>
                     <ListBox.Item id="namera-managed" textValue="Namera managed" isDisabled>
-                      <NameraIcon aria-hidden className="size-4 shrink-0 fill-current" />
-                      <span>Namera managed</span>
-                      <Chip size="sm" variant="soft">
-                        Coming soon
-                      </Chip>
+                      <span className="flex w-full items-center gap-2">
+                        <span className="grid size-4 shrink-0 place-items-center">
+                          <NameraIcon aria-hidden className="size-3 fill-current" />
+                        </span>
+                        <span>Namera managed</span>
+                        <Chip className="ml-auto h-4 px-1.5 text-[10px]" size="sm" variant="soft">
+                          Coming soon
+                        </Chip>
+                      </span>
                     </ListBox.Item>
                   </ListBox>
                 </Select.Popover>
@@ -222,11 +227,13 @@ export function CreateAccountForm() {
                       EVM
                     </ListBox.Item>
                     <ListBox.Item id="solana" textValue="Solana" isDisabled>
-                      <SolanaIcon aria-hidden className="size-4 shrink-0" />
-                      <span>Solana</span>
-                      <Chip size="sm" variant="soft">
-                        Coming soon
-                      </Chip>
+                      <span className="flex w-full items-center gap-2">
+                        <SolanaIcon aria-hidden className="size-4 shrink-0" />
+                        <span>Solana</span>
+                        <Chip className="ml-auto h-4 px-1.5 text-[10px]" size="sm" variant="soft">
+                          Coming soon
+                        </Chip>
+                      </span>
                     </ListBox.Item>
                   </ListBox>
                 </Select.Popover>
@@ -253,7 +260,7 @@ export function CreateAccountForm() {
         className="mt-4"
         form="create-account-form"
         fullWidth
-        isDisabled={isPending}
+        isDisabled={isPending || !form.formState.isValid}
         type="submit"
       >
         {isPending ? "Waiting for passkey…" : "Create account"}

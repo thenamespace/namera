@@ -9,6 +9,20 @@ const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(SessionExportFo
 const options = { fields: {}, shouldUseNativeValidation: false };
 
 describe("session export passphrase form", () => {
+  it("accepts eight characters and rejects seven", async () => {
+    const accepted = await resolve(
+      { password: "testonly", confirmation: "testonly" },
+      undefined,
+      options,
+    );
+    expect(accepted.errors).toEqual({});
+    const rejected = await resolve(
+      { password: "testkey", confirmation: "testkey" },
+      undefined,
+      options,
+    );
+    expect(rejected.errors).toHaveProperty("password.message");
+  });
   it("rejects a short passphrase and attaches confirmation mismatches to the field", async () => {
     const short = await resolve({ password: "short", confirmation: "short" }, undefined, options);
     expect(short.errors).toHaveProperty("password.message");

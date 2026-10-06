@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
 export const SessionExportForm = Schema.Struct({
-  password: Schema.String.check(Schema.isMinLength(12)),
+  password: Schema.String.check(Schema.isMinLength(8)),
   confirmation: Schema.String,
 }).check(
   Schema.makeFilter(({ password, confirmation }) =>
