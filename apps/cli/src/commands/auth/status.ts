@@ -14,4 +14,4 @@ export const authStatusCommand = Command.make(
     const actor = yield* runPromise(client.auth.currentActor());
     yield* printValue({ profile: profileName, actor }, authView);
   }),
-).pipe(Command.withDescription("Show the current delegated CLI actor"));
+).pipe(Command.withDescription("Show your connection and permissions"));

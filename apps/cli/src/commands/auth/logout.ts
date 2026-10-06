@@ -14,4 +14,4 @@ export const logoutCommand = Command.make(
     yield* Effect.tryPromise(() => removeProfile(profile));
     yield* printLine(`Logged out profile "${profile}".`);
   }),
-).pipe(Command.withDescription("Remove a CLI profile and its stored credentials"));
+).pipe(Command.withDescription("Sign out of a saved connection on this device"));

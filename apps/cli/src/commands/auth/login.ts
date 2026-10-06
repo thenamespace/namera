@@ -62,11 +62,11 @@ export const loginCommand = Command.make(
   {
     profile: profileFlag,
     host: Flag.String("host").pipe(
-      Flag.withDescription("Namera API origin"),
+      Flag.withDescription("Namera API URL to connect to"),
       Flag.withDefault(NAMERA_API_ORIGIN),
     ),
     deviceName: Flag.String("device-name").pipe(
-      Flag.withDescription("Friendly name shown on the consent screen"),
+      Flag.withDescription("Name shown when you approve this device"),
       Flag.withDefault(`Namera CLI on ${platform()}`),
     ),
   },
@@ -103,4 +103,4 @@ export const loginCommand = Command.make(
     );
     yield* printLine(`Logged in as profile "${profile}".`);
   }),
-).pipe(Command.withDescription("Authorize this CLI using the browser device flow"));
+).pipe(Command.withDescription("Sign in to Namera in your browser"));

@@ -15,19 +15,24 @@ const list = Command.make(
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.wallets.list()), walletsView);
   }),
-);
+).pipe(Command.withDescription("List the wallets you can access"));
 
 const get = Command.make(
   "get",
-  { walletId: Argument.String("wallet-id"), profile: profileFlag },
+  {
+    walletId: Argument.String("wallet-id").pipe(
+      Argument.withDescription("Wallet ID from wallet list"),
+    ),
+    profile: profileFlag,
+  },
   Effect.fn(function* ({ walletId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(WalletId)(walletId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.wallets.get(id)), walletView);
   }),
-);
+).pipe(Command.withDescription("Show a wallet's details"));
 
 export const walletCommand = Command.make("wallet").pipe(
-  Command.withDescription("Read wallets granted to this CLI"),
+  Command.withDescription("View your wallets"),
   Command.withSubcommands([list, get]),
 );

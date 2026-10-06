@@ -13,11 +13,13 @@ import { SessionKeystoreError } from "#/services/session-keystore/storage";
 export const importSessionKeyCommand = Command.make(
   "import",
   {
-    encryptedExport: Argument.String("encrypted-export"),
+    encryptedExport: Argument.String("encrypted-export").pipe(
+      Argument.withDescription("Encrypted key copied from the dashboard"),
+    ),
     profile: profileFlag,
     host: Flag.String("host").pipe(
       Flag.optional,
-      Flag.withDescription("API host for this key; importing does not require login"),
+      Flag.withDescription("API URL shown in the dashboard import command"),
     ),
   },
   Effect.fn("cli.sessionKey.import")(function* ({ encryptedExport, profile, host }) {
@@ -44,8 +46,4 @@ export const importSessionKeyCommand = Command.make(
     });
     yield* printValue({ status: "imported", ...result }, recordView("Session key imported"));
   }),
-).pipe(
-  Command.withDescription(
-    "Import an encrypted dashboard session export; passphrase is entered securely",
-  ),
-);
+).pipe(Command.withDescription("Save an encrypted session key on this device; no sign-in needed"));

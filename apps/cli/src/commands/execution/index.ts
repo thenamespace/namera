@@ -58,7 +58,7 @@ const execute = Command.make(
     params: paramsFlag,
     profile: profileFlag,
     maxGasCost: Flag.String("max-gas-cost-wei").pipe(
-      Flag.withDescription("Local fee ceiling for self-funded operations, in wei"),
+      Flag.withDescription("Maximum gas cost in wei when paying gas yourself"),
       Flag.optional,
     ),
   },
@@ -76,7 +76,7 @@ const execute = Command.make(
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile, maxGasCostWei));
     yield* printValue(yield* runPromise(client.executions.execute(request)), executionStatusView);
   }),
-).pipe(Command.withDescription("Execute EVM calls after validating an inline or prompted request"));
+).pipe(Command.withDescription("Submit a transaction using a session key"));
 
 const simulate = Command.make(
   "simulate",
@@ -90,26 +90,30 @@ const simulate = Command.make(
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.executions.simulate(request)), simulationView);
   }),
-).pipe(
-  Command.withDescription(
-    "Simulate calls and evaluate session-key policies without signing or submitting",
-  ),
-);
+).pipe(Command.withDescription("Preview a transaction and check permissions without sending it"));
 
 const status = Command.make(
   "status",
-  { submissionId: Argument.String("submission-id"), profile: profileFlag },
+  {
+    submissionId: Argument.String("submission-id").pipe(
+      Argument.withDescription("Submission ID returned when you sent the transaction"),
+    ),
+    profile: profileFlag,
+  },
   Effect.fn(function* ({ submissionId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.executions.getStatus(id)), executionStatusView);
   }),
-);
+).pipe(Command.withDescription("Check a submitted transaction's status"));
 
 const list = Command.make(
   "list",
   {
-    cursor: Flag.String("cursor").pipe(Flag.optional),
+    cursor: Flag.String("cursor").pipe(
+      Flag.withDescription("Continue from the next cursor returned by the previous page"),
+      Flag.optional,
+    ),
     profile: profileFlag,
   },
   Effect.fn(function* ({ cursor, profile }) {
@@ -124,9 +128,9 @@ const list = Command.make(
       executionsView,
     );
   }),
-);
+).pipe(Command.withDescription("View your transaction history"));
 
 export const executionCommand = Command.make("execution").pipe(
-  Command.withDescription("Execute and inspect onchain operations"),
+  Command.withDescription("Preview, send, and track transactions"),
   Command.withSubcommands([execute, simulate, status, list]),
 );

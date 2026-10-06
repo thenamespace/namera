@@ -51,4 +51,4 @@ export const verifySignatureCommand = Command.make(
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.verifySignature(request)), verificationView);
   }),
-).pipe(Command.withDescription("Verify an EVM smart-account signature"));
+).pipe(Command.withDescription("Check whether a wallet signature is valid"));

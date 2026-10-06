@@ -14,7 +14,7 @@ const list = Command.make(
   "list",
   {
     wallet: Flag.String("wallet").pipe(
-      Flag.withDescription("Only list keys for one wallet"),
+      Flag.withDescription("Show keys for this wallet ID only"),
       Flag.optional,
     ),
     profile: profileFlag,
@@ -30,19 +30,24 @@ const list = Command.make(
     );
     yield* printValue(result, sessionKeysView);
   }),
-);
+).pipe(Command.withDescription("List the session keys you can access"));
 
 const get = Command.make(
   "get",
-  { sessionKeyId: Argument.String("session-key-id"), profile: profileFlag },
+  {
+    sessionKeyId: Argument.String("session-key-id").pipe(
+      Argument.withDescription("Session key ID from session-key list"),
+    ),
+    profile: profileFlag,
+  },
   Effect.fn(function* ({ sessionKeyId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(SessionKeyId)(sessionKeyId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.sessionKeys.get(id)), sessionKeyView);
   }),
-);
+).pipe(Command.withDescription("Show a session key's details and permissions"));
 
 export const sessionKeyCommand = Command.make("session-key").pipe(
-  Command.withDescription("Read granted session keys and import local signing material"),
+  Command.withDescription("View and import session keys"),
   Command.withSubcommands([list, get, importSessionKeyCommand]),
 );
