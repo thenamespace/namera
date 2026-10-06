@@ -14,6 +14,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { sessionKeyDisplayStatus } from "@/components/display/session-key-status-display";
 
 import { SessionKeyActions } from "./actions";
 
@@ -24,7 +25,7 @@ export const sessionKeyColumnIds = [
   "status",
   "createdAt",
 ] as const;
-export const sessionKeyStatusOptions = ["active", "revoked"] as const;
+export const sessionKeyStatusOptions = ["active", "pending", "revoked"] as const;
 export const sessionKeyGroupingOptions = [
   { id: "none", label: "No grouping" },
   { id: "status", label: "Status" },
@@ -160,7 +161,8 @@ export const sessionKeySorters: Record<
   (left: SessionKeyResponse, right: SessionKeyResponse) => number
 > = {
   name: (left, right) => collator.compare(left.metadata.name, right.metadata.name),
-  status: (left, right) => collator.compare(left.status, right.status),
+  status: (left, right) =>
+    collator.compare(sessionKeyDisplayStatus(left.status), sessionKeyDisplayStatus(right.status)),
   account: (left, right) => collator.compare(left.wallet.metadata.name, right.wallet.metadata.name),
   creator: (left, right) =>
     collator.compare(

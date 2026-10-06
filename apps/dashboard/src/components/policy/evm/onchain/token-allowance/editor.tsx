@@ -55,7 +55,7 @@ export function TokenAllowanceEditor({
           {description ??
             "Allow transfers and approvals for one token within a lifetime allowance."}
         </Typography.Paragraph>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
+        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
           {(["address", "amount", "decimals"] as const).map((name) => (
             <Controller
               key={name}
@@ -73,6 +73,15 @@ export function TokenAllowanceEditor({
                         ? "Lifetime allowance"
                         : "Decimals"}
                   </FieldLabel>
+                  {fieldState.error ? (
+                    <FieldError>
+                      {name === "address"
+                        ? "Enter a valid token address starting with 0x."
+                        : name === "decimals"
+                          ? "Enter token decimals from 0 to 255."
+                          : fieldState.error.message}
+                    </FieldError>
+                  ) : null}
                   <Input
                     {...field}
                     id={`${id}-${name}`}
@@ -88,15 +97,14 @@ export function TokenAllowanceEditor({
                     placeholder={name === "address" ? "0x…" : name === "amount" ? "100" : "6"}
                     aria-invalid={fieldState.invalid}
                   />
-                  <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
             />
           ))}
         </div>
         <Typography.Paragraph size="xs" color="muted">
-          Use your token’s decimals: 6 for USDC, 18 for many other tokens. Each network gets its own
-          lifetime allowance.
+          Decimals: 6 for USDC, 18 for most tokens. The allowance applies separately on each
+          network.
         </Typography.Paragraph>
         <FieldError errors={[form.formState.errors.root]} />
         {!hideSubmit ? (

@@ -70,8 +70,8 @@ export function SessionPolicyDialog(props: Props) {
               ) : choice.id === "signature" ? (
                 <>
                   <Typography.Paragraph size="sm" color="muted">
-                    One policy enables signing and sets the rules for MCP, CLI and API requests.
-                    Your passkey approval also enables onchain signature authority.
+                    Choose what this key can sign through Namera. Passkey approval also grants
+                    onchain signing authority.
                   </Typography.Paragraph>
                   <SignaturePolicyEditor
                     formId={formId}

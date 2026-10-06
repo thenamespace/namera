@@ -50,6 +50,7 @@ export function SignatureRuleFields({
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel id={`typed-data-network-${index}`}>Network</FieldLabel>
+            {fieldState.error ? <FieldError>Choose a network for this rule.</FieldError> : null}
             <Select
               aria-labelledby={`typed-data-network-${index}`}
               fullWidth
@@ -74,7 +75,6 @@ export function SignatureRuleFields({
                 </ListBox>
               </Select.Popover>
             </Select>
-            {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           </Field>
         )}
       />
@@ -86,6 +86,13 @@ export function SignatureRuleFields({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={`typed-data-${index}-${key}`}>{label}</FieldLabel>
+              {fieldState.error ? (
+                <FieldError>
+                  {key === "verifyingContract"
+                    ? "Enter a valid contract address starting with 0x."
+                    : "Enter unique message type names, separated by commas."}
+                </FieldError>
+              ) : null}
               <Input
                 {...field}
                 aria-invalid={fieldState.invalid}
@@ -97,7 +104,6 @@ export function SignatureRuleFields({
                 placeholder={placeholder}
                 variant="secondary"
               />
-              {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
             </Field>
           )}
         />

@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
-import { Field, FieldError, FieldLabel, Typography } from "@namera-ai/ui";
+import { Field, FieldError, FieldLabel } from "@namera-ai/ui";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import {
@@ -21,23 +21,37 @@ export function OnchainSettings({
   return (
     <section className="grid gap-4">
       <HeadingGroup>
-        <HeadingGroup.Title>Networks and lifetime</HeadingGroup.Title>
+        <HeadingGroup.Title size="sm">Networks and lifetime</HeadingGroup.Title>
         <HeadingGroup.Description>
           Choose where this key can run and when its access expires.
         </HeadingGroup.Description>
       </HeadingGroup>
       <DashboardCardRoot>
         <DashboardCardContent>
-          <DashboardCardRow>
-            <FieldLabel id="session-networks-label">Networks</FieldLabel>
-            <Controller
-              control={form.control}
-              name="onchain.chains"
-              render={({ field, fieldState }) => (
-                <Field className="w-full min-w-0" data-invalid={fieldState.invalid}>
+          <Controller
+            control={form.control}
+            name="onchain.chains"
+            render={({ field, fieldState }) => (
+              <DashboardCardRow className="items-start sm:items-start">
+                <Field className="contents" data-invalid={fieldState.invalid}>
+                  <div className="grid min-w-0 gap-1">
+                    <FieldLabel id="session-networks-label" isRequired>
+                      Networks
+                    </FieldLabel>
+                    <div className="min-h-5" id="session-networks-error">
+                      {fieldState.error ? (
+                        <FieldError>
+                          {field.value?.length
+                            ? "Choose available networks. Some selected networks are paused."
+                            : "Choose at least one network."}
+                        </FieldError>
+                      ) : null}
+                    </div>
+                  </div>
                   <EvmNetworkMultiSelect
                     operationalOnly
                     aria-labelledby="session-networks-label"
+                    aria-describedby={fieldState.error ? "session-networks-error" : undefined}
                     name={field.name}
                     value={field.value ?? []}
                     onBlur={field.onBlur}
@@ -45,24 +59,39 @@ export function OnchainSettings({
                     triggerRef={field.ref}
                     isInvalid={fieldState.invalid}
                   />
-                  {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
                 </Field>
-              )}
-            />
-          </DashboardCardRow>
+              </DashboardCardRow>
+            )}
+          />
           {(["validAfter", "validUntil"] as const).map((name) => {
             const required = name === "validUntil";
-            const label = required ? "Expires on" : "Starts on (optional)";
+            const label = required ? "Expires on" : "Starts on";
             return (
-              <DashboardCardRow key={name}>
-                <Typography weight="medium">{label}</Typography>
-                <div className="w-full min-w-0">
-                  <Controller
-                    control={form.control}
-                    name={`onchain.${name}`}
-                    render={({ field, fieldState }) => (
+              <Controller
+                key={name}
+                control={form.control}
+                name={`onchain.${name}`}
+                render={({ field, fieldState }) => (
+                  <DashboardCardRow className="items-start sm:items-start">
+                    <div className="grid min-w-0 gap-1">
+                      <FieldLabel isRequired={required}>{label}</FieldLabel>
+                      <div className="min-h-5" id={`session-${name}-error`}>
+                        {fieldState.error ? (
+                          <FieldError>
+                            {required
+                              ? field.value
+                                ? "Choose an expiry date after the start date."
+                                : "Choose an expiry date."
+                              : "Choose a valid start date."}
+                          </FieldError>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="w-full min-w-0">
                       <DateTimePolicyField
                         hideLabel
+                        hideError
+                        aria-describedby={fieldState.error ? `session-${name}-error` : undefined}
                         isRequired={required}
                         label={label}
                         name={field.name}
@@ -73,10 +102,10 @@ export function OnchainSettings({
                           field.onChange(value ? Math.floor(Date.parse(value) / 1000) : 0)
                         }
                       />
-                    )}
-                  />
-                </div>
-              </DashboardCardRow>
+                    </div>
+                  </DashboardCardRow>
+                )}
+              />
             );
           })}
         </DashboardCardContent>

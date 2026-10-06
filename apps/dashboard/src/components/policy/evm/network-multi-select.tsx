@@ -2,13 +2,23 @@ import type { ComponentProps } from "react";
 
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
-import { Checkbox, ListBox, Select } from "@namera-ai/ui";
+import { Checkbox, Collection, Header, ListBox, Select } from "@namera-ai/ui";
 import { ChainIcon } from "@namera-ai/ui/icons";
 
 import { evmChainById, evmChainOptions } from "./data";
 
+const networkGroups = [
+  {
+    id: "mainnets",
+    label: "Mainnets",
+    networks: evmChainOptions.filter((chain) => !chain.testnet),
+  },
+  { id: "testnets", label: "Testnets", networks: evmChainOptions.filter((chain) => chain.testnet) },
+];
+
 type EvmNetworkMultiSelectProps = {
   "aria-labelledby": string;
+  "aria-describedby"?: string;
   isInvalid?: boolean;
   operationalOnly?: boolean;
   name: string;
@@ -20,6 +30,7 @@ type EvmNetworkMultiSelectProps = {
 
 export function EvmNetworkMultiSelect({
   "aria-labelledby": ariaLabelledBy,
+  "aria-describedby": ariaDescribedBy,
   isInvalid = false,
   operationalOnly = false,
   name,
@@ -39,6 +50,7 @@ export function EvmNetworkMultiSelect({
   return (
     <Select<(typeof evmChainOptions)[number], "multiple">
       aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
       fullWidth
       isInvalid={isInvalid}
       name={name}
@@ -85,29 +97,35 @@ export function EvmNetworkMultiSelect({
             <span className="text-muted text-xs">{selectable.length}</span>
           </Checkbox.Content>
         </Checkbox>
-        <ListBox className="max-h-60 overflow-y-auto" items={evmChainOptions}>
-          {(chain) => (
-            <ListBox.Item
-              id={chain.id}
-              isDisabled={operationalOnly && !chain.operationsEnabled}
-              textValue={`${chain.name} (${chain.nativeCurrency.symbol})`}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <ChainIcon
-                  aria-hidden
-                  chain={chain.chain}
-                  className="size-4 shrink-0"
-                  namespace="eip155"
-                />
-                <span className="truncate">
-                  {chain.name}{" "}
-                  <span className="text-muted text-xs">({chain.nativeCurrency.symbol})</span>
-                </span>
-              </div>
-              {!chain.operationsEnabled ? <span className="text-muted text-xs">Paused</span> : null}
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-          )}
+        <ListBox className="max-h-60 overflow-y-auto">
+          {networkGroups.map((group) => (
+            <ListBox.Section id={group.id} key={group.id}>
+              <Header className="text-muted px-2 py-2 text-xs font-medium">{group.label}</Header>
+              <Collection items={group.networks}>
+                {(chain) => (
+                  <ListBox.Item
+                    id={chain.id}
+                    isDisabled={operationalOnly && !chain.operationsEnabled}
+                    textValue={chain.name}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <ChainIcon
+                        aria-hidden
+                        chain={chain.chain}
+                        className="size-4 shrink-0"
+                        namespace="eip155"
+                      />
+                      <span className="truncate">{chain.name}</span>
+                    </div>
+                    {!chain.operationsEnabled ? (
+                      <span className="text-muted text-xs">Paused</span>
+                    ) : null}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                )}
+              </Collection>
+            </ListBox.Section>
+          ))}
         </ListBox>
       </Select.Popover>
     </Select>
