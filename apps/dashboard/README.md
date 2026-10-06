@@ -485,6 +485,9 @@ Browser code never receives the LGTM or Axiom destination credentials.
 
 Build from the repository root and run the static dashboard on port 8080:
 
+The builder explicitly copies the root `tsconfig.json` after Turbo pruning;
+Vite needs it to resolve the dashboard's inherited TypeScript configuration.
+
 ```sh
 docker build -f apps/dashboard/Dockerfile -t namera-dashboard .
 docker run --rm -p 3000:8080 namera-dashboard

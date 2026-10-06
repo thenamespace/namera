@@ -30,6 +30,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm install --frozen-lockfile --ignore-scripts
 
 COPY --from=pruner /app/out/full/ .
+# Turbo's pruned output omits the root config extended by workspace packages.
+COPY --from=pruner /app/tsconfig.json ./tsconfig.json
 
 # Refresh pnpm's workspace state after the source tree is restored. The store
 # is already warm, so this keeps Docker's dependency layer cache effective.

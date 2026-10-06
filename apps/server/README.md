@@ -333,6 +333,8 @@ pnpm --filter @namera-ai/server typecheck:test
 Build the production server image from the workspace root.
 `apps/server/Dockerfile` uses Turborepo's pruned-workspace flow and includes only the
 server's production workspace graph in the final Node.js 24 image.
+The builder explicitly copies the root `tsconfig.json` after pruning because
+workspace packages extend it and Turbo does not include it in `out/full`.
 
 ```sh
 docker build --file apps/server/Dockerfile --tag namera-server .
