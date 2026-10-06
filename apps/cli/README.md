@@ -128,7 +128,10 @@ namera --quiet auth status
 ```
 
 Human-readable summaries are the default: colored status, wallet-grouped keys,
-and plain-language permissions. Labels and titles use cyan; permissions and keys
+and plain-language permissions. Labels and section titles use cyan, account names
+use bold magenta, and key names use bold terminal text. Key summaries include
+status and relative expiry; different network expiries are labeled explicitly.
+Permissions and keys
 use blue arrows, with unindented account headings separated by a blank line.
 JSON includes complete response fields and IDs;
 use it when copying IDs for commands or scripts. NDJSON is no longer supported.

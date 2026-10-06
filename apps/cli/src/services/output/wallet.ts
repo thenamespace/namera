@@ -1,7 +1,7 @@
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 
-import { collection, fields, heading, named, type PrettyPrinter } from "./document.js";
-import { statusText } from "./style.js";
+import { collection, fields, named, type PrettyPrinter } from "./document.js";
+import { accountHeading, statusText } from "./style.js";
 
 type WalletDisplay = Pick<
   WalletResponse,
@@ -9,7 +9,7 @@ type WalletDisplay = Pick<
 >;
 
 export const walletView: PrettyPrinter<WalletDisplay> = (wallet, colors) =>
-  `${heading(named(wallet.metadata), colors)}  ${statusText(wallet.status, colors)}\n${fields(
+  `${accountHeading(named(wallet.metadata), colors)} | ${statusText(wallet.status, colors)}\n${fields(
     [
       ["Address", wallet.address],
       ["Network type", "EVM"],

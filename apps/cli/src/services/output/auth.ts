@@ -1,7 +1,12 @@
-import type { CurrentActorResponse, WalletResponse } from "@namera-ai/protocol/dto";
+import type {
+  CurrentActorResponse,
+  SessionKeyResponse,
+  WalletResponse,
+} from "@namera-ai/protocol/dto";
 
-import { date, fields, heading, named, terminalText, type PrettyPrinter } from "./document.js";
-import { listArrow, nextText, paint, statusText, successText } from "./style.js";
+import { date, fields, heading, terminalText, type PrettyPrinter } from "./document.js";
+import { sessionSummary } from "./session-summary.js";
+import { accountHeading, listArrow, nextText, paint, successText } from "./style.js";
 
 const permissions: Readonly<Record<string, string>> = {
   "wallet:read": "View wallets",
@@ -34,7 +39,8 @@ export const authView: PrettyPrinter<{
   readonly actor: CurrentActorResponse;
   readonly organizationName?: string;
   readonly wallets?: readonly Pick<WalletResponse, "id" | "metadata">[];
-}> = ({ profile, actor, organizationName, wallets = [] }, colors) => {
+  readonly sessionKeys?: readonly Pick<SessionKeyResponse, "id" | "installations">[];
+}> = ({ profile, actor, organizationName, wallets = [], sessionKeys = [] }, colors) => {
   const authorization = "authorization" in actor.data ? actor.data.authorization : undefined;
   const groups = new Map<string, { name: string; keys: string[] }>();
   if ("grants" in actor.data) {
@@ -46,7 +52,7 @@ export const authView: PrettyPrinter<{
         keys: [],
       };
       group.keys.push(
-        `${listArrow(colors)} ${terminalText(named(sessionKey.metadata))}  ${statusText(sessionKey.status, colors)}`,
+        `${listArrow(colors)} ${sessionSummary(sessionKey, colors, sessionKeys.find((key) => key.id === sessionKey.id)?.installations)}`,
       );
       groups.set(sessionKey.walletId, group);
     }
@@ -85,7 +91,7 @@ export const authView: PrettyPrinter<{
     ...(groups.size
       ? [
           [...groups.values()]
-            .map((group) => `${heading(group.name, colors)}\n${group.keys.join("\n")}`)
+            .map((group) => `${accountHeading(group.name, colors)}\n${group.keys.join("\n")}`)
             .join("\n\n"),
         ]
       : ["No session keys shared with this connection."]),

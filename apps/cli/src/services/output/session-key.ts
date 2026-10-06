@@ -10,7 +10,8 @@ import {
   timestamp,
   type PrettyPrinter,
 } from "./document.js";
-import { listArrow, statusText } from "./style.js";
+import { expiryText, sessionSummary } from "./session-summary.js";
+import { accountHeading, listArrow, statusText } from "./style.js";
 
 type SessionDisplay = Pick<
   SessionKeyResponse,
@@ -28,7 +29,7 @@ type SessionDisplay = Pick<
 
 export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
   [
-    `${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}\n${fields(
+    `${sessionSummary(key, colors, key.installations)}\n${fields(
       [
         ["Wallet", key.wallet.metadata.name],
         ["Description", key.metadata.description ?? undefined],
@@ -102,14 +103,14 @@ export const sessionKeysView: PrettyPrinter<readonly SessionDisplay[]> = (keys, 
     heading(`${keys.length} session ${keys.length === 1 ? "key" : "keys"}`, colors),
     ...[...groups.values()].map((group) =>
       [
-        heading(group.name, colors),
+        accountHeading(group.name, colors),
         ...group.keys.map((key) =>
           [
-            `${listArrow(colors)} ${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}`,
+            `${listArrow(colors)} ${sessionSummary(key, colors, key.installations)}`,
             ...(key.installations.length
               ? key.installations.map(
                   (installation) =>
-                    `   ${heading(network(installation.chainId), colors)}  ${statusText(installation.status, colors)}`,
+                    `   ${network(installation.chainId)} | ${statusText(installation.status, colors)} | ${expiryText(installation.authorization.validUntil)}`,
                 )
               : ["   No networks enabled"]),
           ].join("\n"),

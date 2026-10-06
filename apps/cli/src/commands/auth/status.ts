@@ -24,11 +24,19 @@ export const authStatusCommand = Command.make(
       output === "pretty" && !quiet && canReadWallets
         ? yield* runPromise(client.wallets.list())
         : [];
+    const canReadKeys =
+      !("authorization" in actor.data) ||
+      actor.data.authorization.scopes.includes("session-key:read");
+    const sessionKeys =
+      output === "pretty" && !quiet && canReadKeys
+        ? yield* runPromise(client.sessionKeys.list())
+        : [];
     yield* printValue({ profile: profileName, actor }, (value, colors) =>
       authView(
         {
           ...value,
           wallets,
+          sessionKeys,
           ...(savedProfile.organizationName
             ? { organizationName: savedProfile.organizationName }
             : {}),

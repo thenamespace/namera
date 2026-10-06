@@ -86,14 +86,14 @@ describe("command-specific pretty output", () => {
     expect(text).toContain("Offchain policies\nPolicies: None");
     expect(text).toContain("\nWallet: Trading Account");
     expect(sessionKeysView([key], false)).toContain(
-      "\n\n💳 Trading Account\n-> Trading bot  Pending",
+      "\n\n💳 Trading Account\n-> Trading bot | Pending |",
     );
     expect(sessionKeysView([key], false)).not.toContain("Onchain permissions");
   });
   it("leads with the wallet name and preserves copyable identifiers", () => {
     const text = walletsView([wallet], false);
     expect(text).toContain("Found 1 delegated wallet:");
-    expect(text).toContain("💳 Trading Account  Active");
+    expect(text).toContain("💳 Trading Account | Active");
     expect(text).toContain(`\nAddress: ${wallet.address}`);
     expect(text).not.toContain("\n  Address:");
     expect(text).not.toContain(wallet.id);

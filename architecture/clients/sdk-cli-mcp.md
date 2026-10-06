@@ -93,7 +93,12 @@ dates, nested policy fields, and control-character sanitization. Pretty mode is 
 human summary; JSON serializes the original result, never the presentation.
 Authorization summaries resolve wallet names through grant-scoped wallet reads
 only in pretty mode with wallet-read scope. They group keys by wallet ID, translate
-scope labels, and retain raw IDs/scopes in JSON. Login instructions go to stderr
+scope labels, and retain raw IDs/scopes in JSON. With session-key-read scope,
+pretty authorization status also reads granted session details for network expiry.
+Key summaries display relative expiry, expired state, or explicitly differing
+network expiries; missing details are never interpreted as unlimited duration.
+Section titles, account names, and key names have distinct terminal styles.
+Login instructions go to stderr
 so successful JSON stdout remains one document. Login/logout successes use green
 feedback and blue next steps; logout still only removes local CLI credentials.
 MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to

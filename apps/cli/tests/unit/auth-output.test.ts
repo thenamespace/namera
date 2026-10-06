@@ -82,13 +82,16 @@ describe("friendly authentication output", () => {
     expect(text.match(/Trading Account/g)).toHaveLength(1);
     expect(text).toContain("\nProfile: personal\nOrganization: Personal");
     expect(text).toContain("\nPermissions\n-> View wallets");
-    expect(text).toContain("\nTrading Account\n-> Trading bot  Active\n-> Savings bot  Active");
+    expect(text).toContain(
+      "\nTrading Account\n-> Trading bot | Active | Expiry unavailable\n-> Savings bot | Active | Expiry unavailable",
+    );
     expect(text).not.toMatch(/wallet:read|Expires:|Authorization ID/);
     expect(text).not.toContain("\u001b");
     expect(text).not.toContain(id);
     expect(authView(value, true)).toContain("\u001b[32mActive");
     expect(authView(value, true)).toContain("\u001b[36mPermissions");
     expect(authView(value, true)).toContain("\u001b[36mProfile:");
+    expect(authView(value, true)).toContain("\u001b[35mTrading Account");
   });
   it("separates flush-left account groups with a blank line", () => {
     if (actor.type !== "cli") throw new Error("Expected CLI fixture");
@@ -116,7 +119,7 @@ describe("friendly authentication output", () => {
       false,
     );
     expect(text).toContain(
-      "Trading Account\n-> Trading bot  Active\n\nSavings\n-> Trading bot  Active",
+      "Trading Account\n-> Trading bot | Active | Expiry unavailable\n\nSavings\n-> Trading bot | Active | Expiry unavailable",
     );
   });
   it("retains full authorization and grant records in JSON", () => {
