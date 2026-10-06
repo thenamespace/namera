@@ -153,7 +153,9 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                     </div>
                     <Select
                       aria-labelledby="session-key-wallet-label"
-                      aria-describedby={fieldState.error ? "session-key-wallet-error" : undefined}
+                      {...(fieldState.error
+                        ? { "aria-describedby": "session-key-wallet-error" }
+                        : {})}
                       fullWidth
                       isDisabled={activeWallets.length === 0}
                       isInvalid={fieldState.invalid}

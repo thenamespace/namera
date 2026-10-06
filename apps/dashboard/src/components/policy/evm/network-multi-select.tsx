@@ -50,7 +50,7 @@ export function EvmNetworkMultiSelect({
   return (
     <Select<(typeof evmChainOptions)[number], "multiple">
       aria-labelledby={ariaLabelledBy}
-      aria-describedby={ariaDescribedBy}
+      {...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {})}
       fullWidth
       isInvalid={isInvalid}
       name={name}
