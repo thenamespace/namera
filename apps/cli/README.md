@@ -131,8 +131,11 @@ Human-readable summaries are the default. JSON includes complete response fields
 NDJSON emits one document per top-level list item. `NO_COLOR` disables styling.
 MCP reserves stdout for the protocol and writes diagnostics to stderr.
 
-Failures exit with a nonzero status and write a concise error, recovery step,
-and stable code to stderr, without stack traces or raw provider details.
+Failures exit with a nonzero status and write a concise message and recovery
+step to stderr, without stack traces or raw provider details. Supported terminals
+show red errors, yellow warnings, and blue next steps with symbols. Human output
+does not show error codes or field labels. Pipes, `TERM=dumb`, and legacy
+consoles use plain/ASCII fallbacks; `NO_COLOR` disables colors.
 `--quiet` suppresses successful output, not errors. With `--output json` or
 `--output ndjson`, the failure is one JSON object on stderr:
 

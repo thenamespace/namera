@@ -12,6 +12,7 @@ import { writeCredentials } from "#/services/credentials";
 import { cliFailure } from "#/services/error-feedback";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
 import { printLine, runPromise } from "#/services/output";
+import { formatFeedback } from "#/services/output/feedback";
 import { version } from "#/version";
 
 const openBrowser = (url: string) => {
@@ -21,7 +22,9 @@ const openBrowser = (url: string) => {
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   // The verification URL is already printed; a missing opener must not crash login.
   child.once("error", () =>
-    process.stderr.write("Could not open a browser. Open the printed verification URL manually.\n"),
+    process.stderr.write(
+      `${formatFeedback("Could not open a browser.", "Open the printed verification URL manually.", "warning")}\n`,
+    ),
   );
   child.unref();
 };

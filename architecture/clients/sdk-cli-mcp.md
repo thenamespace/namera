@@ -104,6 +104,13 @@ and deletion failures are reported instead of silently claiming successful
 logout. No new audit event is needed: this changes local feedback, not server
 authorization or persisted business state.
 
+Human feedback uses stderr's TTY/color support: red errors, yellow warnings,
+and blue recovery steps, without codes or field labels. Unicode symbols have
+ASCII fallbacks for pipes, dumb terminals, legacy Windows consoles, and C/POSIX
+locales. `NO_COLOR` and `FORCE_COLOR=0` disable color. Warning presentation does
+not change failure exit codes or structured error fields. JSON and MCP remain
+unstyled and retain machine-readable codes.
+
 ## MCP tools
 
 `namera mcp serve` runs SDK-backed tools over stdio, launched by the agent client.

@@ -1,5 +1,7 @@
 import { Cause, Predicate, Schema } from "effect";
 
+import { formatFeedback, type FeedbackStyle } from "./output/feedback.js";
+
 export class CliFailure extends Schema.TaggedError<CliFailure>()("CliFailure", {
   code: Schema.String,
   message: Schema.String,
@@ -212,7 +214,7 @@ export const errorFeedback = (failure: unknown, depth = 0): CliFailure => {
   return cliFailure("INTERNAL_ERROR");
 };
 
-export const formatFailure = (failure: CliFailure, structured: boolean) => {
+export const formatFailure = (failure: CliFailure, structured: boolean, style?: FeedbackStyle) => {
   const error = {
     code: failure.code,
     message: failure.message,
@@ -221,5 +223,20 @@ export const formatFailure = (failure: CliFailure, structured: boolean) => {
   };
   return structured
     ? JSON.stringify({ error })
-    : `Error: ${error.message}\nNext: ${error.nextStep}\nCode: ${error.code}`;
+    : formatFeedback(
+        error.message,
+        error.nextStep,
+        [
+          "ALREADY_IMPORTED",
+          "AUTH_BUSY",
+          "AUTH_DENIED",
+          "AUTH_EXPIRED",
+          "RATE_LIMITED",
+          "LIMIT_EXCEEDED",
+          "NETWORK_PAUSED",
+        ].includes(error.code)
+          ? "warning"
+          : "error",
+        style,
+      );
 };

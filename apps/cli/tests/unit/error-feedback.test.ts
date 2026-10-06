@@ -22,7 +22,7 @@ describe("CLI error feedback", () => {
     );
     expect(Exit.isFailure(result)).toBe(true);
     expect(stderr).toHaveLength(1);
-    expect(String(stderr[0])).toContain("INTERNAL_ERROR");
+    expect(String(stderr[0])).toContain("Namera could not complete this command.");
     expect(String(stderr[0])).not.toContain("secret-native-stack");
   });
   it.each([

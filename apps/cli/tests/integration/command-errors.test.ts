@@ -62,8 +62,7 @@ describe("CLI failure output", { timeout: 65_000 }, () => {
       expect(result.stdout).toBe("");
       expect(result.stderr).not.toContain("secret-export-invalid");
       expect(result.stderr).not.toMatch(/at .*\(|node_modules|SessionKeystoreError/);
-      if (format === "pretty")
-        expect(result.stderr).toContain("Next: Copy the entire import command");
+      if (format === "pretty") expect(result.stderr).toContain("-> Copy the entire import command");
       else
         expect(JSON.parse(result.stderr)).toMatchObject({
           error: { code: "INVALID_EXPORT", nextStep: expect.any(String), retryable: false },
@@ -75,7 +74,8 @@ describe("CLI failure output", { timeout: 65_000 }, () => {
     const result = await run(["--quiet", "session-key", "import", "invalid!"]);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("INVALID_EXPORT");
+    expect(result.stderr).toContain("encrypted session-key export is invalid");
+    expect(result.stderr).not.toContain("INVALID_EXPORT");
   });
 
   it("reports parser errors as clean JSON without echoing invalid arguments", async () => {
@@ -117,7 +117,7 @@ describe("CLI failure output", { timeout: 65_000 }, () => {
     const result = await run(["mcp", "serve", "--profile", "../invalid-profile"]);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("INVALID_ARGUMENT");
+    expect(result.stderr).toContain("command input is invalid");
     expect(result.stderr).not.toContain("../invalid-profile");
   });
 
