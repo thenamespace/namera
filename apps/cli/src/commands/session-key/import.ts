@@ -29,7 +29,7 @@ export const importSessionKeyCommand = Command.make(
           Buffer.from(encryptedExport, "base64url").toString("utf8"),
         );
       },
-      catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
+      catch: () => new SessionKeystoreError({ code: "INVALID_EXPORT" }),
     });
     const apiOrigin = yield* Effect.tryPromise(() =>
       sessionKeyImportOrigin(profile, Option.getOrUndefined(host)),
@@ -37,7 +37,10 @@ export const importSessionKeyCommand = Command.make(
     const password = yield* Prompt.Password({ message: "Export passphrase" });
     const result = yield* Effect.tryPromise({
       try: () => sessionKeystore.importKey(envelope, password, apiOrigin),
-      catch: () => new SessionKeystoreError({ code: "IMPORT_FAILED" }),
+      catch: (error) =>
+        error instanceof SessionKeystoreError
+          ? error
+          : new SessionKeystoreError({ code: "IMPORT_FAILED" }),
     });
     yield* printValue({ status: "imported", ...result }, recordView("Session key imported"));
   }),

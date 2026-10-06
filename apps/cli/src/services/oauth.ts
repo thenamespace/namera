@@ -2,6 +2,7 @@ import { open, unlink } from "node:fs/promises";
 
 import { cliLockPath } from "./config.js";
 import { readCredentials, writeCredentials, type CredentialBundle } from "./credentials.js";
+import { cliFailure } from "./error-feedback.js";
 
 const clientId = "namera-cli";
 const resourceScopes = [
@@ -43,6 +44,8 @@ const postForm = async <A>(url: string, body: URLSearchParams): Promise<A> => {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
+  }).catch(() => {
+    throw cliFailure("UPSTREAM_UNAVAILABLE");
   });
   const data = (await response.json()) as Record<string, unknown>;
   if (!response.ok) {
@@ -107,17 +110,16 @@ const acquireRefreshLock = async (profile: string) => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-  throw new Error("Timed out waiting for another Namera command to refresh credentials.");
+  throw cliFailure("AUTH_BUSY");
 };
 
 export const getValidAccessToken = async (profile: string, baseUrl: string) => {
   const release = await acquireRefreshLock(profile);
   try {
     const credentials = readCredentials(profile);
-    if (credentials === undefined) throw new Error(`Profile "${profile}" is not logged in.`);
+    if (credentials === undefined) throw cliFailure("UNAUTHORIZED");
     if (credentials.expiresAt > Date.now() + 30_000) return credentials.accessToken;
-    if (credentials.refreshToken === null)
-      throw new Error("The CLI session expired. Run namera login.");
+    if (credentials.refreshToken === null) throw cliFailure("UNAUTHORIZED");
 
     const token = await postForm<TokenResponse>(
       `${baseUrl}/oauth/token`,

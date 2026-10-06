@@ -9,6 +9,7 @@ import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 import { profileFlag } from "#/commands/common";
 import { saveProfile } from "#/services/config";
 import { writeCredentials } from "#/services/credentials";
+import { cliFailure } from "#/services/error-feedback";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
 import { printLine, runPromise } from "#/services/output";
 import { version } from "#/version";
@@ -17,7 +18,12 @@ const openBrowser = (url: string) => {
   const command =
     process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
   const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
-  spawn(command, args, { detached: true, stdio: "ignore" }).unref();
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  // The verification URL is already printed; a missing opener must not crash login.
+  child.once("error", () =>
+    process.stderr.write("Could not open a browser. Open the printed verification URL manually.\n"),
+  );
+  child.unref();
 };
 
 const waitForToken = async (
@@ -45,7 +51,7 @@ const waitForToken = async (
       throw error;
     }
   }
-  throw new Error("The device authorization expired. Run namera login again.");
+  throw cliFailure("AUTH_EXPIRED");
 };
 
 export const loginCommand = Command.make(

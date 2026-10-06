@@ -2,6 +2,8 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
+import { cliFailure } from "./error-feedback.js";
+
 export interface CliProfile {
   readonly baseUrl: string;
   readonly authorizationId?: string;
@@ -31,7 +33,7 @@ export const readCliConfig = async (): Promise<CliConfig> => {
   try {
     return JSON.parse(await readFile(cliConfigPath, "utf8")) as CliConfig;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw cliFailure("CONFIG_UNAVAILABLE");
     return { activeProfile: "personal", profiles: {} };
   }
 };
@@ -47,7 +49,7 @@ export const getProfile = async (name?: string) => {
   const config = await readCliConfig();
   const profileName = name ?? config.activeProfile;
   const profile = config.profiles[profileName];
-  if (profile === undefined) throw new Error(`Profile "${profileName}" is not logged in.`);
+  if (profile === undefined) throw cliFailure("UNAUTHORIZED");
   return { config, profile, profileName };
 };
 

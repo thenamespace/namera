@@ -71,6 +71,14 @@ temporary file is synced and installed through a non-overwriting hard link;
 failed installation attempts remove their own unlock secret, not an existing
 import's secret. POSIX directories/files use 0700/0600 permissions.
 
+Import preserves typed failures through the CLI boundary: invalid export,
+decryption failure (wrong passphrase or damaged export), wrong API origin,
+already-imported key, unavailable keyring, and other safe-storage failures.
+Cleanup failures remain storage failures rather than claiming a clean duplicate
+import. Feedback gives recovery instructions without exposing native exceptions,
+export contents, or passphrases. No error path overwrites an existing key or
+falls back to plaintext credentials.
+
 Files are addressed by an API-origin hash and validated session ID. Reads reject
 symlinks, non-regular files, oversized files, and permissive POSIX file modes.
 Missing keyring access fails closed. The resolver checks wallet and chain

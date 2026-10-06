@@ -4,6 +4,7 @@ import type { NameraResult } from "@namera-ai/sdk";
 
 import { nameraCommand } from "#/commands/root";
 
+import { errorFeedback, type CliFailure } from "./error-feedback.js";
 import type { PrettyPrinter } from "./output/document.js";
 
 export type OutputFormat = "pretty" | "json" | "ndjson";
@@ -84,18 +85,8 @@ export const printLine = Effect.fn("cli.output.printLine")(function* (value: str
   if (!quiet) yield* Console.log(value);
 });
 
-export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, Error> =>
-  result.success
-    ? Effect.succeed(result.data)
-    : Effect.fail(
-        new Error(
-          result.error.kind === "api"
-            ? result.error.code === undefined
-              ? result.error.message
-              : `${result.error.code}: ${result.error.message}`
-            : result.error.message,
-        ),
-      );
+export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, CliFailure> =>
+  result.success ? Effect.succeed(result.data) : Effect.fail(errorFeedback(result.error));
 
 export const runPromise = <A, E>(promise: Promise<NameraResult<A, E>>) =>
   Effect.tryPromise(() => promise).pipe(Effect.flatMap(unwrapResult));

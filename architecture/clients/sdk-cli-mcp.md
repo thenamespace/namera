@@ -94,6 +94,16 @@ human summary; JSON/NDJSON serialize the original result, never the presentation
 MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to
 `http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
 
+Command failures use a CLI-owned feedback catalog with stable codes, concise
+messages, recovery steps, and conservative retry guidance. Human errors go to
+stderr; JSON/NDJSON mode emits a JSON error object there. Quiet mode does not
+suppress failures. Parser errors avoid echoing user input, help still exits
+successfully, and the runtime does not print stacks. SDK codes are translated
+without rendering raw provider messages or schema inputs. Credential access
+and deletion failures are reported instead of silently claiming successful
+logout. No new audit event is needed: this changes local feedback, not server
+authorization or persisted business state.
+
 ## MCP tools
 
 `namera mcp serve` runs SDK-backed tools over stdio, launched by the agent client.

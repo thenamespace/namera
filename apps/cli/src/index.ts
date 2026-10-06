@@ -11,6 +11,7 @@ import { sessionKeyCommand } from "#/commands/session-key/index";
 import { signCommand } from "#/commands/sign";
 import { verifySignatureCommand } from "#/commands/verify-signature";
 import { walletCommand } from "#/commands/wallet/index";
+import { reportCommandErrors } from "#/services/command-errors";
 import { CliPrompts } from "#/services/prompts";
 import { version } from "#/version";
 
@@ -29,8 +30,9 @@ const namera = nameraCommand.pipe(
 );
 
 namera.pipe(
-  Command.run({ version }),
+  Command.run({ version, renderErrors: false }),
   Effect.provide(CliPrompts.layer),
   Effect.provide(NodeServices.layer),
-  NodeRuntime.runMain,
+  reportCommandErrors,
+  NodeRuntime.runMain({ disableErrorReporting: true }),
 );

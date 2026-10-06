@@ -14,6 +14,7 @@ import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN } from "@namera-ai/sdk";
 
+import { cliFailure, errorFeedback } from "#/services/error-feedback";
 import { makeMcpApiClient, McpAuthentication } from "#/services/mcp/api-client";
 import { mcpCredentialStore, McpProfile } from "#/services/mcp/credential-store";
 import { createMcpSession } from "#/services/mcp/session";
@@ -116,10 +117,10 @@ const login = Command.make(
     const connection = yield* session(options);
     yield* Effect.tryPromise({
       try: connection.login,
-      catch: () =>
-        new Error(
-          "MCP login failed. Check the browser consent and API connection, then try again.",
-        ),
+      catch: (error) => {
+        const feedback = errorFeedback(error);
+        return feedback.code === "INTERNAL_ERROR" ? cliFailure("MCP_LOGIN_FAILED") : feedback;
+      },
     });
     yield* printValue(connection.status(), recordView("MCP connection"));
   }, Effect.scoped),
@@ -139,10 +140,7 @@ const logout = Command.make(
     const connection = yield* session(options);
     yield* Effect.tryPromise({
       try: connection.logout,
-      catch: () =>
-        new Error(
-          "MCP logout could not be completed. Check your OS keyring and revoke the connection in Namera settings.",
-        ),
+      catch: () => cliFailure("MCP_LOGOUT_FAILED"),
     });
     yield* printValue(
       { profile: options.profile, status: "signed-out" },

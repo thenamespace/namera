@@ -1,6 +1,7 @@
 import { NAMERA_API_ORIGIN } from "@namera-ai/sdk";
 
 import { readCliConfig } from "#/services/config";
+import { cliFailure } from "#/services/error-feedback";
 
 /** Resolve the expected origin independently of the encrypted export, without authorization. */
 export const sessionKeyImportOrigin = async (profile: string, host?: string): Promise<string> => {
@@ -10,7 +11,7 @@ export const sessionKeyImportOrigin = async (profile: string, host?: string): Pr
   const config = await readCliConfig();
   const saved = config.profiles[profile];
   if (!saved && profile !== "personal") {
-    throw new Error(`Profile "${profile}" does not exist. Use --host to import before login.`);
+    throw cliFailure("PROFILE_REQUIRED");
   }
   return new URL(saved?.baseUrl ?? NAMERA_API_ORIGIN).origin;
 };

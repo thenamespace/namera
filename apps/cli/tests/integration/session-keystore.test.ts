@@ -36,6 +36,14 @@ const setup = async () => {
 };
 
 describe("CLI session key storage", () => {
+  it("reports decryption failures without writing credentials or files", async () => {
+    const f = await setup();
+    await expect(
+      f.store.importKey(f.encrypted, Redacted.make("wrong-passphrase"), f.material.apiOrigin),
+    ).rejects.toMatchObject({ code: "DECRYPT_FAILED" });
+    expect(f.secrets.size).toBe(0);
+    expect(await readdir(f.directory)).toEqual([]);
+  });
   it("imports into private encrypted files and unlocks with an independent keyring secret", async () => {
     const f = await setup();
     const result = await f.store.importKey(f.encrypted, f.password, f.material.apiOrigin);
@@ -65,7 +73,7 @@ describe("CLI session key storage", () => {
     const originalSecrets = [...f.secrets.entries()];
     await expect(
       f.store.importKey(f.encrypted, f.password, f.material.apiOrigin),
-    ).rejects.toMatchObject({ code: "IMPORT_FAILED" });
+    ).rejects.toMatchObject({ code: "ALREADY_IMPORTED" });
     expect([...f.secrets.entries()]).toEqual(originalSecrets);
     expect(await readdir(f.directory)).toHaveLength(1);
     await expect(f.store.readKey(f.material.apiOrigin, result.sessionKeyId)).resolves.toMatchObject(
@@ -92,7 +100,7 @@ describe("CLI session key storage", () => {
     });
     await expect(
       broken.importKey(f.encrypted, f.password, f.material.apiOrigin),
-    ).rejects.toMatchObject({ code: "IMPORT_FAILED" });
+    ).rejects.toMatchObject({ code: "KEYRING_UNAVAILABLE" });
     expect(await readdir(f.directory)).toEqual([]);
     const result = await f.store.importKey(f.encrypted, f.password, f.material.apiOrigin);
     f.secrets.clear();

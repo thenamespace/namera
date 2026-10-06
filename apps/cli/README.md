@@ -131,6 +131,29 @@ Human-readable summaries are the default. JSON includes complete response fields
 NDJSON emits one document per top-level list item. `NO_COLOR` disables styling.
 MCP reserves stdout for the protocol and writes diagnostics to stderr.
 
+Failures exit with a nonzero status and write a concise error, recovery step,
+and stable code to stderr, without stack traces or raw provider details.
+`--quiet` suppresses successful output, not errors. With `--output json` or
+`--output ndjson`, the failure is one JSON object on stderr:
+
+```json
+{
+  "error": {
+    "code": "INVALID_EXPORT",
+    "message": "The encrypted session-key export is invalid or incomplete.",
+    "nextStep": "Copy the entire import command from the dashboard. Do not paste a private key.",
+    "retryable": false
+  }
+}
+```
+
+Use `code` for automation and `nextStep` for recovery. `retryable: false` means
+do not automatically repeat the command; an ambiguous transfer may already have
+been submitted. MCP tool failures retain `isError`, matching text/structured
+results, and include `nextStep`. Neither format exposes raw causes or stacks.
+Unexpected failures use `INTERNAL_ERROR`; report the command name and CLI version
+to support, never credentials or encrypted exports.
+
 For headless API-key use, supply `NAMERA_API_KEY` through the environment;
 `NAMERA_API_URL` overrides the default host. API keys take precedence over
 ordinary CLI profile credentials, but do not authorize MCP.
