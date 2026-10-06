@@ -19,6 +19,7 @@ import {
 import { useEventCallback } from "usehooks-ts";
 
 import { toTableSelection, type TableFilterFacet } from "@/components/common/table";
+import { useCurrentTime } from "@/hooks/use-current-time";
 
 import {
   inboxGroupOptions,
@@ -78,6 +79,7 @@ function notificationScope(item: NotificationResponse): InboxScope {
 }
 
 export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
+  const now = useCurrentTime();
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ReadonlySet<InboxStatus>>(new Set());
   const [groups, setGroups] = useState<ReadonlySet<InboxNotificationGroup>>(new Set());
@@ -91,7 +93,7 @@ export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
     const dateRange = dateRanges.values().next().value ?? "7d";
     const order = orders.values().next().value ?? "newest";
     const days = dateRangeOptions.find((option) => option.id === dateRange)?.days ?? 7;
-    const cutoff = days === null ? null : Date.now() - days * millisecondsPerDay;
+    const cutoff = days === null ? null : now - days * millisecondsPerDay;
     const visible: Array<NotificationResponse> = [];
 
     for (const item of items) {
@@ -118,7 +120,7 @@ export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
       return order === "newest" ? difference : -difference;
     });
     return visible;
-  }, [dateRanges, groups, items, normalizedQuery, orders, scopes, statuses, types]);
+  }, [dateRanges, groups, items, normalizedQuery, now, orders, scopes, statuses, types]);
 
   const filterFacets = useMemo<ReadonlyArray<TableFilterFacet>>(() => {
     const statusCounts = new Map<InboxStatus, number>();

@@ -215,12 +215,12 @@ export const Playground = () => {
 
   /** -1 idle, 0..n checking that rule, past the end settled. */
   const [cursor, setCursor] = useState(-1);
-  const [settled, setSettled] = useState(false);
 
   const to: TokenId = from === "ETH" ? "USDC" : "ETH";
   const rules = evaluate(from, value, network);
   const firstFailure = rules.findIndex((rule) => !rule.pass);
   const lastChecked = firstFailure === -1 ? rules.length - 1 : firstFailure;
+  const settled = cursor > lastChecked;
 
   const amount = amountOf(value);
   const receives = amount * (TOKENS[from].usd / TOKENS[to].usd);
@@ -229,16 +229,10 @@ export const Playground = () => {
   /** Any edit invalidates the run on screen. */
   const reset = () => {
     setCursor(-1);
-    setSettled(false);
   };
 
   useEffect(() => {
     if (cursor < 0 || settled) return;
-
-    if (cursor > lastChecked) {
-      setSettled(true);
-      return;
-    }
 
     const timer = setTimeout(
       () => {
@@ -249,7 +243,7 @@ export const Playground = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [cursor, lastChecked, reduced, settled]);
+  }, [cursor, reduced, settled]);
 
   const stateOf = (index: number) => {
     if (cursor < 0) return "idle" as const;
@@ -404,7 +398,6 @@ export const Playground = () => {
                   type="button"
                   disabled={running}
                   onClick={() => {
-                    setSettled(false);
                     setCursor(0);
                   }}
                   className={

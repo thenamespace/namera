@@ -67,7 +67,10 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
   const recover = useRecoverSessionRegistration();
   const [needsBackup, setNeedsBackup] = useState(false);
   const [registration, setRegistration] = useState<CreateSessionKeyResponse>();
-  const [bindings, setBindings] = useState<ReadonlyArray<LocalEvmSessionBinding>>();
+  const [setup, setSetup] = useState<{
+    draft: LocalSessionKeyDraft;
+    bindings: ReadonlyArray<LocalEvmSessionBinding>;
+  }>();
   const [registrationError, setRegistrationError] = useState(false);
   useEffect(() => {
     mounted.current = true;
@@ -92,7 +95,11 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     const wallet = reviewedWallet.current;
     try {
       if (!wallet) throw new Error("Selected wallet unavailable");
-      setBindings(createLocalSessionBindings({ request: payload, wallet, registration: created }));
+      if (!draft.current) throw new Error("Local session key unavailable");
+      setSetup({
+        draft: draft.current,
+        bindings: createLocalSessionBindings({ request: payload, wallet, registration: created }),
+      });
     } catch (error) {
       setRegistrationError(true);
       showErrorToast(error, {
@@ -202,11 +209,11 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               The returned configuration differs from your choices. No export or approval is
               available.
             </Typography.Paragraph>
-          ) : bindings && draft.current ? (
+          ) : setup ? (
             <SetupSessionKey
               sessionKey={registration}
-              draft={draft.current}
-              bindings={bindings}
+              draft={setup.draft}
+              bindings={setup.bindings}
               onSaved={() => {
                 setNeedsBackup(false);
                 draft.current?.dispose();

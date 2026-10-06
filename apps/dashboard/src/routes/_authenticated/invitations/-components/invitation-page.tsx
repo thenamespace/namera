@@ -59,13 +59,11 @@ const stateCopy: Record<
 
 export function InvitationPage({ initialInvitation }: InvitationPageProps) {
   const navigate = useNavigate();
-  const initialState =
+  const [state, setState] = useState<InvitationViewState | "not-found">(() =>
     initialInvitation?.invitation.status === "pending" &&
     DateTime.toEpochMillis(initialInvitation.invitation.expiresAt) <= Date.now()
       ? "expired"
-      : initialInvitation?.invitation.status;
-  const [state, setState] = useState<InvitationViewState | "not-found">(
-    initialState ?? "not-found",
+      : (initialInvitation?.invitation.status ?? "not-found"),
   );
   const [errorMessage, setErrorMessage] = useState<string>();
   const acceptInvitation = useAcceptInvitation({

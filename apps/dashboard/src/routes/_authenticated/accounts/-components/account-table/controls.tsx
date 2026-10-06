@@ -8,7 +8,7 @@ import {
   type TableOption,
 } from "@/components/common/table";
 
-import { AccountFilterMenu, type AccountFilterCounts, type AccountFilters } from "./filter-menu";
+import { accountFilterMenu, type AccountFilterCounts, type AccountFilters } from "./filter-menu";
 
 const groupingOptions = [
   { id: "none", label: "No grouping" },
@@ -55,7 +55,7 @@ export function AccountsTableControls({
   return (
     <TableControls>
       <TableFilterControl
-        {...AccountFilterMenu({ counts: filterCounts, filters, onChange: onFiltersChange })}
+        {...accountFilterMenu({ counts: filterCounts, filters, onChange: onFiltersChange })}
       />
       <TableViewOptions
         ariaLabel="Configure account table view"
