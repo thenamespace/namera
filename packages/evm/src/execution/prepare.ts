@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 
 import {
+  EvmExecutionBilling,
   EvmExecutionError,
   EvmPreparedExecution,
   EvmSerializedUserOperation,
@@ -139,6 +140,7 @@ export const makePrepareEvmExecution = (
       estimatedUserOperation: normalizedEstimatedUserOperation,
       getGasPrice,
     }).pipe(
+      Effect.flatMap(Schema.encodeEffect(EvmExecutionBilling)),
       Effect.mapError((cause) =>
         cause instanceof EvmExecutionError
           ? cause

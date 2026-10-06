@@ -21,7 +21,7 @@ export const makeEvmExecutionBilling = Effect.fn("evm.billing.prepareExecution")
   readonly sponsorship: EvmExecutionSponsorship;
   readonly estimatedUserOperation: EvmSerializedUserOperation;
   readonly getGasPrice: () => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>;
-}) {
+}): Effect.fn.Return<EvmExecutionBilling, EvmExecutionError> {
   const executionMeter =
     input.chain.environment === "mainnet" ? "execution.mainnet" : "execution.testnet";
   if (input.chain.environment === "testnet" || input.sponsorship === "none") {
