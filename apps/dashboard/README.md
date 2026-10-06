@@ -418,6 +418,41 @@ read-only presentation.
 
 ## Environment
 
+### Document metadata and discoverability
+
+`src/seo/site.ts` owns public branding, social metadata and application JSON-LD.
+`tooling/document-seo.ts` injects these into the built `index.html`, so link
+preview bots do not need JavaScript. `src/seo/pages.ts` exhaustively maps the
+generated route IDs to page titles and descriptions. `DashboardSeo` updates
+the existing metadata nodes on navigation, including error/not-found states,
+without duplicating the static tags. It runs inside the router context but
+outside route error boundaries. There is no SSR or additional runtime package.
+
+Only `/auth` is public search content. The sitemap includes that entry only;
+robots.txt allows crawling so crawlers can see `noindex`. Nginx and Vite preview
+send `X-Robots-Tag: noindex, nofollow, noarchive` for private paths and auth
+query strings. The client applies the same policy. All canonicals/social URLs
+use the clean public `/auth` URL; metadata never includes private resource names,
+IDs, query strings, invite codes, or email-verification credentials.
+
+The shared raw HTML has a generic dashboard preview; per-page titles require
+JavaScript. Metadata alone cannot make authenticated content indexable. The
+manifest supplies install metadata/icons, not offline support; no service worker
+caches account data. Keywords are descriptive metadata, not a ranking guarantee.
+
+The container's Nginx configuration is required for server-side indexing control.
+Alternative static hosts must reproduce its `X-Robots-Tag` path rules (including
+query-string handling); the security-only `_headers` file does not implement
+these routing rules. Preview/staging hosts should apply a site-wide `noindex`.
+Public canonical URLs intentionally reference `https://dashboard.namera.ai`.
+
+`public/og.svg` is the editable source for the shared 1200×630 `og.png`. It
+reuses the public site's Namera mark and dark palette. The logo and wordmark
+sit together in the center at matching visible heights, with no tagline or
+decoration, as requested. No UI or user data is pictured. Favicons and install icons reuse the
+existing brand assets from `apps/web/public`. Export the SVG as a 1200×630 PNG
+when changing the artwork; asset dimension tests guard the output.
+
 ### Document security
 
 `tooling/document-security.ts` owns the dashboard CSP and browser permissions.
