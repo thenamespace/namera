@@ -30,11 +30,14 @@ import { mcpSignatureFixture } from "../../fixtures/mcp-signature.js";
 
 const id = "01a00407-5961-75cf-933e-9cfd0336ec16";
 
-const harness = async (options?: {
-  fixture: ReturnType<typeof mcpSignatureFixture>;
-  signer: ResolveSessionSigner;
-  fetch: NameraFetch;
-}) => {
+const harness = async (
+  protocolVersion: string,
+  options?: {
+    fixture: ReturnType<typeof mcpSignatureFixture>;
+    signer: ResolveSessionSigner;
+    fetch: NameraFetch;
+  },
+) => {
   const fixture = options?.fixture ?? mcpSignatureFixture();
   let revoked = false;
   let scopes = ["mcp:read", "mcp:execute"];
@@ -122,13 +125,28 @@ const harness = async (options?: {
   );
   await runtime.runPromise(Effect.void);
   let nextId = 0;
-  const rpc = async (method: string, params: unknown = {}) => {
+  const rpc = async (method: string, params: Record<string, unknown> = {}) => {
     const requestId = ++nextId;
     await Effect.runPromise(
       Queue.offer(
         input,
         new TextEncoder().encode(
-          `${JSON.stringify({ jsonrpc: "2.0", id: requestId, method, params })}\n`,
+          `${JSON.stringify({
+            jsonrpc: "2.0",
+            id: requestId,
+            method,
+            params: {
+              ...params,
+              ...(protocolVersion === "2026-07-28"
+                ? {
+                    _meta: {
+                      "io.modelcontextprotocol/protocolVersion": protocolVersion,
+                      "io.modelcontextprotocol/clientCapabilities": {},
+                    },
+                  }
+                : {}),
+            },
+          })}\n`,
         ),
       ),
     );
@@ -139,6 +157,30 @@ const harness = async (options?: {
   };
   return {
     rpc,
+    initialize: async () => {
+      if (protocolVersion === "2026-07-28") {
+        expect(await rpc("server/discover")).toMatchObject({
+          resultType: "complete",
+          supportedVersions: ["2026-07-28", "2025-11-25", "2025-06-18"],
+        });
+      } else {
+        expect(
+          await rpc("initialize", {
+            protocolVersion,
+            capabilities: {},
+            clientInfo: { name: "test", version: "1" },
+          }),
+        ).toMatchObject({ protocolVersion });
+        await Effect.runPromise(
+          Queue.offer(
+            input,
+            new TextEncoder().encode(
+              `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
+            ),
+          ),
+        );
+      }
+    },
     signer,
     fetch,
     fixture,
@@ -155,187 +197,175 @@ const harness = async (options?: {
   };
 };
 
-describe("stdio MCP authorization and tools", () => {
-  it("serializes wallet dates and large integers consistently in structured and text results", async () => {
-    const wallet = {
-      id,
-      organizationId: id,
-      namespace: "eip155",
-      status: "active",
-      implementation: "alchemy-modular-v2",
-      metadata: { version: 1, name: "MCP test wallet" },
-      address: `0x${"11".repeat(20)}`,
-      owner: { signingKeyId: id, custody: "local", algorithm: "p256" },
-      data: {
-        version: 1,
-        modularAccountVersion: "2.0.0",
-        validatorType: "webauthn_p256",
-        entryPointVersion: "0.7",
-        salt: "9007199254740993123456789",
-        entityId: 1,
-      },
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-02T00:00:00.000Z",
-    };
-    const server = await harness({
-      fixture: mcpSignatureFixture(),
-      signer: async () => {
-        throw new Error("Read tools must not access a signer");
-      },
-      fetch: async (input) => {
-        const path = new URL(String(input)).pathname;
-        if (path === "/wallets") return Response.json([wallet]);
-        if (path === `/wallets/${id}`) return Response.json(wallet);
-        throw new Error("Unexpected wallet endpoint");
-      },
-    });
-    try {
-      await server.rpc("initialize", {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: { name: "test", version: "1" },
-      });
-      const listed = await server.rpc("tools/call", { name: "list_wallets", arguments: {} });
-      expect(listed.isError).not.toBe(true);
-      expect(listed.structuredContent).toEqual({ wallets: [wallet] });
-      expect(listed.content).toEqual([
-        { type: "text", text: JSON.stringify(listed.structuredContent) },
-      ]);
-      const fetched = await server.rpc("tools/call", {
-        name: "get_wallet",
-        arguments: { walletId: id },
-      });
-      expect(fetched.isError).not.toBe(true);
-      expect(fetched.structuredContent).toEqual({ wallet });
-      expect(fetched.content).toEqual([
-        { type: "text", text: JSON.stringify(fetched.structuredContent) },
-      ]);
-      expect(server.signer).not.toHaveBeenCalled();
-    } finally {
-      await server.runtime.dispose();
-    }
-  });
-  it("signs through the imported encrypted keystore and refuses an unavailable unlock secret", async () => {
-    const privateKey = generatePrivateKey();
-    const fixture = mcpSignatureFixture(privateKey);
-    const directory = await mkdtemp(join(tmpdir(), "namera-stdio-key-"));
-    const secrets = new Map<string, string>();
-    let unlocked = false;
-    const store = createSessionKeystore(directory, {
-      get: (key) => (unlocked ? (secrets.get(key) ?? null) : null),
-      set: (key, value) => {
-        secrets.set(key, value);
-      },
-      delete: (key) => {
-        secrets.delete(key);
-      },
-    });
-    const apiOrigin = "https://api.namera.test";
-    const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
-      version: 1,
-      namespace: "eip155",
-      apiOrigin,
-      privateKey,
-      bindings: [Schema.encodeSync(LocalEvmSessionBinding)(fixture.binding)],
-    });
-    const password = Redacted.make("test-only export passphrase");
-    let server: Awaited<ReturnType<typeof harness>> | undefined;
-    try {
-      await store.importKey(await sealLocalSessionKey(material, password), password, apiOrigin);
-      let completions = 0;
-      server = await harness({
-        fixture,
-        signer: makeSessionSignerResolver(store, apiOrigin),
-        fetch: async (input, init) => {
-          if (String(input).endsWith("/signatures/prepare"))
-            return Response.json(Schema.encodeSync(PrepareSignatureResponse)(fixture.response));
-          expect(String(input)).toContain("/signatures/complete");
-          const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
-            signature: `0x${string}`;
-          };
-          expect(
-            await verifyTypedData({
-              ...fixture.response.signing.typedData,
-              address: fixture.account.address,
-              signature: payload.signature,
-            }),
-          ).toBe(true);
-          completions += 1;
-          return Response.json(fixture.complete(payload.signature));
+describe.each(["2026-07-28", "2025-11-25", "2025-06-18"])(
+  "stdio MCP %s authorization and tools",
+  (protocolVersion) => {
+    it("serializes wallet dates and large integers consistently in structured and text results", async () => {
+      const wallet = {
+        id,
+        organizationId: id,
+        namespace: "eip155",
+        status: "active",
+        implementation: "alchemy-modular-v2",
+        metadata: { version: 1, name: "MCP test wallet" },
+        address: `0x${"11".repeat(20)}`,
+        owner: { signingKeyId: id, custody: "local", algorithm: "p256" },
+        data: {
+          version: 1,
+          modularAccountVersion: "2.0.0",
+          validatorType: "webauthn_p256",
+          entryPointVersion: "0.7",
+          salt: "9007199254740993123456789",
+          entityId: 1,
+        },
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      };
+      const server = await harness(protocolVersion, {
+        fixture: mcpSignatureFixture(),
+        signer: async () => {
+          throw new Error("Read tools must not access a signer");
+        },
+        fetch: async (input) => {
+          const path = new URL(String(input)).pathname;
+          if (path === "/wallets") return Response.json([wallet]);
+          if (path === `/wallets/${id}`) return Response.json(wallet);
+          throw new Error("Unexpected wallet endpoint");
         },
       });
-      await server.rpc("initialize", {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: { name: "test", version: "1" },
+      try {
+        await server.initialize();
+        const listed = await server.rpc("tools/call", { name: "list_wallets", arguments: {} });
+        expect(listed.isError).not.toBe(true);
+        expect(listed.structuredContent).toEqual({ wallets: [wallet] });
+        expect(listed.content).toEqual([
+          { type: "text", text: JSON.stringify(listed.structuredContent) },
+        ]);
+        const fetched = await server.rpc("tools/call", {
+          name: "get_wallet",
+          arguments: { walletId: id },
+        });
+        expect(fetched.isError).not.toBe(true);
+        expect(fetched.structuredContent).toEqual({ wallet });
+        expect(fetched.content).toEqual([
+          { type: "text", text: JSON.stringify(fetched.structuredContent) },
+        ]);
+        expect(server.signer).not.toHaveBeenCalled();
+      } finally {
+        await server.runtime.dispose();
+      }
+    });
+    it("signs through the imported encrypted keystore and refuses an unavailable unlock secret", async () => {
+      const privateKey = generatePrivateKey();
+      const fixture = mcpSignatureFixture(privateKey);
+      const directory = await mkdtemp(join(tmpdir(), "namera-stdio-key-"));
+      const secrets = new Map<string, string>();
+      let unlocked = false;
+      const store = createSessionKeystore(directory, {
+        get: (key) => (unlocked ? (secrets.get(key) ?? null) : null),
+        set: (key, value) => {
+          secrets.set(key, value);
+        },
+        delete: (key) => {
+          secrets.delete(key);
+        },
       });
-      const params = { name: "sign", arguments: { request: fixture.request } };
-      expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
-        error: { code: "LOCAL_SIGNER_UNAVAILABLE" },
+      const apiOrigin = "https://api.namera.test";
+      const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
+        version: 1,
+        namespace: "eip155",
+        apiOrigin,
+        privateKey,
+        bindings: [Schema.encodeSync(LocalEvmSessionBinding)(fixture.binding)],
       });
-      expect(completions).toBe(0);
-      unlocked = true;
-      expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
-        signature: { walletId: fixture.binding.walletId, type: "message" },
-      });
-      expect(completions).toBe(1);
-    } finally {
-      await server?.runtime.dispose();
-      secrets.clear();
-      await rm(directory, { recursive: true, force: true });
-    }
-  });
-  it("accepts an internal actor client UUID distinct from the public OAuth ID and rechecks live authority", async () => {
-    const server = await harness();
-    try {
-      await server.rpc("initialize", {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: { name: "test", version: "1" },
-      });
-      expect((await server.rpc("tools/list")).tools).toHaveLength(10);
-      expect(server.fetch).not.toHaveBeenCalled();
-      expect(
-        (await server.rpc("tools/call", { name: "list_wallets", arguments: {} })).structuredContent,
-      ).toEqual({ wallets: [] });
-      server.revoke();
-      expect(
-        (await server.rpc("tools/call", { name: "list_wallets", arguments: {} })).isError,
-      ).toBe(true);
-      expect(server.signer).not.toHaveBeenCalled();
-    } finally {
-      await server.runtime.dispose();
-    }
-  });
-  it("blocks scope narrowing and removed grants before local signer access", async () => {
-    const server = await harness();
-    try {
-      await server.rpc("initialize", {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: { name: "test", version: "1" },
-      });
-      server.removeGrants();
-      expect(
-        (
-          await server.rpc("tools/call", {
-            name: "sign",
-            arguments: { request: server.fixture.request },
-          })
-        ).isError,
-      ).toBe(true);
-      server.readOnly();
-      expect(
-        (
-          await server.rpc("tools/call", {
-            name: "sign",
-            arguments: { request: server.fixture.request },
-          })
-        ).structuredContent,
-      ).toMatchObject({ error: { code: "INSUFFICIENT_SCOPE" } });
-      expect(server.signer).not.toHaveBeenCalled();
-    } finally {
-      await server.runtime.dispose();
-    }
-  });
-});
+      const password = Redacted.make("test-only export passphrase");
+      let server: Awaited<ReturnType<typeof harness>> | undefined;
+      try {
+        await store.importKey(await sealLocalSessionKey(material, password), password, apiOrigin);
+        let completions = 0;
+        server = await harness(protocolVersion, {
+          fixture,
+          signer: makeSessionSignerResolver(store, apiOrigin),
+          fetch: async (input, init) => {
+            if (String(input).endsWith("/signatures/prepare"))
+              return Response.json(Schema.encodeSync(PrepareSignatureResponse)(fixture.response));
+            expect(String(input)).toContain("/signatures/complete");
+            const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
+              signature: `0x${string}`;
+            };
+            expect(
+              await verifyTypedData({
+                ...fixture.response.signing.typedData,
+                address: fixture.account.address,
+                signature: payload.signature,
+              }),
+            ).toBe(true);
+            completions += 1;
+            return Response.json(fixture.complete(payload.signature));
+          },
+        });
+        await server.initialize();
+        const params = { name: "sign", arguments: { request: fixture.request } };
+        expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
+          error: { code: "LOCAL_SIGNER_UNAVAILABLE" },
+        });
+        expect(completions).toBe(0);
+        unlocked = true;
+        expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
+          signature: { walletId: fixture.binding.walletId, type: "message" },
+        });
+        expect(completions).toBe(1);
+      } finally {
+        await server?.runtime.dispose();
+        secrets.clear();
+        await rm(directory, { recursive: true, force: true });
+      }
+    });
+    it("accepts an internal actor client UUID distinct from the public OAuth ID and rechecks live authority", async () => {
+      const server = await harness(protocolVersion);
+      try {
+        await server.initialize();
+        expect((await server.rpc("tools/list")).tools).toHaveLength(10);
+        expect(server.fetch).not.toHaveBeenCalled();
+        expect(
+          (await server.rpc("tools/call", { name: "list_wallets", arguments: {} }))
+            .structuredContent,
+        ).toEqual({ wallets: [] });
+        server.revoke();
+        expect(
+          (await server.rpc("tools/call", { name: "list_wallets", arguments: {} })).isError,
+        ).toBe(true);
+        expect(server.signer).not.toHaveBeenCalled();
+      } finally {
+        await server.runtime.dispose();
+      }
+    });
+    it("blocks scope narrowing and removed grants before local signer access", async () => {
+      const server = await harness(protocolVersion);
+      try {
+        await server.initialize();
+        server.removeGrants();
+        expect(
+          (
+            await server.rpc("tools/call", {
+              name: "sign",
+              arguments: { request: server.fixture.request },
+            })
+          ).isError,
+        ).toBe(true);
+        server.readOnly();
+        expect(
+          (
+            await server.rpc("tools/call", {
+              name: "sign",
+              arguments: { request: server.fixture.request },
+            })
+          ).structuredContent,
+        ).toMatchObject({ error: { code: "INSUFFICIENT_SCOPE" } });
+        expect(server.signer).not.toHaveBeenCalled();
+      } finally {
+        await server.runtime.dispose();
+      }
+    });
+  },
+);

@@ -85,6 +85,10 @@ claude mcp add --transport stdio --scope user namera -- namera mcp serve --profi
 Other MCP clients use command `namera` and arguments
 `["mcp", "serve", "--profile", "agent"]`.
 
+The stdio server supports MCP `2026-07-28`, `2025-11-25`, and `2025-06-18`.
+Newer clients use request-scoped protocol metadata; the two older revisions
+retain initialization-based negotiation. No protocol flag is needed.
+
 Your client starts the process: no manual daemon or HTTP MCP endpoint is needed.
 First tool use opens browser authorization. Approve access to installed session
 keys and retry the tool after consent. If the browser cannot open:
