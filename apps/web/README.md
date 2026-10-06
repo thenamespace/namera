@@ -255,6 +255,10 @@ the dashboard. It does not download or play a video and needs no playback
 controls. The original video remains locally staged at
 `assets/web/videos/hero-bg.mp4` for archival/upload use; `assets/` is Git-ignored.
 
+The session key anatomy demo calculates its expiry three calendar months from
+the visitor's current UTC date on mount, clamping to month end when necessary.
+Its server-rendered fallback says "In 3 months" to avoid stale or mismatched dates.
+
 Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
 behind an `@supports` guard, not JavaScript. Where the feature is unsupported
 the content is simply visible and does not animate. This matters more than the
