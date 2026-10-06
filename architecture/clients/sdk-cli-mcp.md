@@ -86,13 +86,40 @@ packaged-platform verification. The same keystore resolves message/typed-data
 signers and the local MCP listener. End-to-end browser/local signing verification
 remains pending.
 
-Global output is `pretty`, `json`, or `ndjson`. CLI-only typed presenters render
+Global output is `pretty` or `json`. CLI-only typed presenters render
 named summaries and labeled sections for wallets, session keys, authorizations,
 execution, simulation, and signatures. Shared terminal primitives handle headings,
 dates, nested policy fields, and control-character sanitization. Pretty mode is a
-human summary; JSON/NDJSON serialize the original result, never the presentation.
+human summary; JSON serializes the original result, never the presentation.
+Authorization summaries resolve wallet names through grant-scoped wallet reads
+only in pretty mode with wallet-read scope. They group keys by wallet ID, translate
+scope labels, and retain raw IDs/scopes in JSON. With session-key-read scope,
+pretty authorization status also reads granted session details for network expiry.
+Key summaries display relative expiry, expired state, or explicitly differing
+network expiries; missing details are never interpreted as unlimited duration.
+Section titles, account names, and key names have distinct terminal styles.
+Login instructions go to stderr
+so successful JSON stdout remains one document. Login/logout successes use green
+feedback and blue next steps; logout still only removes local CLI credentials.
 MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to
 `http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
+
+Command failures use a CLI-owned feedback catalog with stable codes, concise
+messages, recovery steps, and conservative retry guidance. Human errors go to
+stderr; JSON mode emits a JSON error object there. Quiet mode does not
+suppress failures. Parser errors avoid echoing user input, help still exits
+successfully, and the runtime does not print stacks. SDK codes are translated
+without rendering raw provider messages or schema inputs. Credential access
+and deletion failures are reported instead of silently claiming successful
+logout. No new audit event is needed: this changes local feedback, not server
+authorization or persisted business state.
+
+Human feedback uses stderr's TTY/color support: red errors, yellow warnings,
+and blue recovery steps, without codes or field labels. Unicode symbols have
+ASCII fallbacks for pipes, dumb terminals, legacy Windows consoles, and C/POSIX
+locales. `NO_COLOR` and `FORCE_COLOR=0` disable color. Warning presentation does
+not change failure exit codes or structured error fields. JSON and MCP remain
+unstyled and retain machine-readable codes.
 
 ## MCP tools
 

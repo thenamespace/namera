@@ -2,12 +2,12 @@ import { Option, Schema, type Effect } from "effect";
 import { Flag } from "effect/cli";
 
 export const profileFlag = Flag.String("profile").pipe(
-  Flag.withDescription("CLI profile name"),
+  Flag.withDescription("Choose which saved connection to use"),
   Flag.withDefault("personal"),
 );
 
 export const paramsFlag = Flag.String("params").pipe(
-  Flag.withDescription("Inline JSON command payload"),
+  Flag.withDescription("Provide inputs as JSON instead of answering prompts"),
   Flag.optional,
 );
 

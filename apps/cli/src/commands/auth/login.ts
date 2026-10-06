@@ -1,23 +1,34 @@
 import { spawn } from "node:child_process";
 import { platform } from "node:os";
 
-import { Effect } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 
 import { profileFlag } from "#/commands/common";
+import { nameraCommand } from "#/commands/root";
 import { saveProfile } from "#/services/config";
 import { writeCredentials } from "#/services/credentials";
+import { cliFailure } from "#/services/error-feedback";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
-import { printLine, runPromise } from "#/services/output";
+import { printValue, runPromise } from "#/services/output";
+import { loginInstructionsView, loginView } from "#/services/output/auth";
+import { feedbackStyle, formatFeedback } from "#/services/output/feedback";
 import { version } from "#/version";
 
 const openBrowser = (url: string) => {
   const command =
     process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
   const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
-  spawn(command, args, { detached: true, stdio: "ignore" }).unref();
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  // The verification URL is already printed; a missing opener must not crash login.
+  child.once("error", () =>
+    process.stderr.write(
+      `${formatFeedback("Could not open a browser.", "Open the printed verification URL manually.", "warning")}\n`,
+    ),
+  );
+  child.unref();
 };
 
 const waitForToken = async (
@@ -45,7 +56,7 @@ const waitForToken = async (
       throw error;
     }
   }
-  throw new Error("The device authorization expired. Run namera login again.");
+  throw cliFailure("AUTH_EXPIRED");
 };
 
 export const loginCommand = Command.make(
@@ -53,11 +64,11 @@ export const loginCommand = Command.make(
   {
     profile: profileFlag,
     host: Flag.String("host").pipe(
-      Flag.withDescription("Namera API origin"),
+      Flag.withDescription("Namera API URL to connect to"),
       Flag.withDefault(NAMERA_API_ORIGIN),
     ),
     deviceName: Flag.String("device-name").pipe(
-      Flag.withDescription("Friendly name shown on the consent screen"),
+      Flag.withDescription("Name shown when you approve this device"),
       Flag.withDefault(`Namera CLI on ${platform()}`),
     ),
   },
@@ -71,8 +82,17 @@ export const loginCommand = Command.make(
       }),
     );
 
-    yield* printLine(`Open ${request.verification_uri}`);
-    yield* printLine(`Confirm code: ${request.user_code}`);
+    const { quiet } = yield* nameraCommand;
+    if (!quiet)
+      yield* Console.error(
+        loginInstructionsView(
+          {
+            url: request.verification_uri,
+            code: request.user_code,
+          },
+          feedbackStyle(process.stderr).colors,
+        ),
+      );
     yield* Effect.sync(() => openBrowser(request.verification_uri_complete));
 
     const credentials = yield* Effect.tryPromise(() =>
@@ -92,6 +112,6 @@ export const loginCommand = Command.make(
         organizationId: actor.data.organizationId,
       }),
     );
-    yield* printLine(`Logged in as profile "${profile}".`);
+    yield* printValue({ profile, status: "connected", actor }, loginView);
   }),
-).pipe(Command.withDescription("Authorize this CLI using the browser device flow"));
+).pipe(Command.withDescription("Sign in to Namera in your browser"));

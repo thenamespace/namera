@@ -4,9 +4,11 @@ import type { NameraResult } from "@namera-ai/sdk";
 
 import { nameraCommand } from "#/commands/root";
 
+import { errorFeedback, type CliFailure } from "./error-feedback.js";
 import type { PrettyPrinter } from "./output/document.js";
+import { feedbackStyle } from "./output/feedback.js";
 
-export type OutputFormat = "pretty" | "json" | "ndjson";
+export type OutputFormat = "pretty" | "json";
 
 const replacer = (_: string, item: unknown) => (typeof item === "bigint" ? item.toString() : item);
 
@@ -63,8 +65,6 @@ export const formatValue = <A>(
         ? options.pretty(value, options.colors ?? false)
         : prettyValue(value, options.colors ?? false),
     ];
-  if (output === "json") return [JSON.stringify(value, replacer)];
-  if (Array.isArray(value)) return value.map((item) => JSON.stringify(item, replacer));
   return [JSON.stringify(value, replacer)];
 };
 
@@ -74,7 +74,7 @@ export const printValue = Effect.fn("cli.output.printValue")(function* <A>(
 ) {
   const { output, quiet } = yield* nameraCommand;
   if (quiet) return;
-  const colors = output === "pretty" && process.stdout.isTTY && process.env.NO_COLOR === undefined;
+  const colors = output === "pretty" && feedbackStyle(process.stdout).colors;
   for (const line of formatValue(value, output, { colors, ...(pretty ? { pretty } : {}) }))
     yield* Console.log(line);
 });
@@ -84,18 +84,8 @@ export const printLine = Effect.fn("cli.output.printLine")(function* (value: str
   if (!quiet) yield* Console.log(value);
 });
 
-export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, Error> =>
-  result.success
-    ? Effect.succeed(result.data)
-    : Effect.fail(
-        new Error(
-          result.error.kind === "api"
-            ? result.error.code === undefined
-              ? result.error.message
-              : `${result.error.code}: ${result.error.message}`
-            : result.error.message,
-        ),
-      );
+export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, CliFailure> =>
+  result.success ? Effect.succeed(result.data) : Effect.fail(errorFeedback(result.error));
 
 export const runPromise = <A, E>(promise: Promise<NameraResult<A, E>>) =>
   Effect.tryPromise(() => promise).pipe(Effect.flatMap(unwrapResult));

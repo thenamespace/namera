@@ -3,7 +3,7 @@ import { Command } from "effect/cli";
 import { authStatusCommand } from "./status.js";
 
 export const authCommand = Command.make("auth").pipe(
-  Command.withDescription("Inspect CLI authentication"),
+  Command.withDescription("Check your sign-in status"),
   Command.withSubcommands([authStatusCommand]),
 );
 

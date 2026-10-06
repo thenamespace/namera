@@ -48,10 +48,12 @@ Alchemy BSO gas holds separately from onchain confirmation using the server-only
 execution confirmation and session activation do not wait for billing.
 HTTP requests only enqueue email work and never wait for background delivery.
 
-Execution submission status is readable only by the API-key actor that created
-it. Confirmed execution detail and history use one route for user and API-key
-actors: users require `execution:read` and see the active organization, while
-API keys see only executions started by their own actor. History rows include
+Execution submission status is readable only by the machine actor that created
+it. Confirmed execution detail and history use one route for users, API keys,
+CLI, and MCP actors: users require `execution:read` and see the active organization,
+while machine actors see executions performed by their currently granted active
+session keys, including executions submitted by other actors. CLI `execution:read`
+and MCP `mcp:read` scopes remain required. History rows include
 safe account presentation data, a session-key summary, and the initiating actor
 type and ID so dashboard and delegated clients do not need secondary lookups.
 

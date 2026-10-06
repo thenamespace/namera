@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { chmod, link, lstat, mkdir, open, unlink } from "node:fs/promises";
 import { join } from "node:path";
 
-import { Redacted, Schema } from "effect";
+import { Predicate, Redacted, Schema } from "effect";
 
 import { SessionKeyId } from "@namera-ai/protocol";
 import { EncryptedLocalSessionKey, type LocalSessionKeyMaterial } from "@namera-ai/protocol/local";
@@ -26,6 +26,10 @@ export class SessionKeystoreError extends Schema.TaggedError<SessionKeystoreErro
   {
     code: Schema.Literals([
       "IMPORT_FAILED",
+      "INVALID_EXPORT",
+      "DECRYPT_FAILED",
+      "ALREADY_IMPORTED",
+      "KEYRING_UNAVAILABLE",
       "ORIGIN_MISMATCH",
       "READ_FAILED",
       "UNLOCK_UNAVAILABLE",
@@ -45,7 +49,12 @@ export const createSessionKeystore = (directory: string, keyring: SessionKeyring
     password: Redacted.Redacted<string>,
     apiOrigin: string,
   ) => {
-    const material = await openLocalSessionKey(input, password);
+    let material: LocalSessionKeyMaterial;
+    try {
+      material = await openLocalSessionKey(input, password);
+    } catch {
+      throw new SessionKeystoreError({ code: "DECRYPT_FAILED" });
+    }
     if (material.apiOrigin !== apiOrigin)
       throw new SessionKeystoreError({ code: "ORIGIN_MISMATCH" });
     const binding = material.bindings[0];
@@ -58,13 +67,18 @@ export const createSessionKeystore = (directory: string, keyring: SessionKeyring
     let temporaryCreated = false;
     let installed = false;
     let failed = false;
+    let failureCode: typeof SessionKeystoreError.Type.code = "IMPORT_FAILED";
     try {
       await mkdir(directory, { recursive: true, mode: 0o700 });
       const directoryStat = await lstat(directory);
       if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink())
         throw new Error("Unsafe directory");
       if (process.platform !== "win32") await chmod(directory, 0o700);
-      keyring.set(keyringId, unlockSecret);
+      try {
+        keyring.set(keyringId, unlockSecret);
+      } catch {
+        throw new SessionKeystoreError({ code: "KEYRING_UNAVAILABLE" });
+      }
       savedSecret = true;
       const handle = await open(temporaryPath, "wx", 0o600);
       temporaryCreated = true;
@@ -76,10 +90,17 @@ export const createSessionKeystore = (directory: string, keyring: SessionKeyring
       }
       // Hard-link installation is atomic and refuses to overwrite an existing key.
       // The random keyring ID prevents a failed import from deleting its secret.
-      await link(temporaryPath, pathFor(apiOrigin, binding.sessionKeyId));
+      try {
+        await link(temporaryPath, pathFor(apiOrigin, binding.sessionKeyId));
+      } catch (error) {
+        if (Predicate.isObject(error) && error.code === "EEXIST")
+          throw new SessionKeystoreError({ code: "ALREADY_IMPORTED" });
+        throw error;
+      }
       installed = true;
-    } catch {
+    } catch (error) {
       failed = true;
+      if (error instanceof SessionKeystoreError) failureCode = error.code;
     }
 
     // Attempt both cleanup steps even if one fails. Decide the result afterward,
@@ -88,13 +109,15 @@ export const createSessionKeystore = (directory: string, keyring: SessionKeyring
       if (temporaryCreated) await unlink(temporaryPath);
     } catch {
       failed = true;
+      failureCode = "IMPORT_FAILED";
     }
     try {
       if (!installed && savedSecret) keyring.delete(keyringId);
     } catch {
       failed = true;
+      failureCode = "IMPORT_FAILED";
     }
-    if (failed) throw new SessionKeystoreError({ code: "IMPORT_FAILED" });
+    if (failed) throw new SessionKeystoreError({ code: failureCode });
     return {
       sessionKeyId: binding.sessionKeyId,
       walletId: binding.walletId,

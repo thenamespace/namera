@@ -4,6 +4,8 @@ import { McpSchema } from "effect/ai";
 import { McpToolError, McpToolErrorCode } from "@namera-ai/protocol/dto";
 import type { NameraResult } from "@namera-ai/sdk";
 
+import { errorFeedback } from "../error-feedback.js";
+
 const messages: Readonly<Record<McpToolErrorCode, string>> = {
   NETWORK_PAUSED: "New operations on this network are paused. Do not retry until it is re-enabled.",
   INVALID_ARGUMENT: "Invalid tool input. Use returned IDs and the documented field formats.",
@@ -87,9 +89,10 @@ export const toolErrorResult = (failure: unknown) => {
   const error = Schema.is(McpToolError)(failure)
     ? failure
     : localToolError(Schema.isSchemaError(failure) ? "INVALID_ARGUMENT" : "INTERNAL_ERROR");
+  const actionable = { ...error, nextStep: errorFeedback(error).nextStep };
   return new McpSchema.CallToolResult({
     isError: true,
-    structuredContent: { error },
-    content: [{ type: "text", text: JSON.stringify({ error }) }],
+    structuredContent: { error: actionable },
+    content: [{ type: "text", text: JSON.stringify({ error: actionable }) }],
   });
 };

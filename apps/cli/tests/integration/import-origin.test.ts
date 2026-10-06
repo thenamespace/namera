@@ -45,6 +45,9 @@ describe("offline session import origin", () => {
   it("does not silently substitute production for an unknown named profile", async () => {
     const { sessionKeyImportOrigin } =
       await import("../../src/services/session-keystore/import-origin.js");
-    await expect(sessionKeyImportOrigin("dev")).rejects.toThrow("Use --host");
+    await expect(sessionKeyImportOrigin("dev")).rejects.toMatchObject({
+      code: "PROFILE_REQUIRED",
+      nextStep: expect.stringContaining("--host"),
+    });
   });
 });

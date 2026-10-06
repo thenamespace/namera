@@ -16,7 +16,7 @@ import {
   type Execution as ExecutionModel,
   type ExecutionInsert as ExecutionInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -90,6 +90,31 @@ export class ExecutionRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
 
+      // The historical grant identifies the key; today's grant controls visibility.
+      // A subquery avoids duplicate history rows after revocation and regranting.
+      const grantedHistory = (organizationId: OrganizationId, actorId: ActorId) =>
+        inArray(
+          sessionKeyGrant.sessionKeyId,
+          database
+            .select({ sessionKeyId: sessionKeyGrant.sessionKeyId })
+            .from(sessionKeyGrant)
+            .innerJoin(
+              sessionKey,
+              and(
+                eq(sessionKey.id, sessionKeyGrant.sessionKeyId),
+                eq(sessionKey.organizationId, sessionKeyGrant.organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(sessionKeyGrant.organizationId, organizationId),
+                eq(sessionKeyGrant.actorId, actorId),
+                isNull(sessionKeyGrant.revokedAt),
+                eq(sessionKey.status, "active"),
+              ),
+            ),
+        );
+
       const findDetails = Effect.fnUntraced(function* (
         id: ExecutionId,
         organizationId: OrganizationId,
@@ -145,7 +170,7 @@ export class ExecutionRepository extends Context.Service<
             and(
               eq(execution.id, id),
               eq(execution.organizationId, organizationId),
-              actorId === undefined ? undefined : eq(executionSubmission.actorId, actorId),
+              actorId === undefined ? undefined : grantedHistory(organizationId, actorId),
             ),
           )
           .limit(1);
@@ -192,7 +217,7 @@ export class ExecutionRepository extends Context.Service<
               eq(execution.organizationId, input.organizationId),
               input.actorId === undefined
                 ? undefined
-                : eq(executionSubmission.actorId, input.actorId),
+                : grantedHistory(input.organizationId, input.actorId),
               input.walletId === undefined ? undefined : eq(sessionKey.walletId, input.walletId),
               input.sessionKeyId === undefined ? undefined : eq(sessionKey.id, input.sessionKeyId),
             ),
@@ -323,17 +348,17 @@ export class ExecutionRepository extends Context.Service<
             .select({ execution })
             .from(execution)
             .innerJoin(
-              executionSubmission,
+              sessionKeyGrant,
               and(
-                eq(executionSubmission.id, execution.executionSubmissionId),
-                eq(executionSubmission.organizationId, execution.organizationId),
+                eq(sessionKeyGrant.id, execution.sessionKeyGrantId),
+                eq(sessionKeyGrant.organizationId, execution.organizationId),
               ),
             )
             .where(
               and(
                 eq(execution.id, id),
                 eq(execution.organizationId, organizationId),
-                eq(executionSubmission.actorId, actorId),
+                grantedHistory(organizationId, actorId),
               ),
             )
             .limit(1);
@@ -393,7 +418,7 @@ export class ExecutionRepository extends Context.Service<
             .where(
               and(
                 eq(execution.organizationId, input.organizationId),
-                eq(executionSubmission.actorId, input.actorId),
+                grantedHistory(input.organizationId, input.actorId),
                 input.walletId === undefined ? undefined : eq(sessionKey.walletId, input.walletId),
                 input.sessionKeyId === undefined
                   ? undefined

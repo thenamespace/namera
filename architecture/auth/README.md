@@ -41,6 +41,13 @@ flowchart TD
 
 No credential alone grants wallet authority. API keys and OAuth clients require active grants; each operation still passes the immutable policy envelope of the granted session key.
 
+The current-actor response enriches machine actors with an optional
+`organizationName`, looked up using only the authenticated actor's organization
+ID. This read-only presentation lookup happens in that handler, not on every
+authorized request. Older servers remain compatible through the optional field;
+no authorization rules or audit events change. CLI API boundary tests verify
+the organization name alongside narrowed scopes.
+
 ## Data boundaries
 
 - `auth.user` is a human identity.

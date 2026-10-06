@@ -260,7 +260,11 @@ those capabilities before persisting both records in one transaction.
 
 Actor-scoped wallet reads join active grants through active session keys and
 deduplicate wallets by ID. Session-key actor reads use the same active-grant
-boundary. Execution actor reads use the submission's creating actor. These
+boundary. Confirmed execution actor reads use current active grants to the
+historical execution's session key, not the submission's creating actor. List,
+detail, and cursor lookups share this SQL predicate; historical grant revocation
+does not hide history from a different currently authorized reader. Submission
+polling remains bound to the creating actor. These
 queries are the machine-actor visibility boundary; do not load an organization
 wide result and filter it in application memory.
 

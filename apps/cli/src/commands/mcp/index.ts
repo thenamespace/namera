@@ -14,6 +14,7 @@ import { Command, Flag } from "effect/cli";
 
 import { NAMERA_API_ORIGIN } from "@namera-ai/sdk";
 
+import { cliFailure, errorFeedback } from "#/services/error-feedback";
 import { makeMcpApiClient, McpAuthentication } from "#/services/mcp/api-client";
 import { mcpCredentialStore, McpProfile } from "#/services/mcp/credential-store";
 import { createMcpSession } from "#/services/mcp/session";
@@ -25,10 +26,13 @@ import { recordView } from "#/services/output/document";
 import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 
 const flags = {
-  profile: Flag.String("profile").pipe(Flag.withDefault("default")),
+  profile: Flag.String("profile").pipe(
+    Flag.withDescription("Choose which saved agent connection to use"),
+    Flag.withDefault("default"),
+  ),
   host: Flag.String("host").pipe(
     Flag.withDefault(NAMERA_API_ORIGIN),
-    Flag.withDescription("Namera API origin"),
+    Flag.withDescription("Namera API URL to connect to"),
   ),
 };
 const session = Effect.fn("Mcp.session")(function* (options: { host: string; profile: string }) {
@@ -49,7 +53,9 @@ const serve = Command.make(
     ...flags,
     maxGasCost: Flag.String("max-gas-cost-wei").pipe(
       Flag.optional,
-      Flag.withDescription("Fee ceiling for self-funded operations; default is sponsored only"),
+      Flag.withDescription(
+        "Maximum gas cost in wei when paying gas yourself; sponsored gas only if omitted",
+      ),
     ),
   },
   Effect.fn("Mcp.serve")(
@@ -107,7 +113,7 @@ const serve = Command.make(
     Effect.scoped,
     Effect.provide(Logger.layer([Logger.withConsoleError(Logger.formatSimple)])),
   ),
-);
+).pipe(Command.withDescription("Start the wallet connection used by your AI agent"));
 
 const login = Command.make(
   "login",
@@ -116,14 +122,14 @@ const login = Command.make(
     const connection = yield* session(options);
     yield* Effect.tryPromise({
       try: connection.login,
-      catch: () =>
-        new Error(
-          "MCP login failed. Check the browser consent and API connection, then try again.",
-        ),
+      catch: (error) => {
+        const feedback = errorFeedback(error);
+        return feedback.code === "INTERNAL_ERROR" ? cliFailure("MCP_LOGIN_FAILED") : feedback;
+      },
     });
     yield* printValue(connection.status(), recordView("MCP connection"));
   }, Effect.scoped),
-);
+).pipe(Command.withDescription("Connect your AI agent to Namera in your browser"));
 const status = Command.make(
   "status",
   flags,
@@ -131,7 +137,7 @@ const status = Command.make(
     const connection = yield* session(options);
     yield* printValue(yield* Effect.try(connection.status), recordView("MCP connection"));
   }, Effect.scoped),
-);
+).pipe(Command.withDescription("Show your saved agent connection status"));
 const logout = Command.make(
   "logout",
   flags,
@@ -139,19 +145,16 @@ const logout = Command.make(
     const connection = yield* session(options);
     yield* Effect.tryPromise({
       try: connection.logout,
-      catch: () =>
-        new Error(
-          "MCP logout could not be completed. Check your OS keyring and revoke the connection in Namera settings.",
-        ),
+      catch: () => cliFailure("MCP_LOGOUT_FAILED"),
     });
     yield* printValue(
       { profile: options.profile, status: "signed-out" },
       recordView("MCP signed out"),
     );
   }, Effect.scoped),
-);
+).pipe(Command.withDescription("Disconnect your AI agent from Namera"));
 
 export const mcpCommand = Command.make("mcp").pipe(
-  Command.withDescription("Local stdio MCP with persistent OAuth authorization"),
+  Command.withDescription("Connect AI agents to your wallets"),
   Command.withSubcommands([serve, login, status, logout]),
 );

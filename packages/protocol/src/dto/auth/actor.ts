@@ -25,6 +25,7 @@ import {
 const GrantedActorFields = {
   actorId: ActorId,
   organizationId: OrganizationId,
+  organizationName: Schema.optional(Schema.String),
   grants: Schema.Array(
     Schema.Struct({
       grant: SessionKeyGrant,

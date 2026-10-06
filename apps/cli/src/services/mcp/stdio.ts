@@ -10,7 +10,7 @@ export const mcpStdio = Layer.effectDiscard(localMcpTools).pipe(
     McpServer.layerStdio({
       name: "Namera",
       version,
-      protocols: [McpProtocol.v2025_06_18],
+      protocols: [McpProtocol.v2026_07_28, McpProtocol.v2025_11_25, McpProtocol.v2025_06_18],
     }),
   ),
 );

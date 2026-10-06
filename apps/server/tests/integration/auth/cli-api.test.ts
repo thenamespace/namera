@@ -74,7 +74,10 @@ layer(fixture.layer)("CLI API authority", (it) => {
       const actor = yield* cli.session.currentActor();
       expect(actor).toMatchObject({
         type: "cli",
-        data: { authorization: { scopes: ["wallet:read"] } },
+        data: {
+          organizationName: owner.actor.organization.metadata.name,
+          authorization: { scopes: ["wallet:read"] },
+        },
       });
       if (actor.type !== "cli") return yield* Effect.die("Expected CLI actor");
       expect((yield* cli.wallet.list()).map((entry) => entry.id)).toEqual([wallet.id]);

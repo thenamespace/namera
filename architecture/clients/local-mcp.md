@@ -25,6 +25,13 @@ CLI login and `NAMERA_API_KEY` are not used for MCP authorization.
 
 ## OAuth lifecycle
 
+The stdio transport enables Effect's `2026-07-28`, `2025-11-25`, and
+`2025-06-18` adapters, in that order. The 2026 revision uses `server/discover`
+and request-scoped protocol/capability metadata without initialization. The
+2025 revisions retain `initialize` negotiation; an unsupported initialization
+version falls back to `2025-11-25`, not the stateless revision. Authorization
+and signing rules are unchanged across versions.
+
 Initialization and tool discovery do not require credentials or wait on login.
 The first tool call without usable credentials starts browser consent once per
 process and returns an actionable unauthorized result. The user retries after
@@ -81,6 +88,15 @@ stderr. Closing stdin disposes the transport and cancels pending login. The tool
 error boundary returns bounded messages and validated policy diagnostics, not
 raw provider or keystore errors. Existing tool metrics use fixed tool names only.
 
+The CLI command boundary owns terminal failure rendering: stderr-only human
+feedback or a single JSON error for JSON mode, nonzero failure exits, and
+no runtime stack reporting. A shared local feedback catalog supplies `code`,
+`message`, `nextStep`, and conservative `retryable: false`. MCP tool errors add
+`nextStep` to their existing local result envelope without changing the public
+API error schemas. Raw messages, schema inputs, and provider causes are not
+rendered. Subprocess tests cover help, parser errors, quiet mode, invalid exports,
+API authorization, invalid hosts, and MCP startup failures.
+
 Successful tool responses use `Schema.toCodecJson` before constructing the MCP
 result. Plain DTO encoding may retain JavaScript Dates, which MCP structured
 content rejects. The JSON codec emits timestamp strings and preserves explicit
@@ -97,8 +113,10 @@ live revocation and scope/grant narrowing. Encrypted-key signing traverses the
 real local keystore, signer resolver and SDK, with cryptographic verification;
 the OS keyring and upstream API are substituted in that test.
 
-A subprocess test starts the actual CLI source with stdin/stdout pipes, checks
-protocol-only output and discovery without login, and verifies exit on stdin EOF.
+For each supported revision, subprocess tests start the actual CLI source with
+stdin/stdout pipes, check protocol-only output and discovery without login, and
+verify exit on stdin EOF. The stdio tool tests also exercise all three revisions
+for JSON encoding, encrypted-key signing, live revocation, and narrowed grants.
 Existing opt-in OS-keyring tests remain separate. Physical browser/agent consent
 with this new transport and Windows/Linux keyring behavior still require manual
 platform verification. The former HTTP transport's live Sepolia result is not

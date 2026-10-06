@@ -4,6 +4,7 @@ import { WalletId, SessionKeyId } from "@namera-ai/protocol";
 import {
   WalletOwnerResponse,
   GetExecutionSubmissionResponse,
+  SessionKeyResponse,
   VerifySignatureResponse,
   SessionKeyInstallationResponse,
 } from "@namera-ai/protocol/dto";
@@ -29,6 +30,7 @@ const wallet = Schema.decodeUnknownSync(
     address: EthereumAddress,
     namespace: Schema.Literal("eip155"),
     owner: WalletOwnerResponse,
+    data: Schema.Struct({ validatorType: Schema.Literal("webauthn_p256") }),
     createdAt: Schema.DateTimeUtcFromDate,
   }),
 )({
@@ -36,6 +38,7 @@ const wallet = Schema.decodeUnknownSync(
   metadata: { version: 1, name: "Trading Account", logo: { type: "emoji", value: "💳" } },
   status: "active",
   namespace: "eip155",
+  data: { validatorType: "webauthn_p256" },
   address: `0x${"11".repeat(20)}`,
   owner: {
     signingKeyId: "01950000-0000-7000-8000-000000000002",
@@ -79,23 +82,143 @@ describe("command-specific pretty output", () => {
       policies: [],
     };
     const text = sessionKeyView(key, false);
-    expect(text).toContain("Sepolia (eip155:11155111)\n  Status: Pending");
-    expect(text).toContain("Starts: Immediately after installation");
-    expect(text).toContain("Signatures: Enabled");
+    expect(text).toContain("Sepolia | Pending\nNot enabled yet.");
+    expect(text).toContain("-> Expires:");
+    expect(text).toContain("-> Message signing: Allowed");
     expect(text).toContain("Unrestricted account access");
-    expect(text).toContain("Offchain policies\n  Policies: None");
+    expect(text).toContain("API Policies\n-> None");
+    expect(text).toMatch(/^Trading bot \| Pending\n\n-> Account: Trading Account\n/);
+    expect(text).toContain("-> Networks: None installed");
+    expect(text).toContain("\n\nPermissions\n\n");
+    expect(text).not.toContain("ID:");
+    expect(text).not.toContain("Version:");
+    const policies = Schema.decodeUnknownSync(SessionKeyResponse.members[0].fields.policies)([
+      {
+        type: "evm.signature",
+        version: 1,
+        id: wallet.id,
+        appliesTo: "signature",
+        allowedTypes: ["message"],
+      },
+    ]);
+    const policyText = sessionKeyView({ ...key, policies }, false);
+    expect(policyText).toContain("API Policies\n-> Signature");
+    expect(policyText).toContain("Allowed Types: message");
+    expect(policyText).not.toContain(wallet.id);
+    expect(policyText).not.toContain("Version:");
+    expect(text).not.toContain("eip155:");
+    expect(text).not.toContain("Policy:");
+    const limited = sessionKeyView(
+      {
+        ...key,
+        installations: [
+          {
+            ...installation,
+            authorization: {
+              ...installation.authorization,
+              permissions: [{ type: "native-token-transfer", allowance: 999999999999999999999n }],
+            },
+          },
+        ],
+      },
+      false,
+    );
+    expect(limited).toContain("Allowance: 999999999999999999999");
+    expect(limited).toContain("Unit: wei");
+    expect(limited).not.toContain("Unrestricted account access");
+    const multipleNetworks = sessionKeyView(
+      {
+        ...key,
+        status: "active",
+        installations: [
+          { ...installation, status: "installed" },
+          {
+            ...installation,
+            chainId: "eip155:8453",
+            authorization: {
+              ...installation.authorization,
+              validUntil: 1800003600,
+            },
+          },
+        ],
+      },
+      false,
+    );
+    expect(multipleNetworks).toContain("-> Networks: Sepolia\n");
+    expect(multipleNetworks).toContain("-> Expires: Varies by network (see below)");
+    expect(multipleNetworks).toContain("Base | Pending\nNot enabled yet.");
+    expect(sessionKeysView([key], false)).toContain(
+      "💳 Trading Account\n\nTrading bot | Pending |",
+    );
+    expect(sessionKeysView([key], false)).toContain("-> Networks: None active");
+    const listed = sessionKeysView(
+      [
+        {
+          ...key,
+          status: "active",
+          installations: [
+            {
+              ...installation,
+              status: "installed",
+              authorization: {
+                ...installation.authorization,
+                validUntil: Math.floor(Date.now() / 1000) + 86400,
+              },
+            },
+            { ...installation, chainId: "eip155:8453" },
+            {
+              ...installation,
+              chainId: "eip155:1",
+              status: "installed",
+              authorization: { ...installation.authorization, validUntil: 1 },
+            },
+          ],
+        },
+        { ...key, metadata: { version: 1, name: "Second key" } },
+      ],
+      false,
+    );
+    expect(listed).toContain("-> Networks: Sepolia\n\nSecond key | Pending |");
+    expect(listed).not.toContain("eip155:");
+    expect(listed).not.toContain("Base");
+    expect(listed).not.toContain("Ethereum");
     expect(sessionKeysView([key], false)).not.toContain("Onchain permissions");
   });
   it("leads with the wallet name and preserves copyable identifiers", () => {
     const text = walletsView([wallet], false);
     expect(text).toContain("Found 1 delegated wallet:");
-    expect(text).toContain("💳 Trading Account\n  Status: Active");
-    expect(text).toContain(`Address: ${wallet.address}`);
-    expect(text).toContain(`Wallet ID: ${wallet.id}`);
-    expect(text).toContain("Key custody: Local (user-owned)");
+    expect(text).toContain("💳 Trading Account | Active");
+    expect(text).toContain(`\n-> Address: ${wallet.address}`);
+    expect(text).toContain("\n-> Network type: EVM");
+    expect(text).toContain("\n-> Custody: User-owned passkey");
+    expect(text).toContain("\n-> Created: ");
+    expect(text).not.toContain("\n  Address:");
+    expect(text).not.toContain(wallet.id);
+    expect(text).not.toContain("Implementation");
     expect(text).toContain("15 Sept 2026, 12:00:00 UTC");
     expect(text).not.toContain("undefined");
     expect(text).not.toContain("\u001b");
+  });
+
+  it("distinguishes managed custody and user-owned keys from passkeys", () => {
+    expect(
+      walletView(
+        {
+          ...wallet,
+          owner: { ...wallet.owner, custody: "namera-managed", protectionLevel: "software" },
+        },
+        false,
+      ),
+    ).toContain("-> Custody: Namera-managed");
+    const localKey = walletView(
+      {
+        ...wallet,
+        data: { validatorType: "ecdsa_secp256k1" },
+      },
+      false,
+    );
+    expect(localKey).toContain("-> Custody: User-owned key");
+    expect(localKey).not.toContain("User-owned passkey");
   });
 
   it("shows useful empty states and pluralizes collections", () => {
@@ -111,9 +234,6 @@ describe("command-specific pretty output", () => {
     const data = [{ amount: 123456789123456789n }];
     expect(formatValue(data, "json", { pretty: unexpectedPretty })).toEqual([
       '[{"amount":"123456789123456789"}]',
-    ]);
-    expect(formatValue(data, "ndjson", { pretty: unexpectedPretty })).toEqual([
-      '{"amount":"123456789123456789"}',
     ]);
     expect(formatValue(wallet, "pretty", { pretty: walletView })).toEqual([
       walletView(wallet, false),

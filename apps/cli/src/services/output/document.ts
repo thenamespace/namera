@@ -31,6 +31,9 @@ export const network = (chainId: string): string => {
   return chain ? `${chain.name} (${chainId})` : chainId;
 };
 
+export const networkName = (chainId: string): string =>
+  networks.find((entry) => `eip155:${entry.id}` === chainId)?.name ?? "Unknown network";
+
 // API metadata must not be able to clear the terminal or inject OSC hyperlinks.
 export const terminalText = (value: string): string =>
   stripVTControlCharacters(value).replace(
@@ -40,7 +43,7 @@ export const terminalText = (value: string): string =>
   );
 
 export const heading = (value: string, colors: boolean): string =>
-  colors ? `\u001b[1m${terminalText(value)}\u001b[0m` : terminalText(value);
+  colors ? `\u001b[1m\u001b[36m${terminalText(value)}\u001b[0m` : terminalText(value);
 
 export const humanize = (value: string): string => {
   const words = value.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[-_]/g, " ");
@@ -93,8 +96,12 @@ export const fields = (entries: readonly Field[], colors: boolean, indent = 2): 
     })
     .join("\n");
 
-export const section = (title: string, entries: readonly Field[], colors: boolean): string =>
-  `${heading(title, colors)}\n${fields(entries, colors)}`;
+export const section = (
+  title: string,
+  entries: readonly Field[],
+  colors: boolean,
+  indent = 2,
+): string => `${heading(title, colors)}\n${fields(entries, colors, indent)}`;
 
 export const collection = <A>(
   values: readonly A[],

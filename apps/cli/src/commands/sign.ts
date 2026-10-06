@@ -47,4 +47,4 @@ export const signCommand = Command.make(
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
     yield* printValue(yield* runPromise(client.sign(request)), signatureView);
   }),
-).pipe(Command.withDescription("Sign an EVM message or typed-data request"));
+).pipe(Command.withDescription("Sign a message or typed data with your wallet"));

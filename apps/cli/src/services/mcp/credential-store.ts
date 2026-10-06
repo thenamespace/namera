@@ -8,6 +8,7 @@ import { Schema } from "effect";
 import { Entry } from "@napi-rs/keyring";
 
 import { cliConfigPath } from "../config.js";
+import { cliFailure } from "../error-feedback.js";
 
 export const McpProfile = Schema.String.check(Schema.isPattern(/^[a-zA-Z0-9_-]{1,64}$/));
 export const McpCredential = Schema.Struct({
@@ -53,7 +54,7 @@ export const withCredentialLock = async <A>(path: string, run: () => Promise<A>)
         database.exec("ROLLBACK");
       }
     }
-    throw new Error("Another Namera process is updating MCP credentials. Try again.");
+    throw cliFailure("AUTH_BUSY");
   } finally {
     database.close();
   }
@@ -71,14 +72,14 @@ export const mcpCredentialStore = (apiOrigin: string, profile: string): McpCrede
           ? undefined
           : Schema.decodeUnknownSync(Schema.fromJsonString(McpCredential))(raw);
       } catch {
-        throw new Error("MCP credentials could not be read from the OS keyring.");
+        throw cliFailure("KEYRING_UNAVAILABLE");
       }
     },
     write: (credentials) => {
       try {
         entry().setPassword(JSON.stringify(credentials));
       } catch {
-        throw new Error("MCP credentials could not be saved to the OS keyring.");
+        throw cliFailure("KEYRING_UNAVAILABLE");
       }
     },
     lock: (run) =>
