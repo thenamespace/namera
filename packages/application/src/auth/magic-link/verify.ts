@@ -295,7 +295,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
       yield* Effect.logInfo("magic_link.verified").pipe(
         Effect.annotateLogs({ method: input.type }),
       );
-      return "inviteRedeemed" in result
+      return result.sessionToken !== undefined
         ? { sessionToken: result.sessionToken, returnTo: result.returnTo }
         : result;
     },
