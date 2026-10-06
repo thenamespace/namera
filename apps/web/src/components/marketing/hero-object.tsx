@@ -230,11 +230,11 @@ const INBOX = [
   },
 ] as const;
 
-/* Points for the operations chart, one series per range. */
+/* Illustrative activity counts, not cumulative totals: busy periods alternate with quieter ones. */
 const SERIES: Record<Range, readonly number[]> = {
-  Daily: [4, 9, 6, 14, 11, 19, 16, 24, 21, 28, 26, 34, 31, 38],
-  Weekly: [18, 26, 21, 34, 29, 41, 36, 48, 44, 57, 52, 64, 61, 72],
-  Monthly: [40, 62, 55, 78, 71, 96, 88, 112, 104, 131, 124, 148, 141, 168],
+  Daily: [16, 21, 19, 10, 12, 27, 32, 24, 17, 19, 29, 23, 15, 20],
+  Weekly: [42, 57, 63, 46, 31, 38, 55, 72, 61, 49, 34, 45, 59, 52],
+  Monthly: [96, 118, 105, 78, 92, 143, 128, 110, 82, 97, 136, 154, 121, 132],
 };
 const AXIS = ["27 Aug", "30 Aug", "2 Sept", "5 Sept", "8 Sept"];
 

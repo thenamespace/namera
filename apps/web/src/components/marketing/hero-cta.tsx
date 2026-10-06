@@ -49,7 +49,7 @@ export const HeroCta = () => {
             aria-label="Join the waitlist"
             className={
               cn(
-                "edge-top flex h-auto w-full flex-col items-stretch gap-1 rounded-[13px] border-1 border-hairline-strong sm:flex-row sm:items-center",
+                "edge-top flex h-auto w-full flex-col items-stretch gap-1 rounded-[18px] border-1 border-hairline-strong sm:flex-row sm:items-center",
                 "bg-surface/80 p-1 backdrop-blur-sm",
                 "transition-colors duration-150 ease-out-quad",
                 "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus/60",
@@ -80,7 +80,7 @@ export const HeroCta = () => {
                       field.onChange(event);
                       setError(undefined);
                     }}
-                    className="h-11 w-full min-w-0 rounded-[10px] border-0 bg-transparent px-3 text-base text-foreground shadow-none ring-0 outline-none hover:bg-transparent focus:bg-transparent focus:shadow-none focus:ring-0 focus:outline-none"
+                    className="h-11 w-full min-w-0 rounded-[14px] border-0 bg-transparent px-3 text-base text-foreground shadow-none ring-0 outline-none hover:bg-transparent focus:bg-transparent focus:shadow-none focus:ring-0 focus:outline-none"
                   />
                 </Field>
               )}
@@ -92,7 +92,7 @@ export const HeroCta = () => {
               isDisabled={join.isPending}
               className={
                 cn(
-                  "group/join inline-flex h-11 w-full shrink-0 items-center gap-2 rounded-[10px] px-4 sm:w-auto",
+                  "group/join inline-flex h-11 w-full shrink-0 items-center gap-2 rounded-[14px] px-4 sm:w-auto",
                   "bg-button-light text-sm font-medium text-button-light-foreground",
                   "transition-[background-color,transform] duration-150 ease-out-quad",
                   "hover:bg-white active:scale-[0.98]",

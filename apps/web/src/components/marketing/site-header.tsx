@@ -10,8 +10,6 @@ import { SITE_LINKS } from "#/lib/site-links";
 
 // Every item resolves to a section that exists on this page (R-24).
 const NAV_LINKS = [
-  { label: "Playground", href: "/#playground" },
-  { label: "Clients", href: "/#clients" },
   { label: "Pricing", href: "/pricing" },
   { label: "Blog", href: "/blog" },
 ] as const;

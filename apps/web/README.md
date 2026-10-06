@@ -250,13 +250,10 @@ a small upward blur/fade, followed by the dashboard and its wider light stage.
 Reduced-motion users see the final state immediately. Server HTML remains
 visible without JavaScript, and the hero does not use the scroll-reveal classes.
 
-The hero stage uses the original looping smoke video, staged locally at
-`assets/web/videos/hero-bg.mp4` (the uploadable `assets/` directory is Git-ignored).
-Upload it to the CDN object key
-`web/videos/hero-bg.mp4`, served as `video/mp4` at
-`https://cdn.namera.ai/web/videos/hero-bg.mp4`, before deploying this page.
-The local `/hero-bg-poster.jpg` remains the fallback and reduced-motion still.
-Video playback pauses offscreen and visitors can pause it manually.
+The hero stage uses `/hero-bg-poster.jpg`, a static smoke frame masked around
+the dashboard. It does not download or play a video and needs no playback
+controls. The original video remains locally staged at
+`assets/web/videos/hero-bg.mp4` for archival/upload use; `assets/` is Git-ignored.
 
 Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
 behind an `@supports` guard, not JavaScript. Where the feature is unsupported

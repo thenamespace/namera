@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 import { stagger, useAnimate, useReducedMotion } from "motion/react";
 
@@ -14,28 +14,6 @@ const STAGE_MASK =
 export const Hero = () => {
   const [scope, animate] = useAnimate();
   const reducedMotion = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (
-        entry?.isIntersecting &&
-        !reducedMotion &&
-        !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-        !paused
-      ) {
-        // Autoplay can be denied by browser policy; the poster remains visible.
-        void video.play().catch(() => setPaused(true));
-      } else {
-        video.pause();
-      }
-    });
-    observer.observe(video);
-    return () => observer.disconnect();
-  }, [paused, reducedMotion]);
 
   useEffect(() => {
     if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -74,7 +52,7 @@ export const Hero = () => {
         <div className="flex flex-col gap-7">
           <h1
             data-hero-copy
-            className="type-display-xl max-w-[24ch] text-[clamp(1.875rem,1.125rem+2.8vw,3.25rem)] text-balance text-foreground"
+            className="type-display-xl max-w-[24ch] text-[clamp(2.125rem,1rem+4vw,4rem)] text-balance text-foreground"
           >
             Wallets for AI agents
             <br />
@@ -98,14 +76,11 @@ export const Hero = () => {
             aria-hidden
             className="pointer-events-none absolute inset-x-[-6%] inset-y-0 -z-10 overflow-hidden"
           >
-            <video
-              ref={videoRef}
-              loop
-              muted
-              playsInline
-              preload="none"
-              poster="/hero-bg-poster.jpg"
-              src={reducedMotion ? undefined : "https://cdn.namera.ai/web/videos/hero-bg.mp4"}
+            <img
+              src="/hero-bg-poster.jpg"
+              alt=""
+              width={1200}
+              height={1500}
               className="size-full object-cover"
               style={{
                 maskImage: STAGE_MASK,
@@ -117,15 +92,6 @@ export const Hero = () => {
           </div>
 
           <HeroObject />
-          {!reducedMotion ? (
-            <button
-              type="button"
-              onClick={() => setPaused((value) => !value)}
-              className="absolute right-0 bottom-4 min-h-11 rounded-md bg-background/90 px-3 text-xs text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            >
-              {paused ? "Play background" : "Pause background"}
-            </button>
-          ) : null}
         </div>
       </Container>
     </section>
