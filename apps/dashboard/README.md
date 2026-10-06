@@ -433,8 +433,10 @@ Only `/auth` is public search content. The sitemap includes that entry only;
 robots.txt allows crawling so crawlers can see `noindex`. Nginx and Vite preview
 send `X-Robots-Tag: noindex, nofollow, noarchive` for private paths and auth
 query strings. The client applies the same policy. All canonicals/social URLs
-use the clean public `/auth` URL; metadata never includes private resource names,
-IDs, query strings, invite codes, or email-verification credentials.
+use the clean public `/auth` URL. Loaded account and session-key names appear only
+in browser titles (`Name | Overview`); social metadata and structured data stay
+generic. IDs, query strings, invite codes, and email-verification credentials
+never enter metadata.
 
 The shared raw HTML has a generic dashboard preview; per-page titles require
 JavaScript. Metadata alone cannot make authenticated content indexable. The

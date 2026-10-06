@@ -104,7 +104,7 @@ export const pageSeo = {
   "/_authenticated/session-key/$sessionKeyId/usage": usage,
   "/_authenticated/session-key/$sessionKeyId/executions": usage,
   "/_authenticated/execution/$executionId": {
-    title: "Execution details",
+    title: "Execution",
     description:
       "Review an onchain execution's status, account, network, and transaction details in Namera.",
   },

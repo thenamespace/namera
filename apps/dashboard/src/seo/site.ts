@@ -47,7 +47,7 @@ export const structuredData = {
 };
 
 // Only public, code-owned text belongs here. Never serialize router search,
-// resource identifiers, account names, or credentials into a document head.
+// resource identifiers, account names, or credentials into social metadata.
 export function pageMetadata(page: PageSeo) {
   const title = page.title;
   return {
@@ -79,4 +79,9 @@ export function pageMetadata(page: PageSeo) {
 
 export function robotsForRequest(url: string) {
   return url === "/auth" || url === "/auth/" ? publicRobots : privateRobots;
+}
+
+// Private resource names appear only in the signed-in browser tab, not social tags.
+export function resourcePageTitle(title: string, name?: string) {
+  return name?.trim() ? `${name.trim()} | ${title}` : title;
 }

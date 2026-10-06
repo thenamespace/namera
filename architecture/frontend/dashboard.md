@@ -25,7 +25,9 @@ Dashboard SEO remains client-side. An exhaustive route-ID metadata catalog and
 one router-context component update titles, descriptions, Open Graph and Twitter
 tags in place. Build-time document metadata, public WebApplication JSON-LD,
 favicons, a shared OG image and a web manifest are present without JavaScript.
-No per-resource names or identifiers enter metadata. Every canonical/social URL
+Loaded account and session-key names prefix the browser tab title (`Name | Overview`)
+through the shared query cache. Loading states use the section title alone. Names
+and identifiers never enter social metadata or structured data. Every canonical/social URL
 points to the public `/auth` entry, the only URL in the sitemap. Private routes,
 error states and auth query strings are noindex. The Nginx container and Vite
 preview enforce this with `X-Robots-Tag`, independent of JavaScript. Other static

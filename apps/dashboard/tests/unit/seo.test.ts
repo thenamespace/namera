@@ -9,11 +9,19 @@ import {
   privateRobots,
   publicRobots,
   robotsForRequest,
+  resourcePageTitle,
   structuredData,
 } from "../../src/seo/site";
 import { documentSeoTags } from "../../tooling/document-seo";
 
 describe("dashboard metadata", () => {
+  it("uses resource names only in browser titles with a loading fallback", () => {
+    expect(resourcePageTitle("Overview", "Trading Account")).toBe("Trading Account | Overview");
+    expect(resourcePageTitle("Policies", "Agent key")).toBe("Agent key | Policies");
+    expect(resourcePageTitle("Usage", undefined)).toBe("Usage");
+    expect(resourcePageTitle("Assets", "  ")).toBe("Assets");
+    expect(pageMetadata(pageSeo["/_authenticated/execution/$executionId"]).title).toBe("Execution");
+  });
   it("keeps settings titles free of a settings suffix", () => {
     for (const [routeId, page] of Object.entries(pageSeo)) {
       if (routeId.includes("/settings/")) expect(page.title).not.toMatch(/ settings$/i);
