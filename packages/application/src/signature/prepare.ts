@@ -173,5 +173,11 @@ export const makePrepareSignature = Effect.gen(function* () {
     Effect.trackDuration(Metric.withAttributes(signatureDuration, { stage: "prepare" })),
     Effect.catchTag("DatabaseError", Effect.die),
     Effect.catchTag("EvmPolicyError", () => new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(signatureResults, { stage: "prepare", result: error.code }),
+        1,
+      ),
+    ),
   );
 });

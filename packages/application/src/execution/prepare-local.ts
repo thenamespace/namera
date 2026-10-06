@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect, Schema } from "effect";
+import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -15,6 +15,11 @@ import {
   type GrantedActorData,
   type PrepareExecutionResponse,
 } from "@namera-ai/protocol/dto";
+import {
+  executionDuration,
+  executionResults,
+  executionPolicyDecisions,
+} from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { makeBillingMetering } from "#/billing/index";
@@ -101,6 +106,13 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
               context: prepared.context,
               states,
             });
+            yield* Metric.update(
+              Metric.withAttributes(executionPolicyDecisions, {
+                stage: "prepare",
+                result: plan.decision.allowed ? "allowed" : "denied",
+              }),
+              1,
+            );
             if (!plan.decision.allowed)
               return yield* new ExecutionError({
                 code: "POLICY_DENIED",
@@ -233,5 +245,18 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
     },
     Effect.catchTag("DatabaseError", Effect.die),
     Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
+    Effect.tap(() =>
+      Metric.update(
+        Metric.withAttributes(executionResults, { stage: "prepare", result: "success" }),
+        1,
+      ),
+    ),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(executionResults, { stage: "prepare", result: error.code }),
+        1,
+      ),
+    ),
+    Effect.trackDuration(Metric.withAttributes(executionDuration, { stage: "prepare" })),
   );
 });

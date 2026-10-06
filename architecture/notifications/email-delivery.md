@@ -1,5 +1,12 @@
 # Durable email delivery
 
+Delivery telemetry includes bounded email type on per-job outcomes and provider
+duration, enqueue-to-provider-acceptance duration, and pending/processing queue
+depth and oldest age. Empty queues reset gauges to zero. Lost-lease updates do
+not count as successful delivery transitions. Worker failures log a fixed event
+without serializing database errors or encrypted payloads. Provider acceptance
+still does not imply inbox delivery; bounce/complaint webhooks remain pending.
+
 `@namera-ai/emails` owns a typed encrypted outbox, React Email templates, the
 Resend provider adapter, and delivery processing. Domain workflows enqueue jobs
 inside their existing transaction and never wait for the provider.

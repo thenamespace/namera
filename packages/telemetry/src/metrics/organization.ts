@@ -1,5 +1,13 @@
 import { Metric } from "effect";
 
+export const organizationInvitationFailures = Metric.counter(
+  "namera.organization.invitation.failures",
+  {
+    description: "Rejected invitation mutation requests by action and bounded error code",
+    incremental: true,
+  },
+);
+
 export const organizationCreations = Metric.counter("namera.organization.creations", {
   description: "Number of organizations created",
   incremental: true,

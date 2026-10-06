@@ -113,6 +113,44 @@ The overview is a read projection assembled from resource, operation-total, and
 operation-activity queries. It emits no identifiers or organization-specific
 labels.
 
+### Workflow and worker coverage
+
+- HTTP templates cover the typed API, raw OAuth endpoints and proxy routes.
+  A contract-reflection regression test guards new typed routes against falling
+  into `/*`. Unknown paths still use that bounded fallback.
+- Beta invite `namera.beta_invite.transitions` records committed `created`,
+  `revoked`, and `redeemed` transitions. Creation counts invites, not batches.
+  Organization invitation failures carry only a bounded action and error code.
+- Execution request results and duration carry `stage=prepare|complete|simulate`.
+  These count requests (including replay), not unique submissions. Policy
+  decisions distinguish preparation from read-only simulation. Signature failure
+  results carry their prepare/complete stage and typed error code.
+- `namera.auth.authentication.results` distinguishes session, API-key and bearer
+  credential success/invalid outcomes before the downstream handler runs.
+  Missing credentials rejected by the transport remain visible in HTTP status
+  metrics. `namera.http.rate_limit.rejections` uses code-owned limiter scopes.
+- Email delivery counters and provider duration include email type. Bulk expiry
+  remains an aggregate without type. `namera.email.jobs.time_to_send` measures
+  enqueue-to-provider-acceptance latency, not inbox delivery. Lease-losing
+  completion attempts do not increment successful delivery counters.
+- All four workers emit `namera.worker.poll.results` and
+  `namera.worker.last_success` (Unix seconds). A successful poll does not mean
+  every claimed job succeeded. Alert on failures and stale last-success values.
+- Email, execution and session-operation polls report `namera.worker.backlog`
+  and `namera.worker.oldest_age` (seconds). Execution includes signed prepared
+  and submitted attempts; session operations include signed/submitted attempts;
+  email includes pending/processing jobs, including scheduled retries. Unsigned
+  owner approvals and unsigned execution reservations are not queue backlog.
+  Gauges reset to zero for empty queues. These are global database snapshots:
+  use the latest/max across replicas, never sum replicas. Existing status-led
+  indexes support the filters; verify aggregate cost as history grows.
+- Execution/session-operation orchestration and idle claim/expiry queries are
+  untraced; claimed work retains per-item spans. Worker failures use fixed log
+  messages, not raw database/provider errors.
+
+New signals require deployment before Axiom receives them. Local changes are
+not a claim of successful production ingestion or verification.
+
 ## Runtime variables
 
 | Variable                      | Use                                |
@@ -135,6 +173,14 @@ helper-only roots.
 
 ## Pending
 
-- Define production alerts and operational dashboards for HTTP failures and
-  latency, worker age, provider errors, authorization changes, database
-  saturation, rate-limit rejections, and OTLP export failures.
+- Connect production alerts to the operator-selected notifier and verify with
+  controlled failures after deployment.
+- Persist originating trace context across durable outbox/operation boundaries
+  and link recovery spans without reusing completed request spans.
+- Add verified provider delivery/bounce/complaint webhooks. Provider acceptance
+  is not proof of inbox delivery.
+- Instrument database pool saturation and exporter delivery failures using the
+  deployment's infrastructure telemetry; missing application telemetry alone
+  cannot distinguish exporter failure from an idle service.
+- Billing maintenance still emits periodic reconciliation spans; suppressing
+  those must retain visibility into actual rollover/recovery/repair work.
