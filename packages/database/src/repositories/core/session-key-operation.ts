@@ -122,7 +122,7 @@ export class SessionKeyOperationRepository extends Context.Service<
             })
             .from(table)
             .where(inArray(table.status, ["signed", "submitted"]));
-          return Schema.decodeSync(
+          return Schema.decodeUnknownSync(
             Schema.Struct({ count: Schema.Number, oldestAgeSeconds: Schema.Number }),
           )(rows[0]);
         }, mapRepositoryError),

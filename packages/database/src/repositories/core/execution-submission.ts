@@ -130,7 +130,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
             })
             .from(executionSubmission)
             .where(inArray(executionSubmission.status, ["prepared", "submitted"]));
-          return Schema.decodeSync(
+          return Schema.decodeUnknownSync(
             Schema.Struct({ count: Schema.Number, oldestAgeSeconds: Schema.Number }),
           )(rows[0]);
         }, mapRepositoryError),
