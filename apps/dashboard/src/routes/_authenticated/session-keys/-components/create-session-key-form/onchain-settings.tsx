@@ -51,7 +51,7 @@ export function OnchainSettings({
                   <EvmNetworkMultiSelect
                     operationalOnly
                     aria-labelledby="session-networks-label"
-                    aria-describedby={fieldState.error ? "session-networks-error" : undefined}
+                    {...(fieldState.error ? { "aria-describedby": "session-networks-error" } : {})}
                     name={field.name}
                     value={field.value ?? []}
                     onBlur={field.onBlur}
@@ -91,7 +91,9 @@ export function OnchainSettings({
                       <DateTimePolicyField
                         hideLabel
                         hideError
-                        aria-describedby={fieldState.error ? `session-${name}-error` : undefined}
+                        {...(fieldState.error
+                          ? { "aria-describedby": `session-${name}-error` }
+                          : {})}
                         isRequired={required}
                         label={label}
                         name={field.name}

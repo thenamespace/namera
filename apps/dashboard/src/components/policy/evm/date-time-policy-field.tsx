@@ -38,7 +38,7 @@ export function DateTimePolicyField({
   return (
     <Field data-invalid={Boolean(error)}>
       <DatePicker
-        aria-describedby={ariaDescribedBy}
+        {...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {})}
         className="w-full"
         granularity={granularity}
         isInvalid={Boolean(error)}
