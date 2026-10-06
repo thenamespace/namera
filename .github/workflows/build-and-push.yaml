@@ -39,6 +39,7 @@ on:
 env:
   region: europe-west3
   project_id: prod-9427
+  artifact_repository: namera-core
   workload_identity_provider: projects/397196751430/locations/global/workloadIdentityPools/github-pool/providers/github-provider
 
 jobs:
@@ -110,7 +111,7 @@ jobs:
       - name: Build and push Docker image
         env:
           REGISTRY: ${{ env.region }}-docker.pkg.dev/${{ env.project_id }}
-          REPOSITORY: ${{ github.event.repository.name }}
+          REPOSITORY: ${{ env.artifact_repository }}
           IMAGE_NAME: ${{ inputs.app_name }}
           DOTENV: ${{ inputs.dotenv }}
           DOCKERFILE: ${{ inputs.dockerfile }}
