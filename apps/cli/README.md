@@ -128,7 +128,9 @@ namera --quiet auth status
 ```
 
 Human-readable summaries are the default: colored status, wallet-grouped keys,
-and plain-language permissions. JSON includes complete response fields and IDs;
+and plain-language permissions. Labels and titles use cyan; permissions and keys
+use blue arrows, with unindented account headings separated by a blank line.
+JSON includes complete response fields and IDs;
 use it when copying IDs for commands or scripts. NDJSON is no longer supported.
 `NO_COLOR` disables styling. Organization names require a server that includes
 them in its current-actor response; older servers show an unavailable-name notice.

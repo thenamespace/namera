@@ -79,18 +79,23 @@ describe("command-specific pretty output", () => {
       policies: [],
     };
     const text = sessionKeyView(key, false);
-    expect(text).toContain("Sepolia (eip155:11155111)\n  Status: Pending");
+    expect(text).toContain("Sepolia (eip155:11155111)\nStatus: Pending");
     expect(text).toContain("Starts: Immediately after installation");
     expect(text).toContain("Signatures: Enabled");
     expect(text).toContain("Unrestricted account access");
-    expect(text).toContain("Offchain policies\n  Policies: None");
+    expect(text).toContain("Offchain policies\nPolicies: None");
+    expect(text).toContain("\nWallet: Trading Account");
+    expect(sessionKeysView([key], false)).toContain(
+      "\n\n💳 Trading Account\n-> Trading bot  Pending",
+    );
     expect(sessionKeysView([key], false)).not.toContain("Onchain permissions");
   });
   it("leads with the wallet name and preserves copyable identifiers", () => {
     const text = walletsView([wallet], false);
     expect(text).toContain("Found 1 delegated wallet:");
     expect(text).toContain("💳 Trading Account  Active");
-    expect(text).toContain(`Address: ${wallet.address}`);
+    expect(text).toContain(`\nAddress: ${wallet.address}`);
+    expect(text).not.toContain("\n  Address:");
     expect(text).not.toContain(wallet.id);
     expect(text).not.toContain("Implementation");
     expect(text).toContain("15 Sept 2026, 12:00:00 UTC");

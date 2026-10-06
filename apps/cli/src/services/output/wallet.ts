@@ -17,6 +17,7 @@ export const walletView: PrettyPrinter<WalletDisplay> = (wallet, colors) =>
       ["Created", wallet.createdAt],
     ],
     colors,
+    0,
   )}`;
 
 export const walletsView: PrettyPrinter<readonly WalletDisplay[]> = (wallets, colors) =>

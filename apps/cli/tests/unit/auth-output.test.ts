@@ -80,11 +80,44 @@ describe("friendly authentication output", () => {
     expect(text).toContain("Send transactions");
     expect(text).toContain("Stay signed in");
     expect(text.match(/Trading Account/g)).toHaveLength(1);
-    expect(text).toContain("    Trading bot  Active\n    Savings bot  Active");
+    expect(text).toContain("\nProfile: personal\nOrganization: Personal");
+    expect(text).toContain("\nPermissions\n-> View wallets");
+    expect(text).toContain("\nTrading Account\n-> Trading bot  Active\n-> Savings bot  Active");
     expect(text).not.toMatch(/wallet:read|Expires:|Authorization ID/);
     expect(text).not.toContain("\u001b");
     expect(text).not.toContain(id);
     expect(authView(value, true)).toContain("\u001b[32mActive");
+    expect(authView(value, true)).toContain("\u001b[36mPermissions");
+    expect(authView(value, true)).toContain("\u001b[36mProfile:");
+  });
+  it("separates flush-left account groups with a blank line", () => {
+    if (actor.type !== "cli") throw new Error("Expected CLI fixture");
+    const otherWallet = WalletId.make("01950000-0000-7000-8000-000000000002");
+    const firstGrant = actor.data.grants[0];
+    if (!firstGrant) throw new Error("Expected grant fixture");
+    const text = authView(
+      {
+        ...value,
+        wallets: [...value.wallets, { id: otherWallet, metadata: { version: 1, name: "Savings" } }],
+        actor: {
+          ...actor,
+          data: {
+            ...actor.data,
+            grants: [
+              firstGrant,
+              {
+                ...firstGrant,
+                sessionKey: { ...firstGrant.sessionKey, walletId: otherWallet },
+              },
+            ],
+          },
+        },
+      },
+      false,
+    );
+    expect(text).toContain(
+      "Trading Account\n-> Trading bot  Active\n\nSavings\n-> Trading bot  Active",
+    );
   });
   it("retains full authorization and grant records in JSON", () => {
     const json = JSON.parse(formatValue({ profile: value.profile, actor }, "json")[0] ?? "");

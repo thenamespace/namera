@@ -15,3 +15,6 @@ export const successText = (message: string, colors: boolean): string =>
 
 export const nextText = (message: string, colors: boolean): string =>
   paint(`${feedbackStyle(process.stdout).unicode ? "→" : "->"} ${message}`, 34, colors);
+
+export const listArrow = (colors: boolean): string =>
+  paint(feedbackStyle(process.stdout).unicode ? "→" : "->", 34, colors);

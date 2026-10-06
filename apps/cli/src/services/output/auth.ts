@@ -1,7 +1,7 @@
 import type { CurrentActorResponse, WalletResponse } from "@namera-ai/protocol/dto";
 
 import { date, fields, heading, named, terminalText, type PrettyPrinter } from "./document.js";
-import { nextText, paint, statusText, successText } from "./style.js";
+import { listArrow, nextText, paint, statusText, successText } from "./style.js";
 
 const permissions: Readonly<Record<string, string>> = {
   "wallet:read": "View wallets",
@@ -46,7 +46,7 @@ export const authView: PrettyPrinter<{
         keys: [],
       };
       group.keys.push(
-        `    ${terminalText(named(sessionKey.metadata))}  ${statusText(sessionKey.status, colors)}`,
+        `${listArrow(colors)} ${terminalText(named(sessionKey.metadata))}  ${statusText(sessionKey.status, colors)}`,
       );
       groups.set(sessionKey.walletId, group);
     }
@@ -70,19 +70,24 @@ export const authView: PrettyPrinter<{
         ...(authorization?.expiresAt ? [["Expires", date(authorization.expiresAt)] as const] : []),
       ],
       colors,
+      0,
     ),
     ...(authorization
       ? [
           `\n${heading("Permissions", colors)}`,
-          ...authorization.scopes.map((scope) => `  ${terminalText(permissions[scope] ?? scope)}`),
-          "  Within your session keys' limits.",
+          ...authorization.scopes.map(
+            (scope) => `${listArrow(colors)} ${terminalText(permissions[scope] ?? scope)}`,
+          ),
+          "Within your session keys' limits.",
         ]
       : []),
     `\n${heading("Session keys", colors)}`,
     ...(groups.size
-      ? [...groups.values()].map(
-          (group) => `  ${heading(group.name, colors)}\n${group.keys.join("\n")}`,
-        )
-      : ["  No session keys shared with this connection."]),
+      ? [
+          [...groups.values()]
+            .map((group) => `${heading(group.name, colors)}\n${group.keys.join("\n")}`)
+            .join("\n\n"),
+        ]
+      : ["No session keys shared with this connection."]),
   ].join("\n");
 };

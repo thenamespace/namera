@@ -10,7 +10,7 @@ import {
   timestamp,
   type PrettyPrinter,
 } from "./document.js";
-import { statusText } from "./style.js";
+import { listArrow, statusText } from "./style.js";
 
 type SessionDisplay = Pick<
   SessionKeyResponse,
@@ -36,6 +36,7 @@ export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
         ["Revoked", key.revokedAt ?? undefined],
       ],
       colors,
+      0,
     )}`,
     ...key.installations.map((installation) =>
       section(
@@ -69,9 +70,10 @@ export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
           ],
         ],
         colors,
+        0,
       ),
     ),
-    ...(key.installations.length === 0 ? ["  No network installations."] : []),
+    ...(key.installations.length === 0 ? ["No network installations."] : []),
     section(
       "Offchain policies",
       [
@@ -84,6 +86,7 @@ export const sessionKeyView: PrettyPrinter<SessionDisplay> = (key, colors) =>
         ],
       ],
       colors,
+      0,
     ),
   ].join("\n\n");
 
@@ -102,13 +105,13 @@ export const sessionKeysView: PrettyPrinter<readonly SessionDisplay[]> = (keys, 
         heading(group.name, colors),
         ...group.keys.map((key) =>
           [
-            `  ${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}`,
+            `${listArrow(colors)} ${heading(named(key.metadata), colors)}  ${statusText(key.status, colors)}`,
             ...(key.installations.length
               ? key.installations.map(
                   (installation) =>
-                    `    ${heading(network(installation.chainId), colors)}  ${statusText(installation.status, colors)}`,
+                    `   ${heading(network(installation.chainId), colors)}  ${statusText(installation.status, colors)}`,
                 )
-              : ["    No networks enabled"]),
+              : ["   No networks enabled"]),
           ].join("\n"),
         ),
       ].join("\n"),
