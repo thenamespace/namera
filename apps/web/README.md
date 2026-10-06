@@ -232,10 +232,11 @@ visible questions, without an offer while the CTA is a waitlist. Pricing adds
 are noindex. Articles retain their authored SEO overrides and `BlogPosting`.
 
 `SITE` in `src/lib/seo.ts` owns the site positioning and hero description.
-The social image source is `public/og.svg`; after changing it, regenerate the
-1200×630 PNG with `magick -font /System/Library/Fonts/Helvetica.ttc -background none public/og.svg public/og.png`
-from `apps/web` on macOS (select an installed font path on other systems).
-Keep its copy and the install manifest aligned with the hero. Blog social
+The website and dashboard share the OG image and padded icons in root
+`assets/seo/`, served from `https://cdn.namera.ai/seo/`. The entire `assets/`
+directory is Git-ignored; these are operator-managed CDN source files.
+Sync those assets before deploying; do not duplicate them in app public folders.
+The app-specific install manifest remains local and references the CDN icons. Blog social
 previews use each article's cover URL directly, without generated images;
 coverless posts use `seo.image` or the static site image as a fallback.
 

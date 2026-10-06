@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -37,7 +37,8 @@ describe("dashboard metadata", () => {
     expect(meta["twitter:title"]).toBe(title);
     expect(meta["og:description"]).toBe(page.description);
     expect(meta["twitter:description"]).toBe(page.description);
-    expect(meta["og:image"]).toBe("https://dashboard.namera.ai/og.png");
+    expect(meta["og:image"]).toBe("https://cdn.namera.ai/seo/og.png");
+    expect(meta["twitter:image"]).toBe(meta["og:image"]);
     expect(meta["og:url"]).toBe("https://dashboard.namera.ai/auth");
   });
 
@@ -86,18 +87,26 @@ describe("dashboard metadata", () => {
     ).toEqual(structuredData);
   });
 
-  it("ships app icons and a correctly sized social image", () => {
-    const manifest = JSON.parse(
-      readFileSync(new URL("../../public/site.webmanifest", import.meta.url), "utf8"),
-    );
-    expect(manifest.start_url).toBe("/");
-    expect(manifest.scope).toBe("/");
-    for (const icon of manifest.icons) {
-      const png = readFileSync(new URL(`../../public${icon.src}`, import.meta.url));
-      expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe(icon.sizes);
+  it("shares CDN icons without duplicating assets in app public directories", () => {
+    for (const publicPath of ["../../public/", "../../../web/public/"]) {
+      const manifest = JSON.parse(
+        readFileSync(new URL(`${publicPath}site.webmanifest`, import.meta.url), "utf8"),
+      );
+      expect(manifest.start_url).toBe("/");
+      expect(manifest.scope).toBe("/");
+      for (const icon of manifest.icons) {
+        expect(icon.src).toMatch(/^https:\/\/cdn\.namera\.ai\/seo\//);
+        const filename = new URL(icon.src).pathname.split("/").at(-1);
+        expect(existsSync(new URL(`${publicPath}${filename}`, import.meta.url))).toBe(false);
+        expect(["icon-192.png", "icon-512.png", "icon-512-maskable.png", "favicon.svg"]).toContain(
+          filename,
+        );
+      }
+      for (const filename of ["og.png", "og.svg", "favicon.ico", "apple-touch-icon.png"]) {
+        expect(existsSync(new URL(`${publicPath}${filename}`, import.meta.url))).toBe(false);
+      }
     }
-    const image = readFileSync(new URL("../../public/og.png", import.meta.url));
-    expect(image.readUInt32BE(16)).toBe(1200);
-    expect(image.readUInt32BE(20)).toBe(630);
+    expect(structuredData.image).toBe("https://cdn.namera.ai/seo/og.png");
+    expect(structuredData.publisher.logo).toBe("https://cdn.namera.ai/seo/icon-512.png");
   });
 });

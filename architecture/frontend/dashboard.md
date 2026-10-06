@@ -35,6 +35,14 @@ hosts must implement the same response-header rules; `_headers` currently owns
 security headers only. Preview/staging origins need a blanket noindex rule.
 The manifest does not install an offline cache or change authentication.
 
+The dashboard and public website share OG and icon assets from root `assets/seo/`,
+published at `https://cdn.namera.ai/seo/`. Static HTML, runtime social tags,
+publisher JSON-LD and app manifests reference the CDN. Each app keeps its own
+same-origin manifest; the existing HTTPS image policy allows shared icons.
+Deployment requires syncing these public assets first. Tests verify CDN URL
+contracts, not remote CDN availability. The entire `assets/` directory is
+Git-ignored, so tests and builds do not depend on local source images.
+
 All product routes live below the pathless `_authenticated` layout. Its loader
 prefetches the current actor and redirects a missing actor to `/auth`. Auth,
 invitation review, OAuth consent, CLI consent, and workspace creation use
