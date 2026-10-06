@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Effect, Schema } from "effect";
+import { DateTime, Effect, Metric, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
@@ -8,6 +8,7 @@ import { EmailJobs } from "@namera-ai/emails";
 import { Passkeys } from "@namera-ai/passkeys";
 import { VerificationId } from "@namera-ai/protocol";
 import { MagicLinkToken } from "@namera-ai/protocol/dto";
+import { betaInviteTransitions } from "@namera-ai/telemetry";
 
 import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, testEmail } from "../../fixtures/index.js";
@@ -59,6 +60,23 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
 });
 
 layer(BetaLayer)("private-beta invites", (it) => {
+  it.effect("counts issued invites and only actual revocations", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const created = Metric.withAttributes(betaInviteTransitions, { result: "created" });
+      const revoked = Metric.withAttributes(betaInviteTransitions, { result: "revoked" });
+      const beforeCreated = yield* Metric.value(created);
+      const beforeRevoked = yield* Metric.value(revoked);
+      const admin = yield* adminClient;
+      const result = yield* admin.betaInvite.create({ payload: { count: 2 } });
+      const invite = result.invites[0];
+      if (!invite) return yield* Effect.die("No invite returned");
+      yield* admin.betaInvite.revoke({ params: { id: invite.id } });
+      yield* admin.betaInvite.revoke({ params: { id: invite.id } });
+      expect((yield* Metric.value(created)).count - beforeCreated.count).toBe(2);
+      expect((yield* Metric.value(revoked)).count - beforeRevoked.count).toBe(1);
+    }),
+  );
   it.effect("does not accept the admin token as a tenant actor", () =>
     Effect.gen(function* () {
       const admin = yield* adminClient;

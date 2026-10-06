@@ -1,4 +1,4 @@
-import { DateTime, Effect, Layer, Redacted } from "effect";
+import { DateTime, Effect, Layer, Metric, Redacted } from "effect";
 import { HttpEffect, HttpServerResponse } from "effect/http";
 import { HttpApiError } from "effect/http-api";
 
@@ -7,6 +7,7 @@ import { AuthConfig } from "@namera-ai/application";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
+import { authenticationResults } from "@namera-ai/telemetry";
 
 import { AuthCookieConfig, clearAuthCookie } from "#/helpers/auth-cookie";
 import {
@@ -39,7 +40,13 @@ export const AuthorizationLive = Layer.effect(
         const apiKey = yield* repository.auth.apiKey
           .authenticate(keyHash, yield* DateTime.now)
           .pipe(Effect.orDie);
-        if (apiKey === undefined) return yield* new HttpApiError.Unauthorized();
+        if (apiKey === undefined) {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "api_key", result: "invalid" }),
+            1,
+          );
+          return yield* new HttpApiError.Unauthorized();
+        }
 
         const grants = yield* repository.core.sessionKeyGrant
           .findActiveForActor(apiKey.organizationId, apiKey.actorId)
@@ -60,6 +67,10 @@ export const AuthorizationLive = Layer.effect(
             grants,
           },
         };
+        yield* Metric.update(
+          Metric.withAttributes(authenticationResults, { method: "api_key", result: "success" }),
+          1,
+        );
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       bearer: Effect.fn("server.authorization.bearer")(function* (httpEffect, { credential }) {
@@ -75,13 +86,24 @@ export const AuthorizationLive = Layer.effect(
         const token = yield* repository.auth.oauth.token
           .findActiveAccessByHash(tokenHash, now)
           .pipe(Effect.orDie);
-        if (token === undefined) return yield* new HttpApiError.Unauthorized();
+        if (token === undefined) {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "bearer", result: "invalid" }),
+            1,
+          );
+          return yield* new HttpApiError.Unauthorized();
+        }
 
         const client = yield* repository.auth.oauth.client
           .findById(token.clientId)
           .pipe(Effect.orDie);
-        if (client === undefined || client.status !== "active")
+        if (client === undefined || client.status !== "active") {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "bearer", result: "invalid" }),
+            1,
+          );
           return yield* new HttpApiError.Unauthorized();
+        }
 
         const authorization = yield* repository.auth.oauth.authorization
           .findActiveById(token.authorizationId, now)
@@ -95,6 +117,10 @@ export const AuthorizationLive = Layer.effect(
           authorization.resource !== expectedResource ||
           token.resource !== expectedResource
         ) {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "bearer", result: "invalid" }),
+            1,
+          );
           return yield* new HttpApiError.Unauthorized();
         }
 
@@ -125,6 +151,10 @@ export const AuthorizationLive = Layer.effect(
           repository.auth.oauth.authorization.touchLastUsed(authorization.id, now),
         ]).pipe(Effect.orDie);
 
+        yield* Metric.update(
+          Metric.withAttributes(authenticationResults, { method: "bearer", result: "success" }),
+          1,
+        );
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       // A user session is valid only while its active organization membership
@@ -147,6 +177,10 @@ export const AuthorizationLive = Layer.effect(
           .pipe(Effect.orDie);
 
         if (session === undefined || session.activeOrganizationId === null) {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "session", result: "invalid" }),
+            1,
+          );
           yield* clearAuthCookie(cookieConfig.secure);
           return yield* new HttpApiError.Unauthorized();
         }
@@ -156,11 +190,19 @@ export const AuthorizationLive = Layer.effect(
           .pipe(Effect.orDie);
 
         if (membership === undefined) {
+          yield* Metric.update(
+            Metric.withAttributes(authenticationResults, { method: "session", result: "invalid" }),
+            1,
+          );
           yield* clearAuthCookie(cookieConfig.secure);
           return yield* new HttpApiError.Unauthorized();
         }
 
         const user = toUserResponse(membership.user);
+        yield* Metric.update(
+          Metric.withAttributes(authenticationResults, { method: "session", result: "success" }),
+          1,
+        );
         const organization = toOrganizationResponse(membership.organization);
         const organizationRole = toRoleResponse(membership.organizationRole);
         const actor: CurrentActorResponse = {

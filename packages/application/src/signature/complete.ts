@@ -109,5 +109,11 @@ export const makeCompleteSignature = Effect.gen(function* () {
     Effect.trackDuration(Metric.withAttributes(signatureDuration, { stage: "complete" })),
     Effect.catchTag("DatabaseError", Effect.die),
     Effect.catchTag("EvmPolicyError", () => new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
+    Effect.tapError((error) =>
+      Metric.update(
+        Metric.withAttributes(signatureResults, { stage: "complete", result: error.code }),
+        1,
+      ),
+    ),
   );
 });

@@ -74,7 +74,7 @@ function ReceiptStatus({
     onTerminal();
   }, [terminal, pending, status, kind, refreshBilling, onTerminal]);
   return (
-    <output className="block text-xs text-muted">
+    <output className={operation.isError ? "block text-xs text-muted" : "sr-only"}>
       {operation.isError
         ? "Unable to check receipt. Retrying…"
         : status === "awaiting-signature"
@@ -111,6 +111,11 @@ function Installation({
     recovered ?? null,
   );
   const resumable = retryRequest !== undefined;
+  const waitingForConfirmation =
+    installation.status === "submitted" ||
+    (!approval.pending &&
+      !approval.error &&
+      Boolean(approval.operationId || (recovered && !resumable)));
   const networkAvailable = isChainOperationEnabled(installation.chainId);
   const eligible =
     kind === "uninstall"
@@ -128,30 +133,33 @@ function Installation({
     if (beginApproval()) void approval.approve(retryRequest).finally(endApproval);
   };
   return (
-    <article className="rounded-lg border border-separator p-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="grid min-w-0 flex-1 gap-1.5">
-          <header className="flex flex-wrap items-center gap-2">
+    <article className="rounded-lg border border-separator px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="grid min-w-0 flex-1 gap-1">
+          <header className="flex min-h-5 items-center [&_.typography]:leading-5">
             <ChainDisplay chainId={installation.chainId} />
+          </header>
+          <div className="flex min-h-4 flex-wrap items-center gap-x-2 gap-y-1 leading-4">
+            <EvmAddressDisplay address={installation.authorization.signerAddress} />
             <Typography.Paragraph
               size="xs"
               color="muted"
-              className="rounded-md bg-default px-1.5 py-0.5 capitalize"
+              className="rounded-sm bg-default px-1 py-0 text-[10px] leading-4 capitalize"
             >
               {installation.status}
             </Typography.Paragraph>
-          </header>
-          <EvmAddressDisplay address={installation.authorization.signerAddress} />
+          </div>
         </div>
-        {eligible ? (
+        {eligible || waitingForConfirmation ? (
           <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>
             <div className="shrink-0">
               <Button
                 variant={kind === "uninstall" ? "danger" : "tertiary"}
                 size="sm"
-                isPending={approval.pending}
+                isPending={approval.pending || waitingForConfirmation}
                 isDisabled={
                   !networkAvailable ||
+                  waitingForConfirmation ||
                   working ||
                   !owner?.owner ||
                   !active.isSuccess ||
@@ -162,14 +170,16 @@ function Installation({
                 onPress={approve}
               >
                 {approval.pending
-                  ? "Checking approval…"
-                  : approval.error || resumable
-                    ? kind === "uninstall"
-                      ? "Retry removal"
-                      : "Retry approval"
-                    : kind === "uninstall"
-                      ? "Remove with passkey"
-                      : "Approve"}
+                  ? "Approving…"
+                  : waitingForConfirmation
+                    ? "Waiting…"
+                    : approval.error || resumable
+                      ? kind === "uninstall"
+                        ? "Retry removal"
+                        : "Retry approval"
+                      : kind === "uninstall"
+                        ? "Remove with passkey"
+                        : "Approve"}
               </Button>
             </div>
           </PermissionGuard>
@@ -208,7 +218,13 @@ function Installation({
   );
 }
 
-export function SessionKeyInstallations({ sessionKey }: { sessionKey: SessionKeyResponse }) {
+export function SessionKeyInstallations({
+  sessionKey,
+  compact = false,
+}: {
+  sessionKey: SessionKeyResponse;
+  compact?: boolean;
+}) {
   const lock = useRef(false);
   const [working, setWorking] = useState(false);
   const beginApproval = useCallback(() => {
@@ -234,15 +250,21 @@ export function SessionKeyInstallations({ sessionKey }: { sessionKey: SessionKey
     waiting ? 5000 : null,
   );
   return (
-    <section className="mt-8 grid max-w-3xl gap-4" aria-label="Onchain permissions and approvals">
-      <Typography.Heading level={3} className="text-base">
-        Onchain permissions
-      </Typography.Heading>
-      <Typography.Paragraph size="sm" color="muted">
-        {session.status === "revoking"
-          ? "API access is disabled. Remove this session on every installed network to revoke its onchain authority."
-          : "Approve each network with the account owner’s passkey. API policies apply only to requests sent through Namera."}
-      </Typography.Paragraph>
+    <section
+      className={`${compact ? "" : "mt-8 "}grid max-w-3xl gap-4`}
+      aria-label="Onchain permissions and approvals"
+    >
+      {!compact ? (
+        <Typography.Heading level={3} className="text-base">
+          Onchain permissions
+        </Typography.Heading>
+      ) : null}
+      {session.status === "revoking" ? (
+        <Typography.Paragraph size="sm" color="muted">
+          API access is disabled. Remove this session on every installed network to revoke its
+          onchain authority.
+        </Typography.Paragraph>
+      ) : null}
       {owner.isError ? (
         <Typography.Paragraph size="sm" role="alert">
           Couldn’t load the passkey owner.{" "}

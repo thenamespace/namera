@@ -6,7 +6,7 @@ export const executionResults = Metric.counter("namera.execution.results", {
 });
 
 export const executionDuration = Metric.timer("namera.execution.duration", {
-  description: "Duration of synchronous execution workflows",
+  description: "Duration of execution preparation, completion and simulation requests",
 });
 
 export const executionPolicyDecisions = Metric.counter("namera.execution.policy.decisions", {

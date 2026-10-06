@@ -45,10 +45,20 @@ export function PolicySection({
     <section className="grid gap-3">
       <div className="mb-1 flex items-start justify-between gap-4">
         <HeadingGroup>
-          <HeadingGroup.Title>Policies</HeadingGroup.Title>
+          <HeadingGroup.Title size="sm">Policies</HeadingGroup.Title>
           <HeadingGroup.Description>
             Choose what this key can do, then add any limits.
           </HeadingGroup.Description>
+          <div className="min-h-5">
+            <FieldError
+              errors={[
+                errors?.permissions,
+                errors?.permissions?.root,
+                errors?.allowSignatures,
+                form.formState.errors.policies,
+              ]}
+            />
+          </div>
         </HeadingGroup>
         <AddPolicyButton
           disabled={!wallets.some((wallet) => wallet.id === walletId)}
@@ -83,14 +93,6 @@ export function PolicySection({
           <EvmPolicySummary policy={signature} />
         </SessionPolicyCard>
       ) : null}
-      <FieldError
-        errors={[
-          errors?.permissions,
-          errors?.permissions?.root,
-          errors?.allowSignatures,
-          form.formState.errors.policies,
-        ]}
-      />
       {dialog ? (
         <SessionPolicyDialog
           open

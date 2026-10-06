@@ -209,10 +209,23 @@ checked against the submitted configuration and selected wallet before construct
 local bindings. Mismatches prevent export. The screen labels registration as
 pending, not usable authority.
 
-The export form requires a confirmed passphrase of at least 12 characters and
+The export form requires a confirmed passphrase of at least 8 characters and
 uses the SDK WebCrypto codec. It clears passphrase fields after encryption and
 shows a base64url encrypted `namera session-key import` command. Router navigation
 and browser unload warn while the local key has not been acknowledged as saved.
+After registration, the dashboard shows three setup steps: encrypt the key,
+install/import into the CLI, and optionally enable networks now. The encrypted
+import command is copyable; the dashboard does not offer a backup download.
+Continuing to network approval requires explicit confirmation that the CLI
+import succeeded. This is user attestation, not a browser-verified import.
+Encryption or copying alone does not clear the
+navigation warning. Network progress uses confirmed installation records. Users
+may skip approval and open the session overview after import confirmation;
+the key remains pending and unusable until a network is enabled. CLI login is
+an unnumbered follow-up shown only after activation, not a required setup step.
+The overview link appears after import confirmation, allowing remaining
+network approvals to be completed later. Setup layout changes still
+await automated and end-to-end verification.
 The encrypted export was exercised with a disposable browser-only test key;
 this does not prove the full registration/import/approval journey.
 

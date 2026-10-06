@@ -1,4 +1,4 @@
-import { Context, DateTime, Effect, Layer, Metric, Result, Schema } from "effect";
+import { Context, DateTime, Duration, Effect, Layer, Metric, Result, Schema } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
@@ -8,6 +8,9 @@ import {
   emailJobDeliveryDuration,
   emailJobDeliveryResults,
   emailJobsEnqueued,
+  emailJobTimeToSend,
+  workerBacklog,
+  workerOldestAge,
 } from "@namera-ai/telemetry";
 
 import { emailPolicy, emailRetryDelay } from "./data.js";
@@ -52,13 +55,17 @@ export class EmailJobs extends Context.Service<
         lastErrorCode: EmailJobErrorCode | null,
         result: "failed" | "expired" | "invalid",
       ) {
-        yield* repository.jobs.email.markTerminal({
+        const updated = yield* repository.jobs.email.markTerminal({
           id: job.id,
           leaseToken,
           status,
           lastErrorCode,
         });
-        yield* Metric.update(Metric.withAttributes(emailJobDeliveryResults, { result }), 1);
+        if (updated)
+          yield* Metric.update(
+            Metric.withAttributes(emailJobDeliveryResults, { result, type: job.type }),
+            1,
+          );
       });
 
       const enqueue = Effect.fn("emails.jobs.enqueue")(function* (input: EnqueueEmailProps) {
@@ -97,21 +104,35 @@ export class EmailJobs extends Context.Service<
         const delivery = yield* Effect.result(
           email
             .send({ ...decoded.success, idempotencyKey: job.idempotencyKey })
-            .pipe(Effect.trackDuration(emailJobDeliveryDuration)),
+            .pipe(
+              Effect.trackDuration(
+                Metric.withAttributes(emailJobDeliveryDuration, { type: job.type }),
+              ),
+            ),
         );
         const completedAt = yield* DateTime.now;
         if (Result.isSuccess(delivery)) {
-          yield* repository.jobs.email.markSent({
+          const updated = yield* repository.jobs.email.markSent({
             id: job.id,
             leaseToken,
             providerMessageId: delivery.success,
             sentAt: completedAt,
           });
+          if (!updated) return 1;
           yield* Metric.update(
-            Metric.withAttributes(emailJobDeliveryResults, { result: "sent" }),
+            Metric.withAttributes(emailJobDeliveryResults, { result: "sent", type: job.type }),
             1,
           );
           yield* Effect.logInfo("email.job.sent").pipe(Effect.annotateLogs({ type: job.type }));
+          yield* Metric.update(
+            Metric.withAttributes(emailJobTimeToSend, { type: job.type }),
+            Duration.millis(
+              Math.max(
+                0,
+                DateTime.toEpochMillis(completedAt) - DateTime.toEpochMillis(job.createdAt),
+              ),
+            ),
+          );
           return 1;
         }
 
@@ -131,14 +152,15 @@ export class EmailJobs extends Context.Service<
           return 1;
         }
 
-        yield* repository.jobs.email.reschedule({
+        const updated = yield* repository.jobs.email.reschedule({
           id: job.id,
           leaseToken,
           availableAt: retryAt,
           lastErrorCode: delivery.failure.reason,
         });
+        if (!updated) return 1;
         yield* Metric.update(
-          Metric.withAttributes(emailJobDeliveryResults, { result: "retry" }),
+          Metric.withAttributes(emailJobDeliveryResults, { result: "retry", type: job.type }),
           1,
         );
         yield* Effect.logWarning("email.job.retry").pipe(
@@ -153,7 +175,18 @@ export class EmailJobs extends Context.Service<
 
       const processOnce = Effect.fnUntraced(function* () {
         const now = yield* DateTime.now;
-        const expired = yield* repository.jobs.email.expire(now);
+        const backlog = yield* repository.jobs.email.getBacklog(now);
+        yield* Metric.update(
+          Metric.withAttributes(workerBacklog, { worker: "email" }),
+          backlog.count,
+        );
+        yield* Metric.update(
+          Metric.withAttributes(workerOldestAge, { worker: "email" }),
+          backlog.oldestAgeSeconds,
+        );
+        const expired = yield* repository.jobs.email
+          .expire(now)
+          .pipe(Effect.withTracerEnabled(false));
         if (expired > 0) {
           yield* Metric.update(
             Metric.withAttributes(emailJobDeliveryResults, { result: "expired" }),
@@ -162,11 +195,13 @@ export class EmailJobs extends Context.Service<
         }
 
         const leaseToken = yield* crypto.randomToken(18);
-        const job = yield* repository.jobs.email.claim({
-          now,
-          leaseToken,
-          leaseExpiresAt: DateTime.addDuration(now, emailPolicy.leaseDuration),
-        });
+        const job = yield* repository.jobs.email
+          .claim({
+            now,
+            leaseToken,
+            leaseExpiresAt: DateTime.addDuration(now, emailPolicy.leaseDuration),
+          })
+          .pipe(Effect.withTracerEnabled(false));
         if (job === undefined) {
           return 0;
         }

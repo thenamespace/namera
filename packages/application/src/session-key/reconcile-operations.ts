@@ -4,7 +4,7 @@ import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import type { SessionKeyOperation } from "@namera-ai/protocol/model";
-import { sessionKeyOperationResults } from "@namera-ai/telemetry";
+import { sessionKeyOperationResults, workerBacklog, workerOldestAge } from "@namera-ai/telemetry";
 
 import { makeSettleSessionKeyOperation } from "./operation-receipt.js";
 
@@ -61,13 +61,24 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
     yield* defer(operation, leaseToken);
   });
 
-  return Effect.fn("application.sessionKey.reconcileOperations")(
+  return Effect.fnUntraced(
     function* () {
       const now = yield* DateTime.now;
-      const expired = yield* repository.core.sessionKeyOperation.expireAwaitingSignatures({
-        now,
-        limit: reconciliation.batchSize,
-      });
+      const backlog = yield* repository.core.sessionKeyOperation.getBacklog(now);
+      yield* Metric.update(
+        Metric.withAttributes(workerBacklog, { worker: "session_key" }),
+        backlog.count,
+      );
+      yield* Metric.update(
+        Metric.withAttributes(workerOldestAge, { worker: "session_key" }),
+        backlog.oldestAgeSeconds,
+      );
+      const expired = yield* repository.core.sessionKeyOperation
+        .expireAwaitingSignatures({
+          now,
+          limit: reconciliation.batchSize,
+        })
+        .pipe(Effect.withTracerEnabled(false));
       if (expired.length > 0)
         yield* Metric.update(
           Metric.withAttributes(sessionKeyOperationResults, {
@@ -77,12 +88,14 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
           expired.length,
         );
       const leaseToken = yield* crypto.randomToken(24);
-      const operations = yield* repository.core.sessionKeyOperation.claimForReconciliation({
-        now,
-        leaseToken,
-        leaseExpiresAt: DateTime.addDuration(now, reconciliation.lease),
-        limit: reconciliation.batchSize,
-      });
+      const operations = yield* repository.core.sessionKeyOperation
+        .claimForReconciliation({
+          now,
+          leaseToken,
+          leaseExpiresAt: DateTime.addDuration(now, reconciliation.lease),
+          limit: reconciliation.batchSize,
+        })
+        .pipe(Effect.withTracerEnabled(false));
       yield* Effect.forEach(
         operations,
         (operation) =>

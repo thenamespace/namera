@@ -9,6 +9,7 @@ import type { LocalEvmSessionBinding } from "@namera-ai/protocol/local";
 import type { LocalSessionKeyDraft } from "@namera-ai/sdk";
 import {
   Button,
+  Checkbox,
   Field,
   FieldError,
   FieldGroup,
@@ -19,23 +20,26 @@ import {
 import { HugeiconsIcon, ViewIcon, ViewOffIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 
-import { CopyIconButton } from "@/components/copy-icon-button";
 import { HeadingGroup } from "@/components/heading-group";
 import { env } from "@/env";
 import { showErrorToast } from "@/lib/toasts";
 
+import { CommandBlock } from "./command-block";
 import { SessionExportForm } from "./export-schema";
 
 export function ExportSessionKey({
   draft,
   bindings,
   onSaved,
+  onEncrypted,
 }: {
   draft: LocalSessionKeyDraft;
   bindings: ReadonlyArray<LocalEvmSessionBinding>;
   onSaved: () => void;
+  onEncrypted: () => void;
 }) {
   const [command, setCommand] = useState<string>();
+  const [confirmed, setConfirmed] = useState(false);
   const [visible, setVisible] = useState({ password: false, confirmation: false });
   const form = useForm<typeof SessionExportForm.Encoded>({
     defaultValues: { password: "", confirmation: "" },
@@ -51,6 +55,7 @@ export function ExportSessionKey({
       );
       form.reset();
       setVisible({ password: false, confirmation: false });
+      onEncrypted();
     } catch (error) {
       showErrorToast(error, {
         title: "Couldn’t encrypt session key",
@@ -64,39 +69,43 @@ export function ExportSessionKey({
   return (
     <div className="grid gap-6">
       <section className="grid min-w-0 gap-4">
-        <HeadingGroup.Title size="sm">Save your session key</HeadingGroup.Title>
-        <Typography.Paragraph color="muted" size="sm">
-          {command
-            ? "Your key is encrypted. Complete these steps in your terminal."
-            : "Encrypt and save your key before closing this tab. Namera cannot recover it."}
-        </Typography.Paragraph>
+        <HeadingGroup.Title size="sm">
+          {command ? "Install the CLI and import" : "Encrypt your session key"}
+        </HeadingGroup.Title>
+        {!command ? (
+          <Typography.Paragraph color="muted" size="sm">
+            Choose a passphrase to encrypt your key for import.
+          </Typography.Paragraph>
+        ) : null}
         {command ? (
           <div className="grid gap-3">
             <ol className="grid list-none gap-5 p-0">
               {[
-                { title: "Install the CLI", command: "npm i -g @namera-ai/cli" },
+                { title: "Install the CLI", command: "npm i -g @namera-ai/cli@latest" },
                 { title: "Import your key", command },
               ].map((step, index) => (
-                <li key={step.title} className="grid min-w-0 gap-3">
+                <li key={step.title} className="grid min-w-0 gap-0">
                   <HeadingGroup.Title level={3} size="sm">
                     {index + 1}. {step.title}
                   </HeadingGroup.Title>
-                  <div className="flex min-w-0 items-center gap-2 rounded-lg bg-surface p-3">
-                    <code className="min-w-0 flex-1 truncate text-xs">{step.command}</code>
-                    <CopyIconButton label={`${step.title} command`} value={step.command} />
-                  </div>
+                  <CommandBlock command={step.command} label={`${step.title} command`} />
                 </li>
               ))}
             </ol>
-            <Typography.Paragraph color="muted" size="sm">
-              Enter your passphrase to import. No login is needed yet. Then approve a network below.
-            </Typography.Paragraph>
-            <Button variant="tertiary" onPress={onSaved}>
-              I imported the key and saved my backup
+            <Checkbox isSelected={confirmed} onChange={setConfirmed}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                The CLI confirmed my key was imported successfully.
+              </Checkbox.Content>
+            </Checkbox>
+            <Button isDisabled={!confirmed} onPress={onSaved}>
+              Confirm import and continue
             </Button>
           </div>
         ) : (
-          <form id="export-session-key" noValidate onSubmit={submit}>
+          <form id="export-session-key" autoComplete="off" noValidate onSubmit={submit}>
             <FieldGroup>
               {(["password", "confirmation"] as const).map((name) => (
                 <Controller
@@ -108,12 +117,25 @@ export function ExportSessionKey({
                       <FieldLabel htmlFor={`export-${name}`}>
                         {name === "password" ? "Export passphrase" : "Confirm passphrase"}
                       </FieldLabel>
+                      {fieldState.error ? (
+                        <FieldError>
+                          {name === "password"
+                            ? "Use at least 8 characters."
+                            : "Enter the same passphrase in both fields."}
+                        </FieldError>
+                      ) : null}
                       <InputGroup fullWidth variant="secondary">
                         <InputGroup.Input
                           {...field}
                           id={`export-${name}`}
                           type={visible[name] ? "text" : "password"}
-                          autoComplete="new-password"
+                          autoComplete="off"
+                          data-1p-ignore
+                          data-lpignore="true"
+                          data-bwignore="true"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           aria-invalid={fieldState.invalid}
                         />
                         <InputGroup.Suffix>
@@ -136,20 +158,19 @@ export function ExportSessionKey({
                           </Button>
                         </InputGroup.Suffix>
                       </InputGroup>
-                      {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
                     </Field>
                   )}
                 />
               ))}
               <Typography.Paragraph color="muted" size="xs">
-                Use at least 12 characters; a generated passphrase is recommended.
+                Use at least 8 characters. A longer, unique passphrase is recommended.
               </Typography.Paragraph>
               <Button
                 form="export-session-key"
                 type="submit"
                 isPending={form.formState.isSubmitting}
               >
-                Encrypt key
+                Encrypt and continue
               </Button>
             </FieldGroup>
           </form>

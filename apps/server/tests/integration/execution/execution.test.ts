@@ -4,7 +4,6 @@ import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
-import { EmailJobs } from "@namera-ai/emails";
 import { TestEvmExecution } from "@namera-ai/evm";
 
 import {
@@ -15,7 +14,6 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { TestEmails } from "../../fixtures/layers/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
 import { executionFixture, executeRequest, queueExecution } from "./fixture.js";
 
@@ -238,22 +236,21 @@ layer(executionFixture.layer)("execution routes", (it) => {
           )).some(({ event }) => event === "execution.confirmed"),
         ).toBe(true);
 
-        const emailJobs = yield* EmailJobs;
-        const emails = yield* TestEmails;
-        let delivered = (yield* emails.sent).findLast(
-          (email) => email.type === "execution-confirmed",
+        const notifications = yield* repository.notification.inbox.listForUser({
+          userId: owner.actor.user.id,
+          limit: 30,
+          now: yield* DateTime.now,
+        });
+        const confirmation = notifications.find(
+          ({ notification }) =>
+            notification.type === "execution.confirmed" &&
+            notification.resourceId === result.executionId,
         );
-        for (let attempt = 0; delivered === undefined && attempt < 10; attempt += 1) {
-          yield* emailJobs.processOnce;
-          delivered = (yield* emails.sent).findLast(
-            (email) => email.type === "execution-confirmed",
-          );
-        }
-        expect(delivered?.variables).toMatchObject({
+        expect(confirmation).toBeDefined();
+        expect(confirmation?.recipient.emailJobId).toBeNull();
+        expect(confirmation?.notification.data).toMatchObject({
           chainId: "eip155:1",
-          chainIcon: "ethereum",
-          chainName: "Ethereum",
-          transactionUrl: `https://etherscan.io/tx/${result.receipt.transactionHash}`,
+          transactionHash: result.receipt.transactionHash,
         });
       }),
   );

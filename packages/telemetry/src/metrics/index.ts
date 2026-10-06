@@ -13,3 +13,5 @@ export * from "./signature.js";
 export * from "./wallet.js";
 export * from "./oauth.js";
 export * from "./waitlist.js";
+export * from "./worker.js";
+export * from "./beta-invite.js";

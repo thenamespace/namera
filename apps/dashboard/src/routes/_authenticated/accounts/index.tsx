@@ -46,11 +46,12 @@ function AccountsPage() {
         <DashboardPage.Side>
           {canCreate ? (
             <Link
-              className={cn(buttonVariants({ size: "sm", variant: "tertiary" }))}
+              aria-label="Create account"
+              title="Create account"
+              className={cn(buttonVariants({ size: "sm", variant: "tertiary", isIconOnly: true }))}
               to="/accounts/new"
             >
               <HugeiconsIcon icon={Add01Icon} />
-              Create account
             </Link>
           ) : null}
         </DashboardPage.Side>

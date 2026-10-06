@@ -11,7 +11,7 @@ import {
   type DatabaseError,
 } from "@namera-ai/protocol";
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
-import { magicLinkVerificationResults } from "@namera-ai/telemetry";
+import { betaInviteTransitions, magicLinkVerificationResults } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
@@ -279,16 +279,25 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           });
           return {
             sessionToken,
+            inviteRedeemed: invite !== undefined,
             returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,
           };
         }),
       );
 
+      if ("inviteRedeemed" in result && result.inviteRedeemed) {
+        yield* Metric.update(
+          Metric.withAttributes(betaInviteTransitions, { result: "redeemed" }),
+          1,
+        );
+      }
       yield* Metric.update(magicLinkVerificationResults, "success");
       yield* Effect.logInfo("magic_link.verified").pipe(
         Effect.annotateLogs({ method: input.type }),
       );
-      return result;
+      return result.sessionToken !== undefined
+        ? { sessionToken: result.sessionToken, returnTo: result.returnTo }
+        : result;
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );

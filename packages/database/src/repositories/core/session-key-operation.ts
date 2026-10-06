@@ -26,6 +26,9 @@ type Result = Effect.Effect<SessionKeyOperation | undefined, DatabaseError>;
 type Batch = Effect.Effect<ReadonlyArray<SessionKeyOperation>, DatabaseError>;
 
 export interface SessionKeyOperationRepositoryService {
+  readonly getBacklog: (
+    now: DateTime.Utc,
+  ) => Effect.Effect<{ readonly count: number; readonly oldestAgeSeconds: number }, DatabaseError>;
   readonly insert: (
     input: SessionKeyOperationInsert,
   ) => Effect.Effect<
@@ -107,6 +110,22 @@ export class SessionKeyOperationRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return SessionKeyOperationRepository.of({
+        getBacklog: Effect.fnUntraced(function* (now: DateTime.Utc) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select({
+              count: sql<number>`count(*)`.mapWith(Number),
+              oldestAgeSeconds:
+                sql<number>`coalesce(greatest(0, extract(epoch from ${date(now)}::timestamptz - min(${table.createdAt}))), 0)`.mapWith(
+                  Number,
+                ),
+            })
+            .from(table)
+            .where(inArray(table.status, ["signed", "submitted"]));
+          return Schema.decodeUnknownSync(
+            Schema.Struct({ count: Schema.Number, oldestAgeSeconds: Schema.Number }),
+          )(rows[0]);
+        }, mapRepositoryError),
         insert: Effect.fn("database.sessionKeyOperation.insert")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db

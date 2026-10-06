@@ -122,6 +122,13 @@ function BasePermissionEditor({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${id}-${name}`}>{label}</FieldLabel>
+                {fieldState.error ? (
+                  <FieldError>
+                    {name === "permission.address"
+                      ? "Enter a valid address starting with 0x."
+                      : "Enter a whole-number amount of zero or more within the supported limit."}
+                  </FieldError>
+                ) : null}
                 <Input
                   {...field}
                   value={field.value ?? ""}
@@ -135,7 +142,6 @@ function BasePermissionEditor({
                   placeholder={placeholder}
                   variant="secondary"
                 />
-                {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
               </Field>
             )}
           />
@@ -154,6 +160,9 @@ function BasePermissionEditor({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${id}-functions`}>Function selectors</FieldLabel>
+                {fieldState.error ? (
+                  <FieldError>Enter unique four-byte selectors, such as 0xa9059cbb.</FieldError>
+                ) : null}
                 <TextArea
                   id={`${id}-functions`}
                   name={field.name}
@@ -171,7 +180,6 @@ function BasePermissionEditor({
                   One four-byte selector per line, for example 0xa9059cbb for
                   transfer(address,uint256).
                 </Typography.Paragraph>
-                {fieldState.error ? <FieldError errors={[fieldState.error]} /> : null}
               </Field>
             )}
           />

@@ -46,7 +46,7 @@ export const notificationPolicy = {
   },
   "execution.confirmed": {
     target: { category: "organization", topic: "executions" },
-    emailDefaultEnabled: true,
+    emailDefaultEnabled: false,
     emailTimeToLive: Duration.days(7),
   },
   "mcp_authorization.approved": {

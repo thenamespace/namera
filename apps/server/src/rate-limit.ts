@@ -1,9 +1,10 @@
-import { Duration, Effect, Layer, Option, Predicate } from "effect";
+import { Duration, Effect, Layer, Metric, Option, Predicate } from "effect";
 import { HttpServerRequest } from "effect/http";
 import { HttpApiError } from "effect/http-api";
 import { RateLimiter } from "effect/persistence";
 
 import { RateLimitExceeded } from "@namera-ai/protocol";
+import { rateLimitRejections } from "@namera-ai/telemetry";
 
 export const rateLimitPolicy = {
   waitlist: {
@@ -202,6 +203,7 @@ export const consumeRateLimit = Effect.fnUntraced(function* (
       Effect.tapErrorTag("RateLimitExceeded", () =>
         Effect.logWarning("rate_limit.exceeded").pipe(
           Effect.annotateLogs({ "rate_limit.scope": scope }),
+          Effect.andThen(Metric.update(Metric.withAttributes(rateLimitRejections, { scope }), 1)),
         ),
       ),
     );

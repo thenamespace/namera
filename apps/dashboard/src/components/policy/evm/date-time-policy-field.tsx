@@ -10,6 +10,8 @@ type DateTimeFieldProps = {
   error: { readonly message?: ReactNode } | undefined;
   isRequired?: boolean;
   hideLabel?: boolean;
+  hideError?: boolean;
+  "aria-describedby"?: string;
   granularity?: "day" | "minute";
   label: string;
   name: string;
@@ -22,6 +24,8 @@ export function DateTimePolicyField({
   error,
   isRequired = false,
   hideLabel = false,
+  hideError = false,
+  "aria-describedby": ariaDescribedBy,
   granularity = "day",
   label,
   name,
@@ -34,6 +38,7 @@ export function DateTimePolicyField({
   return (
     <Field data-invalid={Boolean(error)}>
       <DatePicker
+        {...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {})}
         className="w-full"
         granularity={granularity}
         isInvalid={Boolean(error)}
@@ -53,7 +58,7 @@ export function DateTimePolicyField({
             </DatePicker.Trigger>
           </DateField.Suffix>
         </DateField.Group>
-        {error ? <FieldError errors={[error]} /> : null}
+        {error && !hideError ? <FieldError errors={[error]} /> : null}
         <DatePicker.Popover className="flex flex-col gap-3">
           <Calendar aria-label={`Choose ${label.toLowerCase()}`} minValue={minimumDate}>
             <Calendar.Header>
