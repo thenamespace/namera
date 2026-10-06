@@ -246,10 +246,11 @@ the sitemap, and externally canonicalized posts are excluded from the sitemap.
 
 ## Motion
 
-The hero uses a one-time Motion entrance after hydration: copy staggers in with
-a small upward blur/fade, followed by the dashboard and its wider light stage.
+The hero uses a one-time CSS entrance from first paint: title lines stagger
+through an upward blur/fade, supporting copy starts at 250ms, the CTA at 550ms, and the static
+dashboard preview follows at 1050ms. The full entrance settles at 2350ms.
 Reduced-motion users see the final state immediately. Server HTML remains
-visible without JavaScript, and the hero does not use the scroll-reveal classes.
+available without JavaScript, and the hero does not use the scroll-reveal classes.
 
 The hero stage uses `/hero-bg-poster.jpg`, a static smoke frame masked around
 the dashboard. It does not download or play a video and needs no playback

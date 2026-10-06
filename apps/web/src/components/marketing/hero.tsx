@@ -1,7 +1,3 @@
-import { useEffect } from "react";
-
-import { stagger, useAnimate, useReducedMotion } from "motion/react";
-
 import { HeroCta } from "#/components/marketing/hero-cta";
 import { HeroObject } from "#/components/marketing/hero-object";
 import { Container } from "#/components/marketing/primitives";
@@ -12,51 +8,18 @@ const STAGE_MASK =
   "linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)";
 
 export const Hero = () => {
-  const [scope, animate] = useAnimate();
-  const reducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    // Animate after hydration so server-rendered content never depends on JS to be visible.
-    const reveal = animate([
-      [
-        "[data-hero-copy]",
-        {
-          opacity: [0, 1],
-          filter: ["blur(6px)", "blur(0px)"],
-          transform: ["translateY(14px)", "translateY(0px)"],
-        },
-        { duration: 0.7, delay: stagger(0.08), ease: [0.22, 1, 0.36, 1] },
-      ],
-      [
-        "[data-hero-preview]",
-        {
-          opacity: [0, 1],
-          filter: ["blur(4px)", "blur(0px)"],
-          transform: ["translateY(24px) scale(0.985)", "translateY(0px) scale(1)"],
-        },
-        { at: 0.16, duration: 0.9, ease: [0.22, 1, 0.36, 1] },
-      ],
-    ]);
-
-    return () => reveal.cancel();
-  }, [animate, reducedMotion]);
-
   return (
-    <section
-      ref={scope}
-      className="relative isolate overflow-hidden pt-40 pb-24 md:pt-56 md:pb-32 lg:pt-64"
-    >
+    <section className="landing-hero relative isolate overflow-hidden pt-40 pb-24 md:pt-56 md:pb-32 lg:pt-64">
       <Container>
         <div className="flex flex-col gap-7">
-          <h1
-            data-hero-copy
-            className="type-display-xl max-w-[24ch] text-[clamp(2.125rem,1rem+4vw,4rem)] font-medium text-balance text-foreground"
-          >
-            Wallets for AI agents
+          <h1 className="type-display-xl max-w-[24ch] text-[clamp(2.125rem,1rem+4vw,4rem)] font-medium text-balance text-foreground">
+            <span data-hero-title-line className="inline-block">
+              Wallets for AI agents
+            </span>
             <br />
-            with permissions built in
+            <span data-hero-title-line className="inline-block">
+              with permissions built in
+            </span>
           </h1>
           <p
             data-hero-copy
@@ -64,7 +27,7 @@ export const Hero = () => {
           >
             {SITE.heroDescription}
           </p>
-          <div data-hero-copy>
+          <div data-hero-cta>
             <HeroCta />
           </div>
         </div>
