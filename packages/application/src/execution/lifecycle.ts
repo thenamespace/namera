@@ -1,7 +1,7 @@
 import { DateTime, Duration, Effect } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { Evm, getChainDataByCaip2 } from "@namera-ai/evm";
+import { Evm } from "@namera-ai/evm";
 import type {
   ActorId,
   EvmExecutionReceipt,
@@ -22,7 +22,6 @@ import type {
 import { Audit } from "#/audit/layer";
 import { makeBillingMetering } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
-import { notificationPolicy } from "#/notification/data";
 
 export const makeExecutionLifecycle = Effect.gen(function* () {
   const audit = yield* Audit;
@@ -402,15 +401,6 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
             userOperationHash: input.receipt.userOperationHash,
           },
         });
-        const organization = yield* repository.auth.organization.findById(input.organizationId);
-        if (organization === undefined)
-          return yield* Effect.die("Execution organization is missing");
-        const chain = getChainDataByCaip2(submission.data.chainId);
-        if (chain === undefined) return yield* Effect.die("Execution chain is missing");
-        const blockExplorerUrl = chain.chain.blockExplorers?.default.url;
-        if (blockExplorerUrl === undefined)
-          return yield* Effect.die("Execution chain block explorer is missing");
-        const transactionUrl = `${blockExplorerUrl.replace(/\/$/, "")}/tx/${input.receipt.transactionHash}`;
         const members = yield* repository.auth.member.findOrganizationMembersForOrg(
           input.organizationId,
         );
@@ -435,23 +425,6 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
             )
             .map(({ user }) => ({
               userId: user.id,
-              email: {
-                type: "execution-confirmed" as const,
-                to: user.email,
-                expiresAt: DateTime.addDuration(
-                  now,
-                  notificationPolicy["execution.confirmed"].emailTimeToLive,
-                ),
-                variables: {
-                  organizationName: organization.metadata.name,
-                  walletName: input.wallet.wallet.metadata.name,
-                  chainId: submission.data.chainId,
-                  chainName: chain.chain.name,
-                  chainIcon: chain.name,
-                  transactionHash: input.receipt.transactionHash,
-                  transactionUrl,
-                },
-              },
             })),
         });
         return created;
