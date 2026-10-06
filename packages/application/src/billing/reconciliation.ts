@@ -1,7 +1,6 @@
 import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import { Evm } from "@namera-ai/evm";
 import {
   type BillingPeriodId,
   ExecutionSubmissionId,
@@ -12,16 +11,17 @@ import { billingProjectionRepairs, billingRecoveryResults } from "@namera-ai/tel
 
 import { makeBillingMetering } from "./metering.js";
 import { makeBillingPeriods } from "./periods.js";
+import { makeSponsorshipReconciliation } from "./sponsorship.js";
 
 const maintenanceBatchSize = 50;
 const deferredReservationDelay = { minutes: 5 } as const;
 
 export const makeBillingReconciliation = Effect.gen(function* () {
-  const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const metering = yield* makeBillingMetering;
   const periods = yield* makeBillingPeriods;
+  const reconcileSponsorships = yield* makeSponsorshipReconciliation;
 
   const recoverReservation = Effect.fnUntraced(function* (reservation: BillingUsageReservation) {
     // Owner-approved operations can be broadcast after an HTTP timeout. Their
@@ -90,19 +90,10 @@ export const makeBillingReconciliation = Effect.gen(function* () {
         submission.organizationId,
       );
       if (execution === undefined || execution.namespace !== "eip155") return false;
-      const signed = submission.data.signedExecution;
-      if (reservation.meterKey === "gas-sponsorship" && signed === null) return false;
-      const amount =
-        reservation.meterKey === "gas-sponsorship" && signed !== null
-          ? evm.billing.settleGasSponsorship({
-              billing: signed.billing,
-              receipt: execution.data.receipt,
-            })
-          : 1n;
       yield* metering.settle({
         organizationId: reservation.organizationId,
         reservationId: reservation.id,
-        amount,
+        amount: 1n,
         data: {
           version: 1,
           namespace: "eip155",
@@ -226,7 +217,7 @@ export const makeBillingReconciliation = Effect.gen(function* () {
 
   const run = Effect.fn("application.billing.reconcile")(function* () {
     const rolledOver = yield* periods.rolloverExpired(maintenanceBatchSize);
-    const recovered = yield* recoverExpired();
+    const recovered = (yield* reconcileSponsorships()) + (yield* recoverExpired());
     const repaired = yield* reconcileProjections();
     return { rolledOver, recovered, repaired };
   });

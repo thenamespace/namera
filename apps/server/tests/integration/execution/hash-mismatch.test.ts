@@ -163,6 +163,7 @@ layer(fixture.layer)("mismatched submission response", (it) => {
           yield* client.execution.getSubmission({ params: { submissionId: queued.submissionId } }),
         ).toMatchObject({ status: "confirmed" });
         expect(yield* app.execution.reconcile()).toBe(0);
+        expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1 });
         expect(
           (yield* repository.billing.usageReservation.listBySource(
             owner.actor.organization.id,

@@ -148,7 +148,7 @@ layer(fixture.layer)("operation billing across anniversaries", (it) => {
       }
       yield* TestClock.adjust("6 minutes");
       yield* app.execution.reconcile();
-      expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1, repaired: 0 });
+      expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 2, repaired: 0 });
       expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 0, repaired: 0 });
       for (const { abandon } of executions) {
         expect(

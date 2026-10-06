@@ -26,7 +26,7 @@ remain under [operations](../../architecture/operations/executions.md).
   tracing, then exposes only the bounded protocol context to policies.
 - `src/billing/` — mainnet/testnet meter classification, Alchemy ETH/USD quote
   decoding, conservative micro-USD arithmetic, Alchemy's sponsorship fee, pessimistic
-  sponsorship reservation, and receipt-based actual-cost settlement.
+  sponsorship reservation, and Alchemy-confirmed BSO cost lookup.
 - `src/policy/` — exhaustive EVM policy definitions and lifecycle service. The
   registry remains declarative, generic state/reservation adapters live in
   `operations.ts`, and individual handlers live in `src/policy/policies/`.
@@ -93,11 +93,24 @@ key. The secp256k1 variant requires the exact digest that the provider signed.
 
 ## Environment
 
-| Variable                    | Required | Purpose                                                 |
-| --------------------------- | -------- | ------------------------------------------------------- |
-| `EVM_ALCHEMY_API_KEY`       | Yes      | Alchemy public RPC and Rundler credential.              |
-| `EVM_ALCHEMY_BSO_POLICY_ID` | Yes      | Policy sent as `x-alchemy-policy-id` for BSO requests.  |
-| `BLOCKSCOUT_API_KEY`        | Yes      | Blockscout portfolio and address enrichment credential. |
+| Variable                    | Required        | Purpose                                                                       |
+| --------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `EVM_ALCHEMY_API_KEY`       | Yes             | Alchemy public RPC and Rundler credential.                                    |
+| `EVM_ALCHEMY_BSO_POLICY_ID` | Yes             | Policy sent as `x-alchemy-policy-id` for BSO requests.                        |
+| `ALCHEMY_ACCESS_TOKEN`      | For BSO billing | Server-only management API bearer token with access to the configured policy. |
+| `BLOCKSCOUT_API_KEY`        | Yes             | Blockscout portfolio and address enrichment credential.                       |
+
+`billing.getGasSponsorshipCost` matches a mined Gas Manager sponsorship by
+chain, UserOperation hash, transaction hash and sender. It rounds the reported
+`confirmedTotalUsd` upward to whole micro-USD without adding another surcharge.
+BSO's zero `actualGasCost` is not the provider charge. Missing costs return
+`Option.none`; missing credentials, invalid responses and provider failures
+return a bounded typed error. Lookups have a 30-second deadline and a 20-page
+limit (100 records per page). Missing credentials do not prevent startup, but
+gas holds remain pending until billing can reconcile them. Keep the configured
+policy accessible until its outstanding holds settle; policy rotation and
+records beyond the scan window require operator follow-up. The token must never
+be placed in dashboard environment variables.
 
 ## Usage
 

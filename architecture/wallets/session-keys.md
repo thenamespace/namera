@@ -111,7 +111,10 @@ retain both signature and quota reservation and retry after 15 seconds.
 Receipt chain, UserOperation hash, sender, nonce and EntryPoint must match the
 persisted signed envelope. Under the wallet lock and a live lease, one transaction
 finishes the operation ledger, updates the installation, activates successful
-installations, settles execution/gas reservations and appends an audit event.
+installations, settles execution reservations, schedules sponsored-gas settlement
+and appends an audit event. The billing worker retains gas holds until Alchemy
+reports a matching mined sponsorship cost; BSO's zero receipt cost never releases
+the hold. This does not delay session activation.
 Included failures consume execution usage and actual sponsored gas. Failed
 installations may retry; failed uninstalls leave the permission installed.
 Approval TTL never releases a signed operation's reservation. Stuck owner nonces

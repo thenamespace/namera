@@ -87,6 +87,13 @@ metrics are operational signals and may reflect an attempted transition that
 is later rolled back by a wider domain transaction. The billing worker logs
 only nonzero aggregate run counts and one bounded failure event.
 
+Sponsored-gas reconciliation uses `sponsorship_settled` and
+`sponsorship_deferred` outcomes on the existing recovery counter. Provider
+lookup warnings include only a closed reason code; no credential, HTTP response
+or signed envelope is logged. Costs exceeding a hold emit a warning with the
+reservation ID for operator investigation (never a metric label). Missing cost
+records remain normal deferred work.
+
 ### Waitlist signals
 
 `namera.waitlist.joins` counts new entries only. `namera.waitlist.status_changes`

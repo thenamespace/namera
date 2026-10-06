@@ -121,6 +121,7 @@ for (const { status, mismatchedReceipt } of [
           expect(yield* app.execution.reconcile()).toBe(0);
           yield* setApiKey();
           yield* setAuthToken(owner.cookie.value);
+          yield* app.billing.reconcile();
           const after = yield* client.billing.get();
           expect(after.meters.find(({ key }) => key === "execution.mainnet")).toMatchObject({
             consumedAmount:

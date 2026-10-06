@@ -223,6 +223,7 @@ layer(executionFixture.layer)("execution routes", (it) => {
         expect(states[0]?.data).toEqual({ version: 1, spent: "4", reserved: "0" });
         yield* setApiKey();
         yield* setAuthToken(owner.cookie.value);
+        yield* (yield* Application).billing.reconcile();
         const billing = yield* client.billing.get();
         expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
           3n,
@@ -393,6 +394,11 @@ layer(executionFixture.layer)("execution routes", (it) => {
       );
       expect(settlements.reduce((total, count) => total + count, 0)).toBe(2);
       expect(yield* app.execution.reconcile()).toBe(0);
+      const billingSettlements = yield* Effect.all(
+        Array.from({ length: 4 }, () => app.billing.reconcile()),
+        { concurrency: "unbounded" },
+      );
+      expect(billingSettlements.reduce((total, result) => total + result.recovered, 0)).toBe(2);
 
       const repository = yield* Repository;
       expect(
@@ -528,6 +534,7 @@ layer(executionFixture.layer)("execution routes", (it) => {
           spendPolicy.id,
         ),
       ).toMatchObject([{ data: { version: 1, spent: "0", reserved: "0" } }]);
+      yield* (yield* Application).billing.reconcile();
       const period = yield* repository.billing.period.findOpen(owner.actor.organization.id);
       if (period === undefined) return yield* Effect.die("Expected billing period");
       expect(

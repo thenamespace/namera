@@ -10,6 +10,7 @@ import {
 } from "@namera-ai/protocol";
 import { entryPoint07Address } from "viem/account-abstraction";
 
+import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { EvmExecutionService } from "./types.js";
 
 export const makeTestEvmExecutionService = (
@@ -133,9 +134,13 @@ export const makeTestEvmExecutionService = (
           signature: Hex.make("0x"),
         },
         billing: {
-          executionMeter: input.chainId === "eip155:1" ? "execution.mainnet" : "execution.testnet",
+          executionMeter:
+            getChainDataByCaip2(input.chainId)?.environment === "mainnet"
+              ? "execution.mainnet"
+              : "execution.testnet",
           sponsorship:
-            input.sponsorship === "alchemy-bso" && input.chainId === "eip155:1"
+            input.sponsorship === "alchemy-bso" &&
+            getChainDataByCaip2(input.chainId)?.environment === "mainnet"
               ? {
                   provider: "alchemy",
                   mode: "bso",

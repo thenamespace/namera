@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Ref, Schema } from "effect";
+import { Context, Effect, Layer, Option, Ref, Schema } from "effect";
 
 import {
   EthereumAddress,
@@ -11,6 +11,7 @@ import {
 import type { CreateAccountProps, CreateAccountResult } from "./accounts/index.js";
 import type { EvmAddressMetadataService } from "./address-metadata/types.js";
 import { settleEvmGasSponsorship } from "./billing/execution.js";
+import type { GasSponsorshipCost } from "./billing/sponsorship.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeTestEvmExecutionService } from "./execution/test.js";
 import type { EvmExecutionService } from "./execution/types.js";
@@ -19,8 +20,9 @@ import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPortfolioService } from "./portfolio/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 
-export type EvmTestOptions = Omit<Partial<EvmService>, "execution"> & {
+export type EvmTestOptions = Omit<Partial<EvmService>, "execution" | "billing"> & {
   readonly execution?: Partial<EvmExecutionService>;
+  readonly billing?: Partial<EvmService["billing"]>;
 };
 
 type TestReceiptMode = "failed" | "immediate" | "pending" | "missing";
@@ -30,25 +32,37 @@ export class TestEvmExecution extends Context.Service<
   {
     readonly receiptMode: Effect.Effect<TestReceiptMode>;
     readonly setReceiptMode: (mode: TestReceiptMode) => Effect.Effect<void>;
+    readonly sponsorshipCost: Effect.Effect<Option.Option<GasSponsorshipCost>>;
+    readonly setSponsorshipCost: (cost: Option.Option<GasSponsorshipCost>) => Effect.Effect<void>;
   }
 >()("@namera-ai/evm/TestEvmExecution") {
   static readonly layer = Layer.effect(
     TestEvmExecution,
     Effect.gen(function* () {
       const receiptMode = yield* Ref.make<TestReceiptMode>("immediate");
+      const sponsorshipCost = yield* Ref.make(
+        Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" }),
+      );
       return TestEvmExecution.of({
         receiptMode: Ref.get(receiptMode),
         setReceiptMode: (mode) => Ref.set(receiptMode, mode),
+        sponsorshipCost: Ref.get(sponsorshipCost),
+        setSponsorshipCost: (cost) => Ref.set(sponsorshipCost, cost),
       });
     }),
   );
 }
 
 export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => {
-  const { execution, ...serviceOverrides } = options;
+  const { execution, billing, ...serviceOverrides } = options;
 
   return {
-    billing: { settleGasSponsorship: settleEvmGasSponsorship },
+    billing: {
+      settleGasSponsorship: settleEvmGasSponsorship,
+      getGasSponsorshipCost: () =>
+        Effect.succeed(Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" })),
+      ...billing,
+    },
     createAccount: Effect.fn("evm.test.createAccount")((props: CreateAccountProps) => {
       const common = {
         version: 1,

@@ -1,7 +1,7 @@
 import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
-import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
+import { isReceiptForEvmExecution } from "@namera-ai/evm";
 import { SessionKeyOperationError, type EvmExecutionReceipt } from "@namera-ai/protocol";
 import type { SessionKeyOperation } from "@namera-ai/protocol/model";
 import { sessionKeyOperationResults } from "@namera-ai/telemetry";
@@ -14,7 +14,6 @@ import { makeFinishSessionKeyRevocation } from "./finish-revocation.js";
 export const makeSettleSessionKeyOperation = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
-  const evm = yield* Evm;
   const billing = yield* makeBillingMetering;
   const audit = yield* Audit;
   const finishRevocation = yield* makeFinishSessionKeyRevocation;
@@ -83,14 +82,20 @@ export const makeSettleSessionKeyOperation = Effect.gen(function* () {
           operation.id,
         );
         for (const reservation of reservations) {
+          if (reservation.meterKey === "gas-sponsorship") {
+            // BSO receipts report the account's cost (usually zero), not Alchemy's charge.
+            yield* repository.billing.usageReservation.deferExpiry(
+              operation.organizationId,
+              reservation.id,
+              now,
+            );
+            continue;
+          }
           // Included failures still consume a UserOperation and actual sponsored gas.
           yield* billing.settle({
             organizationId: operation.organizationId,
             reservationId: reservation.id,
-            amount:
-              reservation.meterKey === "gas-sponsorship"
-                ? evm.billing.settleGasSponsorship({ billing: signed.billing, receipt })
-                : 1n,
+            amount: 1n,
             data: {
               version: 1,
               namespace: "eip155",

@@ -51,20 +51,12 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         yield* billing.release({ organizationId, reservationId: reservation.id });
         continue;
       }
-      const amount = evm.billing.settleGasSponsorship({ billing: signed.billing, receipt });
-      yield* billing.settle({
+      // Included failures also incur a provider charge; keep the hold for reconciliation.
+      yield* repository.billing.usageReservation.deferExpiry(
         organizationId,
-        reservationId: reservation.id,
-        amount,
-        data: {
-          version: 1,
-          namespace: "eip155",
-          chainId: receipt.chainId,
-          provider: "alchemy",
-          actualGasCostWei: receipt.actualGasCost.toString(),
-          transactionHash: receipt.transactionHash,
-        },
-      });
+        reservation.id,
+        yield* DateTime.now,
+      );
     }
   });
 
@@ -83,30 +75,24 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
       if (reservation.meterKey === "gas-sponsorship" && signed === null) {
         return yield* Effect.die("Sponsored execution billing envelope is missing");
       }
-      const amount =
-        reservation.meterKey === "gas-sponsorship" && signed !== null
-          ? evm.billing.settleGasSponsorship({ billing: signed.billing, receipt })
-          : 1n;
+      if (reservation.meterKey === "gas-sponsorship") {
+        yield* repository.billing.usageReservation.deferExpiry(
+          organizationId,
+          reservation.id,
+          yield* DateTime.now,
+        );
+        continue;
+      }
       yield* billing.settle({
         organizationId,
         reservationId: reservation.id,
-        amount,
-        data:
-          reservation.meterKey === "gas-sponsorship"
-            ? {
-                version: 1,
-                namespace: "eip155",
-                chainId: receipt.chainId,
-                provider: "alchemy",
-                actualGasCostWei: receipt.actualGasCost.toString(),
-                transactionHash: receipt.transactionHash,
-              }
-            : {
-                version: 1,
-                namespace: "eip155",
-                chainId: receipt.chainId,
-                transactionHash: receipt.transactionHash,
-              },
+        amount: 1n,
+        data: {
+          version: 1,
+          namespace: "eip155",
+          chainId: receipt.chainId,
+          transactionHash: receipt.transactionHash,
+        },
       });
     }
   });

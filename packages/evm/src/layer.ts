@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Redacted } from "effect";
+import { Config, Context, Effect, Layer, Option, Redacted } from "effect";
 import { HttpClient } from "effect/http";
 
 import { UnsupportedChainError } from "@namera-ai/protocol";
@@ -16,6 +16,7 @@ import {
 import { makeEvmAddressMetadataService } from "./address-metadata/service.js";
 import type { EvmAddressMetadataService } from "./address-metadata/types.js";
 import { settleEvmGasSponsorship } from "./billing/execution.js";
+import { makeGetGasSponsorshipCost, type GetGasSponsorshipCost } from "./billing/sponsorship.js";
 import { getChainDataByChainId } from "./chains/helpers.js";
 import { makeExecutionClients } from "./clients/execution.js";
 import { EvmConfig } from "./config.js";
@@ -54,6 +55,7 @@ export interface EvmService {
   readonly sessions: EvmSessionService;
   readonly billing: {
     readonly settleGasSponsorship: typeof settleEvmGasSponsorship;
+    readonly getGasSponsorshipCost: GetGasSponsorshipCost;
   };
   readonly policy: EvmPolicyService;
   readonly addressMetadata: EvmAddressMetadataService;
@@ -73,6 +75,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
     Effect.gen(function* () {
       const config = yield* EvmConfig;
       const httpClient = yield* HttpClient.HttpClient;
+      const accessToken = yield* Config.option(Config.Redacted("ALCHEMY_ACCESS_TOKEN"));
       const alchemyApiKey = encodeURIComponent(Redacted.value(config.alchemyApiKey));
       const createAccount = makeCreateAccount(config);
       const execution = makeEvmExecutionService(config, httpClient);
@@ -95,7 +98,14 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
 
       return Evm.of({
         createAccount,
-        billing: { settleGasSponsorship: settleEvmGasSponsorship },
+        billing: {
+          settleGasSponsorship: settleEvmGasSponsorship,
+          getGasSponsorshipCost: makeGetGasSponsorshipCost(
+            config.alchemyBsoPolicyId,
+            accessToken,
+            httpClient,
+          ),
+        },
         digestSignature: digestEvmSignature,
         getRpcUrl,
         execution,
@@ -120,6 +130,11 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
         const service = makeEvmTestService(options);
         return Evm.of({
           ...service,
+          billing: {
+            ...service.billing,
+            getGasSponsorshipCost:
+              options.billing?.getGasSponsorshipCost ?? (() => testExecution.sponsorshipCost),
+          },
           execution: {
             ...service.execution,
             getReceipt: Effect.fn("evm.execution.test.controlledGetReceipt")((input) =>
