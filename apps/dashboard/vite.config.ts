@@ -6,6 +6,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig, loadEnv } from "vite";
 
 import { documentSecurity } from "./tooling/document-security.ts";
+import { documentSeo } from "./tooling/document-seo.ts";
 
 const config = defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -18,6 +19,7 @@ const config = defineConfig(({ mode }) => {
     resolve: { conditions: ["namera-source", ...defaultClientConditions], tsconfigPaths: true },
     plugins: [
       security.plugin,
+      documentSeo(),
       devtools(),
       tailwindcss(),
       tanstackRouter({ target: "react", autoCodeSplitting: true }),

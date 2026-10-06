@@ -3,14 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Namera dashboard for programmable wallets, policies, and delegated access."
-    />
-    <title>Namera Dashboard</title>
+    <!-- documentSeo injects crawler-visible metadata from src/seo/site.ts at build time. -->
+    <meta name="application-name" content="Namera Dashboard" />
+    <meta name="theme-color" content="#08090a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-title" content="Namera" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
     <div id="app"></div>
+    <noscript
+      >Namera Dashboard requires JavaScript to manage your accounts and agent access. Visit
+      <a href="https://namera.ai">namera.ai</a> for product information.</noscript
+    >
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

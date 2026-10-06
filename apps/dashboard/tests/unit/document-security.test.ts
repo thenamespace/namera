@@ -10,6 +10,7 @@ describe("dashboard document security", () => {
     expect(policy).toContain("connect-src 'self' https://api.example.com;");
     expect(policy).not.toContain("ignored");
     expect(policy).toContain("script-src 'self';");
+    expect(policy).toContain("manifest-src 'self';");
     expect(policy).not.toContain("'unsafe-eval'");
     expect(policy).toContain("frame-ancestors 'none'");
     expect(headers["Permissions-Policy"]).toContain("publickey-credentials-create=(self)");
