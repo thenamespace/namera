@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
+import { Button, Field, FieldError, FieldLabel, InputGroup } from "@namera-ai/ui";
 import { ArrowRight02Icon, Icon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 import { Controller, useForm } from "react-hook-form";
@@ -42,16 +42,19 @@ export const HeroCta = () => {
             setError(undefined);
             return join.mutate(payload);
           })}
-          className="w-full max-w-[25rem]"
+          className="w-full max-w-[30rem]"
           aria-busy={join.isPending}
         >
-          <div
-            className={cn(
-              "edge-top flex items-center gap-1 rounded-[13px] border-1 border-hairline-strong",
-              "bg-surface/80 p-0.5 backdrop-blur-sm",
-              "transition-colors duration-150 ease-out-quad",
-              "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus/60",
-            )}
+          <InputGroup
+            aria-label="Join the waitlist"
+            className={
+              cn(
+                "edge-top flex h-auto w-full flex-col items-stretch gap-1 rounded-[13px] border-1 border-hairline-strong sm:flex-row sm:items-center",
+                "bg-surface/80 p-1 backdrop-blur-sm",
+                "transition-colors duration-150 ease-out-quad",
+                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus/60",
+              ) ?? ""
+            }
           >
             <Controller
               control={form.control}
@@ -61,7 +64,7 @@ export const HeroCta = () => {
                   <FieldLabel htmlFor="hero-waitlist-email" className="sr-only">
                     Email address
                   </FieldLabel>
-                  <Input
+                  <InputGroup.Input
                     {...field}
                     id="hero-waitlist-email"
                     type="email"
@@ -77,7 +80,7 @@ export const HeroCta = () => {
                       field.onChange(event);
                       setError(undefined);
                     }}
-                    className="tap-target h-8 w-full min-w-0 rounded-[10px] border-0 bg-transparent px-2 text-sm text-foreground shadow-none ring-0 outline-none hover:bg-transparent focus:bg-transparent focus:shadow-none focus:ring-0 focus:outline-none"
+                    className="h-11 w-full min-w-0 rounded-[10px] border-0 bg-transparent px-3 text-base text-foreground shadow-none ring-0 outline-none hover:bg-transparent focus:bg-transparent focus:shadow-none focus:ring-0 focus:outline-none"
                   />
                 </Field>
               )}
@@ -89,8 +92,8 @@ export const HeroCta = () => {
               isDisabled={join.isPending}
               className={
                 cn(
-                  "tap-target group/join inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] px-3",
-                  "bg-button-light text-[0.8125rem] font-medium text-button-light-foreground",
+                  "group/join inline-flex h-11 w-full shrink-0 items-center gap-2 rounded-[10px] px-4 sm:w-auto",
+                  "bg-button-light text-sm font-medium text-button-light-foreground",
                   "transition-[background-color,transform] duration-150 ease-out-quad",
                   "hover:bg-white active:scale-[0.98]",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
@@ -105,7 +108,7 @@ export const HeroCta = () => {
                 className="size-3.5 transition-transform duration-150 ease-out-quad group-hover/join:translate-x-0.5"
               />
             </Button>
-          </div>
+          </InputGroup>
 
           <FieldError
             id="hero-waitlist-email-error"
