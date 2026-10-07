@@ -1,5 +1,28 @@
 # @namera-ai/cli
 
+## 1.1.0
+
+### Minor Changes
+
+- 1e14605: Add optional flags and guided wallet/session-key selection for execution, simulation, signing, and signature verification. Improve validation and recovery instructions, transaction summaries, and MCP connection output while preserving structured JSON responses.
+
+  Expose `client.executions.get(executionId)` in the SDK for full execution details, including transaction hashes, account, session key, and actor information.
+
+- 69c4a6a: Migrate to Effect 4.0.1 stable and refresh runtime dependencies. Effect-based
+  consumers must also upgrade from the release candidate to 4.0.1 and use the
+  stable module paths, including `effect/http-api` instead of
+  `effect/unstable/httpapi`. Public HTTP routes and payloads are unchanged.
+
+  Refresh the CLI's pinned npm dependency tree and retain existing signing formats
+  and encrypted credential storage behavior across the dependency upgrades.
+
+### Patch Changes
+
+- Updated dependencies [1e14605]
+- Updated dependencies [69c4a6a]
+  - @namera-ai/sdk@1.1.0
+  - @namera-ai/protocol@1.1.0
+
 ## 1.0.3
 
 ### Patch Changes

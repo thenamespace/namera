@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/sdk",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Browser and Node.js SDK for Namera's programmable wallet API.",
   "keywords": [
     "ethereum",

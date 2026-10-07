@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/protocol",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Runtime schemas, DTOs, models, and typed errors for the Namera API.",
   "keywords": [
     "effect",
