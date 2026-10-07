@@ -1,5 +1,11 @@
 # @namera-ai/protocol
 
+## 1.1.1
+
+### Patch Changes
+
+- c21bde9: Update repository, issue tracker, and documentation links to thenamespace/namera.
+
 ## 1.1.0
 
 ### Minor Changes
