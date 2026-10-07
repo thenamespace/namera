@@ -10,6 +10,7 @@ import {
 } from "@namera-ai/protocol/dto";
 
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
+import { nameraCommand } from "#/commands/root";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
 import { executionStatusView, executionsView, simulationView } from "#/services/output/execution";
@@ -121,11 +122,20 @@ const list = Command.make(
       ? yield* Schema.decodeUnknownEffect(ExecutionId)(cursor.value)
       : undefined;
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(
-      yield* runPromise(
-        client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
-      ),
-      executionsView,
+    const result = yield* runPromise(
+      client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
+    );
+    const { output, quiet } = yield* nameraCommand;
+    const items =
+      output === "pretty" && !quiet
+        ? yield* Effect.forEach(
+            result.items,
+            (item) => runPromise(client.executions.get(item.details.id)),
+            { concurrency: 4 },
+          )
+        : [];
+    yield* printValue(result, (_, colors) =>
+      executionsView({ items, nextCursor: result.nextCursor }, colors),
     );
   }),
 ).pipe(Command.withDescription("View your transaction history"));

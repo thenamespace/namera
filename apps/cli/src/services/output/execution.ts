@@ -1,13 +1,24 @@
 import type {
   CompleteExecutionResponse,
   GetExecutionSubmissionResponse,
+  ExecutionDetailsResponse,
   ListExecutionsResponse,
   SimulateExecutionResponse,
   SignResponse,
   VerifySignatureResponse,
 } from "@namera-ai/protocol/dto";
 
-import { collection, humanize, network, section, type PrettyPrinter } from "./document.js";
+import {
+  collection,
+  fields,
+  humanize,
+  named,
+  network,
+  networkName,
+  section,
+  type PrettyPrinter,
+} from "./document.js";
+import { accountHeading, listArrow } from "./style.js";
 
 export const executionStatusView: PrettyPrinter<
   GetExecutionSubmissionResponse | CompleteExecutionResponse
@@ -38,24 +49,43 @@ export const executionStatusView: PrettyPrinter<
       : []),
   ].join("\n\n");
 
-export const executionsView: PrettyPrinter<ListExecutionsResponse> = (result, colors) =>
+const actorName = (actor: ExecutionDetailsResponse["actor"]): string => {
+  switch (actor.type) {
+    case "api-key":
+      return `${actor.apiKey.metadata.name} (API Key)`;
+    case "mcp":
+      return `${actor.authorization.client.clientName} (MCP)`;
+    case "cli":
+      return `${actor.authorization.metadata.type === "cli" ? actor.authorization.metadata.deviceName : actor.authorization.client.clientName} (CLI)`;
+    case "user":
+      return `${actor.member.user.metadata.name ?? actor.member.user.email} (Dashboard)`;
+  }
+};
+
+export const executionsView: PrettyPrinter<{
+  readonly items: readonly ExecutionDetailsResponse[];
+  readonly nextCursor: ListExecutionsResponse["nextCursor"];
+}> = (result, colors) =>
   [
     collection(
       result.items,
       "confirmed execution",
       "confirmed executions",
       (item, useColors) =>
-        section(
-          item.wallet.metadata.name,
+        `${accountHeading(named(item.wallet.metadata), useColors)}\n${fields(
           [
-            ["Execution ID", item.details.id],
-            ["Network", network(item.details.chainId)],
-            ["Transaction", item.details.transactionHash],
+            ["Transaction Hash", item.execution.data.transactionHash],
+            ["UserOp Hash", item.execution.data.userOperationHash],
+            ["Network", networkName(item.execution.data.chainId)],
+            ["Actor", actorName(item.actor)],
             ["Session key", item.sessionKey.metadata.name],
-            ["Created", item.details.createdAt],
           ],
           useColors,
-        ),
+          0,
+        )
+          .split("\n")
+          .map((line) => `${listArrow(useColors)} ${line}`)
+          .join("\n")}`,
       colors,
     ),
     ...(result.nextCursor

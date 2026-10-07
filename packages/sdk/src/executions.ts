@@ -149,6 +149,10 @@ export class ExecutionClient {
     );
   }
 
+  get(executionId: ExecutionId) {
+    return this.transport.request(this.transport.client.execution.get({ params: { executionId } }));
+  }
+
   list(options: ListExecutionsOptions = {}) {
     return this.transport.request(
       this.transport.client.execution.list({

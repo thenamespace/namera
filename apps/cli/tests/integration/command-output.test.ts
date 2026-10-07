@@ -81,9 +81,118 @@ const secondSessionKey = {
   metadata: { version: 1, name: "Savings key", description: "Selected savings key" },
 };
 let listedSessionKeys = [sessionKey, secondSessionKey];
+const transactionHash = `0x${"33".repeat(32)}`;
+const userOperationHash = `0x${"44".repeat(32)}`;
+const executionPage = {
+  items: [
+    {
+      details: {
+        id: wallet.id,
+        namespace: "eip155",
+        chainId: "eip155:8453",
+        transactionHash,
+        createdAt: wallet.createdAt,
+      },
+      wallet,
+      sessionKey,
+      actorType: "api-key",
+    },
+  ],
+  nextCursor: secondWallet.id,
+};
+const apiActor = {
+  id: wallet.id,
+  type: "api-key",
+  apiKey: {
+    id: wallet.id,
+    metadata: { version: 1, name: "Trading bot" },
+    keyStart: "nk_test",
+    expiresAt: null,
+    lastUsedAt: null,
+    revokedAt: null,
+    createdAt: wallet.createdAt,
+    updatedAt: wallet.updatedAt,
+  },
+};
+const oauthActor = (type: "cli" | "mcp") => ({
+  id: wallet.id,
+  type,
+  authorization: {
+    id: wallet.id,
+    client: {
+      id: wallet.id,
+      clientId: "test-client",
+      clientName: "Claude",
+      registrationType: "pre-registered",
+      clientUri: null,
+      logoUri: null,
+    },
+    scopes: ["execution:read"],
+    resource: "https://api.namera.ai",
+    status: "active",
+    metadata:
+      type === "cli"
+        ? { type, version: 1, deviceName: "Work laptop", cliVersion: "1.0.3", platform: "darwin" }
+        : { type, version: 1 },
+    expiresAt: null,
+    lastUsedAt: null,
+    revokedAt: null,
+    createdAt: wallet.createdAt,
+    updatedAt: wallet.updatedAt,
+  },
+});
+let executionActor: object = apiActor;
+let detailReads = 0;
+let failExecutionDetails = false;
+const executionDetails = () => ({
+  execution: {
+    id: wallet.id,
+    executionSubmissionId: wallet.id,
+    organizationId: wallet.organizationId,
+    sessionKeyGrantId: wallet.id,
+    namespace: "eip155",
+    createdAt: wallet.createdAt,
+    data: {
+      version: 1,
+      chainId: "eip155:8453",
+      calls: [],
+      transactionHash,
+      userOperationHash,
+      receipt: {
+        version: 1,
+        namespace: "eip155",
+        chainId: "eip155:8453",
+        userOperationHash,
+        transactionHash,
+        blockHash: transactionHash,
+        blockNumber: "1",
+        sender: wallet.address,
+        nonce: "0",
+        entryPoint: wallet.address,
+        paymaster: null,
+        actualGasCost: "0",
+        actualGasUsed: "1",
+        success: true,
+        reason: null,
+      },
+    },
+  },
+  wallet,
+  sessionKey,
+  actor: executionActor,
+});
 const server = createServer((request, response) => {
   response.setHeader("content-type", "application/json");
-  if (request.url === "/wallets") response.end(JSON.stringify(listedWallets));
+  if (request.url === "/executions") response.end(JSON.stringify(executionPage));
+  else if (request.url === `/executions/${wallet.id}`) {
+    detailReads++;
+    response.statusCode = failExecutionDetails ? 404 : 200;
+    response.end(
+      JSON.stringify(
+        failExecutionDetails ? { _tag: "ExecutionNotFoundError" } : executionDetails(),
+      ),
+    );
+  } else if (request.url === "/wallets") response.end(JSON.stringify(listedWallets));
   else if (request.url === `/wallets/${wallet.id}`) response.end(JSON.stringify(wallet));
   else if (request.url === `/wallets/${secondWallet.id}`)
     response.end(JSON.stringify(secondWallet));
@@ -145,6 +254,48 @@ const run = (args: string[]) =>
       { cause: error },
     );
   });
+
+describe("execution list display", () => {
+  it.each([
+    [apiActor, "Trading bot (API Key)"],
+    [oauthActor("cli"), "Work laptop (CLI)"],
+    [oauthActor("mcp"), "Claude (MCP)"],
+    [{ id: wallet.id, type: "user", member: sessionKey.creator }, "CLI tester (Dashboard)"],
+  ])("shows human execution details for %j", async (actor, label) => {
+    executionActor = actor;
+    const { stdout } = await run(["execution", "list"]);
+    expect(stdout).toContain(`Transaction Hash: ${transactionHash}`);
+    expect(stdout).toContain(`UserOp Hash: ${userOperationHash}`);
+    expect(stdout).toContain("Network: Base");
+    expect(stdout).toContain(`Actor: ${label}`);
+    expect(stdout).toContain("Session key: Trading key");
+    expect(stdout).not.toContain("eip155");
+    expect(stdout).not.toContain("Execution ID");
+    expect(stdout).not.toContain(wallet.id);
+    expect(stdout).toContain(`namera execution list --cursor ${secondWallet.id}`);
+  });
+
+  it("does not expand details in JSON or quiet mode", async () => {
+    detailReads = 0;
+    const json = await run(["--output", "json", "execution", "list"]);
+    expect(JSON.parse(json.stdout)).toMatchObject({
+      items: [{ details: { id: wallet.id }, actorType: "api-key" }],
+      nextCursor: secondWallet.id,
+    });
+    expect(JSON.parse(json.stdout).items[0].details).not.toHaveProperty("userOperationHash");
+    expect((await run(["--quiet", "execution", "list"])).stdout).toBe("");
+    expect(detailReads).toBe(0);
+  });
+
+  it("reports a detail read failure rather than an incomplete success", async () => {
+    failExecutionDetails = true;
+    try {
+      await expect(run(["execution", "list"])).rejects.toThrow("code=1");
+    } finally {
+      failExecutionDetails = false;
+    }
+  });
+});
 
 // Exercise the actual terminal prompt without touching saved profiles or keyrings.
 const pickResource = (keys: string, command = "wallet") =>

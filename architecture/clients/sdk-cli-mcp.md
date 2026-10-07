@@ -14,7 +14,7 @@ Supported surface:
 
 - `wallets.list` and `wallets.get`;
 - `sessionKeys.list({ walletId? })` and `sessionKeys.get`;
-- `executions.simulate`, `execute`, `getStatus`, and `list`;
+- `executions.simulate`, `execute`, `getStatus`, `get`, and `list`;
 - root `sign` and read-only `verifySignature`.
 
 Declared endpoint errors preserve their exact tagged union in `error.cause`.
@@ -91,6 +91,10 @@ named summaries and labeled sections for wallets, session keys, authorizations,
 execution, simulation, and signatures. Shared terminal primitives handle headings,
 dates, nested policy fields, and control-character sanitization. Pretty mode is a
 human summary; JSON serializes the original result, never the presentation.
+Human execution lists expand the current page through `executions.get`, with
+four concurrent reads at most, to show UserOp hashes and actor names. They retain
+list order and the original next-page cursor. JSON and quiet mode skip detail
+reads. Detail failures use normal command error handling, never fabricated names.
 Authorization summaries resolve wallet names through grant-scoped wallet reads
 only in pretty mode with wallet-read scope. They group keys by wallet ID, translate
 scope labels, and retain raw IDs/scopes in JSON. With session-key-read scope,

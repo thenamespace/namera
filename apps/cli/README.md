@@ -128,6 +128,12 @@ namera sign
 namera verify-signature
 ```
 
+`execution list` shows each account with full transaction and UserOp hashes,
+the network name, the actor name and source (MCP, CLI, API Key, or Dashboard),
+and the session key. CLI actors use their device name; MCP actors use their
+client name. Human output reads execution details with bounded concurrency;
+JSON keeps the original paginated list response and IDs without extra requests.
+
 Commands prompt for inputs. For automation, pass `--params '<json>'` using the
 public request shape. Execution/signing requires an imported key, active grant,
 and appropriate authority. Gas is sponsored by default. Self-funded operations
