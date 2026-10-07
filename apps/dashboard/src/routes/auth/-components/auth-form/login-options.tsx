@@ -1,4 +1,7 @@
+import { useCallback } from "react";
+
 import { Button, Typography } from "@namera-ai/ui";
+import { BrandGoogleIcon } from "@namera-ai/ui/icons";
 
 import { useGoogleConfiguration, useStartGoogle } from "@/hooks/auth/google";
 import { showErrorToast } from "@/lib/toasts";
@@ -35,12 +38,13 @@ export function LoginOptions({ onContinueWithEmail, returnTo, invite }: LoginOpt
 
       {configuration.data?.enabled ? (
         <Button fullWidth isPending={start.isPending} onPress={continueWithGoogle}>
+          <BrandGoogleIcon aria-hidden="true" className="size-4 shrink-0" />
           Continue with Google
         </Button>
       ) : null}
       <Button
         fullWidth
-        variant={configuration.data?.enabled ? "secondary" : "primary"}
+        variant="tertiary"
         isDisabled={start.isPending}
         onPress={onContinueWithEmail}
       >
@@ -49,4 +53,3 @@ export function LoginOptions({ onContinueWithEmail, returnTo, invite }: LoginOpt
     </div>
   );
 }
-import { useCallback } from "react";

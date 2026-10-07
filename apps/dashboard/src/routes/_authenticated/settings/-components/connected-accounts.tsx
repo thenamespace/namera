@@ -3,7 +3,8 @@ import { useCallback, useState } from "react";
 import { DateTime } from "effect";
 
 import type { AccountId } from "@namera-ai/protocol";
-import { AlertDialog, Button, Surface, Typography } from "@namera-ai/ui";
+import { AlertDialog, Button, Chip, ItemCard, Typography } from "@namera-ai/ui";
+import { BrandGoogleIcon } from "@namera-ai/ui/icons";
 
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
@@ -81,9 +82,6 @@ export function ConnectedAccounts({
     <section aria-labelledby="connected-accounts-heading" className="mb-10">
       <HeadingGroup className="mb-4">
         <HeadingGroup.Title id="connected-accounts-heading">Connected accounts</HeadingGroup.Title>
-        <HeadingGroup.Description>
-          Choose how you sign in. Email sign-in is always available.
-        </HeadingGroup.Description>
       </HeadingGroup>
       {outcome === "linked" && accounts.data?.length ? (
         <Typography.Paragraph aria-live="polite" className="mb-4" size="sm">
@@ -100,15 +98,24 @@ export function ConnectedAccounts({
       ) : accounts.isLoading && !accounts.data ? (
         <DataLoading label="Loading connected accounts" />
       ) : (
-        <Surface variant="secondary" className="rounded-xl border p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <Typography weight="medium">Google</Typography>
-              <Typography.Paragraph className="mt-1 break-all" size="sm" color="muted">
-                {accounts.data?.[0]?.email ??
-                  (accounts.data?.length ? "Connected" : "Not connected")}
-              </Typography.Paragraph>
-            </div>
+        <ItemCard variant="default" className="min-h-16 rounded-lg border flex-wrap sm:flex-nowrap">
+          <ItemCard.Icon>
+            <BrandGoogleIcon aria-hidden="true" className="size-5" />
+          </ItemCard.Icon>
+          <ItemCard.Content className="min-w-0">
+            <ItemCard.Title className="flex items-center gap-2">
+              Google
+              {accounts.data?.length ? (
+                <Chip color="success" size="sm" variant="soft">
+                  Connected
+                </Chip>
+              ) : null}
+            </ItemCard.Title>
+            <ItemCard.Description className="whitespace-normal break-all">
+              {accounts.data?.[0]?.email ?? (accounts.data?.length ? "Connected" : "Not connected")}
+            </ItemCard.Description>
+          </ItemCard.Content>
+          <ItemCard.Action>
             {accounts.data?.[0] ? (
               <Button variant="danger-soft" size="sm" onPress={requestDisconnect}>
                 Disconnect
@@ -127,8 +134,8 @@ export function ConnectedAccounts({
                 Google sign-in is currently unavailable.
               </Typography.Paragraph>
             )}
-          </div>
-        </Surface>
+          </ItemCard.Action>
+        </ItemCard>
       )}
       {needsSignIn ? (
         <div className="mt-4 flex flex-col items-start gap-3" aria-live="polite">
