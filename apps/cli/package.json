@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Namera CLI and local stdio MCP server for self-custodial agent wallets.",
   "keywords": [
     "ai-agents",

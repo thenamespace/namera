@@ -1,16 +1,16 @@
 {
   "name": "@namera-ai/cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "@namera-ai/cli",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
         "@effect/platform-node": "4.0.1",
-        "@namera-ai/protocol": "1.1.0",
-        "@namera-ai/sdk": "1.1.0",
+        "@namera-ai/protocol": "1.1.1",
+        "@namera-ai/sdk": "1.1.1",
         "@napi-rs/keyring": "2.1.0",
         "effect": "4.0.1",
         "viem": "2.57.2"
@@ -80,10 +80,10 @@
       }
     },
     "node_modules/@namera-ai/api": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "license": "Apache-2.0",
       "dependencies": {
-        "@namera-ai/protocol": "1.1.0",
+        "@namera-ai/protocol": "1.1.1",
         "effect": "4.0.1"
       },
       "engines": {
@@ -91,7 +91,7 @@
       }
     },
     "node_modules/@namera-ai/protocol": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "license": "Apache-2.0",
       "dependencies": {
         "@adraffy/ens-normalize": "1.11.1",
@@ -102,12 +102,12 @@
       }
     },
     "node_modules/@namera-ai/sdk": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "license": "Apache-2.0",
       "dependencies": {
         "@alchemy/smart-accounts": "5.2.7",
-        "@namera-ai/api": "1.1.0",
-        "@namera-ai/protocol": "1.1.0",
+        "@namera-ai/api": "1.1.1",
+        "@namera-ai/protocol": "1.1.1",
         "effect": "4.0.1",
         "viem": "2.57.2"
       },
