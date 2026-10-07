@@ -147,15 +147,19 @@ closed, not used to create test history.
 
 ### Continuous integration
 
-The manually dispatched CI workflow runs two independent jobs:
+The manually dispatched CI workflow runs independent check and test jobs:
 
-- `check`: formatting, lint, type checks, builds, all package tests except
-  `@namera-ai/server`, and package publication smoke tests.
+- `check`: formatting, lint, type checks, builds, and package publication smoke tests.
+- `tests (cli)`: CLI tests on their own runner, so cold subprocess startup does
+  not compete with other packages' database initialization or builds.
+- `tests (packages)`: all other package tests except `@namera-ai/server`.
+  Both test groups cap Turbo at two tasks and Vitest at two workers per package.
+  A failed group does not cancel another group's diagnostics.
 - `postgres`: the complete server test suite against disposable PostgreSQL,
   including the PostgreSQL-only concurrency cases. It runs directly through
   pnpm on every invocation, without caching test results.
 
-The server suite is not repeated with PGlite in `check`. Local `pnpm test`
+The server suite is not repeated with PGlite in the package group. Local `pnpm test`
 still includes it; database-package PGlite tests also remain in CI.
 
 The `check` job persists `.turbo/cache` through GitHub Actions cache, keyed by runner

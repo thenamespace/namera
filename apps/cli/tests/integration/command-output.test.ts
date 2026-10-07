@@ -264,7 +264,7 @@ const run = (args: string[]) =>
     );
   });
 
-describe("execution list display", () => {
+describe("execution list display", { timeout: 65_000 }, () => {
   it("uses the same summary for confirmed status and preserves JSON", async () => {
     executionActor = apiActor;
     detailReads = 0;
