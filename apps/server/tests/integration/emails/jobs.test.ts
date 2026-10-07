@@ -2,7 +2,7 @@ import { expect, layer } from "@effect/vitest";
 import { DateTime, Duration, Effect, Metric } from "effect";
 import { TestClock } from "effect/testing";
 
-import { Repository } from "@namera-ai/database";
+import { Database, Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import { emailJobDeliveryResults, workerBacklog, workerOldestAge } from "@namera-ai/telemetry";
 
@@ -100,16 +100,22 @@ layer(TestServerLayer)("email jobs", (it) => {
     }),
   );
 
-  it.effect("drains a backlog without leasing jobs it does not deliver", () =>
+  it.effect("drains a backlog without over-claiming when table statistics lag", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
-      const requested = yield* Effect.forEach([0, 1, 2, 3], (index) =>
-        enqueueMagicLink(client, testEmail(`backlog-${index}@example.com`)),
-      );
       const jobs = yield* EmailJobs;
       const repository = yield* Repository;
       const emails = yield* TestEmails;
+      yield* enqueueMagicLink(client, testEmail("backlog-warmup@example.com"));
+      expect(yield* jobs.processOnce).toBe(1);
+      // Statistics for one terminal row reproduce PostgreSQL's nested-loop
+      // semi-join plan once new jobs arrive, without relying on autovacuum timing.
+      yield* (yield* Database).execute("ANALYZE jobs.email_jobs");
+      yield* emails.clear;
+      const requested = yield* Effect.forEach([0, 1], (index) =>
+        enqueueMagicLink(client, testEmail(`backlog-${index}@example.com`)),
+      );
 
       for (let delivered = 1; delivered <= requested.length; delivered += 1) {
         expect(yield* jobs.processOnce).toBe(1);

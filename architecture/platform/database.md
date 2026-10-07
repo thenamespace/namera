@@ -90,6 +90,13 @@ See [testing](../engineering/testing.md) for commands and coverage boundaries.
 
 ## Worker queue snapshots
 
+Email claims use a scalar `id = (SELECT ... LIMIT 1 FOR UPDATE SKIP LOCKED)`
+subquery, so each worker iteration leases at most one row. Do not replace this
+with `IN`: PostgreSQL can choose a nested-loop semi-join that re-evaluates the
+locking subquery, claims multiple jobs, and strands all but the returned first
+job until their leases expire. The email worker regression seeds stale table
+statistics with `ANALYZE` before adding a backlog to exercise that plan.
+
 Worker-only `getBacklog(now)` reads in the email, execution-submission and
 session-operation repositories aggregate count and oldest creation age without
 returning IDs, payloads or tenant data. They include leased/retrying nonterminal

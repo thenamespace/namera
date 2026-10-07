@@ -155,7 +155,9 @@ export class EmailJobRepository extends Context.Service<
               leaseToken,
               leaseExpiresAt: encodeDate(leaseExpiresAt),
             })
-            .where(inArray(emailJob.id, candidate))
+            // A scalar subquery is evaluated once. IN can use a nested-loop
+            // semi-join that re-scans LIMIT 1 and leases multiple jobs.
+            .where(eq(emailJob.id, sql`(${candidate})`))
             .returning();
           return rows[0] ? Schema.decodeSync(EmailJob)(rows[0]) : undefined;
         }, mapRepositoryError),
