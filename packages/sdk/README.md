@@ -70,6 +70,7 @@ session-key grants and the selected key's policies.
 | `executions.simulate`       | Simulate calls and check policy eligibility                   |
 | `executions.execute`        | Prepare, validate, sign locally, and submit                   |
 | `executions.getStatus/list` | Submission status and execution history                       |
+| `executions.get`            | Confirmed execution details, receipt, and submitting actor    |
 | `sign`                      | Authorized message or EIP-712 signing                         |
 | `verifySignature`           | Verify a smart-account signature against its original payload |
 

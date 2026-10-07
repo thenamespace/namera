@@ -34,6 +34,11 @@ export const network = (chainId: string): string => {
 export const networkName = (chainId: string): string =>
   networks.find((entry) => `eip155:${entry.id}` === chainId)?.name ?? "Unknown network";
 
+export const networkChoices = networks.map((chain) => ({
+  title: chain.name,
+  value: `eip155:${chain.id}`,
+}));
+
 // API metadata must not be able to clear the terminal or inject OSC hyperlinks.
 export const terminalText = (value: string): string =>
   stripVTControlCharacters(value).replace(

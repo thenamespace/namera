@@ -2,93 +2,91 @@ import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 
 import { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
-import {
-  ExecuteRequest,
-  type ExecuteRequest as ExecuteRequestType,
-  SimulateExecutionRequest,
-  type SimulateExecutionRequest as SimulateExecutionRequestType,
-} from "@namera-ai/protocol/dto";
+import { ExecuteRequest, SimulateExecutionRequest } from "@namera-ai/protocol/dto";
 
 import { paramsFlag, profileFlag, resolveParams } from "#/commands/common";
+import { sponsorshipInput, transactionFlags, transactionInput } from "#/commands/execution/input";
+import { ask, optionalInput, parseInput, rejectMixedParams } from "#/commands/operation-input";
+import { nameraCommand } from "#/commands/root";
 import { makeCliClient } from "#/services/client";
 import { printValue, runPromise } from "#/services/output";
-import { executionStatusView, executionsView, simulationView } from "#/services/output/execution";
+import {
+  executionStatusView,
+  executionsView,
+  simulationView,
+  operationContextView,
+  type OperationContext,
+} from "#/services/output/execution";
 import { CliPrompts } from "#/services/prompts";
-
-const promptTransactionRequest = Effect.fn("cli.execution.promptTransactionRequest")(function* () {
-  const prompts = yield* CliPrompts;
-  const namespace = yield* prompts.namespace;
-  const walletId = yield* prompts.walletId();
-  const sessionKeyId = yield* prompts.sessionKeyId();
-  const chainId = yield* prompts.chainId();
-  const callCount = yield* prompts.integer("Number of calls", { min: 1, default: 1 });
-  const calls = yield* Effect.forEach(
-    Array.from({ length: callCount }, (_, index) => index),
-    (index) =>
-      Effect.gen(function* () {
-        const number = callCount === 1 ? "" : ` ${index + 1}`;
-        return {
-          to: yield* prompts.ethereumAddress(`Recipient${number}`),
-          value: yield* prompts.ethereumValue(`Native value${number} (wei)`),
-          data: yield* prompts.hex(`Calldata${number}`),
-        };
-      }),
-  );
-
-  return {
-    namespace,
-    walletId,
-    sessionKeyId,
-    chainId,
-    calls,
-  } satisfies SimulateExecutionRequestType;
-});
-
-const promptExecutionRequest = Effect.fn("cli.execution.promptExecutionRequest")(function* () {
-  const prompts = yield* CliPrompts;
-  const request = yield* promptTransactionRequest();
-  const sponsor = yield* prompts.confirm("Sponsor gas with Namera?", true);
-
-  return { ...request, sponsor } satisfies ExecuteRequestType;
-});
 
 const execute = Command.make(
   "execute",
   {
     params: paramsFlag,
     profile: profileFlag,
+    ...transactionFlags,
+    sponsor: optionalInput("sponsor", "Use sponsored gas: true or false"),
     maxGasCost: Flag.String("max-gas-cost-wei").pipe(
       Flag.withDescription("Maximum gas cost in wei when paying gas yourself"),
       Flag.optional,
     ),
   },
-  Effect.fn(function* ({ params, profile, maxGasCost }) {
-    const request = yield* resolveParams(params, ExecuteRequest, promptExecutionRequest());
+  Effect.fn(function* ({ params, profile, maxGasCost, sponsor, ...input }) {
+    yield* rejectMixedParams(params, [...Object.values(input), sponsor]);
+    const connection = yield* Effect.tryPromise(() => makeCliClient(profile));
+    let context: OperationContext | undefined;
+    const request = yield* resolveParams(
+      params,
+      ExecuteRequest,
+      Effect.gen(function* () {
+        const transaction = yield* transactionInput(connection.client, input);
+        context = transaction.scope;
+        return { ...transaction.request, sponsor: yield* sponsorshipInput(sponsor) };
+      }),
+    );
     let maxGasCostWei: bigint | undefined;
     if (Option.isSome(maxGasCost)) {
-      maxGasCostWei = yield* Schema.decodeUnknownEffect(
+      maxGasCostWei = yield* parseInput(
         Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n)),
-      )(maxGasCost.value);
+        maxGasCost.value,
+        "max-gas-cost-wei",
+      );
     } else if (request.sponsor === false && Option.isNone(params)) {
       const prompts = yield* CliPrompts;
-      maxGasCostWei = yield* prompts.ethereumValue("Maximum total gas cost (wei)");
+      maxGasCostWei = yield* ask(
+        "max-gas-cost-wei",
+        prompts.ethereumValue("Maximum total gas cost (wei)"),
+      );
     }
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile, maxGasCostWei));
-    yield* printValue(yield* runPromise(client.executions.execute(request)), executionStatusView);
+    yield* printValue(yield* runPromise(client.executions.execute(request)), (value, colors) =>
+      [operationContextView(context, request.chainId, colors), executionStatusView(value, colors)]
+        .filter(Boolean)
+        .join("\n"),
+    );
   }),
 ).pipe(Command.withDescription("Submit a transaction using a session key"));
 
 const simulate = Command.make(
   "simulate",
-  { params: paramsFlag, profile: profileFlag },
-  Effect.fn(function* ({ params, profile }) {
+  { params: paramsFlag, profile: profileFlag, ...transactionFlags },
+  Effect.fn(function* ({ params, profile, ...input }) {
+    yield* rejectMixedParams(params, Object.values(input));
+    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
+    let context: OperationContext | undefined;
     const request = yield* resolveParams(
       params,
       SimulateExecutionRequest,
-      promptTransactionRequest(),
+      transactionInput(client, input).pipe(
+        Effect.map((value) => {
+          context = value.scope;
+          return value.request;
+        }),
+      ),
     );
-    const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.simulate(request)), simulationView);
+    yield* printValue(yield* runPromise(client.executions.simulate(request)), (value, colors) =>
+      simulationView(value, colors, context),
+    );
   }),
 ).pipe(Command.withDescription("Preview a transaction and check permissions without sending it"));
 
@@ -103,7 +101,13 @@ const status = Command.make(
   Effect.fn(function* ({ submissionId, profile }) {
     const id = yield* Schema.decodeUnknownEffect(ExecutionSubmissionId)(submissionId);
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(yield* runPromise(client.executions.getStatus(id)), executionStatusView);
+    const result = yield* runPromise(client.executions.getStatus(id));
+    const { output, quiet } = yield* nameraCommand;
+    const details =
+      output === "pretty" && !quiet && result.status === "confirmed"
+        ? yield* runPromise(client.executions.get(result.execution.id))
+        : undefined;
+    yield* printValue(result, (value, colors) => executionStatusView(value, colors, details));
   }),
 ).pipe(Command.withDescription("Check a submitted transaction's status"));
 
@@ -121,11 +125,20 @@ const list = Command.make(
       ? yield* Schema.decodeUnknownEffect(ExecutionId)(cursor.value)
       : undefined;
     const { client } = yield* Effect.tryPromise(() => makeCliClient(profile));
-    yield* printValue(
-      yield* runPromise(
-        client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
-      ),
-      executionsView,
+    const result = yield* runPromise(
+      client.executions.list(decodedCursor === undefined ? {} : { cursor: decodedCursor }),
+    );
+    const { output, quiet } = yield* nameraCommand;
+    const items =
+      output === "pretty" && !quiet
+        ? yield* Effect.forEach(
+            result.items,
+            (item) => runPromise(client.executions.get(item.details.id)),
+            { concurrency: 4 },
+          )
+        : [];
+    yield* printValue(result, (_, colors) =>
+      executionsView({ items, nextCursor: result.nextCursor }, colors),
     );
   }),
 ).pipe(Command.withDescription("View your transaction history"));

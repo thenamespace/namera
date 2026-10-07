@@ -113,7 +113,9 @@ export const createMcpSession = (config: {
         scope: "mcp:read mcp:execute offline_access",
         state,
       }).toString();
-      notify(`Authorize Namera (${config.profile}): ${url}`);
+      notify(
+        `Approve your MCP connection for "${config.profile}" in the browser:\n${url}\n\nWaiting for your approval...`,
+      );
       try {
         await (config.openBrowser ?? openAuthorizationBrowser)(url.toString());
       } catch {
