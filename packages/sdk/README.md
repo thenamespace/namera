@@ -117,6 +117,6 @@ Declared errors preserve their typed cause. Transient execution/signature retrie
 reuse one idempotency key; completion retries do not sign again. Validation,
 authorization and policy failures are not retried automatically.
 
-See [client behavior](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/sdk-cli-mcp.md)
-and [local key storage](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-keystore.md).
+See [client behavior](https://github.com/thenamespace/namera/blob/main/architecture/clients/sdk-cli-mcp.md)
+and [local key storage](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-keystore.md).
 API, protocol, SDK and CLI share a release version starting with 1.0.0.

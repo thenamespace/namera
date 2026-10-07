@@ -55,4 +55,4 @@ handles authentication and returns promise-based results.
 - [cli](https://www.npmjs.com/package/@namera-ai/cli): terminal commands and local MCP.
 
 Use matching versions of the four packages starting with 1.0.0.
-[Contributor architecture](https://github.com/thenamespace/namera-core/blob/main/architecture/packages/contracts.md).
+[Contributor architecture](https://github.com/thenamespace/namera/blob/main/architecture/packages/contracts.md).

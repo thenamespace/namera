@@ -65,4 +65,4 @@ analytics, or server payloads.
 Schemas validate structure, not authorization, installation, or signature validity.
 Use the [SDK](https://www.npmjs.com/package/@namera-ai/sdk) for API operations.
 API, protocol, SDK and CLI share a version starting with 1.0.0.
-[Contributor architecture](https://github.com/thenamespace/namera-core/blob/main/architecture/packages/contracts.md).
+[Contributor architecture](https://github.com/thenamespace/namera/blob/main/architecture/packages/contracts.md).
