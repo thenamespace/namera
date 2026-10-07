@@ -1,10 +1,31 @@
+import { useCallback } from "react";
+
 import { Button, Typography } from "@namera-ai/ui";
+import { BrandGoogleIcon } from "@namera-ai/ui/icons";
+
+import { useGoogleConfiguration, useStartGoogle } from "@/hooks/auth/google";
+import { showErrorToast } from "@/lib/toasts";
 
 type LoginOptionsProps = {
   onContinueWithEmail: () => void;
+  returnTo?: string | undefined;
+  invite?: string | undefined;
 };
 
-export function LoginOptions({ onContinueWithEmail }: LoginOptionsProps) {
+export function LoginOptions({ onContinueWithEmail, returnTo, invite }: LoginOptionsProps) {
+  const configuration = useGoogleConfiguration();
+  const start = useStartGoogle({
+    onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
+    onError: (error) => showErrorToast(error, { title: "Couldn’t start Google sign-in" }),
+  });
+  const continueWithGoogle = useCallback(() => {
+    start.mutate({
+      payload: {
+        ...(returnTo ? { returnTo } : {}),
+        ...(invite ? { inviteCode: invite } : {}),
+      },
+    });
+  }, [start, returnTo, invite]);
   return (
     <div className="grid gap-4">
       <Typography.Heading
@@ -15,7 +36,18 @@ export function LoginOptions({ onContinueWithEmail }: LoginOptionsProps) {
         Log in to Namera
       </Typography.Heading>
 
-      <Button fullWidth onPress={onContinueWithEmail}>
+      {configuration.data?.enabled ? (
+        <Button fullWidth isPending={start.isPending} onPress={continueWithGoogle}>
+          <BrandGoogleIcon aria-hidden="true" className="size-4 shrink-0" />
+          Continue with Google
+        </Button>
+      ) : null}
+      <Button
+        fullWidth
+        variant="tertiary"
+        isDisabled={start.isPending}
+        onPress={onContinueWithEmail}
+      >
         Continue with email
       </Button>
     </div>

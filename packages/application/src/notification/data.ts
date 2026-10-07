@@ -9,6 +9,11 @@ interface NotificationPolicy {
 }
 
 export const notificationPolicy = {
+  "auth.account-changed": {
+    target: { category: "account", topic: "security" },
+    emailDefaultEnabled: true,
+    emailTimeToLive: Duration.days(1),
+  },
   "auth.new-sign-in": {
     target: { category: "account", topic: "activity" },
     emailDefaultEnabled: true,

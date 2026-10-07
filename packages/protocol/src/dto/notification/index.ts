@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import { NotificationId, OrganizationId } from "#/common/index";
 import {
+  AccountChangedNotification,
   ApiKeyCreatedNotification,
   ApiKeyRevokedNotification,
   CliAuthorizationApprovedNotification,
@@ -25,6 +26,7 @@ const NotificationRecipientState = {
 };
 
 export const NotificationResponse = Schema.Union([
+  Schema.Struct({ notification: AccountChangedNotification, ...NotificationRecipientState }),
   Schema.Struct({
     notification: NewSignInNotification,
     ...NotificationRecipientState,

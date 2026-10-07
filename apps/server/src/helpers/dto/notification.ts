@@ -3,6 +3,8 @@ import type { NotificationResponse } from "@namera-ai/protocol/dto";
 
 export const toNotificationResponse = (input: NotificationInboxItem): NotificationResponse => {
   switch (input.notification.type) {
+    case "auth.account-changed":
+      return toResponse(input.notification, input.recipient);
     case "auth.new-sign-in":
       return toResponse(input.notification, input.recipient);
     case "organization.invitation.received":

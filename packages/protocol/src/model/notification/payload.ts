@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import {
   ApiKeyId,
+  AccountId,
   ExecutionId,
   InvitationId,
   OAuthAuthorizationId,
@@ -27,6 +28,7 @@ const CliAuthorizationApprovedNotificationType = Schema.Literal("cli_authorizati
 const CliAuthorizationRevokedNotificationType = Schema.Literal("cli_authorization.revoked");
 
 export const NotificationType = Schema.Union([
+  Schema.Literal("auth.account-changed"),
   NewSignInNotificationType,
   InvitationReceivedNotificationType,
   WalletCreatedNotificationType,
@@ -182,7 +184,19 @@ export const CliAuthorizationRevokedNotificationPayload = Schema.Struct({
   }),
 });
 
+export const AccountChangedNotificationPayload = Schema.Struct({
+  type: Schema.Literal("auth.account-changed"),
+  resourceType: Schema.Literal("connected-account"),
+  resourceId: AccountId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    provider: Schema.Literal("google"),
+    action: Schema.Literals(["linked", "unlinked"]),
+  }),
+});
+
 export const NotificationPayload = Schema.Union([
+  AccountChangedNotificationPayload,
   NewSignInNotificationPayload,
   InvitationReceivedNotificationPayload,
   WalletCreatedNotificationPayload,

@@ -4,6 +4,7 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import type { RequestMagicLinkRequest, RequestMagicLinkResponse } from "@namera-ai/protocol/dto";
+import type { GoogleIdentity } from "@namera-ai/protocol/model";
 import { magicLinkRequestDuration, magicLinkRequests } from "@namera-ai/telemetry";
 
 import { AuthConfig } from "#/auth/config";
@@ -13,7 +14,10 @@ const accepted: RequestMagicLinkResponse = {
 };
 
 export interface RequestMagicLinkApplication {
-  readonly request: (input: RequestMagicLinkRequest) => Effect.Effect<RequestMagicLinkResponse>;
+  readonly request: (
+    input: RequestMagicLinkRequest,
+    googleIdentity?: GoogleIdentity,
+  ) => Effect.Effect<RequestMagicLinkResponse>;
 }
 
 export const makeRequestMagicLinkApplication = Effect.gen(function* () {
@@ -24,7 +28,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
   const transaction = yield* TransactionService;
 
   const request = Effect.fn("application.magicLink.request")(
-    function* (input: RequestMagicLinkRequest) {
+    function* (input: RequestMagicLinkRequest, googleIdentity?: GoogleIdentity) {
       yield* Metric.update(magicLinkRequests, 1);
       const now = yield* DateTime.now;
       const invite =
@@ -40,6 +44,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
         maxAttempts: config.magicLink.maximumAttempts,
       });
       if (
+        !googleIdentity &&
         current &&
         DateTime.toEpochMillis(now) - DateTime.toEpochMillis(current.createdAt) <
           Duration.toMillis(config.magicLink.resendCooldown)
@@ -76,6 +81,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
             purpose: config.magicLink.purpose,
             identifier: input.email,
             data: {
+              ...(googleIdentity ? { googleIdentity, googleEmailConfirmed: true } : {}),
               ...(allowedReturnTo === undefined ? {} : { returnTo: allowedReturnTo }),
               ...(invite ? { betaInviteId: invite.id } : {}),
             },

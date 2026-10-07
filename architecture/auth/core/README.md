@@ -5,11 +5,13 @@ Core identity owns user records, reusable verification challenges, browser sessi
 ## Features
 
 - [Magic-link authentication](magic-link.md)
+- [Google sign-in and connected accounts](google.md)
 - [Browser sessions](sessions.md)
 - [API keys](api-keys.md)
 - [Core auth tables](../../database/auth-core.md)
 
-Magic link is the implemented human login method. The dormant `auth.account` table is reserved for future external-provider bindings and must not be confused with programmable wallets.
+Magic link and optional Google sign-in authenticate humans. `auth.account` stores
+external-provider bindings and must not be confused with programmable wallets.
 
 ```mermaid
 flowchart LR
@@ -33,6 +35,5 @@ For password recovery, email change, step-up authentication, or another challeng
 
 ## Pending before production
 
-- Define whether additional login methods link through `auth.account`.
 - Add verification/session retention workers.
 - Complete recovery and step-up design before exposing destructive enterprise operations.

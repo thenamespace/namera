@@ -5,6 +5,7 @@ import { NonEmptyString } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 
 import {
+  AccountChangedNotificationPayload,
   ApiKeyCreatedNotificationPayload,
   ApiKeyRevokedNotificationPayload,
   CliAuthorizationApprovedNotificationPayload,
@@ -33,6 +34,7 @@ const notification = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct
   NotificationCommon.mapFields(Struct.assign(fields.fields));
 
 export const NewSignInNotification = notification(NewSignInNotificationPayload);
+export const AccountChangedNotification = notification(AccountChangedNotificationPayload);
 export const InvitationReceivedNotification = notification(InvitationReceivedNotificationPayload);
 export const WalletCreatedNotification = notification(WalletCreatedNotificationPayload);
 export const SessionKeyCreatedNotification = notification(SessionKeyCreatedNotificationPayload);
@@ -54,6 +56,7 @@ export const CliAuthorizationRevokedNotification = notification(
 );
 
 export const Notification = Schema.Union([
+  AccountChangedNotification,
   NewSignInNotification,
   InvitationReceivedNotification,
   WalletCreatedNotification,

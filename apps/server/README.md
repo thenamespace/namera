@@ -231,20 +231,16 @@ resets on restart and does not coordinate between replicas. Before horizontally
 scaling the server, replace `RateLimiter.layerStoreMemory` with Effect's Redis
 store while retaining the policies and namespaced keys.
 
-Client addresses default to the server connection. Behind ingress, set
-`SERVER_TRUSTED_PROXY_CIDRS` to comma-separated, confirmed proxy IPs or CIDRs.
-The client-address middleware runs before rate limiting and trusts
-`X-Forwarded-For` only when the socket peer matches that allowlist. It walks the
-chain right to left, stopping at the first untrusted address. Invalid chains or
-chains longer than 32 hops fall back to the socket peer. IPv6 and IPv4-mapped
-addresses are normalized. Other forwarded-IP headers are not trusted.
+The server trusts load-balancer client-IP headers without environment switches
+or CIDR configuration. The middleware prefers a valid `X-Real-IP`, then the
+first address in a valid `X-Forwarded-For` chain. Missing or invalid headers fall
+back to the socket peer. Chains must contain at most 32 valid IP addresses;
+IPv6 and IPv4-mapped addresses are normalized. Other IP headers are ignored.
+The deployment must overwrite both headers at ingress and block direct origin
+access; otherwise callers can spoof their throttle identity.
 
-Keep this setting blank for direct connections. Do not trust all private networks
-or use a cluster-wide pod range unless all workloads in that range are trusted.
-Restrict origin access to ingress (for example, with a NetworkPolicy), and ensure
-Traefik preserves the client address and sanitizes incoming forwarded headers.
-Your infra operator must confirm the stable ingress range; observed pod IPs alone
-are not a durable deployment configuration. After deployment, compare HTTP span
+Restrict origin access to ingress (for example, with a NetworkPolicy).
+After deployment, compare HTTP span
 `client.address` (socket peer) with `namera.client.address` (resolved limiter IP)
 and `namera.client.ip_source` (`socket` or `forwarded`).
 
@@ -291,13 +287,12 @@ do not require GCP KMS credentials or server-side wallet-key storage.
 The template is safe to commit; populated env files remain ignored and excluded
 from container images.
 
-| Variable                     | Default                 | Purpose                                                 |
-| ---------------------------- | ----------------------- | ------------------------------------------------------- |
-| `NODE_ENV`                   | `development`           | Runtime environment and cookie security policy.         |
-| `SERVER_HOST`                | `0.0.0.0`               | HTTP listen host.                                       |
-| `SERVER_PORT`                | `8080`                  | HTTP listen port.                                       |
-| `SERVER_TRUSTED_PROXY_CIDRS` | Empty                   | Trusted proxy IPs/CIDRs for forwarded client addresses. |
-| `SERVER_CORS_ORIGIN`         | `http://localhost:3000` | Allowed credentialed UI origin.                         |
+| Variable             | Default                 | Purpose                                         |
+| -------------------- | ----------------------- | ----------------------------------------------- |
+| `NODE_ENV`           | `development`           | Runtime environment and cookie security policy. |
+| `SERVER_HOST`        | `0.0.0.0`               | HTTP listen host.                               |
+| `SERVER_PORT`        | `8080`                  | HTTP listen port.                               |
+| `SERVER_CORS_ORIGIN` | `http://localhost:3000` | Allowed credentialed UI origin.                 |
 
 The composition root also loads:
 

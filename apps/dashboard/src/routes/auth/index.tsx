@@ -7,6 +7,6 @@ export const Route = createFileRoute("/auth/")({
 });
 
 function AuthPage() {
-  const { returnTo, invite } = Route.useSearch();
-  return <AuthForm returnTo={returnTo} invite={invite} />;
+  const { returnTo, invite, google } = Route.useSearch();
+  return <AuthForm returnTo={returnTo} invite={invite} google={google} />;
 }

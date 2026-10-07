@@ -1,4 +1,8 @@
 export const cryptoPurpose = {
+  googleState: "auth.google.state",
+  googleNonce: "auth.google.nonce",
+  googleBrowser: "auth.google.browser",
+  googleVerifier: "auth.google.pkce",
   betaInvite: "auth.beta-invite.code",
   betaAdmissionToken: "auth.beta-admission.token",
   magicLinkToken: "auth.magic-link.token",

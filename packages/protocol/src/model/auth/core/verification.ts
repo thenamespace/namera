@@ -10,13 +10,18 @@ import {
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
+import { GoogleIdentity, GoogleVerificationData } from "./google.js";
+
 export const VerificationPurpose = Schema.Literals([
   "magic-link-signin",
   "passkey-registration",
   "beta-admission",
+  "google-auth",
 ]);
 
 export const MagicLinkVerificationData = Schema.Struct({
+  googleIdentity: Schema.optionalKey(GoogleIdentity),
+  googleEmailConfirmed: Schema.optionalKey(Schema.Boolean),
   betaInviteId: Schema.optionalKey(Schema.String),
   returnTo: Schema.optionalKey(ApplicationRelativePath),
 });
@@ -33,6 +38,7 @@ export const PasskeyRegistrationVerificationData = Schema.Struct({
 export const VerificationData = Schema.Union([
   MagicLinkVerificationData,
   PasskeyRegistrationVerificationData,
+  GoogleVerificationData,
 ]);
 
 const VerificationLifecycleFields = {
@@ -72,6 +78,14 @@ export const BetaAdmissionVerification = Schema.Struct({
 });
 
 export const Verification = Schema.Union([
+  Schema.Struct({
+    ...VerificationLifecycleFields,
+    purpose: Schema.Literal("google-auth"),
+    identifier: NonEmptyString,
+    data: GoogleVerificationData,
+    tokenHash: NonEmptyString,
+    codeHmac: Schema.Null,
+  }),
   MagicLinkVerification,
   PasskeyRegistrationVerification,
   BetaAdmissionVerification,

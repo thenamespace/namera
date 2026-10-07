@@ -6,6 +6,7 @@ import { makeBetaInviteApplication } from "#/auth/beta-invite";
 import { makeApiKeyApplication, type ApiKeyApplication } from "#/auth/core/api-key";
 import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
 import { makeUserApplication, type UserApplication } from "#/auth/core/user";
+import { makeGoogleApplication } from "#/auth/google/index";
 import {
   makeRequestMagicLinkApplication,
   type RequestMagicLinkApplication,
@@ -39,6 +40,7 @@ import { makeSignatureApplication, type SignatureApplication } from "#/signature
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
+  readonly google: Effect.Success<typeof makeGoogleApplication>;
   readonly admin: Effect.Success<typeof makeAdminApplication>;
   readonly betaInvite: Effect.Success<typeof makeBetaInviteApplication>;
   readonly waitlist: Effect.Success<typeof makeWaitlistApplication>;
@@ -72,6 +74,7 @@ export class Application extends Context.Service<Application, ApplicationService
     Application,
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
+      const google = yield* makeGoogleApplication;
       const admin = yield* makeAdminApplication;
       const betaInvite = yield* makeBetaInviteApplication;
       const waitlist = yield* makeWaitlistApplication;
@@ -94,6 +97,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const signature = yield* makeSignatureApplication;
 
       return Application.of({
+        google,
         admin,
         betaInvite,
         waitlist,

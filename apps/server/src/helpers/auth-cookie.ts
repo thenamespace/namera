@@ -44,6 +44,19 @@ export const clearAuthCookie = (secure: boolean) =>
 
 export const betaSignupCookieName = "beta-signup";
 const BetaSignupSecurity = HttpApiSecurity.apiKey({ key: betaSignupCookieName, in: "cookie" });
+export const googleBrowserCookieName = "google-auth";
+const GoogleBrowserSecurity = HttpApiSecurity.apiKey({
+  key: googleBrowserCookieName,
+  in: "cookie",
+});
+export const setGoogleBrowserCookie = (token: string, secure: boolean) =>
+  HttpApiBuilder.securitySetCookie(GoogleBrowserSecurity, token, {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/auth/google/callback",
+    maxAge: token === "" ? 0 : authPolicy.magicLink.timeToLive,
+  });
 export const setBetaSignupCookie = (token: string, secure: boolean) =>
   HttpApiBuilder.securitySetCookie(BetaSignupSecurity, token, {
     ...cookieOptions(secure),

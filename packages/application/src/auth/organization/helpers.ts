@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
 import {
+  GoogleAuthError,
   type Email,
   type OrganizationId,
   type OrganizationRoleId,
@@ -95,11 +96,13 @@ export const createOrganizationWithOwner = Effect.fn("application.createOrganiza
 
 export const createUserWithPersonalOrganization = Effect.fn(
   "application.createUserWithPersonalOrganization",
-)(function* (repository: RepositoryService, audit: AuditService, email: Email) {
-  const user = yield* repository.auth.user.create({
+)(function* (repository: RepositoryService, audit: AuditService, email: Email, requireNew = false) {
+  const create = requireNew ? repository.auth.user.createIfAbsent : repository.auth.user.create;
+  const user = yield* create({
     email,
     metadata: { version: 1 },
   });
+  if (!user) return yield* new GoogleAuthError({ code: "GOOGLE_ACCOUNT_EXISTS" });
   yield* audit.user({
     userId: user.id,
     sessionId: null,

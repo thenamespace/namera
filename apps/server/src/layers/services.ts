@@ -1,7 +1,7 @@
 import { NodeCrypto, NodeHttpClient } from "@effect/platform-node";
 import { Config, Effect, Layer } from "effect";
 
-import { Application } from "@namera-ai/application";
+import { Application, GoogleIdentityProvider } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { Database, DatabaseMigration, Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
@@ -42,6 +42,7 @@ const EvmLive = Layer.unwrap(
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));
 
 export const ServicesLive = Layer.mergeAll(
+  GoogleIdentityProvider.layer.pipe(Layer.provide(NodeHttpClient.layerUndici)),
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,

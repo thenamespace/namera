@@ -10,6 +10,7 @@ import { AuthorizationLive } from "#/middlewares/authorization";
 import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
 import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
+import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
   MagicLinkRoutes,
@@ -30,6 +31,8 @@ import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
+  GoogleRoutes,
+  ConnectedAccountRoutes,
   AdminUserRoutes,
   BetaInviteRoutes,
   WaitlistRoutes,
