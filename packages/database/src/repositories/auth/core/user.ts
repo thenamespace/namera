@@ -14,6 +14,7 @@ export interface UserRepositoryService {
   findById: (userId: UserId) => Effect.Effect<User | undefined, DatabaseError>;
   findByEmail: (email: Email) => Effect.Effect<User | undefined, DatabaseError>;
   create: (data: UserInsert) => Effect.Effect<User, DatabaseError>;
+  createIfAbsent: (data: UserInsert) => Effect.Effect<User | undefined, DatabaseError>;
   findOrCreateByEmail: (data: UserInsert) => Effect.Effect<User, DatabaseError>;
   markEmailVerifiedAndLogin: (
     userId: UserId,
@@ -63,6 +64,16 @@ export class UserRepository extends Context.Service<UserRepository, UserReposito
           return row ? Schema.decodeSync(User)(row) : undefined;
         }, mapRepositoryError),
         findByEmail,
+        createIfAbsent: Effect.fn("database.userRepository.createIfAbsent")(function* (data) {
+          const db = yield* transactionOrDatabase(database);
+          const parsed = Schema.encodeSync(UserInsert)(data);
+          const rows = yield* db
+            .insert(user)
+            .values(parsed as any)
+            .onConflictDoNothing({ target: user.email })
+            .returning();
+          return rows[0] ? Schema.decodeSync(User)(rows[0]) : undefined;
+        }, mapRepositoryError),
         create: Effect.fn("database.userRepository.create")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(UserInsert)(data);

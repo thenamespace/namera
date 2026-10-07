@@ -11,9 +11,18 @@ export const UserSignedInEventData = Schema.Struct({
   event: Schema.Literal("user.signed_in"),
   data: Schema.Struct({
     version: Schema.Literal(1),
-    method: Schema.Literal("magic-link"),
+    method: Schema.Literals(["magic-link", "google"]),
     ipAddress: Schema.NullOr(Schema.String),
     userAgent: Schema.NullOr(Schema.String),
+  }),
+});
+
+export const UserAccountChangedEventData = Schema.Struct({
+  event: Schema.Literals(["user.account_linked", "user.account_unlinked"]),
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    provider: Schema.Literal("google"),
+    accountId: Schema.String,
   }),
 });
 

@@ -86,13 +86,16 @@ export const ServerLive = HttpRouter.serve(Routes, {
     ),
 }).pipe(
   Layer.provide(
-    HttpMiddleware.layerTracerDisabledForUrls([
-      "/reference",
-      "/auth/session/me",
-      "/t/traces/v1",
-      "/t/logs/v1",
-      "/t/metrics/v1",
-    ]),
+    Layer.succeed(HttpMiddleware.TracerDisabledWhen)((request) =>
+      [
+        "/reference",
+        "/auth/google/callback",
+        "/auth/session/me",
+        "/t/traces/v1",
+        "/t/logs/v1",
+        "/t/metrics/v1",
+      ].includes(request.url.split("?")[0] ?? request.url),
+    ),
   ),
   Layer.provide(
     Layer.succeed(HttpMiddleware.SpanNameGenerator)(

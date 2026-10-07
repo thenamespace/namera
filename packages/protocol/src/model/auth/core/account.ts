@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { AccountId, UserId } from "#/common/index";
+import { AccountId, Email, UserId } from "#/common/index";
 import { NonEmptyString, TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
@@ -9,6 +9,7 @@ export const Account = Schema.Struct({
   userId: UserId,
   accountId: NonEmptyString,
   providerId: NonEmptyString,
+  providerEmail: Schema.NullOr(Email),
   accessToken: Schema.NullOr(Schema.String),
   idToken: Schema.NullOr(Schema.String),
   refreshToken: Schema.NullOr(Schema.String),

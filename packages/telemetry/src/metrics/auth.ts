@@ -1,5 +1,20 @@
 import { Metric } from "effect";
 
+export const googleAuthResults = Metric.counter("namera.auth.google.results", {
+  description: "Google authentication flow outcomes by stage and result",
+  incremental: true,
+});
+export const googleAuthDuration = Metric.timer("namera.auth.google.duration", {
+  description: "Server-side Google authentication processing duration",
+});
+export const connectedAccountTransitions = Metric.counter(
+  "namera.auth.connected_account.transitions",
+  {
+    description: "Committed external login account links and unlinks",
+    incremental: true,
+  },
+);
+
 export const authenticationResults = Metric.counter("namera.auth.authentication.results", {
   description: "Credential authentication outcomes, excluding downstream handler failures",
   incremental: true,

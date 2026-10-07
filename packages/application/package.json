@@ -33,7 +33,9 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
-    "typecheck": "tsc -p tsconfig.json --pretty false"
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run"
   },
   "dependencies": {
     "@namera-ai/crypto": "workspace:*",
@@ -46,12 +48,15 @@
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/utils": "workspace:*",
     "@namera-ai/wallet-keys": "workspace:*",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "jose": "^6.2.12"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

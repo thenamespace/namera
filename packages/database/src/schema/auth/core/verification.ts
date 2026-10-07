@@ -40,7 +40,7 @@ export const verification = authSchema.table(
         AND ${table.tokenHash} IS NOT NULL
         AND ${table.codeHmac} IS NOT NULL
       ) OR (
-        ${table.purpose} = 'beta-admission'
+        ${table.purpose} IN ('beta-admission', 'google-auth')
         AND ${table.tokenHash} IS NOT NULL
         AND ${table.codeHmac} IS NULL
       ) OR (

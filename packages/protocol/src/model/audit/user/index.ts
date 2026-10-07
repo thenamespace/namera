@@ -2,7 +2,12 @@ import { Schema, Struct } from "effect";
 
 import { createInsertSchema } from "#/model/helpers";
 
-import { UserCreatedEventData, UserSignedInEventData, UserUpdatedEventData } from "./account.js";
+import {
+  UserAccountChangedEventData,
+  UserCreatedEventData,
+  UserSignedInEventData,
+  UserUpdatedEventData,
+} from "./account.js";
 import { UserEventCommon } from "./base.js";
 import {
   NotificationPreferenceUpdatedEventData,
@@ -40,6 +45,7 @@ export const NotificationPreferenceUpdatedEventV1 = UserEventCommon.mapFields(
 );
 
 export const UserEvent = Schema.Union([
+  UserEventCommon.mapFields(Struct.assign(UserAccountChangedEventData.fields)),
   UserCreatedEvent,
   UserSignedInEvent,
   UserUpdatedEvent,

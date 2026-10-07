@@ -4,6 +4,7 @@ import type { SendEmailProps } from "#/types";
 
 import { ApiKeyCreatedEmail } from "./emails/api-key-created.js";
 import { ApiKeyRevokedEmail } from "./emails/api-key-revoked.js";
+import { ConnectedAccountChangedEmail } from "./emails/connected-account-changed.js";
 import { ExecutionConfirmedEmail } from "./emails/execution-confirmed.js";
 import { MagicLinkEmail } from "./emails/magic-link.js";
 import { NewSignInEmail } from "./emails/new-sign-in.js";
@@ -14,6 +15,8 @@ import { WalletCreatedEmail } from "./emails/wallet-created.js";
 
 export const renderEmail = (input: SendEmailProps): ReactElement => {
   switch (input.type) {
+    case "connected-account-changed":
+      return <ConnectedAccountChangedEmail {...input.variables} />;
     case "magic-link":
       return <MagicLinkEmail {...input.variables} />;
     case "new-sign-in":

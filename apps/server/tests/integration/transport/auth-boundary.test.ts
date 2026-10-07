@@ -10,6 +10,9 @@ import { TestServerLayer } from "../../fixtures/layers/index.js";
 
 // Raw OAuth protocol routes have separate protocol/PKCE tests; this is the typed API surface.
 const publicEndpoints = new Set([
+  "google.configuration",
+  "google.start",
+  "google.callback",
   "health.health",
   "waitlist.join",
   "ens.isNameAvailable",

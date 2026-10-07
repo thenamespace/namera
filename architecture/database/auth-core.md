@@ -37,7 +37,8 @@ Canonical human identity. Organization membership and actors are separate so a u
 
 ## `auth.account`
 
-Reserved external-provider account binding. It is not the programmable-wallet `core.wallet` table and is not currently the primary Namera login path.
+External-provider account binding, currently used by Google sign-in. It is not
+the programmable-wallet `core.wallet` table. Google persists no provider tokens.
 
 | Column                     | PostgreSQL type | Required | Default | Description                                                                 |
 | -------------------------- | --------------- | -------- | ------- | --------------------------------------------------------------------------- |
@@ -45,6 +46,7 @@ Reserved external-provider account binding. It is not the programmable-wallet `c
 | `user_id`                  | `text`          | Yes      | —       | Owning Namera user.                                                         |
 | `account_id`               | `text`          | Yes      | —       | Provider-side subject/account identifier.                                   |
 | `provider_id`              | `text`          | Yes      | —       | Authentication provider identifier.                                         |
+| `provider_email`           | `text`          | No       | `NULL`  | Last verified provider email, for connected-account presentation.           |
 | `access_token`             | `text`          | No       | `NULL`  | Provider access token if this adapter persists one.                         |
 | `refresh_token`            | `text`          | No       | `NULL`  | Provider refresh token.                                                     |
 | `id_token`                 | `text`          | No       | `NULL`  | Provider ID token.                                                          |
@@ -60,6 +62,7 @@ Reserved external-provider account binding. It is not the programmable-wallet `c
 
 - Primary key: `id`.
 - Unique index `account_provider_account_uidx`: (`provider_id`, `account_id`).
+- Partial unique `account_google_user_uidx` on `user_id` for `provider_id = 'google'` permits one Google binding per user.
 
 ### Foreign keys
 
@@ -115,6 +118,9 @@ digests; passkey registration stores its public challenge and tenant binding in
   is the verified email and its data preserves the approved return destination.
   Its ten-minute, five-attempt proof grants no ordinary session authority.
 - `passkey-registration` requires both magic-link credential columns to be null.
+- `google-auth` requires `token_hash` and null `code_hmac`; data stores browser
+  and nonce digests, encrypted PKCE verifier, approved destination and optional
+  initiating user/session IDs. The identifier is a random normalized flow key.
 
 ### Indexes
 
@@ -241,7 +247,7 @@ Tenant-scoped principal used by authorization, audit, executions, signatures, an
 
 ## Pending before production
 
-- Define retention and deletion behavior for external `auth.account` tokens before enabling provider login.
+- Google does not retain external tokens. Define token retention before adding a provider that needs API access.
 - Add a documented cleanup worker for expired and terminal verification rows.
 - Define session concurrency and forced-global-logout policy.
 - Review whether captured IP addresses require truncation or a shorter retention window.

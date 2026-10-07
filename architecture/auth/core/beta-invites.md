@@ -2,7 +2,7 @@
 
 New accounts require an invite by default (`AUTH_INVITE_REQUIRED=true`). Existing
 users retain normal email login. This gate runs in magic-link authentication,
-not just the dashboard, so CLI and MCP consent cannot create an uninvited user.
+and Google sign-in, not just the dashboard, so CLI and MCP consent cannot create an uninvited user.
 Organization invitations do not bypass beta admission.
 
 ## Operator API

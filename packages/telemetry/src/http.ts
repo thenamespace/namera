@@ -1,5 +1,10 @@
 const staticHttpRoutes = new Set([
   "/",
+  "/auth/google/configuration",
+  "/auth/google/start",
+  "/auth/google/callback",
+  "/auth/connected-accounts",
+  "/auth/connected-accounts/google",
   "/auth/invitation/accept-invitation",
   "/auth/invitation/cancel-invitation",
   "/auth/invitation/get-invitation",
@@ -83,6 +88,7 @@ const staticHttpRoutes = new Set([
 ]);
 
 const dynamicHttpRoutes = [
+  "/auth/connected-accounts/:accountId",
   "/api-keys/:apiKeyId/revoke",
   "/auth/session/sessions/:sessionId",
   "/wallets/:walletId/passkey-owner",

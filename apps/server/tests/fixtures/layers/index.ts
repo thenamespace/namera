@@ -2,7 +2,7 @@ import { NodeCrypto } from "@effect/platform-node";
 import { Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
-import { Application } from "@namera-ai/application";
+import { Application, googleIdentityTestLayer } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { type Database, Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
@@ -18,6 +18,7 @@ import { RateLimiterLive } from "#/rate-limit";
 import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
 import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
+import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
   MagicLinkRoutes,
@@ -66,8 +67,10 @@ export const makeTestServerLayer = (
   evmOptions: EvmTestOptions = {},
   passkeysLayer: Layer.Layer<Passkeys> = Passkeys.testLayer,
   configLayer = TestConfigLayer,
+  googleLayer = googleIdentityTestLayer(),
 ) => {
   const TestServicesLayer = Layer.mergeAll(
+    googleLayer,
     EmailJobs.layer,
     EnsTestLayer,
     Evm.testLayerWith(evmOptions),
@@ -88,6 +91,8 @@ export const makeTestServerLayer = (
   );
 
   const TestHandlersLayer = Layer.mergeAll(
+    GoogleRoutes,
+    ConnectedAccountRoutes,
     AdminUserRoutes,
     BetaInviteRoutes,
     WaitlistRoutes,

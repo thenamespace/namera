@@ -224,10 +224,16 @@ must be a separate explicit workflow that preserves the single-owner invariant.
 
 ## Environment
 
-| Variable                       | Required | Purpose                           |
-| ------------------------------ | -------- | --------------------------------- |
-| `AUTH_API_PUBLIC_ORIGIN`       | Yes      | Public origin of `api.namera.ai`. |
-| `AUTH_DASHBOARD_PUBLIC_ORIGIN` | Yes      | Public dashboard origin.          |
+| Variable                       | Required | Purpose                                                                |
+| ------------------------------ | -------- | ---------------------------------------------------------------------- |
+| `AUTH_API_PUBLIC_ORIGIN`       | Yes      | Public origin of `api.namera.ai`.                                      |
+| `AUTH_DASHBOARD_PUBLIC_ORIGIN` | Yes      | Public dashboard origin.                                               |
+| `GOOGLE_CLIENT_ID`             | No       | Google Web application OAuth client; enables Google with its secret.   |
+| `GOOGLE_CLIENT_SECRET`         | No       | Server-only Google secret; configure both Google variables or neither. |
+
+Register `${AUTH_API_PUBLIC_ORIGIN}/auth/google/callback` as an exact Google
+redirect URI. See [Google authentication](../../architecture/auth/core/google.md)
+for linking, beta admission, email proof and deployment verification.
 
 Editable TTLs, limits, cookie settings, and return paths live in
 `src/auth/data.ts` rather than environment variables.

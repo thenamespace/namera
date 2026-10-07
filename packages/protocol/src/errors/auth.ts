@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import { GoogleAuthError } from "./google.js";
+
 export class InvalidMagicLinkError extends Schema.TaggedError<InvalidMagicLinkError>()(
   "MagicLinkError",
   {
@@ -27,6 +29,7 @@ export class BetaInviteRequiredError extends Schema.TaggedError<BetaInviteRequir
 ) {}
 
 export const MagicLinkErrors = [
+  GoogleAuthError,
   InvalidMagicLinkError,
   MagicLinkAttemptsExceededError,
   BetaInviteRequiredError,

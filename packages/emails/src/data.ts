@@ -3,6 +3,9 @@ import { Duration, Schema } from "effect";
 import type { EmailJobType } from "@namera-ai/protocol/model";
 
 export const emailTemplates = {
+  "connected-account-changed": {
+    subject: "Your connected Google account changed",
+  },
   "magic-link": {
     subject: "Sign in to Namera",
   },

@@ -21,6 +21,11 @@ type checked, body bounded, timed out, rate limited, and untraced.
 
 ## Traces
 
+Google callback paths are excluded from automatic HTTP tracing even with query
+strings, and the provider exchange suppresses HTTP tracing. Safe application
+spans and bounded auth metrics remain; OAuth codes, state and tokens must not
+appear in trace attributes. See [Google authentication](../auth/core/google.md).
+
 - Trace HTTP, application workflows, repositories, SQL transactions, and
   external providers when they explain meaningful work.
 - Use stable names such as `http.server POST /wallets`, never raw identifiers or

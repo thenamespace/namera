@@ -4,6 +4,7 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
   InvalidMagicLinkError,
+  GoogleAuthError,
   BetaInviteRequiredError,
   MagicLinkAttemptsExceededError,
   type MagicLinkError,
@@ -13,14 +14,9 @@ import {
 import type { VerifyMagicLinkRequest } from "@namera-ai/protocol/dto";
 import { betaInviteTransitions, magicLinkVerificationResults } from "@namera-ai/telemetry";
 
-import { Audit } from "#/audit/layer";
+import { makeCompleteSignIn } from "#/auth/complete-sign-in";
 import { AuthConfig } from "#/auth/config";
-import {
-  createOrganizationWithOwner,
-  createUserWithPersonalOrganization,
-} from "#/auth/organization/helpers";
-import { makeCreateNotification } from "#/notification/create";
-import { notificationPolicy } from "#/notification/data";
+import { recordAccountTransition } from "#/auth/google/account";
 
 export interface VerifyMagicLinkResult {
   readonly sessionToken?: string;
@@ -49,11 +45,10 @@ export interface VerifyMagicLinkApplication {
 
 export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
-  const audit = yield* Audit;
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
-  const createNotification = yield* makeCreateNotification;
+  const completeSignIn = yield* makeCompleteSignIn;
 
   const verify = Effect.fn("application.magicLink.verify")(
     function* (
@@ -144,11 +139,6 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
         return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
       }
 
-      const sessionToken = yield* crypto.randomToken(config.session.tokenBytes);
-      const sessionTokenHash = yield* crypto.hash({
-        purpose: cryptoPurpose.sessionToken,
-        value: sessionToken,
-      });
       // Consuming the one-time verification and creating the session are one
       // atomic transition. Concurrent clicks can never mint multiple sessions
       // from the same link or code.
@@ -164,6 +154,17 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           }
 
           const existingUser = yield* repository.auth.user.findByEmail(verification.identifier);
+          if (
+            existingUser &&
+            verification.data.googleIdentity &&
+            !verification.data.googleEmailConfirmed
+          ) {
+            const binding = yield* repository.auth.account.findGoogle(
+              verification.data.googleIdentity.subject,
+            );
+            if (binding?.userId !== existingUser.id)
+              return yield* new GoogleAuthError({ code: "GOOGLE_ACCOUNT_EXISTS" });
+          }
           const inviteId = requestedInvite?.id ?? verification.data.betaInviteId;
           const candidateInvite =
             !existingUser && inviteId
@@ -190,10 +191,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             const pending = yield* repository.auth.verification.create({
               purpose: "beta-admission",
               identifier: verification.identifier,
-              data:
-                verification.data.returnTo === undefined
-                  ? {}
-                  : { returnTo: verification.data.returnTo },
+              data: verification.data,
               tokenHash: yield* crypto.hash({
                 purpose: cryptoPurpose.betaAdmissionToken,
                 value: pendingToken,
@@ -205,10 +203,16 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
               return yield* new InvalidMagicLinkError({ code: "INVALID_OR_EXPIRED_LINK" });
             return { admissionToken: `${pending.id}.${pendingToken}`, returnTo: "/auth/invite" };
           }
-          const initialized = existingUser
-            ? { user: existingUser, organization: undefined }
-            : yield* createUserWithPersonalOrganization(repository, audit, verification.identifier);
-          const user = initialized.user;
+          const completed = yield* completeSignIn({
+            email: verification.identifier,
+            method: verification.data.googleIdentity ? "google" : "magic-link",
+            ...(existingUser ? { userId: existingUser.id } : {}),
+            ...(verification.data.googleIdentity
+              ? { identity: verification.data.googleIdentity }
+              : {}),
+            ...context,
+          });
+          const user = completed.user;
           if (invite) {
             const redeemed = yield* repository.auth.betaInvite.redeem(
               invite.id,
@@ -219,71 +223,16 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
               return yield* new BetaInviteRequiredError({ code: "INVITE_REQUIRED_OR_UNAVAILABLE" });
             yield* repository.auth.betaInvite.appendEvent(invite.id, "redeemed");
           }
-          yield* repository.auth.user.markEmailVerifiedAndLogin(user.id, now);
-          const memberships = yield* repository.auth.member.findMembershipsForUser(user.id);
-          const organization =
-            initialized.organization ??
-            memberships[0]?.organization ??
-            (yield* createOrganizationWithOwner(repository, audit, user.id, "Personal"));
-          const session = yield* repository.auth.session.create({
-            userId: user.id,
-            tokenHash: sessionTokenHash,
-            activeOrganizationId: organization.id,
-            ...(context.ipAddress === null ? {} : { ipAddress: context.ipAddress }),
-            ...(context.userAgent === null ? {} : { userAgent: context.userAgent }),
-            expiresAt: DateTime.addDuration(now, config.session.timeToLive),
-          });
-          const signedInEvent = yield* audit.user({
-            userId: user.id,
-            sessionId: session.id,
-            event: "user.signed_in",
-            data: {
-              version: 1,
-              method: "magic-link",
-              ipAddress: session.ipAddress,
-              userAgent: session.userAgent,
-            },
-          });
-          yield* createNotification({
-            organizationId: null,
-            actorId: null,
-            type: "auth.new-sign-in",
-            resourceType: "session",
-            resourceId: session.id,
-            data: {
-              version: 1,
-              ipAddress: context.ipAddress,
-              userAgent: context.userAgent,
-            },
-            idempotencyKey: `notification:auth.new-sign-in:${session.id}`,
-            correlationId: signedInEvent.correlationId,
-            expiresAt: null,
-            recipients: [
-              {
-                userId: user.id,
-                email: {
-                  type: "new-sign-in",
-                  to: user.email,
-                  variables: {
-                    signedInAt: DateTime.formatIso(now),
-                    ipAddress: context.ipAddress ?? "Unknown",
-                    userAgent: context.userAgent ?? "Unknown",
-                  },
-                  expiresAt: DateTime.addDuration(
-                    now,
-                    notificationPolicy["auth.new-sign-in"].emailTimeToLive,
-                  ),
-                },
-              },
-            ],
-          });
           return {
-            sessionToken,
+            sessionToken: completed.sessionToken,
+            linked: completed.linked,
             inviteRedeemed: invite !== undefined,
             returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,
           };
         }),
       );
+
+      if ("linked" in result && result.linked) yield* recordAccountTransition("linked");
 
       if ("inviteRedeemed" in result && result.inviteRedeemed) {
         yield* Metric.update(
