@@ -82,14 +82,16 @@ magic links, invitations, API-key creation, OAuth/device flow, MCP, execution,
 signatures, RPC, and telemetry proxy traffic. Actor- or authorization-scoped
 limits supplement IP limits where appropriate.
 
-Before transport limits, the client-address middleware resolves `X-Forwarded-For`
-only for socket peers in `SERVER_TRUSTED_PROXY_CIDRS` (empty by default). It walks
-right to left through trusted proxies and stops at the first untrusted address.
-Malformed or over-32-hop chains fall back to the socket peer. Canonicalized IPs
-populate the request's remote address for limits and downstream request metadata.
-Configuration rejects invalid IPs/CIDRs and catch-all `/0` ranges. Transport tests
-cover spoofed prefixes, untrusted peers, malformed chains, IPv6 normalization,
-configuration validation, and separate rate-limit buckets behind one proxy.
+Before transport limits, the client-address middleware trusts sanitized ingress
+headers unconditionally. This requires ingress to overwrite
+`X-Real-IP` and `X-Forwarded-For` and prevent direct origin access. It prefers a
+valid `X-Real-IP`, otherwise uses the first address in a valid `X-Forwarded-For`
+chain, without a CIDR allowlist. Invalid/missing headers fall back to the socket.
+There are no environment switches, proxy CIDRs, or range checks. Canonicalized
+IPs populate the request's remote address for limits and downstream request
+metadata. Transport tests cover malformed/over-32-hop chains, IPv6 normalization,
+sanitized-header precedence/fallback, absent socket addresses, and
+separate rate-limit buckets behind one proxy for both supported headers.
 
 ## Deployment
 
@@ -103,6 +105,6 @@ are supplied at runtime, not baked into the image.
 
 - Replace the process-local limiter with an atomic shared store before running
   multiple server replicas.
-- Confirm the deployed ingress trust range and source-IP preservation, configure
-  `SERVER_TRUSTED_PROXY_CIDRS`, and verify resolved client IPs after deployment.
+- Verify the deployed ingress overwrites both client-IP headers, blocks direct
+  origin access, and resolves distinct client IPs.
 - Add worker-liveness and queue-age alerts.

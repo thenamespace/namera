@@ -1,6 +1,6 @@
-import { BlockList, isIP, SocketAddress } from "node:net";
+import { isIP, SocketAddress } from "node:net";
 
-import { Config, Context, Effect, Layer, Option, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { HttpMiddleware, HttpServerRequest } from "effect/http";
 
 const ipAddress = Schema.String.check(
@@ -21,77 +21,27 @@ const normalizeAddress = (value: string) => {
   return address.startsWith("::ffff:") ? address.slice(7) : address;
 };
 
-const proxyRange = Schema.String.check(
-  Schema.makeFilter((value) => {
-    const [address, prefix, ...rest] = value.split("/");
-    if (!address || Option.isNone(decodeAddress(address)) || rest.length > 0) return false;
-    if (prefix === undefined) return true;
-    // A catch-all trust range would allow arbitrary clients to choose their IP.
-    return (
-      /^\d+$/.test(prefix) &&
-      Number(prefix) > 0 &&
-      Number(prefix) <= (isIP(address) === 4 ? 32 : 128)
-    );
-  }),
-);
-
-export const TrustedProxyConfig = Config.schema(
-  Schema.String.check(
-    Schema.makeFilter(
-      (value) =>
-        value.trim() === "" ||
-        value.split(",").every((entry) => Schema.is(proxyRange)(entry.trim())) ||
-        "Expected comma-separated proxy IPs or CIDRs (no /0 ranges)",
-    ),
-  ),
-  "SERVER_TRUSTED_PROXY_CIDRS",
-).pipe(
-  Config.withDefault(""),
-  Config.map((value) => {
-    const ranges = new BlockList();
-    for (const entry of value
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean)) {
-      const [address = "", prefix] = entry.split("/");
-      const family = isIP(address) === 4 ? "ipv4" : "ipv6";
-      if (prefix === undefined) ranges.addAddress(address, family);
-      else ranges.addSubnet(address, Number(prefix), family);
-    }
-    return ranges;
-  }),
-);
-
-export class TrustedProxies extends Context.Service<TrustedProxies, BlockList>()(
-  "@namera-ai/server/TrustedProxies",
-) {
-  static readonly layer = Layer.effect(this, TrustedProxyConfig);
-}
-
 export const ClientAddressMiddleware = HttpMiddleware.make((httpEffect) =>
   Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
-    const trustedProxies = yield* TrustedProxies;
     const peer = Option.getOrUndefined(request.remoteAddress);
     let address = peer === undefined ? undefined : normalizeAddress(peer);
     let source = "socket";
     const forwarded = request.headers["x-forwarded-for"];
 
-    if (
-      address &&
-      trustedProxies.check(address, isIP(address) === 4 ? "ipv4" : "ipv6") &&
-      forwarded
-    ) {
-      const hops = forwarded.split(",");
-      const addresses = hops.map((hop) => normalizeAddress(hop.trim()));
-      // Reject ambiguous chains as a whole rather than skipping a malformed hop.
-      if (hops.length <= 32 && addresses.every((hop) => hop !== undefined)) {
-        for (const hop of addresses.toReversed()) {
-          if (!trustedProxies.check(address, isIP(address) === 4 ? "ipv4" : "ipv6")) break;
-          address = hop;
-          source = "forwarded";
-        }
-      }
+    // Deployment ingress overwrites both headers and must block direct origin access.
+    const realIp = request.headers["x-real-ip"];
+    const realAddress = realIp === undefined ? undefined : normalizeAddress(realIp.trim());
+    const hops = forwarded?.split(",");
+    const addresses = hops?.map((hop) => normalizeAddress(hop.trim()));
+    const forwardedAddress =
+      hops && hops.length <= 32 && addresses?.every((hop) => hop !== undefined)
+        ? addresses[0]
+        : undefined;
+    const clientAddress = realAddress ?? forwardedAddress;
+    if (clientAddress !== undefined) {
+      address = clientAddress;
+      source = "forwarded";
     }
 
     // Effect's outer HTTP tracer retains the socket peer in client.address.
