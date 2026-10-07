@@ -100,6 +100,33 @@ layer(TestServerLayer)("email jobs", (it) => {
     }),
   );
 
+  it.effect("drains a backlog without leasing jobs it does not deliver", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const requested = yield* Effect.forEach([0, 1, 2, 3], (index) =>
+        enqueueMagicLink(client, testEmail(`backlog-${index}@example.com`)),
+      );
+      const jobs = yield* EmailJobs;
+      const repository = yield* Repository;
+      const emails = yield* TestEmails;
+
+      for (let delivered = 1; delivered <= requested.length; delivered += 1) {
+        expect(yield* jobs.processOnce).toBe(1);
+        const states = yield* Effect.forEach(requested, ({ job }) =>
+          repository.jobs.email.findById(job.id),
+        );
+        expect(states.filter((job) => job?.status === "sent")).toHaveLength(delivered);
+        expect(states.filter((job) => job?.status === "pending")).toHaveLength(
+          requested.length - delivered,
+        );
+        expect(states.filter((job) => job?.status === "processing")).toHaveLength(0);
+        expect(yield* emails.sent).toHaveLength(delivered);
+      }
+      expect(yield* jobs.processOnce).toBe(0);
+    }),
+  );
+
   it.effect("reschedules a transient provider failure and later delivers", () =>
     Effect.gen(function* () {
       yield* resetTestState();
