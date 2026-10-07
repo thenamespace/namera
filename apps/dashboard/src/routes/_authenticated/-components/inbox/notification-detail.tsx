@@ -509,6 +509,18 @@ export function CliAuthorizationRevokedNotificationDetail({
 }
 
 export function NotificationDetail({ item }: { readonly item: NotificationResponse }) {
+  if (isNotification(item, "auth.account-changed")) {
+    return (
+      <NotificationDetailLayout
+        item={item}
+        description={`Google was ${item.notification.data.action === "linked" ? "connected" : "disconnected"}. Email sign-in remains available. If you did not make this change, review your connected accounts and active sessions.`}
+      >
+        <Link to="/settings/security" className={buttonVariants({ variant: "secondary" })}>
+          Review security
+        </Link>
+      </NotificationDetailLayout>
+    );
+  }
   if (isNotification(item, "auth.new-sign-in")) {
     return <NewSignInNotificationDetail item={item} />;
   }

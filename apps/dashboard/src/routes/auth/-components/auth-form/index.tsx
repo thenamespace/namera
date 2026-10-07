@@ -1,4 +1,5 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { Typography } from "@namera-ai/ui";
 import { NameraIcon } from "@namera-ai/ui/icons";
 import { FormProvider, useForm } from "react-hook-form";
 import { useEventCallback, useStep } from "usehooks-ts";
@@ -16,10 +17,11 @@ const totalSteps = 3;
 
 type AuthFormProps = {
   invite?: string | undefined;
+  google?: string | undefined;
   returnTo?: EmailFormOutput["returnTo"];
 };
 
-export function AuthForm({ returnTo, invite }: AuthFormProps) {
+export function AuthForm({ returnTo, invite, google }: AuthFormProps) {
   const form = useForm<EmailFormInput, unknown, EmailFormOutput>({
     defaultValues: {
       email: "",
@@ -53,7 +55,7 @@ export function AuthForm({ returnTo, invite }: AuthFormProps) {
 
   const content =
     step === 1 ? (
-      <LoginOptions onContinueWithEmail={goToNextStep} />
+      <LoginOptions onContinueWithEmail={goToNextStep} returnTo={returnTo} invite={invite} />
     ) : step === 2 ? (
       <EmailEntry
         errorMessage={
@@ -76,6 +78,16 @@ export function AuthForm({ returnTo, invite }: AuthFormProps) {
     <FormProvider {...form}>
       <AuthShell stepKey={`auth-step-${step}`}>
         <NameraIcon aria-hidden="true" className="fill-foreground mx-auto mb-10 h-10 w-auto" />
+        {google ? (
+          <Typography.Paragraph aria-live="polite" className="mb-6" size="sm">
+            {
+              getErrorMessage(
+                { _tag: "GoogleAuthError", code: google },
+                { title: "Google sign-in incomplete" },
+              ).description
+            }
+          </Typography.Paragraph>
+        ) : null}
         {content}
       </AuthShell>
     </FormProvider>

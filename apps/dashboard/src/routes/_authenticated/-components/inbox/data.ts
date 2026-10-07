@@ -31,6 +31,12 @@ export const inboxGroupOptions = [
 ] as const;
 
 export const notificationPresentation = {
+  "auth.account-changed": {
+    group: "security",
+    icon: SecurityIcon,
+    title: "Google connection changed",
+    preview: "Your connected Google sign-in was updated.",
+  },
   "auth.new-sign-in": {
     group: "security",
     icon: SecurityIcon,

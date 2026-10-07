@@ -13,6 +13,51 @@ const networkPaused: FeedbackMessage = {
 };
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "GoogleAuthError:GOOGLE_NOT_CONFIGURED": {
+    title: "Google sign-in unavailable",
+    description: "Use email to sign in for now.",
+  },
+  "GoogleAuthError:GOOGLE_UNAVAILABLE": {
+    title: "Couldn’t reach Google",
+    description: "Try again shortly, or continue with email.",
+  },
+  "GoogleAuthError:GOOGLE_IDENTITY_INVALID": {
+    title: "Couldn’t verify Google sign-in",
+    description: "Start Google sign-in again, or continue with email.",
+  },
+  "GoogleAuthError:GOOGLE_FLOW_INVALID": {
+    title: "Google sign-in expired",
+    description:
+      "Start again in this browser. Only the most recent Google sign-in attempt can be completed.",
+  },
+  "GoogleAuthError:GOOGLE_CANCELED": {
+    title: "Google sign-in canceled",
+    description: "Try again when you’re ready, or continue with email.",
+  },
+  "GoogleAuthError:GOOGLE_ACCOUNT_EXISTS": {
+    title: "Sign in with email first",
+    description:
+      "An account already uses this email. Sign in with email, then connect Google in Security settings.",
+  },
+  "GoogleAuthError:GOOGLE_ALREADY_LINKED": {
+    title: "Google account already connected",
+    description:
+      "Disconnect the current Google account before connecting another. A Google account can only belong to one Namera user.",
+  },
+  "GoogleAuthError:GOOGLE_ACCOUNT_NOT_FOUND": {
+    title: "Google account no longer connected",
+    description: "Refresh Security settings to see your current connections.",
+  },
+  "GoogleAuthError:REAUTHENTICATION_REQUIRED": {
+    title: "Sign in again to continue",
+    description:
+      "For security, connecting or disconnecting Google requires a sign-in within the last 10 minutes.",
+  },
+  "GoogleAuthError:EMAIL_LOGIN_REQUIRED": {
+    title: "Confirm your email",
+    description:
+      "We sent a sign-in email to your Google email address. Open it to finish, or continue with email to enter the code.",
+  },
   "BetaInviteError:INVITE_REQUIRED_OR_UNAVAILABLE": {
     title: "Invite unavailable",
     description: "Check your invite code and email, or ask your teammate for a new invite.",
