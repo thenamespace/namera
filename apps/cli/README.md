@@ -134,8 +134,41 @@ and the session key. CLI actors use their device name; MCP actors use their
 client name. Human output reads execution details with bounded concurrency;
 JSON keeps the original paginated list response and IDs without extra requests.
 
-Commands prompt for inputs. For automation, pass `--params '<json>'` using the
-public request shape. Execution/signing requires an imported key, active grant,
+`execution status <submission-id>` uses the same account and transaction summary
+when confirmed, plus a colored status. Pending states read "Awaiting signature",
+"Queued", or "Pending confirmation", with a UserOp hash when available and a
+relevant next step. Failed submissions do not display a fabricated failure reason.
+JSON retains the original submission response; only confirmed human output makes
+the additional execution-details read.
+
+These four commands prompt only for missing inputs, in order: network type,
+wallet, session key, network, then transaction or signature details. Wallets are
+filtered by network type and session keys by wallet. Verification skips the
+session-key picker: it checks a wallet signature, not which key signed it.
+Use arrow keys and Enter to select, or Ctrl+C to cancel.
+
+```sh
+namera execution execute --namespace evm
+namera execution simulate --namespace evm --wallet <wallet-id> \
+  --session-key <key-id> --network Base --to <recipient-address> --value 0 --data 0x
+namera sign --namespace evm --wallet <wallet-id> --session-key <key-id> \
+  --network Base --type message --message 'Hello'
+namera verify-signature --namespace evm --wallet <wallet-id> --network Base \
+  --type message --message 'Hello' --signature <hex-signature>
+```
+
+Networks accept names, numeric chain IDs, or `eip155:<chain-id>`. Transaction
+values are **wei**, not ETH. Use `--type typed-data --typed-data '<json>'` for
+EIP-712. Execute additionally accepts `--sponsor true|false`.
+Every omitted input prompts in a terminal; JSON, quiet mode, and pipes instead
+return a missing-flag error. Individual flags require wallet/session-key read
+access to validate the selection. For batch calls or existing headless scripts,
+pass `--params '<json>'` using the public request shape; it retains its existing
+permission requirements. Do not mix `--params` with individual input flags.
+
+Human summaries use arrow rows, account/key names when selected interactively
+or with individual flags, and network names. JSON retains all response details.
+Execution/signing requires an imported key, active grant,
 and appropriate authority. Gas is sponsored by default. Self-funded operations
 also require `--max-gas-cost-wei <amount>`; MCP tools cannot raise that ceiling.
 

@@ -22,7 +22,9 @@ import { mcpStdio } from "#/services/mcp/stdio";
 import { localToolError } from "#/services/mcp/tool-errors";
 import { LocalMcpApiOrigin } from "#/services/mcp/transport-security";
 import { printValue } from "#/services/output";
-import { recordView } from "#/services/output/document";
+import { feedbackStyle } from "#/services/output/feedback";
+import { mcpLogoutView, mcpStatusView } from "#/services/output/mcp";
+import { nextText } from "#/services/output/style";
 import { resolveCliSessionSigner } from "#/services/session-keystore/index";
 
 const flags = {
@@ -41,7 +43,18 @@ const session = Effect.fn("Mcp.session")(function* (options: { host: string; pro
   const profile = yield* Schema.decodeUnknownEffect(McpProfile)(options.profile);
   return yield* Effect.acquireRelease(
     Effect.try(() =>
-      createMcpSession({ apiOrigin, profile, store: mcpCredentialStore(apiOrigin, profile) }),
+      createMcpSession({
+        apiOrigin,
+        profile,
+        store: mcpCredentialStore(apiOrigin, profile),
+        notify: (message) =>
+          process.stderr.write(
+            `${message
+              .split("\n")
+              .map((line) => (line ? nextText(line, feedbackStyle(process.stderr).colors) : ""))
+              .join("\n")}\n`,
+          ),
+      }),
     ),
     (value) => Effect.sync(() => value.close()),
   );
@@ -127,7 +140,7 @@ const login = Command.make(
         return feedback.code === "INTERNAL_ERROR" ? cliFailure("MCP_LOGIN_FAILED") : feedback;
       },
     });
-    yield* printValue(connection.status(), recordView("MCP connection"));
+    yield* printValue(connection.status(), mcpStatusView);
   }, Effect.scoped),
 ).pipe(Command.withDescription("Connect your AI agent to Namera in your browser"));
 const status = Command.make(
@@ -135,7 +148,7 @@ const status = Command.make(
   flags,
   Effect.fn("Mcp.status")(function* (options) {
     const connection = yield* session(options);
-    yield* printValue(yield* Effect.try(connection.status), recordView("MCP connection"));
+    yield* printValue(yield* Effect.try(connection.status), mcpStatusView);
   }, Effect.scoped),
 ).pipe(Command.withDescription("Show your saved agent connection status"));
 const logout = Command.make(
@@ -147,10 +160,7 @@ const logout = Command.make(
       try: connection.logout,
       catch: () => cliFailure("MCP_LOGOUT_FAILED"),
     });
-    yield* printValue(
-      { profile: options.profile, status: "signed-out" },
-      recordView("MCP signed out"),
-    );
+    yield* printValue({ profile: options.profile, status: "signed-out" }, mcpLogoutView);
   }, Effect.scoped),
 ).pipe(Command.withDescription("Disconnect your AI agent from Namera"));
 

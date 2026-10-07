@@ -184,7 +184,16 @@ const executionDetails = () => ({
 const server = createServer((request, response) => {
   response.setHeader("content-type", "application/json");
   if (request.url === "/executions") response.end(JSON.stringify(executionPage));
-  else if (request.url === `/executions/${wallet.id}`) {
+  else if (request.url === `/executions/submissions/${wallet.id}`) {
+    response.end(
+      JSON.stringify({
+        namespace: "eip155",
+        submissionId: wallet.id,
+        status: "confirmed",
+        execution: executionDetails().execution,
+      }),
+    );
+  } else if (request.url === `/executions/${wallet.id}`) {
     detailReads++;
     response.statusCode = failExecutionDetails ? 404 : 200;
     response.end(
@@ -256,6 +265,29 @@ const run = (args: string[]) =>
   });
 
 describe("execution list display", () => {
+  it("uses the same summary for confirmed status and preserves JSON", async () => {
+    executionActor = apiActor;
+    detailReads = 0;
+    const { stdout } = await run(["execution", "status", wallet.id]);
+    expect(stdout).toContain("-> Account: 💳 Output test wallet");
+    expect(stdout).toContain("-> Status: Confirmed");
+    expect(stdout).toContain(`Transaction Hash: ${transactionHash}`);
+    expect(stdout).toContain(`UserOp Hash: ${userOperationHash}`);
+    expect(stdout).toContain("Network: Base");
+    expect(stdout).toContain("Actor: Trading bot (API Key)");
+    expect(stdout).toContain("Session key: Trading key");
+    expect(stdout).not.toContain(wallet.id);
+    expect(stdout).not.toContain("eip155");
+    expect(detailReads).toBe(1);
+    const json = await run(["--output", "json", "execution", "status", wallet.id]);
+    expect(JSON.parse(json.stdout)).toMatchObject({
+      status: "confirmed",
+      submissionId: wallet.id,
+      execution: { id: wallet.id },
+    });
+    expect((await run(["--quiet", "execution", "status", wallet.id])).stdout).toBe("");
+    expect(detailReads).toBe(1);
+  });
   it.each([
     [apiActor, "Trading bot (API Key)"],
     [oauthActor("cli"), "Work laptop (CLI)"],
@@ -264,6 +296,7 @@ describe("execution list display", () => {
   ])("shows human execution details for %j", async (actor, label) => {
     executionActor = actor;
     const { stdout } = await run(["execution", "list"]);
+    expect(stdout).toContain("-> Account: 💳 Output test wallet");
     expect(stdout).toContain(`Transaction Hash: ${transactionHash}`);
     expect(stdout).toContain(`UserOp Hash: ${userOperationHash}`);
     expect(stdout).toContain("Network: Base");

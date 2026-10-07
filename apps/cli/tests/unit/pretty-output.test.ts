@@ -249,7 +249,8 @@ describe("command-specific pretty output", () => {
       userOperationHash: null,
     });
     const text = executionStatusView(pending, false);
-    expect(text).toContain("Status: Prepared");
+    expect(text).toContain("-> Status: Queued");
+    expect(text).not.toContain("Submission ID");
     expect(text).toContain("Not confirmed yet.");
     expect(text).toContain(`namera execution status ${wallet.id}`);
     const failed = Schema.decodeUnknownSync(GetExecutionSubmissionResponse)({
@@ -257,8 +258,33 @@ describe("command-specific pretty output", () => {
       submissionId: wallet.id,
       status: "failed",
     });
-    expect(executionStatusView(failed, false)).toContain("Execution failed");
+    expect(executionStatusView(failed, false)).toContain("-> Status: Failed");
     expect(executionStatusView(failed, false)).not.toContain("Check again");
+  });
+
+  it("distinguishes unsigned and submitted operations without internal IDs", () => {
+    const hash = `0x${"aa".repeat(32)}`;
+    for (const status of ["reserved", "submitted"] as const) {
+      const response = Schema.decodeUnknownSync(GetExecutionSubmissionResponse)({
+        namespace: "eip155",
+        submissionId: wallet.id,
+        status,
+        userOperationHash: hash,
+      });
+      const text = executionStatusView(response, false);
+      expect(text).toContain(`UserOp Hash: ${hash}`);
+      expect(text).not.toContain("Submission ID");
+      expect(text).not.toContain("Transaction Hash");
+      if (status === "reserved") {
+        expect(text).toContain("-> Status: Awaiting signature");
+        expect(text).toContain("Complete signing");
+        expect(text).not.toContain("Check again");
+      } else {
+        expect(text).toContain("-> Status: Pending confirmation");
+        expect(text).toContain("Check again");
+      }
+      expect(executionStatusView(response, true)).toContain("\u001b[33m");
+    }
   });
 
   it("makes invalid signatures unambiguous", () => {
@@ -270,7 +296,11 @@ describe("command-specific pretty output", () => {
       type: "message",
       valid: false,
     });
-    expect(verificationView(result, false)).toContain("Signature invalid\n  Valid: No");
+    const text = verificationView(result, false);
+    expect(text).toContain("Signature invalid\n-> Account:");
+    expect(text).toContain("-> Network: Ethereum");
+    expect(text).toContain("Check the wallet, network, original message");
+    expect(text).not.toContain("Wallet ID");
   });
 
   it("renders dates and exact amounts without exposing DateTime internals", () => {

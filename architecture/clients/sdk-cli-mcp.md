@@ -71,8 +71,15 @@ supports headless automation.
 
 Commands cover login/logout/status, wallet and session-key reads, execution
 simulation/submit/status/history, signing, and verification. Complex operations
-accept schema-decoded inline `--params` JSON or use reusable typed interactive
-prompts. No request-file input exists.
+accept schema-decoded inline `--params` JSON or optional individual flags with
+typed prompts for missing fields. Selectors resolve namespace, wallet, and
+wallet-scoped session key before collecting the operation payload; supplied IDs
+are read back and checked for wallet/namespace mismatches. This path needs read
+scopes. Legacy `--params` keeps its existing transport-only permissions and batch
+support, and cannot be mixed with individual payload flags. JSON/quiet/non-TTY
+commands fail on missing inputs rather than opening prompts. Verification omits
+session-key selection because the API verifies the wallet signature. No
+request-file input exists.
 
 `session-key import` installs encrypted local signing material with a hidden
 passphrase prompt and OS-keyring-backed unlock, without requiring login.
@@ -95,6 +102,9 @@ Human execution lists expand the current page through `executions.get`, with
 four concurrent reads at most, to show UserOp hashes and actor names. They retain
 list order and the original next-page cursor. JSON and quiet mode skip detail
 reads. Detail failures use normal command error handling, never fabricated names.
+Confirmed human submission status uses the same details read and presentation,
+with a colored status. Pending/failed output stays submission-only with actionable
+labels and no internal ID fields; JSON and quiet status skip expansion.
 Authorization summaries resolve wallet names through grant-scoped wallet reads
 only in pretty mode with wallet-read scope. They group keys by wallet ID, translate
 scope labels, and retain raw IDs/scopes in JSON. With session-key-read scope,
@@ -105,7 +115,10 @@ Section titles, account names, and key names have distinct terminal styles.
 Login instructions go to stderr
 so successful JSON stdout remains one document. Login/logout successes use green
 feedback and blue next steps; logout still only removes local CLI credentials.
-MCP stdio remains untouched. `--quiet` suppresses normal stdout. Development defaults to
+MCP login/status/logout have typed human summaries, readable permissions, and
+automatic-refresh versus reconnect guidance. Browser authorization instructions
+stay on stderr; JSON response shapes and MCP protocol stdout remain unchanged.
+`--quiet` suppresses normal stdout. Development defaults to
 `http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
 
 Command failures use a CLI-owned feedback catalog with stable codes, concise
