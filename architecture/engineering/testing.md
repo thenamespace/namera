@@ -175,7 +175,9 @@ They allow up to 60 seconds for cold startup on shared runners, where other
 packages run concurrently. Outer test deadlines allow subprocess cleanup, while
 post-start MCP request and shutdown deadlines remain short. Command failures
 include the exit code, signal, and captured output to distinguish startup timeouts
-from application errors. These tests assert behavior, not startup performance.
+from application errors. Command-output tests also terminate and await unfinished
+subprocesses at test teardown, so a timeout cannot leak requests into the next
+test's HTTP fixture. These tests assert behavior, not startup performance.
 
 The CLI's opt-in `NAMERA_TEST_OS_KEYRING=1` test exercises its actual encrypted
 session storage with `@napi-rs/keyring`, a random credential-service namespace,
