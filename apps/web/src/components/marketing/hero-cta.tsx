@@ -18,7 +18,10 @@ import {
  * Namera opens. Kept compact and left-aligned so it sits under the sentence
  * without competing with the product window below it.
  */
-export const HeroCta = () => {
+export const HeroCta = ({ idPrefix = "hero-waitlist" }: { idPrefix?: string }) => {
+  const formId = `${idPrefix}-form`;
+  const emailId = `${idPrefix}-email`;
+  const errorId = `${emailId}-error`;
   const [joinedEmail, setJoinedEmail] = useState<string>();
   const [error, setError] = useState<string>();
 
@@ -36,7 +39,7 @@ export const HeroCta = () => {
         </output>
       ) : (
         <form
-          id="hero-waitlist-form"
+          id={formId}
           noValidate
           onSubmit={form.handleSubmit((payload) => {
             setError(undefined);
@@ -49,7 +52,7 @@ export const HeroCta = () => {
             aria-label="Join the waitlist"
             className={
               cn(
-                "edge-top flex h-auto w-full flex-col items-stretch gap-1 rounded-[18px] border-1 border-hairline-strong sm:flex-row sm:items-center",
+                "edge-top flex h-auto w-full flex-row items-center gap-1 rounded-[18px] border-1 border-hairline-strong",
                 "bg-surface/80 p-1 backdrop-blur-sm",
                 "transition-colors duration-150 ease-out-quad",
                 "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus/60",
@@ -61,12 +64,12 @@ export const HeroCta = () => {
               name="email"
               render={({ field, fieldState }) => (
                 <Field className="min-w-0 flex-1">
-                  <FieldLabel htmlFor="hero-waitlist-email" className="sr-only">
+                  <FieldLabel htmlFor={emailId} className="sr-only">
                     Email address
                   </FieldLabel>
                   <InputGroup.Input
                     {...field}
-                    id="hero-waitlist-email"
+                    id={emailId}
                     type="email"
                     autoComplete="email"
                     autoCapitalize="none"
@@ -75,7 +78,7 @@ export const HeroCta = () => {
                     maxLength={254}
                     disabled={join.isPending}
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "hero-waitlist-email-error" : undefined}
+                    aria-describedby={fieldState.invalid ? errorId : undefined}
                     onChange={(event) => {
                       field.onChange(event);
                       setError(undefined);
@@ -86,13 +89,13 @@ export const HeroCta = () => {
               )}
             />
             <Button
-              form="hero-waitlist-form"
+              form={formId}
               type="submit"
               size="sm"
               isDisabled={join.isPending}
               className={
                 cn(
-                  "group/join inline-flex h-11 w-full shrink-0 items-center gap-2 rounded-[14px] px-4 sm:w-auto",
+                  "group/join inline-flex h-11 w-auto shrink-0 items-center gap-1.5 rounded-[14px] px-2 sm:gap-2 sm:px-4",
                   "bg-button-light text-sm font-medium text-button-light-foreground",
                   "transition-[background-color,transform] duration-150 ease-out-quad",
                   "hover:bg-white active:scale-[0.98]",
@@ -111,7 +114,7 @@ export const HeroCta = () => {
           </InputGroup>
 
           <FieldError
-            id="hero-waitlist-email-error"
+            id={errorId}
             errors={
               form.formState.errors.email ? [{ message: "Enter a valid email address." }] : []
             }

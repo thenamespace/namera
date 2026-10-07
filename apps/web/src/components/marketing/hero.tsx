@@ -1,4 +1,5 @@
 import { HeroCta } from "#/components/marketing/hero-cta";
+import { finishHeroEntrance } from "#/components/marketing/hero-entrance";
 import { HeroObject } from "#/components/marketing/hero-object";
 import { Container } from "#/components/marketing/primitives";
 import { SITE } from "#/lib/seo";
@@ -27,14 +28,18 @@ export const Hero = () => {
           >
             {SITE.heroDescription}
           </p>
-          <div data-hero-cta>
+          <div data-hero-cta onFocusCapture={(event) => finishHeroEntrance(event.currentTarget)}>
             <HeroCta />
           </div>
         </div>
       </Container>
 
       <Container className="mt-16 md:mt-20">
-        <div data-hero-preview className="relative origin-bottom pb-28 sm:pb-36 lg:pb-44">
+        <div
+          data-hero-preview
+          onFocusCapture={(event) => finishHeroEntrance(event.currentTarget)}
+          className="relative origin-bottom pb-28 sm:pb-36 lg:pb-44"
+        >
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-[-6%] inset-y-0 -z-10 overflow-hidden"
