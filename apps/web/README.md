@@ -251,6 +251,9 @@ through an upward blur/fade, supporting copy starts at 250ms, the CTA at 550ms, 
 dashboard preview follows at 1050ms. The full entrance settles at 2350ms.
 Reduced-motion users see the final state immediately. Server HTML remains
 available without JavaScript, and the hero does not use the scroll-reveal classes.
+Focusing the waitlist form or dashboard preview finishes its wrapper's entrance
+without removing the CSS animation, so clicking or tabbing out cannot replay it.
+Animations inside the interactive preview are unaffected.
 
 The hero stage uses `/hero-bg-poster.jpg`, a static smoke frame masked around
 the dashboard. It does not download or play a video and needs no playback
