@@ -101,6 +101,10 @@ verify browser hardware or live bundlers.
 - Use Effect's test clock for expiry, cooldown, leases, and retries; never sleep.
 - Do not run continuous workers in route tests. Invoke one deterministic worker
   iteration.
+- Queue regressions check every remaining row after a claim, not just the
+  delivered message. The email backlog test also seeds one-row planner statistics
+  before enqueueing more work, reproducing over-claiming without waiting for
+  PostgreSQL autovacuum or relying on suite order.
 - Keep rate-limit assertions in focused suites because the in-memory store is
   scoped to the test Layer rather than the database reset.
 
@@ -147,15 +151,22 @@ closed, not used to create test history.
 
 ### Continuous integration
 
-The manually dispatched CI workflow runs two independent jobs:
+The manually dispatched CI workflow runs independent check and test jobs:
 
-- `check`: formatting, lint, type checks, builds, all package tests except
-  `@namera-ai/server`, and package publication smoke tests.
+- `check`: formatting, lint, type checks, builds, and package publication smoke tests.
+- `tests (cli)`: CLI tests on their own runner, so cold subprocess startup does
+  not compete with other packages' database initialization or builds.
+- `tests (packages)`: all other package tests except `@namera-ai/server`.
+  Both test groups cap Turbo at two tasks and Vitest at two workers per package.
+  A failed group does not cancel another group's diagnostics.
 - `postgres`: the complete server test suite against disposable PostgreSQL,
   including the PostgreSQL-only concurrency cases. It runs directly through
-  pnpm on every invocation, without caching test results.
+  pnpm on every invocation, without caching test results. File and test order
+  are shuffled using the workflow run number as the seed. Reproduce an order
+  locally by appending `--sequence.shuffle --sequence.seed=<seed>` to the server
+  test command; Vitest prints the seed at startup.
 
-The server suite is not repeated with PGlite in `check`. Local `pnpm test`
+The server suite is not repeated with PGlite in the package group. Local `pnpm test`
 still includes it; database-package PGlite tests also remain in CI.
 
 The `check` job persists `.turbo/cache` through GitHub Actions cache, keyed by runner
@@ -171,7 +182,9 @@ They allow up to 60 seconds for cold startup on shared runners, where other
 packages run concurrently. Outer test deadlines allow subprocess cleanup, while
 post-start MCP request and shutdown deadlines remain short. Command failures
 include the exit code, signal, and captured output to distinguish startup timeouts
-from application errors. These tests assert behavior, not startup performance.
+from application errors. Command-output tests also terminate and await unfinished
+subprocesses at test teardown, so a timeout cannot leak requests into the next
+test's HTTP fixture. These tests assert behavior, not startup performance.
 
 The CLI's opt-in `NAMERA_TEST_OS_KEYRING=1` test exercises its actual encrypted
 session storage with `@napi-rs/keyring`, a random credential-service namespace,

@@ -2,7 +2,7 @@ import { expect, layer } from "@effect/vitest";
 import { DateTime, Duration, Effect, Metric } from "effect";
 import { TestClock } from "effect/testing";
 
-import { Repository } from "@namera-ai/database";
+import { Database, Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import { emailJobDeliveryResults, workerBacklog, workerOldestAge } from "@namera-ai/telemetry";
 
@@ -97,6 +97,39 @@ layer(TestServerLayer)("email jobs", (it) => {
       const second = yield* jobs.enqueue(input);
 
       expect(second.id).toBe(first.id);
+    }),
+  );
+
+  it.effect("drains a backlog without over-claiming when table statistics lag", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const jobs = yield* EmailJobs;
+      const repository = yield* Repository;
+      const emails = yield* TestEmails;
+      yield* enqueueMagicLink(client, testEmail("backlog-warmup@example.com"));
+      expect(yield* jobs.processOnce).toBe(1);
+      // Statistics for one terminal row reproduce PostgreSQL's nested-loop
+      // semi-join plan once new jobs arrive, without relying on autovacuum timing.
+      yield* (yield* Database).execute("ANALYZE jobs.email_jobs");
+      yield* emails.clear;
+      const requested = yield* Effect.forEach([0, 1], (index) =>
+        enqueueMagicLink(client, testEmail(`backlog-${index}@example.com`)),
+      );
+
+      for (let delivered = 1; delivered <= requested.length; delivered += 1) {
+        expect(yield* jobs.processOnce).toBe(1);
+        const states = yield* Effect.forEach(requested, ({ job }) =>
+          repository.jobs.email.findById(job.id),
+        );
+        expect(states.filter((job) => job?.status === "sent")).toHaveLength(delivered);
+        expect(states.filter((job) => job?.status === "pending")).toHaveLength(
+          requested.length - delivered,
+        );
+        expect(states.filter((job) => job?.status === "processing")).toHaveLength(0);
+        expect(yield* emails.sent).toHaveLength(delivered);
+      }
+      expect(yield* jobs.processOnce).toBe(0);
     }),
   );
 

@@ -203,8 +203,9 @@ layer(executionFixture.layer)("execution read routes", (it) => {
           new Set([...firstPage.items, ...secondPage.items].map(({ details }) => details.id)).size,
         ).toBe(51);
       }),
-    // Builds a full page through 51 real HTTP prepare/complete/worker journeys.
-    { timeout: 30_000 },
+    // Builds 51 real HTTP prepare/complete/worker journeys. Allow shared-runner
+    // contention without increasing deadlines for ordinary route tests.
+    { timeout: 60_000 },
   );
 
   it.effect(

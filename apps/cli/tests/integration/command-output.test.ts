@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { promisify } from "node:util";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 const execute = promisify(execFile);
 const wallet = {
@@ -235,8 +235,8 @@ afterAll(async () => {
   );
 });
 
-const run = (args: string[]) =>
-  execute(
+const run = (args: string[]) => {
+  const command = execute(
     process.execPath,
     ["--conditions=namera-source", "--import", "tsx", "src/index.ts", ...args],
     {
@@ -249,7 +249,15 @@ const run = (args: string[]) =>
       },
       timeout: 60_000,
     },
-  ).catch((error: unknown) => {
+  );
+  onTestFinished(async () => {
+    // A timed-out test must not leave a child calling the next test's HTTP fixture.
+    if (command.child.exitCode === null && command.child.signalCode === null) {
+      command.child.kill("SIGKILL");
+    }
+    await command.catch(() => undefined);
+  });
+  return command.catch((error: unknown) => {
     if (!(error instanceof Error)) throw error;
     const failure = error as Error & {
       code?: string | number;
@@ -263,8 +271,9 @@ const run = (args: string[]) =>
       { cause: error },
     );
   });
+};
 
-describe("execution list display", () => {
+describe("execution list display", { timeout: 65_000 }, () => {
   it("uses the same summary for confirmed status and preserves JSON", async () => {
     executionActor = apiActor;
     detailReads = 0;

@@ -39,7 +39,13 @@ export const requestMagicLink = Effect.fn("server.requestMagicLink")(function* (
     );
   }
   if (sent === undefined || sent.type !== "magic-link") {
-    return yield* Effect.die("Expected a magic-link email for the requested recipient");
+    const repository = yield* Repository;
+    const job = yield* repository.jobs.email.findById(requested.job.id);
+    return yield* Effect.die(
+      `Expected a magic-link delivery: status=${job?.status}, attempts=${job?.attempts}, ` +
+        `error=${job?.lastErrorCode}, availableAt=${job && DateTime.formatIso(job.availableAt)}, ` +
+        `now=${DateTime.formatIso(yield* DateTime.now)}`,
+    );
   }
 
   const url = new URL(sent.variables.magicLinkUrl);
