@@ -101,6 +101,10 @@ verify browser hardware or live bundlers.
 - Use Effect's test clock for expiry, cooldown, leases, and retries; never sleep.
 - Do not run continuous workers in route tests. Invoke one deterministic worker
   iteration.
+- Queue regressions check every remaining row after a claim, not just the
+  delivered message. The email backlog test also seeds one-row planner statistics
+  before enqueueing more work, reproducing over-claiming without waiting for
+  PostgreSQL autovacuum or relying on suite order.
 - Keep rate-limit assertions in focused suites because the in-memory store is
   scoped to the test Layer rather than the database reset.
 
@@ -157,7 +161,10 @@ The manually dispatched CI workflow runs independent check and test jobs:
   A failed group does not cancel another group's diagnostics.
 - `postgres`: the complete server test suite against disposable PostgreSQL,
   including the PostgreSQL-only concurrency cases. It runs directly through
-  pnpm on every invocation, without caching test results.
+  pnpm on every invocation, without caching test results. File and test order
+  are shuffled using the workflow run number as the seed. Reproduce an order
+  locally by appending `--sequence.shuffle --sequence.seed=<seed>` to the server
+  test command; Vitest prints the seed at startup.
 
 The server suite is not repeated with PGlite in the package group. Local `pnpm test`
 still includes it; database-package PGlite tests also remain in CI.

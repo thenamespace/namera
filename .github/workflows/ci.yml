@@ -60,6 +60,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm --filter @namera-ai/server... build
-      - run: pnpm --filter @namera-ai/server test
+      - name: Test PostgreSQL with reproducible shuffled order
+        run: pnpm --filter @namera-ai/server test --sequence.shuffle --sequence.seed=${{ github.run_number }}
         env:
           NAMERA_TEST_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
