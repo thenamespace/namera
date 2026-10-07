@@ -13,12 +13,12 @@
   ],
   "homepage": "https://namera.ai",
   "bugs": {
-    "url": "https://github.com/thenamespace/namera-core/issues"
+    "url": "https://github.com/thenamespace/namera/issues"
   },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thenamespace/namera-core.git",
+    "url": "git+https://github.com/thenamespace/namera.git",
     "directory": "apps/cli"
   },
   "bin": {

@@ -238,8 +238,8 @@ Keychain integration is tested; Windows/Linux still need platform verification.
 Headless Linux needs an accessible Secret Service/keyring. There is no plaintext
 or in-memory fallback.
 
-See [local MCP](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-mcp.md)
-and [key storage](https://github.com/thenamespace/namera-core/blob/main/architecture/clients/local-keystore.md).
+See [local MCP](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-mcp.md)
+and [key storage](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-keystore.md).
 The four public packages share a release version starting with 1.0.0.
 
 The CLI includes an npm shrinkwrap to keep its tested runtime dependencies together.
