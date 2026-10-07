@@ -25,6 +25,11 @@ const provider = googleIdentityTestLayer({
     name: "Alice",
   },
   bob: { subject: "google-bob", email: testEmail("bob@gmail.com"), emailAuthoritative: true },
+  anotherAlice: {
+    subject: "google-another-alice",
+    email: testEmail("alice@gmail.com"),
+    emailAuthoritative: true,
+  },
   external: {
     subject: "google-external",
     email: testEmail("external@example.com"),
@@ -173,13 +178,34 @@ layer(GoogleLayer)("Google authentication", (it) => {
       expect((yield* callback(expired).pipe(Effect.flip)).code).toBe("GOOGLE_FLOW_INVALID");
     }),
   );
-  it.effect("does not automatically connect a matching existing email", () =>
+  it.effect("automatically links a matching email account and preserves its identity", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* clientWithOrigin;
       const existing = yield* signIn(client, testEmail("alice@gmail.com"));
-      expect((yield* callback(yield* start).pipe(Effect.flip)).code).toBe("GOOGLE_ACCOUNT_EXISTS");
-      expect(yield* (yield* Repository).auth.account.list(existing.actor.user.id)).toHaveLength(0);
+      yield* setAuthToken();
+      const completed = yield* callback(yield* start);
+      if (!("sessionToken" in completed)) return yield* Effect.die("Missing Google session");
+      yield* setAuthToken(completed.sessionToken);
+      const current = yield* client.session.currentUser();
+      expect(current.user.id).toBe(existing.actor.user.id);
+      expect(current.session.activeOrganizationId).toBe(
+        existing.actor.session.activeOrganizationId,
+      );
+      const repository = yield* Repository;
+      expect((yield* repository.auth.account.findGoogle("google-alice"))?.userId).toBe(
+        existing.actor.user.id,
+      );
+      yield* callback(yield* start);
+      expect(
+        (yield* repository.audit.user.findForUser(existing.actor.user.id)).filter(
+          (event) => event.event === "user.account_linked",
+        ),
+      ).toHaveLength(1);
+      expect((yield* callback(yield* start, "anotherAlice").pipe(Effect.flip)).code).toBe(
+        "GOOGLE_ALREADY_LINKED",
+      );
+      expect(yield* repository.auth.account.findGoogle("google-another-alice")).toBeUndefined();
     }),
   );
   it.effect("explicit linking binds the initiating session; unlink preserves email access", () =>
@@ -254,6 +280,38 @@ layer(GoogleLayer)("Google authentication", (it) => {
       expect(yield* (yield* Repository).auth.account.findGoogle("google-external")).toBeDefined();
     }),
   );
+  it.effect("requires mailbox proof before automatically linking a third-party email account", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* clientWithOrigin;
+      const existing = yield* signIn(client, testEmail("external@example.com"));
+      yield* setAuthToken();
+      yield* TestClock.adjust(Duration.minutes(2));
+      expect((yield* callback(yield* start, "external")).returnTo).toBe(
+        "/auth?google=EMAIL_LOGIN_REQUIRED",
+      );
+      const repository = yield* Repository;
+      expect(yield* repository.auth.account.findGoogle("google-external")).toBeUndefined();
+      while ((yield* (yield* EmailJobs).processOnce) > 0) {}
+      const mails = yield* (yield* TestEmails).sent;
+      const mail = mails.findLast((email) => email.type === "magic-link");
+      if (!mail || mail.type !== "magic-link") return yield* Effect.die("Missing email proof");
+      const url = new URL(mail.variables.magicLinkUrl);
+      const response = yield* client.magicLink.verify({
+        payload: {
+          type: "token",
+          id: Schema.decodeSync(VerificationId)(url.searchParams.get("id") ?? ""),
+          token: Schema.decodeSync(MagicLinkToken)(url.searchParams.get("token") ?? ""),
+        },
+        responseMode: "response-only",
+      });
+      yield* setAuthToken(response.cookies.cookies["auth-token"]?.value);
+      expect((yield* repository.auth.account.findGoogle("google-external"))?.userId).toBe(
+        existing.actor.user.id,
+      );
+      expect((yield* client.session.currentUser()).user.id).toBe(existing.actor.user.id);
+    }),
+  );
   it.effect("redirects the actual callback without leaking OAuth credentials", () =>
     Effect.gen(function* () {
       yield* resetTestState();
@@ -297,6 +355,21 @@ const GoogleBetaLayer = makeTestServerLayer(
   provider,
 );
 layer(GoogleBetaLayer)("Google beta admission", (it) => {
+  it.effect("signs an existing email user in through Google without another invite", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const repository = yield* Repository;
+      const existing = yield* repository.auth.user.create({
+        email: testEmail("alice@gmail.com"),
+        metadata: { version: 1 },
+      });
+      if (!existing) return yield* Effect.die("Missing existing user");
+      const completed = yield* callback(yield* start);
+      expect("sessionToken" in completed).toBe(true);
+      expect("admissionToken" in completed).toBe(false);
+      expect((yield* repository.auth.account.findGoogle("google-alice"))?.userId).toBe(existing.id);
+    }),
+  );
   it.effect(
     "creates no user before an invite and preserves Google identity through redemption",
     () =>
@@ -327,7 +400,7 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         expect(yield* repository.auth.account.findGoogle("google-alice")).toBeDefined();
       }),
   );
-  it.effect("does not auto-link if an email account appears after Google beta proof", () =>
+  it.effect("auto-links an email account appearing after authoritative Google beta proof", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const pending = yield* callback(yield* start);
@@ -349,8 +422,8 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         payload: { inviteCode: invite.code },
         responseMode: "response-only",
       });
-      expect(response.status).toBe(400);
-      expect(yield* repository.auth.account.findGoogle("google-alice")).toBeUndefined();
+      expect(response.status).toBe(200);
+      expect(yield* repository.auth.account.findGoogle("google-alice")).toBeDefined();
     }),
   );
 });

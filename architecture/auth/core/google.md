@@ -24,8 +24,11 @@ profile` is requested; no offline access or Google API access is retained.
 - `auth.account` binds Google's stable `sub` to one Namera user with provider
   `google`. Email is presentation data, never the provider identifier. Provider
   access/refresh/ID tokens and passwords remain null.
-- A new Google subject whose email already belongs to a Namera user **does not
-  automatically link**. Sign in through email and connect Google in Security.
+- A new Google subject automatically links to the existing Namera user with the
+  same email when Google authoritatively verifies mailbox ownership (Gmail or
+  verified Workspace). It preserves the user, workspaces and wallet access;
+  an existing user does not need another beta invite. A different Google subject
+  already connected to that user is never replaced.
 - New Gmail and verified Workspace identities can enter the normal beta-invite
   gate. For other Google email domains, an existing magic-link email challenge
   must prove mailbox ownership before a binding is created. Google documents
@@ -33,8 +36,8 @@ profile` is requested; no offline access or Google API access is retained.
 - Verified new users without an invite receive only the existing restricted
   beta-signup cookie. No user, workspace, session or sign-in audit is created
   until invite redemption. Provider identity travels in the trusted challenge,
-  never in a browser payload. A matching-email race cannot turn beta admission
-  into an automatic account link.
+  never in a browser payload. If an email account appears during beta admission,
+  linking still requires authoritative Google proof or completed mailbox proof.
 - Successful sign-in uses the shared email/Google completion workflow: user and
   workspace initialization, beta admission, session, audit and notification.
 
@@ -84,6 +87,6 @@ callback query strings. Logs and metric attributes contain no emails or subjects
 Apply the generated additive migration through normal startup. Provider tests
 verify signatures, issuer, audience, authorized party, expiry and mandatory
 claims. Server boundary tests exercise browser/state/nonce/replay validation,
-explicit linking, email conflicts, recent authentication, email proof, redirect
+automatic and explicit linking, identity conflicts, recent authentication, email proof, redirect
 cookies and unchanged email authentication. Live Google consent and production
 cookie behavior must be checked using the configured OAuth client before launch.

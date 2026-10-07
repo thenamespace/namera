@@ -157,6 +157,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
           if (
             existingUser &&
             verification.data.googleIdentity &&
+            !verification.data.googleIdentity.emailAuthoritative &&
             !verification.data.googleEmailConfirmed
           ) {
             const binding = yield* repository.auth.account.findGoogle(

@@ -203,8 +203,6 @@ export const makeGoogleApplication = Effect.gen(function* () {
       }
 
       const binding = yield* repository.auth.account.findGoogle(identity.subject);
-      if (!binding && (yield* repository.auth.user.findByEmail(identity.email)))
-        return yield* new GoogleAuthError({ code: "GOOGLE_ACCOUNT_EXISTS" });
       if (!binding && !identity.emailAuthoritative) {
         yield* requestMagicLink.request(
           {
@@ -224,8 +222,14 @@ export const makeGoogleApplication = Effect.gen(function* () {
           const currentBinding = yield* repository.auth.account.findGoogle(identity.subject);
           if (binding && (!currentBinding || currentBinding.userId !== binding.userId))
             return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+          // Only Google's authoritative mailbox proof may select an existing user by email.
+          const existingUser = currentBinding
+            ? yield* repository.auth.user.findById(currentBinding.userId)
+            : yield* repository.auth.user.findByEmail(identity.email);
+          if (!currentBinding && existingUser)
+            yield* repository.auth.account.lockUser(existingUser.id);
           const invite =
-            !currentBinding && flow.data.inviteCode
+            !existingUser && flow.data.inviteCode
               ? yield* repository.auth.betaInvite.findByHmac(
                   yield* crypto.hmac({
                     purpose: cryptoPurpose.betaInvite,
@@ -240,7 +244,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
             lockedInvite && (lockedInvite.email === null || lockedInvite.email === identity.email)
               ? lockedInvite
               : undefined;
-          if (!currentBinding && config.inviteRequired && !usableInvite) {
+          if (!existingUser && config.inviteRequired && !usableInvite) {
             const token = yield* crypto.randomToken(32);
             yield* repository.auth.verification.revokePending({
               purpose: "beta-admission",
@@ -264,7 +268,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
           const completed = yield* completeSignIn({
             email: identity.email,
             method: "google",
-            ...(currentBinding ? { userId: currentBinding.userId } : {}),
+            ...(existingUser ? { userId: existingUser.id } : {}),
             identity,
             ...context,
           });
