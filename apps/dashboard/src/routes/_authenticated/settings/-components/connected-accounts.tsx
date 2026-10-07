@@ -98,7 +98,10 @@ export function ConnectedAccounts({
       ) : accounts.isLoading && !accounts.data ? (
         <DataLoading label="Loading connected accounts" />
       ) : (
-        <ItemCard variant="default" className="min-h-16 rounded-lg border flex-wrap sm:flex-nowrap">
+        <ItemCard
+          variant="default"
+          className="group min-h-16 rounded-lg border flex-wrap sm:flex-nowrap"
+        >
           <ItemCard.Icon>
             <BrandGoogleIcon aria-hidden="true" className="size-5" />
           </ItemCard.Icon>
@@ -117,7 +120,12 @@ export function ConnectedAccounts({
           </ItemCard.Content>
           <ItemCard.Action>
             {accounts.data?.[0] ? (
-              <Button variant="danger-soft" size="sm" onPress={requestDisconnect}>
+              <Button
+                className="opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100"
+                variant="danger-soft"
+                size="sm"
+                onPress={requestDisconnect}
+              >
                 Disconnect
               </Button>
             ) : configuration.data?.enabled ? (
