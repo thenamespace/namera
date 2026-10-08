@@ -50,12 +50,32 @@ export const CorsMiddleware = Layer.unwrap(
       credentials: true,
       maxAge: 86400,
     });
+    const signInCors = HttpMiddleware.cors({
+      allowedOrigins: [
+        config.corsOrigin,
+        ...Option.toArray(config.adminOrigin).map((url) => url.origin),
+      ],
+      allowedMethods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "B3", "Traceparent", "Tracestate", "Baggage"],
+      credentials: true,
+      maxAge: 86400,
+    });
 
     return HttpRouter.middleware(
       (httpEffect) =>
         Effect.gen(function* () {
           const request = yield* HttpServerRequest.HttpServerRequest;
           const path = new URL(request.url, "http://localhost").pathname;
+          if (
+            [
+              "/auth/google/configuration",
+              "/auth/google/start",
+              "/auth/magic-link/request",
+              "/auth/magic-link/verify",
+              "/auth/session/logout",
+            ].includes(path)
+          )
+            return yield* signInCors(httpEffect);
           if (path === "/waitlist" && (request.method === "POST" || request.method === "OPTIONS")) {
             return yield* waitlistCors(httpEffect);
           }

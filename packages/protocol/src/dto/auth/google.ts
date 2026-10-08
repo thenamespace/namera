@@ -5,6 +5,7 @@ import { AccountId, ApplicationRelativePath, Email } from "#/common/index";
 import { BetaInviteCode } from "./beta-invite.js";
 
 export const StartGoogleSignInRequest = Schema.Struct({
+  surface: Schema.optionalKey(Schema.Literal("admin")),
   returnTo: Schema.optionalKey(ApplicationRelativePath),
   inviteCode: Schema.optionalKey(BetaInviteCode),
 });

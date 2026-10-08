@@ -12,6 +12,7 @@ export const GoogleIdentity = Schema.Struct({
 export type GoogleIdentity = typeof GoogleIdentity.Type;
 
 export const GoogleVerificationData = Schema.Struct({
+  surface: Schema.optionalKey(Schema.Literal("admin")),
   version: Schema.Literal(1),
   intent: Schema.Literals(["sign-in", "link"]),
   nonceHash: Schema.NonEmptyString,

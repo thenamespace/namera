@@ -19,6 +19,9 @@ const routes = Layer.mergeAll(
   HttpRouter.add("GET", "/internal/waitlist", HttpServerResponse.empty()),
   HttpRouter.add("POST", "/auth/platform-invitations/accept", HttpServerResponse.empty()),
   HttpRouter.add("GET", "/wallets", HttpServerResponse.empty()),
+  HttpRouter.add("POST", "/auth/google/start", HttpServerResponse.empty()),
+  HttpRouter.add("POST", "/auth/magic-link/request", HttpServerResponse.empty()),
+  HttpRouter.add("POST", "/auth/magic-link/verify", HttpServerResponse.empty()),
   CorsMiddleware.pipe(
     Layer.provide(
       makeTestConfigLayer({
@@ -47,6 +50,11 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
         ["/auth/platform-invitations/accept", "POST", "https://admin.example.com", true],
         ["/auth/platform-invitations/accept", "POST", "https://evil.example.com", false],
         ["/wallets", "GET", "https://admin.example.com", false],
+        ["/auth/google/start", "OPTIONS", "https://admin.example.com", true],
+        ["/auth/magic-link/request", "POST", "https://admin.example.com", true],
+        ["/auth/magic-link/verify", "POST", "https://admin.example.com", true],
+        ["/auth/google/start", "POST", "https://app.example.com", true],
+        ["/auth/google/start", "POST", "https://evil.example.com", false],
       ] as const) {
         let response: HttpServerResponse.HttpServerResponse | undefined;
         yield* HttpEffect.toHandled(handler, (_request, result) =>

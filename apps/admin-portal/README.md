@@ -1,62 +1,49 @@
-# @namera-ai/admin-portal
+# Namera Admin
 
-Internal operator console for beta invites, user accounts, and the waitlist.
+Static Vite React application using TanStack Router, Effect atoms, and Namera
+UIKit, matching the dashboard's compact sign-in experience.
 
-**Pending rebuild:** this directory still contains the legacy token UI. The server
-now uses verified user sessions and platform membership; `ADMIN_TOKEN` no longer
-works. Do not deploy this UI against the new backend as a functioning console.
-See [the new authorization flow](../../architecture/auth/admin.md). The token
-instructions below describe the legacy UI only and will be removed in its rebuild.
-
-It is a static Vite React SPA with no backend of its own. Every read and write
-goes to `apps/server`'s `/internal` API, typed through `@namera-ai/api`, so the
-portal holds no database credentials and cannot reach the database directly.
-
-## Running it
+## Local development
 
 ```sh
-cp .env.example .env
+pnpm install
 pnpm --filter @namera-ai/admin-portal dev
 ```
 
-`VITE_API_URL` points at namera-core and defaults to `https://api.namera.ai` when
-unset or blank, in both the browser client and build-time security policy.
-Set it to `http://localhost:8080` for local API development. Its origin is the only host the page
-may connect to: the Content-Security-Policy is generated from it at build time.
+The portal runs at `http://localhost:3003`. Copy `.env.example` to `.env` to use
+the local API. Without `VITE_API_URL`, the client uses `https://api.namera.ai`.
+Configure the server's `ADMIN_CORS_ORIGIN=http://localhost:3003` and run the API.
+Email delivery and Google use the server's existing provider configuration; no
+provider secrets belong in this frontend. Google keeps the API callback URI,
+not a portal callback URI.
 
-For the API side, set `ADMIN_TOKEN` (at least 32 characters) on the server, and
-`ADMIN_CORS_ORIGIN` to this app's origin so the browser is allowed to send the
-`Authorization` header on `/internal` requests.
+## Implemented routes
 
-## Signing in
+- `/auth`: Google sign-in or email link/eight-digit code.
+- `/auth/verify`: explicit confirmation of an emailed link; opening a link does
+  not automatically consume it.
+- `/`: protected, intentionally empty. Successful sign-in navigates here.
 
-There is no account system. An operator pastes the platform `ADMIN_TOKEN`, which
-is sent as a bearer token on every request.
+The browser sends the API's HttpOnly session cookie with credentials enabled.
+`/internal/me` verifies active platform membership before allowing the home route;
+an ordinary customer session is not admin access. No shared admin token is stored
+in browser storage. Cross-site deployments must satisfy the API cookie policy;
+deploy the portal and API on same-site HTTPS origins.
 
-The token is held in `sessionStorage`, so it dies with the tab and is never
-written to disk. It is the platform master credential: treat a browser with this
-console open as a machine holding that credential. A rejected token is cleared
-immediately, so a bad paste does not linger.
+Team invitation acceptance, waitlist, and beta-invite screens are not implemented
+yet. Backend authorization and owner bootstrap are documented in
+[platform admin authorization](../../architecture/auth/admin.md).
+The prior UI is preserved in `apps/admin-portal-old`, excluded from the workspace.
 
-Revoking access means rotating `ADMIN_TOKEN` on the server, which invalidates it
-for every consumer including curl and CI. There is no per-operator revocation.
+## Checks and deployment
 
-## What it does not show
+```sh
+pnpm --filter @namera-ai/admin-portal test
+pnpm --filter @namera-ai/admin-portal typecheck
+pnpm --filter @namera-ai/admin-portal lint
+pnpm --filter @namera-ai/admin-portal build
+```
 
-Invite codes exist in plaintext exactly once, in the response to a create
-request. Only a hash is stored, so a code that is not copied from the creation
-screen cannot be recovered. Codes are never logged and never appear in a list.
-
-User records are projected into a dedicated DTO rather than returned whole: the
-list selects named columns and flattens `metadata.name`, so nothing else in the
-user record reaches the browser.
-
-## Deployment
-
-`Dockerfile` builds the static bundle and serves it from nginx on port 8080,
-with the same generated security headers the bundle emits as `_headers`. The
-`Deploy - Admin portal` workflow builds and pushes it.
-
-The site is marked `noindex, nofollow` in both the document and the response
-headers. Restrict `/internal` at the ingress as well: the token is the only
-thing standing between the public internet and every user's email address.
+The Dockerfile builds static assets and serves them with nginx SPA fallback and
+security headers. Set `VITE_API_URL` at build time and the matching exact
+`ADMIN_CORS_ORIGIN` on the API. Never deploy the archived portal.

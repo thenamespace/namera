@@ -19,6 +19,7 @@ COPY --from=pruner /app/out/json/ .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY --from=pruner /app/out/full/ .
+COPY tsconfig.json ./tsconfig.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline --ignore-scripts
 ARG DOTENV=""

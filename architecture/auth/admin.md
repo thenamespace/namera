@@ -108,12 +108,23 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 4. Set the exact `ADMIN_CORS_ORIGIN`, remove the old admin secret, and use HTTPS.
    Bootstrap does not require Google configuration; existing email login works.
 
-The **old token-based admin SPA is not compatible** with this backend. Its
-replacement, invitation-acceptance page, direct admin login/return navigation,
-waitlist acceptance + email transaction, and old endpoint removal are explicitly
-the next phase. Do not deploy this as a working rebuilt portal. Until that phase,
-normal dashboard sign-in supplies the shared API session; auth/team endpoints can
-be exercised with that cookie and an approved Origin.
+The old token-based SPA is archived in `apps/admin-portal-old` and excluded from
+the workspace. The replacement `apps/admin-portal` implements `/auth` with Google
+and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
+protected, intentionally empty `/`. It uses UIKit and the dashboard's Effect
+atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
+members; transport failures show a retry state rather than pretending logout.
+
+Admin sign-in requests send `surface: "admin"`. The API requires the exact
+configured admin Origin and stores the surface in the verification challenge.
+Emails point to that configured origin. Google uses the existing API callback,
+then returns to the admin origin; errors after validated state do likewise.
+Unvalidated/expired Google state falls back to the dashboard. There is no
+client-controlled cross-origin redirect or separate admin credential.
+
+Invitation acceptance UI, waitlist acceptance + email transaction, beta-invite
+screens, and old endpoint removal remain future work. Do not treat the empty
+home route as an implemented operations console.
 
 HTTP tests cover role separation, cookie-only auth, origin/freshness guards,
 email and Google admission, invitation lifecycle, replay, owner protection and

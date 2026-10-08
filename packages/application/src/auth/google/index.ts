@@ -1,4 +1,4 @@
-import { DateTime, Effect, Metric, Schema } from "effect";
+import { DateTime, Effect, Metric, Option, Schema } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -58,6 +58,8 @@ export const makeGoogleApplication = Effect.gen(function* () {
       link?: { userId: UserId; sessionId: SessionId },
     ) {
       if (!provider.enabled) return yield* new GoogleAuthError({ code: "GOOGLE_NOT_CONFIGURED" });
+      if (input.surface === "admin" && (link || Option.isNone(config.adminPublicOrigin)))
+        return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
       if (link) yield* requireRecentSession(repository, link.userId, link.sessionId);
       const now = yield* DateTime.now;
       const [state, nonce, browserToken, verifier] = yield* Effect.all(
@@ -83,6 +85,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
           tokenHash: yield* crypto.hash({ purpose: cryptoPurpose.googleState, value: state }),
           codeHmac: null,
           data: {
+            ...(input.surface ? { surface: input.surface } : {}),
             version: 1,
             intent: link ? "link" : "sign-in",
             nonceHash: yield* crypto.hash({ purpose: cryptoPurpose.googleNonce, value: nonce }),
@@ -94,7 +97,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
               purpose: cryptoPurpose.googleVerifier,
               value: verifier,
             }),
-            returnTo: link ? "/settings/security" : returnTo,
+            returnTo: link ? "/settings/security" : input.surface === "admin" ? "/" : returnTo,
             ...(input.inviteCode ? { inviteCode: input.inviteCode } : {}),
             userId: link?.userId ?? null,
             sessionId: link?.sessionId ?? null,
@@ -151,157 +154,179 @@ export const makeGoogleApplication = Effect.gen(function* () {
           (yield* crypto.hash({ purpose: cryptoPurpose.googleBrowser, value: input.browserToken }))
       )
         return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-      // Claim before exchanging the code. Replays never invoke Google twice; a failed
-      // exchange requires a new flow rather than replaying a possibly consumed code.
-      const claimed = yield* repository.auth.verification.consume({
-        verificationId: flow.id,
-        consumedAt: now,
-        maxAttempts: 1,
-      });
-      if (!claimed) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-      if (input.error !== undefined)
-        return yield* new GoogleAuthError({
-          code: input.error === "access_denied" ? "GOOGLE_CANCELED" : "GOOGLE_IDENTITY_INVALID",
+      return yield* Effect.gen(function* () {
+        // Claim before exchanging the code. Replays never invoke Google twice; a failed
+        // exchange requires a new flow rather than replaying a possibly consumed code.
+        const claimed = yield* repository.auth.verification.consume({
+          verificationId: flow.id,
+          consumedAt: now,
+          maxAttempts: 1,
         });
-      if (!input.code) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-      const verifier = yield* crypto
-        .decrypt({ purpose: cryptoPurpose.googleVerifier, value: flow.data.encryptedVerifier })
-        .pipe(Effect.mapError(() => new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" })));
-      const verified = yield* provider.exchange({ code: input.code, verifier, redirectUri });
-      if (
-        flow.data.nonceHash !==
-        (yield* crypto.hash({ purpose: cryptoPurpose.googleNonce, value: verified.nonce }))
-      )
-        return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-      const identity = verified.identity;
-
-      if (flow.data.intent === "link") {
-        const { userId, sessionId } = flow.data;
-        if (!userId || !sessionId || !input.authToken)
+        if (!claimed) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+        if (input.error !== undefined)
+          return yield* new GoogleAuthError({
+            code: input.error === "access_denied" ? "GOOGLE_CANCELED" : "GOOGLE_IDENTITY_INVALID",
+          });
+        if (!input.code) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+        const verifier = yield* crypto
+          .decrypt({ purpose: cryptoPurpose.googleVerifier, value: flow.data.encryptedVerifier })
+          .pipe(Effect.mapError(() => new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" })));
+        const verified = yield* provider.exchange({ code: input.code, verifier, redirectUri });
+        if (
+          flow.data.nonceHash !==
+          (yield* crypto.hash({ purpose: cryptoPurpose.googleNonce, value: verified.nonce }))
+        )
           return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+        const identity = verified.identity;
+
+        if (flow.data.intent === "link") {
+          const { userId, sessionId } = flow.data;
+          if (!userId || !sessionId || !input.authToken)
+            return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+          const result = yield* transaction.run(
+            Effect.gen(function* () {
+              yield* repository.auth.account.lockUser(userId);
+              const session = yield* requireRecentSession(repository, userId, sessionId);
+              if (
+                session.tokenHash !==
+                (yield* crypto.hash({
+                  purpose: cryptoPurpose.sessionToken,
+                  value: input.authToken ?? "",
+                }))
+              )
+                return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+              const user = yield* repository.auth.user.findById(userId);
+              if (!user || !user.emailVerified)
+                return yield* new GoogleAuthError({ code: "EMAIL_LOGIN_REQUIRED" });
+              return yield* accountChanges.link(user, sessionId, identity);
+            }),
+          );
+          if (result) yield* recordAccountTransition("linked");
+          yield* trackResult("callback", "linked");
+          return { returnTo: "/settings/security?google=linked" };
+        }
+
+        const binding = yield* repository.auth.account.findGoogle(identity.subject);
+        if (!binding && !identity.emailAuthoritative) {
+          yield* requestMagicLink.request(
+            {
+              email: identity.email,
+              ...(flow.data.surface ? { surface: flow.data.surface } : {}),
+              returnTo: flow.data.returnTo,
+              ...(flow.data.inviteCode ? { inviteCode: flow.data.inviteCode } : {}),
+            },
+            identity,
+          );
+          yield* trackResult("callback", "email_confirmation_required");
+          return { returnTo: "/auth?google=EMAIL_LOGIN_REQUIRED" };
+        }
         const result = yield* transaction.run(
           Effect.gen(function* () {
-            yield* repository.auth.account.lockUser(userId);
-            const session = yield* requireRecentSession(repository, userId, sessionId);
-            if (
-              session.tokenHash !==
-              (yield* crypto.hash({
-                purpose: cryptoPurpose.sessionToken,
-                value: input.authToken ?? "",
-              }))
-            )
+            // Repeat binding lookup under the owning user lock to serialize unlink/sign-in.
+            if (binding) yield* repository.auth.account.lockUser(binding.userId);
+            const currentBinding = yield* repository.auth.account.findGoogle(identity.subject);
+            if (binding && (!currentBinding || currentBinding.userId !== binding.userId))
               return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-            const user = yield* repository.auth.user.findById(userId);
-            if (!user || !user.emailVerified)
-              return yield* new GoogleAuthError({ code: "EMAIL_LOGIN_REQUIRED" });
-            return yield* accountChanges.link(user, sessionId, identity);
+            // Only Google's authoritative mailbox proof may select an existing user by email.
+            const existingUser = currentBinding
+              ? yield* repository.auth.user.findById(currentBinding.userId)
+              : yield* repository.auth.user.findByEmail(identity.email);
+            if (!currentBinding && existingUser)
+              yield* repository.auth.account.lockUser(existingUser.id);
+            const invite =
+              !existingUser && flow.data.inviteCode
+                ? yield* repository.auth.betaInvite.findByHmac(
+                    yield* crypto.hmac({
+                      purpose: cryptoPurpose.betaInvite,
+                      value: flow.data.inviteCode,
+                    }),
+                  )
+                : undefined;
+            const lockedInvite = invite
+              ? yield* repository.auth.betaInvite.lockActive(invite.id, now)
+              : undefined;
+            const usableInvite =
+              lockedInvite && (lockedInvite.email === null || lockedInvite.email === identity.email)
+                ? lockedInvite
+                : undefined;
+            const platformInvitation = !existingUser
+              ? yield* repository.auth.platform.pendingForEmail(identity.email, now)
+              : undefined;
+            if (!existingUser && config.inviteRequired && !usableInvite && !platformInvitation) {
+              const token = yield* crypto.randomToken(32);
+              yield* repository.auth.verification.revokePending({
+                purpose: "beta-admission",
+                identifier: identity.email,
+                revokedAt: now,
+              });
+              const pending = yield* repository.auth.verification.create({
+                purpose: "beta-admission",
+                identifier: identity.email,
+                data: { googleIdentity: identity, returnTo: flow.data.returnTo },
+                tokenHash: yield* crypto.hash({
+                  purpose: cryptoPurpose.betaAdmissionToken,
+                  value: token,
+                }),
+                codeHmac: null,
+                expiresAt: DateTime.addDuration(now, googleFlowLifetime),
+              });
+              if (!pending) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+              return { admissionToken: `${pending.id}.${token}`, returnTo: "/auth/invite" };
+            }
+            const completed = yield* completeSignIn({
+              email: identity.email,
+              method: "google",
+              ...(existingUser ? { userId: existingUser.id } : {}),
+              identity,
+              ...context,
+            });
+            if (usableInvite) {
+              const redeemed = yield* repository.auth.betaInvite.redeem(
+                usableInvite.id,
+                completed.user.id,
+                now,
+              );
+              if (!redeemed) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+              yield* repository.auth.betaInvite.appendEvent(usableInvite.id, "redeemed");
+            }
+            yield* repository.auth.account.touchGoogle(identity.subject, identity.email);
+            return {
+              sessionToken: completed.sessionToken,
+              returnTo: flow.data.returnTo,
+              linked: completed.linked,
+              inviteRedeemed: usableInvite !== undefined,
+            };
           }),
         );
-        if (result) yield* recordAccountTransition("linked");
-        yield* trackResult("callback", "linked");
-        return { returnTo: "/settings/security?google=linked" };
-      }
-
-      const binding = yield* repository.auth.account.findGoogle(identity.subject);
-      if (!binding && !identity.emailAuthoritative) {
-        yield* requestMagicLink.request(
-          {
-            email: identity.email,
-            returnTo: flow.data.returnTo,
-            ...(flow.data.inviteCode ? { inviteCode: flow.data.inviteCode } : {}),
-          },
-          identity,
-        );
-        yield* trackResult("callback", "email_confirmation_required");
-        return { returnTo: "/auth?google=EMAIL_LOGIN_REQUIRED" };
-      }
-      const result = yield* transaction.run(
-        Effect.gen(function* () {
-          // Repeat binding lookup under the owning user lock to serialize unlink/sign-in.
-          if (binding) yield* repository.auth.account.lockUser(binding.userId);
-          const currentBinding = yield* repository.auth.account.findGoogle(identity.subject);
-          if (binding && (!currentBinding || currentBinding.userId !== binding.userId))
-            return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-          // Only Google's authoritative mailbox proof may select an existing user by email.
-          const existingUser = currentBinding
-            ? yield* repository.auth.user.findById(currentBinding.userId)
-            : yield* repository.auth.user.findByEmail(identity.email);
-          if (!currentBinding && existingUser)
-            yield* repository.auth.account.lockUser(existingUser.id);
-          const invite =
-            !existingUser && flow.data.inviteCode
-              ? yield* repository.auth.betaInvite.findByHmac(
-                  yield* crypto.hmac({
-                    purpose: cryptoPurpose.betaInvite,
-                    value: flow.data.inviteCode,
-                  }),
-                )
-              : undefined;
-          const lockedInvite = invite
-            ? yield* repository.auth.betaInvite.lockActive(invite.id, now)
-            : undefined;
-          const usableInvite =
-            lockedInvite && (lockedInvite.email === null || lockedInvite.email === identity.email)
-              ? lockedInvite
-              : undefined;
-          const platformInvitation = !existingUser
-            ? yield* repository.auth.platform.pendingForEmail(identity.email, now)
-            : undefined;
-          if (!existingUser && config.inviteRequired && !usableInvite && !platformInvitation) {
-            const token = yield* crypto.randomToken(32);
-            yield* repository.auth.verification.revokePending({
-              purpose: "beta-admission",
-              identifier: identity.email,
-              revokedAt: now,
-            });
-            const pending = yield* repository.auth.verification.create({
-              purpose: "beta-admission",
-              identifier: identity.email,
-              data: { googleIdentity: identity, returnTo: flow.data.returnTo },
-              tokenHash: yield* crypto.hash({
-                purpose: cryptoPurpose.betaAdmissionToken,
-                value: token,
-              }),
-              codeHmac: null,
-              expiresAt: DateTime.addDuration(now, googleFlowLifetime),
-            });
-            if (!pending) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-            return { admissionToken: `${pending.id}.${token}`, returnTo: "/auth/invite" };
-          }
-          const completed = yield* completeSignIn({
-            email: identity.email,
-            method: "google",
-            ...(existingUser ? { userId: existingUser.id } : {}),
-            identity,
-            ...context,
-          });
-          if (usableInvite) {
-            const redeemed = yield* repository.auth.betaInvite.redeem(
-              usableInvite.id,
-              completed.user.id,
-              now,
-            );
-            if (!redeemed) return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
-            yield* repository.auth.betaInvite.appendEvent(usableInvite.id, "redeemed");
-          }
-          yield* repository.auth.account.touchGoogle(identity.subject, identity.email);
-          return {
-            sessionToken: completed.sessionToken,
-            returnTo: flow.data.returnTo,
-            linked: completed.linked,
-            inviteRedeemed: usableInvite !== undefined,
-          };
-        }),
+        if ("linked" in result && result.linked) yield* recordAccountTransition("linked");
+        if ("inviteRedeemed" in result && result.inviteRedeemed)
+          yield* Metric.update(
+            Metric.withAttributes(betaInviteTransitions, { result: "redeemed" }),
+            1,
+          );
+        yield* trackResult("callback", "sessionToken" in result ? "signed_in" : "invite_required");
+        yield* Effect.logInfo("auth.google_completed");
+        return result;
+      }).pipe(
+        Effect.map(
+          (
+            result,
+          ): {
+            returnTo: string;
+            surface: "admin" | undefined;
+            sessionToken?: string;
+            admissionToken?: string;
+          } => ({ ...result, surface: flow.data.surface }),
+        ),
+        Effect.catchTag("GoogleAuthError", (error) =>
+          Effect.fail(
+            new GoogleAuthError({
+              code: error.code,
+              ...(flow.data.surface ? { surface: flow.data.surface } : {}),
+            }),
+          ),
+        ),
       );
-      if ("linked" in result && result.linked) yield* recordAccountTransition("linked");
-      if ("inviteRedeemed" in result && result.inviteRedeemed)
-        yield* Metric.update(
-          Metric.withAttributes(betaInviteTransitions, { result: "redeemed" }),
-          1,
-        );
-      yield* trackResult("callback", "sessionToken" in result ? "signed_in" : "invite_required");
-      yield* Effect.logInfo("auth.google_completed");
-      return result;
     },
     Effect.catchTag("DatabaseError", Effect.die),
     trackFailure("callback"),

@@ -21,6 +21,13 @@ profile` is requested; no offline access or Google API access is retained.
 
 ## Identity and admission
 
+Admin sign-in uses the same callback and session with optional `surface: "admin"`
+on the start request. Its Origin must match configured `ADMIN_CORS_ORIGIN`.
+The browser-bound challenge retains the surface, so validated success/cancellation
+returns to that fixed origin. Admin success targets `/`; beta admission targets
+`/auth?denied=true`. Membership is still checked separately by `/internal/me`.
+Account linking remains dashboard-only. No additional Google redirect URI is needed.
+
 - `auth.account` binds Google's stable `sub` to one Namera user with provider
   `google`. Email is presentation data, never the provider identifier. Provider
   access/refresh/ID tokens and passwords remain null.

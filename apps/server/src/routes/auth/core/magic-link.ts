@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpServerRequest } from "effect/http";
-import { HttpApiBuilder, HttpApiSchema } from "effect/http-api";
+import { HttpApiBuilder, HttpApiError, HttpApiSchema } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
@@ -59,6 +59,15 @@ export const MagicLinkRoutes = HttpApiBuilder.group(NameraApi, "magicLink", (han
       )
       .handle("request", ({ payload }) =>
         Effect.gen(function* () {
+          if (payload.surface === "admin") {
+            const config = yield* Application.AuthConfig.pipe(Effect.orDie);
+            const request = yield* HttpServerRequest.HttpServerRequest;
+            if (
+              Option.isNone(config.adminPublicOrigin) ||
+              request.headers.origin !== config.adminPublicOrigin.value.origin
+            )
+              return yield* new HttpApiError.Forbidden();
+          }
           const identifier = yield* clientIdentifier;
           yield* consumeRateLimit(
             "magic-link.request.ip",
