@@ -14,6 +14,7 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
   const config = yield* AuthConfig;
   const create = Effect.fn("application.betaInvite.create")(function* (
     input: CreateBetaInvitesRequest,
+    actorMemberId?: string,
   ) {
     const createdAt = yield* DateTime.now;
     const expiresAt = DateTime.add(createdAt, { days: input.expiresInDays ?? 7 });
@@ -34,6 +35,12 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
             });
             if (invite) {
               yield* repository.auth.betaInvite.appendEvent(invite.id, "created");
+              if (actorMemberId)
+                yield* repository.auth.platform.appendEvent(actorMemberId, {
+                  version: 1,
+                  type: "beta-invite.created",
+                  inviteId: invite.id,
+                });
               const url = new URL("/auth", config.dashboardPublicOrigin);
               // Query values are stripped by browser telemetry; codes must not enter route names.
               url.searchParams.set("invite", code);
@@ -54,11 +61,20 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
     );
     return result;
   }, Effect.orDie);
-  const revoke = Effect.fn("application.betaInvite.revoke")(function* (id: string) {
+  const revoke = Effect.fn("application.betaInvite.revoke")(function* (
+    id: string,
+    actorMemberId?: string,
+  ) {
     const result = yield* transaction.run(
       Effect.gen(function* () {
         const revoked = yield* repository.auth.betaInvite.revoke(id, yield* DateTime.now);
         if (revoked) yield* repository.auth.betaInvite.appendEvent(id, "revoked");
+        if (revoked && actorMemberId)
+          yield* repository.auth.platform.appendEvent(actorMemberId, {
+            version: 1,
+            type: "beta-invite.revoked",
+            inviteId: id,
+          });
         return { revoked: revoked !== undefined };
       }),
     );

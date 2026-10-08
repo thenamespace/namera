@@ -81,6 +81,10 @@ Registered templates include session-key lifecycle delivery for creation and
 revocation. Revocation emails report the affected account and number of grants
 disabled without exposing policy or credential payloads.
 
+`platform-invitation` carries a seven-day team acceptance link, role and expiry.
+Its token lives only in the encrypted outbox and delivered email. Resend, revoke
+and acceptance cancel pending deliveries; already-sent links are validated again.
+
 ## Adding an email
 
 1. Add its stable type and variables to the `EmailJobPayload` discriminated

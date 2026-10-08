@@ -2,6 +2,12 @@
 
 Internal operator console for beta invites, user accounts, and the waitlist.
 
+**Pending rebuild:** this directory still contains the legacy token UI. The server
+now uses verified user sessions and platform membership; `ADMIN_TOKEN` no longer
+works. Do not deploy this UI against the new backend as a functioning console.
+See [the new authorization flow](../../architecture/auth/admin.md). The token
+instructions below describe the legacy UI only and will be removed in its rebuild.
+
 It is a static Vite React SPA with no backend of its own. Every read and write
 goes to `apps/server`'s `/internal` API, typed through `@namera-ai/api`, so the
 portal holds no database credentials and cannot reach the database directly.

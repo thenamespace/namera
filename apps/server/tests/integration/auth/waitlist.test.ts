@@ -16,14 +16,11 @@ import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, testEmail } from "../../fixtures/index.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
+import { platformClient, platformIdentity } from "../../fixtures/platform.js";
 
-const adminToken = "test-only-waitlist-admin-token-with-32-characters";
-const TestLayer = makeTestServerLayer(
-  {},
-  Passkeys.testLayer,
-  makeTestConfigLayer({ ADMIN_TOKEN: adminToken }),
-);
-const adminClient = handledApi(NameraApi, { headers: { authorization: `Bearer ${adminToken}` } });
+const adminToken = "use-platform-session";
+const TestLayer = makeTestServerLayer({}, Passkeys.testLayer, makeTestConfigLayer());
+const adminClient = platformClient;
 
 const rawRequest = Effect.fnUntraced(function* (
   path: string,
@@ -31,6 +28,7 @@ const rawRequest = Effect.fnUntraced(function* (
   method = "POST",
   token?: string,
 ) {
+  const adminHeaders = token === adminToken ? (yield* platformIdentity()).headers : {};
   const handler = yield* HttpRouter.toHttpEffect(HttpApiBuilder.layer(NameraApi));
   let response: HttpServerResponse.HttpServerResponse | undefined;
   yield* HttpEffect.toHandled(SecurityHeadersMiddleware(handler), (_request, result) =>
@@ -45,7 +43,9 @@ const rawRequest = Effect.fnUntraced(function* (
           method,
           headers: {
             "content-type": "application/json",
-            ...(token ? { authorization: `Bearer ${token}` } : {}),
+            ...(token && token !== adminToken
+              ? { authorization: `Bearer ${token}` }
+              : adminHeaders),
           },
           ...(method === "GET" ? {} : { body: JSON.stringify(body) }),
         }),
@@ -77,7 +77,7 @@ layer(TestLayer)("waitlist", (it) => {
       });
       expect(result.nextCursor).toBeNull();
       const db = yield* Database;
-      expect(yield* db.query.user.findMany()).toHaveLength(0);
+      expect(yield* db.query.user.findMany()).toHaveLength(1); // Only the test operator.
       expect(yield* db.query.emailJob.findMany()).toHaveLength(0);
       expect(yield* db.query.waitlistEvent.findMany()).toHaveLength(0);
       const after = yield* Metric.value(waitlistJoins);

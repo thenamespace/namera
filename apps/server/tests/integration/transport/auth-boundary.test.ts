@@ -3,7 +3,12 @@ import { Effect } from "effect";
 import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
 import { HttpApi, HttpApiBuilder } from "effect/http-api";
 
-import { Authorization, AdminAuthorization, NameraApi } from "@namera-ai/api";
+import {
+  Authorization,
+  AdminAuthorization,
+  PlatformSessionAuthorization,
+  NameraApi,
+} from "@namera-ai/api";
 
 import { SecurityHeadersMiddleware } from "../../../src/middlewares/security-headers.js";
 import { TestServerLayer } from "../../fixtures/layers/index.js";
@@ -29,7 +34,10 @@ HttpApi.reflect(NameraApi, {
     protectedEndpoints.push({ name, method: endpoint.method, path: endpoint.path });
     if (
       ![...middleware].some(
-        (service) => service.key === Authorization.key || service.key === AdminAuthorization.key,
+        (service) =>
+          service.key === Authorization.key ||
+          service.key === AdminAuthorization.key ||
+          service.key === PlatformSessionAuthorization.key,
       )
     )
       throw new Error(`Protected endpoint lacks authentication: ${name}`);

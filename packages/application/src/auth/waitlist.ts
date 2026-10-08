@@ -7,6 +7,7 @@ import type { WaitlistStatus } from "@namera-ai/protocol/model";
 import { waitlistJoins, waitlistStatusChanges } from "@namera-ai/telemetry";
 
 export const makeWaitlistApplication = Effect.gen(function* () {
+  const platform = (yield* Repository).auth.platform;
   const repository = (yield* Repository).auth.waitlist;
   const transaction = yield* TransactionService;
 
@@ -28,7 +29,7 @@ export const makeWaitlistApplication = Effect.gen(function* () {
   }, Effect.orDie);
 
   const setStatus = Effect.fn("application.waitlist.setStatus")(
-    function* (id: string, status: WaitlistStatus) {
+    function* (id: string, status: WaitlistStatus, actorMemberId?: string) {
       const result = yield* transaction.run(
         Effect.gen(function* () {
           const entry = yield* repository.lock(id);
@@ -37,6 +38,13 @@ export const makeWaitlistApplication = Effect.gen(function* () {
           const now = yield* DateTime.now;
           const updated = yield* repository.setStatus(id, status, now);
           yield* repository.appendEvent(id, entry.status, status, now);
+          if (actorMemberId)
+            yield* platform.appendEvent(actorMemberId, {
+              version: 1,
+              type: "waitlist.status-changed",
+              waitlistId: id,
+              status,
+            });
           return { entry: updated, changed: true };
         }),
       );

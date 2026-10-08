@@ -1,6 +1,8 @@
 import { HttpApi, OpenApi } from "effect/http-api";
 
 import {
+  PlatformGroup,
+  PlatformInvitationGroup,
   GoogleGroup,
   ConnectedAccountsGroup,
   AddressMetadataGroup,
@@ -35,6 +37,8 @@ export * from "./middlewares/index.js";
 // live outside this package so every client is generated from the same schema.
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
+    PlatformGroup,
+    PlatformInvitationGroup,
     GoogleGroup,
     ConnectedAccountsGroup,
     AddressMetadataGroup,

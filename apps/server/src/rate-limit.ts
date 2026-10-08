@@ -12,7 +12,7 @@ export const rateLimitPolicy = {
     global: { limit: 500, window: Duration.hours(1), algorithm: "fixed-window" },
   },
   admin: {
-    bearerByIp: {
+    sessionByIp: {
       limit: 60,
       window: Duration.minutes(1),
       algorithm: "token-bucket",

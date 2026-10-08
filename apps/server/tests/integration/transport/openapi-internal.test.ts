@@ -3,7 +3,7 @@ import { OpenApi } from "effect/http-api";
 
 import { NameraApi } from "@namera-ai/api";
 
-// /internal is the operator surface: reachable with ADMIN_TOKEN, but never
+// /internal is the platform-member surface, but never
 // advertised in the published spec or the Scalar reference. A new admin group
 // that forgets `OpenApi.Exclude` fails here rather than in production.
 describe("published OpenAPI specification", () => {

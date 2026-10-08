@@ -8,14 +8,10 @@ import { Passkeys } from "@namera-ai/passkeys";
 import { handledApi } from "../../fixtures/http-api-test.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
+import { platformClient } from "../../fixtures/platform.js";
 
-const adminToken = "test-only-admin-list-token-32-characters-long";
-const AdminLayer = makeTestServerLayer(
-  {},
-  Passkeys.testLayer,
-  makeTestConfigLayer({ ADMIN_TOKEN: adminToken }),
-);
-const adminClient = handledApi(NameraApi, { headers: { authorization: `Bearer ${adminToken}` } });
+const AdminLayer = makeTestServerLayer({}, Passkeys.testLayer, makeTestConfigLayer());
+const adminClient = platformClient;
 
 layer(AdminLayer)("operator invite list", (it) => {
   it.effect("reports a derived status for every lifecycle state", () =>

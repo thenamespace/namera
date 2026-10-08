@@ -85,9 +85,18 @@ const staticHttpRoutes = new Set([
   "/internal/waitlist",
   "/internal/invites",
   "/internal/users",
+  "/internal/me",
+  "/internal/members",
+  "/internal/ownership/transfer",
+  "/internal/member-invitations",
+  "/auth/platform-invitations/accept",
 ]);
 
 const dynamicHttpRoutes = [
+  "/internal/members/:id/role",
+  "/internal/members/:id/status",
+  "/internal/members/:id",
+  "/internal/member-invitations/:id",
   "/auth/connected-accounts/:accountId",
   "/api-keys/:apiKeyId/revoke",
   "/auth/session/sessions/:sessionId",

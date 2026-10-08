@@ -3,6 +3,10 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const auditRelations = defineRelationsPart(schema, (r) => ({
+  platformEvent: {
+    // Bootstrap is the sole event without a human platform member.
+    actor: r.one.platformMember({ from: r.platformEvent.actorMemberId, to: r.platformMember.id }),
+  },
   waitlistEvent: {
     // Platform status history belongs to the retained waitlist entry, not a tenant actor.
     entry: r.one.waitlist({ from: r.waitlistEvent.waitlistId, to: r.waitlist.id, optional: false }),

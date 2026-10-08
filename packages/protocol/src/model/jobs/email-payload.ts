@@ -5,6 +5,7 @@ import { EvmChainName } from "#/evm/chains";
 import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals([
+  "platform-invitation",
   "connected-account-changed",
   "magic-link",
   "new-sign-in",
@@ -103,6 +104,14 @@ export const ExecutionConfirmedEmailVariables = Schema.Struct({
 });
 
 export const EmailJobPayload = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("platform-invitation"),
+    variables: Schema.Struct({
+      invitationUrl: NonEmptyString,
+      role: Schema.Literals(["operator", "viewer"]),
+      expiresAt: NonEmptyString,
+    }),
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
   Schema.Struct({
     type: Schema.Literal("connected-account-changed"),
     variables: Schema.Struct({

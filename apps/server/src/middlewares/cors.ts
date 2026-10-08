@@ -47,7 +47,7 @@ export const CorsMiddleware = Layer.unwrap(
         "Tracestate",
         "Baggage",
       ],
-      credentials: false,
+      credentials: true,
       maxAge: 86400,
     });
 
@@ -59,9 +59,10 @@ export const CorsMiddleware = Layer.unwrap(
           if (path === "/waitlist" && (request.method === "POST" || request.method === "OPTIONS")) {
             return yield* waitlistCors(httpEffect);
           }
-          // With no ADMIN_CORS_ORIGIN set, /internal keeps the previous policy
-          // so curl and the integration tests behave exactly as before.
-          if (path.startsWith("/internal/") && Option.isSome(config.adminOrigin)) {
+          if (
+            (path.startsWith("/internal/") || path === "/auth/platform-invitations/accept") &&
+            Option.isSome(config.adminOrigin)
+          ) {
             return yield* adminCors(httpEffect);
           }
           return yield* dashboardCors(httpEffect);

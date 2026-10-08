@@ -5,28 +5,17 @@ users retain normal email login. This gate runs in magic-link authentication,
 and Google sign-in, not just the dashboard, so CLI and MCP consent cannot create an uninvited user.
 Organization invitations do not bypass beta admission.
 
+Active platform-team invitations are a narrow exception: after proving the
+invited mailbox, a user may sign up normally, but must separately accept the
+single-use team invitation to obtain any admin authority.
+
 ## Operator API
 
-Set `ADMIN_TOKEN` to a randomly generated secret of at least 32 characters
-in the server secret manager. Missing or shorter values disable management.
-Generate a value with `openssl rand -hex 32`; never put it in frontend variables,
-source control, URLs, telemetry, or shared shell history. Rotate it by changing
-the secret and restarting the server. It authorizes routes explicitly protected by
-`AdminAuthorization`, currently these two endpoints, not wallets or delegated operations.
-See [platform admin authorization](../admin.md). A shared operator credential cannot identify
-individual operators; keep distribution narrow and restrict these routes at ingress.
-
-```sh
-# Run from a trusted operator machine with the secret supplied securely.
-curl --fail-with-body "$API_ORIGIN/internal/invites" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H 'Content-Type: application/json' \
-  --data '{"count":6,"expiresInDays":7}'
-
-# Revoke an unused invite using the ID returned at creation, not its code.
-curl --fail-with-body -X DELETE "$API_ORIGIN/internal/invites/$INVITE_ID" \
-  -H "Authorization: Bearer $ADMIN_TOKEN"
-```
+Management uses a verified human session with active platform membership, not a
+shared token. Reads require `invites:read`, creation `invites:create`, revocation
+`invites:revoke`. Writes require an approved Origin. See
+[platform admin authorization](../admin.md) for bootstrap and team lifecycle.
+Issuance/revocation also append the authenticated member to platform audit.
 
 Creation accepts 1–50 invites, an optional 1–30-day lifetime (default seven), and
 optional `email` binding. It returns `invites: [{id, code, url, expiresAt}]`.
@@ -71,7 +60,7 @@ values use the shared HMAC secret with the dedicated `auth.beta-invite.code`
 purpose, not bare hashes vulnerable to offline enumeration. Collisions retry
 without overwriting historical codes. Rotating the HMAC key invalidates unused codes.
 
-Management uses constant-time digest comparison, 10 attempts/minute/IP and
+Management validates the session and current platform role, with session attempts/IP and
 30 authenticated operations/hour globally. Signup retains email/IP limits and
 adds 120 supplied-code attempts/hour globally for each request/redemption route.
 Redemption also uses the verification IP limit and five attempts per restricted proof.
@@ -96,7 +85,7 @@ idempotent revocations do not count again. Codes, recipient addresses, and
 invite IDs never become metric attributes.
 
 Apply the generated migrations through normal startup. No wipe or backfill is
-required. Set `AUTH_INVITE_REQUIRED=true` and the admin secret before admitting
+required. Set `AUTH_INVITE_REQUIRED=true` and bootstrap the platform owner before admitting
 testers. `false` intentionally enables open signup; use it only when explicitly
 desired. Existing accounts are grandfathered in either mode.
 

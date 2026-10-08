@@ -244,7 +244,10 @@ export const makeGoogleApplication = Effect.gen(function* () {
             lockedInvite && (lockedInvite.email === null || lockedInvite.email === identity.email)
               ? lockedInvite
               : undefined;
-          if (!existingUser && config.inviteRequired && !usableInvite) {
+          const platformInvitation = !existingUser
+            ? yield* repository.auth.platform.pendingForEmail(identity.email, now)
+            : undefined;
+          if (!existingUser && config.inviteRequired && !usableInvite && !platformInvitation) {
             const token = yield* crypto.randomToken(32);
             yield* repository.auth.verification.revokePending({
               purpose: "beta-admission",

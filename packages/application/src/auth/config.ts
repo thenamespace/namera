@@ -6,10 +6,12 @@ const AuthEnvironmentConfig = Config.all({
   inviteRequired: Config.Boolean("AUTH_INVITE_REQUIRED").pipe(Config.withDefault(true)),
   apiPublicOrigin: Config.URL("AUTH_API_PUBLIC_ORIGIN"),
   dashboardPublicOrigin: Config.URL("AUTH_DASHBOARD_PUBLIC_ORIGIN"),
+  adminPublicOrigin: Config.option(Config.URL("ADMIN_CORS_ORIGIN")),
 });
 
 export const AuthConfig = AuthEnvironmentConfig.pipe(
-  Config.map(({ apiPublicOrigin, dashboardPublicOrigin, inviteRequired }) => ({
+  Config.map(({ apiPublicOrigin, dashboardPublicOrigin, adminPublicOrigin, inviteRequired }) => ({
+    adminPublicOrigin,
     inviteRequired,
     magicLink: authPolicy.magicLink,
     session: authPolicy.session,

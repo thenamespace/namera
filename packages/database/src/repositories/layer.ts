@@ -4,6 +4,7 @@ import type { Database } from "#/core/index";
 import { OrganizationEventRepository, UserEventRepository } from "#/repositories/audit/index";
 import {
   ActorRepository,
+  PlatformRepository,
   AccountRepository,
   BetaInviteRepository,
   WaitlistRepository,
@@ -62,6 +63,7 @@ export interface RepositoryService {
     user: UserEventRepository["Service"];
   };
   auth: {
+    platform: PlatformRepository["Service"];
     account: AccountRepository["Service"];
     betaInvite: BetaInviteRepository["Service"];
     waitlist: WaitlistRepository["Service"];
@@ -127,6 +129,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const platform = yield* PlatformRepository;
       const account = yield* AccountRepository;
       const betaInvite = yield* BetaInviteRepository;
       const waitlist = yield* WaitlistRepository;
@@ -180,6 +183,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           user: userEvent,
         },
         auth: {
+          platform,
           account,
           betaInvite,
           waitlist,
@@ -242,6 +246,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        PlatformRepository.layer,
         AccountRepository.layer,
         BetaInviteRepository.layer,
         WaitlistRepository.layer,

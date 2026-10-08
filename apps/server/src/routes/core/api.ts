@@ -5,7 +5,7 @@ import { NameraApi } from "@namera-ai/api";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { ApplicationLive, ServicesLive } from "#/layers/services";
-import { AdminAuthorizationLive } from "#/middlewares/admin";
+import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
@@ -21,6 +21,7 @@ import {
   SessionRoutes,
   UserRoutes,
 } from "#/routes/auth/index";
+import { PlatformRoutes } from "#/routes/auth/platform";
 import { WaitlistRoutes } from "#/routes/auth/waitlist";
 import { BillingRoutes } from "#/routes/billing/index";
 import { HealthRoutes } from "#/routes/core/health";
@@ -31,6 +32,7 @@ import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
+  PlatformRoutes,
   GoogleRoutes,
   ConnectedAccountRoutes,
   AdminUserRoutes,
@@ -58,6 +60,7 @@ const ApiHandlers = Layer.mergeAll(
 ).pipe(
   Layer.provide(AuthorizationLive),
   Layer.provide(AdminAuthorizationLive),
+  Layer.provide(PlatformSessionAuthorizationLive),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
   Layer.provide(AuthCookieConfig.layer),

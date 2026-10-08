@@ -16,6 +16,7 @@ import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, signIn, testEmail, setAuthToken } from "../../fixtures/index.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer, TestEmails } from "../../fixtures/layers/index.js";
+import { platformClient } from "../../fixtures/platform.js";
 
 const provider = googleIdentityTestLayer({
   alice: {
@@ -350,7 +351,6 @@ const GoogleBetaLayer = makeTestServerLayer(
   Passkeys.testLayer,
   makeTestConfigLayer({
     AUTH_INVITE_REQUIRED: "true",
-    ADMIN_TOKEN: "test-google-admin-token-32-characters",
   }),
   provider,
 );
@@ -383,9 +383,7 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         ).toBeUndefined();
         expect(yield* repository.auth.account.findGoogle("google-alice")).toBeUndefined();
         if (!("admissionToken" in pending)) return yield* Effect.die("Missing beta proof");
-        const admin = yield* handledApi(NameraApi, {
-          headers: { authorization: "Bearer test-google-admin-token-32-characters" },
-        });
+        const admin = yield* platformClient;
         const invite = (yield* admin.betaInvite.create({ payload: { count: 1 } })).invites[0];
         if (!invite) return yield* Effect.die("Missing invite");
         const client = yield* handledApi(NameraApi, {
@@ -410,9 +408,7 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         email: testEmail("alice@gmail.com"),
         metadata: { version: 1 },
       });
-      const admin = yield* handledApi(NameraApi, {
-        headers: { authorization: "Bearer test-google-admin-token-32-characters" },
-      });
+      const admin = yield* platformClient;
       const invite = (yield* admin.betaInvite.create({ payload: { count: 1 } })).invites[0];
       if (!invite) return yield* Effect.die("Missing invite");
       const client = yield* handledApi(NameraApi, {

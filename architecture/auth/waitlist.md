@@ -25,17 +25,13 @@ errors without claiming a successful join. It does not call admin endpoints.
   entry, or 404 `WAITLIST_NOT_FOUND`. Completed means an operator handled the
   entry, not that the person signed up. Reopening clears `completedAt`.
 
-Use `Authorization: Bearer <ADMIN_TOKEN>` from a trusted operator environment.
-Never expose that credential in the website. Example commands:
+Use a verified platform-member session. Reads require `waitlist:read`; the legacy
+status API is owner-only until replaced by acceptance + invite email. See
+[admin authorization](admin.md). Example public submission:
 
 ```sh
 curl --fail-with-body "$API_ORIGIN/waitlist" \
   -H 'Content-Type: application/json' --data '{"email":"person@example.com"}'
-curl --fail-with-body "$API_ORIGIN/internal/waitlist?status=pending&limit=50" \
-  -H "Authorization: Bearer $ADMIN_TOKEN"
-curl --fail-with-body -X PATCH "$API_ORIGIN/internal/waitlist/$ENTRY_ID" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' \
-  --data '{"status":"completed"}'
 ```
 
 ## Persistence and concurrency
@@ -47,7 +43,8 @@ Status changes lock the entry and append `audit.waitlist_events` in the same
 transaction. Identical updates leave timestamps, audit, and counters unchanged.
 Public joins deliberately have no separate audit event: the entry's creation
 timestamp records admission to this unverified interest list. No tenant actor
-is fabricated for shared-token admin changes.
+is fabricated for admin changes. `audit.platform_events` records the authenticated
+platform member in the same transaction as the legacy waitlist event.
 
 ## Transport and privacy
 

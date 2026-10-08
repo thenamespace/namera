@@ -135,7 +135,8 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 
 `POST /waitlist` accepts an email publicly. `GET /internal/waitlist` lists entries
 with bounded pagination/search/status filters, and `PATCH /internal/waitlist/:id`
-sets `pending` or `completed`; both require `ADMIN_TOKEN`. Joining never creates
+sets `pending` or `completed`; both require platform membership (the legacy status
+update is owner-only pending replacement). Joining never creates
 an account or sends an email. Set optional `WAITLIST_CORS_ORIGIN` to the landing
 page's exact origin; only the public submission route allows it, without cookies.
 See [waitlist architecture](../../architecture/auth/waitlist.md) for commands,
@@ -268,10 +269,13 @@ parallel API-key route for the same resource.
 
 ## Environment
 
-For private beta, set `AUTH_INVITE_REQUIRED=true` (default) and supply a random
-`ADMIN_TOKEN` of at least 32 characters. Shared `AdminAuthorization` middleware protects
-`POST /internal/invites` and `DELETE /internal/invites/:id`; it grants no normal
-user or machine authority. Future platform-admin groups must opt into this middleware.
+For private beta, set `AUTH_INVITE_REQUIRED=true` (default). `AdminAuthorization`
+uses the normal HttpOnly user session and active owner/operator/viewer membership;
+the shared `ADMIN_TOKEN` is no longer accepted. Team writes require recent login
+and an approved Origin. Apply migrations and bootstrap one existing verified user
+with `pnpm --filter @namera-ai/server admin:bootstrap <email>`. Set
+`ADMIN_CORS_ORIGIN` for credentialed admin requests and invitation email links.
+Platform-admin groups must opt into this middleware and enforce permissions.
 See [admin authorization](../../architecture/auth/admin.md) and the
 [operator and signup flow](../../architecture/auth/core/beta-invites.md).
 
@@ -308,8 +312,9 @@ The complete local set and provider-specific comments are kept in
 `apps/server/.env.example`. Package READMEs remain authoritative for each
 service's variables.
 
-Only one exact CORS origin is allowed because credentialed requests must not use
-a wildcard origin.
+The dashboard and internal admin surfaces each use their configured exact origin;
+credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
+is a separate step; see the admin architecture for rollout limitations.
 
 All server environments use `WalletKeys.disabledLayer`. Owner passkeys and local
 session keys sign on the client; managed-key operations fail closed. Local and

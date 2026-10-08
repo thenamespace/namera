@@ -9,12 +9,15 @@ import { ExecutionConfirmedEmail } from "./emails/execution-confirmed.js";
 import { MagicLinkEmail } from "./emails/magic-link.js";
 import { NewSignInEmail } from "./emails/new-sign-in.js";
 import { OrganizationInvitationEmail } from "./emails/organization-invitation.js";
+import { PlatformInvitationEmail } from "./emails/platform-invitation.js";
 import { SessionKeyCreatedEmail } from "./emails/session-key-created.js";
 import { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
 import { WalletCreatedEmail } from "./emails/wallet-created.js";
 
 export const renderEmail = (input: SendEmailProps): ReactElement => {
   switch (input.type) {
+    case "platform-invitation":
+      return <PlatformInvitationEmail {...input.variables} />;
     case "connected-account-changed":
       return <ConnectedAccountChangedEmail {...input.variables} />;
     case "magic-link":

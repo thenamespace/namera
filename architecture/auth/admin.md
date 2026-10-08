@@ -1,50 +1,121 @@
 # Platform admin authorization
 
-Platform operators use `Authorization: Bearer <ADMIN_TOKEN>` on explicitly
-protected internal routes. This is separate from organization administrators:
-an organization owner, API key, CLI token, or MCP token cannot administer the
-platform. The admin token cannot authenticate normal user or wallet routes.
+Platform authority belongs to a verified `auth.user`, independently of provider
+and organization roles. Email and Google reuse `auth.session`; future providers
+need only resolve the same user. No admin session, provider allowlist, shared
+bearer token, or organization-actor bypass exists. `ADMIN_TOKEN` is retired.
 
-`AdminAuthorization` in `packages/api` declares the bearer requirement and provides
-the request-scoped `CurrentAdmin` context (`type: "admin"`,
-`credential: "shared-token"`). `AdminAuthorizationLive` in `apps/server` loads
-`ADMIN_TOKEN` through redacted configuration and compares SHA-256 digests in
-constant time. Missing or shorter-than-32-character configuration disables admin
-access. The old `INVITE_ADMIN_TOKEN` variable is not accepted.
+`AdminAuthorization` accepts only the HttpOnly `auth-token` cookie. It validates
+the session and verified user, then loads current active platform membership on
+every request. It does not depend on an active customer organization. API keys,
+CLI/MCP bearer credentials and ordinary organization owners confer no access.
+`CurrentAdmin` contains user ID, session ID and platform member, not a tenant actor.
 
-The context is deliberately not part of `CurrentActor` or persisted `auth.actor`:
-those principals belong to organizations and participate in wallet grants and
-tenant audit records. Platform administration must not implicitly bypass those
-boundaries. No database migration is needed.
+## Roles
 
-## Adding an admin operation
+Permissions are a fixed protocol-owned map, not editable database roles.
 
-- Declare an internal API group with `.middleware(AdminAuthorization)`.
-- Keep its server handler thin; it can read `CurrentAdmin` if needed. Implement
-  business work in `application`, not in the middleware.
-- Preserve domain-specific validation and add an operation-specific rate limit
-  when required. All admin routes currently share 10 bearer attempts/minute/IP
-  and 30 authenticated operations/hour. These counters are process-local.
-- Persist the mutation and its appropriate audit event in one transaction.
-  Invite creation/revocation already uses `audit.beta_invite_events`. A shared
-  token identifies an operator credential, not an individual human; do not
-  invent a user or organization actor for attribution.
-- Add authentication, authority-isolation, and mutation/audit tests. The typed
-  API boundary suite requires declared authentication on protected endpoints.
+| Permission                                            | Owner | Operator | Viewer |
+| ----------------------------------------------------- | ----- | -------- | ------ |
+| `waitlist:read`, `invites:read`                       | Yes   | Yes      | Yes    |
+| `waitlist:accept`, `invites:create`, `invites:revoke` | Yes   | Yes      | No     |
+| `team:manage`, `ownership:transfer`                   | Yes   | No       | No     |
 
-## Operations
+`waitlist:accept` is reserved for the upcoming transactional acceptance workflow;
+this change does not implement that workflow. Legacy user-list and arbitrary
+waitlist-status endpoints are temporarily owner-only, pending their removal with
+the portal rebuild. They are not operator/viewer capabilities.
 
-Generate a random secret with `openssl rand -hex 32`, supply it through the server
-secret manager, and restrict `/internal/*` at ingress to trusted operators. Use
-HTTPS outside local development. Never ship the token to the dashboard, SDK,
-CLI, or MCP, and never log it. Rotate by replacing it and restarting all server
-instances. Responses receive the API's no-store security headers.
+## Endpoints
 
-When multiple operators need independent revocation, permissions, or personal
-audit attribution, replace the shared credential with named platform identities
-and scoped credentials behind this same boundary. Do not expand tenant roles
-into global admin authority.
+All routes below are excluded from published OpenAPI. `/internal/*` carries
+`AdminAuthorization`; invitation acceptance uses `PlatformSessionAuthorization`
+because the invitee is not a member yet.
 
-Transport tests cover valid context injection, wrong credential kinds,
-missing/short/legacy configuration, attempt throttling, tenant-token isolation,
-and the invite routes' existing transactional audit behavior.
+| Method | Path                                | Access                                             |
+| ------ | ----------------------------------- | -------------------------------------------------- |
+| GET    | `/internal/me`                      | Active member; identity and effective permissions  |
+| GET    | `/internal/members`                 | Owner; team including historical removed members   |
+| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                     |
+| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                         |
+| DELETE | `/internal/members/:id`             | Owner; soft removal                                |
+| POST   | `/internal/ownership/transfer`      | Owner; active target member                        |
+| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor         |
+| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend |
+| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                   |
+| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body         |
+
+Team writes and acceptance require a session created within ten minutes. Re-login
+through normal email/Google authentication provides that proof. All admin writes
+require an exact dashboard or configured admin Origin, including non-browser
+clients. CORS allows credentials for the configured admin origin, never wildcard.
+Existing security middleware supplies no-store. Rate limits are process-local;
+move to a shared store before horizontally scaling admission controls.
+
+## Invitation lifecycle
+
+The owner creates a seven-day invitation and an encrypted durable email job in
+one transaction. The email URL uses `ADMIN_CORS_ORIGIN` and
+`/invitations/accept#token=...`; the fragment avoids server access/referrer logs.
+Only the purpose-separated hash is stored in the invitation table; responses and
+audit events contain neither token nor hash. Invitation mail bypasses notification
+preferences because it is requested access correspondence.
+
+An invited, verified mailbox can complete normal email/Google signup without a
+customer beta code while its invitation and issuing owner remain active. This
+creates a normal user/session, **not** membership. The subsequent explicit accept
+requires the matching verified email, fresh session, live single-use token, and a
+still-active owner issuer. Existing, suspended or removed members cannot use an
+invitation to escalate/reactivate; the owner must change them explicitly.
+
+Resending retires previous pending invitations and cancels pending delivery jobs.
+Revocation/acceptance also cancel pending delivery. Already-sent or in-flight mail
+cannot be recalled, but its token is checked again at acceptance. Ownership
+transfer makes the former owner's outstanding invitations unusable; the new owner
+can resend them. Expired invitations remain historical and can be replaced.
+
+## Transactions and audit
+
+Team mutations and bootstrap take PostgreSQL transaction advisory lock
+`(719204, 1)` before rechecking session/owner authority and changing records.
+This serializes low-volume team operations across replicas, including an empty
+team. At most one owner is enforced by a partial unique index. The owner must
+remain active and generic updates/removal cannot affect them. Transfer demotes
+the previous owner to operator and promotes the active target in one transaction.
+
+State and versioned `audit.platform_events` share that transaction. Acceptance
+attributes its event to the newly created member; bootstrap alone has no actor.
+Legacy beta-invite and waitlist mutations also record the named platform member
+alongside their existing domain audit rows. No credentials or email payloads enter
+audit/logs. Workflow/repository spans use stable names; email delivery and HTTP
+metrics reuse existing bounded telemetry. No new dashboard notifications are added.
+
+See [platform table catalog](../database/auth-platform.md) for persistence details.
+
+## Bootstrap and rollout
+
+1. Apply normal database migrations. There is no conversion of shared-token access.
+2. Ensure the intended owner already has a verified Namera account.
+3. From a trusted server environment with database configuration, run:
+
+   ```sh
+   pnpm --filter @namera-ai/server admin:bootstrap owner@example.com
+   ```
+
+   The command refuses if an owner exists; it is never run on startup or exposed
+   over HTTP. It does not create users or bypass email verification.
+
+4. Set the exact `ADMIN_CORS_ORIGIN`, remove the old admin secret, and use HTTPS.
+   Bootstrap does not require Google configuration; existing email login works.
+
+The **old token-based admin SPA is not compatible** with this backend. Its
+replacement, invitation-acceptance page, direct admin login/return navigation,
+waitlist acceptance + email transaction, and old endpoint removal are explicitly
+the next phase. Do not deploy this as a working rebuilt portal. Until that phase,
+normal dashboard sign-in supplies the shared API session; auth/team endpoints can
+be exercised with that cookie and an approved Origin.
+
+HTTP tests cover role separation, cookie-only auth, origin/freshness guards,
+email and Google admission, invitation lifecycle, replay, owner protection and
+transfer, audit, and immediate revocation. Run lifecycle races against the
+disposable PostgreSQL lane as well as PGlite.

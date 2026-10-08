@@ -17,12 +17,14 @@ import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 const routes = Layer.mergeAll(
   HttpRouter.add("POST", "/waitlist", HttpServerResponse.empty()),
   HttpRouter.add("GET", "/internal/waitlist", HttpServerResponse.empty()),
+  HttpRouter.add("POST", "/auth/platform-invitations/accept", HttpServerResponse.empty()),
   HttpRouter.add("GET", "/wallets", HttpServerResponse.empty()),
   CorsMiddleware.pipe(
     Layer.provide(
       makeTestConfigLayer({
         SERVER_CORS_ORIGIN: "https://app.example.com",
         WAITLIST_CORS_ORIGIN: "https://www.example.com",
+        ADMIN_CORS_ORIGIN: "https://admin.example.com",
       }),
     ),
   ),
@@ -40,6 +42,11 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
         ["/wallets", "GET", "https://www.example.com", false],
         ["/wallets", "OPTIONS", "https://www.example.com", false],
         ["/wallets", "GET", "https://app.example.com", true],
+        ["/internal/waitlist", "GET", "https://admin.example.com", true],
+        ["/internal/waitlist", "OPTIONS", "https://admin.example.com", true],
+        ["/auth/platform-invitations/accept", "POST", "https://admin.example.com", true],
+        ["/auth/platform-invitations/accept", "POST", "https://evil.example.com", false],
+        ["/wallets", "GET", "https://admin.example.com", false],
       ] as const) {
         let response: HttpServerResponse.HttpServerResponse | undefined;
         yield* HttpEffect.toHandled(handler, (_request, result) =>
@@ -63,6 +70,8 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
         );
         if (expected) expect(response?.headers["access-control-allow-origin"]).toBe(origin);
         else expect(response?.headers["access-control-allow-origin"]).not.toBe(origin);
+        if (expected && origin === "https://admin.example.com")
+          expect(response?.headers["access-control-allow-credentials"]).toBe("true");
         if (path === "/waitlist")
           expect(response?.headers["access-control-allow-credentials"]).toBeUndefined();
         if (path === "/waitlist" && method === "OPTIONS") {

@@ -14,14 +14,14 @@ import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, testEmail } from "../../fixtures/index.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer, TestEmails } from "../../fixtures/layers/index.js";
+import { platformClient } from "../../fixtures/platform.js";
 
-const adminToken = "test-only-invite-admin-token-32-characters";
 const BetaLayer = makeTestServerLayer(
   {},
   Passkeys.testLayer,
-  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true", ADMIN_TOKEN: adminToken }),
+  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true" }),
 );
-const adminClient = handledApi(NameraApi, { headers: { authorization: `Bearer ${adminToken}` } });
+const adminClient = platformClient;
 const createInvite = Effect.gen(function* () {
   const admin = yield* adminClient;
   const result = yield* admin.betaInvite.create({ payload: { count: 1, expiresInDays: 7 } });
@@ -77,7 +77,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
       expect((yield* Metric.value(revoked)).count - beforeRevoked.count).toBe(1);
     }),
   );
-  it.effect("does not accept the admin token as a tenant actor", () =>
+  it.effect("does not grant a tenant actor to a platform-only session", () =>
     Effect.gen(function* () {
       const admin = yield* adminClient;
       expect((yield* admin.session.currentActor({ responseMode: "response-only" })).status).toBe(
@@ -252,7 +252,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
           payload: { count: 1 },
           responseMode: "response-only",
         })).status,
-      ).toBe(401);
+      ).toBe(403);
       const replay = yield* registration.client.magicLink.verify({
         payload: registration.payload,
         responseMode: "response-only",

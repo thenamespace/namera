@@ -176,9 +176,14 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             (candidateInvite.email === null || candidateInvite.email === verification.identifier)
               ? candidateInvite
               : undefined;
+          // Admission proves the invited mailbox, not acceptance or admin authority.
+          const platformInvitation = !existingUser
+            ? yield* repository.auth.platform.pendingForEmail(verification.identifier, now)
+            : undefined;
           if (
             !existingUser &&
             config.inviteRequired &&
+            !platformInvitation &&
             (!invite || (invite.email !== null && invite.email !== verification.identifier))
           ) {
             if (input.type === "invite")

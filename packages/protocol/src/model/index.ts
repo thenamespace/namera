@@ -1,4 +1,5 @@
 export * from "./auth/index.js";
+export * from "./auth/platform.js";
 export * from "./billing/index.js";
 export * from "./audit/index.js";
 export * from "./common.js";

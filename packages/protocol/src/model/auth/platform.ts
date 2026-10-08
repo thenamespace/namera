@@ -1,0 +1,101 @@
+import { Schema } from "effect";
+
+import { Email, UserId } from "#/common/index";
+
+export const PlatformRole = Schema.Literals(["owner", "operator", "viewer"]);
+export type PlatformRole = typeof PlatformRole.Type;
+export const PlatformAssignableRole = Schema.Literals(["operator", "viewer"]);
+export const PlatformMemberStatus = Schema.Literals(["active", "suspended", "removed"]);
+export const PlatformPermission = Schema.Literals([
+  "waitlist:read",
+  "waitlist:accept",
+  "invites:read",
+  "invites:create",
+  "invites:revoke",
+  "team:manage",
+  "ownership:transfer",
+]);
+export type PlatformPermission = typeof PlatformPermission.Type;
+
+export const platformPermissions: Readonly<Record<PlatformRole, readonly PlatformPermission[]>> = {
+  owner: [
+    "waitlist:read",
+    "waitlist:accept",
+    "invites:read",
+    "invites:create",
+    "invites:revoke",
+    "team:manage",
+    "ownership:transfer",
+  ],
+  operator: [
+    "waitlist:read",
+    "waitlist:accept",
+    "invites:read",
+    "invites:create",
+    "invites:revoke",
+  ],
+  viewer: ["waitlist:read", "invites:read"],
+};
+
+export const PlatformMember = Schema.Struct({
+  id: Schema.String,
+  userId: UserId,
+  role: PlatformRole,
+  status: PlatformMemberStatus,
+  createdAt: Schema.DateTimeUtcFromDate,
+  updatedAt: Schema.DateTimeUtcFromDate,
+});
+export type PlatformMember = typeof PlatformMember.Type;
+export const PlatformMemberView = Schema.Struct({ ...PlatformMember.fields, email: Email });
+
+export const PlatformInvitation = Schema.Struct({
+  id: Schema.String,
+  email: Email,
+  role: PlatformAssignableRole,
+  tokenHash: Schema.String,
+  invitedByMemberId: Schema.String,
+  expiresAt: Schema.DateTimeUtcFromDate,
+  acceptedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  acceptedByUserId: Schema.NullOr(UserId),
+  revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
+  createdAt: Schema.DateTimeUtcFromDate,
+});
+export type PlatformInvitation = typeof PlatformInvitation.Type;
+
+export const PlatformEventData = Schema.Union([
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literals(["beta-invite.created", "beta-invite.revoked"]),
+    inviteId: Schema.String,
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("waitlist.status-changed"),
+    waitlistId: Schema.String,
+    status: Schema.Literals(["pending", "completed"]),
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("owner.bootstrapped"),
+    memberId: Schema.String,
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("member.changed"),
+    memberId: Schema.String,
+    role: PlatformRole,
+    status: PlatformMemberStatus,
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("ownership.transferred"),
+    previousOwnerId: Schema.String,
+    newOwnerId: Schema.String,
+  }),
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literals(["invitation.created", "invitation.revoked", "invitation.accepted"]),
+    invitationId: Schema.String,
+  }),
+]);
+export type PlatformEventData = typeof PlatformEventData.Type;
