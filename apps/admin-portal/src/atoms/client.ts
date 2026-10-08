@@ -1,5 +1,5 @@
-import { Layer } from "effect";
-import { FetchHttpClient } from "effect/http";
+import { Effect } from "effect";
+import { FetchHttpClient, HttpClient } from "effect/http";
 import { AtomHttpApi } from "effect/reactivity";
 
 import { NameraApi } from "@namera-ai/api";
@@ -13,8 +13,13 @@ export class NameraClient extends AtomHttpApi.Service<NameraClient>()(
     api: NameraApi,
     runtime: adminRuntime,
     baseUrl: env.backendUrl,
-    httpClient: FetchHttpClient.layer.pipe(
-      Layer.provide(Layer.succeed(FetchHttpClient.RequestInit, { credentials: "include" })),
-    ),
+    httpClient: FetchHttpClient.layer,
+    // Apply credentials at request time: telemetry shares the memoized fetch layer.
+    transformClient: (client) =>
+      HttpClient.transform(client, (response) =>
+        Effect.provideService(response, FetchHttpClient.RequestInit, {
+          credentials: "include",
+        }),
+      ),
   },
 ) {}

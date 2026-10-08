@@ -136,6 +136,11 @@ suppresses stale results and rechecks membership. Other pages remain placeholder
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
+Like the dashboard, the generated client supplies fetch credentials at request
+execution through `transformClient`, not only when constructing the fetch layer.
+Telemetry shares that memoized layer; construction-only configuration can be
+lost when the global runtime builds it first. A client regression test covers
+cookie inclusion with the shared global fetch layer present.
 
 Admin sign-in requests send `surface: "admin"`. The API requires the exact
 configured admin Origin and stores the surface in the verification challenge.
