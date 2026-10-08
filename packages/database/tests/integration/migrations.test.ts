@@ -1,9 +1,6 @@
-import { readFile } from "node:fs/promises";
-
-import { expect, it as test, layer } from "@effect/vitest";
+import { expect, layer } from "@effect/vitest";
 import { Effect } from "effect";
 
-import { PGlite } from "@electric-sql/pglite";
 import { sql } from "drizzle-orm";
 
 import { Database, TestDatabase } from "../../src/index.js";
@@ -48,35 +45,4 @@ layer(TestDatabase.layer)("database migrations", (it) => {
       ]);
     }),
   );
-});
-
-test("preserves populated legacy wallet-key tables until their rows are reviewed", async () => {
-  const migration = await readFile(
-    new URL(
-      "../../migrations/20261008182104_remove-legacy-wallet-key/migration.sql",
-      import.meta.url,
-    ),
-    "utf8",
-  );
-  const database = new PGlite();
-  try {
-    await database.exec(`
-      CREATE SCHEMA core;
-      CREATE TABLE core.wallet_key (id text PRIMARY KEY);
-      INSERT INTO core.wallet_key VALUES ('legacy-key');
-    `);
-    await expect(database.exec(migration)).rejects.toThrow(
-      "core.wallet_key still contains legacy rows",
-    );
-    expect((await database.query("SELECT id FROM core.wallet_key")).rows).toEqual([
-      { id: "legacy-key" },
-    ]);
-    await database.exec("DELETE FROM core.wallet_key");
-    await database.exec(migration);
-    expect((await database.query("SELECT to_regclass('core.wallet_key') AS name")).rows).toEqual([
-      { name: null },
-    ]);
-  } finally {
-    await database.close();
-  }
 });

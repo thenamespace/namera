@@ -116,7 +116,5 @@ measure aggregate-query cost before increasing traffic or worker replicas.
 ## Retired wallet-key table
 
 `core.wallet_key` has been replaced by `core.signing_key`. The removal migration
-refuses to drop a nonempty legacy table. Before deploying against an older
-database, review and archive or migrate any remaining rows, then clear the
-legacy table explicitly. Managed local and GCP provider support remains in
-`core.signing_key`; this migration does not delete provider keys.
+drops the legacy table and any remaining rows. Managed local and GCP provider
+support remains in `core.signing_key`; this migration does not delete provider keys.
