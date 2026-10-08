@@ -1,4 +1,4 @@
-export { makeBlockscoutPortfolioService } from "./blockscout.js";
+export { makeAlchemyPortfolioService } from "./alchemy.js";
 export type {
   EvmPortfolioService,
   EvmPortfolioSnapshot,

@@ -39,7 +39,7 @@ export function AssetsTable({
   const [chains, setChains] = useState<ReadonlySet<string>>(new Set());
   const [types, setTypes] = useState<ReadonlySet<string>>(new Set());
   const [pricing, setPricing] = useState<ReadonlySet<string>>(new Set());
-  const [trust, setTrust] = useState<ReadonlySet<string>>(new Set(["credible", "unknown"]));
+
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<DataGridSortDescriptor>({
     column: "value",
@@ -70,18 +70,6 @@ export function AssetsTable({
       { id: "unpriced", label: "Unpriced", count: portfolio.rows.length - priced },
     ];
   }, [portfolio.rows]);
-  const trustOptions = useMemo(() => {
-    const counts = countTableValues(
-      portfolio.rows,
-      (row) => row.addressMetadata?.trust.reputation ?? "unknown",
-    );
-    return [
-      { id: "credible", label: "Trusted", count: counts.get("credible") ?? 0 },
-      { id: "neutral", label: "Known", count: counts.get("neutral") ?? 0 },
-      { id: "unknown", label: "Unverified", count: counts.get("unknown") ?? 0 },
-      { id: "suspicious", label: "Suspicious", count: counts.get("suspicious") ?? 0 },
-    ];
-  }, [portfolio.rows]);
 
   const filtered = useMemo(
     () =>
@@ -93,16 +81,14 @@ export function AssetsTable({
             (value) => value?.toLowerCase().includes(normalizedQuery),
           );
         const pricingId = row.priceUsd === null ? "unpriced" : "priced";
-        const trustId = row.addressMetadata?.trust.reputation ?? "unknown";
         return (
           matchesQuery &&
           (chains.size === 0 || chains.has(row.chainId)) &&
           (types.size === 0 || types.has(row.type)) &&
-          (pricing.size === 0 || pricing.has(pricingId)) &&
-          (trust.size === 0 || trust.has(trustId))
+          (pricing.size === 0 || pricing.has(pricingId))
         );
       }),
-    [chains, normalizedQuery, portfolio.rows, pricing, trust, types],
+    [chains, normalizedQuery, portfolio.rows, pricing, types],
   );
   const sorted = useMemo(() => {
     const sorter = assetSorters[String(sort.column)];
@@ -148,20 +134,6 @@ export function AssetsTable({
           ),
       },
       {
-        id: "trust",
-        label: "Trust",
-        icon: <HugeiconsIcon className="size-4 text-muted" icon={Tag01Icon} />,
-        options: trustOptions,
-        selectedKeys: trust,
-        onSelectionChange: (keys) =>
-          setTrust(
-            toTableSelection(
-              keys,
-              trustOptions.map((option) => option.id),
-            ),
-          ),
-      },
-      {
         id: "pricing",
         label: "Pricing",
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Tag01Icon} />,
@@ -176,20 +148,15 @@ export function AssetsTable({
           ),
       },
     ],
-    [chainOptions, chains, pricing, pricingOptions, trust, trustOptions, typeOptions, types],
+    [chainOptions, chains, pricing, pricingOptions, typeOptions, types],
   );
   const hasFilters =
-    normalizedQuery.length > 0 ||
-    chains.size > 0 ||
-    types.size > 0 ||
-    pricing.size > 0 ||
-    trust.size > 0;
+    normalizedQuery.length > 0 || chains.size > 0 || types.size > 0 || pricing.size > 0;
   const clearFilters = useEventCallback(() => {
     setQuery("");
     setChains(new Set());
     setTypes(new Set());
     setPricing(new Set());
-    setTrust(new Set());
     setPage(1);
   });
   const renderEmptyState = useEventCallback(() =>

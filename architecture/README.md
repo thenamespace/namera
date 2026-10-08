@@ -77,7 +77,6 @@ application contracts are the extension point for future chain families.
 - [EVM namespace adapter](evm/README.md)
 - [Supported EVM chains](evm/supported-chains.md)
 - [EVM smart accounts](evm/accounts/README.md)
-- [Blockscout data enrichment](evm/blockscout-data-enrichment.md)
 - [EVM execution pipeline](evm/execution/README.md)
 - [EVM signatures](evm/signatures.md)
 - [EVM policy engine](evm/policies/README.md)

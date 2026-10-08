@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 
 import { EthereumAddress, Hex, SupportedEvmChainId } from "#/evm/index";
-import { EvmAddressMetadataData } from "#/model/core/address-metadata";
 import { NonEmptyString } from "#/model/index";
 
 export const PortfolioCursor = NonEmptyString.annotate({
@@ -17,6 +16,7 @@ export const QueryPortfolioRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   address: EthereumAddress,
   chainIds: Schema.optionalKey(Schema.Array(SupportedEvmChainId)),
+  refresh: Schema.optionalKey(Schema.Boolean),
   cursor: Schema.optionalKey(PortfolioCursor),
   pageSize: Schema.optionalKey(PortfolioPageSize),
 }).annotate({
@@ -25,6 +25,7 @@ export const QueryPortfolioRequest = Schema.Struct({
 });
 
 export const GetWalletPortfolioRequest = Schema.Struct({
+  refresh: Schema.optionalKey(Schema.Boolean),
   cursor: Schema.optionalKey(PortfolioCursor),
   pageSize: Schema.optionalKey(PortfolioPageSize),
 }).annotate({ identifier: "GetWalletPortfolioRequest" });
@@ -51,8 +52,8 @@ export const EvmPortfolioAsset = Schema.Struct({
   rawBalance: Hex,
   formattedBalance: Schema.NullOr(NonEmptyString),
   metadata: PortfolioAssetMetadata,
-  addressMetadata: Schema.NullOr(EvmAddressMetadataData),
   usdPrice: Schema.NullOr(PortfolioAssetUsdPrice),
+  valueUsd: Schema.NullOr(NonEmptyString),
 }).annotate({
   identifier: "EvmPortfolioAsset",
   description: "A native or ERC-20 balance held by an EVM address",

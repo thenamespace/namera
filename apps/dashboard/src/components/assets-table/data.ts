@@ -1,3 +1,5 @@
+import { BigDecimal } from "effect";
+
 import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { EthereumAddress } from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
@@ -14,7 +16,7 @@ export type AssetTableRow = PortfolioAsset & {
   readonly id: string;
   readonly ownerAddress: EthereumAddress;
   readonly priceUsd: number | null;
-  readonly valueUsd: number | null;
+  readonly numericValueUsd: number | null;
 };
 
 export type AssetAllocation = {
@@ -78,21 +80,18 @@ export const formatBalance = (value: string | null): string => {
 };
 
 export const getAssetName = (asset: PortfolioAsset): string =>
-  asset.addressMetadata?.identity.displayName ??
   asset.metadata.name ??
   asset.metadata.symbol ??
   (asset.type === "native" ? "Native token" : "Unknown token");
 
 export const getAssetSymbol = (asset: PortfolioAsset): string =>
-  asset.addressMetadata?.token?.symbol ??
-  asset.metadata.symbol ??
-  (asset.type === "native" ? "Native" : "Token");
+  asset.metadata.symbol ?? (asset.type === "native" ? "Native" : "Token");
 
 const collapseAllocations = (
-  values: ReadonlyMap<string, { readonly name: string; readonly value: number }>,
+  values: ReadonlyMap<string, { readonly name: string; readonly value: BigDecimal.BigDecimal }>,
 ): ReadonlyArray<AssetAllocation> => {
   const sorted = [...values.entries()]
-    .map(([id, value]) => ({ id, name: value.name, value: value.value }))
+    .map(([id, value]) => ({ id, name: value.name, value: Number(BigDecimal.format(value.value)) }))
     .filter((item) => item.value > 0)
     .toSorted((left, right) => right.value - left.value);
   const visible = sorted.slice(0, 4);
@@ -112,28 +111,33 @@ export const summarizePortfolio = (
   assets: ReadonlyArray<PortfolioAsset>,
   ownerAddress: EthereumAddress,
 ): PortfolioSummary => {
-  const assetValues = new Map<string, { name: string; value: number }>();
-  const chainValues = new Map<string, { name: string; value: number }>();
+  const assetValues = new Map<string, { name: string; value: BigDecimal.BigDecimal }>();
+  const chainValues = new Map<string, { name: string; value: BigDecimal.BigDecimal }>();
 
   const rows = assets.map((asset): AssetTableRow => {
-    const balance = finiteNumber(asset.formattedBalance);
     const priceUsd = finiteNumber(asset.usdPrice?.value ?? null);
-    const valueUsd = balance === null || priceUsd === null ? null : balance * priceUsd;
+    const valueUsd = finiteNumber(asset.valueUsd);
     const id = `${asset.chainId}:${asset.type}:${asset.tokenAddress ?? "native"}`;
 
-    if (valueUsd !== null && Number.isFinite(valueUsd)) {
-      const assetKey = asset.metadata.symbol ?? asset.tokenAddress ?? `native:${asset.chainId}`;
+    if (valueUsd !== null && asset.valueUsd !== null) {
+      const assetKey = id;
       const assetValue = assetValues.get(assetKey);
       assetValues.set(assetKey, {
-        name: getAssetSymbol(asset),
-        value: (assetValue?.value ?? 0) + valueUsd,
+        name: `${getAssetSymbol(asset)} · ${getChainDataByCaip2(asset.chainId)?.chain.name ?? asset.chainId}`,
+        value: BigDecimal.sum(
+          assetValue?.value ?? BigDecimal.fromBigInt(0n),
+          BigDecimal.fromStringUnsafe(asset.valueUsd),
+        ),
       });
 
       const chain = getChainDataByCaip2(asset.chainId);
       const chainValue = chainValues.get(asset.chainId);
       chainValues.set(asset.chainId, {
         name: chain?.chain.name ?? asset.chainId,
-        value: (chainValue?.value ?? 0) + valueUsd,
+        value: BigDecimal.sum(
+          chainValue?.value ?? BigDecimal.fromBigInt(0n),
+          BigDecimal.fromStringUnsafe(asset.valueUsd),
+        ),
       });
     }
 
@@ -142,16 +146,24 @@ export const summarizePortfolio = (
       id,
       ownerAddress,
       priceUsd,
-      valueUsd,
+      numericValueUsd: valueUsd,
     };
   });
-  const pricedAssetCount = rows.filter((row) => row.valueUsd !== null).length;
+  const pricedAssetCount = rows.filter((row) => row.numericValueUsd !== null).length;
 
   return {
     assetAllocations: collapseAllocations(assetValues),
     chainAllocations: collapseAllocations(chainValues),
     pricedAssetCount,
-    pricedTotalUsd: rows.reduce((sum, row) => sum + (row.valueUsd ?? 0), 0),
+    pricedTotalUsd: Number(
+      BigDecimal.format(
+        BigDecimal.sumAll(
+          rows.map((row) =>
+            BigDecimal.fromStringUnsafe(row.numericValueUsd === null ? "0" : (row.valueUsd ?? "0")),
+          ),
+        ),
+      ),
+    ),
     rows,
     unpricedAssetCount: rows.length - pricedAssetCount,
   };

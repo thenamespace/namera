@@ -1,9 +1,4 @@
 export * from "./accounts/index.js";
-export type {
-  EvmAddressMetadataService,
-  ResolveEvmAddressMetadataInput,
-  SearchEvmAddressMetadataInput,
-} from "./address-metadata/index.js";
 export * from "./billing/index.js";
 export * from "./chains/index.js";
 export * from "./config.js";

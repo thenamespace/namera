@@ -36,7 +36,6 @@ it.effect("distinguishes validation rejection from ambiguous RPC failures throug
     const clients = makeExecutionClients({
       alchemyApiKey: Redacted.make("test"),
       alchemyBsoPolicyId: Redacted.make("test"),
-      blockscoutApiKey: Redacted.make("test"),
     })(chain);
 
     for (const code of [

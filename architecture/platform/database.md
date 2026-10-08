@@ -73,7 +73,7 @@ decoding; application workflows own authorization and business decisions.
 
 The server applies the full migration chain before role synchronization and
 worker startup. Tests use the same migrations with PGlite, load the bundled
-`pg_trgm` extension required by address-metadata search indexes, and delete
+`pg_trgm` extension required when replaying historical address-metadata migrations, and delete
 tables in foreign-key order between cases. PGlite verifies migration and normal
 repository compatibility; PostgreSQL remains required for advisory locks,
 concurrency, and query-plan verification. The pre-production database is

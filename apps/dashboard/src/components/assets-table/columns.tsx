@@ -1,5 +1,6 @@
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import { Avatar, Typography, type DataGridColumn } from "@namera-ai/ui";
-import { ChainIcon, CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { ChainIcon } from "@namera-ai/ui/icons";
 
 import {
   formatBalance,
@@ -15,46 +16,44 @@ export type AssetGridRow = AssetTableRow;
 export const getAssetRowId = (row: AssetGridRow): string => row.id;
 
 function TokenIcon({ asset, symbol }: { asset: AssetTableRow; symbol: string }) {
-  const logoUrl = asset.addressMetadata?.identity.iconUrl ?? asset.metadata.logoUrl;
-
-  if (asset.type === "native" && symbol === "ETH") {
-    return (
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-tertiary">
-        <ChainIcon aria-hidden chain="ethereum" className="size-5" namespace="eip155" />
-      </span>
-    );
-  }
-
+  const chain = getChainDataByCaip2(asset.chainId);
   return (
-    <Avatar className="shrink-0" size="sm">
-      {logoUrl === null ? null : <Avatar.Image alt="" src={logoUrl} />}
-      <Avatar.Fallback>{symbol.slice(0, 2).toUpperCase()}</Avatar.Fallback>
-    </Avatar>
+    <span className="relative mr-1 inline-flex size-9 shrink-0">
+      <Avatar className="size-9" size="sm">
+        {asset.metadata.logoUrl === null ? null : (
+          <Avatar.Image alt="" src={asset.metadata.logoUrl} />
+        )}
+        <Avatar.Fallback>
+          {asset.type === "native" && symbol === "ETH" ? (
+            <ChainIcon aria-hidden chain="ethereum" namespace="eip155" className="size-7" />
+          ) : (
+            symbol.slice(0, 2).toUpperCase()
+          )}
+        </Avatar.Fallback>
+      </Avatar>
+      <span className="absolute -right-1 -bottom-1 grid size-4.5 place-items-center rounded-full bg-surface ring-2 ring-surface">
+        <ChainIcon
+          aria-hidden
+          chain={chain?.name ?? "ethereum"}
+          namespace="eip155"
+          className="size-3.5"
+        />
+      </span>
+    </span>
   );
 }
 
 function TokenDisplay({ asset }: { asset: AssetTableRow }) {
   const symbol = getAssetSymbol(asset);
-  const isVerified = asset.addressMetadata?.trust.isSourceVerified === true;
-
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center gap-3 py-1">
       <TokenIcon asset={asset} symbol={symbol} />
       <div className="min-w-0 leading-tight">
-        <div className="flex items-center gap-1">
-          <Typography className="truncate text-sm!" weight="medium">
-            {getAssetName(asset)}
-          </Typography>
-          {isVerified ? (
-            <HugeiconsIcon
-              aria-label="Source verified"
-              className="size-3.5 shrink-0 text-accent"
-              icon={CheckmarkCircle02Icon}
-            />
-          ) : null}
-        </div>
-        <Typography className="truncate text-xs! leading-tight" color="muted">
+        <Typography className="truncate text-sm!" weight="medium">
           {symbol}
+        </Typography>
+        <Typography className="truncate text-xs! leading-tight" color="muted">
+          {getChainDataByCaip2(asset.chainId)?.chain.name ?? asset.chainId}
         </Typography>
       </div>
     </div>
@@ -65,7 +64,7 @@ export const assetColumns: Array<DataGridColumn<AssetGridRow>> = [
   {
     allowsSorting: true,
     cell: (row) => <TokenDisplay asset={row} />,
-    header: "Asset",
+    header: "Token",
     id: "asset",
     isRowHeader: true,
     minWidth: 220,
@@ -89,7 +88,7 @@ export const assetColumns: Array<DataGridColumn<AssetGridRow>> = [
     cell: (row) => (
       <span className="text-sm tabular-nums text-muted">{formatUnitPrice(row.priceUsd)}</span>
     ),
-    header: "Price",
+    header: "Price (USD)",
     id: "price",
     minWidth: 110,
     width: 150,
@@ -98,12 +97,12 @@ export const assetColumns: Array<DataGridColumn<AssetGridRow>> = [
     align: "end",
     allowsSorting: true,
     cell: (row) =>
-      row.valueUsd === null ? (
+      row.numericValueUsd === null ? (
         <span className="text-sm text-muted">—</span>
       ) : (
-        <span className="text-sm font-medium tabular-nums">{formatUsd(row.valueUsd)}</span>
+        <span className="text-sm font-medium tabular-nums">{formatUsd(row.numericValueUsd)}</span>
       ),
-    header: "Value",
+    header: "Value (USD)",
     id: "value",
     minWidth: 120,
     width: 170,
@@ -120,5 +119,6 @@ export const assetSorters: Readonly<
   balance: (left, right) =>
     Number(left.formattedBalance ?? 0) - Number(right.formattedBalance ?? 0),
   price: (left, right) => nullableNumber(left.priceUsd) - nullableNumber(right.priceUsd),
-  value: (left, right) => nullableNumber(left.valueUsd) - nullableNumber(right.valueUsd),
+  value: (left, right) =>
+    nullableNumber(left.numericValueUsd) - nullableNumber(right.numericValueUsd),
 };

@@ -179,11 +179,11 @@ hour. It revokes the key and every active grant in one application transaction.
 as the wallet detail route. `POST /portfolios/assets/query` exposes the same
 provider-neutral portfolio for an explicit namespace-qualified address. Both
 return paginated native and ERC-20 assets across supported EVM chains and
-preserve per-chain Blockscout failures in the success response.
-
-Address enrichment uses `GET /address-metadata/:namespace/:chainId/:address`,
-`POST /address-metadata/resolve`, and `GET /address-metadata/search`. The
-Blockscout credential and provider payloads remain inside the EVM adapter.
+preserve per-chain Alchemy failures in the success response. Complete account
+snapshots are cached in memory for five minutes (bounded to 500 keys per server).
+Use `refresh=true` on the first page to refresh from Alchemy. Wallet authorization
+is checked on every request, including cache hits. Provider credentials stay in
+the EVM adapter.
 
 Smart-account signatures are limited to 120 requests per API key per minute.
 Smart-account signature verification is limited separately to 240 requests per

@@ -1,101 +1,152 @@
 import { expect, it } from "@effect/vitest";
-import { Effect, Redacted } from "effect";
+import { BigDecimal, Effect, Redacted } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 
 import { EthereumAddress } from "@namera-ai/protocol";
 
-import { makeBlockscoutPortfolioService } from "../../src/portfolio/blockscout.js";
+import { makeAlchemyPortfolioService } from "../../src/portfolio/alchemy.js";
 
 const config = {
   alchemyApiKey: Redacted.make("test-api-key"),
   alchemyBsoPolicyId: Redacted.make("test-policy-id"),
-  blockscoutApiKey: Redacted.make("test-blockscout-key"),
 };
-
-const jsonResponse = (
-  request: Parameters<Parameters<typeof HttpClient.make>[0]>[0],
-  body: unknown,
-) =>
-  HttpClientResponse.fromWeb(
-    request,
-    new Response(JSON.stringify(body), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    }),
-  );
-
-it.effect("normalizes native and ERC-20 balances from Blockscout", () => {
-  const client = HttpClient.make((request) => {
-    if (request.url.includes("/tokens")) {
-      return Effect.succeed(
-        jsonResponse(request, {
-          items: [
-            {
-              token: {
-                address_hash: "0x2222222222222222222222222222222222222222",
-                decimals: "6",
-                exchange_rate: "1.00",
-                icon_url: "https://example.test/usdc.svg",
-                name: "USD Coin",
-                reputation: "ok",
-                symbol: "USDC",
-                type: "ERC-20",
-              },
-              value: "2500000",
-            },
-          ],
-          next_page_params: null,
-        }),
-      );
-    }
-    return Effect.succeed(
-      jsonResponse(request, {
-        coin_balance: "1000000000000000000",
-        exchange_rate: "3200.50",
-        hash: "0x1111111111111111111111111111111111111111",
-        is_contract: false,
-        is_scam: false,
-        is_verified: false,
-      }),
-    );
-  });
-  const portfolio = makeBlockscoutPortfolioService(config, client);
-
-  return Effect.gen(function* () {
-    const result = yield* portfolio.getAssets({
-      address: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
-      chainIds: ["eip155:1"],
-    });
-
-    expect(result.items).toHaveLength(2);
-    expect(result.items[0]).toMatchObject({
-      chainId: "eip155:1",
-      type: "native",
-      formattedBalance: "1",
-      metadata: { name: "Ether", symbol: "ETH", decimals: 18 },
-      usdPrice: { value: "3200.50" },
-    });
-    expect(result.items[1]).toMatchObject({
-      type: "erc20",
-      formattedBalance: "2.5",
-      metadata: { name: "USD Coin", symbol: "USDC", decimals: 6 },
-    });
-    expect(result.partialFailures).toEqual([]);
-  });
+const address = EthereumAddress.make("0x1111111111111111111111111111111111111111");
+const token = (overrides: Record<string, unknown> = {}) => ({
+  network: "eth-mainnet",
+  address,
+  tokenAddress: "0x2222222222222222222222222222222222222222",
+  tokenBalance: "0x2625a0",
+  tokenMetadata: {
+    name: "USD Coin",
+    symbol: "USDC",
+    decimals: 6,
+    logo: "https://example.test/usdc.svg",
+  },
+  tokenPrices: [
+    { currency: "usd", value: "1.000000000000000001", lastUpdatedAt: "2026-10-09T00:00:00Z" },
+  ],
+  ...overrides,
 });
-
-it.effect("maps an unavailable Blockscout chain to a typed error", () => {
-  const client = HttpClient.make((request) =>
-    Effect.succeed(
-      HttpClientResponse.fromWeb(request, new Response("rate limited", { status: 429 })),
+const clientWith = (body: () => unknown) =>
+  HttpClient.make((request) =>
+    Effect.sync(() =>
+      HttpClientResponse.fromWeb(
+        request,
+        new Response(JSON.stringify(body()), { headers: { "content-type": "application/json" } }),
+      ),
     ),
   );
-  const portfolio = makeBlockscoutPortfolioService(config, client);
 
-  return Effect.flip(
-    portfolio.getAssets({
-      address: EthereumAddress.make("0x1111111111111111111111111111111111111111"),
+it.effect("paginates and deduplicates balances without rounding USD values", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const client = clientWith(() => ({
+      data: {
+        tokens: [
+          token(),
+          ...(calls > 0
+            ? [
+                token({
+                  tokenAddress: null,
+                  tokenBalance: "0xde0b6b3a7640000",
+                  tokenMetadata: null,
+                  tokenPrices: [],
+                }),
+              ]
+            : []),
+        ],
+        pageKey: calls++ === 0 ? "next-page" : null,
+      },
+    }));
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({
+      address,
       chainIds: ["eip155:1"],
-    }),
-  ).pipe(Effect.map((error) => expect(error.code).toBe("PROVIDER_UNAVAILABLE")));
-});
+    });
+    expect(calls).toBe(2);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
+      formattedBalance: "2.5",
+    });
+    expect(
+      BigDecimal.equals(
+        BigDecimal.fromStringUnsafe(result.items[0]?.valueUsd ?? "0"),
+        BigDecimal.fromStringUnsafe("2.5000000000000000025"),
+      ),
+    ).toBe(true);
+    expect(result.items[1]).toMatchObject({
+      formattedBalance: "1",
+      metadata: { symbol: "ETH", decimals: 18 },
+      valueUsd: null,
+    });
+  }),
+);
+
+it.effect("preserves unknown token balances and reports partial network errors", () =>
+  Effect.gen(function* () {
+    const client = clientWith(() => ({
+      data: {
+        tokens: [
+          token({
+            tokenMetadata: null,
+            tokenPrices: [],
+            error: { message: "metadata unavailable" },
+          }),
+        ],
+      },
+    }));
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({
+      address,
+      chainIds: ["eip155:1", "eip155:8453"],
+    });
+    expect(result.items[0]).toMatchObject({
+      rawBalance: "0x2625a0",
+      formattedBalance: null,
+      valueUsd: null,
+    });
+    expect(result.partialFailures).toEqual([
+      { chainId: "eip155:8453", code: "PROVIDER_UNAVAILABLE" },
+    ]);
+  }),
+);
+
+it.effect("rejects HTTP-200 partial errors rather than showing an empty wallet", () =>
+  Effect.gen(function* () {
+    const client = clientWith(() => ({
+      data: { tokens: [] },
+      error: { partialErrors: [{ network: "eth-mainnet", message: "Timed out" }] },
+    }));
+    const error = yield* Effect.flip(
+      makeAlchemyPortfolioService(config, client).getAssets({ address, chainIds: ["eip155:1"] }),
+    );
+    expect(error.code).toBe("PROVIDER_UNAVAILABLE");
+  }),
+);
+
+it.effect("stops repeated provider cursors instead of returning truncated totals", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const client = clientWith(() => {
+      calls++;
+      return { data: { tokens: [token()], pageKey: "repeat" } };
+    });
+    yield* Effect.flip(
+      makeAlchemyPortfolioService(config, client).getAssets({ address, chainIds: ["eip155:1"] }),
+    );
+    expect(calls).toBe(2);
+  }),
+);
+
+it.effect("sanitizes HTTP failures without exposing the credential URL", () =>
+  Effect.gen(function* () {
+    const client = HttpClient.make((request) =>
+      Effect.succeed(
+        HttpClientResponse.fromWeb(request, new Response("rate limited", { status: 429 })),
+      ),
+    );
+    const error = yield* Effect.flip(
+      makeAlchemyPortfolioService(config, client).getAssets({ address, chainIds: ["eip155:1"] }),
+    );
+    expect(error.code).toBe("PROVIDER_UNAVAILABLE");
+    expect(String(error.cause)).not.toContain("test-api-key");
+  }),
+);

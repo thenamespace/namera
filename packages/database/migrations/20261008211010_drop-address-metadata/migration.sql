@@ -1,0 +1,1 @@
+DROP TABLE "core"."address_metadata";

@@ -161,7 +161,6 @@ it("isolates the BSO policy header to sponsored submission", () => {
   const clients = makeExecutionClients({
     alchemyApiKey: Redacted.make("alchemy-api-key"),
     alchemyBsoPolicyId: Redacted.make("bso-policy-id"),
-    blockscoutApiKey: Redacted.make("blockscout-api-key"),
   })(chain);
   const sponsoredHeaders = new Headers(
     clients.getSubmissionClient("alchemy-bso").transport.fetchOptions?.headers,
