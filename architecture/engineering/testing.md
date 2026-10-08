@@ -144,8 +144,7 @@ Execution, history, and overview tests submit through prepare/complete and run
 worker iterations explicitly. They cover idempotent settlement, failed-receipt
 reservation release, actor-scoped reads, and pagination. Simulation assertions
 compare usage after the installation baseline: installing a session is itself a
-metered operation. The published-contract regression asserts that synchronous execution/signature
-endpoints are absent and their prepare/complete replacements remain available.
+metered operation. The removed synchronous endpoints are not used to create test history.
 
 ## Commands
 
