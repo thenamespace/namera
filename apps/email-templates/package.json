@@ -35,7 +35,7 @@
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
     "typecheck": "tsc -p tsconfig.json --pretty false",
-    "email:dev": "email dev -d ./src/emails -p 4000"
+    "dev": "email dev -d ./src/emails -p 4000"
   },
   "dependencies": {
     "@namera-ai/emails": "workspace:*",
