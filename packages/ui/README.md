@@ -24,6 +24,8 @@ the UI package boundary.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
   Dashboard and admin use `bg-app-canvas` for the outer shell and `bg-background`
   for page panels. Sidebar row sizing and hover treatments are shared here.
+- `src/components/transition.tsx` — shared step transition used by dashboard and
+  admin auth pages, preserving the dashboard timing and reduced-motion behavior.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
 
 ## Usage

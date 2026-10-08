@@ -43,9 +43,9 @@ export function AuthForm({ denied, google }: { denied: boolean; google?: string 
     (google ? { _tag: "GoogleAuthError", code: google } : null);
 
   return (
-    <AuthShell>
+    <AuthShell stepKey={`auth-step-${step}`}>
       {denied ? (
-        <Typography.Paragraph className="mb-6 text-center" size="sm" role="alert">
+        <Typography.Paragraph align="center" className="mb-6" size="sm" role="alert">
           This account doesn’t have admin access. Sign in with your team account or ask the owner
           for access.
         </Typography.Paragraph>
@@ -53,6 +53,7 @@ export function AuthForm({ denied, google }: { denied: boolean; google?: string 
       {step === "options" ? (
         <div className="grid gap-4">
           <Typography.Heading
+            align="center"
             className="mb-3 text-center text-balance text-xl"
             level={1}
             weight="medium"
@@ -95,7 +96,7 @@ export function AuthForm({ denied, google }: { denied: boolean; google?: string 
             request.mutate({ payload: { ...payload, surface: "admin", returnTo: "/" } }),
           )}
         >
-          <Typography.Heading className="mb-3 text-center text-balance text-xl" level={1}>
+          <Typography.Heading align="center" className="mb-3 text-balance text-xl" level={1}>
             What's your email address?
           </Typography.Heading>
           <FieldGroup>
@@ -126,7 +127,7 @@ export function AuthForm({ denied, google }: { denied: boolean; google?: string 
               )}
             />
           </FieldGroup>
-          <Button form="admin-email-form" fullWidth isPending={request.isPending} type="submit">
+          <Button form="admin-email-form" fullWidth isDisabled={request.isPending} type="submit">
             {request.isPending ? "Sending link..." : "Continue with email"}
           </Button>
           <Button fullWidth variant="ghost" isDisabled={request.isPending} onPress={back}>
@@ -137,7 +138,7 @@ export function AuthForm({ denied, google }: { denied: boolean; google?: string 
         <EmailConfirmation email={form.getValues("email")} onBack={back} />
       )}
       {error ? (
-        <Typography.Paragraph role="alert" size="sm" className="mt-4 text-danger text-center">
+        <Typography.Paragraph align="center" role="alert" size="sm" className="mt-4 text-danger">
           {authErrorMessage(
             error,
             startGoogle.error

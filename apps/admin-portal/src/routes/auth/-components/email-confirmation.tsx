@@ -15,17 +15,19 @@ export function EmailConfirmation({ email, onBack }: { email: string; onBack: ()
   });
   const verify = useVerifyMagicLink({ onSuccess: finishSignIn });
   return (
-    <div className="text-center">
-      <Typography.Heading className="text-xl" level={1}>
+    <div className="text-center flex flex-col items-center justify-center">
+      <Typography.Heading align="center" className="text-balance text-xl" level={1}>
         Check your email
       </Typography.Heading>
-      <output className="mt-3 block text-sm text-muted">
-        Use the sign-in link or enter the eight-digit code sent to{" "}
-        <span className="text-foreground wrap-anywhere">{email}</span>
+      <output className="mt-3 block">
+        <Typography.Paragraph align="center" className="text-pretty" color="muted" size="sm">
+          Use the sign-in link or enter the eight-digit code sent to{" "}
+          <span className="text-foreground wrap-anywhere">{email}</span>
+        </Typography.Paragraph>
       </output>
       <form
         id="admin-code-form"
-        className="mt-6"
+        className="mt-6 w-full"
         noValidate
         onSubmit={form.handleSubmit((payload) =>
           verify.mutate({ payload: { type: "code", ...payload } }),
@@ -73,13 +75,13 @@ export function EmailConfirmation({ email, onBack }: { email: string; onBack: ()
           form="admin-code-form"
           fullWidth
           type="submit"
-          isPending={verify.isPending}
+          isDisabled={verify.isPending}
         >
           {verify.isPending ? "Signing in..." : "Sign in"}
         </Button>
       </form>
       {verify.error ? (
-        <Typography.Paragraph className="mt-3 text-danger" role="alert" size="sm">
+        <Typography.Paragraph align="center" className="mt-3 text-danger" role="alert" size="sm">
           {authErrorMessage(
             verify.error,
             "Couldn’t sign in. Check your code or request a new email.",

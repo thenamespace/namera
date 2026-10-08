@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { Schema } from "effect";
 
 import { GetMagicLinkRequest } from "@namera-ai/protocol/dto";
-import { Button, Typography, Link } from "@namera-ai/ui";
+import { Button, buttonVariants, cn, Typography, Link } from "@namera-ai/ui";
 
 import { useVerifyMagicLink } from "@/hooks/auth";
 import { authErrorMessage, finishSignIn } from "@/lib/auth-feedback";
@@ -18,24 +18,27 @@ export function VerifyForm({ search }: { search: { id?: string; token?: string }
     if (valid) mutate({ payload: { type: "token", ...search } });
   }, [valid, mutate, search]);
   return (
-    <AuthShell>
-      <div className="grid gap-4 text-center">
-        <Typography.Heading className="mb-3 text-xl" level={1}>
+    <AuthShell stepKey="verify-magic-link">
+      <div className="text-center flex flex-col items-center justify-center">
+        <Typography.Heading align="center" className="text-balance text-xl" level={1}>
           Sign in to Namera Admin?
         </Typography.Heading>
-        <Button fullWidth isDisabled={!valid} isPending={verify.isPending} onPress={submit}>
+        <Button className="mt-8" fullWidth isDisabled={!valid || verify.isPending} onPress={submit}>
           {verify.isPending ? "Signing in..." : "Continue"}
         </Button>
         {!valid || verify.error ? (
-          <Typography.Paragraph role="alert" className="text-danger" size="sm">
+          <Typography.Paragraph align="center" role="alert" className="text-danger mt-4" size="sm">
             {authErrorMessage(
               verify.error,
               "This sign-in link is invalid or expired. Request a new email.",
             )}
           </Typography.Paragraph>
         ) : null}
-        <Link href="/auth" className="py-3">
-          Back to login
+        <Link
+          href="/auth"
+          className={cn(buttonVariants({ variant: "ghost" }), "mt-2 w-full") as string}
+        >
+          Cancel
         </Link>
       </div>
     </AuthShell>
