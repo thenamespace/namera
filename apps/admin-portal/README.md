@@ -82,7 +82,6 @@ when the server snapshot is cached.
 Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
 and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in
 [platform admin authorization](../../architecture/auth/admin.md).
-The prior UI is preserved in `apps/admin-portal-old`, excluded from the workspace.
 
 ## Checks and deployment
 

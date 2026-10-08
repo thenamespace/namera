@@ -141,10 +141,10 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 4. Set the exact `ADMIN_CORS_ORIGIN`, remove the old admin secret, and use HTTPS.
    Bootstrap does not require Google configuration; existing email login works.
 
-The old token-based SPA is archived in `apps/admin-portal-old` and excluded from
-the workspace. The replacement `apps/admin-portal` implements `/auth` with Google
+The old token-based SPA has been removed; its source remains in Git history.
+`apps/admin-portal` implements `/auth` with Google
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
-protected pages at `/`, `/waitlist`, `/invites`, and `/team`.
+protected page set at `/`, `/waitlist`, `/invites`, and `/team`.
 All share one membership-guarded layout and the dashboard-style UIKit sidebar;
 Team implements an owner-only member table, invite-by-email, role updates and
 confirmed soft removal. Member rows include user display metadata from the existing
