@@ -15,15 +15,14 @@ CLI/MCP bearer credentials and ordinary organization owners confer no access.
 
 Permissions are a fixed protocol-owned map, not editable database roles.
 
-| Permission                                            | Owner | Operator | Viewer |
-| ----------------------------------------------------- | ----- | -------- | ------ |
-| `waitlist:read`, `invites:read`                       | Yes   | Yes      | Yes    |
-| `waitlist:accept`, `invites:create`, `invites:revoke` | Yes   | Yes      | No     |
-| `team:manage`, `ownership:transfer`                   | Yes   | No       | No     |
+| Permission                          | Owner | Operator | Viewer |
+| ----------------------------------- | ----- | -------- | ------ |
+| `team:manage`, `ownership:transfer` | Yes   | No       | No     |
 
-Waitlist and beta-invite permissions are reserved for the portal rebuild; no
-business-management endpoints currently consume them. The role map and all
-team-management authorization remain unchanged.
+Only implemented team-management permissions are defined. Operators and viewers
+currently have empty permission arrays but retain active-member access to
+`/internal/me` and the portal shell. Waitlist and beta-invite permissions will be
+introduced alongside their replacement endpoints, not reserved in advance.
 
 ## Endpoints
 
