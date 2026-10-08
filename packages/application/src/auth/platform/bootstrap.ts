@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { PlatformAuthError, type Email } from "@namera-ai/protocol";
 
-// Explicit operator command only; never called during startup or exposed over HTTP.
+// Called by trusted server startup only, never exposed over HTTP.
 export const bootstrapPlatformOwner = Effect.fn("application.platform.bootstrapOwner")(function* (
   email: Email,
 ) {

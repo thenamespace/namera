@@ -7,7 +7,6 @@
     "#/*": "./src/*.ts"
   },
   "scripts": {
-    "admin:bootstrap": "tsx --env-file-if-exists=.env --conditions=namera-source src/commands/bootstrap-admin.ts",
     "build": "tsdown --config tsdown.config.ts",
     "dev": "tsx watch --env-file-if-exists=.env --conditions=namera-source src/index.ts",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",

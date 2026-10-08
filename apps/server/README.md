@@ -35,7 +35,8 @@ the server/application ownership split.
 
 Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
-`@namera-ai/database/DatabaseMigration`.
+`@namera-ai/database/DatabaseMigration`. It then optionally bootstraps the first
+platform owner from `ADMIN_BOOTSTRAP_OWNER_EMAIL` before accepting traffic.
 
 After migrations complete, the server starts scoped email, execution, and
 billing workers. They use locked/leased claims safe for multiple instances and
@@ -272,8 +273,11 @@ parallel API-key route for the same resource.
 For private beta, set `AUTH_INVITE_REQUIRED=true` (default). `AdminAuthorization`
 uses the normal HttpOnly user session and active owner/operator/viewer membership;
 the shared `ADMIN_TOKEN` is no longer accepted. Team writes require recent login
-and an approved Origin. Apply migrations and bootstrap one existing verified user
-with `pnpm --filter @namera-ai/server admin:bootstrap <email>`. Set
+and an approved Origin. Set `ADMIN_BOOTSTRAP_OWNER_EMAIL` to an existing verified
+user's email to bootstrap the first owner automatically after startup migrations.
+Unset/blank disables it; any existing owner makes it a no-op. Missing/unverified
+users are skipped with a warning and retried on the next restart. Invalid email
+syntax or database failures fail startup. Remove the variable after success. Set
 `ADMIN_CORS_ORIGIN` for credentialed admin requests and invitation email links.
 Platform-admin groups must opt into this middleware and enforce permissions.
 See [admin authorization](../../architecture/auth/admin.md) and the

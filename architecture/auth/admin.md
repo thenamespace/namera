@@ -96,14 +96,25 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 
 1. Apply normal database migrations. There is no conversion of shared-token access.
 2. Ensure the intended owner already has a verified Namera account.
-3. From a trusted server environment with database configuration, run:
+3. Set the server environment variable:
 
    ```sh
-   pnpm --filter @namera-ai/server admin:bootstrap owner@example.com
+   ADMIN_BOOTSTRAP_OWNER_EMAIL=owner@example.com
    ```
 
-   The command refuses if an owner exists; it is never run on startup or exposed
-   over HTTP. It does not create users or bypass email verification.
+   On every server startup, after database migrations and before binding HTTP,
+   the server attempts bootstrap using its existing database connection. Unset
+   or blank disables it. If any owner already exists, nothing changes, even if
+   the configured email differs or ownership has been transferred. A missing or
+   unverified account produces `admin.owner_bootstrap_skipped` with reason
+   `verified_user_required`; startup continues and the next restart retries.
+   No user is created and verification is never bypassed. Invalid email syntax
+   or unexpected database failures fail startup rather than silently skipping.
+   Successful creation emits `admin.owner_bootstrapped` without the email and
+   atomically records `owner.bootstrapped` with membership under the existing
+   team lock. Remove the variable after success. There is no bootstrap HTTP
+   endpoint or manual command. The standalone `db:migrate` only migrates schema
+   and system roles; owner bootstrap belongs to server startup.
 
 4. Set the exact `ADMIN_CORS_ORIGIN`, remove the old admin secret, and use HTTPS.
    Bootstrap does not require Google configuration; existing email login works.

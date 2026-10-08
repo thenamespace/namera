@@ -32,12 +32,14 @@ import {
   TelemetryRoutes,
 } from "#/routes/index";
 
+import { bootstrapConfiguredAdminOwner } from "./admin-bootstrap.js";
 import { createHttpServer } from "./http-server.js";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
-    // Never accept traffic against an older schema. Migrations and system-data
+    // Finish migrations and optional owner bootstrap before accepting traffic.
     yield* DatabaseMigration;
+    yield* bootstrapConfiguredAdminOwner();
     const config = yield* ServerConfig;
 
     return NodeHttpServer.layer(createHttpServer, {
@@ -45,7 +47,7 @@ const NodeServerLive = Layer.unwrap(
       port: config.port,
     });
   }),
-).pipe(Layer.provide(DatabaseMigration.layer));
+).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
 
 const Routes = Layer.mergeAll(
   ApiReferenceRoutes,
