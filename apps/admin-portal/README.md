@@ -27,7 +27,6 @@ not a portal callback URI.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: Owner-only admin members table, invitations, role updates, and removal.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
-- `/activity`: Admin activity.
 
 Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header

@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedInvitesRouteImport } from './routes/_authenticated/invites'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedWaitlistRouteImport } from './routes/_authenticated/waitlist'
@@ -32,11 +31,6 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInvitesRoute = AuthenticatedInvitesRouteImport.update({
@@ -73,7 +67,6 @@ const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
-  '/activity': typeof AuthenticatedActivityRoute
   '/invites': typeof AuthenticatedInvitesRoute
   '/team': typeof AuthenticatedTeamRoute
   '/waitlist': typeof AuthenticatedWaitlistRoute
@@ -82,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
 }
 export interface FileRoutesByTo {
-  '/activity': typeof AuthenticatedActivityRoute
   '/invites': typeof AuthenticatedInvitesRoute
   '/team': typeof AuthenticatedTeamRoute
   '/waitlist': typeof AuthenticatedWaitlistRoute
@@ -95,7 +87,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
-  '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/invites': typeof AuthenticatedInvitesRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/waitlist': typeof AuthenticatedWaitlistRoute
@@ -109,7 +100,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/activity'
     | '/invites'
     | '/team'
     | '/waitlist'
@@ -118,7 +108,6 @@ export interface FileRouteTypes {
     | '/auth/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/activity'
     | '/invites'
     | '/team'
     | '/waitlist'
@@ -130,7 +119,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/activity'
     | '/_authenticated/invites'
     | '/_authenticated/team'
     | '/_authenticated/waitlist'
@@ -167,13 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/activity': {
-      id: '/_authenticated/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invites': {
@@ -222,7 +203,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedInvitesRoute: typeof AuthenticatedInvitesRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedWaitlistRoute: typeof AuthenticatedWaitlistRoute
@@ -230,7 +210,6 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedInvitesRoute: AuthenticatedInvitesRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedWaitlistRoute: AuthenticatedWaitlistRoute,

@@ -135,7 +135,7 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 The old token-based SPA is archived in `apps/admin-portal-old` and excluded from
 the workspace. The replacement `apps/admin-portal` implements `/auth` with Google
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
-protected scaffolds at `/`, `/waitlist`, `/invites`, `/team`, and `/activity`.
+protected pages at `/`, `/waitlist`, `/invites`, and `/team`.
 All share one membership-guarded layout and the dashboard-style UIKit sidebar;
 Team implements an owner-only member table, invite-by-email, role updates and
 confirmed soft removal. Member rows include user display metadata from the existing
@@ -147,7 +147,8 @@ listing, email/status filters, cursor pagination, single/batch creation, one-tim
 code/link copying, redeemer display metadata and confirmed revocation. Its atoms,
 mutation invalidation and permission guards follow the Team conventions. Waitlist
 implements email/status filters, 25-row pagination and confirmed acceptance with
-an email-bound invite and durable email job. Overview and Activity remain placeholders.
+an email-bound invite and durable email job. Overview remains a placeholder;
+the unused Activity page and navigation entry have been removed.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.

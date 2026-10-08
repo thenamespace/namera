@@ -2,14 +2,26 @@ import { createMemoryHistory } from "@tanstack/react-router";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { navigationGroups } from "../src/components/sidebar/navigation";
 import { getRouter } from "../src/router";
 
-const paths = ["/", "/waitlist", "/invites", "/team", "/activity"];
+const paths = ["/", "/waitlist", "/invites", "/team"];
 const fetchMock = vi.fn<typeof fetch>();
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("admin page access", () => {
+  it("does not expose the retired Activity page or navigation item", () => {
+    const router = getRouter();
+    try {
+      expect(Object.keys(router.routesByPath)).not.toContain("/activity");
+      expect(
+        navigationGroups.flatMap((group) => group.items.map((item) => item.href)),
+      ).not.toContain("/activity");
+    } finally {
+      router.options.context.atomRegistry.dispose();
+    }
+  });
   it("prefetches the owner member table with display metadata", async () => {
     const member = {
       id: "member-1",
