@@ -5,21 +5,20 @@ domains while repositories expose transaction-aware operations to application
 workflows. Migrations are applied by the server under a PostgreSQL advisory lock
 before the HTTP port opens.
 
-Effect SQL 4.0.0 uses its native PostgreSQL driver. Drizzle owns the SQL casts
-and decoding for dates/timestamps; the old node-postgres `getTypeParser` override
-is no longer part of the driver configuration. Verify driver upgrades in the
+Effect SQL uses its native PostgreSQL driver. Drizzle owns SQL casts
+and date/timestamp decoding. Verify driver upgrades in the
 disposable PostgreSQL lane, not just PGlite.
 
 ## Logical schemas
 
-| Schema         | Tables                                                                                                                         | Responsibility                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys           | Identity, tenants, management authorization, and delegated credentials. |
-| `core`         | signing keys, wallets, session keys, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                 |
-| `billing`      | accounts, subscriptions, provider events                                                                                       | Organization entitlements and future provider synchronization.          |
-| `notification` | notifications, recipients, preferences                                                                                         | Immutable occurrences, inbox state, and delivery preferences.           |
-| `jobs`         | email jobs                                                                                                                     | Encrypted transactional email outbox.                                   |
-| `audit`        | user events, organization events                                                                                               | Append-only typed history.                                              |
+| Schema         | Tables                                                                                                                                                                   | Responsibility                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys, platform members, beta invites, waitlist           | Identity, tenants, management authorization, and delegated credentials.                       |
+| `core`         | signing keys, wallets, session keys, installations, owner-approval operations, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                                       |
+| `billing`      | accounts, subscriptions/items, periods, meters, reservations, usage events/deliveries, provider events                                                                   | Free entitlements, quota and sponsored-gas accounting; inactive provider integration records. |
+| `notification` | notifications, recipients, preferences                                                                                                                                   | Immutable occurrences, inbox state, and delivery preferences.                                 |
+| `jobs`         | email jobs                                                                                                                                                               | Encrypted transactional email outbox.                                                         |
+| `audit`        | user, organization, platform, beta-invite, and waitlist events                                                                                                           | Append-only typed history.                                                                    |
 
 ## Tenant integrity
 
@@ -73,12 +72,10 @@ decoding; application workflows own authorization and business decisions.
 
 The server applies the full migration chain before role synchronization and
 worker startup. Tests use the same migrations with PGlite, load the bundled
-`pg_trgm` extension required when replaying historical address-metadata migrations, and delete
+`pg_trgm` extension required by the migration chain, and delete
 tables in foreign-key order between cases. PGlite verifies migration and normal
 repository compatibility; PostgreSQL remains required for advisory locks,
-concurrency, and query-plan verification. The pre-production database is
-disposable; current migrations optimize for a clean initial deployment rather
-than legacy backfills.
+concurrency, and query-plan verification.
 
 The opt-in server PostgreSQL lane uses `TestDatabase.postgresLayer(port)` and
 the production driver/migrator, with the same reset ordering as PGlite. It is
@@ -104,17 +101,3 @@ work, exclude unsigned execution/session preparations, and return zero age for
 empty queues. Application/email workflows publish the gauges; persistence has
 no telemetry dependency. The existing status-leading indexes support filtering;
 measure aggregate-query cost before increasing traffic or worker replicas.
-
-## Pending
-
-- Rehearse the migration chain against the exact production PostgreSQL version.
-- Define retention jobs for expired authentication, OAuth, invitation, session,
-  and terminal operation records.
-- Add query-plan checks for high-volume execution, audit, notification, and
-  OAuth-token lookup paths before production traffic grows.
-
-## Retired wallet-key table
-
-`core.wallet_key` has been replaced by `core.signing_key`. The removal migration
-drops the legacy table and any remaining rows. Managed local and GCP provider
-support remains in `core.signing_key`; this migration does not delete provider keys.

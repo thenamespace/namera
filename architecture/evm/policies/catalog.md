@@ -142,10 +142,3 @@ persistence, audit payloads and duplicate rejection.
 | Signature type + chain allowlist                         | Typed-data signature on allowed chain         | Allowed if typed data is enabled.                       |
 | Time window + chain allowlist, no signature policy       | Message signature                             | Denied: explicit signature policy required.             |
 | Daily gas budget + lifetime gas budget for same chain    | Operation under daily but over lifetime       | Denied; all applicable budgets must pass.               |
-
-## Pending before production
-
-- Confirm period boundaries and timezone presentation in dashboard documentation.
-- Add externally documented examples for every denial code.
-- Reconcile Alchemy BSO service-fee invoice variance against the persisted quote
-  and product-priced units before enabling paid gas overage.

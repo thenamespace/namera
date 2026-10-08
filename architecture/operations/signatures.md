@@ -47,8 +47,7 @@ successful operations and holds active reservations, preventing concurrent
 requests from crossing the organization's anniversary-period quota.
 
 The exact session must also have owner-approved `onchain.allowSignatures`.
-The server never signs with the wallet owner. The synchronous
-`POST /signatures` endpoint has been removed; clients use prepare/complete.
+The server never signs with the wallet owner. Clients use prepare/complete.
 
 Preparation reserves one unit for at most five minutes, bounded by session and
 API time-window expiry. Reusing the same actor/idempotency key with different
@@ -103,16 +102,3 @@ then verifies a mismatched domain is denied with the policy ID before billing or
 signature audit writes. A corrected request reuses the unconsumed idempotency key
 and completes with one charged signature. Provider signing/receipt services are
 test substitutes; the API, policy engine and persistence are real.
-
-## Pending
-
-- Wire local MCP to the SDK's implemented prepare/local-sign/complete workflow.
-  Migrate remote-MCP authentication separately.
-- Complete end-to-end browser consent/import coverage and consumer conformance.
-- Add namespace-specific signature variants only with another chain adapter.
-- Complete browser session creation/approval with EIP-712 rules. Local draft
-  validation, save/edit and exact-domain round trips passed production-preview
-  browser checks. The shared API creation contract requires explicit rules;
-  these API rules do not prevent direct local signing outside Namera.
-- Add per-session-key signature count policies through the existing generic
-  reservation model if product delegation limits require them.

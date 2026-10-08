@@ -56,7 +56,7 @@ permits only `passkey`; authenticated managed requests receive HTTP 403
 provider, or persistence work. The dashboard offers only passkey creation on EVM;
 its ownership and network selectors display managed custody and Solana
 as disabled coming-soon options.
-Managed construction remains internal for future use and is not a beta feature.
+Managed construction is an internal capability; the server provider is disabled.
 
 The creation form starts WebAuthn registration after validating account metadata,
 without a recovery acknowledgement checkbox. The account overview retains the
@@ -80,7 +80,7 @@ and have no overage price. Managed software and HSM wallets retain their existin
 resource entitlements and billing classification.
 
 `GET /ens/availability?label=...` remains an unauthenticated, IP-rate-limited
-lookup for future standalone naming flows. Wallet creation does not check,
+lookup. Wallet creation does not check,
 reserve, or create an ENS subname.
 
 ## EVM implementations
@@ -142,16 +142,3 @@ counter with a compare-and-set update. The owner-approval workflow
 consumes its challenge and advances that counter in one transaction. Synced
 credentials may keep counter zero, so counter checks do not replace one-time
 approval consumption.
-
-## Pending
-
-- Add compensation/reconciliation for an external provider key created before a
-  failed account-construction or persistence boundary.
-- Verify the complete browser/live-chain installation and removal journey;
-  owner approval routes and dashboard ceremonies are wired, with HTTP and
-  separate Anvil contract coverage. See [session keys](session-keys.md).
-- Add a standalone, transactional account naming workflow before assigning ENS
-  names to wallets.
-- Define freeze/archive semantics before adding those lifecycle operations.
-- Add another namespace only through a new discriminated chain adapter rather
-  than EVM conditionals in application workflows.

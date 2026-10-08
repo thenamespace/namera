@@ -52,18 +52,15 @@ assets, and unavailable-network counts. Unpriced assets remain visible but do no
 contribute to USD allocation. Asset slices are identified by chain and contract,
 with small holdings grouped into Other; chain slices use the same asset values.
 
-## Retired enrichment
+## Persistence
 
-The address-metadata routes, DTOs, repository, schema, and provider code are
-removed. Migration `20261008211010_drop-address-metadata` drops
-`core.address_metadata` with its data. Historical migrations remain intact, and
-fresh databases still need `pg_trgm` while replaying those migrations. No balances
-or metadata are persisted in a replacement table.
+Portfolio snapshots live in bounded process memory. Balances and token metadata
+have no database table. Migration history remains intact; fresh databases load
+`pg_trgm` when replaying the migration chain.
 
 ## Verification
 
 Provider integration tests cover pagination, exact valuation, missing metadata,
 partial failures, repeated cursors, and sanitized provider failures. Account
 cache tests cover reuse and explicit refresh. Existing wallet authorization tests
-continue to exercise scoped reads. There are no tests solely for removed routes
-or tables.
+continue to exercise scoped reads.

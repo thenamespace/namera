@@ -2,7 +2,7 @@
 
 `apps/server` is the only live composition root. It binds the Node HTTP server,
 loads configuration, selects providers, applies migrations, starts scoped
-workers, and mounts typed HTTP and MCP transports.
+workers, and mounts the typed HTTP API and protocol routes.
 
 ## Startup
 
@@ -20,7 +20,7 @@ sequenceDiagram
   DB-->>Process: Apply migrations
   Process->>Roles: Synchronize owner/admin/member definitions
   Process->>DB: Bootstrap configured platform owner if none exists
-  Process->>Workers: Start email and execution reconciliation workers
+  Process->>Workers: Start email, execution, billing, and session-operation workers
   Process->>HTTP: Bind configured host and port
 ```
 
@@ -37,8 +37,8 @@ See [admin authorization](../auth/admin.md) for rollout and audit details.
 ## Layer composition
 
 The live graph includes PostgreSQL repositories and transactions, Node Crypto,
-the encrypted EmailJobs service, the selected email provider, selected
-WalletKeys provider, EVM clients, application workflows, route handlers, and
+the encrypted EmailJobs service, the selected email provider, disabled
+WalletKeys layer, EVM clients, passkey and Google verification, ENS, application workflows, route handlers, and
 telemetry. Provider selection is environment-owned:
 
 - wallet keys: disabled in every server environment for the self-custodial beta;
@@ -50,7 +50,7 @@ telemetry. Provider selection is environment-owned:
 - The generated Effect `HttpApi` serves typed application routes.
 - OAuth protocol routes handle form media types and protocol-specific error
   responses directly where the generated JSON API is not appropriate.
-- MCP transport runs in the CLI loopback listener, not the API. OAuth consent,
+- MCP transport runs over CLI stdio. OAuth consent,
   token issuance and authorization management remain on the API.
 - `/rpc/eip155/:chainId` proxies validated EVM JSON-RPC to Alchemy.
 - `/t/{traces,logs,metrics}/v1` proxies browser OTLP without exposing provider
@@ -58,7 +58,8 @@ telemetry. Provider selection is environment-owned:
 - `/health` is the process readiness/liveness endpoint; `/reference` serves the
   Scalar contract reference.
 
-Credentialed CORS allows one configured dashboard origin. Cookies, actor
+CORS uses configured product origins, including the dashboard, admin portal,
+and public website according to the route boundary. Cookies, actor
 authentication, permission narrowing, DTO mapping, rate limiting, and transport
 error mapping live in server adapters rather than application workflows.
 
@@ -79,13 +80,25 @@ the provider, and conditionally marks sent, retryable, expired, or failed.
 
 Claims prepared or submitted execution rows with leases, checks bundler status
 and receipts with bounded concurrency, retries uncertain states, and calls the
-same application settlement/release path used by the synchronous request.
+application settlement/release transitions under the current worker lease.
 
 Idle polling is intentionally untraced. A span starts after work is claimed.
 
+### Billing maintenance
+
+Every minute, reconciles anniversary periods, expired reservations, and ledger
+projections through the billing application service.
+
+### Session-operation reconciliation
+
+Every five seconds, reconciles persisted installation/removal operations through
+the session-key application service. Recovery uses the same receipt transitions
+as foreground requests. Unsigned owner approvals are not broadcast by workers.
+
 ## Rate limiting
 
-The current Effect store is process-local. Global IP and focused limits protect
+The current Effect store is process-local; deployment must retain a single
+replica for limits to apply consistently. Global IP and focused limits protect
 magic links, invitations, API-key creation, OAuth/device flow, MCP, execution,
 signatures, RPC, and telemetry proxy traffic. Actor- or authorization-scoped
 limits supplement IP limits where appropriate.
@@ -104,15 +117,7 @@ separate rate-limit buckets behind one proxy for both supported headers.
 ## Deployment
 
 `apps/server/Dockerfile` builds the server-only production image from the repository
-root. The manual `deploy-server.yml` workflow calls `build-and-push.yml` with app
+root. The manual `deploy-server.yaml` workflow calls `build-and-push.yaml` with app
 name `namera-server`, pushes to Artifact Registry, and dispatches the image tag to
 `thenamespace/infra`, which owns Helm values and ArgoCD deployment. Server secrets
 are supplied at runtime, not baked into the image.
-
-## Pending
-
-- Replace the process-local limiter with an atomic shared store before running
-  multiple server replicas.
-- Verify the deployed ingress overwrites both client-IP headers, blocks direct
-  origin access, and resolves distinct client IPs.
-- Add worker-liveness and queue-age alerts.

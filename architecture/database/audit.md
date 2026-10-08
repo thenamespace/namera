@@ -85,13 +85,6 @@ Tenant-scoped events for mutations and protected operations.
 
 When a successful state mutation requires an audit event, the domain rows and audit row share one database transaction. Audit should never claim a mutation committed when it did not, or omit the actor from a committed security change.
 
-## Pending before production
-
-- Define event-specific retention and export requirements.
-- Add privileged audit search/export endpoints and record their own audit access.
-- Decide whether cryptographic append/tamper evidence is required for enterprise plans.
-- Review every mutation for transactional audit coverage and document intentional omissions.
-
 ## Waitlist operator events
 
 `audit.waitlist_events` is append-only: text UUIDv7 primary key `id`, non-null
@@ -99,15 +92,20 @@ When a successful state mutation requires an audit event, the domain rows and au
 `status`, and timezone-aware `created_at` defaulting to now. A check requires
 both statuses to be pending/completed and different. `waitlist_id` is indexed.
 The foreign key retains history without cascading deletion. Events and status
-changes share one transaction; no-op updates add nothing. No email, credential,
-or invented tenant actor is stored. The shared admin token cannot attribute
-actions to individual operators.
+changes share one transaction; no-op updates add nothing. No email or credential is stored in this journal. The accompanying
+`audit.platform_events` row attributes the action to the platform member.
 
-# Beta invite operator events
+## Beta invite operator events
 
 `audit.beta_invite_events` is append-only: text primary key `id`, non-null
 `invite_id` (FK to auth.beta_invite), non-null `event` (`created`, `revoked`,
 `redeemed`), and timezone-aware `created_at` defaulting to now. Operator actions
-have no tenant actor. State transitions and events share a transaction; neither
-codes nor the shared operator token are recorded. The invite's redeemed user
+are attributed through the accompanying platform event. State transitions and
+events share a transaction; invite codes and credentials are never recorded. The invite's redeemed user
 provides identity for signup events.
+
+## Platform member events
+
+`audit.platform_events` attributes operator mutations to platform members, with
+nullable attribution reserved for bootstrap. Its column and index catalog is in
+[platform administration](auth-platform.md#auditplatform_events).

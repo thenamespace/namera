@@ -16,6 +16,10 @@ Rules:
 
 Wallet Keys owns custody-provider implementations and exposes provider-neutral key creation/signing. Current adapters support local development files and Google Cloud KMS. Application receives public metadata and a signing operation, never raw provider clients/private keys.
 
+The server installs `WalletKeys.disabledLayer` in every environment. Public
+wallets use browser passkeys, and routine session execution/signing uses local
+client keys. The adapters below remain internal package capabilities.
+
 Provider adapters own:
 
 - key creation/import restrictions;
@@ -29,9 +33,9 @@ Adding a provider requires protocol-discriminated locator data, configuration/la
 
 ## `packages/evm`
 
-EVM owns the `eip155` adapter. Detailed architecture is in [the EVM hub](../evm/README.md). It uses provider-neutral owner accounts from Wallet Keys, reconstructs Alchemy Modular Account V2 accounts, and contains all Viem/Alchemy-specific logic.
+EVM owns the `eip155` adapter. Detailed architecture is in [the EVM hub](../evm/README.md). It reconstructs Alchemy Modular Account V2 from public account and installation data and contains Viem/Alchemy-specific logic. Managed owner adapters are internal capabilities; public execution uses detached local signatures.
 
-### Boundary between custody and chain code
+### Internal managed-provider boundary
 
 ```mermaid
 flowchart LR
@@ -53,9 +57,3 @@ Wallet Keys does not know Modular Account V2, calls, UserOperations, or chain ID
 4. Keep database JSONB models discriminated; avoid namespace-specific columns unless query requirements justify them.
 5. Add SDK/CLI/MCP/dashboard namespace presentation and input decoding.
 6. Add provider test layers and full boundary tests.
-
-## Pending before production
-
-- Complete KMS IAM/key lifecycle/rotation and orphan cleanup runbooks.
-- Define production local-provider prohibition or explicit secure deployment constraints.
-- Add cryptographic known-answer and provider signature-format regression suites.

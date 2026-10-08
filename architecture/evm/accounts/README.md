@@ -10,13 +10,14 @@ modes:
 - `webauthn_p256` uses Namera's counterfactual WebAuthn factory integration;
 - `ecdsa_secp256k1` uses Alchemy's Semi-Modular Account in EIP-7702 mode.
 
-The public create-wallet workflow still creates only P-256 accounts. The
+The public create-wallet workflow creates only passkey-owned P-256 accounts. The
 secp256k1 construction, persistence, response, and reconstruction contracts are
-in place so a later product slice can expose 7702 creation without changing the
-execution and signing boundaries.
+implemented internally; public creation does not expose 7702 accounts.
 
 The database stores only the public data needed to reconstruct the account.
-Private keys and provider locators remain owned by `wallet-keys`.
+Public wallet creation uses a browser passkey; its private key remains with
+the authenticator. Internal managed-provider adapters belong to `wallet-keys`,
+whose server layer is disabled.
 
 ## Stored account data
 
@@ -42,23 +43,23 @@ data internally.
 ```mermaid
 sequenceDiagram
   participant App as Wallet application
-  participant Keys as WalletKeys
+  participant Keys as Passkey verification
   participant EVM as EVM adapter
   participant Alchemy as Alchemy RPC
   participant DB as PostgreSQL
   App->>App: Validate organization and locked plan limits
-  App->>Keys: Create P-256 owner key
-  Keys-->>App: Public key and provider locator
+  App->>Keys: Verify browser registration ceremony
+  Keys-->>App: Public credential and P-256 key
   App->>EVM: Create Modular Account V2
   EVM->>Alchemy: Resolve deterministic counterfactual account
   Alchemy-->>EVM: Account construction reads
   EVM-->>App: Address and public reconstruction data
   App->>DB: Recheck locked wallet entitlement
-  App->>DB: Insert key, wallet, audit event, notification, email job
+  App->>DB: Consume ceremony; insert signing key, wallet, audit, notification, email job
   DB-->>App: Commit
 ```
 
-Remote key creation and account construction happen before the final database
+Passkey verification and account construction happen before the final database
 transaction. The wallet application repeats the locked billing check inside
 that transaction so concurrent requests cannot exceed the plan.
 
@@ -84,7 +85,7 @@ flowchart LR
 The comparison detects mismatched owner keys, derivation inputs, account data,
 or addresses before Namera signs an operation.
 
-## P-256 owner adapter
+## P-256 owner encoding and internal managed adapter
 
 `createWalletKeyWebAuthnAccount` adapts the provider-neutral P-256 signer to the
 WebAuthn account expected by the Alchemy SDK:
@@ -110,9 +111,9 @@ UserOperations the current deployed adapter's WebAuthn challenge is the
 EIP-191 hash of the exact UserOperation hash, not the raw UserOperation hash.
 `evm.execution.ownerApprovalChallenge` computes this challenge;
 `completeOwnerApproval` checks the assertion's challenge and encodes the signed
-operation without invoking an owner signer. Application approval routes must
-still verify the credential and atomically consume a persisted approval; those
-routes are not yet wired.
+operation without invoking an owner signer. Application approval routes verify the credential and atomically consume a
+persisted approval before the signed operation can be submitted. Receipt
+reconciliation updates installation state; see [session keys](../../wallets/session-keys.md).
 
 ## secp256k1 owner adapter
 
@@ -152,13 +153,3 @@ not just a DTO option. It requires:
    chain;
 5. application audit and notification mapping;
 6. dashboard creation and display support.
-
-## Pending before production
-
-- Retain provider-boundary tests for deployed and counterfactual accounts on all
-  launch networks.
-- Expose secp256k1/7702 account creation through the product DTO and dashboard
-  only after its key-protection and migration UX is defined.
-- Define a reviewed account-upgrade policy before accepting new Modular Account
-  versions.
-- Add a bounded provider/chain disable control for operational incidents.

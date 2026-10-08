@@ -29,8 +29,7 @@ accepted submissions retain their status/recovery flow.
 
 Execution and simulation requests select `sessionKeyId` explicitly alongside
 the wallet and chain. Simulation uses that installed session's public-only
-account adapter and API policies; it never previews a different signer. The
-legacy server execution endpoint has been removed. The SDK uses the detached flow below.
+account adapter and API policies; it never previews a different signer. The SDK uses the detached flow below.
 
 `executions.prepare` and `executions.complete` expose the detached transport.
 Preparation owns an internal retry-stable idempotency key. Completion retries
@@ -50,8 +49,8 @@ Viem provides hashing/signature verification and Alchemy's installed calldata
 codec provides Modular Account V2 encoding. No provider credentials or backend
 EVM service are imported by the SDK. Unit tests cover tampered preparations;
 transport tests exercise real local secp256k1 signing with injected Fetch and
-response loss. CLI keystore resolution is wired; dashboard authorization export
-and live-chain client integration are still pending.
+response loss. Dashboard encrypted export, CLI keystore resolution and local MCP signing
+share the installed-session bindings described in [local keystore](local-keystore.md).
 
 `sign` uses detached signature preparation and completion with an explicit
 session key ID. It requires local `allowSignatures` consent and `signTypedData`,
@@ -75,7 +74,7 @@ accept schema-decoded inline `--params` JSON or optional individual flags with
 typed prompts for missing fields. Selectors resolve namespace, wallet, and
 wallet-scoped session key before collecting the operation payload; supplied IDs
 are read back and checked for wallet/namespace mismatches. This path needs read
-scopes. Legacy `--params` keeps its existing transport-only permissions and batch
+scopes. `--params` keeps its existing transport-only permissions and batch
 support, and cannot be mixed with individual payload flags. JSON/quiet/non-TTY
 commands fail on missing inputs rather than opening prompts. Verification omits
 session-key selection because the API verifies the wallet signature. No
@@ -90,8 +89,7 @@ wallet/chain binding. Self-funded
 execution requires an explicit `--max-gas-cost-wei` budget or interactive consent.
 See [local keystore](local-keystore.md) for storage invariants and remaining
 packaged-platform verification. The same keystore resolves message/typed-data
-signers and the local MCP listener. End-to-end browser/local signing verification
-remains pending.
+signers and the local MCP process.
 
 Global output is `pretty` or `json`. CLI-only typed presenters render
 named summaries and labeled sections for wallets, session keys, authorizations,
@@ -118,8 +116,8 @@ feedback and blue next steps; logout still only removes local CLI credentials.
 MCP login/status/logout have typed human summaries, readable permissions, and
 automatic-refresh versus reconnect guidance. Browser authorization instructions
 stay on stderr; JSON response shapes and MCP protocol stdout remain unchanged.
-`--quiet` suppresses normal stdout. Development defaults to
-`http://localhost:8080`; `--host` and `NAMERA_API_URL` override it.
+`--quiet` suppresses normal stdout. The default API origin is
+`https://api.namera.ai`; `--host` and `NAMERA_API_URL` override it.
 
 Command failures use a CLI-owned feedback catalog with stable codes, concise
 messages, recovery steps, and conservative retry guidance. Human errors go to
@@ -182,12 +180,3 @@ synchronize sibling versions and reject stale direct dependency declarations.
 performs clean npm installs outside the workspace. It tests CLI startup, login/MCP
 help, SDK request decoding, protocol schemas and API OpenAPI generation. No login,
 keyring mutation or production request is performed. Both CI and Release run it.
-
-## Pending
-
-- Test packaged CLI profiles and keyrings on macOS, Windows, and Linux and test
-  two-process refresh contention against a live server.
-- Add convenience SDK polling only after real client usage validates the
-  desired behavior.
-- Add specialized high-level MCP transaction tools only when they reduce schema
-  ambiguity without duplicating the generic execute boundary.

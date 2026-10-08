@@ -38,12 +38,14 @@ For signing, definitive submission, or failed receipt, release locks the submiss
 
 Current policy:
 
-| Setting        |      Value |
-| -------------- | ---------: |
-| Batch size     |         20 |
-| Concurrency    |          5 |
-| Lease duration |  2 minutes |
-| Retry delay    | 15 seconds |
+| Setting                |      Value |
+| ---------------------- | ---------: |
+| Batch size             |         20 |
+| Concurrency            |          5 |
+| Lease duration         |  2 minutes |
+| Retry delay            | 15 seconds |
+| Broadcast lifetime     |   24 hours |
+| Unresolved retry delay |  5 minutes |
 
 ```mermaid
 flowchart TD
@@ -55,11 +57,11 @@ flowchart TD
   Resubmit --> Observe[Query status when needed]
   Observe -->|submitted/included/reverted/failed| Mark[Mark submitted; recover receipt]
   Observe -->|rejected| Release
-  Observe -->|not observed but definitive rejection| Release
+  Observe -->|first attempt definitively rejected and not observed| Release
   Observe -->|unknown/transient| Retry
   Status -->|submitted| Receipt[Get receipt]
   Receipt -->|successful| Settle[Settle and confirm]
-  Receipt -->|failed receipt/status| Release
+  Receipt -->|matching failed receipt| Release
   Receipt -->|not found/transient| Retry
 ```
 
@@ -67,11 +69,8 @@ The submission row is locked before policy state for both settle and release. De
 
 ## User-visible status
 
-The synchronous execute route may return `submitted` when the bounded wait produces no receipt. Clients use execution status/detail endpoints rather than resending a new logical operation. Reconciliation later creates the final execution or marks the submission failed.
-
-## Pending before production
-
-- Run reconciliation as a durable scheduled worker in every production environment.
-- Alert on oldest due row, retry age, lease recovery, terminal failure, and provider outage.
-- Define maximum reconciliation age and manual operator resolution for permanently unknown operations.
-- Test receipt reorg/finality expectations per supported chain.
+Detached completion returns the queued `prepared` operation. Clients poll the
+submission status rather than sending a new logical operation. The worker
+advances it to submitted and then confirmed or failed. After 24 hours it stops
+rebroadcasting an uncertain operation but continues status/receipt recovery at
+five-minute intervals. Uncertainty alone never releases the reserved budget.

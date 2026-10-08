@@ -42,9 +42,3 @@ The first-login helper executes the same organization construction inside the la
 ## Tenant-safety invariant
 
 Application queries always carry organization context, but PostgreSQL also protects critical relationships with composite foreign keys. A wallet cannot point to another tenant's key; a member cannot use another tenant's role/actor; an operation cannot use another tenant's grant.
-
-## Pending before production
-
-- Define organization offboarding, retention, and legal deletion workflow.
-- Add ownership transfer with last-owner protection.
-- Complete custom-role lifecycle if custom roles are launched.

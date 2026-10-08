@@ -290,7 +290,7 @@ Durable idempotent inbox for verified payment-provider webhooks. It is inbound;
 - Check: attempts non-negative.
 - Index (`status`, `created_at`) serves worker claims.
 
-## Retention and pending work
+## Runtime use and retention
 
 Billing history uses `ON DELETE RESTRICT`; product cleanup cannot cascade-delete
 invoice evidence. Production retention should archive or anonymize eligible
@@ -298,6 +298,6 @@ contact/provider data without removing financial evidence.
 
 Free v1 initializes these rows with every organization and uses the reservation,
 ledger, balance, period, recovery, and reconciliation paths in production code.
-Before paid plans, define provider data retention/dead-letter procedures and add
-PostgreSQL stress tests for concurrent admission plus provider-specific tests for
-corrections, webhook replay, and delivery retries.
+Payment-provider delivery and webhook processing are inactive. Their tables and
+repositories are retained independently of the active Free-plan ledger; see
+[billing](../billing/README.md#provider-integration-boundary).

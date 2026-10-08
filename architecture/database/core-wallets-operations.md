@@ -16,7 +16,7 @@ persisted by the server.
 | `organization_id` | `text`          | Yes      | —        | Owning tenant.                                                                       |
 | `purpose`         | `text`          | Yes      | —        | `wallet-root` or `session`.                                                          |
 | `custody`         | `text`          | Yes      | —        | `local` or `namera-managed`.                                                         |
-| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or future `ed25519`.                                            |
+| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or `ed25519` (not an EVM owner).                                |
 | `public_key_hex`  | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                   |
 | `status`          | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                       |
 | `data`            | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, or managed development-provider metadata. |
@@ -151,8 +151,9 @@ Immutable policy envelope granting bounded authority over one wallet. Revocation
 
 ## `core.session_key_installation`
 
-Per-chain onchain delegation state. This persistence foundation is implemented;
-owner-approval routes, signing-key binding and recovery workers are not yet wired.
+Per-chain onchain delegation state, bound to the session signing key.
+Owner-approval routes and the session-operation worker apply receipt-confirmed
+installation and removal transitions; see [session keys](../wallets/session-keys.md).
 Compiler output is immutable through the repository; changing permissions needs
 a new session/validation entity. No private key material is stored here.
 
@@ -194,7 +195,7 @@ a new session/validation entity. No private key material is stored here.
   installed/revoking/revoked require an installation receipt and timestamp;
   revoked also requires the uninstall hashes and timestamp.
 - Lookup index `(organization_id, wallet_id, chain_id, status)`.
-- Recovery lookup index `(status, updated_at)`; worker claiming is not yet implemented.
+- Recovery lookup index `(status, updated_at)`; durable worker leases belong to the session-operation ledger.
 
 The repository uses conditional updates and matches the stored UserOperation
 hash before confirming an installation or revocation. Duplicate/stale transitions
@@ -268,9 +269,10 @@ hash. Only a chain receipt can mark a signed attempt failed here: an RPC timeout
 or rejection does not invalidate a root signature that may still be broadcast.
 Unsigned expiry never touches signed attempts, even after `expires_at` passes.
 
-PGlite tests cover JSON round trips, idempotency, constraints, rollback, replay,
-expiry and lease transitions. Application/HTTP/worker wiring and real PostgreSQL
-concurrency tests remain pending.
+Repository tests cover JSON round trips, idempotency, constraints, rollback,
+replay, expiry and lease transitions. Application routes and the scoped server
+worker use this ledger for owner approval and recovery; see
+[session keys](../wallets/session-keys.md) and [test lanes](../engineering/testing.md).
 
 ## `core.session_key_grant`
 
@@ -570,10 +572,3 @@ stateDiagram-v2
 ```
 
 Exact protocol statuses remain the executable contract; feature flow is documented in [EVM execution](../evm/execution/README.md).
-
-## Pending before production
-
-- Add SQL lifecycle checks for session-key and execution-submission status/timestamp shapes if transitions have stabilized.
-- Define retention tiers for failed submissions, confirmed executions, signatures, and settled/released reservations.
-- Add an explicit reservation recovery runbook and monitoring thresholds.
-- Confirm state `revision` compare-and-swap behavior under high concurrency with database integration tests.

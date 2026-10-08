@@ -166,11 +166,3 @@ sequenceDiagram
   Provider-->>Worker: Provider message ID
   Worker->>DB: Mark sent and clear/update lease state
 ```
-
-## Pending before production
-
-- Define retention and payload-clearing windows for sent, failed, and expired jobs.
-- Add dead-letter inspection and replay tooling with explicit authorization.
-- Implement user-facing notification inbox delivery if planned; current tables provide the persistence model.
-- Add preference inheritance tests across global and organization scopes.
-- Add worker saturation, oldest-ready-job, lease-recovery, and terminal-failure alerts.

@@ -245,13 +245,6 @@ Tenant-scoped principal used by authorization, audit, executions, signatures, an
 
 - (`organization_id`, `type`) for scoped actor listings and resolution.
 
-## Pending before production
-
-- Google does not retain external tokens. Define token retention before adding a provider that needs API access.
-- Add a documented cleanup worker for expired and terminal verification rows.
-- Define session concurrency and forced-global-logout policy.
-- Review whether captured IP addresses require truncation or a shorter retention window.
-
 ## Waitlist
 
 `auth.waitlist` stores unverified interest independently of users and tenants.
@@ -264,7 +257,7 @@ The primary key supports descending-ID cursor scans; `(status, id)` supports
 filtered pages. Literal email substring search is a scan initially. There are
 no user/organization foreign keys. See [workflow](../auth/waitlist.md).
 
-# Beta invite admission
+## Beta invite admission
 
 `auth.beta_invite`: text primary key `id`, unique non-null `code_hmac`, nullable
 normalized `email`, non-null `created_at` (default now) and `expires_at`, nullable

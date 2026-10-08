@@ -165,7 +165,7 @@ Execution, history, and overview tests submit through prepare/complete and run
 worker iterations explicitly. They cover idempotent settlement, failed-receipt
 reservation release, actor-scoped reads, and pagination. Simulation assertions
 compare usage after the installation baseline: installing a session is itself a
-metered operation. The removed synchronous endpoints are not used to create test history.
+metered operation.
 
 ## Commands
 
@@ -231,12 +231,3 @@ pnpm test
 pnpm typecheck:test
 pnpm check
 ```
-
-## Pending
-
-- Add dashboard browser and accessibility regression tests.
-- Add packaged CLI tests for macOS Keychain, Windows Credential Manager, and
-  Linux Secret Service.
-- Add opt-in live tests for GCP KMS, Alchemy Rundler/BSO, Resend, and Axiom.
-- Rehearse migrations and concurrency-sensitive tests against the production
-  PostgreSQL version.

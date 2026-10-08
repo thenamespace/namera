@@ -127,7 +127,7 @@ records remain normal deferred work.
 `namera.waitlist.acceptances` counts committed pending-to-completed transitions;
 each also increments beta-invite creation. Repeated accepts count neither.
 Management routes use `/internal/waitlist` and `/internal/waitlist/:id/accept`
-templates; retired routes resolve to `/*`. Emails, invite codes and IDs never
+templates; unrecognized routes resolve to `/*`. Emails, invite codes and IDs never
 become metric attributes. Acceptance delivery uses existing email-job signals.
 See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
 
@@ -207,17 +207,3 @@ After instrumentation changes, inspect one read and one mutation. Confirm one
 cross-service trace, stable route names, bounded metric attributes, structured
 log fields with trace correlation, no `/t/*` trace loop, and no idle-worker or
 helper-only roots.
-
-## Pending
-
-- Connect production alerts to the operator-selected notifier and verify with
-  controlled failures after deployment.
-- Persist originating trace context across durable outbox/operation boundaries
-  and link recovery spans without reusing completed request spans.
-- Add verified provider delivery/bounce/complaint webhooks. Provider acceptance
-  is not proof of inbox delivery.
-- Instrument database pool saturation and exporter delivery failures using the
-  deployment's infrastructure telemetry; missing application telemetry alone
-  cannot distinguish exporter failure from an idle service.
-- Billing maintenance still emits periodic reconciliation spans; suppressing
-  those must retain visibility into actual rollover/recovery/repair work.

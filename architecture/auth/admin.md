@@ -1,9 +1,9 @@
 # Platform admin authorization
 
 Platform authority belongs to a verified `auth.user`, independently of provider
-and organization roles. Email and Google reuse `auth.session`; future providers
+and organization roles. Email and Google reuse `auth.session`; providers
 need only resolve the same user. No admin session, provider allowlist, shared
-bearer token, or organization-actor bypass exists. `ADMIN_TOKEN` is retired.
+bearer token, or organization-actor bypass exists.
 
 `AdminAuthorization` accepts only the HttpOnly `auth-token` cookie. It validates
 the session and verified user, then loads current active platform membership on
@@ -65,12 +65,6 @@ require an exact dashboard or configured admin Origin, including non-browser
 clients. CORS allows credentials for the configured admin origin, never wildcard.
 Existing security middleware supplies no-store. Rate limits are process-local;
 move to a shared store before horizontally scaling admission controls.
-
-The former arbitrary waitlist-status PATCH and user-list routes remain removed
-and return 404 even for an authenticated owner. Public submission is preserved.
-Waitlist list/accept management is documented in [waitlist](waitlist.md).
-Beta-invite management is implemented again with session-based permissions;
-see [beta invites](core/beta-invites.md).
 
 ## Invitation lifecycle
 
@@ -141,7 +135,6 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 4. Set the exact `ADMIN_CORS_ORIGIN`, remove the old admin secret, and use HTTPS.
    Bootstrap does not require Google configuration; existing email login works.
 
-The old token-based SPA has been removed; its source remains in Git history.
 `apps/admin-portal` implements `/auth` with Google
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
 protected page set at `/`, `/waitlist`, `/invites`, and `/team`.
@@ -158,7 +151,7 @@ mutation invalidation and permission guards follow the Team conventions. Waitlis
 implements email/status filters, 25-row pagination and confirmed acceptance with
 an email-bound invite and durable email job. Overview shows six lifetime totals,
 selected-period counts and daily growth/activity charts;
-the unused Activity page and navigation entry have been removed.
+the portal exposes only implemented navigation destinations.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
@@ -181,8 +174,8 @@ email-code/Google login, then clears it on acceptance or cancellation. A magic l
 opened in a different tab requires reopening the invitation afterward. `/auth?reauth=true`
 allows existing members to sign in again explicitly when needed.
 
-Pending-team-invitation management and ownership/status controls in the UI remain future work. Do not treat the empty
-page scaffolds as an implemented operations console.
+Team-invitation management and ownership/status controls are API capabilities
+without corresponding portal controls.
 
 HTTP tests cover role separation, cookie-only auth, origin and session guards,
 email and Google admission, invitation lifecycle, replay, owner protection and

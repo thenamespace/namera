@@ -23,10 +23,16 @@ queries, and address/text/data record operations as typed Effects. Provider
 failures are translated to stable `EnsError` reasons before they leave the
 package.
 
-Account creation orchestration does not belong here. A future application
-workflow may call this service after creating an account and decide how ENS
-failures affect account persistence, retries, audit history, and user-facing
-responses.
+The application exposes name availability reads. Wallet creation does not
+assign an ENS name; provider capabilities do not imply a wired account-naming
+workflow.
+
+## `packages/passkeys`
+
+Passkeys owns WebAuthn ceremony generation and cryptographic verification.
+Application workflows bind challenges to the user, wallet and operation, consume
+them transactionally, and persist public credential material. Browser private
+keys never enter this service. The server supplies runtime dependencies.
 
 ## `packages/template`
 
@@ -39,8 +45,3 @@ Template is the workspace starter for a new package. It owns no product runtime 
 - Relative ESM imports include `.js`.
 - Root barrels expose supported APIs only; implementation/provider modules remain internal unless another package is intentionally allowed to depend on them.
 - A growing flat directory should be grouped by domain with a barrel at the boundary.
-
-## Pending before production
-
-- Remove the template package from production publication/deployment sets if it is internal-only.
-- Add an automated unused-export/dependency review if package surfaces grow materially.

@@ -6,9 +6,9 @@ Namera uses one OAuth persistence and token model for two delegated client types
 - **CLI**: device authorization, resource-bound bearer tokens, and rotating refresh tokens.
 
 Authorization-code tokens target only the API-origin audience and authenticate
-as MCP actors on scoped API routes. The CLI-local listener has its own OAuth
-issuer and separate agent-facing bearer tokens. Hosted `/mcp` transport and its
-metadata are removed; see [local MCP](../../clients/local-mcp.md).
+as MCP actors on scoped API routes. The CLI runs MCP over stdio without a local
+OAuth issuer or agent-facing bearer token. Its temporary loopback callback only
+receives browser consent results; see [local MCP](../../clients/local-mcp.md).
 
 Both create a durable `auth.oauth_authorization`, a dedicated organization actor, and explicit `core.session_key_grant` rows. Scope allows a class of action; grants and session-key policies decide the concrete wallets/operations.
 
@@ -60,10 +60,3 @@ MCP authorization accepts the complete supported set subject to client registrat
 ## Protocol transport
 
 OAuth form endpoints enforce their expected media type, duplicate/unknown parameter rules as implemented by protocol parsers, safe error redirects, and `Cache-Control: no-store`. Dashboard management endpoints use typed JSON `HttpApi` contracts and user authorization middleware.
-
-## Pending before production
-
-- Complete OAuth conformance and malicious-client tests.
-- Define dynamic registration trust/rate policy and client disable procedures.
-- Add cleanup for expired request/code/device/token rows.
-- Adopt a newer MCP protocol revision only when the Effect transport supports it and compatibility tests pass.

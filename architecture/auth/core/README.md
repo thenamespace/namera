@@ -32,8 +32,3 @@ For password recovery, email change, step-up authentication, or another challeng
 4. Implement a purpose-specific application workflow; never add magic-link-specific columns to `auth.verification`.
 5. Add enumeration-resistant transport behavior and purpose-specific rate limits.
 6. Update feature docs and the database catalog if persistence changes.
-
-## Pending before production
-
-- Add verification/session retention workers.
-- Complete recovery and step-up design before exposing destructive enterprise operations.

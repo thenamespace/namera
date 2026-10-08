@@ -85,26 +85,16 @@ Missing keyring access fails closed. The resolver checks wallet and chain
 bindings before providing the local signer to the SDK. The server independently
 checks current installation/grant authority during preparation and completion.
 
-## Verification and pending integration
+## Registration and use
 
-Schema tests cover validity, duplicate chains, inconsistent wallet bindings and
-unsafe API origins. SDK tests cover encryption round trips, randomized envelopes,
-wrong passwords, ciphertext tampering, KDF changes and signer/key mismatch.
-These tests do not prove an installed-session or browser import journey.
-CLI tests exercise actual temporary files with a substitute keyring, including
-duplicate-import preservation, origin mismatch, unavailable unlock, private file
-modes, and encrypted round trips. The CLI build and import help smoke test pass.
+The dashboard keeps the generation handle in a ref while registering the public
+signer and obtaining owner approval. Approval and receipt polling bind the export
+to the installed permissions; ambiguous registration is recovered without
+replacing the original draft. Only encrypted export text enters the clipboard.
+CLI import and local MCP share the local signer resolver. The SDK checks local
+bindings and prepared payloads before execution or signature completion.
 
-- Generation-handle tests cover real encrypted round trips, signer mismatch,
-  corrected retry, and disposal during encryption. No private material is part
-  of the handle's serialized shape.
-- Browser generation and encrypted export are connected to registration. The key
-  handle remains in a ref, navigation warns before losing an unsaved draft, and
-  only the encrypted command enters the clipboard. A disposable isolated browser
-  preview verified encryption; no live registration/import journey is claimed.
-- Pending: connect owner approval and receipt polling, and recover ambiguous
-  registration responses without replacing or losing the original draft.
-- Registration-binding regressions reject response substitutions for wallets,
-  signers, networks, expiry, signature consent, root authority and exact spend.
-- Pending: real OS-keyring and owner-approved import-to-execution journeys.
-- Pending: local MCP reuse, removal/backup UX, and packaged platform tests.
+Focused SDK and CLI tests cover encrypted round trips, tampering, origin and
+signer mismatches, duplicate import preservation, private file modes, and
+unavailable keyring failures. OS-keyring integration is opt-in; see
+[testing](../engineering/testing.md).

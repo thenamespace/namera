@@ -76,10 +76,3 @@ the organization name alongside narrowed scopes.
 | HTTP contracts             | `packages/api/src/routes/auth`  | Typed routes only.                                         |
 | Cookies/protocol handlers  | `apps/server/src/routes/auth`   | Transport rules and authorization middleware.              |
 | Browser UI                 | `apps/dashboard/src/routes`     | Login, consent, settings, and authorization management.    |
-
-## Pending before production
-
-- Complete an endpoint-by-endpoint authorization matrix and boundary regression tests.
-- Define credential and security-history retention.
-- Add runbooks for global session revocation, compromised OAuth clients, and leaked API keys.
-- Complete OAuth interoperability and adversarial tests listed in [OAuth](oauth/README.md).

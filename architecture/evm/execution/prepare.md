@@ -83,8 +83,6 @@ does not change the signed operation's gas or billing estimates.
 Viem forwards it to `eth_createAccessList` during asset discovery, avoiding
 Alchemy's rejection of an implicit gas allowance above the block limit. Asset
 and transfer tracing remain enabled; a simulation failure still fails preparation.
-The live Sepolia passkey installation journey reproduced the missing-limit
-failure and confirmed installation after this change.
 
 Native transfers are normalized from provider trace logs emitted at `0xeeee…eeee` with the ERC-20-style `Transfer(address,address,uint256)` selector. Each record includes call index, from, to, and decimal-string value. Token asset changes contain address, bounded symbol (≤64 when valid), optional valid decimals (0–255), and pre/post/diff values.
 
@@ -103,9 +101,3 @@ Policies consume this context. Period windows use the simulated block timestamp 
 ## Integrity boundary
 
 `EvmPreparedExecution` includes serialized UserOperation and redundant normalized context. The sign phase intentionally compares them before producing a signature, protecting against accidental or malicious mutation between policy evaluation and signing.
-
-## Pending before production
-
-- Validate `simulateCalls` and asset tracing support on every advertised chain/provider tier.
-- Add fixtures for malformed token metadata and native-transfer trace normalization.
-- Define behavior when asset tracing is unavailable but ERC-4337 simulation succeeds.

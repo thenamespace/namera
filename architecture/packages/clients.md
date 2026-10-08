@@ -2,58 +2,49 @@
 
 ## `packages/sdk`
 
-The SDK is the publishable typed client over the public API. It supports API-key and OAuth bearer authentication, maps protocol errors, and generates internal idempotency keys for retryable mutations.
+The publishable SDK is the typed Promise client over the public API, with API-key
+and OAuth bearer authentication. Its default origin is `https://api.namera.ai`.
+Domain methods preserve declared protocol errors and caller cancellation.
+Execution and signature preparation generate retry-stable idempotency keys;
+bounded retries cover transient transport outcomes, not business denials.
 
-Rules:
-
-- Expose domain inputs, not transport headers or idempotency implementation details.
-- Generate one key per logical execution/signature and reuse it within bounded automatic retries.
-- Retry transient transport/provider outcomes only; never retry declared validation, authorization, policy, billing, or conflict errors blindly.
-- Keep base URL configurable. Local defaults are development-only and must not become a published production default accidentally.
-- Preserve abort signal and caller retry/timeouts.
+Execution and signing use prepare/local-sign/complete. The client checks the
+server payload against locally trusted installation bindings before invoking a
+signer. Local private keys never enter HTTP requests. Completion retries reuse
+the same signature, and accepted operations are polled by submission ID.
 
 ## `apps/cli`
 
-CLI uses Effect CLI and the SDK. Device OAuth obtains delegated authority; refresh rotation is serialized and persisted atomically. Commands support interactive prompts when `--params` is absent and schema-decoded JSON payload when present.
+Effect CLI commands use the SDK. Device OAuth supports interactive profiles;
+`NAMERA_API_KEY` supports headless access. Refresh credentials use the OS keyring
+and rotation is serialized across processes. Local session keys use encrypted
+files with independent keyring-held unlock secrets.
 
-Global output modes:
+Commands accept schema-decoded `--params` or individual flags and prompts.
+`pretty` presents human-readable summaries; `json` emits the DTO. Quiet mode
+suppresses guidance, and noninteractive commands never prompt for missing input.
 
-- `pretty`: colorful, indented human-readable rendering (not JSON);
-- `json`: one JSON value;
-- `ndjson`: newline-delimited records for streams/lists;
-- quiet: suppress non-result guidance/progress.
+## Local MCP
 
-Reusable prompt services own addresses, values, dates, namespaces, chain IDs, and selectors. Command modules should orchestrate prompt/params → SDK call → renderer rather than reimplement validation or HTTP.
+`namera mcp serve` exposes ten SDK-backed tools over stdio in the CLI process.
+The parent agent starts and stops it. Tool calls use separate browser OAuth
+consent, persisted keyring credentials and live server grants. The temporary
+loopback listener exists only during the OAuth callback, not as an MCP endpoint.
+Signing uses the same imported local keystore and SDK validation as CLI commands.
+Stdout is reserved for protocol messages; diagnostics use stderr.
 
-## MCP server in `apps/server`
+The API owns OAuth issuance, revocation and authorization management. It does
+not host MCP transport. Tool schemas distinguish wallet and session-key IDs,
+CAIP-2 chains and operation status; callers poll uncertain submissions instead
+of creating a second transfer.
 
-MCP is a transport adapter over OAuth and application services, not a separate source of domain logic. The intentionally small tool set is:
+## Release and detailed contracts
 
-- get/list wallet;
-- get/list session key;
-- execute/simulate transaction;
-- get transaction status;
-- sign/verify signature;
-- get executions.
+The API, protocol, SDK and CLI are released as a fixed Changesets group. The
+manual release workflow builds and publishes their packages. `pnpm pack:check`
+validates candidate tarballs and consumer entry points before release.
 
-Tool schemas and descriptions must distinguish wallet IDs from session-key IDs, explain CAIP-2 chain IDs, state grant/policy requirements, and return stable typed error codes with policy ID/code when denied. Tool handlers map OAuth actor/grants into the same application operations used by API/CLI.
-
-## Idempotency across clients
-
-SDK is the lowest common generator for SDK/CLI integrations. MCP tool handlers generate/reuse a key around their own bounded retry boundary when not using SDK directly. End users are not asked to choose a key. Responses expose operation/submission IDs for status lookup rather than encouraging repeated new executions.
-
-## Adding a public operation
-
-1. Implement protocol/API/application/server first.
-2. Add one SDK method with typed input/output/error mapping.
-3. Add CLI interactive and `--params` paths using the same input schema.
-4. Add an MCP tool only when agents genuinely need the capability; prefer a small orthogonal set.
-5. Write descriptions/examples that prevent ID/namespace/chain confusion.
-6. Add boundary tests for auth scopes, grants, policies, errors, output modes, and retries.
-
-## Pending before production
-
-- Publish SDK/CLI compatibility and release process.
-- Replace any local-development API defaults before distribution.
-- Add golden CLI output and MCP schema/description evaluations.
-- Add secure OS credential storage for CLI refresh tokens if not already present.
+- [SDK and CLI operations](../clients/sdk-cli-mcp.md)
+- [MCP authorization and transport](../clients/local-mcp.md)
+- [Local encrypted key storage](../clients/local-keystore.md)
+- [Packaging and test lanes](../engineering/testing.md)

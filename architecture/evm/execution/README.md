@@ -1,84 +1,47 @@
 # EVM execution pipeline
 
-An execution is one ERC-4337 call batch authorized in full by one active session-key grant. Namera never combines policies from multiple grants to synthesize authority the user did not create.
+An execution is one ERC-4337 call batch authorized by one explicitly selected,
+installed session key and active grant. Policies from multiple grants are never
+combined. The owner passkey approves installation/removal; the local session
+signer signs routine executions.
 
 ## Phases
 
-| Phase                | Owner                                     | Durable effect                                                     |
-| -------------------- | ----------------------------------------- | ------------------------------------------------------------------ |
-| Resolve/prepare      | Application + EVM adapter                 | Provider simulations and EVM-owned billing envelope.               |
-| Stateless evaluation | EVM policy service                        | None.                                                              |
-| Reserve              | Application transaction + policy handlers | Billing check, submission, policy state changes, and reservations. |
-| Sign                 | EVM adapter + wallet-key owner            | Prepared UserOperation is integrity-checked and signed.            |
-| Submit               | EVM adapter                               | Bundler accepts or ambiguously observes UserOperation.             |
-| Mark submitted       | Application transaction                   | Submission/reservations transition and audit event.                |
-| Settle/release       | Application transaction                   | Policy accounting, final execution/failure, audit, notifications.  |
-| Reconcile            | Background application operation          | Leased retry of prepared/submitted attempts.                       |
+| Phase          | Owner                    | Result                                                                                                         |
+| -------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Prepare        | Application and EVM      | Resolve selected grant/installation; reconstruct public account, estimate UserOperation and simulate calls.    |
+| Reserve        | Application transaction  | Lock authority and policy state; reserve billing and policy budgets; persist unsigned preparation with expiry. |
+| Local sign     | SDK and client signer    | Validate preparation against local binding, calls and gas consent; sign the exact operation hash.              |
+| Complete       | Application and EVM      | Verify signature/integrity, recheck authority and expiry, persist signed envelope once.                        |
+| Broadcast      | Execution worker and EVM | Persist attempt marker, submit exact operation, record observed acceptance.                                    |
+| Reconcile      | Leased execution worker  | Poll canonical status/receipt; retry uncertain outcomes with bounded concurrency.                              |
+| Settle/release | Application transaction  | Update policy and billing ledgers, terminal operation, audit and notifications.                                |
 
-Details: [prepare](prepare.md), [sign/submit](sign-submit.md), [receipts/reconciliation](receipts.md), and [operation tables](../../database/core-wallets-operations.md).
+Completion returns the queued durable operation, not chain confirmation. Clients
+poll its submission ID. The [application sequence](../../operations/executions.md)
+owns idempotency, authority checks, expiry and lifecycle transitions.
 
-## End-to-end sequence
+## Provider boundaries
 
-```mermaid
-sequenceDiagram
-  participant Caller
-  participant App as Execution application
-  participant EVM as EVM adapter
-  participant DB as PostgreSQL
-  participant Bundler as Alchemy Rundler
-  App->>DB: Resolve actor grants, wallet, key, active session-key candidates
-  App->>EVM: Prepare account call batch
-  EVM->>Bundler: Prepare/estimate UserOperation
-  EVM->>EVM: simulateCalls with assets and transfers
-  EVM-->>App: Prepared execution + policy context
-  loop Candidates in deterministic order
-    App->>EVM: Stateless policy evaluation
-    alt candidate may authorize
-      App->>DB: Transaction: reserve execution and applicable sponsored-gas meter; lock policy state
-      App->>EVM: Plan stateful reservation
-      App->>DB: Insert submission, state changes, reservations
-    end
-  end
-  App->>EVM: Sign prepared UserOperation
-  App->>DB: Mark prepared and persist signed execution
-  App->>EVM: Submit to bundler
-  EVM->>Bundler: eth_sendUserOperation
-  App->>DB: Mark submission/reservations submitted + audit
-  App->>EVM: Wait bounded time for receipt
-  alt successful receipt
-    App->>DB: Transaction: settle policies/billing, insert execution, confirm submission, audit, notifications
-    App-->>Caller: confirmed execution + receipt
-  else no receipt yet
-    App-->>Caller: submitted + UserOperation hash
-  else signing/definitive submission failure
-    App->>DB: Transaction: release policies/billing, fail submission, audit
-    App-->>Caller: execution failed
-  else reverted receipt
-    App->>DB: Transaction: release execution count, settle actual sponsored gas, fail submission, audit
-    App-->>Caller: execution failed
-  end
-```
+[Preparation](prepare.md) calls ERC-4337 estimation and `simulateCalls` with
+asset/transfer tracing. The EVM adapter returns protocol-owned preparation and
+policy context; no provider client escapes into application code.
 
-An ambiguous submission (`SUBMISSION_UNKNOWN`) is treated as potentially broadcast. It is marked submitted and reconciled; releasing policy or billing budget immediately could allow overspend if the network later includes it. A failed/reverted status without a receipt is also deferred because included failure consumes gas; only the receipt carries the authoritative actual cost.
+[Signature completion and submission](sign-submit.md) recheck sender, EntryPoint,
+calldata, nonce, gas, fees and sponsorship. Returned bundler hashes must match
+the locally computed canonical hash. Ambiguous transport outcomes retain holds;
+absence of a response does not prove the operation was never broadcast.
 
-## Idempotency
-
-Clients generate one UUID idempotency key per logical call and reuse it only for automatic retries of that call. The application hashes the decoded request. A repeated actor/key:
-
-- returns the prior confirmed/submitted response when request hash matches;
-- returns `EXECUTION_FAILED` for a prior terminal failure;
-- returns `IDEMPOTENCY_CONFLICT` when the same key carries different input.
-
-The unique database key (`organization_id`, `actor_id`, `idempotency_key`) resolves races after an initial optimistic lookup.
+[Receipt reconciliation](receipts.md) uses persisted signed envelopes and worker
+leases to recover after process failure. Included failures still consume gas.
+Sponsored mainnet cost is resolved through Alchemy BSO accounting; see
+[billing](../../billing/README.md).
 
 ## Simulation-only route
 
-Simulation shares grant/wallet/account preparation and policy logic but does not create a submission, change state, or create reservations. It loads current committed states, supplies missing handler seeds, and calls the pure reservation planner as a preview. It returns call outcomes, asset changes, native transfers, and a candidate-specific policy decision.
-
-## Pending before production
-
-- Run concurrency tests across HTTP execute, retries, and reconciliation for the same submission.
-- Define synchronous wait timeouts and client polling guidance.
-- Add a durable reconciliation scheduler/worker deployment runbook.
-- Validate Alchemy quote freshness and production BSO invoice variance; use
-  provider-confirmed cost when that source becomes available.
+Simulation uses the explicitly selected installed session and the same public
+account reconstruction and policy checks. It previews reservation decisions
+against current state without inserting a submission or changing any budget.
+It returns call outcomes, asset changes, native transfers and the selected
+session's policy decision. A simulation cannot guarantee later admission because
+state and available budgets may change before preparation.

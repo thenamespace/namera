@@ -7,9 +7,9 @@ local session signer signs.
 
 ## Persistence and EVM internals
 
-### Self-custody migration boundary
+### Preparation and completion contract
 
-`PrepareExecutionRequest` and `CompleteExecutionRequest` define the new local
+`PrepareExecutionRequest` and `CompleteExecutionRequest` define the local
 signing contract in protocol. Preparation selects one explicit `sessionKeyId`
 alongside wallet, chain, calls and sponsorship. Its response identifies the
 persisted submission, installation and signing key, and includes the exact
@@ -19,12 +19,10 @@ must recompute that hash before asking the local signer to sign.
 Completion carries only namespace, submission ID and the raw 65-byte secp256k1
 signature. The server must load the immutable preparation, recheck authority and
 expiry, verify the signature, then construct the account validation envelope.
-It must not accept replacement operation fields from the client. Schema tests
-cover wire quantities, required signer selection and signature-envelope shape;
-cryptographic correctness is tested in the EVM adapter.
+It must not accept replacement operation fields from the client. Cryptographic correctness is tested at the EVM adapter boundary.
 
 `POST /executions/prepare` and `POST /executions/complete` now implement these
-contracts for granted API-key and CLI actors. The old single-call execution endpoint has been removed. The SDK and CLI
+contracts for granted delegated actors. The SDK, CLI and local MCP
 use prepare/complete with local signing.
 No routine execution falls back to the wallet owner's signing key.
 
@@ -214,13 +212,3 @@ insert submissions, reserve state, bill usage, audit, notify, or sign.
   grant removal, ungranted keys, cross-organization denial, shared pagination,
   and unchanged submission ownership. These reads do not mutate state or emit
   audit events.
-
-## Pending
-
-- Migrate SDK/CLI execution and local MCP to installed session
-  authority; complete the dashboard's local signer export/installation flow.
-- Finish detached message/typed-data signing and its client integration.
-- Validate self-funded Modular Account V2 execution against live Alchemy
-  Rundler on every supported mainnet and testnet.
-- Add product guidance for funding smart accounts before unsponsored execution.
-- Add stale-submission/reservation age alerts and an operator recovery view.

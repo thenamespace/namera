@@ -56,9 +56,3 @@ API is the typed transport declaration built with Effect `HttpApi`. It declares 
 ## Compatibility boundary
 
 Protocol and API changes can break dashboard, SDK, CLI, and MCP simultaneously. Additive fields should have decoding/default semantics where older clients may omit them. Removing/renaming public values requires an explicit version/migration plan once production compatibility begins.
-
-## Pending before production
-
-- Define semantic-versioning and deprecation policy for the public API/SDK.
-- Generate/publish a stable OpenAPI artifact and compare it in CI.
-- Add compatibility fixtures for supported older clients when external versions ship.

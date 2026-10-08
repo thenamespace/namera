@@ -2,7 +2,7 @@
 
 This directory is the technical source of truth for Namera. It documents the
 implemented boundaries, persistence model, runtime flows, security invariants,
-and known production work. Package READMEs explain how to work inside one
+and current operational constraints. Package READMEs explain how to work inside one
 workspace; these documents explain how the workspaces compose into the product.
 
 ## System model
@@ -28,8 +28,9 @@ flowchart LR
 
   SessionKey --> Policy[Policy evaluation]
   Policy --> EVM[EVM adapter]
-  EVM --> Key[WalletKeys]
-  Key --> Chain[ERC-4337 network]
+  EVM --> Local[Client signs with local session key]
+  Local --> Complete[API verifies and persists signed operation]
+  Complete --> Chain[ERC-4337 network]
 
   Management --> Postgres[(PostgreSQL)]
   Policy --> Postgres
@@ -57,12 +58,15 @@ application contracts are the extension point for future chain families.
 - [Canonical database catalog](database/README.md)
 - [Audit events](platform/audit.md)
 - [Telemetry](platform/telemetry.md)
-- [Production readiness](platform/production.md)
+- [Deployment and operational constraints](platform/production.md)
 
 ### Authentication and authorization
 
 - [Auth model](auth/README.md)
 - [Magic-link authentication](auth/core/magic-link.md)
+- [Google sign-in and account linking](auth/core/google.md)
+- [Platform administration](auth/admin.md)
+- [Waitlist admission](auth/waitlist.md)
 - [Private-beta invites](auth/core/beta-invites.md)
 - [Browser sessions](auth/core/sessions.md)
 - [Organizations, members, roles, and invitations](auth/organization/README.md)
@@ -76,6 +80,7 @@ application contracts are the extension point for future chain families.
 - [Session keys and grants](wallets/session-keys.md)
 - [EVM namespace adapter](evm/README.md)
 - [Supported EVM chains](evm/supported-chains.md)
+- [Alchemy portfolios and account caching](evm/portfolio.md)
 - [EVM smart accounts](evm/accounts/README.md)
 - [EVM execution pipeline](evm/execution/README.md)
 - [EVM signatures](evm/signatures.md)
@@ -101,7 +106,7 @@ application contracts are the extension point for future chain families.
 ## Documentation contract
 
 - Document implemented behavior in the present tense.
-- Put future work only in the final `Pending` section of the owning feature.
+- Describe current limits beside the implemented flow; keep speculative roadmaps out of this catalog.
 - Link to source boundaries instead of duplicating implementation code.
 - Update the relevant document in the same change as a contract, table,
   transaction boundary, authorization rule, or lifecycle change.

@@ -48,9 +48,3 @@ Organization switching is owned by organization application/routes and only acce
 - Metrics/logs emit only for a real transition.
 - Logout clears the cookie while retaining the historical database row.
 - Revoke-others explicitly excludes the current session.
-
-## Pending before production
-
-- Add cleanup after audit-retention policy is fixed.
-- Define maximum concurrent sessions and emergency account-wide logout.
-- Decide retention/anonymization for IP address and user agent.
