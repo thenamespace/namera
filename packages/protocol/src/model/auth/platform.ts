@@ -8,13 +8,18 @@ export const PlatformRole = Schema.Literals(["owner", "operator", "viewer"]);
 export type PlatformRole = typeof PlatformRole.Type;
 export const PlatformAssignableRole = Schema.Literals(["operator", "viewer"]);
 export const PlatformMemberStatus = Schema.Literals(["active", "suspended", "removed"]);
-export const PlatformPermission = Schema.Literals(["team:manage", "ownership:transfer"]);
+export const PlatformPermission = Schema.Literals([
+  "team:manage",
+  "ownership:transfer",
+  "invites:read",
+  "invites:manage",
+]);
 export type PlatformPermission = typeof PlatformPermission.Type;
 
 export const platformPermissions: Readonly<Record<PlatformRole, readonly PlatformPermission[]>> = {
-  owner: ["team:manage", "ownership:transfer"],
-  operator: [],
-  viewer: [],
+  owner: ["team:manage", "ownership:transfer", "invites:read", "invites:manage"],
+  operator: ["invites:read", "invites:manage"],
+  viewer: ["invites:read"],
 };
 
 export const PlatformMember = Schema.Struct({

@@ -135,9 +135,10 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 ## Waitlist API
 
 `POST /waitlist` accepts an email publicly. Joining never creates an account or
-sends an email. The internal invite, waitlist, and user-management APIs have been
-removed for the admin portal rebuild; admin authentication/team management and
-signup invite redemption remain available. Set optional `WAITLIST_CORS_ORIGIN`
+sends an email. Internal waitlist and user-management APIs remain removed.
+Session-authorized invite listing, creation and revocation are available at
+`/internal/invites`; see the [beta invite flow](../../architecture/auth/core/beta-invites.md).
+Set optional `WAITLIST_CORS_ORIGIN`
 to the landing page’s exact origin; only public submission allows it, without
 cookies. See [waitlist architecture](../../architecture/auth/waitlist.md).
 

@@ -2,6 +2,7 @@ import { HttpApi, OpenApi } from "effect/http-api";
 
 import {
   PlatformGroup,
+  BetaInviteGroup,
   PlatformInvitationGroup,
   GoogleGroup,
   ConnectedAccountsGroup,
@@ -35,6 +36,7 @@ export * from "./middlewares/index.js";
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     PlatformGroup,
+    BetaInviteGroup,
     PlatformInvitationGroup,
     GoogleGroup,
     ConnectedAccountsGroup,

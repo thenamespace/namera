@@ -4,7 +4,7 @@ import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { betaInvite, betaInviteEvent, Database } from "@namera-ai/database";
 import type { Email } from "@namera-ai/protocol";
 
-// Admission still supports existing invites; management APIs are intentionally absent.
+// Seed admission-only tests without requiring an administrative session.
 export const seedBetaInvite = Effect.fnUntraced(function* (email: Email | null = null) {
   const db = yield* Database;
   const crypto = yield* CryptoService;

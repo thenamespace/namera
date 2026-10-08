@@ -8,6 +8,7 @@ import { ApplicationLive, ServicesLive } from "#/layers/services";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
+import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
@@ -31,6 +32,7 @@ import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
   PlatformRoutes,
+  BetaInviteRoutes,
   GoogleRoutes,
   ConnectedAccountRoutes,
   WaitlistRoutes,

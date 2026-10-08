@@ -150,8 +150,10 @@ labels.
 - HTTP templates cover the typed API, raw OAuth endpoints and proxy routes.
   A contract-reflection regression test guards new typed routes against falling
   into `/*`. Unknown paths still use that bounded fallback.
-- Beta invite `namera.beta_invite.transitions` records committed `redeemed`
-  transitions. The retired issuance/revocation workflows no longer emit metrics.
+- Beta invite `namera.beta_invite.transitions` records committed
+  `created|revoked|redeemed` transitions. Creation counts each code in a batch;
+  no-op revocations emit nothing. Invite routes use bounded templates, including
+  `/internal/invites/:id`; credentials and recipient details are not attributes.
   Organization invitation failures carry only a bounded action and error code.
 - Execution request results and duration carry `stage=prepare|complete|simulate`.
   These count requests (including replay), not unique submissions. Policy

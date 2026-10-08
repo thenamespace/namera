@@ -24,7 +24,7 @@ not a portal callback URI.
   not automatically consume it.
 - `/`: Overview. Successful sign-in navigates here.
 - `/waitlist`: Waitlist.
-- `/invites`: Beta invites.
+- `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: Owner-only admin members table, invitations, role updates, and removal.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 - `/activity`: Admin activity.
@@ -33,10 +33,19 @@ Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
 Inter typography, icons, and compact spacing follow the dashboard. These pages
-other than Team remain empty scaffolds. Team uses the dashboard's DataGrid,
+other than Team and Invites remain empty scaffolds. Team uses the dashboard's DataGrid,
 profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
 Only operator/viewer roles can be assigned; the owner cannot be edited or removed.
 Removed members remain visible as historical rows without management actions.
+
+Invites is readable by every active admin role; owner/operator can create and
+revoke codes. Create 1–50 codes, with optional email binding only for a single
+code, and expiry of 1–30 days. Codes and join links are shown only immediately
+after creation and are not saved in browser storage. Copy them before closing.
+No email is sent automatically. Writes require a sign-in within ten minutes;
+the dialogs offer reauthentication when needed. Status is derived server-side
+from redemption, revocation and expiry. The table includes recipient and
+redeemer metadata, with an opaque reference rather than a recoverable code.
 
 The browser sends the API's HttpOnly session cookie with credentials enabled.
 `/internal/me` verifies active platform membership in the shared protected layout;

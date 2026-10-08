@@ -16,6 +16,7 @@ import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/midd
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
+import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
@@ -94,6 +95,7 @@ export const makeTestServerLayer = (
 
   const TestHandlersLayer = Layer.mergeAll(
     PlatformRoutes,
+    BetaInviteRoutes,
     GoogleRoutes,
     ConnectedAccountRoutes,
     WaitlistRoutes,

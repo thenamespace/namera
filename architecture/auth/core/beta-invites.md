@@ -9,12 +9,27 @@ Active platform-team invitations are a narrow exception: after proving the
 invited mailbox, a user may sign up normally, but must separately accept the
 single-use team invitation to obtain any admin authority.
 
-## Management status
+## Management
 
-The internal invite list/create/revoke API has been removed for the admin portal
-rebuild. There is currently no supported invite issuance or revocation endpoint.
-Existing invites remain redeemable, subject to expiry, recipient binding, and
-terminal state. Admin authentication and team management are unchanged; see
+The admin portal implements three internal, OpenAPI-excluded endpoints:
+
+- `GET /internal/invites`: all active admin roles; newest-first UUIDv7 cursor
+  pagination (default 50, maximum 100), derived status and literal, case-insensitive
+  bound-email substring filters. Returns display-safe fields and the redeemer's
+  name/image/email, never codes or HMACs.
+- `POST /internal/invites`: owner/operator; count 1–50, optional expiry 1–30 days
+  (default seven). Optional normalized email binding is accepted only for count=1;
+  batches with an email are rejected. Codes and dashboard join URLs are returned
+  once. No email is sent automatically.
+- `DELETE /internal/invites/:id`: owner/operator; active codes only. Missing,
+  expired, redeemed or already-revoked codes return `{ revoked: false }`.
+
+Writes require a recent verified session and approved Origin, take the team lock,
+recheck permission, and share a transaction with both invite and platform audit
+events. Generation retries random-code collisions without overwriting old codes;
+the complete batch commits or rolls back. Revocation and redemption use
+conditional writes/row locking to prevent two terminal states. Existing invites
+remain redeemable subject to expiry, recipient binding and terminal state. See
 [platform admin authorization](../admin.md).
 
 ## Signup lifecycle
@@ -64,24 +79,28 @@ Authorization headers, plaintext invite codes, response bodies, or invite-link q
 Dashboard telemetry uses route templates, not invite query values.
 
 `auth.beta_invite` retains issuance, expiry, recipient and terminal state;
-`audit.beta_invite_events` retains historical created/revoked facts and appends
-redeemed facts in the admission transaction. Events reference the invite ID and
+`audit.beta_invite_events` appends created/revoked facts in management transactions
+and redeemed facts in the admission transaction. Events reference the invite ID and
 contain no code/token. Failed redemptions append no events. Pending email proofs use
 the existing verification lifecycle, not an admitted-user audit event. Existing user/workspace
 audit events remain unchanged.
 
 ## Deployment and verification
 
-Committed redemptions increment `namera.beta_invite.transitions` with
-`result=redeemed`. Issuance/revocation emitters are removed. Codes, recipient
+Committed transitions increment `namera.beta_invite.transitions` with
+`result=created|revoked|redeemed`. Batch creation counts each code; failed
+transactions and no-op revocations do not increment it. Codes, recipient
 addresses, and invite IDs never become metric attributes.
 
 Apply the generated migrations through normal startup. No wipe or backfill is
 required. Set `AUTH_INVITE_REQUIRED=true` to admit testers with existing valid
-invites. New invite issuance awaits the replacement management workflow. `false` intentionally enables open signup; use it only when explicitly
+invites or create codes through the admin portal. `false` intentionally enables open signup; use it only when explicitly
 desired. Existing accounts are grandfathered in either mode.
 
-HTTP tests seed existing invites directly and cover guarded signup, expiry/revocation, optional
+Management HTTP tests cover authorization, origin/freshness, creation, batch
+binding rejection, safe projections, audit, filtering, pagination and competing
+revocation/redemption. Admin form tests cover input boundaries and permission
+gates. Admission HTTP tests seed existing invites directly and cover guarded signup, expiry/revocation, optional
 recipient binding, existing-user login, restricted-cookie isolation, proof expiry,
 attempt limits, and competing redemption. Run the same
 suite in the disposable PostgreSQL lane for production-driver concurrency.

@@ -18,11 +18,11 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | Permission                          | Owner | Operator | Viewer |
 | ----------------------------------- | ----- | -------- | ------ |
 | `team:manage`, `ownership:transfer` | Yes   | No       | No     |
+| `invites:read`                      | Yes   | Yes      | Yes    |
+| `invites:manage`                    | Yes   | Yes      | No     |
 
-Only implemented team-management permissions are defined. Operators and viewers
-currently have empty permission arrays but retain active-member access to
-`/internal/me` and the portal shell. Waitlist and beta-invite permissions will be
-introduced alongside their replacement endpoints, not reserved in advance.
+Only implemented permissions are defined. Waitlist permissions will be added
+alongside their replacement endpoints, not reserved in advance.
 
 ## Endpoints
 
@@ -33,6 +33,9 @@ because the invitee is not a member yet.
 | Method | Path                                | Access                                             |
 | ------ | ----------------------------------- | -------------------------------------------------- |
 | GET    | `/internal/me`                      | Active member; identity and effective permissions  |
+| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters  |
+| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one |
+| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code              |
 | GET    | `/internal/members`                 | Owner; team including historical removed members   |
 | PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                     |
 | PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                         |
@@ -43,17 +46,17 @@ because the invitee is not a member yet.
 | DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                   |
 | POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body         |
 
-Team writes and acceptance require a session created within ten minutes. Re-login
+Team writes, beta-invite writes and acceptance require a session created within ten minutes. Re-login
 through normal email/Google authentication provides that proof. All admin writes
 require an exact dashboard or configured admin Origin, including non-browser
 clients. CORS allows credentials for the configured admin origin, never wildcard.
 Existing security middleware supplies no-store. Rate limits are process-local;
 move to a shared store before horizontally scaling admission controls.
 
-The former invite list/create/revoke, waitlist list/status, and user-list routes
-are removed, including their DTOs, handlers, workflows, query methods, and
-dedicated telemetry. They return 404 even for an authenticated owner. Existing
-records, signup invite redemption, and public waitlist submission are preserved.
+The former waitlist list/status and user-list routes remain removed and return
+404 even for an authenticated owner. Public waitlist submission is preserved.
+Beta-invite management is implemented again with session-based permissions;
+see [beta invites](core/beta-invites.md).
 
 ## Invitation lifecycle
 
@@ -88,8 +91,10 @@ the previous owner to operator and promotes the active target in one transaction
 
 State and versioned `audit.platform_events` share that transaction. Acceptance
 attributes its event to the newly created member; bootstrap alone has no actor.
-Retired beta-invite and waitlist event variants remain decodable for historical
-audit rows; their mutation workflows and emitters have been removed. No credentials or email payloads enter
+Beta-invite creation/revocation uses the same team lock to recheck permission
+against concurrent membership changes. Each transition appends both its invite
+event and actor-attributed platform event atomically. Retired waitlist event
+variants remain decodable for historical audit rows. No credentials or email payloads enter
 audit/logs. Workflow/repository spans use stable names; email delivery and HTTP
 metrics reuse existing bounded telemetry. No new dashboard notifications are added.
 
@@ -132,7 +137,10 @@ confirmed soft removal. Member rows include user display metadata from the exist
 user join (no new table). Owner and removed rows have no generic edit/remove actions.
 Permission guards hide Team navigation from other roles and prevent member fetching
 on denied direct visits. Mutation hooks own query invalidation; rejected access
-suppresses stale results and rechecks membership. Other pages remain placeholders.
+suppresses stale results and rechecks membership. Invites implements all-role
+listing, email/status filters, cursor pagination, single/batch creation, one-time
+code/link copying, redeemer display metadata and confirmed revocation. Its atoms,
+mutation invalidation and permission guards follow the Team conventions. Other pages remain placeholders.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
@@ -155,7 +163,7 @@ email-code/Google login, then clears it on acceptance or cancellation. A magic l
 opened in a different tab requires reopening the invitation afterward. `/auth?reauth=true`
 allows existing members to renew their session for the ten-minute write boundary.
 
-Waitlist acceptance + email transaction, beta-invite screens, pending-invitation
+Waitlist acceptance + email transaction, pending-team-invitation
 management and ownership/status controls in the UI remain future work. Do not treat the empty
 page scaffolds as an implemented operations console.
 

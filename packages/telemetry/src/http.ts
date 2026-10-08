@@ -83,6 +83,7 @@ const staticHttpRoutes = new Set([
   "/wallets/passkey/registration-options",
   "/waitlist",
   "/internal/me",
+  "/internal/invites",
   "/internal/members",
   "/internal/ownership/transfer",
   "/internal/member-invitations",
@@ -90,6 +91,7 @@ const staticHttpRoutes = new Set([
 ]);
 
 const dynamicHttpRoutes = [
+  "/internal/invites/:id",
   "/internal/members/:id/role",
   "/internal/members/:id/status",
   "/internal/members/:id",

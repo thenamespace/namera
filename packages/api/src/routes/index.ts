@@ -13,3 +13,4 @@ export * from "./signature.js";
 export * from "./auth/index.js";
 export * from "./waitlist.js";
 export * from "./platform.js";
+export * from "./beta-invite.js";
