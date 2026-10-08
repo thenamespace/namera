@@ -20,9 +20,10 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | `team:manage`, `ownership:transfer` | Yes   | No       | No     |
 | `invites:read`                      | Yes   | Yes      | Yes    |
 | `invites:manage`                    | Yes   | Yes      | No     |
+| `waitlist:read`                     | Yes   | Yes      | Yes    |
+| `waitlist:accept`                   | Yes   | Yes      | No     |
 
-Only implemented permissions are defined. Waitlist permissions will be added
-alongside their replacement endpoints, not reserved in advance.
+Only implemented permissions are defined.
 
 ## Endpoints
 
@@ -36,6 +37,8 @@ because the invitee is not a member yet.
 | GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters  |
 | POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one |
 | DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code              |
+| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters        |
+| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite     |
 | GET    | `/internal/members`                 | Owner; team including historical removed members   |
 | PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                     |
 | PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                         |
@@ -54,8 +57,9 @@ clients. CORS allows credentials for the configured admin origin, never wildcard
 Existing security middleware supplies no-store. Rate limits are process-local;
 move to a shared store before horizontally scaling admission controls.
 
-The former waitlist list/status and user-list routes remain removed and return
-404 even for an authenticated owner. Public waitlist submission is preserved.
+The former arbitrary waitlist-status PATCH and user-list routes remain removed
+and return 404 even for an authenticated owner. Public submission is preserved.
+Waitlist list/accept management is documented in [waitlist](waitlist.md).
 Beta-invite management is implemented again with session-based permissions;
 see [beta invites](core/beta-invites.md).
 
@@ -141,7 +145,9 @@ on denied direct visits. Mutation hooks own query invalidation; rejected access
 suppresses stale results and rechecks membership. Invites implements all-role
 listing, email/status filters, cursor pagination, single/batch creation, one-time
 code/link copying, redeemer display metadata and confirmed revocation. Its atoms,
-mutation invalidation and permission guards follow the Team conventions. Other pages remain placeholders.
+mutation invalidation and permission guards follow the Team conventions. Waitlist
+implements email/status filters, 25-row pagination and confirmed acceptance with
+an email-bound invite and durable email job. Overview and Activity remain placeholders.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
@@ -164,8 +170,7 @@ email-code/Google login, then clears it on acceptance or cancellation. A magic l
 opened in a different tab requires reopening the invitation afterward. `/auth?reauth=true`
 allows existing members to sign in again explicitly when needed.
 
-Waitlist acceptance + email transaction, pending-team-invitation
-management and ownership/status controls in the UI remain future work. Do not treat the empty
+Pending-team-invitation management and ownership/status controls in the UI remain future work. Do not treat the empty
 page scaffolds as an implemented operations console.
 
 HTTP tests cover role separation, cookie-only auth, origin and session guards,

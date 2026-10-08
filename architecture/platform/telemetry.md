@@ -124,8 +124,11 @@ records remain normal deferred work.
 ### Waitlist signals
 
 `namera.waitlist.joins` counts new entries only, excluding duplicate joins.
-The legacy status-change counter and management route labels are removed.
-Retired routes resolve to `/*`, so emails and IDs never become metric attributes.
+`namera.waitlist.acceptances` counts committed pending-to-completed transitions;
+each also increments beta-invite creation. Repeated accepts count neither.
+Management routes use `/internal/waitlist` and `/internal/waitlist/:id/accept`
+templates; retired routes resolve to `/*`. Emails, invite codes and IDs never
+become metric attributes. Acceptance delivery uses existing email-job signals.
 See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
 
 ### Dashboard signals

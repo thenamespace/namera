@@ -3,6 +3,7 @@ import { HttpApi, OpenApi } from "effect/http-api";
 import {
   PlatformGroup,
   BetaInviteGroup,
+  AdminWaitlistGroup,
   PlatformInvitationGroup,
   GoogleGroup,
   ConnectedAccountsGroup,
@@ -37,6 +38,7 @@ export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     PlatformGroup,
     BetaInviteGroup,
+    AdminWaitlistGroup,
     PlatformInvitationGroup,
     GoogleGroup,
     ConnectedAccountsGroup,

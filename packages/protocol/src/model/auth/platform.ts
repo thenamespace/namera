@@ -13,13 +13,22 @@ export const PlatformPermission = Schema.Literals([
   "ownership:transfer",
   "invites:read",
   "invites:manage",
+  "waitlist:read",
+  "waitlist:accept",
 ]);
 export type PlatformPermission = typeof PlatformPermission.Type;
 
 export const platformPermissions: Readonly<Record<PlatformRole, readonly PlatformPermission[]>> = {
-  owner: ["team:manage", "ownership:transfer", "invites:read", "invites:manage"],
-  operator: ["invites:read", "invites:manage"],
-  viewer: ["invites:read"],
+  owner: [
+    "team:manage",
+    "ownership:transfer",
+    "invites:read",
+    "invites:manage",
+    "waitlist:read",
+    "waitlist:accept",
+  ],
+  operator: ["invites:read", "invites:manage", "waitlist:read", "waitlist:accept"],
+  viewer: ["invites:read", "waitlist:read"],
 };
 
 export const PlatformMember = Schema.Struct({
@@ -52,6 +61,12 @@ export const PlatformInvitation = Schema.Struct({
 export type PlatformInvitation = typeof PlatformInvitation.Type;
 
 export const PlatformEventData = Schema.Union([
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("waitlist.accepted"),
+    waitlistId: Schema.String,
+    inviteId: Schema.String,
+  }),
   Schema.Struct({
     version: Schema.Literal(1),
     type: Schema.Literals(["beta-invite.created", "beta-invite.revoked"]),

@@ -60,7 +60,6 @@ layer(TestLayer)("waitlist", (it) => {
       yield* resetTestState();
       for (const token of [undefined, adminToken]) {
         for (const [method, path] of [
-          ["GET", "/internal/waitlist"],
           ["PATCH", "/internal/waitlist/00000000-0000-4000-8000-000000000001"],
           ["GET", "/internal/users"],
         ] as const) {

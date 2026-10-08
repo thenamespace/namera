@@ -84,6 +84,7 @@ const staticHttpRoutes = new Set([
   "/waitlist",
   "/internal/me",
   "/internal/invites",
+  "/internal/waitlist",
   "/internal/members",
   "/internal/ownership/transfer",
   "/internal/member-invitations",
@@ -92,6 +93,7 @@ const staticHttpRoutes = new Set([
 
 const dynamicHttpRoutes = [
   "/internal/invites/:id",
+  "/internal/waitlist/:id/accept",
   "/internal/members/:id/role",
   "/internal/members/:id/status",
   "/internal/members/:id",

@@ -5,13 +5,25 @@ import { describe, expect, it } from "vitest";
 import { PlatformPermission, platformPermissions } from "../../src/model/auth/platform.js";
 
 describe("platform permissions", () => {
-  it("grants only implemented team administration to the owner", () => {
-    expect(platformPermissions.owner).toEqual(["team:manage", "ownership:transfer"]);
-    expect(platformPermissions.operator).toEqual([]);
-    expect(platformPermissions.viewer).toEqual([]);
+  it("grants team administration only to owners and access management to operators", () => {
+    expect(platformPermissions.owner).toEqual([
+      "team:manage",
+      "ownership:transfer",
+      "invites:read",
+      "invites:manage",
+      "waitlist:read",
+      "waitlist:accept",
+    ]);
+    expect(platformPermissions.operator).toEqual([
+      "invites:read",
+      "invites:manage",
+      "waitlist:read",
+      "waitlist:accept",
+    ]);
+    expect(platformPermissions.viewer).toEqual(["invites:read", "waitlist:read"]);
   });
 
-  it.each(["waitlist:read", "waitlist:accept", "invites:read", "invites:create", "invites:revoke"])(
+  it.each(["users:read", "waitlist:delete", "invites:create", "invites:revoke"])(
     "rejects the unimplemented permission %s",
     (permission) => {
       expect(Schema.is(PlatformPermission)(permission)).toBe(false);

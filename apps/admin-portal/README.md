@@ -23,7 +23,7 @@ not a portal callback URI.
 - `/auth/verify`: explicit confirmation of an emailed link; opening a link does
   not automatically consume it.
 - `/`: Overview. Successful sign-in navigates here.
-- `/waitlist`: Waitlist.
+- `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: Owner-only admin members table, invitations, role updates, and removal.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
@@ -33,7 +33,7 @@ Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
 Inter typography, icons, and compact spacing follow the dashboard. These pages
-other than Team and Invites remain empty scaffolds. Team uses the dashboard's DataGrid,
+other than Team, Invites and Waitlist remain empty scaffolds. Team uses the dashboard's DataGrid,
 profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
 Only operator/viewer roles can be assigned; the owner cannot be edited or removed.
 Removed members remain visible as historical rows without management actions.
@@ -47,6 +47,12 @@ No email is sent automatically. Writes use the active login session without a
 separate recent-sign-in requirement. Status is derived server-side
 from redemption, revocation and expiry. The table includes recipient and
 redeemer metadata without exposing invite credentials.
+
+Waitlist is readable by all active roles; owner/operator can accept pending entries.
+Acceptance issues a seven-day email-bound invite, queues its email and marks the
+entry completed in one transaction. Completed means queued, not delivered;
+the server outbox handles retries. The confirmation describes this before sending.
+Repeated acceptance is a no-op and never creates a second invite.
 
 The browser sends the API's HttpOnly session cookie with credentials enabled.
 `/internal/me` verifies active platform membership in the shared protected layout;
