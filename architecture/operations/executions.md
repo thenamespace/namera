@@ -60,7 +60,7 @@ sequenceDiagram
   App->>Tx: mark submitted + audit
   App->>Bundler: worker polls receipt
   alt successful receipt
-    App->>Tx: settle policies + execution + billing + audit + notification/email
+    App->>Tx: settle policies + execution + billing + audit + in-app notification
     Client->>App: poll confirmed execution
   else pending or uncertain transport
     Client->>App: poll submitted operation

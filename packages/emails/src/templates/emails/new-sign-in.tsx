@@ -1,5 +1,6 @@
 import type { NewSignInEmailVariables } from "@namera-ai/protocol/model";
 
+import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
@@ -9,7 +10,12 @@ import { NameraEmail } from "../provider.js";
 
 export type NewSignInEmailProps = NewSignInEmailVariables;
 
-export const NewSignInEmail = ({ ipAddress, signedInAt, userAgent }: NewSignInEmailProps) => {
+export const NewSignInEmail = ({
+  actionUrl,
+  ipAddress,
+  signedInAt,
+  userAgent,
+}: NewSignInEmailProps) => {
   return (
     <NameraEmail preview="A new sign-in to your Namera account was detected.">
       <EmailLayout>
@@ -22,6 +28,7 @@ export const NewSignInEmail = ({ ipAddress, signedInAt, userAgent }: NewSignInEm
             <EmailDetail label="IP address" mono value={ipAddress} />
             <EmailDetail label="Device" value={userAgent} />
           </EmailDetails>
+          <EmailAction href={actionUrl}>Review sign-ins</EmailAction>
           <EmailNotice>
             If this was you, no action is needed. If you do not recognize this sign-in, review your
             active sessions and sign out the session immediately.
@@ -33,6 +40,7 @@ export const NewSignInEmail = ({ ipAddress, signedInAt, userAgent }: NewSignInEm
 };
 
 NewSignInEmail.PreviewProps = {
+  actionUrl: "https://dashboard.namera.ai/auth?returnTo=%2Fsettings%2Fsecurity",
   ipAddress: "203.0.113.42",
   signedInAt: "2026-08-15T08:30:00.000Z",
   userAgent: "Chrome 150 on macOS",

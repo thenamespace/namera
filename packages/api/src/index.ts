@@ -1,15 +1,18 @@
 import { HttpApi, OpenApi } from "effect/http-api";
 
 import {
+  PlatformGroup,
+  PlatformSessionGroup,
+  BetaInviteGroup,
+  AdminWaitlistGroup,
+  AdminOverviewGroup,
+  PlatformInvitationGroup,
   GoogleGroup,
   ConnectedAccountsGroup,
   AddressMetadataGroup,
   ApiKeyGroup,
   BillingGroup,
-  BetaInviteGroup,
   WaitlistGroup,
-  AdminWaitlistGroup,
-  AdminUserGroup,
   DashboardGroup,
   ExecutionGroup,
   EnsGroup,
@@ -35,15 +38,18 @@ export * from "./middlewares/index.js";
 // live outside this package so every client is generated from the same schema.
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
+    PlatformGroup,
+    PlatformSessionGroup,
+    BetaInviteGroup,
+    AdminWaitlistGroup,
+    AdminOverviewGroup,
+    PlatformInvitationGroup,
     GoogleGroup,
     ConnectedAccountsGroup,
     AddressMetadataGroup,
     ApiKeyGroup,
     BillingGroup,
-    BetaInviteGroup,
     WaitlistGroup,
-    AdminWaitlistGroup,
-    AdminUserGroup,
     DashboardGroup,
     ExecutionGroup,
     EnsGroup,

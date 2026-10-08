@@ -12,10 +12,11 @@ import { Passkeys } from "@namera-ai/passkeys";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
-import { AdminAuthorizationLive } from "#/middlewares/admin";
+import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
-import { AdminUserRoutes } from "#/routes/auth/admin";
+import { AdminOverviewRoutes } from "#/routes/admin/overview";
+import { AdminWaitlistRoutes } from "#/routes/auth/admin-waitlist";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
 import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
@@ -29,6 +30,7 @@ import {
   SessionRoutes,
   UserRoutes,
 } from "#/routes/auth/index";
+import { PlatformRoutes } from "#/routes/auth/platform";
 import { WaitlistRoutes } from "#/routes/auth/waitlist";
 import { BillingRoutes } from "#/routes/billing/index";
 import { HealthRoutes } from "#/routes/core/health";
@@ -83,7 +85,10 @@ export const makeTestServerLayer = (
   );
 
   const TestApplicationLayer = Application.layer.pipe(Layer.provide(TestServicesLayer));
-  const TestAdminAuthorizationLayer = AdminAuthorizationLive.pipe(Layer.provide(RateLimiterLive));
+  const TestAdminAuthorizationLayer = Layer.merge(
+    AdminAuthorizationLive,
+    PlatformSessionAuthorizationLive,
+  ).pipe(Layer.provide(RateLimiterLive), Layer.provide(TestServicesLayer));
 
   const TestAuthorizationLayer = AuthorizationLive.pipe(
     Layer.provide(TestServicesLayer),
@@ -91,10 +96,12 @@ export const makeTestServerLayer = (
   );
 
   const TestHandlersLayer = Layer.mergeAll(
+    PlatformRoutes,
+    BetaInviteRoutes,
+    AdminWaitlistRoutes,
+    AdminOverviewRoutes,
     GoogleRoutes,
     ConnectedAccountRoutes,
-    AdminUserRoutes,
-    BetaInviteRoutes,
     WaitlistRoutes,
     AddressMetadataRoutes,
     ApiKeyRoutes,

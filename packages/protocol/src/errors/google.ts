@@ -16,6 +16,7 @@ export class GoogleAuthError extends Schema.TaggedError<GoogleAuthError>()(
   "GoogleAuthError",
   {
     code: GoogleAuthErrorCode,
+    surface: Schema.optionalKey(Schema.Literal("admin")),
   },
   { httpApiStatus: 400 },
 ) {}

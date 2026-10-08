@@ -16,9 +16,10 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   email-safe asset generator for package-owned React Email templates.
 - [`apps/cli`](apps/cli/README.md) — Effect CLI using OAuth device authorization
   and the public SDK for delegated wallet operations.
-- [`apps/admin-portal`](apps/admin-portal/README.md) — operator SPA for beta
-  invites, users, and the waitlist. Static Vite React build with no server of
-  its own; it calls `apps/server`'s `/internal` API with an admin bearer token.
+- [`apps/admin-portal`](apps/admin-portal/README.md) — static TanStack Router SPA
+  with Google/email sign-in and an empty protected home route. Uses verified user
+  sessions and platform membership. The legacy UI is archived in
+  `apps/admin-portal-old`, outside the pnpm workspace.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
@@ -151,8 +152,8 @@ Additional rules:
 - `apps/admin-portal` is a static SPA with no backend of its own. It holds no
   database credentials and never touches `database`, `application`, or any
   repository: every read and write goes over HTTP to `apps/server`'s `/internal`
-  API, typed through `api`. The operator's admin token lives in `sessionStorage`
-  and dies with the tab, so it is never persisted to disk.
+  API, typed through `api`. New portal code must use the existing HttpOnly user
+  session and platform membership, not the retired shared admin token.
 - Every `/internal` route is operator surface: it carries `AdminAuthorization`
   and `OpenApi.Exclude`, so it stays out of the published spec and the Scalar
   reference. `tests/integration/transport/openapi-internal.test.ts` enforces it.

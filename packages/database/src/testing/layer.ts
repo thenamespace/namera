@@ -52,6 +52,9 @@ import {
   systemRole,
   user,
   userEvent,
+  platformEvent,
+  platformInvitation,
+  platformMember,
   verification,
   betaInvite,
   betaInviteEvent,
@@ -96,6 +99,9 @@ export class TestDatabase extends Context.Service<
       const reset = Effect.fn("database.testDatabase.reset")(function* () {
         yield* database.delete(notificationRecipient);
         yield* database.delete(betaInviteEvent);
+        yield* database.delete(platformEvent);
+        yield* database.delete(platformInvitation);
+        yield* database.delete(platformMember);
         yield* database.delete(waitlistEvent);
         yield* database.delete(waitlist);
         yield* database.delete(betaInvite);

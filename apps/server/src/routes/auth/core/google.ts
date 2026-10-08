@@ -39,7 +39,14 @@ export const GoogleRoutes = HttpApiBuilder.group(NameraApi, "google", (handlers)
       .handle("configuration", () => Effect.succeed({ enabled: app.google.enabled }))
       .handle("start", ({ payload }) =>
         Effect.gen(function* () {
-          yield* requireDashboardOrigin;
+          if (payload.surface === "admin") {
+            const request = yield* HttpServerRequest.HttpServerRequest;
+            if (
+              Option.isNone(config.adminPublicOrigin) ||
+              request.headers.origin !== config.adminPublicOrigin.value.origin
+            )
+              return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
+          } else yield* requireDashboardOrigin;
           yield* limitGoogle;
           const started = yield* app.google.start(payload);
           yield* setGoogleBrowserCookie(started.browserToken, cookies.secure);
@@ -70,7 +77,8 @@ export const GoogleRoutes = HttpApiBuilder.group(NameraApi, "google", (handlers)
           }).pipe(
             Effect.catchTag("GoogleAuthError", (error) =>
               Effect.succeed({
-                returnTo: `${request.cookies["auth-token"] ? "/settings/security" : "/auth"}?google=${error.code}`,
+                surface: error.surface,
+                returnTo: `${error.surface !== "admin" && request.cookies["auth-token"] ? "/settings/security" : "/auth"}?google=${error.code}`,
               }),
             ),
             Effect.catchTag("RateLimitExceeded", () =>
@@ -82,9 +90,13 @@ export const GoogleRoutes = HttpApiBuilder.group(NameraApi, "google", (handlers)
             yield* setAuthCookie(result.sessionToken, cookies.secure);
           if ("admissionToken" in result && result.admissionToken)
             yield* setBetaSignupCookie(result.admissionToken, cookies.secure);
-          return HttpServerResponse.redirect(
-            new URL(result.returnTo, config.dashboardPublicOrigin).toString(),
-          ).pipe(
+          const isAdmin = "surface" in result && result.surface === "admin";
+          const origin = isAdmin
+            ? Option.getOrElse(config.adminPublicOrigin, () => config.dashboardPublicOrigin)
+            : config.dashboardPublicOrigin;
+          const returnTo =
+            isAdmin && result.returnTo === "/auth/invite" ? "/auth?denied=true" : result.returnTo;
+          return HttpServerResponse.redirect(new URL(returnTo, origin).toString()).pipe(
             HttpServerResponse.setHeader("cache-control", "no-store"),
             HttpServerResponse.setHeader("referrer-policy", "no-referrer"),
           );

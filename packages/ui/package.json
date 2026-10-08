@@ -41,6 +41,7 @@
     "@thenamespace/uikit": "0.3.0",
     "emojibase": "17.0.0",
     "emojibase-data": "17.0.0",
+    "motion": "catalog:",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {

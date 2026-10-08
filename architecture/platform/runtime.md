@@ -19,12 +19,20 @@ sequenceDiagram
   Process->>DB: Open pool and acquire migration advisory lock
   DB-->>Process: Apply migrations
   Process->>Roles: Synchronize owner/admin/member definitions
+  Process->>DB: Bootstrap configured platform owner if none exists
   Process->>Workers: Start email and execution reconciliation workers
   Process->>HTTP: Bind configured host and port
 ```
 
 Effect scopes close the server, workers, provider clients, exporters, and
 database resources during shutdown.
+
+Before HTTP binds, `ADMIN_BOOTSTRAP_OWNER_EMAIL` optionally grants the first
+platform owner to an existing verified user through the application workflow.
+This follows migrations and uses the transaction-scoped team lock across replicas.
+Existing ownership is never overwritten. Missing/unverified users are warned and
+skipped until the next startup; configuration/database failures stop startup.
+See [admin authorization](../auth/admin.md) for rollout and audit details.
 
 ## Layer composition
 

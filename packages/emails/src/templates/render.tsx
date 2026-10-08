@@ -5,16 +5,24 @@ import type { SendEmailProps } from "#/types";
 import { ApiKeyCreatedEmail } from "./emails/api-key-created.js";
 import { ApiKeyRevokedEmail } from "./emails/api-key-revoked.js";
 import { ConnectedAccountChangedEmail } from "./emails/connected-account-changed.js";
-import { ExecutionConfirmedEmail } from "./emails/execution-confirmed.js";
 import { MagicLinkEmail } from "./emails/magic-link.js";
 import { NewSignInEmail } from "./emails/new-sign-in.js";
 import { OrganizationInvitationEmail } from "./emails/organization-invitation.js";
+import { PlatformInvitationEmail } from "./emails/platform-invitation.js";
 import { SessionKeyCreatedEmail } from "./emails/session-key-created.js";
 import { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
+import { WaitlistAcceptedEmail } from "./emails/waitlist-accepted.js";
+import { WaitlistConfirmedEmail } from "./emails/waitlist-confirmed.js";
 import { WalletCreatedEmail } from "./emails/wallet-created.js";
 
 export const renderEmail = (input: SendEmailProps): ReactElement => {
   switch (input.type) {
+    case "waitlist-confirmed":
+      return <WaitlistConfirmedEmail {...input.variables} />;
+    case "waitlist-accepted":
+      return <WaitlistAcceptedEmail {...input.variables} />;
+    case "platform-invitation":
+      return <PlatformInvitationEmail {...input.variables} />;
     case "connected-account-changed":
       return <ConnectedAccountChangedEmail {...input.variables} />;
     case "magic-link":
@@ -33,7 +41,5 @@ export const renderEmail = (input: SendEmailProps): ReactElement => {
       return <ApiKeyCreatedEmail {...input.variables} />;
     case "api-key-revoked":
       return <ApiKeyRevokedEmail {...input.variables} />;
-    case "execution-confirmed":
-      return <ExecutionConfirmedEmail {...input.variables} />;
   }
 };

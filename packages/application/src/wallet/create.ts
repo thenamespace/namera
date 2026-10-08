@@ -18,6 +18,7 @@ import { generateUniqueId } from "@namera-ai/utils";
 import { WalletKeys } from "@namera-ai/wallet-keys";
 
 import { Audit } from "#/audit/layer";
+import { AuthConfig } from "#/auth/config";
 import {
   enforceLocalWalletLimit,
   enforceWalletLimit,
@@ -25,11 +26,13 @@ import {
 } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
+import { dashboardEmailLink } from "#/notification/email-link";
 
 import { walletPolicy } from "./data.js";
 import { makeVerifyPasskeyRegistration } from "./passkey-registration.js";
 
 export const makeCreateWallet = Effect.gen(function* () {
+  const config = yield* AuthConfig;
   const audit = yield* Audit;
   const evm = yield* Evm;
   const repository = yield* Repository;
@@ -290,6 +293,10 @@ export const makeCreateWallet = Effect.gen(function* () {
                   ),
                   variables: {
                     walletName: wallet.metadata.name,
+                    actionUrl: dashboardEmailLink(
+                      config.dashboardPublicOrigin,
+                      `/account/${wallet.id}/overview`,
+                    ),
                     organizationName: organization.metadata.name,
                     address: account.address,
                     addressUrl,

@@ -2,6 +2,8 @@ import { Schema } from "effect";
 
 import { Email, UserId } from "#/common/index";
 
+import { UserMetadata } from "./user.js";
+
 export const BetaInvite = Schema.Struct({
   id: Schema.String,
   codeHmac: Schema.String,
@@ -30,6 +32,7 @@ export const BetaInviteListEntry = Schema.Struct({
   redeemedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   redeemedBy: Schema.NullOr(UserId),
   redeemedByEmail: Schema.NullOr(Email),
+  redeemedByMetadata: Schema.NullOr(UserMetadata),
   revokedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   status: BetaInviteStatus,
 });

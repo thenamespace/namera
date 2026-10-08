@@ -2,6 +2,7 @@
 import type { WalletCreatedEmailVariables } from "@namera-ai/protocol/model";
 import { Link } from "react-email";
 
+import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
@@ -12,6 +13,7 @@ import { NameraEmail } from "../provider.js";
 export type WalletCreatedEmailProps = WalletCreatedEmailVariables;
 
 export const WalletCreatedEmail = ({
+  actionUrl,
   address,
   addressUrl,
   organizationName,
@@ -42,6 +44,7 @@ export const WalletCreatedEmail = ({
             <EmailDetail label="Implementation" value={implementationName} />
             <EmailDetail label="Ownership" value={ownership} />
           </EmailDetails>
+          <EmailAction href={actionUrl}>View account</EmailAction>
           <EmailNotice>
             Namera will enforce organization permissions and session-key policies before this
             account can be used by an agent.
@@ -53,6 +56,7 @@ export const WalletCreatedEmail = ({
 };
 
 WalletCreatedEmail.PreviewProps = {
+  actionUrl: "https://dashboard.namera.ai/auth?returnTo=%2Faccount%2Fexample-account-id%2Foverview",
   address: "0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
   addressUrl: "https://etherscan.io/address/0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
   implementation: "alchemy-modular-v2",

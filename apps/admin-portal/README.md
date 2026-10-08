@@ -1,56 +1,98 @@
-# @namera-ai/admin-portal
+# Namera Admin
 
-Internal operator console for beta invites, user accounts, and the waitlist.
+Static Vite React application using TanStack Router, Effect atoms, and Namera
+UIKit, matching the dashboard's compact sign-in experience.
 
-It is a static Vite React SPA with no backend of its own. Every read and write
-goes to `apps/server`'s `/internal` API, typed through `@namera-ai/api`, so the
-portal holds no database credentials and cannot reach the database directly.
-
-## Running it
+## Local development
 
 ```sh
-cp .env.example .env
+pnpm install
 pnpm --filter @namera-ai/admin-portal dev
 ```
 
-`VITE_API_URL` points at namera-core and defaults to `https://api.namera.ai` when
-unset or blank, in both the browser client and build-time security policy.
-Set it to `http://localhost:8080` for local API development. Its origin is the only host the page
-may connect to: the Content-Security-Policy is generated from it at build time.
+The portal runs at `http://localhost:3003`. Copy `.env.example` to `.env` to use
+the local API. Without `VITE_API_URL`, the client uses `https://api.namera.ai`.
+Configure the server's `ADMIN_CORS_ORIGIN=http://localhost:3003` and run the API.
+Email delivery and Google use the server's existing provider configuration; no
+provider secrets belong in this frontend. Google keeps the API callback URI,
+not a portal callback URI.
 
-For the API side, set `ADMIN_TOKEN` (at least 32 characters) on the server, and
-`ADMIN_CORS_ORIGIN` to this app's origin so the browser is allowed to send the
-`Authorization` header on `/internal` requests.
+## Implemented routes
 
-## Signing in
+- `/auth`: Google sign-in or email link/eight-digit code.
+- `/auth/verify`: explicit confirmation of an emailed link; opening a link does
+  not automatically consume it.
+- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day selection.
+- `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
+- `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
+- `/team`: Owner-only admin members table, invitations, role updates, and removal.
+- `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 
-There is no account system. An operator pastes the platform `ADMIN_TOKEN`, which
-is sent as a bearer token on every request.
+Protected pages use a shared UIKit inset sidebar,
+active navigation, tooltips, and a responsive off-canvas menu. The page header
+toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
+Inter typography, icons, and compact spacing follow the dashboard. The sidebar
+header menu offers owner-only member management and logout; successful logout
+discards the in-memory query cache through a document navigation.
+Team uses the dashboard's DataGrid,
+profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
+Only operator/viewer roles can be assigned; the owner cannot be edited or removed.
+Removed members remain visible as historical rows without management actions.
 
-The token is held in `sessionStorage`, so it dies with the tab and is never
-written to disk. It is the platform master credential: treat a browser with this
-console open as a machine holding that credential. A rejected token is cleared
-immediately, so a bad paste does not linger.
+Invites is readable by every active admin role; owner/operator can create and
+revoke codes. Create 1–50 codes, with optional email binding only for a single
+code, and expiry presets of 7, 14, or 30 days. The table shows 25 entries per page
+and hides pagination when there is only one page. Codes and join links are shown only immediately
+after creation and are not saved in browser storage. Copy them before closing.
+No email is sent automatically. Writes use the active login session without a
+separate recent-sign-in requirement. Status is derived server-side
+from redemption, revocation and expiry. The table includes recipient and
+redeemer metadata without exposing invite credentials.
 
-Revoking access means rotating `ADMIN_TOKEN` on the server, which invalidates it
-for every consumer including curl and CI. There is no per-operator revocation.
+Waitlist is readable by all active roles; owner/operator can accept pending entries.
+Acceptance issues a seven-day email-bound invite, queues its email and marks the
+entry completed in one transaction. Completed means queued, not delivered;
+the server outbox handles retries. The confirmation describes this before sending.
+Repeated acceptance is a no-op and never creates a second invite.
 
-## What it does not show
+The browser sends the API's HttpOnly session cookie with credentials enabled.
+`/internal/me` verifies active platform membership in the shared protected layout;
+an ordinary customer session is not admin access. No shared admin token is stored
+in browser storage. Cross-site deployments must satisfy the API cookie policy;
+deploy the portal and API on same-site HTTPS origins.
 
-Invite codes exist in plaintext exactly once, in the response to a create
-request. Only a hash is stored, so a code that is not copied from the creation
-screen cannot be recovered. Codes are never logged and never appear in a list.
+`PermissionGuard` and `usePermissions` gate controls; route loaders check effective
+permissions before fetching team data. Domain hooks own mutation invalidation through
+central query keys. Rejected access clears stale query data and rechecks membership.
+Team writes require an active authorized session; expired sessions prompt sign-in.
+Invitation fragments are held only in tab-scoped session storage through sign-in,
+removed from URL history, and cleared on acceptance or cancellation. Use email code
+sign-in in the same tab, or reopen the original invitation link after signing in.
 
-User records are projected into a dedicated DTO rather than returned whole: the
-list selects named columns and flattens `metadata.name`, so nothing else in the
-user record reaches the browser.
+Browser telemetry follows the dashboard runtime through server-owned `/t/*` proxy
+endpoints under `namera-admin-portal`; optional `VITE_TELEMETRY_SERVICE_VERSION`
+identifies the deployed build. No provider credentials enter the browser.
 
-## Deployment
+Overview reads one typed internal endpoint, cached for sixty seconds on the
+server. Cards show lifetime totals; period details and charts use zero-filled
+UTC days. Only confirmed executions and successful signatures count. The page
+does not poll. All active roles can read it; authorization is rechecked even
+when the server snapshot is cached.
 
-`Dockerfile` builds the static bundle and serves it from nginx on port 8080,
-with the same generated security headers the bundle emits as `_headers`. The
-`Deploy - Admin portal` workflow builds and pushes it.
+Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
+and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in
+[platform admin authorization](../../architecture/auth/admin.md).
+The prior UI is preserved in `apps/admin-portal-old`, excluded from the workspace.
 
-The site is marked `noindex, nofollow` in both the document and the response
-headers. Restrict `/internal` at the ingress as well: the token is the only
-thing standing between the public internet and every user's email address.
+## Checks and deployment
+
+```sh
+pnpm --filter @namera-ai/admin-portal test
+pnpm --filter @namera-ai/admin-portal typecheck
+pnpm --filter @namera-ai/admin-portal lint
+pnpm --filter @namera-ai/admin-portal build
+```
+
+The Dockerfile builds static assets and serves them with nginx SPA fallback and
+security headers. Set `VITE_API_URL` at build time and the matching exact
+`ADMIN_CORS_ORIGIN` on the API. Never deploy the archived portal.

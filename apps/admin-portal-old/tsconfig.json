@@ -1,0 +1,11 @@
+{
+  "extends": ["../../tsconfig.json", "klarity/tsconfig/app/vite"],
+  "compilerOptions": {
+    "customConditions": ["namera-source"],
+    "rootDir": "src",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

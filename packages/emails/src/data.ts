@@ -3,6 +3,9 @@ import { Duration, Schema } from "effect";
 import type { EmailJobType } from "@namera-ai/protocol/model";
 
 export const emailTemplates = {
+  "waitlist-confirmed": { subject: "You're on the Namera waitlist" },
+  "waitlist-accepted": { subject: "Your Namera invite is here" },
+  "platform-invitation": { subject: "You're invited to the Namera admin team" },
   "connected-account-changed": {
     subject: "Your connected Google account changed",
   },
@@ -29,9 +32,6 @@ export const emailTemplates = {
   },
   "api-key-revoked": {
     subject: "API key revoked",
-  },
-  "execution-confirmed": {
-    subject: "Transaction confirmed",
   },
 } as const satisfies Record<EmailJobType, { readonly subject: string }>;
 

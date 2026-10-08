@@ -1,4 +1,5 @@
 export * from "./address-metadata.js";
+export * from "./admin-overview.js";
 export * from "./auth/index.js";
 export * from "./billing.js";
 export * from "./dashboard-overview.js";
@@ -11,3 +12,4 @@ export * from "./session-key/index.js";
 export * from "./signature.js";
 export * from "./signature-signing.js";
 export * from "./wallet/index.js";
+export * from "./platform.js";

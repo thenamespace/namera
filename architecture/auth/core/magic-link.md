@@ -4,6 +4,13 @@ Magic link proves control of an email, initializes a first-time tenant, and crea
 
 ## Credentials
 
+Admin requests use optional `surface: "admin"` and must come from the exact
+configured `ADMIN_CORS_ORIGIN`. Their email links use that origin's `/auth/verify`;
+verification and cookies reuse the ordinary endpoints. Challenges retain the
+surface, and a resend across surfaces replaces the previous challenge rather
+than silently keeping a link to the other app. Admin UI checks membership after
+verification; signing in alone never grants platform access.
+
 | Setting                      | Current behavior                        |
 | ---------------------------- | --------------------------------------- |
 | Link token                   | 32 random bytes in the email URL        |

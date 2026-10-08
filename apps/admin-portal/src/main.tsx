@@ -4,14 +4,9 @@ import { RouterProvider } from "@tanstack/react-router";
 
 import { getRouter } from "@/router";
 
+import "@/styles.css";
+
 const router = getRouter();
-
-const rootElement = document.getElementById("app");
-
-if (!rootElement) {
-  throw new Error("App root element not found");
-}
-
-if (!rootElement.innerHTML) {
-  ReactDOM.createRoot(rootElement).render(<RouterProvider router={router} />);
-}
+const root = document.getElementById("app");
+if (!root) throw new Error("App root element not found");
+ReactDOM.createRoot(root).render(<RouterProvider router={router} />);

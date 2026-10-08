@@ -35,7 +35,8 @@ the server/application ownership split.
 
 Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
-`@namera-ai/database/DatabaseMigration`.
+`@namera-ai/database/DatabaseMigration`. It then optionally bootstraps the first
+platform owner from `ADMIN_BOOTSTRAP_OWNER_EMAIL` before accepting traffic.
 
 After migrations complete, the server starts scoped email, execution, and
 billing workers. They use locked/leased claims safe for multiple instances and
@@ -133,13 +134,13 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 
 ## Waitlist API
 
-`POST /waitlist` accepts an email publicly. `GET /internal/waitlist` lists entries
-with bounded pagination/search/status filters, and `PATCH /internal/waitlist/:id`
-sets `pending` or `completed`; both require `ADMIN_TOKEN`. Joining never creates
-an account or sends an email. Set optional `WAITLIST_CORS_ORIGIN` to the landing
-page's exact origin; only the public submission route allows it, without cookies.
-See [waitlist architecture](../../architecture/auth/waitlist.md) for commands,
-constraints, audit, counters, and rate limits. Landing-page wiring is separate.
+`POST /waitlist` accepts an email publicly. Joining never creates an account or
+sends an email. Internal waitlist and user-management APIs remain removed.
+Session-authorized invite listing, creation and revocation are available at
+`/internal/invites`; see the [beta invite flow](../../architecture/auth/core/beta-invites.md).
+Set optional `WAITLIST_CORS_ORIGIN`
+to the landing page’s exact origin; only public submission allows it, without
+cookies. See [waitlist architecture](../../architecture/auth/waitlist.md).
 
 ## Rate limiting
 
@@ -268,12 +269,18 @@ parallel API-key route for the same resource.
 
 ## Environment
 
-For private beta, set `AUTH_INVITE_REQUIRED=true` (default) and supply a random
-`ADMIN_TOKEN` of at least 32 characters. Shared `AdminAuthorization` middleware protects
-`POST /internal/invites` and `DELETE /internal/invites/:id`; it grants no normal
-user or machine authority. Future platform-admin groups must opt into this middleware.
+For private beta, set `AUTH_INVITE_REQUIRED=true` (default). `AdminAuthorization`
+uses the normal HttpOnly user session and active owner/operator/viewer membership;
+the shared `ADMIN_TOKEN` is no longer accepted. Team writes require an active session
+and an approved Origin. Set `ADMIN_BOOTSTRAP_OWNER_EMAIL` to an existing verified
+user's email to bootstrap the first owner automatically after startup migrations.
+Unset/blank disables it; any existing owner makes it a no-op. Missing/unverified
+users are skipped with a warning and retried on the next restart. Invalid email
+syntax or database failures fail startup. Remove the variable after success. Set
+`ADMIN_CORS_ORIGIN` for credentialed admin requests and invitation email links.
+Platform-admin groups must opt into this middleware and enforce permissions.
 See [admin authorization](../../architecture/auth/admin.md) and the
-[operator and signup flow](../../architecture/auth/core/beta-invites.md).
+[signup flow](../../architecture/auth/core/beta-invites.md).
 
 Copy `.env.example` to `apps/server/.env` for local development. Server-owned
 values have defaults; composed package configuration remains required unless its
@@ -308,8 +315,9 @@ The complete local set and provider-specific comments are kept in
 `apps/server/.env.example`. Package READMEs remain authoritative for each
 service's variables.
 
-Only one exact CORS origin is allowed because credentialed requests must not use
-a wildcard origin.
+The dashboard and internal admin surfaces each use their configured exact origin;
+credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
+is a separate step; see the admin architecture for rollout limitations.
 
 All server environments use `WalletKeys.disabledLayer`. Owner passkeys and local
 session keys sign on the client; managed-key operations fail closed. Local and

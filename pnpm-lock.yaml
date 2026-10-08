@@ -269,6 +269,9 @@ importers:
 
   apps/admin-portal:
     dependencies:
+      '@effect/atom-react':
+        specifier: 'catalog:'
+        version: 4.0.1(effect@4.0.1)(react@19.3.0)(scheduler@0.27.0)
       '@fontsource-variable/inter':
         specifier: 'catalog:'
         version: 5.3.0
@@ -281,15 +284,15 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@namera-ai/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@namera-ai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.3(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-      '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.170.41(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1136,6 +1139,9 @@ importers:
       emojibase-data:
         specifier: 17.0.0
         version: 17.0.0(emojibase@17.0.0)
+      motion:
+        specifier: 'catalog:'
+        version: 14.0.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

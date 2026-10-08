@@ -25,13 +25,16 @@ import { sessionKeyCreationDuration, sessionKeyCreationResults } from "@namera-a
 import { Base64, generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
+import { AuthConfig } from "#/auth/config";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
+import { dashboardEmailLink } from "#/notification/email-link";
 
 import { hashSessionKeyPolicies } from "./hash.js";
 import { makeLoadSessionKeyViews } from "./view.js";
 
 export const makeCreateSessionKey = Effect.gen(function* () {
+  const config = yield* AuthConfig;
   const audit = yield* Audit;
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
@@ -292,6 +295,10 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                   expiresAt: emailExpiry,
                   variables: {
                     sessionKeyName: created.metadata.name,
+                    actionUrl: dashboardEmailLink(
+                      config.dashboardPublicOrigin,
+                      `/session-key/${created.id}/overview`,
+                    ),
                     walletName: wallet.wallet.metadata.name,
                     organizationName: organization.metadata.name,
                     expiresAt: DateTime.formatIso(effectiveExpiry),

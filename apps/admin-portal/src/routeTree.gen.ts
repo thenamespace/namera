@@ -9,174 +9,234 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthedRouteRouteImport } from './routes/_authed/route'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
-import { Route as AuthedUsersRouteImport } from './routes/_authed/users'
-import { Route as AuthedWaitlistRouteImport } from './routes/_authed/waitlist'
-import { Route as AuthedInvitesIndexRouteImport } from './routes/_authed/invites/index'
-import { Route as AuthedInvitesNewRouteImport } from './routes/_authed/invites/new'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteRouteImport } from './routes/auth/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedInvitesRouteImport } from './routes/_authenticated/invites'
+import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as AuthenticatedWaitlistRouteImport } from './routes/_authenticated/waitlist'
+import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 
-const AuthedRouteRoute = AuthedRouteRouteImport.update({
-  id: '/_authed',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthRouteRoute = AuthRouteRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthedIndexRoute = AuthedIndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthedRouteRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthedUsersRoute = AuthedUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AuthedRouteRoute,
+const AuthenticatedInvitesRoute = AuthenticatedInvitesRouteImport.update({
+  id: '/invites',
+  path: '/invites',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthedWaitlistRoute = AuthedWaitlistRouteImport.update({
+const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWaitlistRoute = AuthenticatedWaitlistRouteImport.update({
   id: '/waitlist',
   path: '/waitlist',
-  getParentRoute: () => AuthedRouteRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthedInvitesIndexRoute = AuthedInvitesIndexRouteImport.update({
-  id: '/invites/',
-  path: '/invites/',
-  getParentRoute: () => AuthedRouteRoute,
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthedInvitesNewRoute = AuthedInvitesNewRouteImport.update({
-  id: '/invites/new',
-  path: '/invites/new',
-  getParentRoute: () => AuthedRouteRoute,
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
+  id: '/invitations/accept',
+  path: '/invitations/accept',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthedIndexRoute
-  '/login': typeof LoginRoute
-  '/users': typeof AuthedUsersRoute
-  '/waitlist': typeof AuthedWaitlistRoute
-  '/invites/new': typeof AuthedInvitesNewRoute
-  '/invites/': typeof AuthedInvitesIndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRouteRouteWithChildren
+  '/invites': typeof AuthenticatedInvitesRoute
+  '/team': typeof AuthenticatedTeamRoute
+  '/waitlist': typeof AuthenticatedWaitlistRoute
+  '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
+  '/auth/': typeof AuthIndexRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/users': typeof AuthedUsersRoute
-  '/waitlist': typeof AuthedWaitlistRoute
-  '/': typeof AuthedIndexRoute
-  '/invites/new': typeof AuthedInvitesNewRoute
-  '/invites': typeof AuthedInvitesIndexRoute
+  '/invites': typeof AuthenticatedInvitesRoute
+  '/team': typeof AuthenticatedTeamRoute
+  '/waitlist': typeof AuthenticatedWaitlistRoute
+  '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authed': typeof AuthedRouteRouteWithChildren
-  '/login': typeof LoginRoute
-  '/_authed/users': typeof AuthedUsersRoute
-  '/_authed/waitlist': typeof AuthedWaitlistRoute
-  '/_authed/': typeof AuthedIndexRoute
-  '/_authed/invites/new': typeof AuthedInvitesNewRoute
-  '/_authed/invites/': typeof AuthedInvitesIndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRouteRouteWithChildren
+  '/_authenticated/invites': typeof AuthenticatedInvitesRoute
+  '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/_authenticated/waitlist': typeof AuthenticatedWaitlistRoute
+  '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/auth/': typeof AuthIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/users' | '/waitlist' | '/invites/new' | '/invites/'
+    | '/'
+    | '/auth'
+    | '/invites'
+    | '/team'
+    | '/waitlist'
+    | '/auth/verify'
+    | '/invitations/accept'
+    | '/auth/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/users' | '/waitlist' | '/' | '/invites/new' | '/invites'
+  to:
+    | '/invites'
+    | '/team'
+    | '/waitlist'
+    | '/auth/verify'
+    | '/invitations/accept'
+    | '/'
+    | '/auth'
   id:
     | '__root__'
-    | '/_authed'
-    | '/login'
-    | '/_authed/users'
-    | '/_authed/waitlist'
-    | '/_authed/'
-    | '/_authed/invites/new'
-    | '/_authed/invites/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/invites'
+    | '/_authenticated/team'
+    | '/_authenticated/waitlist'
+    | '/auth/verify'
+    | '/invitations/accept'
+    | '/_authenticated/'
+    | '/auth/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthedRouteRoute: typeof AuthedRouteRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  InvitationsAcceptRoute: typeof InvitationsAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authed': {
-      id: '/_authed'
+    '/_authenticated': {
+      id: '/_authenticated'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AuthedRouteRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed/': {
-      id: '/_authed/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthedIndexRouteImport
-      parentRoute: typeof AuthedRouteRoute
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authed/users': {
-      id: '/_authed/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthedUsersRouteImport
-      parentRoute: typeof AuthedRouteRoute
+    '/_authenticated/invites': {
+      id: '/_authenticated/invites'
+      path: '/invites'
+      fullPath: '/invites'
+      preLoaderRoute: typeof AuthenticatedInvitesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authed/waitlist': {
-      id: '/_authed/waitlist'
+    '/_authenticated/team': {
+      id: '/_authenticated/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/waitlist': {
+      id: '/_authenticated/waitlist'
       path: '/waitlist'
       fullPath: '/waitlist'
-      preLoaderRoute: typeof AuthedWaitlistRouteImport
-      parentRoute: typeof AuthedRouteRoute
+      preLoaderRoute: typeof AuthenticatedWaitlistRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authed/invites/': {
-      id: '/_authed/invites/'
-      path: '/invites'
-      fullPath: '/invites/'
-      preLoaderRoute: typeof AuthedInvitesIndexRouteImport
-      parentRoute: typeof AuthedRouteRoute
+    '/auth/': {
+      id: '/auth/'
+      path: '/'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
-    '/_authed/invites/new': {
-      id: '/_authed/invites/new'
-      path: '/invites/new'
-      fullPath: '/invites/new'
-      preLoaderRoute: typeof AuthedInvitesNewRouteImport
-      parentRoute: typeof AuthedRouteRoute
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/invitations/accept': {
+      id: '/invitations/accept'
+      path: '/invitations/accept'
+      fullPath: '/invitations/accept'
+      preLoaderRoute: typeof InvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AuthedRouteRouteChildren {
-  AuthedUsersRoute: typeof AuthedUsersRoute
-  AuthedWaitlistRoute: typeof AuthedWaitlistRoute
-  AuthedIndexRoute: typeof AuthedIndexRoute
-  AuthedInvitesNewRoute: typeof AuthedInvitesNewRoute
-  AuthedInvitesIndexRoute: typeof AuthedInvitesIndexRoute
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedInvitesRoute: typeof AuthenticatedInvitesRoute
+  AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedWaitlistRoute: typeof AuthenticatedWaitlistRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
-const AuthedRouteRouteChildren: AuthedRouteRouteChildren = {
-  AuthedUsersRoute: AuthedUsersRoute,
-  AuthedWaitlistRoute: AuthedWaitlistRoute,
-  AuthedIndexRoute: AuthedIndexRoute,
-  AuthedInvitesNewRoute: AuthedInvitesNewRoute,
-  AuthedInvitesIndexRoute: AuthedInvitesIndexRoute,
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedInvitesRoute: AuthenticatedInvitesRoute,
+  AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedWaitlistRoute: AuthenticatedWaitlistRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
-const AuthedRouteRouteWithChildren = AuthedRouteRoute._addFileChildren(
-  AuthedRouteRouteChildren,
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AuthRouteRouteChildren {
+  AuthVerifyRoute: typeof AuthVerifyRoute
+  AuthIndexRoute: typeof AuthIndexRoute
+}
+
+const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthVerifyRoute: AuthVerifyRoute,
+  AuthIndexRoute: AuthIndexRoute,
+}
+
+const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
+  AuthRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthedRouteRoute: AuthedRouteRouteWithChildren,
-  LoginRoute: LoginRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRouteRoute: AuthRouteRouteWithChildren,
+  InvitationsAcceptRoute: InvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

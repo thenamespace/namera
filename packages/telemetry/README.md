@@ -63,9 +63,13 @@ The server resolves those upstream destinations with `resolveTelemetryExport`
 and attaches provider authorization only while proxying.
 
 The server emits one route-normalized span plus bounded request count and
-duration metrics for each non-telemetry request. Browser exporters use a
-one-second interval to reduce loss during navigation. OTLP proxy operations and
-routine current-session probes are intentionally untraced.
+duration metrics for each non-telemetry request. Browser traces and logs use a
+one-second interval to reduce loss during navigation; server traces batch every
+ten seconds. Metrics use an independent 60-second interval in both runtimes.
+Counters and histograms still record every instrumented observation between
+exports; cumulative snapshots can repeat unchanged values while idle. The layer's
+`exportInterval` configures traces, and `metricsExportInterval` configures metrics.
+OTLP proxy operations and routine current-session probes are intentionally untraced.
 
 ## Environment
 

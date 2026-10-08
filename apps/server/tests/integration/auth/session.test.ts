@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Effect } from "effect";
+import { DateTime, Duration, Effect } from "effect";
+import { TestClock } from "effect/testing";
 
 import { Repository } from "@namera-ai/database";
 
@@ -14,6 +15,24 @@ import {
 import { TestServerLayer } from "../../fixtures/layers/index.js";
 
 layer(TestServerLayer)("session routes", (it) => {
+  it.effect("expires browser sessions and their cookies after seven days", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const signedIn = yield* signIn(client, testEmail("session-expiry@example.com"));
+      expect(signedIn.cookie.options?.maxAge).toEqual(Duration.seconds(7 * 86400));
+      expect(
+        DateTime.toEpochMillis(signedIn.actor.session.expiresAt) -
+          DateTime.toEpochMillis(yield* DateTime.now),
+      ).toBe(7 * 86400000);
+      yield* TestClock.adjust("6 days");
+      expect((yield* client.session.currentUser()).user.id).toBe(signedIn.actor.user.id);
+      yield* TestClock.adjust("1 day");
+      expect(yield* client.session.currentUser().pipe(Effect.flip)).toMatchObject({
+        _tag: "Unauthorized",
+      });
+    }),
+  );
   it.effect("rejects requests without an auth token", () =>
     Effect.gen(function* () {
       yield* resetTestState();

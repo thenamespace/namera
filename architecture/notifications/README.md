@@ -45,8 +45,8 @@ confirmed, and corresponding resource context. Recipient selection is
 permission-aware for organization resources.
 
 Execution confirmations create in-app notifications only, regardless of email
-preferences. Settlement does not enqueue execution-confirmation emails. Legacy
-email payloads and templates remain supported for jobs queued before this change.
+preferences. Settlement does not enqueue execution-confirmation emails, and the
+execution email payload and template have been removed.
 
 Invitation terminal transitions expire the actionable occurrence and cancel a
 still-pending email. New-sign-in is user scoped. Preferences are grouped by

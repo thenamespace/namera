@@ -18,7 +18,7 @@ function RootComponent() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <div className="bg-[#010102] text-foreground min-h-screen font-inter">
+        <div className="bg-app-canvas text-foreground min-h-screen font-inter">
           <Outlet />
           <Toast.Provider placement="bottom end" maxVisibleToasts={3} />
         </div>

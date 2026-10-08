@@ -65,7 +65,7 @@ export const authPolicy = {
     codeDigits: 8,
   },
   session: {
-    timeToLive: Duration.days(30),
+    timeToLive: Duration.days(7),
     tokenBytes: 32,
   },
   passkey: {

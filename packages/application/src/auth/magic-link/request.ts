@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect, Metric } from "effect";
+import { DateTime, Duration, Effect, Metric, Option } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -30,6 +30,11 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
   const request = Effect.fn("application.magicLink.request")(
     function* (input: RequestMagicLinkRequest, googleIdentity?: GoogleIdentity) {
       yield* Metric.update(magicLinkRequests, 1);
+      const origin =
+        input.surface === "admin"
+          ? Option.getOrUndefined(config.adminPublicOrigin)
+          : config.dashboardPublicOrigin;
+      if (!origin) return accepted;
       const now = yield* DateTime.now;
       const invite =
         input.inviteCode === undefined
@@ -46,6 +51,8 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
       if (
         !googleIdentity &&
         current &&
+        current.purpose === "magic-link-signin" &&
+        current.data.surface === input.surface &&
         DateTime.toEpochMillis(now) - DateTime.toEpochMillis(current.createdAt) <
           Duration.toMillis(config.magicLink.resendCooldown)
       ) {
@@ -81,6 +88,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
             purpose: config.magicLink.purpose,
             identifier: input.email,
             data: {
+              ...(input.surface ? { surface: input.surface } : {}),
               ...(googleIdentity ? { googleIdentity, googleEmailConfirmed: true } : {}),
               ...(allowedReturnTo === undefined ? {} : { returnTo: allowedReturnTo }),
               ...(invite ? { betaInviteId: invite.id } : {}),
@@ -91,7 +99,7 @@ export const makeRequestMagicLinkApplication = Effect.gen(function* () {
           });
           if (verification === undefined) return false;
 
-          const magicLinkUrl = new URL("/auth/verify", config.dashboardPublicOrigin);
+          const magicLinkUrl = new URL("/auth/verify", origin);
           magicLinkUrl.searchParams.set("id", verification.id);
           magicLinkUrl.searchParams.set("token", token);
 

@@ -1,34 +1,28 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Effect, Metric, Schema } from "effect";
+import { DateTime, Effect, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
-import { Database, Repository } from "@namera-ai/database";
+import { betaInvite, Database, Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
 import { Passkeys } from "@namera-ai/passkeys";
 import { VerificationId } from "@namera-ai/protocol";
 import { MagicLinkToken } from "@namera-ai/protocol/dto";
-import { betaInviteTransitions } from "@namera-ai/telemetry";
 
+import { seedBetaInvite } from "../../fixtures/beta-invite.js";
 import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, testEmail } from "../../fixtures/index.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer, TestEmails } from "../../fixtures/layers/index.js";
+import { platformClient } from "../../fixtures/platform.js";
 
-const adminToken = "test-only-invite-admin-token-32-characters";
 const BetaLayer = makeTestServerLayer(
   {},
   Passkeys.testLayer,
-  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true", ADMIN_TOKEN: adminToken }),
+  makeTestConfigLayer({ AUTH_INVITE_REQUIRED: "true" }),
 );
-const adminClient = handledApi(NameraApi, { headers: { authorization: `Bearer ${adminToken}` } });
-const createInvite = Effect.gen(function* () {
-  const admin = yield* adminClient;
-  const result = yield* admin.betaInvite.create({ payload: { count: 1, expiresInDays: 7 } });
-  const invite = result.invites[0];
-  if (!invite) return yield* Effect.die("No invite returned");
-  return invite;
-});
+const adminClient = platformClient;
+const createInvite = seedBetaInvite();
 const challenge = Effect.fn("test.betaInvite.challenge")(function* (
   code: string | undefined,
   emailValue: string,
@@ -60,25 +54,9 @@ const challenge = Effect.fn("test.betaInvite.challenge")(function* (
 });
 
 layer(BetaLayer)("private-beta invites", (it) => {
-  it.effect("counts issued invites and only actual revocations", () =>
+  it.effect("does not grant a tenant actor to a platform-only session", () =>
     Effect.gen(function* () {
       yield* resetTestState();
-      const created = Metric.withAttributes(betaInviteTransitions, { result: "created" });
-      const revoked = Metric.withAttributes(betaInviteTransitions, { result: "revoked" });
-      const beforeCreated = yield* Metric.value(created);
-      const beforeRevoked = yield* Metric.value(revoked);
-      const admin = yield* adminClient;
-      const result = yield* admin.betaInvite.create({ payload: { count: 2 } });
-      const invite = result.invites[0];
-      if (!invite) return yield* Effect.die("No invite returned");
-      yield* admin.betaInvite.revoke({ params: { id: invite.id } });
-      yield* admin.betaInvite.revoke({ params: { id: invite.id } });
-      expect((yield* Metric.value(created)).count - beforeCreated.count).toBe(2);
-      expect((yield* Metric.value(revoked)).count - beforeRevoked.count).toBe(1);
-    }),
-  );
-  it.effect("does not accept the admin token as a tenant actor", () =>
-    Effect.gen(function* () {
       const admin = yield* adminClient;
       expect((yield* admin.session.currentActor({ responseMode: "response-only" })).status).toBe(
         401,
@@ -248,11 +226,10 @@ layer(BetaLayer)("private-beta invites", (it) => {
         (yield* ownerClient.session.currentActor({ responseMode: "response-only" })).status,
       ).toBe(200);
       expect(
-        (yield* ownerClient.betaInvite.create({
-          payload: { count: 1 },
+        (yield* ownerClient.platform.me({
           responseMode: "response-only",
         })).status,
-      ).toBe(401);
+      ).toBe(403);
       const replay = yield* registration.client.magicLink.verify({
         payload: registration.payload,
         responseMode: "response-only",
@@ -260,28 +237,11 @@ layer(BetaLayer)("private-beta invites", (it) => {
       expect(replay.status).toBe(400);
     }),
   );
-  it.effect("protects management from missing and wrong credentials", () =>
-    Effect.gen(function* () {
-      yield* resetTestState();
-      const anonymous = yield* handledApi(NameraApi);
-      const wrong = yield* handledApi(NameraApi, {
-        headers: { authorization: "Bearer not-the-admin-token" },
-      });
-      for (const client of [anonymous, wrong]) {
-        const response = yield* client.betaInvite.create({
-          payload: { count: 1, expiresInDays: 7 },
-          responseMode: "response-only",
-        });
-        expect(response.status).toBe(401);
-      }
-    }),
-  );
-  it.effect("generates bounded single-use codes, stores HMACs, and admits a verified user", () =>
+  it.effect("redeems an existing HMAC-backed invite and admits a verified user", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const invite = yield* createInvite;
       expect(invite.code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
-      expect(new URL(invite.url).searchParams.get("invite")).toBe(invite.code);
       const repository = yield* Repository;
       const registration = yield* challenge(invite.code, "beta@example.com");
       expect(yield* repository.auth.user.findByEmail(registration.email)).toBeUndefined();
@@ -330,8 +290,11 @@ layer(BetaLayer)("private-beta invites", (it) => {
       yield* resetTestState();
       const invite = yield* createInvite;
       const registration = yield* challenge(invite.code, "revoked@example.com");
-      const admin = yield* adminClient;
-      yield* admin.betaInvite.revoke({ params: { id: invite.id } });
+      const revoked = yield* (yield* Database)
+        .update(betaInvite)
+        .set({ revokedAt: DateTime.toDateUtc(yield* DateTime.now) })
+        .returning({ id: betaInvite.id });
+      expect(revoked).toEqual([{ id: invite.id }]);
       const response = yield* registration.client.magicLink.verify({
         payload: registration.payload,
         responseMode: "response-only",
@@ -383,12 +346,7 @@ layer(BetaLayer)("private-beta invites", (it) => {
   it.effect("enforces recipient binding", () =>
     Effect.gen(function* () {
       yield* resetTestState();
-      const admin = yield* adminClient;
-      const result = yield* admin.betaInvite.create({
-        payload: { count: 1, expiresInDays: 7, email: testEmail("bound@example.com") },
-      });
-      const invite = result.invites[0];
-      if (!invite) return yield* Effect.die("Missing invite");
+      const invite = yield* seedBetaInvite(testEmail("bound@example.com"));
       const registration = yield* challenge(invite.code, "wrong@example.com");
       const response = yield* registration.client.magicLink.verify({
         payload: registration.payload,

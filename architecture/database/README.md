@@ -4,6 +4,9 @@ This directory is the canonical catalog for Namera's PostgreSQL data model. Feat
 
 ## Schemas
 
+Platform membership, team invitations and their audit events are documented in
+[platform administration](auth-platform.md).
+
 | Schema         | Responsibility                                                                        | Catalog                                                                                      |
 | -------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `auth`         | Identities, browser sessions, organizations, actors, API keys, invitations, and OAuth | [Core identity](auth-core.md), [organizations](auth-organization.md), [OAuth](auth-oauth.md) |

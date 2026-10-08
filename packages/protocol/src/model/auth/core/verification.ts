@@ -20,6 +20,7 @@ export const VerificationPurpose = Schema.Literals([
 ]);
 
 export const MagicLinkVerificationData = Schema.Struct({
+  surface: Schema.optionalKey(Schema.Literal("admin")),
   googleIdentity: Schema.optionalKey(GoogleIdentity),
   googleEmailConfirmed: Schema.optionalKey(Schema.Boolean),
   betaInviteId: Schema.optionalKey(Schema.String),

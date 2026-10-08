@@ -4,6 +4,7 @@ import type { Database } from "#/core/index";
 import { OrganizationEventRepository, UserEventRepository } from "#/repositories/audit/index";
 import {
   ActorRepository,
+  PlatformRepository,
   AccountRepository,
   BetaInviteRepository,
   WaitlistRepository,
@@ -36,6 +37,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   AddressMetadataRepository,
+  AdminOverviewRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
@@ -62,6 +64,7 @@ export interface RepositoryService {
     user: UserEventRepository["Service"];
   };
   auth: {
+    platform: PlatformRepository["Service"];
     account: AccountRepository["Service"];
     betaInvite: BetaInviteRepository["Service"];
     waitlist: WaitlistRepository["Service"];
@@ -96,6 +99,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    adminOverview: AdminOverviewRepository["Service"];
     addressMetadata: AddressMetadataRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
@@ -127,6 +131,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const platform = yield* PlatformRepository;
       const account = yield* AccountRepository;
       const betaInvite = yield* BetaInviteRepository;
       const waitlist = yield* WaitlistRepository;
@@ -162,6 +167,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const wallet = yield* WalletRepository;
       const addressMetadata = yield* AddressMetadataRepository;
       const dashboardOverview = yield* DashboardOverviewRepository;
+      const adminOverview = yield* AdminOverviewRepository;
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
@@ -180,6 +186,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           user: userEvent,
         },
         auth: {
+          platform,
           account,
           betaInvite,
           waitlist,
@@ -214,6 +221,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          adminOverview,
           addressMetadata,
           dashboardOverview,
           execution,
@@ -242,11 +250,13 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        PlatformRepository.layer,
         AccountRepository.layer,
         BetaInviteRepository.layer,
         WaitlistRepository.layer,
         AddressMetadataRepository.layer,
         DashboardOverviewRepository.layer,
+        AdminOverviewRepository.layer,
         ApiKeyRepository.layer,
         OAuthAuthorizationRepository.layer,
         OAuthAuthorizationCodeRepository.layer,

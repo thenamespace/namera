@@ -19,6 +19,13 @@ Production uses separate trace, log, and metric datasets with a redacted Axiom
 token. The browser only knows server proxy paths. Proxy requests are content-
 type checked, body bounded, timed out, rate limited, and untraced.
 
+The admin portal uses the same browser exporter/runtime pattern, with service
+identity `namera-admin-portal` and normalized HTTP span names. `/internal/me`
+probes are untraced. The three `/t/*/v1` endpoints accept non-credentialed POSTs
+from only the configured dashboard and admin origins; landing and arbitrary origins
+are not admitted by CORS. Browser tests disable exporters. Existing server workflow
+spans and transactional platform audit events remain authoritative for team changes.
+
 ## Traces
 
 Google callback paths are excluded from automatic HTTP tracing even with query
@@ -73,6 +80,21 @@ messages are prohibited metric labels.
 HTTP metrics exclude `/t/*` to prevent an exporter feedback loop. No-op
 mutations do not increment successful mutation metrics.
 
+Metrics export cumulative snapshots every 60 seconds in the server, dashboard,
+and admin portal, independently of trace batching (one second in browsers, ten
+seconds on the server) and log batching (one second). No signal or instrumented
+observation is sampled out by this cadence change: counters and histograms
+aggregate between exports. Gauges represent their value at collection time.
+Unchanged metrics may still be sent while idle. Use metric chart intervals of
+at least one minute. Normal scoped shutdown retains the exporter's final flush;
+abrupt browser termination can lose observations since the last export.
+
+Exporters transport existing instrumentation; they do not automatically record
+all clicks, uncaught browser errors, or stack traces. Explicit diagnostic events
+must follow the same privacy and bounded-attribute rules. Fast trace/log export
+remains enabled for existing browser workflows. Cadence regression tests exercise
+all three signals with a test clock and captured OTLP requests.
+
 CLI-local MCP tools create `cli.mcp.tool` spans without payloads using Effect.
 The CLI has no telemetry-package dependency, counter, or configured exporter;
 it does not automatically send telemetry from the user's machine. The API no
@@ -101,12 +123,13 @@ records remain normal deferred work.
 
 ### Waitlist signals
 
-`namera.waitlist.joins` counts new entries only. `namera.waitlist.status_changes`
-counts actual committed transitions with destination `status` (`pending` or
-`completed`). Duplicate joins and unchanged statuses increment neither counter.
-HTTP route labels strip search queries and replace entry IDs with `:id`.
-Emails, IDs, and admin tokens are never metric attributes. No payload logs are
-added. See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
+`namera.waitlist.joins` counts new entries only, excluding duplicate joins.
+`namera.waitlist.acceptances` counts committed pending-to-completed transitions;
+each also increments beta-invite creation. Repeated accepts count neither.
+Management routes use `/internal/waitlist` and `/internal/waitlist/:id/accept`
+templates; retired routes resolve to `/*`. Emails, invite codes and IDs never
+become metric attributes. Acceptance delivery uses existing email-job signals.
+See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
 
 ### Dashboard signals
 
@@ -130,8 +153,10 @@ labels.
 - HTTP templates cover the typed API, raw OAuth endpoints and proxy routes.
   A contract-reflection regression test guards new typed routes against falling
   into `/*`. Unknown paths still use that bounded fallback.
-- Beta invite `namera.beta_invite.transitions` records committed `created`,
-  `revoked`, and `redeemed` transitions. Creation counts invites, not batches.
+- Beta invite `namera.beta_invite.transitions` records committed
+  `created|revoked|redeemed` transitions. Creation counts each code in a batch;
+  no-op revocations emit nothing. Invite routes use bounded templates, including
+  `/internal/invites/:id`; credentials and recipient details are not attributes.
   Organization invitation failures carry only a bounded action and error code.
 - Execution request results and duration carry `stage=prepare|complete|simulate`.
   These count requests (including replay), not unique submissions. Policy

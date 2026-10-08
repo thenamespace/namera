@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
+import { makeAdminOverviewApplication } from "#/admin/overview";
 import { Audit } from "#/audit/layer";
-import { makeAdminApplication } from "#/auth/admin";
 import { makeBetaInviteApplication } from "#/auth/beta-invite";
 import { makeApiKeyApplication, type ApiKeyApplication } from "#/auth/core/api-key";
 import { makeSessionApplication, type SessionApplication } from "#/auth/core/session";
@@ -25,6 +25,7 @@ import {
   makeOrganizationApplication,
   type OrganizationApplication,
 } from "#/auth/organization/organization";
+import { makePlatformApplication } from "#/auth/platform/index";
 import { makeWaitlistApplication } from "#/auth/waitlist";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
 import {
@@ -40,9 +41,10 @@ import { makeSignatureApplication, type SignatureApplication } from "#/signature
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
-  readonly google: Effect.Success<typeof makeGoogleApplication>;
-  readonly admin: Effect.Success<typeof makeAdminApplication>;
+  readonly adminOverview: Effect.Success<typeof makeAdminOverviewApplication>;
   readonly betaInvite: Effect.Success<typeof makeBetaInviteApplication>;
+  readonly platform: Effect.Success<typeof makePlatformApplication>;
+  readonly google: Effect.Success<typeof makeGoogleApplication>;
   readonly waitlist: Effect.Success<typeof makeWaitlistApplication>;
   readonly apiKey: ApiKeyApplication;
   readonly billing: BillingApplication;
@@ -74,9 +76,10 @@ export class Application extends Context.Service<Application, ApplicationService
     Application,
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
-      const google = yield* makeGoogleApplication;
-      const admin = yield* makeAdminApplication;
+      const adminOverview = yield* makeAdminOverviewApplication;
+      const platform = yield* makePlatformApplication;
       const betaInvite = yield* makeBetaInviteApplication;
+      const google = yield* makeGoogleApplication;
       const waitlist = yield* makeWaitlistApplication;
       const apiKey = yield* makeApiKeyApplication;
       const user = yield* makeUserApplication;
@@ -97,9 +100,10 @@ export class Application extends Context.Service<Application, ApplicationService
       const signature = yield* makeSignatureApplication;
 
       return Application.of({
-        google,
-        admin,
+        adminOverview,
         betaInvite,
+        platform,
+        google,
         waitlist,
         apiKey,
         billing,

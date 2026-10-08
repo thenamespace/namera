@@ -20,10 +20,16 @@ the preview application's ownership boundary.
 Start the React Email preview server:
 
 ```sh
-pnpm --filter @namera-ai/email-templates email:dev
+pnpm --filter @namera-ai/email-templates dev
 ```
 
 The preview is available at `http://localhost:4000`.
+
+Run the rendered-HTML regression tests:
+
+```sh
+pnpm --filter @namera-ai/email-templates test
+```
 
 Generate the PNG assets before uploading them to the configured CDN:
 
@@ -40,13 +46,16 @@ pnpm --filter @namera-ai/email-templates email:assets
   Generate PNGs from the canonical UI icons and upload `assets/email-assets/`
   without changing its paths.
 - Use the package-owned semantic theme and provide both light and dark styles.
-- Keep transactional copy concise and always include a safe fallback when the
-  primary action is a link.
+- Keep transactional copy concise. Only the magic-link sign-in email includes a
+  copyable fallback URL; other emails show the action button without a raw URL.
 - Keep job variables semantic. Presentation-only date formatting, pluralization,
   labels, asset lookup, and truncation belong in the React component.
 - Add realistic `PreviewProps` without real credentials or personal data.
 
 ## Templates
+
+- `waitlist-confirmed` — signup acknowledgement, with no access granted yet.
+- `waitlist-accepted` — invite code, expiry and a join button.
 
 - `magic-link` — one-time sign-in link and fallback code.
 - `new-sign-in` — security alert with session details.
@@ -56,6 +65,12 @@ pnpm --filter @namera-ai/email-templates email:assets
 - `session-key-revoked` — session-key and grant revocation summary.
 - `api-key-created` — API-key creation and authorization summary.
 - `api-key-revoked` — API-key and session-key grant revocation summary.
-- `execution-confirmed` — confirmed onchain execution receipt.
 
 Update CDN and footer destinations in `packages/emails/src/templates/data.ts`.
+
+The footer includes X at `https://x.com/namera_ai`. The asset generator includes
+the supplied X mark as `social/x-light.png` and `social/x-dark.png`; sync those
+files from `assets/email-assets/` to the matching CDN paths before deployment.
+
+The waitlist templates are registered for rendering and available in preview.
+Automatic sending from signup and acceptance workflows is not wired yet.

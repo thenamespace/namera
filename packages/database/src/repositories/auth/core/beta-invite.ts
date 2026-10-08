@@ -95,6 +95,7 @@ const make = Effect.gen(function* () {
           redeemedAt: betaInvite.redeemedAt,
           redeemedBy: betaInvite.redeemedBy,
           redeemedByEmail: user.email,
+          redeemedByMetadata: user.metadata,
           revokedAt: betaInvite.revokedAt,
           status: statusSql(now),
         })
@@ -165,7 +166,12 @@ const make = Effect.gen(function* () {
           .update(betaInvite)
           .set({ revokedAt: DateTime.toDateUtc(now) })
           .where(
-            and(eq(betaInvite.id, id), isNull(betaInvite.redeemedAt), isNull(betaInvite.revokedAt)),
+            and(
+              eq(betaInvite.id, id),
+              isNull(betaInvite.redeemedAt),
+              isNull(betaInvite.revokedAt),
+              gt(betaInvite.expiresAt, DateTime.toDateUtc(now)),
+            ),
           )
           .returning(),
       );

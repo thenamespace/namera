@@ -154,6 +154,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         walletName: "Operations",
+        actionUrl: `http://dashboard.test/auth?returnTo=%2Faccount%2F${operations.id}%2Foverview`,
         address: "0x3333333333333333333333333333333333333333",
         addressUrl: "https://etherscan.io/address/0x3333333333333333333333333333333333333333",
         implementation: "alchemy-modular-v2",

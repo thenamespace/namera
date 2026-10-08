@@ -1,4 +1,5 @@
 export const cryptoPurpose = {
+  platformInvitation: "auth.platform-invitation.token",
   googleState: "auth.google.state",
   googleNonce: "auth.google.nonce",
   googleBrowser: "auth.google.browser",

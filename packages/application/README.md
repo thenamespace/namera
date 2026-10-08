@@ -13,6 +13,10 @@ composition model.
 
 ## Structure
 
+Platform team workflows live in `src/auth/platform/`. They reuse verified human
+sessions, enforce owner invariants under a transaction lock, and enqueue team
+invitation emails atomically. See [admin authorization](../../architecture/auth/admin.md).
+
 - `src/application.ts` — the single aggregate `Application` service and live layer.
 - `src/audit/` — internal typed audit-event writer used by application workflows.
 - `src/auth/core/` — focused user and session operations.

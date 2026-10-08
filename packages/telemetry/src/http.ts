@@ -82,12 +82,24 @@ const staticHttpRoutes = new Set([
   "/wallets",
   "/wallets/passkey/registration-options",
   "/waitlist",
-  "/internal/waitlist",
+  "/internal/me",
   "/internal/invites",
-  "/internal/users",
+  "/internal/waitlist",
+  "/internal/overview",
+  "/auth/platform/logout",
+  "/internal/members",
+  "/internal/ownership/transfer",
+  "/internal/member-invitations",
+  "/auth/platform-invitations/accept",
 ]);
 
 const dynamicHttpRoutes = [
+  "/internal/invites/:id",
+  "/internal/waitlist/:id/accept",
+  "/internal/members/:id/role",
+  "/internal/members/:id/status",
+  "/internal/members/:id",
+  "/internal/member-invitations/:id",
   "/auth/connected-accounts/:accountId",
   "/api-keys/:apiKeyId/revoke",
   "/auth/session/sessions/:sessionId",
@@ -116,12 +128,6 @@ export const httpRouteTemplate = (url: string): string => {
   }
   const dynamicRoute = dynamicHttpRoutes.find(({ pattern }) => pattern.test(pathname));
   if (dynamicRoute) return dynamicRoute.template;
-  if (/^\/internal\/waitlist\/[^/]+$/.test(pathname)) {
-    return "/internal/waitlist/:id";
-  }
-  if (/^\/internal\/invites\/[^/]+$/.test(pathname)) {
-    return "/internal/invites/:id";
-  }
   if (/^\/wallets\/[^/]+$/.test(pathname)) {
     return "/wallets/:walletId";
   }

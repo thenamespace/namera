@@ -1,10 +1,20 @@
 import { Effect } from "effect";
 import { HttpApiBuilder } from "effect/http-api";
 
-import { NameraApi } from "@namera-ai/api";
+import { CurrentAdmin, NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
+
+const writer = Effect.gen(function* () {
+  const admin = yield* CurrentAdmin;
+  yield* consumeRateLimit(
+    "admin.invites.write",
+    admin.member.id,
+    rateLimitPolicy.admin.writesGlobal,
+  );
+  return admin;
+});
 
 export const BetaInviteRoutes = HttpApiBuilder.group(NameraApi, "betaInvite", (handlers) =>
   Effect.gen(function* () {
@@ -12,25 +22,17 @@ export const BetaInviteRoutes = HttpApiBuilder.group(NameraApi, "betaInvite", (h
     return handlers
       .handle("list", ({ query }) =>
         Effect.gen(function* () {
-          yield* consumeRateLimit("admin.reads", "operator", rateLimitPolicy.admin.readsGlobal);
-          return yield* app.betaInvite.list(query);
+          return yield* app.betaInvite.list(yield* CurrentAdmin, query);
         }),
       )
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
-          yield* consumeRateLimit("admin.writes", "operator", rateLimitPolicy.admin.writesGlobal);
-          yield* consumeRateLimit(
-            "admin.inviteCreate",
-            "operator",
-            rateLimitPolicy.admin.inviteCreateGlobal,
-          );
-          return yield* app.betaInvite.create(payload);
+          return yield* app.betaInvite.create(yield* writer, payload);
         }),
       )
       .handle("revoke", ({ params }) =>
         Effect.gen(function* () {
-          yield* consumeRateLimit("admin.writes", "operator", rateLimitPolicy.admin.writesGlobal);
-          return yield* app.betaInvite.revoke(params.id);
+          return yield* app.betaInvite.revoke(yield* writer, params.id);
         }),
       );
   }),

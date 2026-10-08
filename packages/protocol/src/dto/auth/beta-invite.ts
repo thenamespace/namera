@@ -15,10 +15,19 @@ export const CreateBetaInvitesRequest = Schema.Struct({
     Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 30 })),
   ),
   email: Schema.optionalKey(Email),
-}).annotate({
-  identifier: "CreateBetaInvitesRequest",
-  description: "Generate 1–50 single-use invites; expiry defaults to seven days",
-});
+})
+  .check(
+    Schema.makeFilter(
+      (input) =>
+        input.count === 1 ||
+        input.email === undefined ||
+        "Email binding is only available when creating one invite code.",
+    ),
+  )
+  .annotate({
+    identifier: "CreateBetaInvitesRequest",
+    description: "Generate 1–50 single-use invites; expiry defaults to seven days",
+  });
 export const BetaInviteResponse = Schema.Struct({
   id: Schema.String,
   code: BetaInviteCode,

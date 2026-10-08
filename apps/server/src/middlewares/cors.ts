@@ -47,6 +47,26 @@ export const CorsMiddleware = Layer.unwrap(
         "Tracestate",
         "Baggage",
       ],
+      credentials: true,
+      maxAge: 86400,
+    });
+    const signInCors = HttpMiddleware.cors({
+      allowedOrigins: [
+        config.corsOrigin,
+        ...Option.toArray(config.adminOrigin).map((url) => url.origin),
+      ],
+      allowedMethods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "B3", "Traceparent", "Tracestate", "Baggage"],
+      credentials: true,
+      maxAge: 86400,
+    });
+    const telemetryCors = HttpMiddleware.cors({
+      allowedOrigins: [
+        config.corsOrigin,
+        ...Option.toArray(config.adminOrigin).map((url) => url.origin),
+      ],
+      allowedMethods: ["POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type"],
       credentials: false,
       maxAge: 86400,
     });
@@ -56,12 +76,25 @@ export const CorsMiddleware = Layer.unwrap(
         Effect.gen(function* () {
           const request = yield* HttpServerRequest.HttpServerRequest;
           const path = new URL(request.url, "http://localhost").pathname;
+          if (["/t/traces/v1", "/t/logs/v1", "/t/metrics/v1"].includes(path))
+            return yield* telemetryCors(httpEffect);
+          if (
+            [
+              "/auth/google/configuration",
+              "/auth/google/start",
+              "/auth/magic-link/request",
+              "/auth/magic-link/verify",
+              "/auth/session/logout",
+            ].includes(path)
+          )
+            return yield* signInCors(httpEffect);
           if (path === "/waitlist" && (request.method === "POST" || request.method === "OPTIONS")) {
             return yield* waitlistCors(httpEffect);
           }
-          // With no ADMIN_CORS_ORIGIN set, /internal keeps the previous policy
-          // so curl and the integration tests behave exactly as before.
-          if (path.startsWith("/internal/") && Option.isSome(config.adminOrigin)) {
+          if (
+            (path.startsWith("/internal/") || path === "/auth/platform-invitations/accept") &&
+            Option.isSome(config.adminOrigin)
+          ) {
             return yield* adminCors(httpEffect);
           }
           return yield* dashboardCors(httpEffect);

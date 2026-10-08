@@ -3,6 +3,19 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const authRelations = defineRelationsPart(schema, (r) => ({
+  platformMember: {
+    // Platform access belongs to an identity, never a tenant actor.
+    user: r.one.user({ from: r.platformMember.userId, to: r.user.id, optional: false }),
+  },
+  platformInvitation: {
+    // Keep the issuing member and accepting identity for historical attribution.
+    inviter: r.one.platformMember({
+      from: r.platformInvitation.invitedByMemberId,
+      to: r.platformMember.id,
+      optional: false,
+    }),
+    acceptedUser: r.one.user({ from: r.platformInvitation.acceptedByUserId, to: r.user.id }),
+  },
   betaInvite: {
     // A redeemed invite identifies the verified account it admitted.
     redeemedUser: r.one.user({ from: r.betaInvite.redeemedBy, to: r.user.id }),

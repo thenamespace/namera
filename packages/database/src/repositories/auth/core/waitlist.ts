@@ -1,7 +1,8 @@
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 
 import type { Email } from "@namera-ai/protocol";
-import { WaitlistEntry, type WaitlistStatus } from "@namera-ai/protocol/model";
+import type { ListWaitlistRequest } from "@namera-ai/protocol/dto";
+import { WaitlistEntry } from "@namera-ai/protocol/model";
 import { and, desc, eq, lt, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
@@ -14,6 +15,48 @@ const decode = (rows: unknown[]) =>
 const make = Effect.gen(function* () {
   const database = yield* Database;
   return {
+    list: Effect.fn("database.waitlist.list")(function* (
+      input: ListWaitlistRequest & { readonly limit: number },
+    ) {
+      const db = yield* transactionOrDatabase(database);
+      return Schema.decodeUnknownSync(Schema.Array(WaitlistEntry))(
+        yield* db
+          .select()
+          .from(waitlist)
+          .where(
+            and(
+              input.status ? eq(waitlist.status, input.status) : undefined,
+              input.cursor ? lt(waitlist.id, input.cursor) : undefined,
+              input.email ? sql`strpos(lower(${waitlist.email}), ${input.email}) > 0` : undefined,
+            ),
+          )
+          .orderBy(desc(waitlist.id))
+          .limit(input.limit + 1),
+      );
+    }, mapRepositoryError),
+    completePending: Effect.fn("database.waitlist.completePending")(function* (
+      id: string,
+      now: DateTime.Utc,
+    ) {
+      const db = yield* transactionOrDatabase(database);
+      return decode(
+        yield* db
+          .update(waitlist)
+          .set({
+            status: "completed",
+            completedAt: DateTime.toDateUtc(now),
+            updatedAt: DateTime.toDateUtc(now),
+          })
+          .where(and(eq(waitlist.id, id), eq(waitlist.status, "pending")))
+          .returning(),
+      );
+    }, mapRepositoryError),
+    appendAcceptance: Effect.fn("database.waitlist.appendAcceptance")(function* (id: string) {
+      const db = yield* transactionOrDatabase(database);
+      yield* db
+        .insert(waitlistEvent)
+        .values({ waitlistId: id, previousStatus: "pending", status: "completed" });
+    }, mapRepositoryError),
     join: Effect.fn("database.waitlist.join")(function* (email: Email) {
       const db = yield* transactionOrDatabase(database);
       return decode(
@@ -23,60 +66,6 @@ const make = Effect.gen(function* () {
           .onConflictDoNothing({ target: waitlist.email })
           .returning(),
       );
-    }, mapRepositoryError),
-    list: Effect.fn("database.waitlist.list")(function* (input: {
-      readonly limit: number;
-      readonly cursor?: string;
-      readonly status?: WaitlistStatus;
-      readonly search?: string;
-    }) {
-      const db = yield* transactionOrDatabase(database);
-      const rows = yield* db
-        .select()
-        .from(waitlist)
-        .where(
-          and(
-            input.cursor ? lt(waitlist.id, input.cursor) : undefined,
-            input.status ? eq(waitlist.status, input.status) : undefined,
-            // Literal substring search: '%' and '_' in email addresses are not wildcards.
-            input.search ? sql`strpos(${waitlist.email}, ${input.search}) > 0` : undefined,
-          ),
-        )
-        .orderBy(desc(waitlist.id))
-        .limit(input.limit + 1);
-      return Schema.decodeUnknownSync(Schema.Array(WaitlistEntry))(rows);
-    }, mapRepositoryError),
-    lock: Effect.fn("database.waitlist.lock")(function* (id: string) {
-      const db = yield* transactionOrDatabase(database);
-      return decode(yield* db.select().from(waitlist).where(eq(waitlist.id, id)).for("update"));
-    }, mapRepositoryError),
-    setStatus: Effect.fn("database.waitlist.setStatus")(function* (
-      id: string,
-      status: WaitlistStatus,
-      now: DateTime.Utc,
-    ) {
-      const db = yield* transactionOrDatabase(database);
-      const rows = yield* db
-        .update(waitlist)
-        .set({
-          status,
-          updatedAt: DateTime.toDateUtc(now),
-          completedAt: status === "completed" ? DateTime.toDateUtc(now) : null,
-        })
-        .where(eq(waitlist.id, id))
-        .returning();
-      return Schema.decodeUnknownSync(WaitlistEntry)(rows[0]);
-    }, mapRepositoryError),
-    appendEvent: Effect.fn("database.waitlist.appendEvent")(function* (
-      waitlistId: string,
-      previousStatus: WaitlistStatus,
-      status: WaitlistStatus,
-      now: DateTime.Utc,
-    ) {
-      const db = yield* transactionOrDatabase(database);
-      yield* db
-        .insert(waitlistEvent)
-        .values({ waitlistId, previousStatus, status, createdAt: DateTime.toDateUtc(now) });
     }, mapRepositoryError),
   };
 });

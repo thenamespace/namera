@@ -143,6 +143,7 @@ layer(fixture.layer)("API-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         apiKeyName: "Production agent",
+        actionUrl: "http://dashboard.test/auth?returnTo=%2Fsettings%2Fworkspace%2Fapi-keys",
         organizationName: owner.actor.organization.metadata.name,
         sessionKeyCount: 2,
       });
@@ -320,6 +321,7 @@ layer(fixture.layer)("API-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         apiKeyName: "Revocable agent",
+        actionUrl: "http://dashboard.test/auth?returnTo=%2Fsettings%2Fworkspace%2Fapi-keys",
         organizationName: owner.actor.organization.metadata.name,
         sessionKeyCount: 2,
       });

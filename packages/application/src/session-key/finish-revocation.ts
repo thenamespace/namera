@@ -4,11 +4,14 @@ import { Repository, TransactionService } from "@namera-ai/database";
 import type { OrganizationId, SessionKeyId } from "@namera-ai/protocol";
 
 import { Audit, type AuditOptions } from "#/audit/layer";
+import { AuthConfig } from "#/auth/config";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
+import { dashboardEmailLink } from "#/notification/email-link";
 
 /** Finalize only after no installed permission or broadcastable owner attempt remains. */
 export const makeFinishSessionKeyRevocation = Effect.gen(function* () {
+  const config = yield* AuthConfig;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const audit = yield* Audit;
@@ -93,6 +96,10 @@ export const makeFinishSessionKeyRevocation = Effect.gen(function* () {
                 ),
                 variables: {
                   sessionKeyName: revoked.metadata.name,
+                  actionUrl: dashboardEmailLink(
+                    config.dashboardPublicOrigin,
+                    `/session-key/${revoked.id}/overview`,
+                  ),
                   walletName: wallet.wallet.metadata.name,
                   organizationName: organization.metadata.name,
                   revokedGrantCount,

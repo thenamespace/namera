@@ -19,7 +19,7 @@ export default defineConfig({
       // every row in its own component, which buys nothing for an operator tool
       // whose tables are capped at 100 rows. Correctness and accessibility rules
       // stay active.
-      files: ["apps/admin-portal/src/**/*.tsx"],
+      files: ["apps/admin-portal-old/src/**/*.tsx"],
       rules: {
         "react-perf/jsx-no-new-object-as-prop": "off",
         "react-perf/jsx-no-new-array-as-prop": "off",

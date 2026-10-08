@@ -15,7 +15,9 @@ export const makeTelemetryLayer = (options: {
   tracesUrl: string;
   logsUrl: string;
   metricsUrl: string;
+  /** Trace batching interval; metrics have an independent cadence. */
   exportInterval?: Duration.Input;
+  metricsExportInterval?: Duration.Input;
   tracesHeaders?: Readonly<Record<string, string>>;
   logsHeaders?: Readonly<Record<string, string>>;
   metricsHeaders?: Readonly<Record<string, string>>;
@@ -48,7 +50,7 @@ export const makeTelemetryLayer = (options: {
       url: options.metricsUrl,
       headers: options.metricsHeaders,
       resource,
-      exportInterval: options.exportInterval ?? telemetryData.exportInterval,
+      exportInterval: options.metricsExportInterval ?? telemetryData.metricsExportInterval,
       shutdownTimeout: telemetryData.shutdownTimeout,
       temporality: "cumulative",
     }),

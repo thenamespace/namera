@@ -122,6 +122,16 @@ layer(executionFixture.layer)("execution routes", (it) => {
         yield* resetTestState();
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("execution-owner@example.com"));
+        // Execution confirmations remain in-app only, even with an email preference.
+        yield* client.notification.updatePreference({
+          payload: {
+            organizationId: owner.actor.organization.id,
+            category: "organization",
+            topic: "executions",
+            channel: "email",
+            enabled: true,
+          },
+        });
         const wallet = yield* createTestPasskeyWallet(client, "Treasury");
         const sessionKey = yield* client.sessionKey.create({
           payload: {

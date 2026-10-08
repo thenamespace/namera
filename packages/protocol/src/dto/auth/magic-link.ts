@@ -25,6 +25,7 @@ export const MagicLinkCode = Schema.String.check(
 export const MagicLinkReturnTo = ApplicationRelativePath;
 
 export const RequestMagicLinkRequest = Schema.Struct({
+  surface: Schema.optionalKey(Schema.Literal("admin")),
   email: Email,
   inviteCode: Schema.optional(BetaInviteCode),
   returnTo: Schema.optionalKey(MagicLinkReturnTo),
