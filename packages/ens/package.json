@@ -33,7 +33,7 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
-    "test": "vitest run",
+    "test": "vitest run --maxWorkers=2",
     "typecheck": "tsc -p tsconfig.json --pretty false",
     "typecheck:test": "tsc -p tsconfig.test.json --pretty false"
   },

@@ -7,6 +7,7 @@ import { Repository } from "@namera-ai/database";
 import { makeTestEvmExecutionService } from "@namera-ai/evm";
 import { EthereumAddress, EvmExecutionError, Hex, UserOperationHash } from "@namera-ai/protocol";
 
+import { queueExecution } from "../../fixtures/execution.js";
 import {
   makeTestApiClient,
   resetTestState,
@@ -17,7 +18,6 @@ import {
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
-import { queueExecution } from "./fixture.js";
 
 const receiptVisible = Context.Reference<boolean>("test/hashMismatch/receiptVisible", {
   defaultValue: () => false,

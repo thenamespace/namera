@@ -12,6 +12,7 @@ export default defineNodeVitestConfig({
     },
   },
   test: {
+    maxWorkers: 2,
     hookTimeout: 30_000,
     server: { deps: { inline: [/^@namera-ai\//] } },
     sequence: {

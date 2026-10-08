@@ -6,6 +6,11 @@ import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 
 import {
+  createExecutionFixture,
+  executionFixture,
+  queueExecution,
+} from "../../fixtures/execution.js";
+import {
   makeTestApiClient,
   resetTestState,
   setApiKey,
@@ -13,7 +18,6 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { createExecutionFixture, executionFixture, queueExecution } from "./fixture.js";
 
 layer(executionFixture.layer)("execution lease recovery", (it) => {
   for (const stage of ["prepared", "submitted"] as const) {

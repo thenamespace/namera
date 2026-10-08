@@ -6,5 +6,8 @@ export default defineNodeVitestConfig({
     noExternal: [/^@namera-ai\//],
     resolve: { conditions: ["namera-source"], externalConditions: ["namera-source", "node"] },
   },
-  test: { server: { deps: { inline: [/^@namera-ai\//] } } },
+  test: {
+    maxWorkers: 2,
+    server: { deps: { inline: [/^@namera-ai\//] } },
+  },
 });

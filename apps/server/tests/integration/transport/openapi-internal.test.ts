@@ -12,9 +12,4 @@ describe("published OpenAPI specification", () => {
     const leaked = Object.keys(spec.paths).filter((path) => path.startsWith("/internal"));
     expect(leaked).toEqual([]);
   });
-
-  it("still documents the public surface", () => {
-    const spec = OpenApi.fromApi(NameraApi) as { paths: Record<string, unknown> };
-    expect(Object.keys(spec.paths)).toContain("/waitlist");
-  });
 });

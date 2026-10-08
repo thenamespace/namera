@@ -27,8 +27,17 @@ and `tests/e2e/` for packaged or browser journeys. Keep feature folders within
 these groups and shared fixture code in `tests/fixtures/`. Contract tests that
 require Anvil belong under integration and remain opt-in. Existing suites use
 these boundaries; do not delete security regressions merely to reduce
-the test count. Remove tests only when they duplicate behavior already covered
-at the appropriate boundary or test code that no longer exists.
+the test count. Keep tests that can detect a meaningful regression: authorization,
+validation, state transitions, persistence, recovery, or externally visible behavior.
+Remove redundant boundary coverage, retired-feature assertions, and checks that
+merely repeat static copy, styling, or constant declarations. Do not add tests only
+to assert that a retired endpoint or table was removed.
+
+Small pure suites can stay directly in `unit`; related suites belong in domain
+folders such as `auth`, `signing`, or `session-keys`. Rendered component and email
+tests belong in `integration`. Share fixture construction and process lifecycle
+code when multiple suites need it; keep scenario-specific setup and assertions
+beside each test.
 
 Vitest must resolve workspace dependencies using the `namera-source` condition
 in both normal and SSR resolution. Inline workspace packages where needed; a
@@ -156,7 +165,9 @@ The manually dispatched CI workflow runs independent check and test jobs:
 - `tests (cli)`: CLI tests on their own runner, so cold subprocess startup does
   not compete with other packages' database initialization or builds.
 - `tests (packages)`: all other package tests except `@namera-ai/server`.
-  Both test groups cap Turbo at two tasks and Vitest at two workers per package.
+  Both test groups cap Turbo at two tasks. Vitest configurations cap workers at two;
+  the email suite uses Node's `--test-concurrency=2`. Runner flags stay with their
+  own runner instead of being forwarded through Turbo to incompatible commands.
   A failed group does not cancel another group's diagnostics.
 - `postgres`: the complete server test suite against disposable PostgreSQL,
   including the PostgreSQL-only concurrency cases. It runs directly through
@@ -181,9 +192,10 @@ They allow up to 60 seconds for cold startup on shared runners, where other
 packages run concurrently. Outer test deadlines allow subprocess cleanup, while
 post-start MCP request and shutdown deadlines remain short. Command failures
 include the exit code, signal, and captured output to distinguish startup timeouts
-from application errors. Command-output tests also terminate and await unfinished
+from application errors. Shared CLI command and terminal fixtures terminate and await unfinished
 subprocesses at test teardown, so a timeout cannot leak requests into the next
-test's HTTP fixture. These tests assert behavior, not startup performance.
+test's HTTP fixture. Mutable response fixtures reset before each test. CLI files
+remain serial, as do suites sharing a disposable PostgreSQL or Anvil instance. These tests assert behavior, not startup performance.
 
 The CLI's opt-in `NAMERA_TEST_OS_KEYRING=1` test exercises its actual encrypted
 session storage with `@napi-rs/keyring`, a random credential-service namespace,

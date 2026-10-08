@@ -7,6 +7,12 @@ import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 
+import {
+  createExecutionFixture,
+  executeFixture,
+  executionFixture,
+  queueExecution,
+} from "../../fixtures/execution.js";
 import { handledApi } from "../../fixtures/http-api-test.js";
 import {
   makeTestApiClient,
@@ -16,12 +22,6 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import {
-  createExecutionFixture,
-  executeFixture,
-  executionFixture,
-  queueExecution,
-} from "./fixture.js";
 
 layer(executionFixture.layer)("execution read routes", (it) => {
   it.effect("only lets the creating API-key actor read its submission", () =>

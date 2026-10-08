@@ -21,7 +21,7 @@
     "lint": "turbo run lint",
     "lint:fix": "oxlint --fix .",
     "prepare": "lefthook install && effect-tsgo patch --typescript --no-oxlint",
-    "test": "turbo run test",
+    "test": "turbo run test --concurrency=2",
     "telemetry:down": "docker compose stop lgtm",
     "telemetry:logs": "docker compose logs -f lgtm",
     "telemetry:up": "docker compose up -d lgtm",

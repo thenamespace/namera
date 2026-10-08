@@ -6,6 +6,7 @@ import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 
+import { executionFixture, executeRequest, queueExecution } from "../../fixtures/execution.js";
 import {
   makeTestApiClient,
   resetTestState,
@@ -15,7 +16,6 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
-import { executionFixture, executeRequest, queueExecution } from "./fixture.js";
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 

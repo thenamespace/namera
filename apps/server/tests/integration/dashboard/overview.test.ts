@@ -3,6 +3,11 @@ import { Clock, Effect } from "effect";
 import { TestClock } from "effect/testing";
 
 import {
+  createExecutionFixture,
+  executeFixture,
+  executionFixture,
+} from "../../fixtures/execution.js";
+import {
   makeTestApiClient,
   resetTestState,
   setApiKey,
@@ -10,7 +15,6 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { createExecutionFixture, executeFixture, executionFixture } from "../execution/fixture.js";
 
 layer(executionFixture.layer)("dashboard overview route", (it) => {
   it.effect("returns a namespace-aware organization snapshot", () =>

@@ -12,6 +12,7 @@ export default defineNodeVitestConfig({
     },
   },
   test: {
+    maxWorkers: 2,
     fileParallelism: process.env.NAMERA_TEST_POSTGRES_PORT === undefined,
     hookTimeout: 30_000,
     server: {

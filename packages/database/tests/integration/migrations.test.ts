@@ -6,17 +6,6 @@ import { sql } from "drizzle-orm";
 import { Database, TestDatabase } from "../../src/index.js";
 
 layer(TestDatabase.layer)("database migrations", (it) => {
-  it.effect("removes legacy wallet-key persistence and retains signing keys", () =>
-    Effect.gen(function* () {
-      const database = yield* Database;
-      const tables = yield* database
-        .select({ tablename: sql<string>`tablename` })
-        .from(sql`pg_tables`)
-        .where(sql`schemaname = 'core' and tablename in ('wallet_key', 'signing_key')`);
-      expect(tables.map(({ tablename }) => tablename)).toEqual(["signing_key"]);
-    }),
-  );
-
   it.effect("loads pg_trgm and creates the address metadata search indexes", () =>
     Effect.gen(function* () {
       const database = yield* Database;

@@ -25,7 +25,8 @@ pnpm --filter @namera-ai/email-templates dev
 
 The preview is available at `http://localhost:4000`.
 
-Run the rendered-HTML regression tests:
+Run the rendered-HTML integration tests in `tests/integration/templates`
+(action destinations, escaping, and payload compatibility):
 
 ```sh
 pnpm --filter @namera-ai/email-templates test

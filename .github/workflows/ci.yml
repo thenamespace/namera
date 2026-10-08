@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - name: Test with bounded package and worker concurrency
-        run: pnpm exec turbo run test ${{ matrix.filters }} --concurrency=2 -- --maxWorkers=2
+        run: pnpm exec turbo run test ${{ matrix.filters }} --concurrency=2
   postgres:
     name: PostgreSQL integration
     runs-on: ubuntu-latest

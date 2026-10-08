@@ -35,7 +35,7 @@
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
     "typecheck": "tsc -p tsconfig.json --pretty false",
-    "test": "pnpm --filter @namera-ai/emails build && tsx --tsconfig tsconfig.json --test tests/unit/*.test.tsx",
+    "test": "pnpm --filter @namera-ai/emails build && tsx --tsconfig tsconfig.json --test --test-concurrency=2 tests/integration/templates/*.test.tsx",
     "dev": "email dev -d ./src/emails -p 4000"
   },
   "dependencies": {
