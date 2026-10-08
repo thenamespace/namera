@@ -26,8 +26,10 @@ import {
 } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+import { AuthConfig } from "#/auth/config";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
+import { dashboardEmailLink } from "#/notification/email-link";
 
 import { authPolicy } from "../data.js";
 
@@ -63,6 +65,7 @@ export interface ApiKeyApplication {
 }
 
 export const makeApiKeyApplication = Effect.gen(function* () {
+  const config = yield* AuthConfig;
   const audit = yield* Audit;
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
@@ -197,6 +200,10 @@ export const makeApiKeyApplication = Effect.gen(function* () {
                   ),
                   variables: {
                     apiKeyName: apiKey.metadata.name,
+                    actionUrl: dashboardEmailLink(
+                      config.dashboardPublicOrigin,
+                      "/settings/workspace/api-keys",
+                    ),
                     organizationName: organization.metadata.name,
                     sessionKeyCount: sessionKeys.length,
                   },
@@ -327,6 +334,10 @@ export const makeApiKeyApplication = Effect.gen(function* () {
                   ),
                   variables: {
                     apiKeyName: revoked.metadata.name,
+                    actionUrl: dashboardEmailLink(
+                      config.dashboardPublicOrigin,
+                      "/settings/workspace/api-keys",
+                    ),
                     organizationName: organization.metadata.name,
                     sessionKeyCount: revokedGrants.length,
                   },

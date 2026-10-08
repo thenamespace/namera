@@ -5,7 +5,6 @@ import type { SendEmailProps } from "#/types";
 import { ApiKeyCreatedEmail } from "./emails/api-key-created.js";
 import { ApiKeyRevokedEmail } from "./emails/api-key-revoked.js";
 import { ConnectedAccountChangedEmail } from "./emails/connected-account-changed.js";
-import { ExecutionConfirmedEmail } from "./emails/execution-confirmed.js";
 import { MagicLinkEmail } from "./emails/magic-link.js";
 import { NewSignInEmail } from "./emails/new-sign-in.js";
 import { OrganizationInvitationEmail } from "./emails/organization-invitation.js";
@@ -36,7 +35,5 @@ export const renderEmail = (input: SendEmailProps): ReactElement => {
       return <ApiKeyCreatedEmail {...input.variables} />;
     case "api-key-revoked":
       return <ApiKeyRevokedEmail {...input.variables} />;
-    case "execution-confirmed":
-      return <ExecutionConfirmedEmail {...input.variables} />;
   }
 };

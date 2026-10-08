@@ -15,6 +15,7 @@ import {
 } from "#/auth/organization/helpers";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
+import { dashboardEmailLink } from "#/notification/email-link";
 
 // Called inside the caller's transaction, after its identity proof is consumed.
 export const makeCompleteSignIn = Effect.gen(function* () {
@@ -104,6 +105,7 @@ export const makeCompleteSignIn = Effect.gen(function* () {
             to: user.email,
             variables: {
               signedInAt: DateTime.formatIso(now),
+              actionUrl: dashboardEmailLink(config.dashboardPublicOrigin, "/settings/security"),
               ipAddress: input.ipAddress ?? "Unknown",
               userAgent: input.userAgent ?? "Unknown",
             },

@@ -52,6 +52,20 @@ harness and PNG asset generator. Templates use protocol-owned props, shared
 Namera layout/theme primitives, responsive spacing, light/dark support, and CDN
 PNG assets rather than embedded SVG.
 
+API-key, session-key, account-creation and sign-in emails
+include a dashboard action without a raw fallback URL. Only magic-link sign-in
+emails include a copyable fallback URL. Application workflows build
+links from `AUTH_DASHBOARD_PUBLIC_ORIGIN` through `/auth?returnTo=...`, preserving
+the destination when sign-in is needed. Organization resources still require the
+recipient to select the matching workspace; links never bypass authorization or
+change workspace automatically. New `actionUrl` fields are optional when decoding
+older queued payloads, which render without the added action. New producers always
+populate them.
+
+Execution confirmations are in-app only, regardless of email preferences. There
+is no execution email payload, template or sending logic. The shared footer includes
+the X profile with generated light/dark PNGs under `assets/email-assets/social/`.
+
 Resend receives configured sender/reply-to, a bounded timeout, and the business
 idempotency key. Development uses an explicit logger provider selected only when
 `NODE_ENV=development`.

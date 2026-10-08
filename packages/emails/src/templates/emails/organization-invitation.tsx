@@ -4,7 +4,6 @@ import { Section } from "react-email";
 import { EmailButton } from "../components/button.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
-import { FallbackLink } from "../components/fallback-link.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
 import { formatEmailDate } from "../helpers/date.js";
@@ -35,7 +34,6 @@ export const OrganizationInvitationEmail = ({
           <Section className="mt-7">
             <EmailButton href={invitationUrl}>Review invitation</EmailButton>
           </Section>
-          <FallbackLink href={invitationUrl} />
           <EmailNotice>
             Only accept this invitation if you know the sender and expect access to this
             organization.

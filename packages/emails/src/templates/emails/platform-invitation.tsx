@@ -3,7 +3,6 @@ import type { EmailJobPayload } from "@namera-ai/protocol/model";
 import { EmailButton } from "../components/button.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
-import { FallbackLink } from "../components/fallback-link.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
 import { formatEmailDate } from "../helpers/date.js";
@@ -25,7 +24,6 @@ export const PlatformInvitationEmail = ({
           <EmailDetail label="Expires" value={formatEmailDate(expiresAt)} />
         </EmailDetails>
         <EmailButton href={invitationUrl}>Review invitation</EmailButton>
-        <FallbackLink href={invitationUrl} />
         <EmailNotice>
           Accept only if you expected access to Namera's internal admin tools. Do not forward this
           link.

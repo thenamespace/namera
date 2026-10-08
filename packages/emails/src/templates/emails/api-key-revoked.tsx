@@ -1,5 +1,6 @@
 import type { ApiKeyRevokedEmailVariables } from "@namera-ai/protocol/model";
 
+import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
@@ -10,6 +11,7 @@ import { NameraEmail } from "../provider.js";
 export type ApiKeyRevokedEmailProps = ApiKeyRevokedEmailVariables;
 
 export const ApiKeyRevokedEmail = ({
+  actionUrl,
   apiKeyName,
   organizationName,
   sessionKeyCount,
@@ -27,9 +29,10 @@ export const ApiKeyRevokedEmail = ({
             <EmailDetail label="API key" value={apiKeyName} />
             <EmailDetail label="Revoked access" value={revokedAccess} />
           </EmailDetails>
+          <EmailAction href={actionUrl}>View API keys</EmailAction>
           <EmailNotice>
-            Requests using this API key are now rejected, and all of its session-key grants have
-            been revoked.
+            This key can no longer access your session keys. If you do not recognize this activity,
+            review your API keys and check with your workspace team.
           </EmailNotice>
         </EmailContent>
       </EmailLayout>
@@ -38,6 +41,7 @@ export const ApiKeyRevokedEmail = ({
 };
 
 ApiKeyRevokedEmail.PreviewProps = {
+  actionUrl: "https://dashboard.namera.ai/auth?returnTo=%2Fsettings%2Fworkspace%2Fapi-keys",
   apiKeyName: "Production agent",
   organizationName: "Atlas Labs",
   sessionKeyCount: 3,

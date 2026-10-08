@@ -166,6 +166,7 @@ layer(fixture.layer)("session-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         sessionKeyName: "Agent window",
+        actionUrl: `http://dashboard.test/auth?returnTo=%2Fsession-key%2F${created.id}%2Foverview`,
         walletName: "Treasury",
         organizationName: owner.actor.organization.metadata.name,
       });
@@ -476,6 +477,7 @@ layer(fixture.layer)("session-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         sessionKeyName: "Revocable key",
+        actionUrl: `http://dashboard.test/auth?returnTo=%2Fsession-key%2F${sessionKey.id}%2Foverview`,
         walletName: "Revocation wallet",
         revokedGrantCount: 2,
       });

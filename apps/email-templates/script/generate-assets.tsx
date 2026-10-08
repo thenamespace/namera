@@ -34,9 +34,11 @@ const renderPng = async (
     .toFile(resolve(destination, `${name}.png`));
 };
 
-const socialIcon = (type: "email" | "github" | "linkedin" | "website", color: string) => {
+const socialIcon = (type: "email" | "github" | "linkedin" | "website" | "x", color: string) => {
   const common = `xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="512" height="512"`;
   switch (type) {
+    case "x":
+      return `<svg ${common} fill="${color}"><title>X</title><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg>`;
     case "website":
       return `<svg ${common} fill="none"><circle cx="12" cy="12" r="9" stroke="${color}" stroke-width="1.6"/><path d="M3.5 12h17M12 3c2.2 2.45 3.3 5.45 3.3 9s-1.1 6.55-3.3 9c-2.2-2.45-3.3-5.45-3.3-9S9.8 5.45 12 3Z" stroke="${color}" stroke-width="1.6"/></svg>`;
     case "github":
@@ -71,7 +73,7 @@ await Promise.all(
 );
 
 await Promise.all(
-  (["website", "github", "email", "linkedin"] as const).flatMap((type) =>
+  (["website", "github", "x", "email", "linkedin"] as const).flatMap((type) =>
     Object.entries(monochromeColors).map(([theme, color]) =>
       renderPng("social", `${type}-${theme}`, socialIcon(type, color)),
     ),

@@ -6,12 +6,13 @@ type SocialIconProps = {
   readonly alt: string;
   readonly dark: string;
   readonly light: string;
+  readonly size?: number;
 };
 
-const SocialIcon = ({ alt, dark, light }: SocialIconProps) => (
+const SocialIcon = ({ alt, dark, light, size = 18 }: SocialIconProps) => (
   <>
-    <Img alt={alt} className="block dark:hidden" height="18" src={light} width="18" />
-    <Img alt={alt} className="hidden dark:block" height="18" src={dark} width="18" />
+    <Img alt={alt} className="block dark:hidden" height={size} src={light} width={size} />
+    <Img alt={alt} className="hidden dark:block" height={size} src={dark} width={size} />
   </>
 );
 
@@ -31,6 +32,9 @@ export const EmailSocialLinks = () => {
         href={emailLinks.github.href}
       >
         <SocialIcon alt={emailLinks.github.label} {...emailAssets.social.github} />
+      </Link>
+      <Link aria-label={emailLinks.x.label} className="mx-2 inline-block" href={emailLinks.x.href}>
+        <SocialIcon alt={emailLinks.x.label} {...emailAssets.social.x} size={16} />
       </Link>
       <Link
         aria-label={emailLinks.email.label}

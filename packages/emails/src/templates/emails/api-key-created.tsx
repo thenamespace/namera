@@ -1,5 +1,6 @@
 import type { ApiKeyCreatedEmailVariables } from "@namera-ai/protocol/model";
 
+import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
@@ -10,6 +11,7 @@ import { NameraEmail } from "../provider.js";
 export type ApiKeyCreatedEmailProps = ApiKeyCreatedEmailVariables;
 
 export const ApiKeyCreatedEmail = ({
+  actionUrl,
   apiKeyName,
   organizationName,
   sessionKeyCount,
@@ -27,9 +29,10 @@ export const ApiKeyCreatedEmail = ({
             <EmailDetail label="API key" value={apiKeyName} />
             <EmailDetail label="Authorized access" value={authorizedAccess} />
           </EmailDetails>
+          <EmailAction href={actionUrl}>View API keys</EmailAction>
           <EmailNotice>
-            The API key secret is never sent by email. Revoke this key immediately if you do not
-            recognize it.
+            If you do not recognize this activity, review your API keys and revoke any access you
+            did not authorize.
           </EmailNotice>
         </EmailContent>
       </EmailLayout>
@@ -38,6 +41,7 @@ export const ApiKeyCreatedEmail = ({
 };
 
 ApiKeyCreatedEmail.PreviewProps = {
+  actionUrl: "https://dashboard.namera.ai/auth?returnTo=%2Fsettings%2Fworkspace%2Fapi-keys",
   apiKeyName: "Production agent",
   organizationName: "Atlas Labs",
   sessionKeyCount: 3,

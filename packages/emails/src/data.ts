@@ -31,9 +31,6 @@ export const emailTemplates = {
   "api-key-revoked": {
     subject: "API key revoked",
   },
-  "execution-confirmed": {
-    subject: "Transaction confirmed",
-  },
 } as const satisfies Record<EmailJobType, { readonly subject: string }>;
 
 export const emailPolicy = {

@@ -16,6 +16,10 @@ export const emailAssets = {
     optimism: emailAssetUrl("chains/optimism.png"),
   } satisfies Readonly<Record<EvmChainName, string>>,
   social: {
+    x: {
+      light: emailAssetUrl("social/x-light.png"),
+      dark: emailAssetUrl("social/x-dark.png"),
+    },
     website: {
       light: emailAssetUrl("social/website-light.png"),
       dark: emailAssetUrl("social/website-dark.png"),
@@ -36,6 +40,10 @@ export const emailAssets = {
 } as const;
 
 export const emailLinks = {
+  x: {
+    label: "X (Twitter)",
+    href: "https://x.com/namera_ai",
+  },
   website: {
     label: "Website",
     href: "https://namera.ai",

@@ -1,7 +1,6 @@
 import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
-import { EvmChainName } from "#/evm/chains";
 import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals([
@@ -15,7 +14,6 @@ export const EmailJobType = Schema.Literals([
   "session-key-revoked",
   "api-key-created",
   "api-key-revoked",
-  "execution-confirmed",
 ]);
 
 export const EmailRecipient = Schema.Union([
@@ -45,6 +43,7 @@ export const MagicLinkEmailVariables = Schema.Struct({
 });
 
 export const NewSignInEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   signedInAt: NonEmptyString,
   ipAddress: NonEmptyString,
   userAgent: NonEmptyString,
@@ -59,6 +58,7 @@ export const OrganizationInvitationEmailVariables = Schema.Struct({
 });
 
 export const WalletCreatedEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
   address: NonEmptyString,
@@ -68,6 +68,7 @@ export const WalletCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyCreatedEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   sessionKeyName: NonEmptyString,
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
@@ -75,6 +76,7 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyRevokedEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   sessionKeyName: NonEmptyString,
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
@@ -82,25 +84,17 @@ export const SessionKeyRevokedEmailVariables = Schema.Struct({
 });
 
 export const ApiKeyCreatedEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   apiKeyName: NonEmptyString,
   organizationName: NonEmptyString,
   sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
 });
 
 export const ApiKeyRevokedEmailVariables = Schema.Struct({
+  actionUrl: Schema.optionalKey(NonEmptyString),
   apiKeyName: NonEmptyString,
   organizationName: NonEmptyString,
   sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-});
-
-export const ExecutionConfirmedEmailVariables = Schema.Struct({
-  organizationName: NonEmptyString,
-  walletName: NonEmptyString,
-  chainId: NonEmptyString,
-  chainName: NonEmptyString,
-  chainIcon: EvmChainName,
-  transactionHash: NonEmptyString,
-  transactionUrl: NonEmptyString,
 });
 
 export const EmailJobPayload = Schema.Union([
@@ -152,10 +146,6 @@ export const EmailJobPayload = Schema.Union([
     type: Schema.Literal("api-key-revoked"),
     variables: ApiKeyRevokedEmailVariables,
   }).mapFields(Struct.assign(EmailPayloadFields.fields)),
-  Schema.Struct({
-    type: Schema.Literal("execution-confirmed"),
-    variables: ExecutionConfirmedEmailVariables,
-  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
 ]);
 
 export type EmailJobType = typeof EmailJobType.Type;
@@ -169,5 +159,4 @@ export type SessionKeyCreatedEmailVariables = typeof SessionKeyCreatedEmailVaria
 export type SessionKeyRevokedEmailVariables = typeof SessionKeyRevokedEmailVariables.Type;
 export type ApiKeyCreatedEmailVariables = typeof ApiKeyCreatedEmailVariables.Type;
 export type ApiKeyRevokedEmailVariables = typeof ApiKeyRevokedEmailVariables.Type;
-export type ExecutionConfirmedEmailVariables = typeof ExecutionConfirmedEmailVariables.Type;
 export type EmailJobPayload = typeof EmailJobPayload.Type;

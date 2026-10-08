@@ -205,6 +205,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       const emails = yield* TestEmails;
       const email = (yield* emails.sent).findLast((message) => message.type === "new-sign-in");
       expect(email?.variables).toMatchObject({
+        actionUrl: "http://dashboard.test/auth?returnTo=%2Fsettings%2Fsecurity",
         ipAddress: "203.0.113.10",
         userAgent: "Namera test client",
       });
