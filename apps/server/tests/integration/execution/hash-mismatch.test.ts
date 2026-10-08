@@ -68,8 +68,8 @@ layer(fixture.layer)("mismatched submission response", (it) => {
     "keeps holds while the canonical hash is not visible and settles a later matching receipt once",
     () =>
       Effect.gen(function* () {
-        yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
         yield* resetTestState();
+        yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("hash-mismatch@example.com"));
         const wallet = yield* createTestPasskeyWallet(client, "Hash recovery");

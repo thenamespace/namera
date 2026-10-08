@@ -104,7 +104,9 @@ verify browser hardware or live bundlers.
 
 ## Isolation rules
 
-- Reset database and captured provider state at the start of every test.
+- Reset database, captured provider state, and the shared test clock at the start
+  of every test. `resetTestState` restores Effect's epoch clock before setup;
+  expiry and recent-authentication tests must not leave later scenarios in the future.
 - Never depend on test order; use unique identities per scenario.
 - Keep shared-PGlite suites non-concurrent.
 - Use Effect's test clock for expiry, cooldown, leases, and retries; never sleep.

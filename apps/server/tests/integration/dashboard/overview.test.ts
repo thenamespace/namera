@@ -19,10 +19,10 @@ import {
 layer(executionFixture.layer)("dashboard overview route", (it) => {
   it.effect("returns a namespace-aware organization snapshot", () =>
     Effect.gen(function* () {
+      yield* resetTestState();
       // Persisted operation timestamps use the database clock, so the overview
       // window must not remain at the test clock's Unix-epoch default.
       yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
-      yield* resetTestState();
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("dashboard-overview@example.com"));
 
