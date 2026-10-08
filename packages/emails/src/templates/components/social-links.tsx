@@ -34,7 +34,7 @@ export const EmailSocialLinks = () => {
         <SocialIcon alt={emailLinks.github.label} {...emailAssets.social.github} />
       </Link>
       <Link aria-label={emailLinks.x.label} className="mx-2 inline-block" href={emailLinks.x.href}>
-        <SocialIcon alt={emailLinks.x.label} {...emailAssets.social.x} size={16} />
+        <SocialIcon alt={emailLinks.x.label} {...emailAssets.social.x} size={14} />
       </Link>
       <Link
         aria-label={emailLinks.email.label}

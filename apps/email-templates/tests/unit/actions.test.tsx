@@ -68,7 +68,7 @@ test("X renders smaller than the other footer icons", async () => {
   const xImages = images.filter((image) => image.includes("/social/x-"));
   assert.equal(xImages.length, 2);
   for (const image of xImages) {
-    assert.ok(image.includes('width="16"'));
-    assert.ok(image.includes('height="16"'));
+    assert.ok(image.includes('width="14"'));
+    assert.ok(image.includes('height="14"'));
   }
 });
