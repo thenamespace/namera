@@ -17,9 +17,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 - [`apps/cli`](apps/cli/README.md) — Effect CLI using OAuth device authorization
   and the public SDK for delegated wallet operations.
 - [`apps/admin-portal`](apps/admin-portal/README.md) — static TanStack Router SPA
-  with Google/email sign-in and an empty protected home route. Uses verified user
-  sessions and platform membership. The legacy UI is archived in
-  `apps/admin-portal-old`, outside the pnpm workspace.
+  with Google/email sign-in, overview, team, invite-code, and waitlist management.
+  Uses verified user sessions and platform membership.
 - [`packages/protocol`](packages/protocol/README.md) — shared schemas, models,
   DTOs, branded IDs, and typed errors.
 - [`packages/crypto`](packages/crypto/README.md) — shared domain-separated
