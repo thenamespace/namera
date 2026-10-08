@@ -4,6 +4,8 @@ import { Email } from "#/common/index";
 import { NonEmptyString } from "#/model/common";
 
 export const EmailJobType = Schema.Literals([
+  "waitlist-confirmed",
+  "waitlist-accepted",
   "platform-invitation",
   "connected-account-changed",
   "magic-link",
@@ -40,6 +42,14 @@ export const MagicLinkEmailVariables = Schema.Struct({
   magicLinkUrl: NonEmptyString,
   code: NonEmptyString,
   expiresInMinutes: Schema.Int.check(Schema.isGreaterThan(0)),
+});
+
+export const WaitlistConfirmedEmailVariables = Schema.Struct({});
+
+export const WaitlistAcceptedEmailVariables = Schema.Struct({
+  inviteCode: NonEmptyString,
+  invitationUrl: NonEmptyString,
+  expiresAt: NonEmptyString,
 });
 
 export const NewSignInEmailVariables = Schema.Struct({
@@ -99,6 +109,14 @@ export const ApiKeyRevokedEmailVariables = Schema.Struct({
 
 export const EmailJobPayload = Schema.Union([
   Schema.Struct({
+    type: Schema.Literal("waitlist-confirmed"),
+    variables: WaitlistConfirmedEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
+    type: Schema.Literal("waitlist-accepted"),
+    variables: WaitlistAcceptedEmailVariables,
+  }).mapFields(Struct.assign(EmailPayloadFields.fields)),
+  Schema.Struct({
     type: Schema.Literal("platform-invitation"),
     variables: Schema.Struct({
       invitationUrl: NonEmptyString,
@@ -149,6 +167,8 @@ export const EmailJobPayload = Schema.Union([
 ]);
 
 export type EmailJobType = typeof EmailJobType.Type;
+export type WaitlistConfirmedEmailVariables = typeof WaitlistConfirmedEmailVariables.Type;
+export type WaitlistAcceptedEmailVariables = typeof WaitlistAcceptedEmailVariables.Type;
 export type EmailRecipient = typeof EmailRecipient.Type;
 export type EmailTag = typeof EmailTag.Type;
 export type MagicLinkEmailVariables = typeof MagicLinkEmailVariables.Type;

@@ -11,10 +11,16 @@ import { OrganizationInvitationEmail } from "./emails/organization-invitation.js
 import { PlatformInvitationEmail } from "./emails/platform-invitation.js";
 import { SessionKeyCreatedEmail } from "./emails/session-key-created.js";
 import { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
+import { WaitlistAcceptedEmail } from "./emails/waitlist-accepted.js";
+import { WaitlistConfirmedEmail } from "./emails/waitlist-confirmed.js";
 import { WalletCreatedEmail } from "./emails/wallet-created.js";
 
 export const renderEmail = (input: SendEmailProps): ReactElement => {
   switch (input.type) {
+    case "waitlist-confirmed":
+      return <WaitlistConfirmedEmail {...input.variables} />;
+    case "waitlist-accepted":
+      return <WaitlistAcceptedEmail {...input.variables} />;
     case "platform-invitation":
       return <PlatformInvitationEmail {...input.variables} />;
     case "connected-account-changed":

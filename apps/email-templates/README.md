@@ -54,6 +54,9 @@ pnpm --filter @namera-ai/email-templates email:assets
 
 ## Templates
 
+- `waitlist-confirmed` — signup acknowledgement, with no access granted yet.
+- `waitlist-accepted` — invite code, expiry and a join button.
+
 - `magic-link` — one-time sign-in link and fallback code.
 - `new-sign-in` — security alert with session details.
 - `organization-invitation` — organization invitation with a review action.
@@ -68,3 +71,6 @@ Update CDN and footer destinations in `packages/emails/src/templates/data.ts`.
 The footer includes X at `https://x.com/namera_ai`. The asset generator includes
 the supplied X mark as `social/x-light.png` and `social/x-dark.png`; sync those
 files from `assets/email-assets/` to the matching CDN paths before deployment.
+
+The waitlist templates are registered for rendering and available in preview.
+Automatic sending from signup and acceptance workflows is not wired yet.

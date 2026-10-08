@@ -14,3 +14,7 @@ export { SessionKeyRevokedEmail } from "./emails/session-key-revoked.js";
 export type { SessionKeyRevokedEmailProps } from "./emails/session-key-revoked.js";
 export { WalletCreatedEmail } from "./emails/wallet-created.js";
 export type { WalletCreatedEmailProps } from "./emails/wallet-created.js";
+export { WaitlistConfirmedEmail } from "./emails/waitlist-confirmed.js";
+export type { WaitlistConfirmedEmailProps } from "./emails/waitlist-confirmed.js";
+export { WaitlistAcceptedEmail } from "./emails/waitlist-accepted.js";
+export type { WaitlistAcceptedEmailProps } from "./emails/waitlist-accepted.js";

@@ -72,6 +72,12 @@ idempotency key. Development uses an explicit logger provider selected only when
 
 ## Pending
 
+The `waitlist-confirmed` and `waitlist-accepted` payloads, subjects, runtime
+templates and preview entries are implemented and covered by HTML rendering
+tests. Confirmation has no dynamic variables; acceptance requires `inviteCode`,
+`invitationUrl` and `expiresAt`. The acceptance link uses the existing dashboard
+`/auth?invite=...` flow. No waitlist workflow enqueues these emails yet.
+
 - Configure and verify the production sender domain, reply-to, and spam
   placement.
 - Add provider webhooks, bounce/suppression state, and operator alerts.
