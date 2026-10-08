@@ -22,7 +22,7 @@ not a portal callback URI.
 - `/auth`: Google sign-in or email link/eight-digit code.
 - `/auth/verify`: explicit confirmation of an emailed link; opening a link does
   not automatically consume it.
-- `/`: Overview. Successful sign-in navigates here.
+- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day selection.
 - `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: Owner-only admin members table, invitations, role updates, and removal.
@@ -31,8 +31,10 @@ not a portal callback URI.
 Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
-Inter typography, icons, and compact spacing follow the dashboard. These pages
-other than Team, Invites and Waitlist remain empty scaffolds. Team uses the dashboard's DataGrid,
+Inter typography, icons, and compact spacing follow the dashboard. The sidebar
+header menu offers owner-only member management and logout; successful logout
+discards the in-memory query cache through a document navigation.
+Team uses the dashboard's DataGrid,
 profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
 Only operator/viewer roles can be assigned; the owner cannot be edited or removed.
 Removed members remain visible as historical rows without management actions.
@@ -70,6 +72,12 @@ sign-in in the same tab, or reopen the original invitation link after signing in
 Browser telemetry follows the dashboard runtime through server-owned `/t/*` proxy
 endpoints under `namera-admin-portal`; optional `VITE_TELEMETRY_SERVICE_VERSION`
 identifies the deployed build. No provider credentials enter the browser.
+
+Overview reads one typed internal endpoint, cached for sixty seconds on the
+server. Cards show lifetime totals; period details and charts use zero-filled
+UTC days. Only confirmed executions and successful signatures count. The page
+does not poll. All active roles can read it; authorization is rechecked even
+when the server snapshot is cached.
 
 Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
 and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in

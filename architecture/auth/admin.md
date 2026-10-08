@@ -22,8 +22,16 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | `invites:manage`                    | Yes   | Yes      | No     |
 | `waitlist:read`                     | Yes   | Yes      | Yes    |
 | `waitlist:accept`                   | Yes   | Yes      | No     |
+| `overview:read`                     | Yes   | Yes      | Yes    |
 
 Only implemented permissions are defined.
+
+The sidebar's owner-only member action opens Team. Logout uses
+`DELETE /auth/platform/logout` with `PlatformSessionAuthorization`, exact-origin
+protection and the existing session-revocation workflow/cookie clearing.
+It does not require customer organization membership or active platform membership,
+so suspended/removed admins can still end their verified browser session.
+The route is excluded from OpenAPI and uses existing session audit/telemetry.
 
 ## Endpoints
 
@@ -31,23 +39,24 @@ All routes below are excluded from published OpenAPI. `/internal/*` carries
 `AdminAuthorization`; invitation acceptance uses `PlatformSessionAuthorization`
 because the invitee is not a member yet.
 
-| Method | Path                                | Access                                             |
-| ------ | ----------------------------------- | -------------------------------------------------- |
-| GET    | `/internal/me`                      | Active member; identity and effective permissions  |
-| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters  |
-| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one |
-| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code              |
-| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters        |
-| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite     |
-| GET    | `/internal/members`                 | Owner; team including historical removed members   |
-| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                     |
-| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                         |
-| DELETE | `/internal/members/:id`             | Owner; soft removal                                |
-| POST   | `/internal/ownership/transfer`      | Owner; active target member                        |
-| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor         |
-| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend |
-| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                   |
-| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body         |
+| Method | Path                                | Access                                              |
+| ------ | ----------------------------------- | --------------------------------------------------- |
+| GET    | `/internal/me`                      | Active member; identity and effective permissions   |
+| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity |
+| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters   |
+| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one  |
+| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code               |
+| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters         |
+| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite      |
+| GET    | `/internal/members`                 | Owner; team including historical removed members    |
+| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                      |
+| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                          |
+| DELETE | `/internal/members/:id`             | Owner; soft removal                                 |
+| POST   | `/internal/ownership/transfer`      | Owner; active target member                         |
+| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor          |
+| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend  |
+| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                    |
+| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body          |
 
 Team writes, beta-invite writes and acceptance require an active verified session,
 with no additional recent-sign-in window. New browser sessions last seven days.
@@ -147,7 +156,8 @@ listing, email/status filters, cursor pagination, single/batch creation, one-tim
 code/link copying, redeemer display metadata and confirmed revocation. Its atoms,
 mutation invalidation and permission guards follow the Team conventions. Waitlist
 implements email/status filters, 25-row pagination and confirmed acceptance with
-an email-bound invite and durable email job. Overview remains a placeholder;
+an email-bound invite and durable email job. Overview shows six lifetime totals,
+selected-period counts and daily growth/activity charts;
 the unused Activity page and navigation entry have been removed.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
@@ -178,3 +188,30 @@ HTTP tests cover role separation, cookie-only auth, origin and session guards,
 email and Google admission, invitation lifecycle, replay, owner protection and
 transfer, audit, and immediate revocation. Run lifecycle races against the
 disposable PostgreSQL lane as well as PGlite.
+
+## Overview
+
+`GET /internal/overview?period=30d` accepts `7d`, `30d` (default), or `90d`.
+The application shares one 90-day snapshot per process for sixty seconds across
+all periods and roles. Concurrent misses share the refresh; failures are not
+cached. Session and current membership/permission checks run on every request,
+including cache hits. The protected loader and hooks share the browser atom
+registry; no background polling is added.
+
+PostgreSQL counts users, waitlist entries, wallets, session keys, confirmed
+execution records and succeeded signature operations across organizations.
+Daily buckets are zero-filled UTC dates, including the partial current day.
+Signatures use completion time, not reservation time. Totals count retained rows;
+hard-deleted resources cannot be reconstructed. Session-key active/revoked and
+pending-waitlist counts reflect stored status at refresh time.
+
+The repository bounds query concurrency to two. Lifetime counts still scan
+retained tables once per cache refresh, so large deployments may need indexed
+rollups; this is not a constant-cost counter system or a transactionally frozen
+snapshot. No Axiom queries, new tables or migrations are required.
+Read-only refresh/get/repository spans and existing bounded HTTP telemetry cover
+the endpoint; no audit event or new metric series is needed.
+
+Integration tests cover UTC boundaries, empty periods, all-role reads, sixty-second
+cache expiry, revoked access on a cache hit, expired sessions, and completed
+operations versus signature reservations.

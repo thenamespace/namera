@@ -4,6 +4,7 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentAdmin, CurrentPlatformSession, NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 
+import { AuthCookieConfig, clearAuthCookie } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 const writer = Effect.gen(function* () {
@@ -12,7 +13,20 @@ const writer = Effect.gen(function* () {
   return admin;
 });
 
-export const PlatformRoutes = Layer.merge(
+export const PlatformRoutes = Layer.mergeAll(
+  HttpApiBuilder.group(NameraApi, "platformSession", (handlers) =>
+    Effect.gen(function* () {
+      const app = yield* Application;
+      const cookieConfig = yield* AuthCookieConfig;
+      return handlers.handle("logout", () =>
+        Effect.gen(function* () {
+          const context = yield* CurrentPlatformSession;
+          yield* app.session.logout(context.sessionId, context.userId);
+          yield* clearAuthCookie(cookieConfig.secure);
+        }),
+      );
+    }),
+  ),
   HttpApiBuilder.group(NameraApi, "platform", (handlers) =>
     Effect.gen(function* () {
       const app = yield* Application;

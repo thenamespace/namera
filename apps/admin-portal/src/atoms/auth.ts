@@ -20,3 +20,4 @@ export const googleConfigurationAtom = NameraClient.query("google", "configurati
 export const startGoogleMutation = NameraClient.mutation("google", "start");
 export const requestMagicLinkMutation = NameraClient.mutation("magicLink", "request");
 export const verifyMagicLinkMutation = NameraClient.mutation("magicLink", "verify");
+export const logoutMutation = NameraClient.mutation("platformSession", "logout");

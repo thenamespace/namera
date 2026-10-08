@@ -7,6 +7,7 @@ import { PlatformPermission, platformPermissions } from "../../src/model/auth/pl
 describe("platform permissions", () => {
   it("grants team administration only to owners and access management to operators", () => {
     expect(platformPermissions.owner).toEqual([
+      "overview:read",
       "team:manage",
       "ownership:transfer",
       "invites:read",
@@ -15,12 +16,13 @@ describe("platform permissions", () => {
       "waitlist:accept",
     ]);
     expect(platformPermissions.operator).toEqual([
+      "overview:read",
       "invites:read",
       "invites:manage",
       "waitlist:read",
       "waitlist:accept",
     ]);
-    expect(platformPermissions.viewer).toEqual(["invites:read", "waitlist:read"]);
+    expect(platformPermissions.viewer).toEqual(["overview:read", "invites:read", "waitlist:read"]);
   });
 
   it.each(["users:read", "waitlist:delete", "invites:create", "invites:revoke"])(

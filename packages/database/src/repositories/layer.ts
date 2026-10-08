@@ -37,6 +37,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   AddressMetadataRepository,
+  AdminOverviewRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
@@ -98,6 +99,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    adminOverview: AdminOverviewRepository["Service"];
     addressMetadata: AddressMetadataRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
@@ -165,6 +167,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const wallet = yield* WalletRepository;
       const addressMetadata = yield* AddressMetadataRepository;
       const dashboardOverview = yield* DashboardOverviewRepository;
+      const adminOverview = yield* AdminOverviewRepository;
       const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
@@ -218,6 +221,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          adminOverview,
           addressMetadata,
           dashboardOverview,
           execution,
@@ -252,6 +256,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         WaitlistRepository.layer,
         AddressMetadataRepository.layer,
         DashboardOverviewRepository.layer,
+        AdminOverviewRepository.layer,
         ApiKeyRepository.layer,
         OAuthAuthorizationRepository.layer,
         OAuthAuthorizationCodeRepository.layer,

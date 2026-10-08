@@ -85,6 +85,8 @@ const staticHttpRoutes = new Set([
   "/internal/me",
   "/internal/invites",
   "/internal/waitlist",
+  "/internal/overview",
+  "/auth/platform/logout",
   "/internal/members",
   "/internal/ownership/transfer",
   "/internal/member-invitations",
