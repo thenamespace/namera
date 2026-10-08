@@ -22,16 +22,26 @@ not a portal callback URI.
 - `/auth`: Google sign-in or email link/eight-digit code.
 - `/auth/verify`: explicit confirmation of an emailed link; opening a link does
   not automatically consume it.
-- `/`: protected, intentionally empty. Successful sign-in navigates here.
+- `/`: Overview. Successful sign-in navigates here.
+- `/waitlist`: Waitlist.
+- `/invites`: Beta invites.
+- `/team`: Admin team.
+- `/activity`: Admin activity.
+
+All five protected pages are empty scaffolds with a shared UIKit inset sidebar,
+active navigation, tooltips, and a responsive off-canvas menu. The page header
+toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
+Inter typography, icons, and compact spacing follow the dashboard. These pages
+do not fetch operational data or expose management actions yet.
 
 The browser sends the API's HttpOnly session cookie with credentials enabled.
-`/internal/me` verifies active platform membership before allowing the home route;
+`/internal/me` verifies active platform membership in the shared protected layout;
 an ordinary customer session is not admin access. No shared admin token is stored
 in browser storage. Cross-site deployments must satisfy the API cookie policy;
 deploy the portal and API on same-site HTTPS origins.
 
-Team invitation acceptance, waitlist, and beta-invite screens are not implemented
-yet. Backend authorization and owner bootstrap are documented in
+Team invitation acceptance, role-specific controls, and operational page contents
+are not implemented yet. Backend authorization and owner bootstrap are documented in
 [platform admin authorization](../../architecture/auth/admin.md).
 The prior UI is preserved in `apps/admin-portal-old`, excluded from the workspace.
 

@@ -1,9 +1,10 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { currentAdminAtom } from "@/atoms/auth";
 import { prefetchQuery } from "@/atoms/prefetch";
+import { AdminSidebar } from "@/components/sidebar";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated")({
   loader: async ({ context, abortController }) => {
     context.atomRegistry.refresh(currentAdminAtom);
     const access = await prefetchQuery(
@@ -13,5 +14,13 @@ export const Route = createFileRoute("/")({
     );
     if (access.status !== "authorized") throw redirect({ to: "/auth", replace: true });
   },
-  component: () => null,
+  component: AuthenticatedLayout,
 });
+
+function AuthenticatedLayout() {
+  return (
+    <AdminSidebar>
+      <Outlet />
+    </AdminSidebar>
+  );
+}

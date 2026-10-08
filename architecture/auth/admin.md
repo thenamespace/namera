@@ -126,7 +126,9 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 The old token-based SPA is archived in `apps/admin-portal-old` and excluded from
 the workspace. The replacement `apps/admin-portal` implements `/auth` with Google
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
-protected, intentionally empty `/`. It uses UIKit and the dashboard's Effect
+protected scaffolds at `/`, `/waitlist`, `/invites`, `/team`, and `/activity`.
+All share one membership-guarded layout and the dashboard-style UIKit sidebar;
+page content and role-specific controls are not implemented. It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
 
@@ -139,7 +141,7 @@ client-controlled cross-origin redirect or separate admin credential.
 
 Invitation acceptance UI, waitlist acceptance + email transaction, beta-invite
 screens, and their replacement APIs remain future work. Do not treat the empty
-home route as an implemented operations console.
+page scaffolds as an implemented operations console.
 
 HTTP tests cover role separation, cookie-only auth, origin/freshness guards,
 email and Google admission, invitation lifecycle, replay, owner protection and
