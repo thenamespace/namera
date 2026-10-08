@@ -1,6 +1,7 @@
 export const telemetryData = {
   serviceNames: {
     dashboard: "namera-dashboard",
+    adminPortal: "namera-admin-portal",
     server: "namera-server",
   },
   browserExportInterval: "1 second",

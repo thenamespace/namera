@@ -60,12 +60,24 @@ export const CorsMiddleware = Layer.unwrap(
       credentials: true,
       maxAge: 86400,
     });
+    const telemetryCors = HttpMiddleware.cors({
+      allowedOrigins: [
+        config.corsOrigin,
+        ...Option.toArray(config.adminOrigin).map((url) => url.origin),
+      ],
+      allowedMethods: ["POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type"],
+      credentials: false,
+      maxAge: 86400,
+    });
 
     return HttpRouter.middleware(
       (httpEffect) =>
         Effect.gen(function* () {
           const request = yield* HttpServerRequest.HttpServerRequest;
           const path = new URL(request.url, "http://localhost").pathname;
+          if (["/t/traces/v1", "/t/logs/v1", "/t/metrics/v1"].includes(path))
+            return yield* telemetryCors(httpEffect);
           if (
             [
               "/auth/google/configuration",

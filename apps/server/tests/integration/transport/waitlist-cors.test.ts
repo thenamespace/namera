@@ -16,6 +16,7 @@ import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 
 const routes = Layer.mergeAll(
   HttpRouter.add("POST", "/waitlist", HttpServerResponse.empty()),
+  HttpRouter.add("POST", "/t/traces/v1", HttpServerResponse.empty()),
   HttpRouter.add("GET", "/internal/me", HttpServerResponse.empty()),
   HttpRouter.add("POST", "/auth/platform-invitations/accept", HttpServerResponse.empty()),
   HttpRouter.add("GET", "/wallets", HttpServerResponse.empty()),
@@ -39,6 +40,11 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
       const handler = yield* HttpRouter.toHttpEffect(routes);
       for (const [path, method, origin, expected] of [
         ["/waitlist", "POST", "https://www.example.com", true],
+        ["/t/traces/v1", "OPTIONS", "https://admin.example.com", true],
+        ["/t/traces/v1", "POST", "https://admin.example.com", true],
+        ["/t/traces/v1", "POST", "https://app.example.com", true],
+        ["/t/traces/v1", "POST", "https://www.example.com", false],
+        ["/t/traces/v1", "POST", "https://evil.example.com", false],
         ["/waitlist", "OPTIONS", "https://www.example.com", true],
         ["/waitlist", "POST", "https://evil.example.com", false],
         ["/internal/me", "GET", "https://www.example.com", false],
@@ -78,9 +84,9 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
         );
         if (expected) expect(response?.headers["access-control-allow-origin"]).toBe(origin);
         else expect(response?.headers["access-control-allow-origin"]).not.toBe(origin);
-        if (expected && origin === "https://admin.example.com")
+        if (expected && origin === "https://admin.example.com" && !path.startsWith("/t/"))
           expect(response?.headers["access-control-allow-credentials"]).toBe("true");
-        if (path === "/waitlist")
+        if (path === "/waitlist" || path.startsWith("/t/"))
           expect(response?.headers["access-control-allow-credentials"]).toBeUndefined();
         if (path === "/waitlist" && method === "OPTIONS") {
           expect(response?.headers["access-control-allow-methods"]).toBe("POST, OPTIONS");

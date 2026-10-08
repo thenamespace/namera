@@ -19,6 +19,13 @@ Production uses separate trace, log, and metric datasets with a redacted Axiom
 token. The browser only knows server proxy paths. Proxy requests are content-
 type checked, body bounded, timed out, rate limited, and untraced.
 
+The admin portal uses the same browser exporter/runtime pattern, with service
+identity `namera-admin-portal` and normalized HTTP span names. `/internal/me`
+probes are untraced. The three `/t/*/v1` endpoints accept non-credentialed POSTs
+from only the configured dashboard and admin origins; landing and arbitrary origins
+are not admitted by CORS. Browser tests disable exporters. Existing server workflow
+spans and transactional platform audit events remain authoritative for team changes.
+
 ## Traces
 
 Google callback paths are excluded from automatic HTTP tracing even with query
