@@ -28,8 +28,8 @@ export const WaitlistAcceptedEmail = ({
         </EmailDetails>
         <EmailAction href={invitationUrl}>Join Namera</EmailAction>
         <Text className="mt-5 mb-0 text-sm leading-6 text-email-light-muted dark:text-email-dark-muted">
-          Sign in with the email address that received this invitation. Your invite is included in
-          the link. If you're asked for a code, enter the one above.
+          Your invite is included in the link. Sign in to join Namera, and enter the code above if
+          prompted.
         </Text>
         <EmailNotice>
           This invite can be used once. Keep it for yourself and do not forward this email.

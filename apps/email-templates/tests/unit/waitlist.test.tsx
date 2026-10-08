@@ -25,7 +25,8 @@ test("waitlist acceptance shows the invite, expiry and join link", async () => {
   assert.ok(html.includes("Oct 15, 2026"));
   assert.ok(html.includes("Join Namera"));
   assert.ok(html.includes('href="https://dashboard.namera.ai/auth?invite=ABC234"'));
-  assert.ok(html.includes("Sign in with the email address that received this invitation."));
+  assert.ok(html.includes("Your invite is included in the link."));
+  assert.ok(!html.includes("Sign in with the email address that received this invitation."));
   assert.ok(!html.includes("If the button does not work"));
 });
 
