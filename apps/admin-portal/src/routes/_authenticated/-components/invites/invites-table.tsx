@@ -13,7 +13,12 @@ import {
   Select,
   type DataGridColumn,
 } from "@namera-ai/ui";
-import { Add01Icon, HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
+import {
+  Add01Icon,
+  CancelCircleIcon,
+  HugeiconsIcon,
+  MoreHorizontalIcon,
+} from "@namera-ai/ui/icons";
 
 import { PermissionGuard, manageInvitesPermission } from "@/components/permission";
 import { MemberDisplay, EmailDisplay } from "@/components/team-display";
@@ -95,16 +100,6 @@ const columnsFor = (
       ),
   },
   {
-    id: "reference",
-    header: "Reference",
-    width: 160,
-    cell: (invite) => (
-      <span className="text-muted select-all text-xs" title={invite.id}>
-        {invite.id.slice(-12)}
-      </span>
-    ),
-  },
-  {
     id: "actions",
     header: "",
     width: 48,
@@ -125,6 +120,7 @@ const columnsFor = (
             <Dropdown.Popover className="min-w-44">
               <Dropdown.Menu onAction={() => revoke(invite)}>
                 <Dropdown.Item id="revoke" textValue="Revoke code" variant="danger">
+                  <HugeiconsIcon className="size-4 text-danger" icon={CancelCircleIcon} />
                   <Label>Revoke code</Label>
                 </Dropdown.Item>
               </Dropdown.Menu>
@@ -160,7 +156,7 @@ export function InvitesTable() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center">
           <SearchField
-            aria-label="Search bound email"
+            aria-label="Search email"
             className="w-full sm:max-w-80"
             value={emailInput}
             onChange={(value) => {
@@ -170,7 +166,7 @@ export function InvitesTable() {
           >
             <SearchField.Group>
               <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search bound email…" />
+              <SearchField.Input placeholder="Search email…" />
               <SearchField.ClearButton aria-label="Clear email search" />
             </SearchField.Group>
           </SearchField>
@@ -209,7 +205,7 @@ export function InvitesTable() {
             onPress={() => setCreating(true)}
           >
             <HugeiconsIcon icon={Add01Icon} />
-            Create invite codes
+            Create
           </Button>
         </PermissionGuard>
       </div>
@@ -239,28 +235,30 @@ export function InvitesTable() {
           variant="secondary"
         />
       )}
-      <div className="flex items-center justify-end gap-3">
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="tertiary"
-            isDisabled={!cursors.length || invites.isFetching}
-            onPress={() => setCursors((previous) => previous.slice(0, -1))}
-          >
-            Previous
-          </Button>
-          <Button
-            size="sm"
-            variant="tertiary"
-            isDisabled={!nextCursor || invites.isFetching}
-            onPress={() => {
-              if (nextCursor) setCursors((previous) => [...previous, nextCursor]);
-            }}
-          >
-            Next
-          </Button>
+      {cursors.length > 0 || nextCursor ? (
+        <div className="flex items-center justify-end gap-3">
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="tertiary"
+              isDisabled={!cursors.length || invites.isFetching}
+              onPress={() => setCursors((previous) => previous.slice(0, -1))}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="tertiary"
+              isDisabled={!nextCursor || invites.isFetching}
+              onPress={() => {
+                if (nextCursor) setCursors((previous) => [...previous, nextCursor]);
+              }}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
       {creating ? <CreateInvitesDialog onClose={() => setCreating(false)} /> : null}
       {revoking ? <RevokeInviteDialog invite={revoking} onClose={() => setRevoking(null)} /> : null}
     </div>

@@ -17,6 +17,11 @@ import {
 
 describe("invite code creation", () => {
   const decode = Schema.decodeUnknownSync(CreateInvitesForm);
+  it.each([7, 14, 30])("accepts the %i-day preset in the form and API", (expiresInDays) => {
+    const payload = invitePayload(decode({ count: 1, expiresInDays, email: "" }));
+    expect(payload.expiresInDays).toBe(expiresInDays);
+    expect(Schema.is(CreateBetaInvitesRequest)(payload)).toBe(true);
+  });
   it("supports an unbound single code and normalizes a bound email", () => {
     expect(invitePayload(decode({ count: 1, expiresInDays: 7, email: "" }))).toEqual({
       count: 1,

@@ -5,7 +5,18 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import type { CreateBetaInvitesResponse } from "@namera-ai/protocol/dto";
-import { Button, Field, FieldLabel, FieldError, FieldGroup, Input, Modal } from "@namera-ai/ui";
+import {
+  Button,
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldGroup,
+  Input,
+  Modal,
+  Select,
+  ListBox,
+  Label,
+} from "@namera-ai/ui";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { useCreateInvites } from "@/hooks/invites";
@@ -64,40 +75,71 @@ export function CreateInvitesDialog({ onClose }: { onClose: () => void }) {
                   >
                     <FieldGroup>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {(["count", "expiresInDays"] as const).map((name) => (
-                          <Controller
-                            key={name}
-                            control={form.control}
-                            name={name}
-                            render={({ field, fieldState }) => (
-                              <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor={name}>
-                                  {name === "count" ? "Number of codes" : "Expires in (days)"}
-                                </FieldLabel>
-                                <Input
-                                  {...field}
-                                  id={name}
-                                  type="number"
-                                  min={1}
-                                  max={name === "count" ? 50 : 30}
-                                  value={Number.isNaN(field.value) ? "" : field.value}
-                                  onChange={(event) => {
-                                    field.onChange(event.target.valueAsNumber);
-                                    if (name === "count" && event.target.valueAsNumber !== 1)
-                                      form.setValue("email", "");
-                                  }}
-                                  fullWidth
-                                  variant="secondary"
-                                  disabled={pending}
-                                  aria-invalid={fieldState.invalid}
-                                />
-                                {fieldState.invalid ? (
-                                  <FieldError errors={[fieldState.error]} />
-                                ) : null}
-                              </Field>
-                            )}
-                          />
-                        ))}
+                        <Controller
+                          control={form.control}
+                          name="count"
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <FieldLabel htmlFor="count">Number of codes</FieldLabel>
+                              <Input
+                                {...field}
+                                id="count"
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={Number.isNaN(field.value) ? "" : field.value}
+                                onChange={(event) => {
+                                  field.onChange(event.target.valueAsNumber);
+                                  if (event.target.valueAsNumber !== 1) form.setValue("email", "");
+                                }}
+                                fullWidth
+                                variant="secondary"
+                                disabled={pending}
+                                aria-invalid={fieldState.invalid}
+                              />
+                              {fieldState.invalid ? (
+                                <FieldError errors={[fieldState.error]} />
+                              ) : null}
+                            </Field>
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name="expiresInDays"
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <Select
+                                name={field.name}
+                                selectedKey={field.value}
+                                onSelectionChange={field.onChange}
+                                onBlur={field.onBlur}
+                                isDisabled={pending}
+                                isInvalid={fieldState.invalid}
+                                variant="secondary"
+                                fullWidth
+                              >
+                                <Label>Expires in</Label>
+                                <Select.Trigger ref={field.ref}>
+                                  <Select.Value />
+                                  <Select.Indicator />
+                                </Select.Trigger>
+                                <Select.Popover>
+                                  <ListBox>
+                                    {[7, 14, 30].map((days) => (
+                                      <ListBox.Item key={days} id={days} textValue={`${days} days`}>
+                                        {days} days
+                                        <ListBox.ItemIndicator />
+                                      </ListBox.Item>
+                                    ))}
+                                  </ListBox>
+                                </Select.Popover>
+                              </Select>
+                              {fieldState.invalid ? (
+                                <FieldError errors={[fieldState.error]} />
+                              ) : null}
+                            </Field>
+                          )}
+                        />
                       </div>
                       {count === 1 ? (
                         <Controller

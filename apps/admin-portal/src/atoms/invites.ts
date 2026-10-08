@@ -5,7 +5,7 @@ import { QueryKeys } from "@/atoms/query-keys";
 
 export const invitesAtom = (query: ListBetaInvitesRequest = {}) =>
   NameraClient.query("betaInvite", "list", {
-    query,
+    query: { limit: 25, ...query },
     reactivityKeys: QueryKeys.invites.list,
     timeToLive: "30 seconds",
   });

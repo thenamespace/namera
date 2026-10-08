@@ -5,7 +5,7 @@ import { CreateBetaInvitesRequest } from "@namera-ai/protocol/dto";
 
 export const CreateInvitesForm = Schema.Struct({
   count: CreateBetaInvitesRequest.fields.count,
-  expiresInDays: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 30 })),
+  expiresInDays: Schema.Literals([7, 14, 30]),
   email: Schema.Union([Schema.Literal(""), Email]),
 });
 

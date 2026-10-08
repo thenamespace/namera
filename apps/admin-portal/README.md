@@ -40,12 +40,13 @@ Removed members remain visible as historical rows without management actions.
 
 Invites is readable by every active admin role; owner/operator can create and
 revoke codes. Create 1–50 codes, with optional email binding only for a single
-code, and expiry of 1–30 days. Codes and join links are shown only immediately
+code, and expiry presets of 7, 14, or 30 days. The table shows 25 entries per page
+and hides pagination when there is only one page. Codes and join links are shown only immediately
 after creation and are not saved in browser storage. Copy them before closing.
 No email is sent automatically. Writes require a sign-in within ten minutes;
 the dialogs offer reauthentication when needed. Status is derived server-side
 from redemption, revocation and expiry. The table includes recipient and
-redeemer metadata, with an opaque reference rather than a recoverable code.
+redeemer metadata without exposing invite credentials.
 
 The browser sends the API's HttpOnly session cookie with credentials enabled.
 `/internal/me` verifies active platform membership in the shared protected layout;
