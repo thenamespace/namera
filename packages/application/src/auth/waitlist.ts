@@ -17,7 +17,21 @@ export const makeWaitlistApplication = Effect.gen(function* () {
   const issue = yield* makeIssueBetaInvite;
 
   const join = Effect.fn("application.waitlist.join")(function* (email: Email) {
-    const created = yield* repository.join(email);
+    const created = yield* transaction.run(
+      Effect.gen(function* () {
+        const entry = yield* repository.join(email);
+        if (!entry) return false;
+
+        yield* emails.enqueue({
+          type: "waitlist-confirmed",
+          to: entry.email,
+          idempotencyKey: `waitlist-confirmed:${entry.id}`,
+          expiresAt: DateTime.add(yield* DateTime.now, { days: 1 }),
+          variables: {},
+        });
+        return true;
+      }),
+    );
     if (created) yield* Metric.update(waitlistJoins, 1);
     return { accepted: true as const };
   }, Effect.orDie);

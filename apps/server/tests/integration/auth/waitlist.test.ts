@@ -1,10 +1,12 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Metric } from "effect";
+import { Effect, Exit, Metric } from "effect";
 import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
 import { HttpApiBuilder } from "effect/http-api";
+import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
 import { Database, Repository } from "@namera-ai/database";
+import { EmailJobs, TestEmails } from "@namera-ai/emails";
 import { Passkeys } from "@namera-ai/passkeys";
 import { waitlistJoins } from "@namera-ai/telemetry";
 
@@ -69,7 +71,7 @@ layer(TestLayer)("waitlist", (it) => {
     }),
   );
 
-  it.effect("normalizes email, deduplicates joins, and creates no account or email job", () =>
+  it.effect("normalizes email and queues one confirmation without creating an account", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const before = yield* Metric.value(waitlistJoins);
@@ -87,10 +89,82 @@ layer(TestLayer)("waitlist", (it) => {
       });
       const db = yield* Database;
       expect(yield* db.query.user.findMany()).toHaveLength(0);
-      expect(yield* db.query.emailJob.findMany()).toHaveLength(0);
+      const queued = yield* db.query.emailJob.findMany();
+      expect(queued).toHaveLength(1);
+      const confirmation = queued[0];
+      if (!confirmation) return yield* Effect.die("Missing confirmation email job");
+      expect(confirmation).toMatchObject({
+        type: "waitlist-confirmed",
+        status: "pending",
+        idempotencyKey: `waitlist-confirmed:${entries[0]?.id}`,
+      });
+      expect(confirmation.expiresAt.getTime() - confirmation.availableAt.getTime()).toBe(
+        86_400_000,
+      );
+      const provider = yield* TestEmails;
+      expect(yield* provider.sent).toHaveLength(0);
+      expect(yield* (yield* EmailJobs).processOnce).toBe(1);
+      expect(yield* provider.sent).toMatchObject([
+        { type: "waitlist-confirmed", to: "person@example.com", variables: {} },
+      ]);
       expect(yield* db.query.waitlistEvent.findMany()).toHaveLength(0);
       const after = yield* Metric.value(waitlistJoins);
       expect(after.count - before.count).toBe(1);
+    }),
+  );
+
+  it.effect("rolls back the join on enqueue failure and allows a successful retry", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const db = yield* Database;
+      const client = yield* handledApi(NameraApi);
+      const payload = { email: testEmail("enqueue-failure@example.com") };
+      const before = yield* Metric.value(waitlistJoins);
+      yield* db.execute(
+        "ALTER TABLE jobs.email_jobs ADD CONSTRAINT test_waitlist_confirmation_failure CHECK (type <> 'waitlist-confirmed')",
+      );
+      const result = yield* client.waitlist
+        .join({ payload })
+        .pipe(
+          Effect.exit,
+          Effect.ensuring(
+            db
+              .execute(
+                "ALTER TABLE jobs.email_jobs DROP CONSTRAINT test_waitlist_confirmation_failure",
+              )
+              .pipe(Effect.orDie),
+          ),
+        );
+      expect(Exit.isFailure(result)).toBe(true);
+      expect(yield* db.query.waitlist.findMany()).toHaveLength(0);
+      expect(yield* db.query.emailJob.findMany()).toHaveLength(0);
+      expect((yield* Metric.value(waitlistJoins)).count).toBe(before.count);
+      expect(yield* client.waitlist.join({ payload })).toEqual({ accepted: true });
+      expect(yield* db.query.waitlist.findMany()).toHaveLength(1);
+      expect(yield* db.query.emailJob.findMany()).toHaveLength(1);
+    }),
+  );
+
+  it.effect("retries provider failures without another confirmation on repeat joins", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* handledApi(NameraApi);
+      const payload = { email: testEmail("delivery-retry@example.com") };
+      yield* client.waitlist.join({ payload });
+      const jobs = yield* EmailJobs;
+      const provider = yield* TestEmails;
+      yield* provider.failNext();
+      expect(yield* jobs.processOnce).toBe(1);
+      expect(yield* provider.sent).toHaveLength(0);
+      yield* client.waitlist.join({ payload });
+      yield* TestClock.adjust("5 minutes");
+      expect(yield* jobs.processOnce).toBe(1);
+      yield* client.waitlist.join({ payload });
+      expect(yield* jobs.processOnce).toBe(0);
+      expect(yield* provider.sent).toHaveLength(1);
+      expect(yield* (yield* Database).query.emailJob.findMany()).toMatchObject([
+        { type: "waitlist-confirmed", status: "sent", attempts: 2 },
+      ]);
     }),
   );
 
@@ -101,6 +175,7 @@ layer(TestLayer)("waitlist", (it) => {
         expect((yield* rawRequest("/waitlist", payload)).status).toBe(400);
       }
       expect(yield* (yield* Database).query.waitlist.findMany()).toHaveLength(0);
+      expect(yield* (yield* Database).query.emailJob.findMany()).toHaveLength(0);
     }),
   );
 
@@ -115,6 +190,7 @@ layer(TestLayer)("waitlist", (it) => {
       );
       expect(results).toEqual([{ accepted: true }, { accepted: true }]);
       expect(yield* (yield* Database).query.waitlist.findMany()).toHaveLength(1);
+      expect(yield* (yield* Database).query.emailJob.findMany()).toHaveLength(1);
       expect(yield* (yield* Database).query.waitlistEvent.findMany()).toHaveLength(0);
       expect(yield* (yield* Repository).auth.user.findByEmail(payload.email)).toBeUndefined();
     }),
