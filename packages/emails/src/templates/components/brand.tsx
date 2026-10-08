@@ -2,27 +2,28 @@ import { Column, Img, Row, Text } from "react-email";
 
 import { emailAssets } from "../data.js";
 
-const logoStyle = { width: 32, height: "auto" } as const;
+// Match the wordmark's visible letter height, rather than its full line box.
+const logoStyle = { width: 20, height: "auto" } as const;
 
 export const NameraBrand = () => {
   return (
     <Row>
-      <Column className="w-10 align-middle">
+      <Column className="w-7 align-middle">
         <Img
           alt=""
           className="block dark:hidden"
-          height="26.5"
+          height="16.5625"
           src={emailAssets.brand.light}
           style={logoStyle}
-          width="32"
+          width="20"
         />
         <Img
           alt=""
           className="hidden dark:block"
-          height="26.5"
+          height="16.5625"
           src={emailAssets.brand.dark}
           style={logoStyle}
-          width="32"
+          width="20"
         />
       </Column>
       <Column className="align-middle">
