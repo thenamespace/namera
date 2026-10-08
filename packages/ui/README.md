@@ -22,6 +22,8 @@ the UI package boundary.
 - `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
 - `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
+  Dashboard and admin use `bg-app-canvas` for the outer shell and `bg-background`
+  for page panels. Sidebar row sizing and hover treatments are shared here.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
 
 ## Usage
