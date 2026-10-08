@@ -41,8 +41,4 @@ describe("public waitlist", () => {
       "Network unavailable",
     );
   });
-
-  it.each(["", "not-an-email"])("rejects invalid email input (%#)", (email) => {
-    expect(() => Schema.decodeUnknownSync(JoinWaitlistRequest)({ email })).toThrow();
-  });
 });

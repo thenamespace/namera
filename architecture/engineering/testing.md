@@ -33,10 +33,20 @@ Remove redundant boundary coverage, retired-feature assertions, and checks that
 merely repeat static copy, styling, or constant declarations. Do not add tests only
 to assert that a retired endpoint or table was removed.
 
+Keep the suite focused on security, money movement, persistence, and recovery.
+Do not maintain tests for CLI styling/copy, marketing/blog rendering, email-template
+presentation, ordinary profile/name/code form validation, or role constant lists.
+The email preview app has no test task; email queue delivery remains covered at the
+server boundary. Frontend suites retain session isolation, approval/recovery,
+permission conversion, exact amounts, and request/credential boundaries.
+Application's Google token tests remain because server tests substitute that
+provider and cannot detect broken issuer, audience, signature, or claim validation.
+Protocol tests retain unsafe local-key export and raw-signature boundary checks.
+
 Small pure suites can stay directly in `unit`; related suites belong in domain
-folders such as `auth`, `signing`, or `session-keys`. Rendered component and email
-tests belong in `integration`. Share fixture construction and process lifecycle
-code when multiple suites need it; keep scenario-specific setup and assertions
+folders such as `auth`, `signing`, or `session-keys`. HTTP and real service tests
+belong in `integration`. Share fixture construction and process lifecycle code
+when multiple suites need it; keep scenario-specific setup and assertions
 beside each test.
 
 Vitest must resolve workspace dependencies using the `namera-source` condition
@@ -167,9 +177,7 @@ The manually dispatched CI workflow runs independent check and test jobs:
 - `tests (cli)`: CLI tests on their own runner, so cold subprocess startup does
   not compete with other packages' database initialization or builds.
 - `tests (packages)`: all other package tests except `@namera-ai/server`.
-  Both test groups cap Turbo at two tasks. Vitest configurations cap workers at two;
-  the email suite uses Node's `--test-concurrency=2`. Runner flags stay with their
-  own runner instead of being forwarded through Turbo to incompatible commands.
+  Both test groups cap Turbo at two tasks. Vitest configurations cap workers at two.
   A failed group does not cancel another group's diagnostics.
 - `postgres`: the complete server test suite against disposable PostgreSQL,
   including the PostgreSQL-only concurrency cases. It runs directly through

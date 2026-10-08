@@ -2,18 +2,12 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import * as chainRegistry from "@namera-ai/evm/chains";
-import { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import { CreateSessionKeyFormSchema } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/schema";
 
 const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema));
 const options = { fields: {}, shouldUseNativeValidation: false };
-const signer = {
-  custody: "local",
-  algorithm: "secp256k1",
-  publicKey: `0x04${"11".repeat(64)}`,
-} as const;
 afterEach(() => vi.restoreAllMocks());
 const request = {
   namespace: "eip155",
@@ -30,40 +24,6 @@ const request = {
   },
   policies: [],
 } as const;
-
-describe("optional session description", () => {
-  it.each(["", undefined])(
-    "omits a blank controlled field (%s) from the API payload",
-    async (description) => {
-      const result = await resolve(
-        { ...request, metadata: { ...request.metadata, description } },
-        undefined,
-        options,
-      );
-      expect(result.errors).toEqual({});
-      expect(result.values).not.toHaveProperty("metadata.description");
-      expect(() =>
-        Schema.encodeUnknownSync(CreateSessionKeyRequest)({ ...result.values, signer }),
-      ).not.toThrow();
-    },
-  );
-
-  it("preserves provided text and rejects an oversized description", async () => {
-    const description = "Treasury automation";
-    const accepted = await resolve(
-      { ...request, metadata: { ...request.metadata, description } },
-      undefined,
-      options,
-    );
-    expect(accepted.values).toHaveProperty("metadata.description", description);
-    const rejected = await resolve(
-      { ...request, metadata: { ...request.metadata, description: "x".repeat(1025) } },
-      undefined,
-      options,
-    );
-    expect(rejected.errors).toHaveProperty("metadata.description.message");
-  });
-});
 
 it("rejects paused networks through the actual session creation form resolver", async () => {
   const chain = chainRegistry.chains["base-mainnet"];

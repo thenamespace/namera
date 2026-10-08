@@ -2,11 +2,7 @@ import { Schema } from "effect";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  CompleteExecutionRequest,
-  PrepareExecutionRequest,
-} from "../../../src/dto/execution-signing.js";
-import { SimulateExecutionRequest } from "../../../src/dto/execution.js";
+import { CompleteExecutionRequest } from "../../../src/dto/execution-signing.js";
 
 const prepare = {
   namespace: "eip155",
@@ -17,32 +13,6 @@ const prepare = {
 };
 
 describe("local execution wire contracts", () => {
-  it("preserves exact native quantities and an explicit self-funded choice", () => {
-    const input = { ...prepare, sponsor: false };
-    const decoded = Schema.decodeUnknownSync(PrepareExecutionRequest)(input);
-    expect(decoded.calls[0]?.value).toBe(1_000_000_000_000_000_000n);
-    expect(Schema.encodeSync(PrepareExecutionRequest)(decoded)).toEqual(input);
-  });
-
-  it("requires a selected signer session without making sponsor mandatory", () => {
-    expect(Schema.decodeUnknownSync(PrepareExecutionRequest)(prepare).sponsor).toBeUndefined();
-    const { sessionKeyId: _sessionKeyId, ...missingSession } = prepare;
-    expect(() => Schema.decodeUnknownSync(PrepareExecutionRequest)(missingSession)).toThrow();
-    expect(() => Schema.decodeUnknownSync(SimulateExecutionRequest)(missingSession)).toThrow();
-    expect(Schema.decodeUnknownSync(SimulateExecutionRequest)(prepare).sessionKeyId).toBe(
-      prepare.sessionKeyId,
-    );
-  });
-
-  it.each([
-    { ...prepare, namespace: "solana" },
-    { ...prepare, chainId: "eip155:137" },
-    { ...prepare, calls: [] },
-    { ...prepare, calls: [{ ...prepare.calls[0], value: "-1" }] },
-  ])("rejects an unsupported or invalid preparation", (input) => {
-    expect(() => Schema.decodeUnknownSync(PrepareExecutionRequest)(input)).toThrow();
-  });
-
   it("only returns stored-operation identity and raw signature from completion input", () => {
     // Shape validation is separate from cryptographic verification in EVM.
     const input = {

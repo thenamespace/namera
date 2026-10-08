@@ -513,9 +513,10 @@ the server workflow. It does not provision infra resources.
 
 ## Commands
 
-`tests/unit` groups form validation and domain rules by feature.
-`tests/integration/components` checks rendered component behavior and accessible
-feedback. These suites do not replace browser journeys or server authorization tests.
+`tests/unit` keeps browser session isolation, protected query state, signing approval
+and recovery, permission/amount conversion, and document security checks. General
+form validation, display formatting, and rendered component assertions are omitted.
+These suites do not replace browser journeys or server authorization tests.
 Vitest resolves the same `@/` TypeScript paths as Vite so these tests can import
 the actual shared form schemas. Optional descriptions are normalized by
 `src/lib/form-description.ts`; do not pass an empty string directly to a

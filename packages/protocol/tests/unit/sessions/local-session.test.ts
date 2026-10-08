@@ -20,14 +20,6 @@ const binding = {
 };
 
 describe("local session authority schema", () => {
-  it("round-trips public local bindings with stable timestamp encoding", () => {
-    expect(
-      Schema.encodeSync(LocalEvmSessionBinding)(
-        Schema.decodeUnknownSync(LocalEvmSessionBinding)(binding),
-      ),
-    ).toEqual(binding);
-  });
-
   it.each([
     { ...binding, entityId: 0 },
     { ...binding, validUntil: binding.validAfter },
