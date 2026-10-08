@@ -127,7 +127,13 @@ the workspace. The replacement `apps/admin-portal` implements `/auth` with Googl
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
 protected scaffolds at `/`, `/waitlist`, `/invites`, `/team`, and `/activity`.
 All share one membership-guarded layout and the dashboard-style UIKit sidebar;
-page content and role-specific controls are not implemented. It uses the dashboard's Effect
+Team implements an owner-only member table, invite-by-email, role updates and
+confirmed soft removal. Member rows include user display metadata from the existing
+user join (no new table). Owner and removed rows have no generic edit/remove actions.
+Permission guards hide Team navigation from other roles and prevent member fetching
+on denied direct visits. Mutation hooks own query invalidation; rejected access
+suppresses stale results and rechecks membership. Other pages remain placeholders.
+It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.
 
@@ -138,8 +144,14 @@ then returns to the admin origin; errors after validated state do likewise.
 Unvalidated/expired Google state falls back to the dashboard. There is no
 client-controlled cross-origin redirect or separate admin credential.
 
-Invitation acceptance UI, waitlist acceptance + email transaction, beta-invite
-screens, and their replacement APIs remain future work. Do not treat the empty
+The invitation acceptance page explicitly posts the token only after user action.
+It clears the URL fragment and keeps the token in tab-scoped session storage across
+email-code/Google login, then clears it on acceptance or cancellation. A magic link
+opened in a different tab requires reopening the invitation afterward. `/auth?reauth=true`
+allows existing members to renew their session for the ten-minute write boundary.
+
+Waitlist acceptance + email transaction, beta-invite screens, pending-invitation
+management and ownership/status controls in the UI remain future work. Do not treat the empty
 page scaffolds as an implemented operations console.
 
 HTTP tests cover role separation, cookie-only auth, origin/freshness guards,

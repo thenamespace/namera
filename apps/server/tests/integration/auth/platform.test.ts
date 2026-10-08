@@ -58,6 +58,15 @@ const deliveredToken = Effect.fnUntraced(function* (email: string) {
 });
 
 layer(testLayer)("platform membership lifecycle", (it) => {
+  it.effect("returns the user's display metadata with team members", () =>
+    Effect.gen(function* () {
+      yield* resetPlatformTest;
+      const owner = yield* platformIdentity();
+      const members = yield* owner.client.platform.members();
+      expect(members).toHaveLength(1);
+      expect(members[0]).toMatchObject({ email: owner.user.email, metadata: owner.user.metadata });
+    }),
+  );
   it.effect("serializes first-owner bootstrap and refuses an unverified identity", () =>
     Effect.gen(function* () {
       yield* resetPlatformTest;

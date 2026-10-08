@@ -25,14 +25,18 @@ not a portal callback URI.
 - `/`: Overview. Successful sign-in navigates here.
 - `/waitlist`: Waitlist.
 - `/invites`: Beta invites.
-- `/team`: Admin team.
+- `/team`: Owner-only admin members table, invitations, role updates, and removal.
+- `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 - `/activity`: Admin activity.
 
-All five protected pages are empty scaffolds with a shared UIKit inset sidebar,
+Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
 Inter typography, icons, and compact spacing follow the dashboard. These pages
-do not fetch operational data or expose management actions yet.
+other than Team remain empty scaffolds. Team uses the dashboard's DataGrid,
+profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
+Only operator/viewer roles can be assigned; the owner cannot be edited or removed.
+Removed members remain visible as historical rows without management actions.
 
 The browser sends the API's HttpOnly session cookie with credentials enabled.
 `/internal/me` verifies active platform membership in the shared protected layout;
@@ -40,8 +44,20 @@ an ordinary customer session is not admin access. No shared admin token is store
 in browser storage. Cross-site deployments must satisfy the API cookie policy;
 deploy the portal and API on same-site HTTPS origins.
 
-Team invitation acceptance, role-specific controls, and operational page contents
-are not implemented yet. Backend authorization and owner bootstrap are documented in
+`PermissionGuard` and `usePermissions` gate controls; route loaders check effective
+permissions before fetching team data. Domain hooks own mutation invalidation through
+central query keys. Rejected access clears stale query data and rechecks membership.
+Team writes require a recent sign-in, with a sign-in-again link when needed.
+Invitation fragments are held only in tab-scoped session storage through sign-in,
+removed from URL history, and cleared on acceptance or cancellation. Use email code
+sign-in in the same tab, or reopen the original invitation link after signing in.
+
+Browser telemetry follows the dashboard runtime through server-owned `/t/*` proxy
+endpoints under `namera-admin-portal`; optional `VITE_TELEMETRY_SERVICE_VERSION`
+identifies the deployed build. No provider credentials enter the browser.
+
+Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
+and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in
 [platform admin authorization](../../architecture/auth/admin.md).
 The prior UI is preserved in `apps/admin-portal-old`, excluded from the workspace.
 

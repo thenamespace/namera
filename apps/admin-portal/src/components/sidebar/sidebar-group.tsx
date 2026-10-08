@@ -3,16 +3,21 @@ import { useMatchRoute } from "@tanstack/react-router";
 import { Sidebar } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 
+import { hasPermissions, manageTeamPermission, usePermissions } from "@/components/permission";
+
 import type { NavigationGroup } from "./navigation";
 
 export function SidebarGroup({ group }: { readonly group: NavigationGroup }) {
   const matchRoute = useMatchRoute();
+  const permissions = usePermissions();
 
   return (
     <Sidebar.Group>
       <Sidebar.GroupLabel>{group.label}</Sidebar.GroupLabel>
       <Sidebar.Menu aria-label={`${group.label} navigation`}>
         {group.items.map((item) => {
+          if (item.href === "/team" && !hasPermissions(permissions, manageTeamPermission))
+            return null;
           const isCurrent = Boolean(
             matchRoute({ to: item.href, fuzzy: item.href !== "/", includeSearch: false }),
           );

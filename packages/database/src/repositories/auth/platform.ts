@@ -56,6 +56,7 @@ const make = Effect.gen(function* () {
           createdAt: platformMember.createdAt,
           updatedAt: platformMember.updatedAt,
           email: user.email,
+          metadata: user.metadata,
         })
         .from(platformMember)
         .innerJoin(user, eq(user.id, platformMember.userId))

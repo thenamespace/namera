@@ -1,15 +1,29 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
-export function toQuery<A, E>(atom: Atom.Atom<AsyncResult.AsyncResult<A, E>>) {
+import { currentAdminAtom } from "@/atoms/auth";
+import { isAccessRejection } from "@/lib/access-rejection";
+
+export function toQuery<A, E>(getAtom: () => Atom.Atom<AsyncResult.AsyncResult<A, E>>) {
   return function useQuery() {
+    const atom = getAtom();
     const result = useAtomValue(atom);
+    const refetch = useAtomRefresh(atom);
+    const refreshSession = useAtomRefresh(currentAdminAtom);
+    const error = Option.getOrNull(AsyncResult.error(result));
+    useEffect(() => {
+      if (atom !== currentAdminAtom && isAccessRejection(error)) refreshSession();
+    }, [atom, error, refreshSession]);
     return {
-      data: Option.getOrUndefined(AsyncResult.value(result)),
-      error: AsyncResult.isFailure(result) ? result.cause : null,
+      data: isAccessRejection(error) ? undefined : Option.getOrUndefined(AsyncResult.value(result)),
+      error,
+      refetch,
+      isError: AsyncResult.isFailure(result),
+      isFetching: result.waiting,
+      isLoading: AsyncResult.isInitial(result) && result.waiting,
       isPending: result.waiting || AsyncResult.isInitial(result),
     };
   };
@@ -21,28 +35,36 @@ type Callbacks<A> = {
   onSettled?: () => void;
 };
 
-export function toMutation<Input, A, E>(atom: Atom.AtomResultFn<Input, A, E>) {
+export function toMutation<Input, A, E>(
+  atom: Atom.AtomResultFn<Input, A, E>,
+  options?: { readonly invalidates: readonly string[] },
+) {
   return function useMutation(callbacks: Callbacks<A> = {}) {
     const [result, set] = useAtom(atom);
     const run = useAtomSet(atom, { mode: "promise" });
+    const refreshSession = useAtomRefresh(currentAdminAtom);
     const callbacksRef = useRef(callbacks);
     callbacksRef.current = callbacks;
     const mutate = useCallback(
-      (input: Input) => {
-        void run(input).then(
+      (input: Omit<Input, "reactivityKeys">) => {
+        void run({
+          ...input,
+          ...(options ? { reactivityKeys: options.invalidates } : {}),
+        } as Input).then(
           (value) => {
             callbacksRef.current.onSuccess?.(value);
             callbacksRef.current.onSettled?.();
             return undefined;
           },
           (error: unknown) => {
+            if (isAccessRejection(error)) refreshSession();
             callbacksRef.current.onError?.(error);
             callbacksRef.current.onSettled?.();
             return undefined;
           },
         );
       },
-      [run],
+      [run, refreshSession],
     );
     const reset = useCallback(() => set(Atom.Reset), [set]);
     return {

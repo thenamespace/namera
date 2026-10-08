@@ -18,6 +18,7 @@ import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/t
 import { Route as AuthenticatedWaitlistRouteImport } from './routes/_authenticated/waitlist'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
+import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -63,6 +64,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
+  id: '/invitations/accept',
+  path: '/invitations/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/waitlist': typeof AuthenticatedWaitlistRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/auth/': typeof AuthIndexRoute
 }
 export interface FileRoutesByTo {
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/waitlist': typeof AuthenticatedWaitlistRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
 }
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/waitlist': typeof AuthenticatedWaitlistRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
 }
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/waitlist'
     | '/auth/verify'
+    | '/invitations/accept'
     | '/auth/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/waitlist'
     | '/auth/verify'
+    | '/invitations/accept'
     | '/'
     | '/auth'
   id:
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/waitlist'
     | '/auth/verify'
+    | '/invitations/accept'
     | '/_authenticated/'
     | '/auth/'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  InvitationsAcceptRoute: typeof InvitationsAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/invitations/accept': {
+      id: '/invitations/accept'
+      path: '/invitations/accept'
+      fullPath: '/invitations/accept'
+      preLoaderRoute: typeof InvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -237,6 +257,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  InvitationsAcceptRoute: InvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

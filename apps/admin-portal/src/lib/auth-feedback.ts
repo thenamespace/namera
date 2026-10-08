@@ -1,5 +1,7 @@
 import { Predicate } from "effect";
 
+import { pendingTeamInvitation } from "@/lib/team-invitation";
+
 export function authErrorMessage(error: unknown, fallback: string): string {
   if (Predicate.isTagged(error, "RateLimitExceeded"))
     return "Too many attempts. Wait a minute, then try again.";
@@ -21,5 +23,11 @@ export function authErrorMessage(error: unknown, fallback: string): string {
 }
 
 export const finishSignIn = (response: { body: { returnTo: string } }) => {
-  window.location.replace(response.body.returnTo === "/auth/invite" ? "/auth?denied=true" : "/");
+  window.location.replace(
+    response.body.returnTo === "/auth/invite"
+      ? "/auth?denied=true"
+      : pendingTeamInvitation()
+        ? "/invitations/accept"
+        : "/",
+  );
 };

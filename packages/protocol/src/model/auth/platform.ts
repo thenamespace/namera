@@ -2,6 +2,8 @@ import { Schema } from "effect";
 
 import { Email, UserId } from "#/common/index";
 
+import { UserMetadata } from "./core/user.js";
+
 export const PlatformRole = Schema.Literals(["owner", "operator", "viewer"]);
 export type PlatformRole = typeof PlatformRole.Type;
 export const PlatformAssignableRole = Schema.Literals(["operator", "viewer"]);
@@ -24,7 +26,11 @@ export const PlatformMember = Schema.Struct({
   updatedAt: Schema.DateTimeUtcFromDate,
 });
 export type PlatformMember = typeof PlatformMember.Type;
-export const PlatformMemberView = Schema.Struct({ ...PlatformMember.fields, email: Email });
+export const PlatformMemberView = Schema.Struct({
+  ...PlatformMember.fields,
+  email: Email,
+  metadata: UserMetadata,
+});
 
 export const PlatformInvitation = Schema.Struct({
   id: Schema.String,
