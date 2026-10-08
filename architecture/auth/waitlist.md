@@ -2,7 +2,8 @@
 
 The waitlist is a platform-level interest list, not an account or admission grant.
 Addresses are unverified. Joining does not create a user, organization, session,
-invite, notification, or email job. The landing-page CTA posts to this endpoint
+invite, or in-app notification. A new entry queues one `waitlist-confirmed` email.
+The landing-page CTA posts to this endpoint
 using the shared request/response schemas and `VITE_API_URL` (public build-time
 configuration). It omits credentials, bounds requests to 15 seconds, prevents
 duplicate in-flight submissions, and handles validation, rate-limit and network
@@ -38,6 +39,12 @@ curl --fail-with-body "$API_ORIGIN/waitlist" \
 See [auth catalog](../database/auth-core.md) and [audit catalog](../database/audit.md).
 The unique normalized email constraint and conflict-do-nothing insert make
 concurrent joins idempotent. Repeat joins never change status or timestamps.
+Entry creation and encrypted confirmation enqueue share one transaction; an
+enqueue failure rolls back the entry so a retry can complete both. The job uses
+`waitlist-confirmed:<entry-id>` as its idempotency key and a one-day delivery
+deadline. Delivery is asynchronous through the existing retrying outbox worker.
+Existing entries, including completed entries, do not receive another confirmation
+on repeat joins; this change does not backfill historical signups.
 Existing entries and historical `audit.waitlist_events` and platform events are
 preserved. Public joins deliberately have no separate audit event: the entry’s
 creation timestamp records interest.
@@ -77,7 +84,8 @@ neither. Route labels are bounded templates; email delivery uses existing outbox
 telemetry. No addresses, codes, or invitation URLs enter telemetry attributes.
 
 HTTP tests cover normalization, malformed inputs, duplicate and competing joins,
-join metrics, no account/email side effects, per-IP limits, and 404 responses for
+join metrics, no account creation, confirmation delivery and provider retry,
+enqueue-failure rollback, per-IP limits, and 404 responses for
 retired status/user routes. Management HTTP tests cover role/session/Origin
 enforcement, competing accepts, outbox-failure rollback, provider retry,
 bound invite/email delivery, audit and metrics,

@@ -70,13 +70,16 @@ Resend receives configured sender/reply-to, a bounded timeout, and the business
 idempotency key. Development uses an explicit logger provider selected only when
 `NODE_ENV=development`.
 
-## Pending
-
 The `waitlist-confirmed` and `waitlist-accepted` payloads, subjects, runtime
 templates and preview entries are implemented and covered by HTML rendering
 tests. Confirmation has no dynamic variables; acceptance requires `inviteCode`,
 `invitationUrl` and `expiresAt`. The acceptance link uses the existing dashboard
-`/auth?invite=...` flow. No waitlist workflow enqueues these emails yet.
+`/auth?invite=...` flow. New waitlist joins enqueue confirmation atomically with
+entry creation, with a one-day delivery deadline and no resend for duplicates.
+Admin acceptance atomically queues the acceptance email with the seven-day
+email-bound invite and completed transition.
+
+## Pending
 
 - Configure and verify the production sender domain, reply-to, and spam
   placement.
