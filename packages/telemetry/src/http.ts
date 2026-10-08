@@ -82,9 +82,6 @@ const staticHttpRoutes = new Set([
   "/wallets",
   "/wallets/passkey/registration-options",
   "/waitlist",
-  "/internal/waitlist",
-  "/internal/invites",
-  "/internal/users",
   "/internal/me",
   "/internal/members",
   "/internal/ownership/transfer",
@@ -125,12 +122,6 @@ export const httpRouteTemplate = (url: string): string => {
   }
   const dynamicRoute = dynamicHttpRoutes.find(({ pattern }) => pattern.test(pathname));
   if (dynamicRoute) return dynamicRoute.template;
-  if (/^\/internal\/waitlist\/[^/]+$/.test(pathname)) {
-    return "/internal/waitlist/:id";
-  }
-  if (/^\/internal\/invites\/[^/]+$/.test(pathname)) {
-    return "/internal/invites/:id";
-  }
   if (/^\/wallets\/[^/]+$/.test(pathname)) {
     return "/wallets/:walletId";
   }

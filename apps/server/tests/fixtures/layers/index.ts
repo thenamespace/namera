@@ -15,9 +15,7 @@ import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
 import { RateLimiterLive } from "#/rate-limit";
-import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
-import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
@@ -98,8 +96,6 @@ export const makeTestServerLayer = (
     PlatformRoutes,
     GoogleRoutes,
     ConnectedAccountRoutes,
-    AdminUserRoutes,
-    BetaInviteRoutes,
     WaitlistRoutes,
     AddressMetadataRoutes,
     ApiKeyRoutes,

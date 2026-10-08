@@ -7,9 +7,7 @@ import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { ApplicationLive, ServicesLive } from "#/layers/services";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
 import { AuthorizationLive } from "#/middlewares/authorization";
-import { AdminUserRoutes } from "#/routes/auth/admin";
 import { ApiKeyRoutes } from "#/routes/auth/api-key";
-import { BetaInviteRoutes } from "#/routes/auth/beta-invite";
 import { GoogleRoutes, ConnectedAccountRoutes } from "#/routes/auth/core/google";
 import {
   InvitationRoutes,
@@ -35,8 +33,6 @@ const ApiHandlers = Layer.mergeAll(
   PlatformRoutes,
   GoogleRoutes,
   ConnectedAccountRoutes,
-  AdminUserRoutes,
-  BetaInviteRoutes,
   WaitlistRoutes,
   AddressMetadataRoutes,
   ApiKeyRoutes,

@@ -101,12 +101,10 @@ records remain normal deferred work.
 
 ### Waitlist signals
 
-`namera.waitlist.joins` counts new entries only. `namera.waitlist.status_changes`
-counts actual committed transitions with destination `status` (`pending` or
-`completed`). Duplicate joins and unchanged statuses increment neither counter.
-HTTP route labels strip search queries and replace entry IDs with `:id`.
-Emails, IDs, and admin tokens are never metric attributes. No payload logs are
-added. See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
+`namera.waitlist.joins` counts new entries only, excluding duplicate joins.
+The legacy status-change counter and management route labels are removed.
+Retired routes resolve to `/*`, so emails and IDs never become metric attributes.
+See [waitlist](../auth/waitlist.md) for coverage and deployment boundaries.
 
 ### Dashboard signals
 
@@ -130,8 +128,8 @@ labels.
 - HTTP templates cover the typed API, raw OAuth endpoints and proxy routes.
   A contract-reflection regression test guards new typed routes against falling
   into `/*`. Unknown paths still use that bounded fallback.
-- Beta invite `namera.beta_invite.transitions` records committed `created`,
-  `revoked`, and `redeemed` transitions. Creation counts invites, not batches.
+- Beta invite `namera.beta_invite.transitions` records committed `redeemed`
+  transitions. The retired issuance/revocation workflows no longer emit metrics.
   Organization invitation failures carry only a bounded action and error code.
 - Execution request results and duration carry `stage=prepare|complete|simulate`.
   These count requests (including replay), not unique submissions. Policy

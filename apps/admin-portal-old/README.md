@@ -3,6 +3,8 @@
 Preserved for reference only, excluded from the pnpm workspace. The replacement
 is in `apps/admin-portal`. The commands and deployment files below are historical;
 do not build or deploy this directory against the session-based admin API.
+Its invite, waitlist, and user-management endpoints have also been removed.
+The archived source is historical reference, not a supported API consumer.
 
 Internal operator console for beta invites, user accounts, and the waitlist.
 

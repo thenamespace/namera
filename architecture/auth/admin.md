@@ -21,10 +21,9 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | `waitlist:accept`, `invites:create`, `invites:revoke` | Yes   | Yes      | No     |
 | `team:manage`, `ownership:transfer`                   | Yes   | No       | No     |
 
-`waitlist:accept` is reserved for the upcoming transactional acceptance workflow;
-this change does not implement that workflow. Legacy user-list and arbitrary
-waitlist-status endpoints are temporarily owner-only, pending their removal with
-the portal rebuild. They are not operator/viewer capabilities.
+Waitlist and beta-invite permissions are reserved for the portal rebuild; no
+business-management endpoints currently consume them. The role map and all
+team-management authorization remain unchanged.
 
 ## Endpoints
 
@@ -51,6 +50,11 @@ require an exact dashboard or configured admin Origin, including non-browser
 clients. CORS allows credentials for the configured admin origin, never wildcard.
 Existing security middleware supplies no-store. Rate limits are process-local;
 move to a shared store before horizontally scaling admission controls.
+
+The former invite list/create/revoke, waitlist list/status, and user-list routes
+are removed, including their DTOs, handlers, workflows, query methods, and
+dedicated telemetry. They return 404 even for an authenticated owner. Existing
+records, signup invite redemption, and public waitlist submission are preserved.
 
 ## Invitation lifecycle
 
@@ -85,8 +89,8 @@ the previous owner to operator and promotes the active target in one transaction
 
 State and versioned `audit.platform_events` share that transaction. Acceptance
 attributes its event to the newly created member; bootstrap alone has no actor.
-Legacy beta-invite and waitlist mutations also record the named platform member
-alongside their existing domain audit rows. No credentials or email payloads enter
+Retired beta-invite and waitlist event variants remain decodable for historical
+audit rows; their mutation workflows and emitters have been removed. No credentials or email payloads enter
 audit/logs. Workflow/repository spans use stable names; email delivery and HTTP
 metrics reuse existing bounded telemetry. No new dashboard notifications are added.
 
@@ -134,7 +138,7 @@ Unvalidated/expired Google state falls back to the dashboard. There is no
 client-controlled cross-origin redirect or separate admin credential.
 
 Invitation acceptance UI, waitlist acceptance + email transaction, beta-invite
-screens, and old endpoint removal remain future work. Do not treat the empty
+screens, and their replacement APIs remain future work. Do not treat the empty
 home route as an implemented operations console.
 
 HTTP tests cover role separation, cookie-only auth, origin/freshness guards,

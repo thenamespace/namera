@@ -12,11 +12,11 @@ import { Passkeys } from "@namera-ai/passkeys";
 import { VerificationId } from "@namera-ai/protocol";
 import { MagicLinkToken } from "@namera-ai/protocol/dto";
 
+import { seedBetaInvite } from "../../fixtures/beta-invite.js";
 import { handledApi } from "../../fixtures/http-api-test.js";
 import { resetTestState, signIn, testEmail, setAuthToken } from "../../fixtures/index.js";
 import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { makeTestServerLayer, TestEmails } from "../../fixtures/layers/index.js";
-import { platformClient } from "../../fixtures/platform.js";
 
 const provider = googleIdentityTestLayer({
   alice: {
@@ -383,9 +383,7 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         ).toBeUndefined();
         expect(yield* repository.auth.account.findGoogle("google-alice")).toBeUndefined();
         if (!("admissionToken" in pending)) return yield* Effect.die("Missing beta proof");
-        const admin = yield* platformClient;
-        const invite = (yield* admin.betaInvite.create({ payload: { count: 1 } })).invites[0];
-        if (!invite) return yield* Effect.die("Missing invite");
+        const invite = yield* seedBetaInvite();
         const client = yield* handledApi(NameraApi, {
           headers: { cookie: `beta-signup=${pending.admissionToken}` },
         });
@@ -408,9 +406,7 @@ layer(GoogleBetaLayer)("Google beta admission", (it) => {
         email: testEmail("alice@gmail.com"),
         metadata: { version: 1 },
       });
-      const admin = yield* platformClient;
-      const invite = (yield* admin.betaInvite.create({ payload: { count: 1 } })).invites[0];
-      if (!invite) return yield* Effect.die("Missing invite");
+      const invite = yield* seedBetaInvite();
       const client = yield* handledApi(NameraApi, {
         headers: { cookie: `beta-signup=${pending.admissionToken}` },
       });

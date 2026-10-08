@@ -17,19 +17,8 @@ export const rateLimitPolicy = {
       window: Duration.minutes(1),
       algorithm: "token-bucket",
     },
-    readsGlobal: {
-      limit: 600,
-      window: Duration.hours(1),
-      algorithm: "token-bucket",
-    },
     writesGlobal: {
       limit: 60,
-      window: Duration.hours(1),
-      algorithm: "fixed-window",
-    },
-    // Minting keeps the previous protective ceiling, now scoped to minting only.
-    inviteCreateGlobal: {
-      limit: 30,
       window: Duration.hours(1),
       algorithm: "fixed-window",
     },

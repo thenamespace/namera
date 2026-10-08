@@ -6,5 +6,4 @@ export * from "./magic-link.js";
 export * from "./oauth.js";
 export * from "./beta-invite.js";
 export * from "./waitlist.js";
-export * from "./admin.js";
 export * from "./google.js";

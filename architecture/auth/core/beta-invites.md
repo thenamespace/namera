@@ -9,20 +9,13 @@ Active platform-team invitations are a narrow exception: after proving the
 invited mailbox, a user may sign up normally, but must separately accept the
 single-use team invitation to obtain any admin authority.
 
-## Operator API
+## Management status
 
-Management uses a verified human session with active platform membership, not a
-shared token. Reads require `invites:read`, creation `invites:create`, revocation
-`invites:revoke`. Writes require an approved Origin. See
-[platform admin authorization](../admin.md) for bootstrap and team lifecycle.
-Issuance/revocation also append the authenticated member to platform audit.
-
-Creation accepts 1–50 invites, an optional 1–30-day lifetime (default seven), and
-optional `email` binding. It returns `invites: [{id, code, url, expiresAt}]`.
-Plaintext codes/links are returned only here; save them privately before sharing.
-The link uses the configured dashboard origin: `/auth?invite=K7MP2X`.
-Revocation returns `revoked: true` only for a new transition; missing, already
-revoked or redeemed IDs return false. It does not remove an admitted user.
+The internal invite list/create/revoke API has been removed for the admin portal
+rebuild. There is currently no supported invite issuance or revocation endpoint.
+Existing invites remain redeemable, subject to expiry, recipient binding, and
+terminal state. Admin authentication and team management are unchanged; see
+[platform admin authorization](../admin.md).
 
 ## Signup lifecycle
 
@@ -53,43 +46,42 @@ than blocking email login. Subsequent login and CLI/MCP authorization need no in
 
 ## Security and persistence
 
-Codes use six cryptographically random characters from
+Existing codes contain six cryptographically random characters from
 `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (30 bits). They are admission credentials, not
 email authentication. Unbound codes admit whoever redeems them first. Stored
 values use the shared HMAC secret with the dedicated `auth.beta-invite.code`
-purpose, not bare hashes vulnerable to offline enumeration. Collisions retry
-without overwriting historical codes. Rotating the HMAC key invalidates unused codes.
+purpose, not bare hashes vulnerable to offline enumeration. Rotating the HMAC key
+invalidates unused codes.
 
-Management validates the session and current platform role, with session attempts/IP and
-30 authenticated operations/hour globally. Signup retains email/IP limits and
+Signup retains email/IP limits and
 adds 120 supplied-code attempts/hour globally for each request/redemption route.
 Redemption also uses the verification IP limit and five attempts per restricted proof.
 These are process-local: run one
-replica until the shared limiter is implemented. Configure trusted ingress IPs.
+replica until the shared limiter is implemented. Ingress must overwrite forwarded
+IP headers and block direct origin access.
 API security middleware applies no-store to responses. Do not log request bodies,
 Authorization headers, plaintext invite codes, response bodies, or invite-link query strings at ingress.
 Dashboard telemetry uses route templates, not invite query values.
 
 `auth.beta_invite` retains issuance, expiry, recipient and terminal state;
-`audit.beta_invite_events` appends created/revoked/redeemed facts in the same
-transaction. Events reference the invite ID and contain no code/token. Failed
-requests and idempotent revocations append no events. Pending email proofs use
+`audit.beta_invite_events` retains historical created/revoked facts and appends
+redeemed facts in the admission transaction. Events reference the invite ID and
+contain no code/token. Failed redemptions append no events. Pending email proofs use
 the existing verification lifecycle, not an admitted-user audit event. Existing user/workspace
 audit events remain unchanged.
 
 ## Deployment and verification
 
-Committed invite transitions increment `namera.beta_invite.transitions` with
-`result=created|revoked|redeemed`. Creation counts each invite in a batch;
-idempotent revocations do not count again. Codes, recipient addresses, and
-invite IDs never become metric attributes.
+Committed redemptions increment `namera.beta_invite.transitions` with
+`result=redeemed`. Issuance/revocation emitters are removed. Codes, recipient
+addresses, and invite IDs never become metric attributes.
 
 Apply the generated migrations through normal startup. No wipe or backfill is
-required. Set `AUTH_INVITE_REQUIRED=true` and bootstrap the platform owner before admitting
-testers. `false` intentionally enables open signup; use it only when explicitly
+required. Set `AUTH_INVITE_REQUIRED=true` to admit testers with existing valid
+invites. New invite issuance awaits the replacement management workflow. `false` intentionally enables open signup; use it only when explicitly
 desired. Existing accounts are grandfathered in either mode.
 
-HTTP tests cover admin authorization, guarded signup, expiry/revocation, optional
+HTTP tests seed existing invites directly and cover guarded signup, expiry/revocation, optional
 recipient binding, existing-user login, restricted-cookie isolation, proof expiry,
 attempt limits, and competing redemption. Run the same
 suite in the disposable PostgreSQL lane for production-driver concurrency.

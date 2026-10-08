@@ -37,16 +37,13 @@ layer(TestServerLayer)("platform session authorization", (it) => {
       const owner = yield* platformIdentity();
       const viewer = yield* platformIdentity("viewer@example.com", "viewer");
       const operator = yield* platformIdentity("operator@example.com", "operator");
-      expect((yield* viewer.client.adminWaitlist.list({ query: {} })).entries).toEqual([]);
+      expect((yield* viewer.client.platform.me()).member.role).toBe("viewer");
       expect(
-        (yield* viewer.client.betaInvite.create({
-          payload: { count: 1 },
+        (yield* viewer.client.platform.members({
           responseMode: "response-only",
         })).status,
       ).toBe(403);
-      expect(
-        (yield* operator.client.betaInvite.create({ payload: { count: 1 } })).invites,
-      ).toHaveLength(1);
+      expect((yield* operator.client.platform.me()).member.role).toBe("operator");
       expect(
         (yield* operator.client.platform.members({ responseMode: "response-only" })).status,
       ).toBe(403);
@@ -73,13 +70,15 @@ layer(TestServerLayer)("platform session authorization", (it) => {
       yield* resetTestState();
       yield* TestClock.setTime(Date.now());
       const owner = yield* platformIdentity();
+      const viewer = yield* platformIdentity("origin-viewer@example.com", "viewer");
       for (const origin of [undefined, "https://evil.test"]) {
         const client = yield* handledApi(NameraApi, {
           headers: { cookie: owner.headers.cookie, ...(origin ? { origin } : {}) },
         });
         expect(
-          (yield* client.betaInvite.create({
-            payload: { count: 1 },
+          (yield* client.platform.changeStatus({
+            params: { id: viewer.member.id },
+            payload: { status: "suspended" },
             responseMode: "response-only",
           })).status,
         ).toBe(403);
@@ -87,7 +86,7 @@ layer(TestServerLayer)("platform session authorization", (it) => {
       yield* TestClock.adjust("11 minutes");
       expect(
         (yield* owner.client.platform.removeMember({
-          params: { id: owner.member.id },
+          params: { id: viewer.member.id },
           responseMode: "response-only",
         })).status,
       ).toBe(403);

@@ -12,6 +12,5 @@ export * from "./signature.js";
 export * from "./wallet.js";
 export * from "./wallet-key.js";
 export * from "./oauth.js";
-export * from "./waitlist.js";
 export * from "./google.js";
 export * from "./platform.js";

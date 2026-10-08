@@ -134,14 +134,12 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 
 ## Waitlist API
 
-`POST /waitlist` accepts an email publicly. `GET /internal/waitlist` lists entries
-with bounded pagination/search/status filters, and `PATCH /internal/waitlist/:id`
-sets `pending` or `completed`; both require platform membership (the legacy status
-update is owner-only pending replacement). Joining never creates
-an account or sends an email. Set optional `WAITLIST_CORS_ORIGIN` to the landing
-page's exact origin; only the public submission route allows it, without cookies.
-See [waitlist architecture](../../architecture/auth/waitlist.md) for commands,
-constraints, audit, counters, and rate limits. Landing-page wiring is separate.
+`POST /waitlist` accepts an email publicly. Joining never creates an account or
+sends an email. The internal invite, waitlist, and user-management APIs have been
+removed for the admin portal rebuild; admin authentication/team management and
+signup invite redemption remain available. Set optional `WAITLIST_CORS_ORIGIN`
+to the landing page’s exact origin; only public submission allows it, without
+cookies. See [waitlist architecture](../../architecture/auth/waitlist.md).
 
 ## Rate limiting
 
@@ -281,7 +279,7 @@ syntax or database failures fail startup. Remove the variable after success. Set
 `ADMIN_CORS_ORIGIN` for credentialed admin requests and invitation email links.
 Platform-admin groups must opt into this middleware and enforce permissions.
 See [admin authorization](../../architecture/auth/admin.md) and the
-[operator and signup flow](../../architecture/auth/core/beta-invites.md).
+[signup flow](../../architecture/auth/core/beta-invites.md).
 
 Copy `.env.example` to `apps/server/.env` for local development. Server-owned
 values have defaults; composed package configuration remains required unless its
