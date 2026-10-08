@@ -1,5 +1,16 @@
 # @namera-ai/protocol
 
+## 1.2.0
+
+### Minor Changes
+
+- 33c0e76: Add an optional admin surface to email and Google sign-in requests, preserving
+  the configured portal destination through verification and Google callback errors.
+- ad5a126: Add provider-independent platform membership and team invitation contracts with
+  owner, operator and viewer permissions. Internal admin APIs now require a verified
+  browser session instead of the retired shared admin bearer token.
+- 5afe5dc: Add optional Google sign-in and explicit connected-account APIs, with typed errors, account-change notifications, and Google audit events. Existing email sign-in remains supported.
+
 ## 1.1.1
 
 ### Patch Changes
