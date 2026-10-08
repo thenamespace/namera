@@ -12,14 +12,14 @@ disposable PostgreSQL lane, not just PGlite.
 
 ## Logical schemas
 
-| Schema         | Tables                                                                                                                                             | Responsibility                                                          |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys                               | Identity, tenants, management authorization, and delegated credentials. |
-| `core`         | signing keys, legacy wallet keys, wallets, session keys, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                 |
-| `billing`      | accounts, subscriptions, provider events                                                                                                           | Organization entitlements and future provider synchronization.          |
-| `notification` | notifications, recipients, preferences                                                                                                             | Immutable occurrences, inbox state, and delivery preferences.           |
-| `jobs`         | email jobs                                                                                                                                         | Encrypted transactional email outbox.                                   |
-| `audit`        | user events, organization events                                                                                                                   | Append-only typed history.                                              |
+| Schema         | Tables                                                                                                                         | Responsibility                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `auth`         | users, accounts, verifications, sessions, actors, organizations, roles, members, invitations, OAuth tables, API keys           | Identity, tenants, management authorization, and delegated credentials. |
+| `core`         | signing keys, wallets, session keys, grants, policy state/reservations, execution submissions/executions, signature operations | Wallet resources and operation ledgers.                                 |
+| `billing`      | accounts, subscriptions, provider events                                                                                       | Organization entitlements and future provider synchronization.          |
+| `notification` | notifications, recipients, preferences                                                                                         | Immutable occurrences, inbox state, and delivery preferences.           |
+| `jobs`         | email jobs                                                                                                                     | Encrypted transactional email outbox.                                   |
+| `audit`        | user events, organization events                                                                                               | Append-only typed history.                                              |
 
 ## Tenant integrity
 
@@ -112,3 +112,11 @@ measure aggregate-query cost before increasing traffic or worker replicas.
   and terminal operation records.
 - Add query-plan checks for high-volume execution, audit, notification, and
   OAuth-token lookup paths before production traffic grows.
+
+## Retired wallet-key table
+
+`core.wallet_key` has been replaced by `core.signing_key`. The removal migration
+refuses to drop a nonempty legacy table. Before deploying against an older
+database, review and archive or migrate any remaining rows, then clear the
+legacy table explicitly. Managed local and GCP provider support remains in
+`core.signing_key`; this migration does not delete provider keys.

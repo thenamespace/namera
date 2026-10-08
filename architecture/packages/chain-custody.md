@@ -22,7 +22,7 @@ Provider adapters own:
 - algorithm/protection mapping;
 - public-key normalization;
 - payload signing and provider error mapping;
-- provider locator data stored in `core.wallet_key.data`;
+- provider locator data stored in `core.signing_key.data`;
 - test substitutes.
 
 Adding a provider requires protocol-discriminated locator data, configuration/layer, creation/signing implementation, cleanup/compensation analysis, provider-boundary tests, and deployment IAM/runbook documentation.

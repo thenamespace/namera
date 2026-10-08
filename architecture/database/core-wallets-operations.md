@@ -4,42 +4,6 @@ The `core` schema separates key custody, namespace-specific wallet identity, del
 
 Source: [`packages/database/src/schema/core`](../../packages/database/src/schema/core).
 
-## `core.wallet_key` (legacy)
-
-Legacy managed-key record retained temporarily while the signing migration moves
-session operations. New wallet creation does not write or reference this table.
-Private key material remains in the configured provider.
-
-| Column             | PostgreSQL type | Required | Default  | Description                                              |
-| ------------------ | --------------- | -------- | -------- | -------------------------------------------------------- |
-| `id`               | `text`          | Yes      | UUIDv7   | Wallet-key identifier.                                   |
-| `organization_id`  | `text`          | Yes      | —        | Owning tenant.                                           |
-| `provider`         | `text`          | Yes      | —        | Custody provider discriminator.                          |
-| `algorithm`        | `text`          | Yes      | —        | Signing algorithm.                                       |
-| `protection_level` | `text`          | Yes      | —        | Provider-backed protection classification.               |
-| `public_key_hex`   | `text`          | Yes      | —        | Encoded public key used for derivation and verification. |
-| `status`           | `text`          | Yes      | `active` | Key lifecycle state.                                     |
-| `data`             | `jsonb`         | Yes      | —        | Provider-discriminated key locator/configuration.        |
-| `created_at`       | `timestamptz`   | Yes      | `now()`  | Creation time.                                           |
-| `updated_at`       | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                   |
-
-### Keys and uniqueness
-
-- Primary key: `id`.
-- Unique (`id`, `organization_id`) supports tenant-safe wallet references.
-
-### Foreign keys
-
-- `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
-
-### Checks
-
-- Domain values are decoded by protocol models; no explicit SQL check is currently defined for provider, algorithm, protection level, or status.
-
-### Indexes
-
-- (`organization_id`, `status`) for active-key listings.
-
 ## `core.signing_key`
 
 Provider-neutral signing identity used by wallets and, in a later slice,

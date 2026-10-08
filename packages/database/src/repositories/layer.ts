@@ -49,7 +49,6 @@ import {
   SessionKeyPolicyStateRepository,
   SigningKeyRepository,
   SignatureOperationRepository,
-  WalletKeyRepository,
   WalletRepository,
 } from "#/repositories/core/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
@@ -113,7 +112,6 @@ export interface RepositoryService {
     signingKey: SigningKeyRepository["Service"];
     signatureOperation: SignatureOperationRepository["Service"];
     wallet: WalletRepository["Service"];
-    walletKey: WalletKeyRepository["Service"];
   };
   jobs: {
     email: EmailJobRepository["Service"];
@@ -168,7 +166,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const addressMetadata = yield* AddressMetadataRepository;
       const dashboardOverview = yield* DashboardOverviewRepository;
       const adminOverview = yield* AdminOverviewRepository;
-      const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyOperation = yield* SessionKeyOperationRepository;
@@ -235,7 +232,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           signingKey,
           signatureOperation,
           wallet,
-          walletKey,
         },
         jobs: {
           email: emailJob,
@@ -297,7 +293,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SigningKeyRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
-        WalletKeyRepository.layer,
       ),
     ),
   );

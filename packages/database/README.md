@@ -251,7 +251,7 @@ from the user's current memberships.
 
 ## Wallet persistence
 
-`core.wallet_key` stores the public key and opaque provider reference while
+`core.signing_key` stores the public key and custody-specific reference while
 `core.wallet` stores the organization-owned address and namespace-specific
 account data. The repositories expose organization-scoped wallet reads,
 transaction-aware inserts, and metadata-only updates. Provider calls and
