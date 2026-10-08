@@ -47,9 +47,8 @@ successful operations and holds active reservations, preventing concurrent
 requests from crossing the organization's anniversary-period quota.
 
 The exact session must also have owner-approved `onchain.allowSignatures`.
-The server never signs with the wallet owner. The legacy synchronous
-`POST /signatures` route fails closed with `SIGNATURE_UNAVAILABLE` until its
-clients migrate; API-key and CLI actors can use prepare/complete now.
+The server never signs with the wallet owner. The synchronous
+`POST /signatures` endpoint has been removed; clients use prepare/complete.
 
 Preparation reserves one unit for at most five minutes, bounded by session and
 API time-window expiry. Reusing the same actor/idempotency key with different

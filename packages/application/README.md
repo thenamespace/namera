@@ -164,8 +164,7 @@ Execution preparation selects an explicitly granted installed session key and
 persists its unsigned UserOperation together with policy and billing holds.
 Completion verifies the local signature, rechecks authority and expiry under
 locks, and attaches the signed envelope once. The worker submits and reconciles
-that envelope; routine operations never use the root signer. The legacy execute
-method currently fails closed while clients migrate. A successful receipt
+that envelope; routine operations never use the root signer. Execution uses only the prepare/complete workflow. A successful receipt
 settles policy state and creates the execution in the same transaction. A
 definitive failure releases policy state. Timeout or uncertain RPC outcomes
 return `submitted`; `Application.execution.reconcile` later claims a bounded
@@ -204,8 +203,7 @@ rechecks authority under locks, and atomically settles billing, operation status
 and audit. The persisted discriminated message/typed-data payload binds its
 digest, policy hash, actor and grant; signature bytes are never stored or logged.
 Abandoned preparations expire through billing reconciliation. Invalid signatures
-can be retried until expiry, and successful retries do not charge twice. The
-legacy synchronous signing method fails closed. Signature workflows do not
+can be retried until expiry, and successful retries do not charge twice. The synchronous signing method has been removed. Signature workflows do not
 enqueue notifications or emails.
 
 Signature verification is a separate read-only workflow. It requires an active

@@ -79,30 +79,6 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
           return yield* app.execution.simulate({ actor: data, request: payload });
         }),
       )
-      .handle("execute", ({ headers, payload }) =>
-        Effect.gen(function* () {
-          const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["api-key", "cli", "mcp"],
-            requiredPermissions: {
-              "api-key": [],
-              cli: ["execution:execute"],
-              mcp: ["mcp:execute"],
-            },
-          });
-          yield* consumeRateLimit(
-            "execution.api_key",
-            data.actorId,
-            rateLimitPolicy.execution.byApiKey,
-          );
-          return yield* app.execution.execute({
-            actor: data,
-            idempotencyKey: headers["idempotency-key"],
-            request: payload,
-          });
-        }),
-      )
       .handle("getSubmission", ({ params }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;

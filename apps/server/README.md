@@ -76,13 +76,13 @@ requests reserve and settle the sponsored-gas meter. `POST /executions/complete`
 accepts only a submission ID and local secp256k1 signature, verifies the stored
 operation and current authority, and queues its signed envelope for the worker.
 Status polling distinguishes unsigned `reserved`, signed `prepared`, and
-bundler-observed `submitted` attempts. The old `POST /executions` currently fails
-closed while SDK/CLI consumers migrate to the detached flow.
+bundler-observed `submitted` attempts. The synchronous `POST /executions` endpoint has been removed; SDK/CLI
+consumers use the detached flow.
 
 `POST /signatures/prepare` reserves a local signature operation with an internal
 idempotency key; `/signatures/complete` verifies and settles it. The SDK/CLI
 sign locally between these calls. Abandoned reservations are recovered by the
-billing worker. The legacy synchronous `/signatures` route fails closed.
+billing worker. The synchronous `/signatures` endpoint has been removed.
 
 `POST /signatures/verify` verifies the original message or EIP-712 payload for
 an actively granted wallet. It uses ERC-1271 for deployed accounts and ERC-6492

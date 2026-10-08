@@ -181,9 +181,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
             ],
           },
         };
-        expect(yield* client.execution.execute(request).pipe(Effect.flip)).toMatchObject({
-          code: "EXECUTION_UNAVAILABLE",
-        });
         const result = yield* executeRequest(client, request);
         expect(result.status).toBe("confirmed");
         if (result.status !== "confirmed") return yield* Effect.die("Expected a receipt");

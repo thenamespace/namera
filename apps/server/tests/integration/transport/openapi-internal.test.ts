@@ -17,4 +17,17 @@ describe("published OpenAPI specification", () => {
     const spec = OpenApi.fromApi(NameraApi) as { paths: Record<string, unknown> };
     expect(Object.keys(spec.paths)).toContain("/waitlist");
   });
+
+  it("exposes detached execution and signing without the retired synchronous endpoints", () => {
+    const spec = OpenApi.fromApi(NameraApi) as {
+      paths: Record<string, Record<string, unknown>>;
+    };
+    for (const resource of ["executions", "signatures"]) {
+      expect(spec.paths[`/${resource}`]?.post).toBeUndefined();
+      expect(spec.paths[`/${resource}/`]?.post).toBeUndefined();
+      expect(spec.paths[`/${resource}/prepare`]?.post).toBeDefined();
+      expect(spec.paths[`/${resource}/complete`]?.post).toBeDefined();
+    }
+    expect(spec.paths["/executions/"]?.get ?? spec.paths["/executions"]?.get).toBeDefined();
+  });
 });

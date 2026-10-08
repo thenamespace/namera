@@ -24,8 +24,8 @@ cover wire quantities, required signer selection and signature-envelope shape;
 cryptographic correctness is tested in the EVM adapter.
 
 `POST /executions/prepare` and `POST /executions/complete` now implement these
-contracts for granted API-key and CLI actors. The old single-call execution
-method fails closed; SDK, CLI, local MCP and dashboard migration remain pending.
+contracts for granted API-key and CLI actors. The old single-call execution endpoint has been removed. The SDK and CLI
+use prepare/complete with local signing.
 No routine execution falls back to the wallet owner's signing key.
 
 The complete `core.execution_submission` and `core.execution` definitions are

@@ -30,7 +30,7 @@ accepted submissions retain their status/recovery flow.
 Execution and simulation requests select `sessionKeyId` explicitly alongside
 the wallet and chain. Simulation uses that installed session's public-only
 account adapter and API policies; it never previews a different signer. The
-legacy server execution call fails closed. The SDK uses the detached flow below.
+legacy server execution endpoint has been removed. The SDK uses the detached flow below.
 
 `executions.prepare` and `executions.complete` expose the detached transport.
 Preparation owns an internal retry-stable idempotency key. Completion retries

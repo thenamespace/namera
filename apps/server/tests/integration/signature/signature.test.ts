@@ -282,11 +282,6 @@ layer(fixture.layer)("detached signature routes", (it) => {
             },
           }),
         ).toMatchObject({ type: "typed-data", signature: "0x1234" });
-        expect(
-          yield* client.signature
-            .sign({ headers: { "idempotency-key": "legacy" }, payload })
-            .pipe(Effect.flip),
-        ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
         const repository = yield* Repository;
         const operation = yield* repository.core.signatureOperation.findByIdForActor(
           prepared.operationId,

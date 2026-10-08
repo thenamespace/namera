@@ -16,7 +16,7 @@ The result is decoded as protocol `Bytes32`. Digesting is reusable for canonical
 This is the old synchronous path, not the self-custodial beta signing flow.
 Local passkey owners cannot sign silently through this adapter. The public
 signature workflow now uses the detached flow below; the legacy HTTP signing
-route fails closed instead of falling back to an owner key.
+route has been removed. Routine signing never falls back to an owner key.
 
 ```mermaid
 sequenceDiagram
