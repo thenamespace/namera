@@ -80,6 +80,21 @@ messages are prohibited metric labels.
 HTTP metrics exclude `/t/*` to prevent an exporter feedback loop. No-op
 mutations do not increment successful mutation metrics.
 
+Metrics export cumulative snapshots every 60 seconds in the server, dashboard,
+and admin portal, independently of trace batching (one second in browsers, ten
+seconds on the server) and log batching (one second). No signal or instrumented
+observation is sampled out by this cadence change: counters and histograms
+aggregate between exports. Gauges represent their value at collection time.
+Unchanged metrics may still be sent while idle. Use metric chart intervals of
+at least one minute. Normal scoped shutdown retains the exporter's final flush;
+abrupt browser termination can lose observations since the last export.
+
+Exporters transport existing instrumentation; they do not automatically record
+all clicks, uncaught browser errors, or stack traces. Explicit diagnostic events
+must follow the same privacy and bounded-attribute rules. Fast trace/log export
+remains enabled for existing browser workflows. Cadence regression tests exercise
+all three signals with a test clock and captured OTLP requests.
+
 CLI-local MCP tools create `cli.mcp.tool` spans without payloads using Effect.
 The CLI has no telemetry-package dependency, counter, or configured exporter;
 it does not automatically send telemetry from the user's machine. The API no

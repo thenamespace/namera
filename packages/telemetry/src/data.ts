@@ -7,6 +7,7 @@ export const telemetryData = {
   browserExportInterval: "1 second",
   exportInterval: "10 seconds",
   logExportInterval: "1 second",
+  metricsExportInterval: "60 seconds",
   proxyBodyLimit: 2 * 1024 * 1024,
   proxyTimeout: "10 seconds",
   shutdownTimeout: "3 seconds",
