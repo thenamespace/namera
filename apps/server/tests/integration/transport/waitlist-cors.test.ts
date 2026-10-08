@@ -98,7 +98,12 @@ layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
   it.effect("never includes entry IDs or email searches in route metric labels", () =>
     Effect.sync(() => {
       expect(httpRouteTemplate("/waitlist")).toBe("/waitlist");
-      expect(httpRouteTemplate("/internal/waitlist?search=person@example.com")).toBe("/*");
+      expect(httpRouteTemplate("/internal/waitlist?search=person@example.com")).toBe(
+        "/internal/waitlist",
+      );
+      expect(
+        httpRouteTemplate("/internal/waitlist/00000000-0000-4000-8000-000000000001/accept"),
+      ).toBe("/internal/waitlist/:id/accept");
       expect(httpRouteTemplate("/internal/waitlist/00000000-0000-4000-8000-000000000001")).toBe(
         "/*",
       );
