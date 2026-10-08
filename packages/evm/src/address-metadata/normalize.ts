@@ -163,21 +163,3 @@ export const normalizeBlockscoutAddress = (input: {
     provenance: { provider: "blockscout", observedAt: input.observedAt },
   };
 };
-
-export const unknownAddressMetadata = (input: {
-  readonly address: EthereumAddress;
-  readonly chainId: SupportedEvmChainId;
-  readonly observedAt: DateTime.Utc;
-}): EvmAddressMetadataData => ({
-  schemaVersion: 1,
-  namespace: "eip155",
-  chainId: input.chainId,
-  address: input.address,
-  kind: "unknown",
-  identity: { displayName: null, description: null, iconUrl: null },
-  trust: { reputation: "unknown", isScam: false, isSourceVerified: null, signals: [] },
-  tags: [],
-  token: null,
-  contract: null,
-  provenance: { provider: "blockscout", observedAt: input.observedAt },
-});

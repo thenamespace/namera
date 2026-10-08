@@ -3,8 +3,6 @@ export * from "./gas-budget/editor";
 export * from "./chain-allowlist/editor";
 export * from "./native-spend-limit/editor";
 export * from "./network-multi-select";
-export * from "./policy-card";
-export * from "./policy-dialog";
 export * from "./policy-display-card";
 export * from "./policy-editor";
 export * from "./signature/editor";

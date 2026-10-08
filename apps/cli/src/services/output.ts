@@ -79,11 +79,6 @@ export const printValue = Effect.fn("cli.output.printValue")(function* <A>(
     yield* Console.log(line);
 });
 
-export const printLine = Effect.fn("cli.output.printLine")(function* (value: string) {
-  const { quiet } = yield* nameraCommand;
-  if (!quiet) yield* Console.log(value);
-});
-
 export const unwrapResult = <A, E>(result: NameraResult<A, E>): Effect.Effect<A, CliFailure> =>
   result.success ? Effect.succeed(result.data) : Effect.fail(errorFeedback(result.error));
 

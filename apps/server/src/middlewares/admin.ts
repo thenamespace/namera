@@ -12,7 +12,6 @@ import {
 import { AuthConfig } from "@namera-ai/application";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
-import { platformPermissions, type PlatformPermission } from "@namera-ai/protocol/model";
 
 import { clientIdentifier, consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
@@ -86,11 +85,3 @@ export const PlatformSessionAuthorizationLive = Layer.effect(
     });
   }),
 );
-
-export const enforceAdmin = (permission: PlatformPermission) =>
-  Effect.gen(function* () {
-    const admin = yield* CurrentAdmin;
-    if (!platformPermissions[admin.member.role].includes(permission))
-      return yield* new HttpApiError.Forbidden();
-    return admin;
-  });
