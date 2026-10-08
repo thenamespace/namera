@@ -6,6 +6,7 @@ import {
   Button,
   DataGrid,
   Dropdown,
+  Typography,
   Label,
   ListBox,
   SearchField,
@@ -136,7 +137,7 @@ const columnsFor = (
 
 export function InvitesTable() {
   const [emailInput, setEmailInput] = useState("");
-  const [email, setEmail] = useState("");
+  const email = emailInput.trim();
   const [status, setStatus] = useState<BetaInviteStatus | "all">("all");
   const [cursors, setCursors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
@@ -153,33 +154,18 @@ export function InvitesTable() {
   const filtered = Boolean(email) || status !== "all";
   return (
     <div className="grid min-w-0 gap-5">
+      <Typography.Heading level={2} weight="medium" className="mb-3 text-2xl">
+        Invite codes
+      </Typography.Heading>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">Create and manage single-use codes for joining Namera.</p>
-        <PermissionGuard required={manageInvitesPermission}>
-          <Button size="sm" className="self-start sm:self-auto" onPress={() => setCreating(true)}>
-            <HugeiconsIcon icon={Add01Icon} />
-            Create invite codes
-          </Button>
-        </PermissionGuard>
-      </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <form
-          className="flex min-w-0 gap-2 sm:max-w-96"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setEmail(emailInput.trim());
-            setCursors([]);
-          }}
-        >
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center">
           <SearchField
             aria-label="Search bound email"
+            className="w-full sm:max-w-80"
             value={emailInput}
             onChange={(value) => {
               setEmailInput(value);
-              if (!value) {
-                setEmail("");
-                setCursors([]);
-              }
+              setCursors([]);
             }}
           >
             <SearchField.Group>
@@ -188,45 +174,44 @@ export function InvitesTable() {
               <SearchField.ClearButton aria-label="Clear email search" />
             </SearchField.Group>
           </SearchField>
-          <Button type="submit" variant="tertiary" size="sm">
-            Search
+          <Select
+            aria-label="Filter by status"
+            selectedKey={status}
+            variant="secondary"
+            className="w-full sm:w-44"
+            onSelectionChange={(key) => {
+              const value = filters.find((filter) => filter.id === key)?.id;
+              if (value) {
+                setStatus(value as BetaInviteStatus | "all");
+                setCursors([]);
+              }
+            }}
+          >
+            <Select.Trigger>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox items={filters}>
+                {(filter) => (
+                  <ListBox.Item id={filter.id} textValue={filter.label}>
+                    {filter.label}
+                  </ListBox.Item>
+                )}
+              </ListBox>
+            </Select.Popover>
+          </Select>
+        </div>
+        <PermissionGuard required={manageInvitesPermission}>
+          <Button
+            size="sm"
+            className="self-start shrink-0 sm:self-auto"
+            onPress={() => setCreating(true)}
+          >
+            <HugeiconsIcon icon={Add01Icon} />
+            Create invite codes
           </Button>
-        </form>
-        <Select
-          aria-label="Filter by status"
-          selectedKey={status}
-          variant="secondary"
-          className="w-full sm:w-44"
-          onSelectionChange={(key) => {
-            const value = filters.find((filter) => filter.id === key)?.id;
-            if (value) {
-              setStatus(value as BetaInviteStatus | "all");
-              setCursors([]);
-            }
-          }}
-        >
-          <Select.Trigger>
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox items={filters}>
-              {(filter) => (
-                <ListBox.Item id={filter.id} textValue={filter.label}>
-                  {filter.label}
-                </ListBox.Item>
-              )}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-        <Button
-          variant="tertiary"
-          size="sm"
-          isDisabled={invites.isFetching}
-          onPress={invites.refetch}
-        >
-          Refresh
-        </Button>
+        </PermissionGuard>
       </div>
       {invites.error ? (
         <div role="alert" className="flex items-center gap-3 text-sm">
@@ -254,10 +239,7 @@ export function InvitesTable() {
           variant="secondary"
         />
       )}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-muted text-xs">
-          Codes are shown only when created. Newest invites first.
-        </p>
+      <div className="flex items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button
             size="sm"
