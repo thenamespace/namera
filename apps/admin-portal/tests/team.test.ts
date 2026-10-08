@@ -17,17 +17,12 @@ describe("team access and feedback", () => {
     expect(hasPermissions(["ownership:transfer"], manageTeamPermission)).toBe(false);
     expect(hasPermissions(["team:manage"], manageTeamPermission)).toBe(true);
   });
-  it("invalidates rejected access but does not log out on reauthentication or network errors", () => {
+  it("invalidates rejected access but does not log out on network errors", () => {
     expect(isAccessRejection({ _tag: "PlatformAuthError", code: "ADMIN_ACCESS_REQUIRED" })).toBe(
       true,
     );
-    expect(isAccessRejection({ _tag: "PlatformAuthError", code: "RECENT_LOGIN_REQUIRED" })).toBe(
-      false,
-    );
     expect(isAccessRejection(new TypeError("Network unavailable"))).toBe(false);
-    expect(
-      teamErrorMessage({ _tag: "PlatformAuthError", code: "RECENT_LOGIN_REQUIRED" }),
-    ).toContain("Sign in again");
+    expect(teamErrorMessage({ _tag: "Unauthorized" })).toContain("Sign in again");
   });
 });
 

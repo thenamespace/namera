@@ -46,8 +46,9 @@ because the invitee is not a member yet.
 | DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                   |
 | POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body         |
 
-Team writes, beta-invite writes and acceptance require a session created within ten minutes. Re-login
-through normal email/Google authentication provides that proof. All admin writes
+Team writes, beta-invite writes and acceptance require an active verified session,
+with no additional recent-sign-in window. New browser sessions last seven days.
+All admin writes
 require an exact dashboard or configured admin Origin, including non-browser
 clients. CORS allows credentials for the configured admin origin, never wildcard.
 Existing security middleware supplies no-store. Rate limits are process-local;
@@ -70,7 +71,7 @@ preferences because it is requested access correspondence.
 An invited, verified mailbox can complete normal email/Google signup without a
 customer beta code while its invitation and issuing owner remain active. This
 creates a normal user/session, **not** membership. The subsequent explicit accept
-requires the matching verified email, fresh session, live single-use token, and a
+requires the matching verified email, active session, live single-use token, and a
 still-active owner issuer. Existing, suspended or removed members cannot use an
 invitation to escalate/reactivate; the owner must change them explicitly.
 
@@ -161,13 +162,13 @@ The invitation acceptance page explicitly posts the token only after user action
 It clears the URL fragment and keeps the token in tab-scoped session storage across
 email-code/Google login, then clears it on acceptance or cancellation. A magic link
 opened in a different tab requires reopening the invitation afterward. `/auth?reauth=true`
-allows existing members to renew their session for the ten-minute write boundary.
+allows existing members to sign in again explicitly when needed.
 
 Waitlist acceptance + email transaction, pending-team-invitation
 management and ownership/status controls in the UI remain future work. Do not treat the empty
 page scaffolds as an implemented operations console.
 
-HTTP tests cover role separation, cookie-only auth, origin/freshness guards,
+HTTP tests cover role separation, cookie-only auth, origin and session guards,
 email and Google admission, invitation lifecycle, replay, owner protection and
 transfer, audit, and immediate revocation. Run lifecycle races against the
 disposable PostgreSQL lane as well as PGlite.

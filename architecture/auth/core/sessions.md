@@ -2,6 +2,11 @@
 
 Browser sessions authenticate humans. Their complete persistence shape is documented under [`auth.session`](../../database/auth-core.md#authsession).
 
+New email and Google browser sessions expire seven days after sign-in; the cookie
+and persisted expiry use the same policy. This applies to dashboard and admin
+sessions, not CLI/MCP OAuth tokens. Existing sessions keep their persisted expiry
+until they expire or are revoked. Activity does not extend the session lifetime.
+
 ## Validation pipeline
 
 ```mermaid

@@ -271,7 +271,7 @@ parallel API-key route for the same resource.
 
 For private beta, set `AUTH_INVITE_REQUIRED=true` (default). `AdminAuthorization`
 uses the normal HttpOnly user session and active owner/operator/viewer membership;
-the shared `ADMIN_TOKEN` is no longer accepted. Team writes require recent login
+the shared `ADMIN_TOKEN` is no longer accepted. Team writes require an active session
 and an approved Origin. Set `ADMIN_BOOTSTRAP_OWNER_EMAIL` to an existing verified
 user's email to bootstrap the first owner automatically after startup migrations.
 Unset/blank disables it; any existing owner makes it a no-op. Missing/unverified

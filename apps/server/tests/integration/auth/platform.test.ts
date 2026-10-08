@@ -126,6 +126,7 @@ layer(testLayer)("platform membership lifecycle", (it) => {
         yield* resetPlatformTest;
         const owner = yield* platformIdentity();
         const email = testEmail("teammate@example.com");
+        yield* TestClock.adjust("11 minutes");
         const invitation = yield* owner.client.platform.invite({
           payload: { email, role: "operator" },
         });
@@ -137,6 +138,7 @@ layer(testLayer)("platform membership lifecycle", (it) => {
         const client = yield* handledApi(NameraApi, {
           headers: { cookie: `auth-token=${login.cookie.value}`, origin: "http://admin.test" },
         });
+        yield* TestClock.adjust("11 minutes");
         expect((yield* client.platform.me({ responseMode: "response-only" })).status).toBe(403);
         const results = yield* Effect.all(
           Array.from({ length: 4 }, () =>

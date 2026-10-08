@@ -5,8 +5,6 @@ import { toast } from "@namera-ai/ui";
 export function teamErrorMessage(error: unknown): string {
   if (Predicate.isTagged(error, "PlatformAuthError") && "code" in error) {
     switch (error.code) {
-      case "RECENT_LOGIN_REQUIRED":
-        return "Sign in again, then retry. Team changes require a recent sign-in.";
       case "MEMBER_ALREADY_EXISTS":
         return "This email already belongs to a team member.";
       case "MEMBER_NOT_FOUND":

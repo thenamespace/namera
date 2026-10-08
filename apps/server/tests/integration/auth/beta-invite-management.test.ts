@@ -162,11 +162,11 @@ layer(TestServerLayer)("beta invite management", (it) => {
             payload: { count: 1 },
             responseMode: "response-only",
           })).status,
-        ).toBe(403);
+        ).toBe(200);
         expect(
           (yield* owner.client.betaInvite.revoke({ params: { id }, responseMode: "response-only" }))
             .status,
-        ).toBe(403);
+        ).toBe(200);
       }),
   );
 

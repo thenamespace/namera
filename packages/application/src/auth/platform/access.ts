@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Effect } from "effect";
 
 import type { RepositoryService } from "@namera-ai/database";
 import { PlatformAuthError, type SessionId, type UserId } from "@namera-ai/protocol";
@@ -12,7 +12,6 @@ export interface PlatformSession {
 export const requirePlatformSession = Effect.fnUntraced(function* (
   repository: RepositoryService,
   context: PlatformSession,
-  recent = false,
 ) {
   const now = yield* DateTime.now;
   const session = yield* repository.auth.session.findActiveById(
@@ -23,12 +22,6 @@ export const requirePlatformSession = Effect.fnUntraced(function* (
   const user = yield* repository.auth.user.findById(context.userId);
   if (!session || !user?.emailVerified)
     return yield* new PlatformAuthError({ code: "VERIFIED_USER_REQUIRED" });
-  if (
-    recent &&
-    DateTime.toEpochMillis(now) - DateTime.toEpochMillis(session.createdAt) >
-      Duration.toMillis(Duration.minutes(10))
-  )
-    return yield* new PlatformAuthError({ code: "RECENT_LOGIN_REQUIRED" });
   return user;
 });
 
@@ -36,9 +29,8 @@ export const requirePlatformPermission = Effect.fnUntraced(function* (
   repository: RepositoryService,
   context: PlatformSession,
   permission: PlatformPermission,
-  recent = false,
 ) {
-  yield* requirePlatformSession(repository, context, recent);
+  yield* requirePlatformSession(repository, context);
   const member = yield* repository.auth.platform.findMember(context.userId);
   if (
     !member ||

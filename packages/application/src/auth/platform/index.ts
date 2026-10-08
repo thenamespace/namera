@@ -68,7 +68,7 @@ export const makePlatformApplication = Effect.gen(function* () {
       return yield* transactions.run(
         Effect.gen(function* () {
           yield* store.lockTeam();
-          const actor = yield* requirePlatformPermission(repository, context, "team:manage", true);
+          const actor = yield* requirePlatformPermission(repository, context, "team:manage");
           const user = yield* repository.auth.user.findByEmail(input.email);
           if (user && (yield* store.findMember(user.id)))
             return yield* new PlatformAuthError({ code: "MEMBER_ALREADY_EXISTS" });
@@ -123,7 +123,7 @@ export const makePlatformApplication = Effect.gen(function* () {
       return yield* transactions.run(
         Effect.gen(function* () {
           yield* store.lockTeam();
-          const actor = yield* requirePlatformPermission(repository, context, "team:manage", true);
+          const actor = yield* requirePlatformPermission(repository, context, "team:manage");
           const revoked = yield* store.revokeInvitation(id, yield* DateTime.now);
           if (!revoked) return { revoked: false };
           yield* cancelDelivery(id);
@@ -144,7 +144,7 @@ export const makePlatformApplication = Effect.gen(function* () {
       return yield* transactions.run(
         Effect.gen(function* () {
           yield* store.lockTeam();
-          const user = yield* requirePlatformSession(repository, context, true);
+          const user = yield* requirePlatformSession(repository, context);
           const now = yield* DateTime.now;
           const invitation = yield* store.findInvitationByHash(
             yield* crypto.hash({ purpose: cryptoPurpose.platformInvitation, value: token }),
@@ -188,7 +188,7 @@ export const makePlatformApplication = Effect.gen(function* () {
       return yield* transactions.run(
         Effect.gen(function* () {
           yield* store.lockTeam();
-          const actor = yield* requirePlatformPermission(repository, context, "team:manage", true);
+          const actor = yield* requirePlatformPermission(repository, context, "team:manage");
           const target = yield* store.findById(id);
           if (!target) return yield* new PlatformAuthError({ code: "MEMBER_NOT_FOUND" });
           if (target.role === "owner")
@@ -219,12 +219,7 @@ export const makePlatformApplication = Effect.gen(function* () {
       return yield* transactions.run(
         Effect.gen(function* () {
           yield* store.lockTeam();
-          const actor = yield* requirePlatformPermission(
-            repository,
-            context,
-            "ownership:transfer",
-            true,
-          );
+          const actor = yield* requirePlatformPermission(repository, context, "ownership:transfer");
           const target = yield* store.findById(memberId);
           if (!target || target.status !== "active" || target.id === actor.id)
             return yield* new PlatformAuthError({ code: "MEMBER_NOT_FOUND" });

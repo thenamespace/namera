@@ -54,10 +54,7 @@ describe("invite code creation", () => {
       );
     }
   });
-  it("offers reauthentication only for authentication or freshness failures", () => {
-    expect(inviteNeedsSignIn({ _tag: "PlatformAuthError", code: "RECENT_LOGIN_REQUIRED" })).toBe(
-      true,
-    );
+  it("offers reauthentication only for an invalid session", () => {
     expect(inviteNeedsSignIn({ _tag: "Unauthorized" })).toBe(true);
     expect(inviteNeedsSignIn({ _tag: "PlatformAuthError", code: "ADMIN_ACCESS_REQUIRED" })).toBe(
       false,

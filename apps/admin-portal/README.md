@@ -43,8 +43,8 @@ revoke codes. Create 1–50 codes, with optional email binding only for a single
 code, and expiry presets of 7, 14, or 30 days. The table shows 25 entries per page
 and hides pagination when there is only one page. Codes and join links are shown only immediately
 after creation and are not saved in browser storage. Copy them before closing.
-No email is sent automatically. Writes require a sign-in within ten minutes;
-the dialogs offer reauthentication when needed. Status is derived server-side
+No email is sent automatically. Writes use the active login session without a
+separate recent-sign-in requirement. Status is derived server-side
 from redemption, revocation and expiry. The table includes recipient and
 redeemer metadata without exposing invite credentials.
 
@@ -57,7 +57,7 @@ deploy the portal and API on same-site HTTPS origins.
 `PermissionGuard` and `usePermissions` gate controls; route loaders check effective
 permissions before fetching team data. Domain hooks own mutation invalidation through
 central query keys. Rejected access clears stale query data and rechecks membership.
-Team writes require a recent sign-in, with a sign-in-again link when needed.
+Team writes require an active authorized session; expired sessions prompt sign-in.
 Invitation fragments are held only in tab-scoped session storage through sign-in,
 removed from URL history, and cleared on acceptance or cancellation. Use email code
 sign-in in the same tab, or reopen the original invitation link after signing in.

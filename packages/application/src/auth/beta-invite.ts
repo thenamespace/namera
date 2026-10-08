@@ -20,12 +20,7 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
       const result = yield* transaction.run(
         Effect.gen(function* () {
           yield* repository.auth.platform.lockTeam();
-          const actor = yield* requirePlatformPermission(
-            repository,
-            context,
-            "invites:manage",
-            true,
-          );
+          const actor = yield* requirePlatformPermission(repository, context, "invites:manage");
           const actorMemberId = actor.id;
           const invites = [];
           for (let index = 0; index < input.count; index++) {
@@ -77,12 +72,7 @@ export const makeBetaInviteApplication = Effect.gen(function* () {
       const result = yield* transaction.run(
         Effect.gen(function* () {
           yield* repository.auth.platform.lockTeam();
-          const actor = yield* requirePlatformPermission(
-            repository,
-            context,
-            "invites:manage",
-            true,
-          );
+          const actor = yield* requirePlatformPermission(repository, context, "invites:manage");
           const actorMemberId = actor.id;
           const revoked = yield* repository.auth.betaInvite.revoke(id, yield* DateTime.now);
           if (revoked) yield* repository.auth.betaInvite.appendEvent(id, "revoked");

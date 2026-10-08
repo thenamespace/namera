@@ -24,7 +24,7 @@ The admin portal implements three internal, OpenAPI-excluded endpoints:
 - `DELETE /internal/invites/:id`: owner/operator; active codes only. Missing,
   expired, redeemed or already-revoked codes return `{ revoked: false }`.
 
-Writes require a recent verified session and approved Origin, take the team lock,
+Writes require an active verified session and approved Origin, take the team lock,
 recheck permission, and share a transaction with both invite and platform audit
 events. Generation retries random-code collisions without overwriting old codes;
 the complete batch commits or rolls back. Revocation and redemption use
@@ -97,7 +97,7 @@ required. Set `AUTH_INVITE_REQUIRED=true` to admit testers with existing valid
 invites or create codes through the admin portal. `false` intentionally enables open signup; use it only when explicitly
 desired. Existing accounts are grandfathered in either mode.
 
-Management HTTP tests cover authorization, origin/freshness, creation, batch
+Management HTTP tests cover authorization, origin, session validity, creation, batch
 binding rejection, safe projections, audit, filtering, pagination and competing
 revocation/redemption. Admin form tests cover input boundaries and permission
 gates. Admission HTTP tests seed existing invites directly and cover guarded signup, expiry/revocation, optional

@@ -57,11 +57,7 @@ export function MemberDialog({
   const pending = invite.isPending || update.isPending || remove.isPending;
   const error =
     state.type === "invite" ? invite.error : state.type === "role" ? update.error : remove.error;
-  const needsSignIn =
-    Predicate.isTagged(error, "Unauthorized") ||
-    (Predicate.isTagged(error, "PlatformAuthError") &&
-      "code" in error &&
-      error.code === "RECENT_LOGIN_REQUIRED");
+  const needsSignIn = Predicate.isTagged(error, "Unauthorized");
   const isInvite = state.type === "invite";
   const form = useForm<
     typeof CreatePlatformInvitationRequest.Encoded,

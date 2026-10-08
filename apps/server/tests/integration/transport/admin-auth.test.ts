@@ -65,7 +65,7 @@ layer(TestServerLayer)("platform session authorization", (it) => {
     }),
   );
 
-  it.effect("requires an approved Origin for writes and recent login for team changes", () =>
+  it.effect("requires an approved Origin but allows team changes after ten minutes", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       yield* TestClock.setTime(Date.now());
@@ -89,7 +89,7 @@ layer(TestServerLayer)("platform session authorization", (it) => {
           params: { id: viewer.member.id },
           responseMode: "response-only",
         })).status,
-      ).toBe(403);
+      ).toBe(200);
       expect((yield* owner.client.platform.me()).member.role).toBe("owner");
     }),
   );
