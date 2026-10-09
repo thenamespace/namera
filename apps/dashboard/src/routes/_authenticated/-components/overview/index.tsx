@@ -16,6 +16,7 @@ import { useDashboardOverview } from "@/hooks/dashboard";
 import { ActivityChart } from "./activity-chart";
 import { ExecutionSourcesChart } from "./execution-sources-chart";
 import { OverviewKPIGrid } from "./kpi-grid";
+import { QuickActions } from "./quick-actions";
 
 type ActivityView = "daily" | "weekly" | "monthly";
 
@@ -79,7 +80,11 @@ function OverviewContent({ overview }: { overview: GetDashboardOverviewResponse 
 
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
         <ActivityWidget activity={evm.activity} />
-        <ExecutionSourcesChart sources={evm.executionSources} />
+        {evm.executionSources.some((source) => source.count > 0) ? (
+          <ExecutionSourcesChart sources={evm.executionSources} />
+        ) : (
+          <QuickActions />
+        )}
       </div>
 
       <section aria-labelledby="recent-activity-heading">

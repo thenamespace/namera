@@ -51,7 +51,9 @@ accepted by the server. There is no push channel for remote role changes.
 Overview prefetches `GET /dashboard/overview`. Its namespace-discriminated
 response contains resource totals, execution/signature series and execution
 source distribution. The current EVM series has daily, weekly and monthly
-buckets. Recent executions reuse the Activity table; quota and period consumption
+buckets. When the execution-source distribution is empty, the overview shows
+permission-aware quick-action links for account/session-key creation, MCP setup,
+and API-key management instead of the source chart. Recent executions reuse the Activity table; quota and period consumption
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
 
