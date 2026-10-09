@@ -1,12 +1,9 @@
-import { type ReactNode, useCallback, useMemo } from "react";
-
-import { useNavigate } from "@tanstack/react-router";
+import { type ReactNode, useMemo } from "react";
 
 import type { DashboardOverviewActivitySeries } from "@namera-ai/protocol/dto";
-import { Button, Chip, KPI, Tooltip, Typography } from "@namera-ai/ui";
+import { Chip, KPI, Tooltip, Typography } from "@namera-ai/ui";
 import {
   Activity02Icon,
-  Add01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
   HugeiconsIcon,
@@ -18,25 +15,14 @@ import {
 
 type ResourceKPIProps = {
   active: number;
-  createLabel?: string;
   icon: typeof Wallet01Icon;
   info?: string;
-  onCreate?: () => void;
   title: string;
   total: number;
   value: number;
 };
 
-function ResourceKPI({
-  active,
-  createLabel,
-  icon,
-  info,
-  onCreate,
-  title,
-  total,
-  value,
-}: ResourceKPIProps) {
+function ResourceKPI({ active, icon, info, title, total, value }: ResourceKPIProps) {
   return (
     <KPI className="h-28 border p-3">
       <KPI.Header className="gap-0!">
@@ -64,16 +50,11 @@ function ResourceKPI({
       </KPI.Header>
       <KPI.Content className="mt-auto items-end px-2 py-2">
         <KPI.Value className="text-2xl! leading-none!" notation="compact" value={value} />
-        {total === 0 && onCreate !== undefined ? (
-          <Button size="sm" variant="secondary" onPress={onCreate}>
-            <HugeiconsIcon icon={Add01Icon} />
-            {createLabel}
-          </Button>
-        ) : (
+        {total > 0 ? (
           <Chip color={active > 0 ? "success" : "default"} size="sm" variant="soft">
-            <Chip.Label>{total === 0 ? "No resources" : `${active} active`}</Chip.Label>
+            <Chip.Label>{`${active} active`}</Chip.Label>
           </Chip>
-        )}
+        ) : null}
       </KPI.Content>
     </KPI>
   );
@@ -166,32 +147,20 @@ export function OverviewKPIGrid({
   sessionKeys,
   signatures,
 }: OverviewKPIGridProps): ReactNode {
-  const navigate = useNavigate();
-  const createAccount = useCallback(() => {
-    void navigate({ to: "/accounts" });
-  }, [navigate]);
-  const createSessionKey = useCallback(() => {
-    void navigate({ to: "/session-keys" });
-  }, [navigate]);
-
   return (
     <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <ResourceKPI
         active={accounts.active}
-        createLabel="Create account"
         icon={Wallet01Icon}
         info="A smart wallet your agents transact through. You own it with your passkey, and it enforces your rules on every transaction."
-        onCreate={createAccount}
         title="Accounts"
         total={accounts.total}
         value={accounts.total}
       />
       <ResourceKPI
         active={sessionKeys.active}
-        createLabel="Create session key"
         icon={Key01Icon}
         info="A scoped key you grant an agent — limited to the spend, contracts, networks, and expiry you set."
-        onCreate={createSessionKey}
         title="Session keys"
         total={sessionKeys.total}
         value={sessionKeys.total}
