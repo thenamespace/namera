@@ -62,8 +62,9 @@ The phase-2 contract additionally accepts `{type: "namera-managed", provider:
 "1claw"}` without a protection-level claim. It remains rejected by both the HTTP
 gate and the internal creation workflow before billing or provider calls. The
 managed account loader also rejects 1Claw until the provider and EVM integration
-are implemented. No new account namespace, database row shape or runtime provider
-is enabled by this contract change.
+are implemented. Phase 3 adds encrypted credential persistence and a tenant-scoped
+signer reference without changing wallet rows. No new account namespace or runtime
+provider is enabled.
 
 The creation form starts WebAuthn registration after validating account metadata,
 without a recovery acknowledgement checkbox. The account overview retains the

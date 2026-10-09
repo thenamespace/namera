@@ -4,24 +4,53 @@ The `core` schema separates key custody, namespace-specific wallet identity, del
 
 Source: [`packages/database/src/schema/core`](../../packages/database/src/schema/core).
 
+## `core.credentials`
+
+Internal, tenant-scoped encrypted provider credentials. This is a general-purpose
+table with an explicit typed variant, currently only `1claw-agent`.
+
+| Column                     | PostgreSQL type | Required | Description                                                             |
+| -------------------------- | --------------- | -------- | ----------------------------------------------------------------------- |
+| `id`                       | `text`          | Yes      | UUIDv7 primary key.                                                     |
+| `organization_id`          | `text`          | Yes      | Owning tenant; references `auth.organization` with restricted deletion. |
+| `type`                     | `text`          | Yes      | `1claw-agent`.                                                          |
+| `data`                     | `jsonb`         | Yes      | Version 1 metadata with a nonempty string `agentId`.                    |
+| `encrypted_payload`        | `text`          | Yes      | Nonempty ciphertext; never a plaintext provider API key.                |
+| `created_at`, `updated_at` | `timestamptz`   | Yes      | Standard timestamps, defaulting to `now()`.                             |
+
+Unique (`id`, `organization_id`) supports tenant-safe signer references. A partial
+unique index on organization, type and agent ID allows one credential per agent
+within a tenant. Checks reject unknown types, invalid metadata and empty payloads.
+
+`repository.core.credentials` exposes `insert` and tenant-scoped `findById` using
+the shared transaction context. Insert errors discard driver query parameters to
+avoid exposing ciphertext. Referenced credentials cannot be deleted. Repositories
+do not encrypt, decrypt, authenticate ciphertext or match agent IDs across rows;
+those checks belong to the later application/provider workflow. No public DTO,
+credential rotation workflow or provisioning table is introduced here.
+
+Persistence tests cover tenant isolation, uniqueness, restricted deletion,
+metadata checks, atomic writes/rollback and legacy signer compatibility.
+
 ## `core.signing_key`
 
 Provider-neutral signing identity used by wallets and, in a later slice,
 cryptographic session keys. Private and encrypted local key material is never
 persisted by the server.
 
-| Column            | PostgreSQL type | Required | Default  | Description                                                                          |
-| ----------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------ |
-| `id`              | `text`          | Yes      | UUIDv7   | Signing-key identifier.                                                              |
-| `organization_id` | `text`          | Yes      | —        | Owning tenant.                                                                       |
-| `purpose`         | `text`          | Yes      | —        | `wallet-root` or `session`.                                                          |
-| `custody`         | `text`          | Yes      | —        | `local` or `namera-managed`.                                                         |
-| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or `ed25519` (not an EVM owner).                                |
-| `public_key_hex`  | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                   |
-| `status`          | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                       |
-| `data`            | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, or managed development-provider metadata. |
-| `created_at`      | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                       |
-| `updated_at`      | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                                               |
+| Column            | PostgreSQL type | Required | Default  | Description                                                                                |
+| ----------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
+| `id`              | `text`          | Yes      | UUIDv7   | Signing-key identifier.                                                                    |
+| `organization_id` | `text`          | Yes      | —        | Owning tenant.                                                                             |
+| `purpose`         | `text`          | Yes      | —        | `wallet-root` or `session`.                                                                |
+| `credential_id`   | `text`          | No       | —        | Required for 1Claw; null for other signer variants.                                        |
+| `custody`         | `text`          | Yes      | —        | `local` or `namera-managed`.                                                               |
+| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or `ed25519` (not an EVM owner).                                      |
+| `public_key_hex`  | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                         |
+| `status`          | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                             |
+| `data`            | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, managed development-provider or 1Claw metadata. |
+| `created_at`      | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                             |
+| `updated_at`      | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                                                     |
 
 ### Keys and uniqueness
 
@@ -29,10 +58,13 @@ persisted by the server.
 - Unique (`id`, `organization_id`) supports tenant-safe wallet references.
 - Unique (`organization_id`, `algorithm`, `public_key_hex`) prevents duplicate
   registration of one cryptographic key inside a tenant.
+- Partial unique organization/agent/provider-key/numeric-key-version identity for 1Claw.
 
 ### Foreign keys
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
+- (`credential_id`, `organization_id`) → `core.credentials` (`id`, `organization_id`),
+  `ON DELETE RESTRICT`. The foreign key enforces tenant ownership, not JSON agent matching.
 
 ### Checks
 
@@ -40,7 +72,10 @@ persisted by the server.
 - Public keys use an even-length lowercase hexadecimal encoding.
 - `data` must be an object with a recognized discriminator.
 - Local custody accepts only `passkey` or `local-key` data; managed custody
-  requires `gcp-kms` or development-only `local-provider` data.
+  requires `gcp-kms`, development-only `local-provider` or `1claw` data.
+- 1Claw requires a credential reference, metadata version 1, nonempty agent/key
+  identifiers and a positive integer key version. Ethereum/Bitcoin/Tron require
+  secp256k1; Solana/XRP/Cardano require Ed25519. Other variants require a null reference.
 - Passkeys are P-256 wallet-root signing keys.
 
 ### Indexes
@@ -48,6 +83,7 @@ persisted by the server.
 - (`organization_id`, `purpose`, `status`) supports tenant-scoped lifecycle
   lookups.
 - The unique public-key index supports deduplication lookup.
+- (`credential_id`, `organization_id`) supports credential-reference lookups.
 
 `SigningKeyRepository` exposes insert, tenant-scoped ID lookup, public-key
 lookup, and lifecycle updates. Lifecycle updates refuse to modify a destroyed

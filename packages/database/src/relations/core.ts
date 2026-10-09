@@ -3,7 +3,25 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const coreRelations = defineRelationsPart(schema, (r) => ({
+  credentials: {
+    // Provider authentication material belongs to one tenant.
+    organization: r.one.organization({
+      from: r.credentials.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Signers reference credentials only within the same tenant.
+    signingKeys: r.many.signingKey({
+      from: [r.credentials.id, r.credentials.organizationId],
+      to: [r.signingKey.credentialId, r.signingKey.organizationId],
+    }),
+  },
   signingKey: {
+    // Local/passkey/KMS signers have no stored provider credential.
+    credential: r.one.credentials({
+      from: [r.signingKey.credentialId, r.signingKey.organizationId],
+      to: [r.credentials.id, r.credentials.organizationId],
+    }),
     // A delegated signing key is dedicated to one immutable session envelope.
     sessionKeys: r.many.sessionKey({
       from: [r.signingKey.id, r.signingKey.organizationId],

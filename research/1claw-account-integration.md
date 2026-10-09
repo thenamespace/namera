@@ -1,6 +1,6 @@
 # 1Claw managed account integration plan
 
-Status: phase 2 contracts implemented; runtime integration not enabled. Updated: 10 October 2026.
+Status: phase 3 persistence implemented; runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
 later project. The first complete milestone is a managed account that can install
@@ -72,7 +72,7 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 
 - [ ] Phase 1: provider and account compatibility
 - [x] Phase 2: protocol contracts
-- [ ] Phase 3: persistence and recovery model
+- [x] Phase 3: persistence and recovery model
 - [ ] Phase 4: 1Claw key-provider implementation
 - [ ] Phase 5: EVM managed-owner integration
 - [ ] Phase 6: account provisioning workflow
@@ -187,6 +187,27 @@ Owners: `packages/database`, protocol persistence models.
 **Exit gate:** migrations and repository tests prove tenant isolation, uniqueness,
 credential scoping and atomic local writes. Document manual recovery for remote
 resources left behind by failures, including lost one-time credentials.
+
+Implemented: `core.credentials`, the tenant-scoped signing-key credential FK,
+provider identity uniqueness, metadata/custody/algorithm checks, transaction-aware
+credential insert/read methods and relations. Migration
+`20261009185014_melted_nomad` is tested through the disposable database layer.
+Persistence tests cover isolation, restricted deletion, malformed metadata,
+uniqueness, transaction commit/rollback and existing signer variants. Encryption
+and cross-row credential/agent binding remain application/provider work; no live
+provider workflow or new audit-producing mutation is enabled by this phase.
+
+Manual recovery policy for the later provisioning workflow:
+
+- Stop after an ambiguous remote creation result; do not blindly repeat creation.
+- An operator must reconcile the agent and key using available non-secret provider
+  identifiers before retrying local persistence or provisioning anything new.
+- If a one-time API key was lost, use only provider-confirmed rotation/recovery.
+  Until that mechanism is verified, leave the resource unresolved for operator
+  review rather than assuming its credential can be retrieved.
+- Do not automatically delete agents or keys. Confirm ownership, usage and funds
+  before any separately authorized cleanup. Never record API keys or temporary
+  JWTs in logs or recovery notes.
 
 ### Phase 4: 1Claw key-provider implementation
 

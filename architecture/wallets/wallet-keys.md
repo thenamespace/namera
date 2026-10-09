@@ -80,17 +80,19 @@ Ethereum/Bitcoin/Tron use secp256k1 and Solana/XRP/Cardano use Ed25519. This is 
 support only, not non-EVM account or operation support. The legacy standalone
 `WalletKey` model remains local/GCP-only; 1Claw does not get a competing identity.
 
-Protocol also defines `Credential`/`CredentialInsert` for the planned generic
+Protocol also defines `Credential`/`CredentialInsert` for the generic
 `core.credentials` table. The first variant is `1claw-agent`, containing versioned
 non-secret agent metadata and encrypted payload. The decrypted envelope binds
 credential ID, organization ID and agent ID to the API key. Encryption will use
 `cryptoPurpose.providerCredential` with existing `CRYPTO_ENCRYPTION_KEY`. Binding
-verification, storage and key rotation are not implemented by these schemas.
-1Claw signers require top-level `credentialId`; existing records may omit it or
-use null until the database migration. No database table, foreign key, provisioning
-attempt table, provider API call or credential persistence has been added.
+verification and key rotation are not implemented by these schemas. Phase 3 adds
+the table, ciphertext-only repository and organization-scoped signer foreign key.
+1Claw signers require top-level `credentialId`; existing records migrate to null.
+No encryption/decryption workflow, provisioning-attempt table or provider API call
+is wired. Database checks validate metadata shape and chain/algorithm pairing;
+the future provider must still verify credential type and agent identity.
 
-Next steps are tenant-scoped persistence, provider implementation and managed EVM
+Next steps are provider implementation and managed EVM
 workflows. Partial remote provisioning will use manual recovery in this iteration;
 no automatic retry of ambiguous creation or automatic key destruction is allowed.
 

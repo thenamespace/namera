@@ -61,7 +61,12 @@ export class SigningKeyRepository extends Context.Service<
           const encoded = Schema.encodeSync(SigningKeyInsert)(input);
           const rows = yield* db
             .insert(signingKey)
-            .values({ ...encoded, id: input.id, organizationId: input.organizationId })
+            .values({
+              ...encoded,
+              id: input.id,
+              organizationId: input.organizationId,
+              credentialId: input.credentialId ?? null,
+            })
             .returning();
           return decodeSigningKey(rows[0]);
         }, mapRepositoryError),
@@ -72,7 +77,12 @@ export class SigningKeyRepository extends Context.Service<
           const encoded = Schema.encodeSync(SigningKeyInsert)(input);
           const rows = yield* db
             .insert(signingKey)
-            .values({ ...encoded, id: input.id, organizationId: input.organizationId })
+            .values({
+              ...encoded,
+              id: input.id,
+              organizationId: input.organizationId,
+              credentialId: input.credentialId ?? null,
+            })
             .onConflictDoNothing({
               target: [signingKey.organizationId, signingKey.algorithm, signingKey.publicKeyHex],
             })

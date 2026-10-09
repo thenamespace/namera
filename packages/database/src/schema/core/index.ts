@@ -1,4 +1,5 @@
 export * from "./common.js";
+export * from "./credentials.js";
 export * from "./execution.js";
 export * from "./execution-submission.js";
 export * from "./session-key-grant.js";

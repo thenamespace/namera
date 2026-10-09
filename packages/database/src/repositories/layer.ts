@@ -37,6 +37,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   AdminOverviewRepository,
+  CredentialsRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
@@ -97,6 +98,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    credentials: CredentialsRepository["Service"];
     adminOverview: AdminOverviewRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
@@ -172,6 +174,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const sessionKeyPolicyReservation = yield* SessionKeyPolicyReservationRepository;
       const sessionKeyPolicyState = yield* SessionKeyPolicyStateRepository;
       const signingKey = yield* SigningKeyRepository;
+      const credentials = yield* CredentialsRepository;
       const signatureOperation = yield* SignatureOperationRepository;
 
       return Repository.of({
@@ -215,6 +218,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          credentials,
           adminOverview,
           dashboardOverview,
           execution,
@@ -286,6 +290,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionKeyPolicyReservationRepository.layer,
         SessionKeyPolicyStateRepository.layer,
         SigningKeyRepository.layer,
+        CredentialsRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
       ),
