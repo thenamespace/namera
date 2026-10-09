@@ -24,7 +24,7 @@ export function ResourceEmptyState({
     <div className="mx-auto flex max-w-sm flex-col items-center gap-5 px-6 py-16 text-center">
       <span
         aria-hidden
-        className="grid size-14 place-items-center rounded-2xl border border-border bg-surface/60 text-foreground/70 shadow-sm"
+        className="grid size-14 place-items-center rounded-xl border border-border bg-surface/60 text-foreground/70 shadow-sm"
       >
         <HugeiconsIcon className="size-6" icon={icon} />
       </span>
@@ -36,13 +36,13 @@ export function ResourceEmptyState({
         <Typography.Paragraph
           className="max-w-xs text-center leading-relaxed text-balance"
           color="muted"
-          size="sm"
+          size="xs"
         >
           {description}
         </Typography.Paragraph>
       </div>
 
-      <Button className="mt-1" onPress={onCreate}>
+      <Button className="mt-1" onPress={onCreate} size="sm">
         <HugeiconsIcon icon={Add01Icon} />
         {actionLabel}
       </Button>

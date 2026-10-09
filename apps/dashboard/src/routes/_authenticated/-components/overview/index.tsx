@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
 
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 import type {
   DashboardOverviewActivitySeries,
   GetDashboardOverviewResponse,
 } from "@namera-ai/protocol/dto";
-import { Button, Segment, Surface, Typography, Widget } from "@namera-ai/ui";
+import { Segment, Surface, Typography, Widget } from "@namera-ai/ui";
 
 import { DataLoading } from "@/components/data-loading";
 import { ExecutionsTable } from "@/components/executions-table";
@@ -16,6 +16,7 @@ import { useDashboardOverview } from "@/hooks/dashboard";
 import { ActivityChart } from "./activity-chart";
 import { ExecutionSourcesChart } from "./execution-sources-chart";
 import { OverviewKPIGrid } from "./kpi-grid";
+import { QuickActions } from "./quick-actions";
 
 type ActivityView = "daily" | "weekly" | "monthly";
 
@@ -27,19 +28,13 @@ const activityOptions = [
 
 function ActivityWidget({
   activity,
-  emptyWorkspace,
 }: {
   activity: Record<ActivityView, DashboardOverviewActivitySeries>;
-  emptyWorkspace: boolean;
 }) {
   const [view, setView] = useState<ActivityView>("daily");
-  const navigate = useNavigate();
   const handleViewChange = useCallback((key: React.Key) => {
     setView(String(key) as ActivityView);
   }, []);
-  const createAccount = useCallback(() => {
-    void navigate({ to: "/accounts" });
-  }, [navigate]);
 
   return (
     <Widget>
@@ -64,16 +59,6 @@ function ActivityWidget({
       </Widget.Header>
       <Widget.Content className="relative border-none p-0">
         <ActivityChart series={activity[view]} />
-        {emptyWorkspace ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-background/45 px-4 text-center backdrop-blur-[1px]">
-            <Typography.Paragraph className="max-w-xs" color="muted" size="sm">
-              Create your first agent account to see activity.
-            </Typography.Paragraph>
-            <Button size="sm" variant="secondary" onPress={createAccount}>
-              Create account
-            </Button>
-          </div>
-        ) : null}
       </Widget.Content>
     </Widget>
   );
@@ -94,11 +79,12 @@ function OverviewContent({ overview }: { overview: GetDashboardOverviewResponse 
       />
 
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
-        <ActivityWidget
-          activity={evm.activity}
-          emptyWorkspace={overview.resources.accounts.total === 0}
-        />
-        <ExecutionSourcesChart sources={evm.executionSources} />
+        <ActivityWidget activity={evm.activity} />
+        {evm.executionSources.some((source) => source.count > 0) ? (
+          <ExecutionSourcesChart sources={evm.executionSources} />
+        ) : (
+          <QuickActions />
+        )}
       </div>
 
       <section aria-labelledby="recent-activity-heading">

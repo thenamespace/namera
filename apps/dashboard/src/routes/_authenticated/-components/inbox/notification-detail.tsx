@@ -78,17 +78,17 @@ function NotificationDetailLayout({ children, description, item }: NotificationD
 
   return (
     <article className="mx-auto flex w-full max-w-2xl flex-col px-5 py-10 sm:px-8 sm:py-14">
-      <header className="flex items-start gap-4">
+      <header className="flex items-center gap-4">
         <NotificationIcon
-          className="size-11 rounded-xl"
+          className="size-12 rounded-lg"
           iconClassName="size-5"
           type={item.notification.type}
         />
-        <div className="min-w-0 flex-1 pt-0.5">
-          <Typography.Heading className="text-xl tracking-tight" level={2}>
+        <div className="min-w-0 flex-1">
+          <Typography.Heading className="text-xl leading-7 tracking-tight" level={2}>
             {presentation.title}
           </Typography.Heading>
-          <Typography className="mt-1 text-xs!" color="muted">
+          <Typography className="mt-1 text-xs! leading-4" color="muted">
             {receivedAt}
           </Typography>
         </div>
@@ -123,7 +123,7 @@ function InternalAction({
 
   return (
     <Link
-      className={buttonVariants({ size: "sm", variant: "secondary" })}
+      className={buttonVariants({ size: "sm", variant: "tertiary" })}
       to={to}
       {...(params === undefined ? {} : { params })}
     >
@@ -515,7 +515,7 @@ export function NotificationDetail({ item }: { readonly item: NotificationRespon
         item={item}
         description={`Google was ${item.notification.data.action === "linked" ? "connected" : "disconnected"}. Email sign-in remains available. If you did not make this change, review your connected accounts and active sessions.`}
       >
-        <Link to="/settings/security" className={buttonVariants({ variant: "secondary" })}>
+        <Link to="/settings/security" className={buttonVariants({ variant: "tertiary" })}>
           Review security
         </Link>
       </NotificationDetailLayout>

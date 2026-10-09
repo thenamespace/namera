@@ -157,7 +157,6 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                         ? { "aria-describedby": "session-key-wallet-error" }
                         : {})}
                       fullWidth
-                      isDisabled={activeWallets.length === 0}
                       isInvalid={fieldState.invalid}
                       isRequired
                       name={field.name}
@@ -173,20 +172,22 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                               metadata={selectedWallet.metadata}
                             />
                           ) : (
-                            <span className="text-muted">
-                              {activeWallets.length === 0
-                                ? "No active passkey accounts"
-                                : "Select an account"}
-                            </span>
+                            <span className="text-muted">Select an account</span>
                           )}
                         </Select.Value>
                         <Select.Indicator />
                       </Select.Trigger>
                       <Select.Popover>
-                        <ListBox items={activeWallets}>
-                          {(wallet) => (
+                        <ListBox>
+                          {activeWallets.length === 0 ? (
+                            <ListBox.Item id="empty" isDisabled textValue="No active accounts">
+                              No active accounts
+                            </ListBox.Item>
+                          ) : null}
+                          {activeWallets.map((wallet) => (
                             <ListBox.Item
                               id={wallet.id}
+                              key={wallet.id}
                               textValue={wallet.metadata.name || "Unnamed account"}
                             >
                               <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
@@ -199,7 +200,7 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                                 </span>
                               </div>
                             </ListBox.Item>
-                          )}
+                          ))}
                         </ListBox>
                       </Select.Popover>
                     </Select>

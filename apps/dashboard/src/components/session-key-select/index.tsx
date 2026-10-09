@@ -1,7 +1,7 @@
 import { useMemo, type FocusEventHandler, type Ref } from "react";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
-import { Collection, Description, Header, ListBox, Select, Typography } from "@namera-ai/ui";
+import { Collection, Header, ListBox, Select, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
 import { MetadataDisplay } from "@/components/display";
@@ -83,7 +83,6 @@ export function SessionKeySelect({
     <Select<SessionKeyResponse, "multiple">
       aria-labelledby={ariaLabelledBy}
       fullWidth
-      isDisabled={sessionKeys.length === 0}
       {...(isInvalid === undefined ? {} : { isInvalid })}
       {...(name === undefined ? {} : { name })}
       selectionMode="multiple"
@@ -97,6 +96,11 @@ export function SessionKeySelect({
       </Select.Trigger>
       <Select.Popover className="w-(--trigger-width) min-w-80">
         <ListBox>
+          {sessionKeys.length === 0 ? (
+            <ListBox.Item id="empty" isDisabled textValue="No session keys">
+              No session keys
+            </ListBox.Item>
+          ) : null}
           {groups.map((group) => (
             <ListBox.Section id={group.id} key={group.id}>
               <Header className="border-separator flex items-center justify-between gap-3 border-b px-3 py-2 mb-2">
@@ -136,11 +140,6 @@ export function SessionKeySelect({
           ))}
         </ListBox>
       </Select.Popover>
-      {sessionKeys.length === 0 ? (
-        <Description>
-          No active session keys. Create a key and approve a network to make it available here.
-        </Description>
-      ) : null}
     </Select>
   );
 }

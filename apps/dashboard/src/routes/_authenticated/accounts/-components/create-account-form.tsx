@@ -17,10 +17,8 @@ import {
   Select,
   TextArea,
   Typography,
-  cn,
-  inputVariants,
 } from "@namera-ai/ui";
-import { AlchemyIcon, ChainIcon, NameraIcon, SolanaIcon } from "@namera-ai/ui/icons";
+import { ChainIcon, NameraIcon, SolanaIcon } from "@namera-ai/ui/icons";
 import { startRegistration } from "@simplewebauthn/browser";
 import { Controller, useForm } from "react-hook-form";
 
@@ -31,7 +29,7 @@ import {
 } from "@/components/dashboard-card";
 import { WalletOwnerDisplay } from "@/components/display/wallet-owner-display";
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { showErrorToast } from "@/lib/toasts";
 
 import {
   CreateAccountFormValues,
@@ -57,12 +55,12 @@ export function CreateAccountForm() {
         title: "Couldn’t create account",
         description: "Review the account details and try again.",
       }),
-    onSuccess: () => {
-      showSuccessToast({
-        title: "Account created",
-        description: "Your smart account was created successfully.",
+    onSuccess: (account) => {
+      void navigate({
+        to: "/accounts/created/$accountId",
+        params: { accountId: account.id },
+        replace: true,
       });
-      void navigate({ to: "/accounts", replace: true });
     },
   });
   const form = useForm<CreateAccountFormValuesEncoded, unknown, CreateAccountFormValues>({
@@ -238,19 +236,6 @@ export function CreateAccountForm() {
                   </ListBox>
                 </Select.Popover>
               </Select>
-            </DashboardCardRow>
-
-            <DashboardCardRow>
-              <Typography className="text-sm!">Account type</Typography>
-              <div
-                className={cn(
-                  inputVariants({ variant: "secondary" }),
-                  "flex flex-row items-center gap-2",
-                )}
-              >
-                <AlchemyIcon aria-hidden className="size-5 shrink-0" />
-                Alchemy Modular V2
-              </div>
             </DashboardCardRow>
           </FieldGroup>
         </DashboardCardContent>

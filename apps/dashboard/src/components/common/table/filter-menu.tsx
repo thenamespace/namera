@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
-import { Button, Checkbox, Dropdown, Label, type DataGridSelection } from "@namera-ai/ui";
+import { Button, Checkbox, Dropdown, Header, Label, type DataGridSelection } from "@namera-ai/ui";
 import { FilterHorizontalIcon, FilterRemoveIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
 type TableFilterOption = {
+  group?: string;
   count?: number;
   id: string;
   label: string;
@@ -12,6 +13,8 @@ type TableFilterOption = {
 };
 
 type TableFilterFacet = {
+  groups?: ReadonlyArray<string>;
+  emptyLabel?: string;
   defaultSelectedKeys?: ReadonlySet<string>;
   disallowEmptySelection?: boolean;
   icon: ReactNode;
@@ -107,20 +110,31 @@ export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuP
                     : { disallowEmptySelection: facet.disallowEmptySelection })}
                   onSelectionChange={facet.onSelectionChange}
                 >
-                  {facet.options.map((option) => (
-                    <Dropdown.Item id={option.id} key={option.id} textValue={option.label}>
-                      <TableFilterCheckbox
-                        isSelected={facet.selectedKeys.has(option.id)}
-                        label={`Filter by ${option.label}`}
-                      />
-                      {option.content ?? <Label>{option.label}</Label>}
-                      {option.count === undefined ? null : (
-                        <span className="ml-auto text-xs tabular-nums text-muted">
-                          {option.count}
-                        </span>
-                      )}
+                  {facet.options.length === 0 ? (
+                    <Dropdown.Item
+                      id="empty"
+                      isDisabled
+                      textValue={facet.emptyLabel ?? "No options"}
+                    >
+                      <Label>{facet.emptyLabel ?? "No options"}</Label>
                     </Dropdown.Item>
-                  ))}
+                  ) : null}
+                  {facet.groups
+                    ? facet.groups.map((group) => {
+                        const options = facet.options.filter((option) => option.group === group);
+                        if (options.length === 0) return null;
+                        return (
+                          <Dropdown.Section key={group}>
+                            <Header className="px-2 py-2 text-xs font-medium text-muted">
+                              {group}
+                            </Header>
+                            {options.map((option) =>
+                              renderFilterOption(option, facet.selectedKeys),
+                            )}
+                          </Dropdown.Section>
+                        );
+                      })
+                    : facet.options.map((option) => renderFilterOption(option, facet.selectedKeys))}
                 </Dropdown.Menu>
               </Dropdown.Popover>
             </Dropdown.SubmenuTrigger>
@@ -137,3 +151,18 @@ export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuP
 }
 
 export type { TableFilterFacet, TableFilterMenuProps, TableFilterOption };
+
+function renderFilterOption(option: TableFilterOption, selectedKeys: ReadonlySet<string>) {
+  return (
+    <Dropdown.Item id={option.id} key={option.id} textValue={option.label}>
+      <TableFilterCheckbox
+        isSelected={selectedKeys.has(option.id)}
+        label={`Filter by ${option.label}`}
+      />
+      {option.content ?? <Label>{option.label}</Label>}
+      {option.count === undefined ? null : (
+        <span className="ml-auto text-xs tabular-nums text-muted">{option.count}</span>
+      )}
+    </Dropdown.Item>
+  );
+}

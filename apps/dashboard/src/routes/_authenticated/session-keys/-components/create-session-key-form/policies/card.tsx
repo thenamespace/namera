@@ -20,7 +20,7 @@ export function SessionPolicyCard({
 }) {
   return (
     <ItemCard className="border-separator min-h-20 rounded-lg border" variant="outline">
-      <ItemCard.Icon className="self-start">
+      <ItemCard.Icon className="self-center">
         <HugeiconsIcon icon={icon} />
       </ItemCard.Icon>
       <ItemCard.Content>
@@ -32,7 +32,7 @@ export function SessionPolicyCard({
         </div>
         <ItemCard.Description>{children}</ItemCard.Description>
       </ItemCard.Content>
-      <ItemCard.Action className="self-start">
+      <ItemCard.Action className="self-center">
         <div className="flex items-center gap-1">
           {onEdit ? (
             <Button

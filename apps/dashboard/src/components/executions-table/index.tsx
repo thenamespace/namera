@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { chains as supportedEvmChains } from "@namera-ai/evm/chains";
+import { chains as supportedEvmChains, getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { SessionKeyId, WalletId } from "@namera-ai/protocol";
 import type { ExecutionListItemResponse, ListExecutionsResponse } from "@namera-ai/protocol/dto";
 import type { ActorType } from "@namera-ai/protocol/model";
@@ -155,6 +155,7 @@ function ExecutionsTableContent({
     }
 
     return [...available].map(([chainId, label]) => ({
+      group: getChainDataByCaip2(chainId)?.chain.testnet ? "Testnets" : "Mainnets",
       id: chainId,
       label,
       content: <ChainDisplay chainId={chainId} />,
@@ -286,6 +287,7 @@ function ExecutionsTableContent({
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Wallet01Icon} />,
         selectedKeys: accounts,
         options: accountOptions,
+        emptyLabel: "No accounts",
         onSelectionChange: (keys) =>
           setAccounts(
             toTableSelection(
@@ -303,6 +305,7 @@ function ExecutionsTableContent({
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Key01Icon} />,
         selectedKeys: sessionKeys,
         options: sessionKeyOptions,
+        emptyLabel: "No session keys",
         onSelectionChange: (keys) =>
           setSessionKeys(
             toTableSelection(
@@ -334,6 +337,7 @@ function ExecutionsTableContent({
         icon: <ChainIcon className="size-4" chain="ethereum" namespace="eip155" />,
         selectedKeys: chains,
         options: chainOptions,
+        groups: ["Mainnets", "Testnets"],
         onSelectionChange: (keys) =>
           setChains(
             toTableSelection(
