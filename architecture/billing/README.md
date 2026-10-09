@@ -311,12 +311,15 @@ projection.
 
 ## Recovery and reconciliation
 
-The server runs a scoped billing worker every minute after migrations. Each run:
+The server runs a scoped billing worker after migrations. Sponsorship checks run
+every 10 seconds; anniversary, expiry and projection maintenance runs once per
+minute. A maintenance run:
 
 1. advances expired open anniversary periods in bounded batches;
-2. claims up to 20 due sponsored-gas holds with `FOR UPDATE SKIP LOCKED`, defers
-   them by five minutes, commits, then looks up provider costs outside database
-   transactions with concurrency two;
+2. claims up to 20 due sponsored-gas holds with `FOR UPDATE SKIP LOCKED`, increments
+   their persisted attempt counts and sets a ten-minute crash-recovery lease,
+   commits, then looks up provider costs outside database transactions with
+   concurrency two;
 3. claims other expired active reservations with `FOR UPDATE SKIP LOCKED`;
 4. settles terminal successful execution/signature sources, releases terminal
    failures and manual sources, and defers operations still in flight or whose
@@ -336,6 +339,14 @@ releases these gas holds, including across period rollover. Settlement uses the
 existing reservation lock and unique ledger identity, atomically recording the
 provider total and transaction identities while releasing unused capacity.
 No separate audit event is added: the immutable usage event is billing evidence.
+
+After an unsuccessful lookup, the next attempt is scheduled from completion:
+10, 20, 40, 80, 160, then 300 seconds, capped at 300 seconds thereafter. The
+10-second worker poll and provider/batch processing can add scheduling delay.
+Attempt counts survive restarts. A stale claim cannot overwrite a newer claim
+or a terminal reservation. Unexpected interruption retains the ten-minute lease;
+normal missing-cost and provider-error results use the faster retry schedule.
+There is no retry limit and unresolved cost never releases the hold.
 
 The server-only `ALCHEMY_ACCESS_TOKEN` must have management access to the
 configured policy. Missing credentials, missing/pending costs, malformed

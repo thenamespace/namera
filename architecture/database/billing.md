@@ -157,23 +157,24 @@ the immutable usage ledger remains the historical source of truth.
 Temporary capacity ownership for in-flight billable work. It prevents concurrent
 operations from collectively exceeding a hard limit.
 
-| Column            | Type          | Required | Default  | Description                      |
-| ----------------- | ------------- | -------- | -------- | -------------------------------- |
-| `id`              | `text`        | Yes      | UUIDv7   | Reservation ID.                  |
-| `organization_id` | `text`        | Yes      | —        | Tenant guard.                    |
-| `period_id`       | `text`        | Yes      | —        | Period whose capacity is held.   |
-| `meter_key`       | `text`        | Yes      | —        | Reserved meter.                  |
-| `meter_version`   | `integer`     | Yes      | —        | Meter version at authorization.  |
-| `unit`            | `text`        | Yes      | —        | Quantity unit.                   |
-| `amount`          | `bigint`      | Yes      | —        | Positive reserved quantity.      |
-| `source_type`     | `text`        | Yes      | —        | Domain source discriminator.     |
-| `source_id`       | `text`        | Yes      | —        | Domain operation ID.             |
-| `status`          | `text`        | Yes      | `active` | Active/settled/released/expired. |
-| `expires_at`      | `timestamptz` | Yes      | —        | Recovery expiry time.            |
-| `settled_at`      | `timestamptz` | No       | `NULL`   | Successful settlement time.      |
-| `released_at`     | `timestamptz` | No       | `NULL`   | Release or expiration time.      |
-| `created_at`      | `timestamptz` | Yes      | `now()`  | Creation time.                   |
-| `updated_at`      | `timestamptz` | Yes      | `now()`  | Last lifecycle update.           |
+| Column                 | Type          | Required | Default  | Description                                        |
+| ---------------------- | ------------- | -------- | -------- | -------------------------------------------------- |
+| `id`                   | `text`        | Yes      | UUIDv7   | Reservation ID.                                    |
+| `organization_id`      | `text`        | Yes      | —        | Tenant guard.                                      |
+| `period_id`            | `text`        | Yes      | —        | Period whose capacity is held.                     |
+| `meter_key`            | `text`        | Yes      | —        | Reserved meter.                                    |
+| `meter_version`        | `integer`     | Yes      | —        | Meter version at authorization.                    |
+| `unit`                 | `text`        | Yes      | —        | Quantity unit.                                     |
+| `amount`               | `bigint`      | Yes      | —        | Positive reserved quantity.                        |
+| `source_type`          | `text`        | Yes      | —        | Domain source discriminator.                       |
+| `source_id`            | `text`        | Yes      | —        | Domain operation ID.                               |
+| `status`               | `text`        | Yes      | `active` | Active/settled/released/expired.                   |
+| `sponsorship_attempts` | `integer`     | Yes      | `0`      | Persisted provider-cost claim count; non-negative. |
+| `expires_at`           | `timestamptz` | Yes      | —        | Recovery expiry time.                              |
+| `settled_at`           | `timestamptz` | No       | `NULL`   | Successful settlement time.                        |
+| `released_at`          | `timestamptz` | No       | `NULL`   | Release or expiration time.                        |
+| `created_at`           | `timestamptz` | Yes      | `now()`  | Creation time.                                     |
+| `updated_at`           | `timestamptz` | Yes      | `now()`  | Last lifecycle update.                             |
 
 ### Integrity and access paths
 
@@ -184,9 +185,14 @@ operations from collectively exceeding a hard limit.
 - Source is deliberately generic; application code creates it with the domain
   operation in one transaction rather than using polymorphic SQL foreign keys.
 - Checks: version at least 1, amount positive, and terminal timestamps consistent
-  with status.
+  with status. Sponsorship attempts must be non-negative.
 - Index (`organization_id`, `period_id`, `status`) serves period usage work.
 - Index (`status`, `expires_at`) serves the expiry worker.
+
+Sponsorship claims increment `sponsorship_attempts` and advance `expires_at`
+to a ten-minute lease while holding the row lock. Failed lookups replace it
+with the exponential retry time only if status, attempt count and claimed expiry
+still match. The existing expiry index also serves provider-cost retries.
 
 ## `billing.usage_event`
 

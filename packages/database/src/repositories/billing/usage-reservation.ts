@@ -1,5 +1,5 @@
 // oxlint-disable typescript/no-explicit-any
-import { Context, Effect, Layer, Schema, type DateTime } from "effect";
+import { Context, Effect, Layer, Schema, DateTime } from "effect";
 
 import type {
   BillingPeriodId,
@@ -78,6 +78,10 @@ export interface BillingUsageReservationRepositoryService {
     now: DateTime.Utc,
     limit: number,
   ) => Effect.Effect<ReadonlyArray<BillingUsageReservationModel>, DatabaseError>;
+  readonly retrySponsorship: (
+    reservation: BillingUsageReservationModel,
+    expiresAt: DateTime.Utc,
+  ) => Effect.Effect<void, DatabaseError>;
   readonly sumActiveForMeter: (
     organizationId: OrganizationId,
     periodId: BillingPeriodId,
@@ -292,7 +296,40 @@ export class BillingUsageReservationRepository extends Context.Service<
               .orderBy(asc(billingUsageReservation.expiresAt), asc(billingUsageReservation.id))
               .limit(Math.min(Math.max(Math.trunc(limit), 1), 100))
               .for("update", { skipLocked: true });
-            return Schema.decodeUnknownSync(Schema.Array(BillingUsageReservation))(rows);
+            if (rows.length === 0) return [];
+            // Called inside the claim transaction. The lease covers a full batch
+            // of 20 lookups at concurrency two with 30-second provider deadlines.
+            const claimed = yield* db
+              .update(billingUsageReservation)
+              .set({
+                sponsorshipAttempts: sql`${billingUsageReservation.sponsorshipAttempts} + 1`,
+                expiresAt: encodeDate(DateTime.add(now, { minutes: 10 })),
+              })
+              .where(
+                inArray(
+                  billingUsageReservation.id,
+                  rows.map((row) => row.id),
+                ),
+              )
+              .returning();
+            return Schema.decodeUnknownSync(Schema.Array(BillingUsageReservation))(claimed);
+          }, mapRepositoryError),
+          retrySponsorship: Effect.fn(
+            "database.billingUsageReservationRepository.retrySponsorship",
+          )(function* (reservation, expiresAt) {
+            const db = yield* transactionOrDatabase(database);
+            yield* db
+              .update(billingUsageReservation)
+              .set({ expiresAt: encodeDate(expiresAt) })
+              .where(
+                and(
+                  eq(billingUsageReservation.id, reservation.id),
+                  eq(billingUsageReservation.organizationId, reservation.organizationId),
+                  eq(billingUsageReservation.status, "active"),
+                  eq(billingUsageReservation.sponsorshipAttempts, reservation.sponsorshipAttempts),
+                  eq(billingUsageReservation.expiresAt, encodeDate(reservation.expiresAt)),
+                ),
+              );
           }, mapRepositoryError),
           sumActiveForMeter: Effect.fn(
             "database.billingUsageReservationRepository.sumActiveForMeter",

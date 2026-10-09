@@ -25,6 +25,7 @@ export const billingUsageReservation = billingSchema.table(
     sourceType: text("source_type").notNull().$type<BillingUsageReservation["sourceType"]>(),
     sourceId: text("source_id").notNull(),
     status: text("status").notNull().default("active").$type<BillingUsageReservation["status"]>(),
+    sponsorshipAttempts: integer("sponsorship_attempts").notNull().default(0),
     expiresAt: createTimestampField("expires_at").notNull(),
     settledAt: createTimestampField("settled_at"),
     releasedAt: createTimestampField("released_at"),
@@ -55,6 +56,10 @@ export const billingUsageReservation = billingSchema.table(
       table.status,
     ),
     index("billing_usage_reservation_status_expires_at_idx").on(table.status, table.expiresAt),
+    check(
+      "billing_usage_reservation_sponsorship_attempts_check",
+      sql`${table.sponsorshipAttempts} >= 0`,
+    ),
     check("billing_usage_reservation_version_check", sql`${table.meterVersion} >= 1`),
     check("billing_usage_reservation_amount_check", sql`${table.amount} > 0`),
     check(

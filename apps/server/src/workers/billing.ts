@@ -3,15 +3,24 @@ import { DateTime, Duration, Effect, Layer, Metric } from "effect";
 import { Application } from "@namera-ai/application";
 import { workerLastSuccess, workerPollResults } from "@namera-ai/telemetry";
 
-const workerPollInterval = Duration.minutes(1);
+const workerPollInterval = Duration.seconds(10);
 
 export const BillingWorkerLayer = Layer.effectDiscard(
   Effect.gen(function* () {
     const app = yield* Application;
 
     yield* Effect.gen(function* () {
+      let nextMaintenanceAt = 0;
       while (true) {
-        yield* app.billing.reconcile().pipe(
+        const now = DateTime.toEpochMillis(yield* DateTime.now);
+        const maintenanceDue = now >= nextMaintenanceAt;
+        if (maintenanceDue) nextMaintenanceAt = now + 60_000;
+        const reconcile = maintenanceDue
+          ? app.billing.reconcile()
+          : app.billing
+              .reconcileSponsorships()
+              .pipe(Effect.map((recovered) => ({ rolledOver: 0, recovered, repaired: 0 })));
+        yield* reconcile.pipe(
           Effect.tap(() =>
             Effect.gen(function* () {
               yield* Metric.update(

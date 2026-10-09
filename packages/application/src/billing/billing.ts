@@ -10,6 +10,7 @@ import { makeBillingReconciliation } from "./reconciliation.js";
 
 export interface BillingApplication {
   readonly get: (organizationId: OrganizationId) => Effect.Effect<GetBillingResponse>;
+  readonly reconcileSponsorships: () => Effect.Effect<number>;
   readonly reconcile: () => Effect.Effect<{
     readonly rolledOver: number;
     readonly recovered: number;
@@ -105,5 +106,10 @@ export const makeBillingApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
 
-  return { get, reconcile } satisfies BillingApplication;
+  const reconcileSponsorships = Effect.fn("application.billing.reconcileSponsorships")(
+    reconciliation.reconcileSponsorships,
+    Effect.catchTag("DatabaseError", Effect.die),
+  );
+
+  return { get, reconcile, reconcileSponsorships } satisfies BillingApplication;
 });

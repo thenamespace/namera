@@ -106,15 +106,7 @@ export const makeSponsorshipReconciliation = Effect.gen(function* () {
     const reservations = yield* transaction.run(
       Effect.gen(function* () {
         const now = yield* DateTime.now;
-        const claimed = yield* repository.billing.usageReservation.claimSponsorships(now, 20);
-        for (const reservation of claimed) {
-          yield* repository.billing.usageReservation.deferExpiry(
-            reservation.organizationId,
-            reservation.id,
-            DateTime.add(now, { minutes: 5 }),
-          );
-        }
-        return claimed;
+        return yield* repository.billing.usageReservation.claimSponsorships(now, 20);
       }),
     );
     // Network I/O must not hold database locks. The reservation lock and unique
@@ -131,6 +123,19 @@ export const makeSponsorshipReconciliation = Effect.gen(function* () {
           ),
           Effect.catchTag(["EvmExecutionError", "UnsupportedChainError"], () =>
             Effect.logWarning("billing.sponsorship_receipt_unavailable").pipe(Effect.as(false)),
+          ),
+          Effect.tap((recovered) =>
+            Effect.gen(function* () {
+              if (recovered) return;
+              const seconds = Math.min(
+                300,
+                10 * 2 ** Math.min(reservation.sponsorshipAttempts - 1, 5),
+              );
+              yield* repository.billing.usageReservation.retrySponsorship(
+                reservation,
+                DateTime.add(yield* DateTime.now, { seconds }),
+              );
+            }),
           ),
           Effect.tap((recovered) =>
             Metric.update(

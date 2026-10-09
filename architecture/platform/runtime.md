@@ -86,8 +86,10 @@ Idle polling is intentionally untraced. A span starts after work is claimed.
 
 ### Billing maintenance
 
-Every minute, reconciles anniversary periods, expired reservations, and ledger
-projections through the billing application service.
+Checks due Alchemy sponsorship costs every ten seconds, with persisted
+10-second exponential retries capped at five minutes. Anniversary periods,
+other expired reservations and ledger projections are reconciled once per
+minute through the same billing application service.
 
 ### Session-operation reconciliation
 
