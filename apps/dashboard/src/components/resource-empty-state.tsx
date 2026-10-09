@@ -42,7 +42,7 @@ export function ResourceEmptyState({
         </Typography.Paragraph>
       </div>
 
-      <Button className="mt-1" onPress={onCreate}>
+      <Button className="mt-1" onPress={onCreate} size="sm">
         <HugeiconsIcon icon={Add01Icon} />
         {actionLabel}
       </Button>
