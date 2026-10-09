@@ -55,6 +55,45 @@ provide authentication.
 A package-owned deterministic layer supplies stable public keys and signatures
 for server boundary tests. Consumers do not invent separate wallet-key mocks.
 
+### 1Claw contract preparation
+
+Protocol has an explicit `1claw` variant, but there is no provider implementation
+or live layer yet. Local, GCP and test creation reject this variant instead of
+creating substitute local/KMS material. The server still uses the disabled layer.
+
+The accounts-first operation contract supports Ethereum/secp256k1 creation,
+32-byte digest signing and disablement only. It does not require or claim HSM
+protection. Message signing and destruction exclude 1Claw; deactivation is not
+destruction. Existing GCP/local contracts and their HSM restriction are unchanged.
+Provider failures can carry bounded `WalletKeyError.code` categories without
+changing existing error construction; provider response mapping is not wired yet.
+
+Creation takes an organization ID and preallocated credential ID. Its result
+contains public material, pinned agent/key/version metadata and a credential
+envelope with a redacted API key for later application-owned encryption. Signing
+and disablement take tenant-scoped credential references, never public API
+credentials. The future provider must validate the requested organization,
+credential, agent, key/version and public identity before signing.
+
+The canonical `SigningKey` model correlates metadata chain families with algorithms:
+Ethereum/Bitcoin/Tron use secp256k1 and Solana/XRP/Cardano use Ed25519. This is model
+support only, not non-EVM account or operation support. The legacy standalone
+`WalletKey` model remains local/GCP-only; 1Claw does not get a competing identity.
+
+Protocol also defines `Credential`/`CredentialInsert` for the planned generic
+`core.credentials` table. The first variant is `1claw-agent`, containing versioned
+non-secret agent metadata and encrypted payload. The decrypted envelope binds
+credential ID, organization ID and agent ID to the API key. Encryption will use
+`cryptoPurpose.providerCredential` with existing `CRYPTO_ENCRYPTION_KEY`. Binding
+verification, storage and key rotation are not implemented by these schemas.
+1Claw signers require top-level `credentialId`; existing records may omit it or
+use null until the database migration. No database table, foreign key, provisioning
+attempt table, provider API call or credential persistence has been added.
+
+Next steps are tenant-scoped persistence, provider implementation and managed EVM
+workflows. Partial remote provisioning will use manual recovery in this iteration;
+no automatic retry of ambiguous creation or automatic key destruction is allowed.
+
 ## Signing semantics
 
 ECDSA message signing hashes with SHA-256; Ed25519 signs the message directly.

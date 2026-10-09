@@ -42,6 +42,14 @@ export const makeGcpWalletKeys: Effect.Effect<
   const keyRingName = client.keyRingPath(config.projectId, config.location, config.keyRing);
 
   const create = Effect.fn("wallet-keys.gcp.create")(function* (input: CreateWalletKeyInput) {
+    if (input.provider === "1claw") {
+      return yield* new WalletKeyError({
+        operation: "create",
+        code: "UNSUPPORTED_OPERATION",
+        cause: new Error("The GCP provider cannot provision 1Claw keys"),
+      });
+    }
+
     const providerAlgorithm = providerAlgorithms[input.algorithm];
     const [key] = yield* Effect.tryPromise({
       try: () =>

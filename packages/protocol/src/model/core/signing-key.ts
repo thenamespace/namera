@@ -1,8 +1,14 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, SigningKeyId } from "#/common/index";
+import { CredentialId, OrganizationId, SigningKeyId } from "#/common/index";
 import { Hex } from "#/evm/index";
 import { TimestampFields } from "#/model/common";
+
+import {
+  OneClawEd25519KeyData,
+  OneClawSecp256k1KeyData,
+  OneClawSigningKeyData,
+} from "./one-claw.js";
 
 export const SigningKeyPurpose = Schema.Literals(["wallet-root", "session"]);
 export const SigningKeyCustody = Schema.Literals(["local", "namera-managed"]);
@@ -51,6 +57,7 @@ export const SigningKeyData = Schema.Union([
   LocalSigningKeyData,
   GcpSigningKeyData,
   ManagedLocalSigningKeyData,
+  OneClawSigningKeyData,
 ]);
 
 const SigningKeyFields = {
@@ -58,6 +65,7 @@ const SigningKeyFields = {
   organizationId: OrganizationId,
   publicKeyHex: Hex,
   status: SigningKeyStatus,
+  credentialId: Schema.optionalKey(Schema.Null),
 };
 
 const LocalPasskeySigningKey = Schema.Struct({
@@ -84,10 +92,31 @@ const NameraManagedSigningKey = Schema.Struct({
   data: Schema.Union([GcpSigningKeyData, ManagedLocalSigningKeyData]),
 }).mapFields(Struct.assign(TimestampFields));
 
+const OneClawSigningKeyFields = {
+  ...SigningKeyFields,
+  purpose: SigningKeyPurpose,
+  custody: Schema.Literal("namera-managed"),
+  credentialId: CredentialId,
+};
+
+const OneClawSecp256k1SigningKeyInsert = Schema.Struct({
+  ...OneClawSigningKeyFields,
+  algorithm: Schema.Literal("secp256k1"),
+  data: OneClawSecp256k1KeyData,
+});
+
+const OneClawEd25519SigningKeyInsert = Schema.Struct({
+  ...OneClawSigningKeyFields,
+  algorithm: Schema.Literal("ed25519"),
+  data: OneClawEd25519KeyData,
+});
+
 export const SigningKey = Schema.Union([
   LocalPasskeySigningKey,
   LocalSigningKey,
   NameraManagedSigningKey,
+  OneClawSecp256k1SigningKeyInsert.mapFields(Struct.assign(TimestampFields)),
+  OneClawEd25519SigningKeyInsert.mapFields(Struct.assign(TimestampFields)),
 ]);
 
 const SigningKeyInsertFields = {
@@ -95,9 +124,12 @@ const SigningKeyInsertFields = {
   organizationId: OrganizationId,
   publicKeyHex: Hex,
   status: SigningKeyStatus,
+  credentialId: Schema.optionalKey(Schema.Null),
 };
 
 export const SigningKeyInsert = Schema.Union([
+  OneClawSecp256k1SigningKeyInsert,
+  OneClawEd25519SigningKeyInsert,
   Schema.Struct({
     ...SigningKeyInsertFields,
     purpose: Schema.Literal("wallet-root"),

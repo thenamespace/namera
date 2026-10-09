@@ -1,5 +1,5 @@
 import { createHash, createPublicKey, verify } from "node:crypto";
-import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -7,7 +7,7 @@ import { expect, it } from "@effect/vitest";
 import { ConfigProvider, Effect, Layer, Schema } from "effect";
 
 import { SigningKeyId } from "@namera-ai/protocol";
-import type { CreateWalletKeyInput } from "@namera-ai/protocol/model";
+import { CreateWalletKeyInput } from "@namera-ai/protocol/model";
 import { p256 } from "@noble/curves/nist.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 
@@ -59,6 +59,25 @@ const readPrivateKey = Effect.fn("wallet-keys.test.readPrivateKey")(function* (
   const encoded = yield* Effect.promise(() => readFile(join(directory, fileName), "utf8"));
   return (JSON.parse(encoded) as { readonly privateKeyPem: string }).privateKeyPem;
 });
+
+it.effect("rejects 1Claw creation without creating local key material", () =>
+  withLocalWalletKeys((directory) =>
+    Effect.gen(function* () {
+      const walletKeys = yield* WalletKeys;
+      const input = Schema.decodeUnknownSync(CreateWalletKeyInput)({
+        id: signingKeyIds.secp256k1,
+        organizationId: "0198a6f0-0000-7000-8000-000000000006",
+        credentialId: "0198a6f0-0000-7000-8000-000000000007",
+        provider: "1claw",
+        chain: "ethereum",
+        algorithm: "secp256k1",
+      });
+      const error = yield* walletKeys.create(input).pipe(Effect.flip);
+      expect(error).toMatchObject({ _tag: "WalletKeyError", code: "UNSUPPORTED_OPERATION" });
+      expect(yield* Effect.promise(() => readdir(directory))).toEqual([]);
+    }),
+  ),
+);
 
 it.effect("creates keys and signs messages with each supported algorithm", () =>
   withLocalWalletKeys((directory) =>

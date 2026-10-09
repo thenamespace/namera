@@ -7,6 +7,7 @@ import {
   PasskeyVerificationError,
   SigningKeyId,
   WalletCreationError,
+  WalletCustodyUnavailableError,
   type ActorId,
   type OrganizationId,
   type UserId,
@@ -48,6 +49,9 @@ export const makeCreateWallet = Effect.gen(function* () {
     readonly request: CreateWalletRequest;
   }) {
     const requestedOwner = input.request.owner;
+    if (requestedOwner.type === "namera-managed" && requestedOwner.provider === "1claw") {
+      return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
+    }
     const custody = requestedOwner.type === "passkey" ? "local" : "namera-managed";
     const protectionLevel =
       requestedOwner.type === "namera-managed" ? requestedOwner.protectionLevel : "not-applicable";
@@ -119,6 +123,12 @@ export const makeCreateWallet = Effect.gen(function* () {
                   }),
               ),
             );
+          if (createdKey.provider === "1claw") {
+            return yield* new WalletCreationError({
+              code: "KEY_CREATION_FAILED",
+              namespace: input.request.namespace,
+            });
+          }
           const data =
             createdKey.provider === "gcp-kms"
               ? {
@@ -254,7 +264,7 @@ export const makeCreateWallet = Effect.gen(function* () {
           );
           const now = yield* DateTime.now;
           const notificationData =
-            signingKey.custody === "local"
+            preparedOwner.signingKey.custody === "local"
               ? {
                   version: 1 as const,
                   address: account.address,
@@ -266,7 +276,7 @@ export const makeCreateWallet = Effect.gen(function* () {
                   address: account.address,
                   implementation: account.implementation,
                   custody: "namera-managed" as const,
-                  protectionLevel: signingKey.data.protectionLevel,
+                  protectionLevel: preparedOwner.signingKey.data.protectionLevel,
                 };
           yield* createNotification({
             organizationId: input.organizationId,

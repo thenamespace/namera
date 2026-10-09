@@ -11,6 +11,7 @@ export const cryptoPurpose = {
   sessionToken: "auth.session.token",
   apiKey: "auth.api-key",
   emailOutbox: "email.outbox.payload",
+  providerCredential: "core.credentials.payload",
   sessionKeyPolicies: "session-key.policies",
   executionRequest: "execution.request",
   signatureRequest: "signature.request",

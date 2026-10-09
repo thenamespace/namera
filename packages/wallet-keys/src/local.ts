@@ -36,6 +36,14 @@ export const makeLocalWalletKeys: Effect.Effect<
   });
 
   const create = Effect.fn("wallet-keys.local.create")(function* (input: CreateWalletKeyInput) {
+    if (input.provider === "1claw") {
+      return yield* new WalletKeyError({
+        operation: "create",
+        code: "UNSUPPORTED_OPERATION",
+        cause: new Error("The local provider cannot provision 1Claw keys"),
+      });
+    }
+
     const keyPair = yield* generateLocalKeyPair(input.algorithm);
     const fileName = `${input.id}.json`;
 

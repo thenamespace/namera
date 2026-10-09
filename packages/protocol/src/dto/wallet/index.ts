@@ -23,6 +23,12 @@ export * from "./passkey.js";
 export const CreateWalletOwnerRequest = Schema.Union([
   Schema.Struct({
     type: Schema.Literal("namera-managed"),
+    provider: Schema.Literal("1claw"),
+    protectionLevel: Schema.optionalKey(Schema.Never),
+  }),
+  Schema.Struct({
+    type: Schema.Literal("namera-managed"),
+    provider: Schema.optionalKey(Schema.Never),
     protectionLevel: WalletKeyProtectionLevel,
   }),
   Schema.Struct({
@@ -52,12 +58,20 @@ export const CreateWalletRequest = CreateEvmWalletRequest.annotate({
 export const WalletOwnerResponse = Schema.Union([
   Schema.Struct({
     signingKeyId: SigningKeyId,
+    custody: Schema.Literal("namera-managed"),
+    provider: Schema.Literal("1claw"),
+    algorithm: Schema.Literal("secp256k1"),
+    protectionLevel: Schema.optionalKey(Schema.Never),
+  }),
+  Schema.Struct({
+    signingKeyId: SigningKeyId,
     custody: Schema.Literal("local"),
     algorithm: SigningKeyAlgorithm,
   }),
   Schema.Struct({
     signingKeyId: SigningKeyId,
     custody: Schema.Literal("namera-managed"),
+    provider: Schema.optionalKey(Schema.Never),
     algorithm: SigningKeyAlgorithm,
     protectionLevel: WalletKeyProtectionLevel,
   }),

@@ -30,12 +30,16 @@ layer(TestServerLayer)("wallet routes", (it) => {
         owner.actor.organization.id,
       );
 
-      for (const protectionLevel of ["software", "hsm"] as const) {
+      for (const managedOwner of [
+        { type: "namera-managed", protectionLevel: "software" },
+        { type: "namera-managed", protectionLevel: "hsm" },
+        { type: "namera-managed", provider: "1claw" },
+      ] as const) {
         const error = yield* client.wallet
           .create({
             payload: {
               namespace: "eip155",
-              owner: { type: "namera-managed", protectionLevel },
+              owner: managedOwner,
               metadata: metadata("Unavailable managed account"),
             },
           })
@@ -45,6 +49,18 @@ layer(TestServerLayer)("wallet routes", (it) => {
           code: "MANAGED_WALLETS_DISABLED",
         });
       }
+
+      const internalError = yield* createTestManagedWallet(client, {
+        payload: {
+          namespace: "eip155",
+          owner: { type: "namera-managed", provider: "1claw" },
+          metadata: metadata("Unavailable internal 1Claw account"),
+        },
+      }).pipe(Effect.flip);
+      expect(internalError).toMatchObject({
+        _tag: "WalletCustodyUnavailableError",
+        code: "MANAGED_WALLETS_DISABLED",
+      });
 
       expect(yield* client.wallet.list()).toEqual([]);
       expect(yield* client.billing.get()).toEqual(billingBefore);

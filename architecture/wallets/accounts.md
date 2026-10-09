@@ -58,6 +58,13 @@ its ownership and network selectors display managed custody and Solana
 as disabled coming-soon options.
 Managed construction is an internal capability; the server provider is disabled.
 
+The phase-2 contract additionally accepts `{type: "namera-managed", provider:
+"1claw"}` without a protection-level claim. It remains rejected by both the HTTP
+gate and the internal creation workflow before billing or provider calls. The
+managed account loader also rejects 1Claw until the provider and EVM integration
+are implemented. No new account namespace, database row shape or runtime provider
+is enabled by this contract change.
+
 The creation form starts WebAuthn registration after validating account metadata,
 without a recovery acknowledgement checkbox. The account overview retains the
 notice that email login cannot restore the owner passkey and that losing every
@@ -107,6 +114,13 @@ accepts an optional presentation description alongside its name and logo.
 Public wallet responses include safe owner information: signing-key ID, custody,
 algorithm, and managed protection level when applicable. They never expose a
 provider locator, passkey credential ID, or private material.
+
+The prepared 1Claw response variant exposes `provider: "1claw"` and
+`algorithm: "secp256k1"` instead of a protection level. Its mapper includes no
+credential ID, agent ID, key/version locator or encrypted payload and rejects
+non-Ethereum 1Claw owners. Existing passkey and local/GCP response shapes remain
+unchanged. Protocol validation, managed-route rejection and local-provider
+fallback regressions cover this preparation; full provisioning is not implemented.
 
 Routes are `POST /wallets`, `GET /wallets`, `GET /wallets/:walletId`,
 `GET /wallets/:walletId/portfolio`, and `POST /wallets/:walletId/update`. The

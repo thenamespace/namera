@@ -22,7 +22,8 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
       wallet.wallet.namespace !== "eip155" ||
       wallet.wallet.status !== "active" ||
       wallet.signingKey.status !== "active" ||
-      wallet.signingKey.custody !== "namera-managed"
+      wallet.signingKey.custody !== "namera-managed" ||
+      wallet.signingKey.data.type === "1claw"
     ) {
       return yield* new WalletAccountUnavailable();
     }

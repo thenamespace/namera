@@ -1,6 +1,6 @@
 # 1Claw managed account integration plan
 
-Status: proposed, not implemented. Updated: 9 October 2026.
+Status: phase 2 contracts implemented; runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
 later project. The first complete milestone is a managed account that can install
@@ -42,7 +42,7 @@ server: configuration and live provider composition
   application: account provisioning and owner authorization
     wallet-keys: 1Claw client, authentication, key lifecycle, signing
     evm: account construction, digests, signature formatting, submission
-    database: tenant-scoped persistence and durable recovery
+    database: tenant-scoped signer and encrypted credential persistence
   api / protocol: public contracts and typed models
 ```
 
@@ -71,7 +71,7 @@ Complete phases in order. Each phase should be a reviewable change with its own
 verification evidence; later phases must not bypass an unresolved earlier gate.
 
 - [ ] Phase 1: provider and account compatibility
-- [ ] Phase 2: protocol contracts
+- [x] Phase 2: protocol contracts
 - [ ] Phase 3: persistence and recovery model
 - [ ] Phase 4: 1Claw key-provider implementation
 - [ ] Phase 5: EVM managed-owner integration
@@ -109,7 +109,7 @@ decision, not a silent fallback.
 Owners: `packages/protocol`, with review of current provider and wallet contracts.
 
 - Add versioned 1Claw signing-key/provider metadata and lifecycle input variants.
-- Pin provider agent, key identity/version, chain family, and credential reference.
+- Pin provider agent, key identity/version, chain family, and top-level `credentialId`.
 - Resolve the existing secp256k1/HSM restriction honestly for this provider.
 - Define managed account inputs and safe public ownership responses while
   preserving passkey compatibility. Account mode remains server-selected.
@@ -120,6 +120,49 @@ Owners: `packages/protocol`, with review of current provider and wallet contract
 **Exit gate:** schema tests cover valid variants, invalid combinations, existing
 passkey payloads, and public response redaction. No new HTTP capability is enabled.
 
+Implemented contracts:
+
+- `SigningKey`/`SigningKeyInsert` accept versioned `1claw` metadata. Ethereum,
+  Bitcoin and Tron require secp256k1; Solana, XRP and Cardano require Ed25519.
+  These are metadata shapes, not enabled account namespaces or signing support.
+  Midnight is excluded until its curve and signing contract are established.
+- 1Claw signers require a top-level `credentialId`. Existing variants accept an
+  absent or null reference for compatibility with the pre-migration database.
+  Passkey `data.credentialId` remains the unrelated WebAuthn identifier.
+- `Credential`/`CredentialInsert` describe the planned generic `core.credentials`
+  table. Its first typed variant is `1claw-agent`, with non-secret versioned
+  agent metadata and an encrypted payload. The decrypted envelope binds version,
+  credential ID, organization ID and agent ID to a redacted API key.
+- Provider creation accepts explicit `provider: "1claw"`, Ethereum/secp256k1,
+  organization ID and a preallocated credential ID. Its result carries pinned
+  public key metadata and the redacted credential envelope for application-owned
+  encryption. No private signing key is returned. Signing and disable inputs
+  carry tenant-scoped credential references. Phase 4 must resolve and validate
+  those references before provider authentication.
+- Only Ethereum 32-byte digest signing and disablement have new input variants.
+  No 1Claw message-signing or destruction capability is claimed. Legacy GCP/local
+  creation and protection levels are unchanged; their standalone `WalletKey`
+  compatibility model is not extended into a second 1Claw identity model.
+- Public owner input is `{type: "namera-managed", provider: "1claw"}`. Its safe
+  response exposes only signing-key ID, custody, provider and algorithm. It has
+  no HSM/software claim, credential reference, agent ID or provider key locator.
+- `WalletKeyError.code` adds optional provider-unavailable, approval-required,
+  identity-mismatch, unsupported-operation and incomplete-provisioning categories.
+  Optionality preserves existing provider errors. Actual provider mapping is
+  phase 4 work, not implemented by defining the categories.
+- `cryptoPurpose.providerCredential` reserves `core.credentials.payload` for
+  encryption with existing `CRYPTO_ENCRYPTION_KEY`. No new secret or encryption
+  implementation is introduced. Key rotation remains a separate operational task.
+
+The HTTP managed-custody gate remains unchanged. Internal 1Claw creation and
+account loading also fail closed; local/GCP providers do not provision substitute
+keys for 1Claw requests. Persistence, provider authentication, binding checks,
+billing classification and managed account operations remain later phases.
+
+Verification: protocol suite (40 tests), wallet-key provider suite (6 tests),
+wallet/passkey/OpenAPI boundary suites (12 tests), wallet response mapping
+(3 tests), and `pnpm check` passed. No live 1Claw resources were created or used.
+
 ### Phase 3: persistence and recovery model
 
 Owners: `packages/database`, protocol persistence models.
@@ -127,18 +170,23 @@ Owners: `packages/database`, protocol persistence models.
 - Extend `core.signing_key` discriminator/custody checks for 1Claw metadata.
 - Retain `core.wallet.signing_key_id` and existing tenant-safe relationships.
 - Add a provider-tenant mapping only if required by the selected management model.
-- Persist durable provisioning attempts with tenant-scoped idempotency and remote
-  resource references. Define retry, terminal failure, and reconciliation states.
-- Choose protected credential storage: a secret-manager reference or encrypted
-  database value using existing crypto infrastructure. Credentials cannot be
-  hashed because provider authentication needs their original value.
+- Add generic `core.credentials`, initially typed as `1claw-agent`, with encrypted
+  payloads using existing crypto infrastructure. Credentials cannot be hashed
+  because provider authentication needs their original value.
+- Add nullable `core.signing_key.credential_id`, required for 1Claw rows and null
+  for other variants, with an organization-scoped foreign key. Do not duplicate
+  this reference in JSON metadata or introduce a `signing_key_credential` table.
+- Do not add `wallet_provisioning` or another provisioning-attempt table in this
+  iteration. Partial or ambiguous remote creation requires manual recovery;
+  automatic crash recovery and exactly-once remote creation are not promised.
 - Handle the crash window after a one-time credential is issued but before it is
   stored: define provider-assisted rotation/recovery or safe cleanup.
 - Keep private keys and temporary JWTs out of the database; do not duplicate signer
   identity in a competing provider-wallet table.
 
 **Exit gate:** migrations and repository tests prove tenant isolation, uniqueness,
-concurrent retries, credential scoping, and durable recovery after partial writes.
+credential scoping and atomic local writes. Document manual recovery for remote
+resources left behind by failures, including lost one-time credentials.
 
 ### Phase 4: 1Claw key-provider implementation
 
@@ -181,21 +229,23 @@ Existing P-256 account tests remain green.
 Owner: `packages/application`.
 
 1. Authorize the actor and precheck managed-account entitlement/capacity.
-2. Establish or resume the durable provisioning attempt.
-3. Provision/recover the dedicated provider agent and protect its credential.
-4. Provision/recover and validate the owner key.
+2. Allocate local signing-key and credential IDs for the request.
+3. Provision one dedicated provider agent and protect its credential.
+4. Provision one Ethereum key, enable raw signing and validate its identity.
 5. Construct the selected EVM account.
 6. Lock billing state, repeat capacity checks, and atomically persist the signer,
-   wallet, required audits, notifications, and attempt completion.
-7. Reconcile failed or ambiguous attempts without duplicating remote resources.
+   credential, wallet, required audits and notifications.
+7. Report partial or ambiguous failures for manual recovery. Never blindly retry
+   remote creation or claim that a remote resource was rolled back.
 
-Keep remote calls outside long database transactions. Scope idempotency to the
-tenant and payload; reject key reuse with different creation parameters.
+Keep remote calls outside long database transactions. Use provider idempotency
+only if verified; a local transaction does not make remote creation atomic.
 Never destroy a provider key automatically if it might control a funded account.
 
-**Exit gate:** workflow tests cover duplicate requests, concurrent capacity checks,
-provider success followed by database failure, lost responses, retries, and safe
-orphan handling. Exactly one successful account and audit sequence is returned.
+**Exit gate:** workflow tests cover concurrent capacity checks, provider success
+followed by database failure, lost responses and safe orphan handling. Successful
+local account, credential, signer and audit writes are atomic; ambiguous remote
+outcomes require the documented manual procedure.
 
 ### Phase 7: managed-owner session authorization
 
