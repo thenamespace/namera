@@ -36,7 +36,7 @@ export function ResourceEmptyState({
         <Typography.Paragraph
           className="max-w-xs text-center leading-relaxed text-balance"
           color="muted"
-          size="sm"
+          size="xs"
         >
           {description}
         </Typography.Paragraph>
