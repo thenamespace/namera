@@ -5,11 +5,11 @@ import type { EthereumAddress } from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
 
 export const portfolioChartColors = [
-  "var(--chart-3)",
-  "var(--chart-2)",
-  "var(--chart-4)",
-  "var(--chart-1)",
-  "var(--chart-5)",
+  "var(--accent)",
+  "var(--muted)",
+  "color-mix(in oklch, var(--accent) 45%, var(--foreground))",
+  "color-mix(in oklch, var(--muted) 65%, var(--foreground))",
+  "color-mix(in oklch, var(--muted) 55%, var(--surface))",
 ] as const;
 
 export type AssetTableRow = PortfolioAsset & {
@@ -100,7 +100,7 @@ const collapseAllocations = (
     otherValue > 0 ? [...visible, { id: "other", name: "Other", value: otherValue }] : visible;
 
   return collapsed.map((item, index) => ({
-    color: portfolioChartColors[index % portfolioChartColors.length] ?? "var(--chart-3)",
+    color: portfolioChartColors[index % portfolioChartColors.length] ?? "var(--muted)",
     id: item.id,
     name: item.name,
     value: item.value,

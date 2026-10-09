@@ -43,7 +43,7 @@ function PortfolioPieTooltip({
     <ChartTooltip>
       <ChartTooltip.Header>{item.name}</ChartTooltip.Header>
       <ChartTooltip.Item>
-        <ChartTooltip.Indicator color={item.payload?.color ?? "var(--chart-3)"} />
+        <ChartTooltip.Indicator color={item.payload?.color ?? "var(--accent)"} />
         <ChartTooltip.Label>Value</ChartTooltip.Label>
         <ChartTooltip.Value>{currency.format(value)}</ChartTooltip.Value>
       </ChartTooltip.Item>
@@ -187,10 +187,6 @@ function PortfolioOverview({
             >
               {currency.format(summary.pricedTotalUsd)}
             </Typography.Heading>
-            <Typography className="mt-2 text-xs!" color="muted">
-              Based on {summary.pricedAssetCount} priced{" "}
-              {summary.pricedAssetCount === 1 ? "asset" : "assets"} across supported networks
-            </Typography>
           </div>
 
           <div className="self-end">
@@ -321,7 +317,7 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
             Assets
           </Typography.Heading>
           <Typography.Paragraph className="mt-1 max-w-2xl text-muted" size="sm">
-            Token balances and USD values across supported EVM networks.
+            Token balances and USD values across supported networks.
           </Typography.Paragraph>
         </div>
         <Button
