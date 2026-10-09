@@ -123,7 +123,7 @@ function InternalAction({
 
   return (
     <Link
-      className={buttonVariants({ size: "sm", variant: "secondary" })}
+      className={buttonVariants({ size: "sm", variant: "tertiary" })}
       to={to}
       {...(params === undefined ? {} : { params })}
     >
@@ -515,7 +515,7 @@ export function NotificationDetail({ item }: { readonly item: NotificationRespon
         item={item}
         description={`Google was ${item.notification.data.action === "linked" ? "connected" : "disconnected"}. Email sign-in remains available. If you did not make this change, review your connected accounts and active sessions.`}
       >
-        <Link to="/settings/security" className={buttonVariants({ variant: "secondary" })}>
+        <Link to="/settings/security" className={buttonVariants({ variant: "tertiary" })}>
           Review security
         </Link>
       </NotificationDetailLayout>

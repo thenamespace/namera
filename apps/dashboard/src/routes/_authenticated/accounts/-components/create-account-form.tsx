@@ -17,10 +17,8 @@ import {
   Select,
   TextArea,
   Typography,
-  cn,
-  inputVariants,
 } from "@namera-ai/ui";
-import { AlchemyIcon, ChainIcon, NameraIcon, SolanaIcon } from "@namera-ai/ui/icons";
+import { ChainIcon, NameraIcon, SolanaIcon } from "@namera-ai/ui/icons";
 import { startRegistration } from "@simplewebauthn/browser";
 import { Controller, useForm } from "react-hook-form";
 
@@ -238,19 +236,6 @@ export function CreateAccountForm() {
                   </ListBox>
                 </Select.Popover>
               </Select>
-            </DashboardCardRow>
-
-            <DashboardCardRow>
-              <Typography className="text-sm!">Account type</Typography>
-              <div
-                className={cn(
-                  inputVariants({ variant: "secondary" }),
-                  "flex flex-row items-center gap-2",
-                )}
-              >
-                <AlchemyIcon aria-hidden className="size-5 shrink-0" />
-                Alchemy Modular V2
-              </div>
             </DashboardCardRow>
           </FieldGroup>
         </DashboardCardContent>
