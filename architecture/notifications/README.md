@@ -45,8 +45,7 @@ confirmed, and corresponding resource context. Recipient selection is
 permission-aware for organization resources.
 
 Execution confirmations create in-app notifications only, regardless of email
-preferences. Settlement does not enqueue execution-confirmation emails, and the
-execution email payload and template have been removed.
+preferences. Settlement does not enqueue execution-confirmation emails.
 
 Invitation terminal transitions expire the actionable occurrence and cancel a
 still-pending email. New-sign-in is user scoped. Preferences are grouped by
@@ -85,9 +84,3 @@ initial and cursor-page retries recover, failed read/archive/mark-all-read
 preserve visible state, and a successful archive refreshes the list and clears
 the matching selection. These checks use real notification-shaped responses
 with intercepted transport; server recipient authorization is covered separately.
-
-## Pending
-
-- Add email-delivery webhook, bounce, and suppression handling when required by
-  operational volume.
-- Verify preference resolution and delivery in production.

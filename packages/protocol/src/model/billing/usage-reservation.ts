@@ -24,6 +24,7 @@ export const BillingUsageReservation = Schema.Struct({
   sourceType: BillingUsageSourceType,
   sourceId: NonEmptyString,
   status: BillingUsageReservationStatus,
+  sponsorshipAttempts: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   expiresAt: Schema.DateTimeUtcFromDate,
   settledAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   releasedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),

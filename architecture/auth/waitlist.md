@@ -26,7 +26,6 @@ errors without claiming a successful join. It does not call admin endpoints.
 
 Internal routes require admin session authorization, are excluded from public
 OpenAPI, and writes require an approved Origin and the admin write rate limit.
-The old arbitrary-status PATCH and user-list endpoints remain removed.
 Public example:
 
 ```sh
@@ -85,13 +84,12 @@ telemetry. No addresses, codes, or invitation URLs enter telemetry attributes.
 
 HTTP tests cover normalization, malformed inputs, duplicate and competing joins,
 join metrics, no account creation, confirmation delivery and provider retry,
-enqueue-failure rollback, per-IP limits, and 404 responses for
-retired status/user routes. Management HTTP tests cover role/session/Origin
+enqueue-failure rollback and per-IP limits. Management HTTP tests cover role/session/Origin
 enforcement, competing accepts, outbox-failure rollback, provider retry,
 bound invite/email delivery, audit and metrics,
 literal search, status filters, and 25-row pagination. Run races in the disposable
 PostgreSQL lane as well as PGlite. Separate transport tests verify route-specific
-CORS and bounded metric labels. Existing migrations and data remain unchanged.
+CORS and bounded metric labels.
 
 The admin page uses the same UIKit table, copyable email display, filters and
 pagination as Invites. Only pending entries expose Accept, gated by permission;

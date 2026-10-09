@@ -4,46 +4,22 @@ Namera is a pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and Effect
 v4. Packages expose narrow public entry points and use the `namera-source`
 condition for direct source consumption during development.
 
-## Dependency versions
+## Toolchain and dependency ownership
 
-The workspace pins Effect and its platform, SQL, Atom, OpenTelemetry, and Vitest
-adapters to 4.0.1. The `@effect/tsgo` editor tool is versioned independently.
-Import platform modules from `effect/http`,
-`effect/http-api`, `effect/sql`, and the other stable paths, not `effect/unstable/*`.
-Encoding helpers live in `effect/encoding/*`. Keep the CLI npm shrinkwrap in sync
-with the pnpm catalog using `pnpm cli:lock`, then run `pnpm pack:check` before release.
+The pnpm catalog and lockfile own exact dependency versions. Effect v4 modules
+use stable `effect/http`, `effect/http-api`, `effect/sql` and
+`effect/encoding/*` paths. Packages retain the `namera-source` condition and
+Klarity's unbundled build conventions. The root config is a Turbo global dependency.
 
-Direct dependencies track the latest releases accepted by pnpm's supply-chain
-policies, with this explicit exception:
+The root `prepare` script installs hooks and patches TypeScript with
+`@effect/tsgo`; installs using `--ignore-scripts` can run
+`pnpm exec effect-tsgo patch --typescript --no-oxlint` for editor integration.
+Effect editor diagnostics do not replace the normal typecheck and lint gates.
+React Hook Form uses the Standard Schema resolver with Effect schemas.
 
-- Drizzle ORM and Kit stay on the standard `rc` channel (1.0.0-rc.4), not
-  experimental snapshot tags. Its existing Effect error-constructor patch remains.
-
-The dashboard uses UA Parser v2 with its bundled TypeScript declarations. Its
-AGPL/commercial licensing change was accepted for this upgrade; the old v1 hold
-and separate `@types/ua-parser-js` dependency have been removed.
-
-TypeScript 7.0.2 uses tsdown's `tsgo` declaration generator. Klarity 0.3.0
-suppresses its known experimental-API warning while keeping other build warnings
-fatal, and supports Vitest 5 without a peer override.
-
-`@effect/tsgo` replaces the JavaScript Effect language-service package. `pnpm
-install` patches the native TypeScript binary through the root `prepare` script;
-installs with `--ignore-scripts` must run `pnpm exec effect-tsgo patch --typescript
---no-oxlint` to enable the editor integration. VS Code-based editors should use
-the TypeScript 7 extension and workspace compiler, then restart the TS server.
-The plugin configuration still uses the `@effect/language-service` name, as
-required by the native integration. Effect diagnostics remain editor feedback,
-not new CI failure conditions; TypeScript errors still fail checks. Oxlint is
-not patched. Container builds can use the unpatched compiler. Every package
-extends the root config before its Klarity preset; Turbo tracks that shared
-config as a global dependency so editor/compiler changes invalidate cached checks.
-
-A scoped peer exception covers React Hook Form's Standard Schema resolver with
-Effect 4. Do not import the resolver package's Effect 3-specific adapter.
-
-Oxlint's new React Compiler migration diagnostics are warnings while the compiler
-is not enabled. Existing correctness, Hooks, and accessibility checks remain active.
+Keep the CLI npm shrinkwrap synchronized with `pnpm cli:lock`, and validate
+published entry points with `pnpm pack:check`. Exact versions and peer exceptions
+belong in package configuration rather than a second architecture inventory.
 
 ## Dependency direction
 
@@ -71,6 +47,9 @@ flowchart TD
   Application --> WalletKeys
   Application --> Telemetry
   Application --> Utils[packages/utils]
+  Application --> Passkeys[packages/passkeys]
+  Application --> ENS[packages/ens]
+  Dashboard --> EvmBrowser[EVM chains and session-review subpaths]
 
   API --> Protocol
   Database --> Protocol
@@ -91,34 +70,36 @@ do not import application workflows.
 
 ## Workspace responsibilities
 
-| Workspace              | Responsibility                                                                                                   |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `apps/server`          | Node runtime, middleware, actor authentication, rate limits, HTTP/MCP handlers, workers, live Layer composition. |
-| `apps/dashboard`       | Vite/React dashboard, route loaders, Effect Atom queries, forms, and product presentation.                       |
-| `apps/cli`             | Effect CLI, OAuth device login, keyring profiles, interactive prompts, output formatting.                        |
-| `apps/email-templates` | React Email preview and generation of email-safe PNG assets.                                                     |
-| `packages/protocol`    | Effect Schemas, branded identities, models, public DTOs, and expected errors.                                    |
-| `packages/database`    | Drizzle schemas, migrations, PostgreSQL/PGlite layers, transactions, repositories.                               |
-| `packages/application` | Business workflows, transaction boundaries, billing enforcement, audit and notification orchestration.           |
-| `packages/api`         | Public typed `HttpApi` declaration and authentication middleware contracts.                                      |
-| `packages/crypto`      | Purpose-separated HMAC, AES-GCM encryption, tokens, and numeric codes.                                           |
-| `packages/emails`      | Encrypted durable email jobs, worker, Resend provider, and runtime React Email templates.                        |
-| `packages/wallet-keys` | Provider-neutral key lifecycle with local and Google Cloud KMS layers.                                           |
-| `packages/evm`         | Chain registry, clients, smart accounts, simulations, execution, signing, verification, and policy handlers.     |
-| `packages/telemetry`   | OTLP exporters, service identity, HTTP normalization, and shared bounded metrics.                                |
-| `packages/sdk`         | Fetch-based Promise client over the generated API contract.                                                      |
-| `packages/ui`          | Shared source-only React components and Namespace UIKit exports.                                                 |
-| `packages/utils`       | Dependency-light deterministic helpers without Effect services or application state.                             |
+| Workspace              | Responsibility                                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `apps/server`          | Node runtime, middleware, actor authentication, rate limits, HTTP handlers, workers, live Layer composition.            |
+| `apps/dashboard`       | Vite/React dashboard, route loaders, Effect Atom queries, forms, and product presentation.                              |
+| `apps/web`             | Public website, waitlist form, documentation and MDX blog.                                                              |
+| `apps/admin-portal`    | Static platform administration over internal APIs.                                                                      |
+| `apps/cli`             | Effect CLI, OAuth device login, keyring profiles, interactive prompts, output formatting, local signing, and stdio MCP. |
+| `apps/email-templates` | React Email preview and generation of email-safe PNG assets.                                                            |
+| `packages/protocol`    | Effect Schemas, branded identities, models, public DTOs, and expected errors.                                           |
+| `packages/database`    | Drizzle schemas, migrations, PostgreSQL/PGlite layers, transactions, repositories.                                      |
+| `packages/application` | Business workflows, transaction boundaries, billing enforcement, audit and notification orchestration.                  |
+| `packages/api`         | Public typed `HttpApi` declaration and authentication middleware contracts.                                             |
+| `packages/crypto`      | Purpose-separated HMAC, AES-GCM encryption, tokens, and numeric codes.                                                  |
+| `packages/emails`      | Encrypted durable email jobs, worker, Resend provider, and runtime React Email templates.                               |
+| `packages/wallet-keys` | Provider-neutral key lifecycle with local and Google Cloud KMS layers.                                                  |
+| `packages/passkeys`    | WebAuthn ceremony generation and verification.                                                                          |
+| `packages/ens`         | Namespace offchain ENS provider boundary.                                                                               |
+| `packages/template`    | Workspace starter without product runtime behavior.                                                                     |
+| `packages/evm`         | Chain registry, clients, smart accounts, simulations, execution, signing, verification, and policy handlers.            |
+| `packages/telemetry`   | OTLP exporters, service identity, HTTP normalization, and shared bounded metrics.                                       |
+| `packages/sdk`         | Fetch-based Promise client over the generated API contract.                                                             |
+| `packages/ui`          | Shared source-only React components and Namespace UIKit exports.                                                        |
+| `packages/utils`       | Dependency-light deterministic helpers without Effect services or application state.                                    |
 
 ## Source organization
 
-`apps/web` owns the public website scaffold using TanStack Start and Fumadocs.
-Its `/` landing route is empty, `/docs` serves the local MDX collection, and
-`/api/search` searches that public content. It consumes `packages/ui` styles
-and has no backend API, authentication, persistence, or telemetry integration.
-These read-only routes do not create audit events. See the
-[web README](../../apps/web/README.md) for local commands and content structure.
-Production hosting and website content remain pending.
+`apps/web` owns the public landing page, waitlist, pricing, legal pages,
+Fumadocs documentation and MDX blog; see [website](../frontend/website.md).
+`apps/admin-portal` is a static operator SPA using verified browser sessions and
+platform membership through `/internal`; see [administration](../auth/admin.md).
 
 - Internal package imports use `#/*`; cross-package imports use package exports.
 - Relative ESM imports include `.js`.
@@ -138,8 +119,3 @@ The server is the composition root. It selects live providers, supplies secrets
 through Effect `Config`, runs migrations and workers, and exposes transport.
 Application workflows receive interfaces such as repositories, `WalletKeys`,
 EVM, EmailJobs, and telemetry; they do not select concrete providers.
-
-## Pending
-
-- Remove `packages/template` when package scaffolding moves to a maintained
-  generator, or keep it synchronized with repository conventions.

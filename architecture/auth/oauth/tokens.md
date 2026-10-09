@@ -106,11 +106,3 @@ Views expand the client, authorizing member/user/role, and currently active gran
 ## Client-side refresh serialization
 
 Because refresh credentials are single-use, SDK/CLI clients must serialize refresh within a process and persist the new token set atomically. Parallel refresh using the same parent is interpreted as reuse and can revoke the authorization.
-
-## Pending before production
-
-- Verify revocation rollback behavior under database failure; concurrent reuse
-  and child-token invalidation are covered.
-- Define token TTLs, authorization expiry, and refresh-session maximum age per client type.
-- Add cleanup that preserves required security history while removing expired credential rows.
-- Add client-disable and signing-key/credential incident runbooks.

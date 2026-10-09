@@ -59,10 +59,3 @@ Handlers return no partial changes when one scope denies. Application applies st
 ## Expiry and recovery
 
 Reservations carry expiry and status indexes so interrupted operations can be found. Execution lifecycle currently releases or settles them through request/reconciliation logic. Signature operations use the generic operation reference and can adopt analogous recovery for future stateful signature-count policies.
-
-## Pending before production
-
-- Add an explicit expired-reservation sweeper with operation-status-aware decisions.
-- Test deadlock freedom and compare-and-swap behavior under high concurrency.
-- Add a state-repair operator tool that is audited and cannot silently widen policy limits.
-- Add signature stateful handlers before enabling per-period signature policies.

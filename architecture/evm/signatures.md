@@ -11,36 +11,6 @@ The EVM adapter supports fully discriminated personal-message and EIP-712 typed-
 
 The result is decoded as protocol `Bytes32`. Digesting is reusable for canonical request hashing/policy context and does not call a provider.
 
-## Legacy owner signing
-
-This is the old synchronous path, not the self-custodial beta signing flow.
-Local passkey owners cannot sign silently through this adapter. The public
-signature workflow now uses the detached flow below; the legacy HTTP signing
-route fails closed instead of falling back to an owner key.
-
-```mermaid
-sequenceDiagram
-  participant App as Signature application
-  participant EVM as EVM signature adapter
-  participant RPC as Public client
-  participant Account as Reconstructed Modular Account V2
-  participant Owner as Wallet-key signer
-  App->>EVM: chain, account data, message or typed data
-  EVM->>EVM: Resolve supported chain
-  EVM->>Account: Reconstruct using RPC and owner
-  EVM->>EVM: Verify derived address equals stored address
-  alt message
-    EVM->>Account: signMessage
-  else typed data
-    EVM->>Account: signTypedData
-  end
-  Account->>Owner: Sign account-specific payload
-  Owner-->>Account: Signature
-  EVM-->>App: Protocol Hex signature
-```
-
-Reconstruction errors map to `ACCOUNT_RECONSTRUCTION_FAILED` or `ACCOUNT_ADDRESS_MISMATCH`; owner signing failures map to `SIGNING_FAILED`.
-
 ## Detached session signing adapter
 
 `Evm.sessionSignatures.prepare` reconstructs the public account and requires
@@ -58,7 +28,7 @@ must fail. No provider transaction is submitted and no signature is logged.
 The adapter owns chain/account encoding only. Callers must resolve installation
 data from persistence, validate actor/grant authority and lifetime, and own
 idempotency, billing and audit transitions. The application and API now expose
-prepare/complete with these checks; SDK/CLI validate and sign locally.
+prepare/complete with these checks; SDK/CLI and local MCP validate and sign locally.
 
 Actual-contract tests exercise both payload types with public-only account
 reconstruction, rejection before installation and after removal, changed-payload
@@ -85,16 +55,7 @@ Signature policy evaluation requires at least one signature operation that expli
 
 ## Idempotency and quota
 
-- SDK/CLI generate a key internally and reuse it for retries of the same preparation; local MCP integration remains pending.
+- SDK/CLI and local MCP generate a key internally and reuse it for retries of the same preparation.
 - Application canonical request hash rejects different input under the same actor/key.
 - Monthly signature quotas count successful operations in the effective billing window.
 - Reservation/failure lifecycle prevents an interrupted attempt from silently becoming unlimited free work.
-
-## Pending before production
-
-- Wire detached preparation/completion into local MCP.
-- Disclose the offchain scope of API-enforced signature expiry/policies in client consent.
-- Add conformance fixtures for popular ERC-1271 consumers and counterfactual verification paths.
-- Define retention/redaction for signed message and typed-data content, especially personal data.
-- Add optional domain/contract allowlist policies before broad typed-data production use.
-- Add periodic signature-count policy if per-session-key daily limits are launched.

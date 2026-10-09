@@ -84,8 +84,3 @@ flowchart LR
 
 Run the narrowest package checks first, then `pnpm check` for cross-package
 changes. Commit meaningful changes with a small conventional commit message.
-
-## Pending
-
-No repository-wide development-rule work is currently pending. Feature-specific
-work is listed in the owning architecture document.

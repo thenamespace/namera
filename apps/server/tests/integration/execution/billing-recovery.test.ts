@@ -6,6 +6,11 @@ import { Application } from "@namera-ai/application";
 import { Repository, TransactionService } from "@namera-ai/database";
 
 import {
+  createExecutionFixture,
+  executionFixture,
+  queueExecution,
+} from "../../fixtures/execution.js";
+import {
   makeTestApiClient,
   resetTestState,
   setApiKey,
@@ -13,7 +18,6 @@ import {
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { createExecutionFixture, executionFixture, queueExecution } from "./fixture.js";
 
 describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
   "PostgreSQL execution billing recovery",

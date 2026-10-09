@@ -50,7 +50,7 @@ Server is the Node composition and transport boundary:
 - implement typed API handlers;
 - resolve cookie/API-key/OAuth actors and permissions;
 - apply cookies, form parsing, redirects, headers, rate limits, and request context;
-- retain MCP OAuth while the CLI hosts local Streamable HTTP and tool adapters;
+- retain MCP OAuth while the CLI hosts stdio and SDK-backed tool adapters;
 - start/stop workers with runtime lifecycle.
 
 Handlers should decode through `HttpApi`, enforce transport/actor policy, call one application operation, and map the safe result. They should not duplicate queries or business transactions.
@@ -81,9 +81,3 @@ and listener cleanup; they do not simulate slow-header timeout expiry.
 - Application tests use package-owned test layers for remote services.
 - Server boundary tests compose real application/database layers and substitute provider adapters, rather than mocking application internals.
 - Authorization tests prove each credential/permission/grant combination.
-
-## Pending before production
-
-- Add deployment migration/worker ordering runbooks.
-- Complete server boundary permission matrix.
-- Add fault-injection tests at remote-call/transaction/reconciliation boundaries.

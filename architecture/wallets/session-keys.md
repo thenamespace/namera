@@ -15,7 +15,6 @@ See [onchain session compilation](../evm/accounts/onchain-sessions.md).
 
 The SDK and local MCP sign delegated operations using client-held session keys.
 The dashboard can register/export a local signer and approve installation/removal.
-Browser and live-chain end-to-end verification remain pending.
 
 ## Persistence and policy references
 
@@ -192,19 +191,15 @@ active-operation lookup recovers the public retry identity or receipt status.
 Typed approval failures
 use the shared feedback registry; provider and assertion payloads are not shown.
 
-Creation now separates onchain permissions from optional API policies. The
-shared `components/policy/evm/onchain` editor covers all eight compiled permission
-types with protocol-backed address, selector and integer-base-unit validation.
-Root access requires a field-specific acknowledgement; API restrictions are
-explicitly described as unable to constrain direct onchain use. The editor was
-checked in an isolated browser harness for root consent and exact native amounts;
-the harness was removed afterward. Dashboard unit regressions exercise the actual
-form resolver for consent errors and exact integer amounts. Network selection,
-minute-precision local-time lifetime controls, and explicit signature consent are
-also present. Signature consent defaults off and explains that execution expiry
-does not remove ERC-1271 authority. The account picker only offers active local
-P-256 owners. Lifetime ordering failures attach to the expiry field; the server
-still checks that the expiry has not passed when registering.
+Creation presents six capabilities: Contract access, Token spending, Native
+spending limit, Gas budget, Signatures, and Unrestricted account access. The
+[dashboard](../frontend/dashboard.md) maps these to compiler permissions and
+optional API policies. Native/gas budgets serialize exact base units and apply
+per network over the installation lifetime. Dates use local midnight. Root
+requires explicit acknowledgement and does not implicitly enable signatures.
+Signature consent defaults off; execution expiry does not remove ERC-1271
+authority. Only active local P-256 owners appear in the account picker.
+
 Creation generates a local SDK draft on first submission and puts only its public
 signer in form/API state. The draft stays in a ref and is disposed on unmount or
 after the user acknowledges importing/backing it up. Successful registration is
@@ -267,12 +262,5 @@ or expire. Recovery lookup errors disable new approvals rather than falling back
 to a new identity. The endpoint is covered for tenant
 isolation, member visibility, expiration, and signed/confirmed transitions.
 
-## Pending
-
-- Complete stuck signed-operation cancellation/replacement recovery.
-- Verify browser generation, encrypted export/import and owner-approved creation
-  end to end, including recovery after navigation/reload.
-- Verify dashboard removal on every installed chain, including partial failures.
-- Add retention behavior for expired/revoked keys and historical grants.
-- Per-grant editing is intentionally unsupported; revoke/replace the parent
-  credential or authorization instead.
+Per-grant editing is unsupported. Revoke or replace the parent credential or
+authorization to change delegated access.

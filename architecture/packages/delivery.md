@@ -52,6 +52,14 @@ Dashboard is a Vite React/TanStack Router application. It uses Effect Atom for s
 5. Add permission-aware loading/empty/error states and mutation feedback.
 6. Test signed-in UI at localhost plus keyboard/focus/responsive behavior.
 
+## `apps/web` and `apps/admin-portal`
+
+The public website owns landing/waitlist, documentation and blog content; see
+[website](../frontend/website.md). The static admin portal owns platform-member
+operations through authenticated `/internal` APIs; see
+[administration](../auth/admin.md). Neither frontend imports database or
+application services.
+
 ## `apps/email-templates`
 
 This app previews package-owned runtime templates and generates email-safe PNG assets. It is not imported by the server at runtime and does not own delivery/provider behavior.
@@ -65,13 +73,7 @@ Vercel as an alternative preset. Both listen on port 8080 behind infra HTTPS.
 Public `VITE_API_URL` is fixed at build time, defaults to `https://api.namera.ai`,
 and must match the API's corresponding origin configuration.
 
-Manual `deploy-dashboard.yml` and `deploy-web.yml` workflows reuse the server's
-Artifact Registry builder and infra dispatch, targeting `namera-dashboard` and
-`namera-web`. Infra provisioning and real-domain browser verification remain
+Manual `deploy-dashboard.yaml`, `deploy-web.yaml` and
+`deploy-admin-portal.yaml` workflows reuse the server's Artifact Registry builder
+and infra dispatch for their respective images. Infra provisioning and real-domain browser verification remain
 outside these image builds. Package READMEs document build/run commands.
-
-## Pending before production
-
-- Add dashboard accessibility and critical-flow browser tests.
-- Add visual regression coverage for shared table/popover/tooltip primitives.
-- Verify browser telemetry proxy privacy and failure behavior.

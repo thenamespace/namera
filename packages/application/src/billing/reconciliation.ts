@@ -222,5 +222,5 @@ export const makeBillingReconciliation = Effect.gen(function* () {
     return { rolledOver, recovered, repaired };
   });
 
-  return { run } as const;
+  return { run, reconcileSponsorships } as const;
 });

@@ -2,6 +2,7 @@ import { QueryKeys } from "@/atoms/query-keys";
 import {
   createPasskeyRegistrationOptionsMutation,
   createWalletMutation,
+  refreshWalletPortfolioMutation,
   walletAtom,
   walletPasskeyOwnerAtom,
   walletPortfolioAtom,
@@ -19,3 +20,7 @@ export const useCreateWallet = toMutation(createWalletMutation, {
 export const useCreatePasskeyRegistrationOptions = toMutation(
   createPasskeyRegistrationOptionsMutation,
 );
+
+export const useRefreshWalletPortfolio = toMutation(refreshWalletPortfolioMutation, {
+  invalidates: (input) => QueryKeys.wallet.assets(input.params.walletId),
+});

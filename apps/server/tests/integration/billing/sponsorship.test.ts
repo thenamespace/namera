@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Option } from "effect";
+import { DateTime, Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Application } from "@namera-ai/application";
@@ -76,7 +76,12 @@ layer(fixture.layer)("BSO gas billing", (it) => {
         expect(
           (yield* client.sessionKey.get({ params: { sessionKeyId: session.id } })).status,
         ).toBe(outcome === "immediate" ? "active" : "pending");
-        expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 0 });
+        expect(
+          yield* Effect.all(
+            Array.from({ length: 4 }, () => app.billing.reconcileSponsorships()),
+            { concurrency: 4 },
+          ),
+        ).toEqual([0, 0, 0, 0]);
         expect(
           yield* repository.billing.meterBalance.find(
             organizationId,
@@ -85,11 +90,47 @@ layer(fixture.layer)("BSO gas billing", (it) => {
           ),
         ).toMatchObject({ consumedAmount: 0n, reservedAmount: gas.amount });
 
+        let previousAttempt = yield* repository.billing.usageReservation.findById(
+          organizationId,
+          gas.id,
+        );
+        if (!previousAttempt) return yield* Effect.die("Missing attempted hold");
+        for (const [index, delay] of [10, 20, 40, 80, 160, 300, 300].entries()) {
+          expect(previousAttempt.sponsorshipAttempts).toBe(index + 1);
+          expect(
+            DateTime.toEpochMillis(previousAttempt.expiresAt) -
+              DateTime.toEpochMillis(yield* DateTime.now),
+          ).toBe(delay * 1000);
+          yield* TestClock.adjust(`${delay - 1} seconds`);
+          expect(yield* app.billing.reconcileSponsorships()).toBe(0);
+          expect(
+            (yield* repository.billing.usageReservation.findById(organizationId, gas.id))
+              ?.sponsorshipAttempts,
+          ).toBe(index + 1);
+          yield* TestClock.adjust("1 second");
+          expect(yield* app.billing.reconcileSponsorships()).toBe(0);
+          const nextAttempt = yield* repository.billing.usageReservation.findById(
+            organizationId,
+            gas.id,
+          );
+          if (!nextAttempt) return yield* Effect.die("Missing retried hold");
+          // A late failure from an older claim cannot replace the current retry schedule.
+          yield* repository.billing.usageReservation.retrySponsorship(
+            previousAttempt,
+            yield* DateTime.now,
+          );
+          expect(
+            (yield* repository.billing.usageReservation.findById(organizationId, gas.id))
+              ?.expiresAt,
+          ).toEqual(nextAttempt.expiresAt);
+          previousAttempt = nextAttempt;
+        }
+
         // A provider total above the authorized hold requires investigation, not an overcharge.
         yield* control.setSponsorshipCost(
           Option.some({ amountMicroUsd: gas.amount + 1n, confirmedTotalUsd: "1" }),
         );
-        yield* TestClock.adjust("6 minutes");
+        yield* TestClock.adjust("5 minutes");
         expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 0 });
         expect(
           (yield* repository.billing.usageReservation.findById(organizationId, gas.id))?.status,
@@ -98,7 +139,7 @@ layer(fixture.layer)("BSO gas billing", (it) => {
         yield* control.setSponsorshipCost(
           Option.some({ amountMicroUsd: 9644n, confirmedTotalUsd: "0.0096432" }),
         );
-        yield* TestClock.adjust("6 minutes");
+        yield* TestClock.adjust("5 minutes");
         expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1 });
         expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 0 });
         expect(

@@ -4,7 +4,8 @@ Signing proves the prepared context still matches the reconstructed account and 
 
 ## Sign integrity checks
 
-Before calling the owner signer, the adapter reconstructs the account and compares:
+Before accepting a detached owner or session signature, the adapter reconstructs
+the account and compares:
 
 - prepared chain ID with context chain ID;
 - context account and serialized sender with reconstructed address;
@@ -67,18 +68,17 @@ responsibilities; the adapter alone is not an authorization API.
 
 ```mermaid
 sequenceDiagram
-  participant App
-  participant EVM
-  participant Account as Reconstructed smart account
-  participant Owner as Wallet-key owner
-  App->>EVM: account + prepared execution
-  EVM->>Account: encodeCalls(context.calls)
-  EVM->>EVM: Compare account, EntryPoint, calls, nonce, gas, fees, sponsorship
-  EVM->>Account: signUserOperation
-  Account->>Owner: Sign account-specific UserOperation payload
-  Owner-->>Account: Signature
-  EVM->>EVM: Compute EntryPoint UserOperation hash and normalize signed operation
-  EVM-->>App: EvmSignedExecution v1
+  participant Client as Local session signer
+  participant App as Application
+  participant EVM as EVM adapter
+  participant DB as PostgreSQL
+  App-->>Client: Exact prepared UserOperation and hash
+  Client->>Client: Validate local bindings and sign EIP-191 hash
+  Client->>App: Submission ID and signature
+  App->>EVM: Persisted preparation and signature
+  EVM->>EVM: Recheck context and recover expected signer
+  EVM-->>App: Packed signed UserOperation
+  App->>DB: Recheck authority; persist signed envelope once
 ```
 
 ## Submission
@@ -122,12 +122,7 @@ of the original attempt. Only the first attempt may be failed from a send reject
 plus an absent status; later uncertainty needs canonical status/receipt evidence.
 
 The signed envelope also persists the EVM-owned billing measurement selected at
-preparation. Successful and reverted receipts calculate micro-USD from
-`actualGasCost` using that exact quote. A pre-inclusion rejection releases the
+preparation. Sponsored mainnet settlement uses Alchemy provider-confirmed BSO cost.
+Receipt gas and the persisted quote support accounting context; delayed provider
+cost keeps the gas hold unresolved. See [billing](../../billing/README.md). A pre-inclusion rejection releases the
 gas hold; an uncertain or included failure keeps it until a receipt is available.
-
-## Pending before production
-
-- Test provider error classification against actual Alchemy Rundler/HTTP failure shapes.
-- Add alerting for hash mismatch; it indicates a severe integration or data-integrity problem.
-- Document retry/backoff and provider idempotency behavior for repeated `sendUserOperation`.

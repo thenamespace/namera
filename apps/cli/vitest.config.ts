@@ -10,6 +10,7 @@ export default defineNodeVitestConfig({
     },
   },
   test: {
+    maxWorkers: 2,
     // Crypto-heavy keystore tests compete with cold CLI subprocess startup.
     fileParallelism: false,
     server: { deps: { inline: [/^@namera-ai\//] } },

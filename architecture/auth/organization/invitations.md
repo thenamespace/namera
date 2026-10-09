@@ -73,9 +73,3 @@ Acceptance requires the signed-in user's normalized email to match the invitatio
 ## Privacy behavior
 
 Fetching an invitation distinguishes missing from recipient mismatch only for an authenticated caller. Public creation paths do not expose whether an email has a Namera account through delivery response differences.
-
-## Pending before production
-
-- Add scheduled normalization/retention for expired invitations.
-- Define resend behavior without weakening one-pending-invitation uniqueness.
-- Add concurrency tests covering the last plan seat and duplicate email.

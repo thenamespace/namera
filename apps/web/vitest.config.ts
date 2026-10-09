@@ -17,5 +17,8 @@ export default defineConfig({
       externalConditions: ["namera-source", "node"],
     },
   },
-  test: { server: { deps: { inline: [/^@namera-ai\//] } } },
+  test: {
+    maxWorkers: 2,
+    server: { deps: { inline: [/^@namera-ai\//] } },
+  },
 });

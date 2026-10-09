@@ -25,11 +25,8 @@ pnpm --filter @namera-ai/email-templates dev
 
 The preview is available at `http://localhost:4000`.
 
-Run the rendered-HTML regression tests:
-
-```sh
-pnpm --filter @namera-ai/email-templates test
-```
+Template presentation is reviewed in the preview server. Durable email delivery
+is covered by the server integration suite.
 
 Generate the PNG assets before uploading them to the configured CDN:
 

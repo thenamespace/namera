@@ -190,10 +190,3 @@ sequenceDiagram
 ```
 
 Remote calls do not belong inside this transaction. All tenant identity and initial billing facts must either commit together or not exist.
-
-## Pending before production
-
-- Define owner transfer and last-owner invariants.
-- Add custom-role management only with permission-change audit events and affected-member analysis.
-- Add an invitation expiry worker or normalize expired status during every read path.
-- Document organization deletion/offboarding as an explicit retention workflow rather than cascading SQL deletion.

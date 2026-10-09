@@ -134,9 +134,3 @@ PostgreSQL and PGlite.
 - Every successful login writes `user.signed_in` transactionally with the session.
 - New-sign-in notification/email is correlated to that audit event.
 - Metrics record request duration/count and bounded verification outcomes.
-
-## Pending before production
-
-- Add cleanup/retention for terminal and expired verification rows.
-- Verify production sender authentication, reputation, and deliverability.
-- Apply and test strict security headers on the verification page.

@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { PortfolioResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
-import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
+import { HugeiconsIcon, InformationCircleIcon, RefreshIcon } from "@namera-ai/ui/icons";
+import { useEventCallback } from "usehooks-ts";
 
 import { AssetsTable, summarizePortfolio, type AssetAllocation } from "@/components/assets-table";
 import { DataLoading } from "@/components/data-loading";
 import { ChainDisplay } from "@/components/display";
-import { useWalletPortfolio } from "@/hooks/wallet";
+import { useWalletPortfolio, useRefreshWalletPortfolio } from "@/hooks/wallet";
+import { showErrorToast } from "@/lib/toasts";
 
 type PieTooltipProps = {
   readonly active?: boolean;
@@ -77,7 +79,7 @@ function AllocationSegment({
     <Tooltip delay={150}>
       <Tooltip.Trigger
         aria-label={`${item.name}: ${currency.format(item.value)}`}
-        className="h-full min-w-1 outline-none ring-inset focus-visible:ring-2 focus-visible:ring-foreground"
+        className="h-full outline-none ring-inset focus-visible:ring-2 focus-visible:ring-foreground"
         style={style}
         tabIndex={0}
       />
@@ -197,7 +199,7 @@ function PortfolioOverview({
                 Chain allocation
               </Typography>
               <Typography className="text-xs!" color="muted">
-                Live balances
+                Priced balances
               </Typography>
             </div>
             <ChainAllocation
@@ -242,7 +244,7 @@ function PortfolioOverview({
             ) : (
               <PieChart height={160} width={160}>
                 <PieChart.Pie
-                  cornerRadius={10}
+                  cornerRadius={0}
                   cx="50%"
                   cy="50%"
                   data={summary.assetAllocations}
@@ -250,7 +252,7 @@ function PortfolioOverview({
                   innerRadius="70%"
                   nameKey="name"
                   outerRadius="94%"
-                  paddingAngle={-16}
+                  paddingAngle={0}
                   strokeWidth={0}
                 >
                   {summary.assetAllocations.map((item) => (
@@ -279,6 +281,15 @@ type AccountAssetsProps = {
 export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps) {
   const assets = useWalletPortfolio(account.id);
   const portfolio = assets.data ?? initialPortfolio;
+  const refresh = useRefreshWalletPortfolio({
+    onError: (error) => showErrorToast(error, { title: "Could not refresh portfolio" }),
+  });
+  const refreshPortfolio = useEventCallback(() =>
+    refresh.mutate({
+      params: { walletId: account.id },
+      query: { refresh: true, pageSize: 100 },
+    }),
+  );
   const [showTestnets, setShowTestnets] = useState(false);
   const visibleAssets = useMemo(
     () =>
@@ -304,14 +315,38 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
 
   return (
     <div className="grid w-full gap-7 px-3">
-      <header>
-        <Typography.Heading className="text-2xl tracking-tight" level={2}>
-          Assets
-        </Typography.Heading>
-        <Typography.Paragraph className="mt-1 max-w-2xl text-muted" size="sm">
-          Trusted token metadata, balances, and USD values across every supported EVM network.
-        </Typography.Paragraph>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <Typography.Heading className="text-2xl tracking-tight" level={2}>
+            Assets
+          </Typography.Heading>
+          <Typography.Paragraph className="mt-1 max-w-2xl text-muted" size="sm">
+            Token balances and USD values across supported EVM networks.
+          </Typography.Paragraph>
+        </div>
+        <Button
+          isIconOnly
+          variant="tertiary"
+          aria-label="Refresh portfolio"
+          isDisabled={refresh.isPending || assets.isFetching}
+          onPress={refreshPortfolio}
+        >
+          <HugeiconsIcon
+            className={
+              refresh.isPending || assets.isFetching
+                ? "size-4 animate-spin motion-reduce:animate-none"
+                : "size-4"
+            }
+            icon={RefreshIcon}
+          />
+        </Button>
       </header>
+      {refresh.isError || assets.isError ? (
+        <output className="text-sm text-muted">
+          Could not refresh portfolio.{" "}
+          {portfolio ? "Showing previously loaded balances." : "Try refreshing again."}
+        </output>
+      ) : null}
 
       {visiblePortfolio ? (
         <PortfolioOverview
@@ -329,7 +364,7 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
             Asset balances
           </Typography.Heading>
           <Typography className="mt-1 text-xs!" color="muted">
-            Search, filter, group, and inspect enriched token balances by chain.
+            Search and filter token balances by chain.
           </Typography>
         </div>
         {portfolio ? (

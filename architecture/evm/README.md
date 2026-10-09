@@ -20,13 +20,16 @@
 
 The package exposes focused services rather than Viem/Alchemy clients:
 
-| Service          | Operations                                                                |
-| ---------------- | ------------------------------------------------------------------------- |
-| Account creation | Create protocol `AlchemyModularV2WalletData` with P-256 validation.       |
-| Execution        | `prepare`, `sign`, `submit`, `getReceipt`, `getStatus`, `waitForReceipt`. |
-| Signature        | `digest`, `sign`, `verify`.                                               |
-| Portfolio        | Multi-chain native/ERC-20 assets with metadata and USD prices.            |
-| Policy           | deterministic evaluation, state seeds, reserve, settle, release.          |
+| Service            | Operations                                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Account creation   | Create protocol `AlchemyModularV2WalletData` with P-256 or internal secp256k1/7702 validation.             |
+| Execution          | Preparation, detached owner/session completion, submission, status and receipts; internal managed signing. |
+| Signature          | `digest`, `sign`, `verify`.                                                                                |
+| Sessions           | Compile permissions, prepare installation/removal, and inspect onchain installation.                       |
+| Session signatures | Prepare replay-safe payloads and verify/pack local signatures.                                             |
+| Billing            | Quote gas sponsorship and resolve provider-confirmed BSO costs.                                            |
+| Portfolio          | Multi-chain native/ERC-20 assets with metadata and USD prices.                                             |
+| Policy             | deterministic evaluation, state seeds, reserve, settle, release.                                           |
 
 Large provider-specific types stay inside the package. `application` dispatches by namespace and receives protocol models/errors.
 
@@ -53,10 +56,3 @@ flowchart LR
 5. Add server/API/client surfaces only if it is public.
 6. Add test adapters in `packages/evm`; compose them into server boundary tests.
 7. Update this hub and the relevant flow document.
-
-## Pending before production
-
-- Run funded provider/bundler integration tests on every advertised chain tier.
-- Define chain support tiers and incident disable behavior.
-- Document provider fallback strategy and rate/capacity assumptions.
-- Add reconciliation worker/alerts for submitted operations that outlive synchronous waits.

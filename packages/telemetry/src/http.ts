@@ -47,8 +47,6 @@ const staticHttpRoutes = new Set([
   "/executions/prepare",
   "/executions/complete",
   "/executions/simulate",
-  "/address-metadata/resolve",
-  "/address-metadata/search",
   "/portfolios/assets/query",
   "/.well-known/oauth-authorization-server",
   "/.well-known/oauth-protected-resource",
@@ -114,7 +112,6 @@ const dynamicHttpRoutes = [
   "/oauth/authorization-requests/:requestId",
   "/oauth/authorizations/:authorizationId",
   "/oauth/cli-authorizations/:authorizationId",
-  "/address-metadata/:namespace/:chainId/:address",
 ].map((template) => ({
   template,
   pattern: new RegExp(`^${template.replace(/:[^/]+/g, "[^/]+")}$`),

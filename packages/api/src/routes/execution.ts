@@ -7,9 +7,7 @@ import {
   ExecutionSubmissionNotFoundError,
 } from "@namera-ai/protocol";
 import {
-  ExecuteRequest,
   ExecuteRequestHeaders,
-  ExecuteResponse,
   PrepareExecutionRequest,
   PrepareExecutionResponse,
   CompleteExecutionRequest,
@@ -50,14 +48,6 @@ export class ExecutionGroup extends HttpApiGroup.make("execution")
       OpenApi.Summary,
       "Simulate an operation and evaluate authorized session-key policies",
     ),
-  )
-  .add(
-    HttpApiEndpoint.post("execute", "/", {
-      payload: ExecuteRequest,
-      headers: ExecuteRequestHeaders,
-      success: ExecuteResponse,
-      error: [ExecutionError, ...BillingErrors, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Execute an operation through an authorized session key"),
   )
   .add(
     HttpApiEndpoint.get("getSubmission", "/submissions/:submissionId", {

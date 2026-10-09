@@ -36,7 +36,6 @@ import {
   BillingUsageReservationRepository,
 } from "#/repositories/billing/index";
 import {
-  AddressMetadataRepository,
   AdminOverviewRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
@@ -49,7 +48,6 @@ import {
   SessionKeyPolicyStateRepository,
   SigningKeyRepository,
   SignatureOperationRepository,
-  WalletKeyRepository,
   WalletRepository,
 } from "#/repositories/core/index";
 import { EmailJobRepository } from "#/repositories/jobs/index";
@@ -100,7 +98,6 @@ export interface RepositoryService {
   };
   core: {
     adminOverview: AdminOverviewRepository["Service"];
-    addressMetadata: AddressMetadataRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
     executionSubmission: ExecutionSubmissionRepository["Service"];
@@ -113,7 +110,6 @@ export interface RepositoryService {
     signingKey: SigningKeyRepository["Service"];
     signatureOperation: SignatureOperationRepository["Service"];
     wallet: WalletRepository["Service"];
-    walletKey: WalletKeyRepository["Service"];
   };
   jobs: {
     email: EmailJobRepository["Service"];
@@ -165,10 +161,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const billingUsageReservation = yield* BillingUsageReservationRepository;
       const billingUsage = yield* BillingUsageRepository;
       const wallet = yield* WalletRepository;
-      const addressMetadata = yield* AddressMetadataRepository;
       const dashboardOverview = yield* DashboardOverviewRepository;
       const adminOverview = yield* AdminOverviewRepository;
-      const walletKey = yield* WalletKeyRepository;
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyOperation = yield* SessionKeyOperationRepository;
@@ -222,7 +216,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         core: {
           adminOverview,
-          addressMetadata,
           dashboardOverview,
           execution,
           executionSubmission,
@@ -235,7 +228,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           signingKey,
           signatureOperation,
           wallet,
-          walletKey,
         },
         jobs: {
           email: emailJob,
@@ -254,7 +246,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         AccountRepository.layer,
         BetaInviteRepository.layer,
         WaitlistRepository.layer,
-        AddressMetadataRepository.layer,
         DashboardOverviewRepository.layer,
         AdminOverviewRepository.layer,
         ApiKeyRepository.layer,
@@ -297,7 +288,6 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SigningKeyRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
-        WalletKeyRepository.layer,
       ),
     ),
   );

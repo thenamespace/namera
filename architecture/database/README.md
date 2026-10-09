@@ -7,14 +7,14 @@ This directory is the canonical catalog for Namera's PostgreSQL data model. Feat
 Platform membership, team invitations and their audit events are documented in
 [platform administration](auth-platform.md).
 
-| Schema         | Responsibility                                                                        | Catalog                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `auth`         | Identities, browser sessions, organizations, actors, API keys, invitations, and OAuth | [Core identity](auth-core.md), [organizations](auth-organization.md), [OAuth](auth-oauth.md) |
-| `core`         | Wallets, wallet keys, session-key authority, policy state, executions, and signatures | [Wallets and operations](core-wallets-operations.md)                                         |
-| `billing`      | Billing identity, subscriptions, metering ledger, and provider synchronization        | [Billing](billing.md)                                                                        |
-| `notification` | Durable user-visible notification facts, recipients, and preferences                  | [Notifications and jobs](notifications-jobs.md)                                              |
-| `jobs`         | Leased asynchronous work, currently email delivery                                    | [Notifications and jobs](notifications-jobs.md)                                              |
-| `audit`        | Append-oriented user and organization security history                                | [Audit](audit.md)                                                                            |
+| Schema         | Responsibility                                                                         | Catalog                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `auth`         | Identities, browser sessions, organizations, actors, API keys, invitations, and OAuth  | [Core identity](auth-core.md), [organizations](auth-organization.md), [OAuth](auth-oauth.md) |
+| `core`         | Wallets, signing keys, session-key authority, policy state, executions, and signatures | [Wallets and operations](core-wallets-operations.md)                                         |
+| `billing`      | Billing identity, subscriptions, metering ledger, and provider synchronization         | [Billing](billing.md)                                                                        |
+| `notification` | Durable user-visible notification facts, recipients, and preferences                   | [Notifications and jobs](notifications-jobs.md)                                              |
+| `jobs`         | Leased asynchronous work, currently email delivery                                     | [Notifications and jobs](notifications-jobs.md)                                              |
+| `audit`        | Append-only user, organization, platform and admission history                         | [Audit](audit.md)                                                                            |
 
 ## Shared conventions
 
@@ -35,9 +35,14 @@ erDiagram
   USER ||--o{ SESSION : owns
   USER ||--o{ ORGANIZATION_MEMBER : joins
   ORGANIZATION ||--o{ ACTOR : scopes
-  ORGANIZATION ||--o{ WALLET_KEY : owns
-  WALLET_KEY ||--o{ WALLET : controls
+  ORGANIZATION ||--o{ SIGNING_KEY : owns
+  SIGNING_KEY ||--o{ WALLET : controls
   WALLET ||--o{ SESSION_KEY : delegates
+  SIGNING_KEY ||--o{ SESSION_KEY : signs
+  SESSION_KEY ||--o{ SESSION_KEY_INSTALLATION : installs
+  SESSION_KEY_INSTALLATION ||--o{ SESSION_KEY_OPERATION : changes
+  USER ||--o| PLATFORM_MEMBER : administers
+  PLATFORM_MEMBER |o--o{ PLATFORM_EVENT : audits
   SESSION_KEY ||--o{ SESSION_KEY_GRANT : grants
   SESSION_KEY_GRANT ||--o{ EXECUTION_SUBMISSION : authorizes
   EXECUTION_SUBMISSION ||--o| EXECUTION : produces
@@ -59,10 +64,3 @@ The diagram is deliberately an orientation map. Exact columns, optionality, comp
 3. Review every `ON DELETE`, partial predicate, unique constraint, and backfill.
 4. Update the matching catalog page and feature flow.
 5. Run database package checks and the repository check.
-
-## Pending before production
-
-- Establish backup restore drills and measured recovery objectives.
-- Add production migration runbooks for expand/backfill/contract changes.
-- Document data retention windows for audit, execution, OAuth, notification, and webhook records.
-- Add schema drift detection in deployment CI.

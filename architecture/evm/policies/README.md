@@ -73,9 +73,3 @@ flowchart TD
 6. Add protocol/handler/application concurrency tests.
 7. Add dashboard editor and shared summary display.
 8. Update [the catalog](catalog.md) and [state model](state-reservations.md).
-
-## Pending before production
-
-- Add comprehensive handler law tests: deterministic decision, reserve atomicity, settle bounds, and release inverse.
-- Broader token-spend tracking through routers requires a separate design proving complete asset discovery; the current token rule deliberately allows direct token calls only.
-- Define stable external policy-code documentation for SDK/MCP consumers.

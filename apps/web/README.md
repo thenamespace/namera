@@ -64,8 +64,9 @@ copying, scrolling, and code styles, with colors mapped to the landing theme;
 ordinary Markdown uses the custom MDX components.
 
 `typecheck` generates the Fumadocs collection and router types before checking.
-Run `pnpm --filter @namera-ai/web test` for schema, search, RSS, SEO, authored
-content, and sequence-renderer regressions.
+Run `pnpm --filter @namera-ai/web test` for the waitlist HTTP boundary: submission,
+credential isolation, and failure handling. Blog and marketing presentation are
+checked manually in the preview.
 
 ## Legal pages
 

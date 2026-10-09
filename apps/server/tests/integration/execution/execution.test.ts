@@ -6,6 +6,7 @@ import { Application } from "@namera-ai/application";
 import { Repository } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 
+import { executionFixture, executeRequest, queueExecution } from "../../fixtures/execution.js";
 import {
   makeTestApiClient,
   resetTestState,
@@ -15,7 +16,6 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
-import { executionFixture, executeRequest, queueExecution } from "./fixture.js";
 
 const metadata = (name: string) => ({ version: 1 as const, name });
 
@@ -181,9 +181,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
             ],
           },
         };
-        expect(yield* client.execution.execute(request).pipe(Effect.flip)).toMatchObject({
-          code: "EXECUTION_UNAVAILABLE",
-        });
         const result = yield* executeRequest(client, request);
         expect(result.status).toBe("confirmed");
         if (result.status !== "confirmed") return yield* Effect.die("Expected a receipt");

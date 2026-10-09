@@ -53,7 +53,8 @@ the dashboard's cache invalidation behavior.
 | Update role           | Manage current target role, assign requested role, conditional mutation, audit. |
 | Remove member         | Manage target role, conditional removal timestamp, audit.                       |
 
-Owner cannot be assigned through ordinary invitation/member flows and should eventually have a dedicated transfer workflow.
+Owner cannot be assigned through ordinary invitation/member flows. Organization
+ownership transfer has no public workflow.
 
 ## Audit and observability
 
@@ -70,9 +71,3 @@ Owner cannot be assigned through ordinary invitation/member flows and should eve
 4. Reassess strict-subset management behavior: the new permission can alter which roles dominate others.
 5. Add audit events for newly enabled mutations.
 6. Document the endpoint matrix before release.
-
-## Pending before production
-
-- Add custom-role create/update/delete workflows, constraints, audit, API, and UI if launched.
-- Implement owner transfer and prevent removal of the final owner.
-- Add full permission-matrix boundary tests.

@@ -118,8 +118,3 @@ normal execution preparation instead of a separate gas-estimation pipeline.
 message and typed-data signatures, wrong-message/chain/wallet replay rejection,
 continued signature validity after TimeRange expiry and rejection after uninstall
 against the actual forked contracts.
-
-## Pending
-
-- Add real-contract tests for the remaining permission types.
-- Verify hosted bundler/BSO support on the eight advertised chains.

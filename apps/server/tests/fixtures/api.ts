@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { HttpClientResponse } from "effect/http";
 import type { HttpApiClient } from "effect/http-api";
+import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
 
@@ -17,6 +18,8 @@ export const resetTestState = Effect.fn("server.resetTestState")(function* () {
   const authToken = yield* TestAuthToken;
   const ens = yield* TestEns;
 
+  // Shared layers retain clock adjustments between scenarios.
+  yield* TestClock.setTime(0);
   yield* database.reset;
   yield* emails.clear;
   yield* authToken.clear;

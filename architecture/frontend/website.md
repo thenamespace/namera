@@ -1,6 +1,7 @@
 # Public website and blog
 
-`apps/web` owns the TanStack Start public website, including the MDX blog.
+`apps/web` owns the TanStack Start public website, including the landing page, waitlist form, pricing, legal pages, Fumadocs
+documentation and MDX blog.
 It does not call authenticated APIs for article content or store articles in
 the application database.
 
@@ -23,7 +24,10 @@ the application database.
   generic Mermaid is lazy-loaded with strict security. Both provide source
   fallbacks; sequence motion respects reduced-motion preferences.
 
-There are no mutations, audit events, or new telemetry events in this flow.
+Article reads do not mutate application state. The landing-page waitlist form
+calls the public waitlist API; admission, deduplication and confirmation email
+are owned by the [waitlist workflow](../auth/waitlist.md). `/docs/$` renders the
+repository-owned Fumadocs content.
 
 SEO uses a shared permissions-focused site identity. Server-rendered route heads
 connect WebPage, WebSite, Organization, SoftwareApplication and BlogPosting
@@ -33,6 +37,4 @@ canonical URL, and empty later pages are noindex. Article metadata retains
 author, publication/update dates, image and canonical/noindex overrides.
 The homepage does not advertise an offer while its primary action is a waitlist.
 
-Tests in `apps/web/tests/unit/blog*.test.*` cover metadata, discovery, RSS,
-SEO escaping, content compilation, and sequence layout/rendering.
 Authoring commands and frontmatter examples live in the package README.

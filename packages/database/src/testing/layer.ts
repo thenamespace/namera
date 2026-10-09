@@ -61,7 +61,6 @@ import {
   waitlist,
   waitlistEvent,
   wallet,
-  walletKey,
 } from "#/schema/index";
 
 const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
@@ -135,7 +134,6 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(sessionKeyInstallation);
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);
-        yield* database.delete(walletKey);
         yield* database.delete(signingKey);
         yield* database.delete(invitation);
         yield* database.delete(organizationMember);

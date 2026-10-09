@@ -73,26 +73,6 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
           );
           return yield* app.signature.verify({ actor: data, request: payload });
         }),
-      )
-      .handle("sign", ({ headers, payload }) =>
-        Effect.gen(function* () {
-          const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["api-key", "cli", "mcp"],
-            requiredPermissions: { "api-key": [], cli: ["signature:create"], mcp: ["mcp:execute"] },
-          });
-          yield* consumeRateLimit(
-            "signature.api_key",
-            data.actorId,
-            rateLimitPolicy.signature.byApiKey,
-          );
-          return yield* app.signature.sign({
-            actor: data,
-            idempotencyKey: headers["idempotency-key"],
-            request: payload,
-          });
-        }),
       );
   }),
 );

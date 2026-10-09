@@ -4,6 +4,11 @@
 destruction behind one provider-neutral Effect service. Application and EVM code
 never import a provider client directly.
 
+The server composes `WalletKeys.disabledLayer` in every environment. Public
+wallets use browser passkeys, while routine execution and signatures use local
+session keys. This document describes the retained provider package, not an
+active managed-custody product flow.
+
 ## Service contract
 
 `WalletKeys` exposes:
@@ -71,11 +76,3 @@ GCP providers below remain available only through explicit layer composition.
 | `GCP_PROJECT_ID`              | KMS project.                    |
 | `GCP_KMS_LOCATION`            | KMS location, default `global`. |
 | `GCP_KMS_KEY_RING`            | Existing key ring.              |
-
-## Pending
-
-- Add operator-visible cleanup for provider keys not referenced by a committed
-  wallet row.
-- Run live GCP integration tests before production algorithm or protection
-  changes.
-- Document operator recovery for disable/destroy failures.

@@ -20,11 +20,10 @@ Pre-registered and metadata-document client types share the same `auth.oauth_cli
 
 The server resolves public `client_id`, requires active status and exact redirect membership, requires response type `code`, validates PKCE challenge schema and method `S256`, deduplicates scopes, and verifies them against both server and optional client-registered scope. `offline_access` additionally requires refresh-token grant support.
 
-The resource must be the canonical API origin (local MCP's upstream API client).
-The removed hosted `/mcp` audience is rejected before creating an authorization
-request. Root protected-resource metadata advertises the API origin. The CLI's
-local MCP listener authenticates its agent-facing connection separately; a
-loopback-audience bearer token is never passed upstream.
+The resource must be the canonical API origin used by the local MCP process.
+Other audiences are rejected before creating an authorization request. Root
+protected-resource metadata advertises the API origin. The agent connects over
+stdio; the temporary OAuth loopback callback does not issue tokens.
 
 Only after these checks does it insert a pending authorization request and redirect the browser to `/oauth/authorize?requestId=...`.
 
@@ -88,10 +87,3 @@ Denial conditionally marks the live request and redirects to the exact registere
 The HTTP protocol test races eight valid exchanges of one authorization code:
 one returns a token response and seven return `invalid_grant` with no-store
 headers. The same suite runs in PGlite and the opt-in PostgreSQL test lane.
-
-## Pending before production
-
-- Add end-to-end interoperability tests with Codex, Claude, and generic MCP OAuth clients.
-- Extend malicious redirect/state/PKCE/resource substitution coverage; concurrent
-  code redemption is covered through the HTTP token endpoint.
-- Define approval expiry UI/policy and reauthorization behavior.

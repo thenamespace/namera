@@ -1,0 +1,2 @@
+ALTER TABLE "billing"."usage_reservation" ADD COLUMN "sponsorship_attempts" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "billing"."usage_reservation" ADD CONSTRAINT "billing_usage_reservation_sponsorship_attempts_check" CHECK ("sponsorship_attempts" >= 0);

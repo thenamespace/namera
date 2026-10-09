@@ -36,12 +36,8 @@ remain under [operations](../../architecture/operations/executions.md).
 - `src/signing/` — smart-account message and EIP-712 signing and verification
   exposed as `evm.sign` and `evm.verifySignature`; raw digest signing is not
   supported.
-- `src/blockscout/` — authenticated Blockscout PRO transport and provider-only
-  response schemas.
-- `src/address-metadata/` — provider-neutral Blockscout address, contract,
-  token, tag, and trust normalization.
-- `src/portfolio/` — Blockscout all-chain native and ERC-20 balances, prices,
-  pagination, scam filtering, and partial-failure mapping.
+- `src/portfolio/` — Alchemy Portfolio balances, metadata, USD prices, and per-chain failures.
+
 - `src/config.ts` — redacted provider credentials.
 - `src/layer.ts` — root `Evm` service and live layer.
 
@@ -98,7 +94,6 @@ key. The secp256k1 variant requires the exact digest that the provider signed.
 | `EVM_ALCHEMY_API_KEY`       | Yes             | Alchemy public RPC and Rundler credential.                                    |
 | `EVM_ALCHEMY_BSO_POLICY_ID` | Yes             | Policy sent as `x-alchemy-policy-id` for BSO requests.                        |
 | `ALCHEMY_ACCESS_TOKEN`      | For BSO billing | Server-only management API bearer token with access to the configured policy. |
-| `BLOCKSCOUT_API_KEY`        | Yes             | Blockscout portfolio and address enrichment credential.                       |
 
 `billing.getGasSponsorshipCost` matches a mined Gas Manager sponsorship by
 chain, UserOperation hash, transaction hash and sender. It rounds the reported
@@ -225,8 +220,9 @@ signatures return `false`; account, chain, and RPC failures remain typed adapter
 errors. Verification never invokes the wallet-key signer.
 
 `evm.portfolio.getAssets` queries chains in the launch registry through
-Blockscout. It returns exact raw and formatted balances, nullable
-metadata and USD prices, an opaque next cursor, and CAIP-2 partial failures.
+Alchemy Portfolio. It fetches every provider page and returns exact raw and
+formatted balances, nullable metadata/prices, exact USD values, and CAIP-2
+partial failures. It uses `EVM_ALCHEMY_API_KEY` and requires Portfolio API access.
 Provider response types and network slugs remain internal to this package.
 
 Preparation records the standardized `eth_estimateUserOperationGas` result in

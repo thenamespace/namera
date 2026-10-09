@@ -55,9 +55,3 @@ access without waiting for onchain uninstallation; credential revocation then
 changes these reads to `Unauthorized`. The owner can still read the unchanged
 wallet. Chain approval and portfolio providers use package-owned substitutes.
 This matrix does not certify OAuth actors or every resource route.
-
-## Pending before production
-
-- Add leak-response and zero-downtime rotation runbooks.
-- Decide whether enterprise network restrictions are a separate credential control.
-- Alert on unusual failed authentication and dormant-key patterns.

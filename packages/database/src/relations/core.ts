@@ -21,14 +21,6 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       to: [r.wallet.signingKeyId, r.wallet.organizationId],
     }),
   },
-  walletKey: {
-    // Each wallet key belongs to one organization.
-    organization: r.one.organization({
-      from: r.walletKey.organizationId,
-      to: r.organization.id,
-      optional: false,
-    }),
-  },
   wallet: {
     // Each wallet belongs to one organization.
     organization: r.one.organization({

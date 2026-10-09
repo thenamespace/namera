@@ -32,7 +32,7 @@ tables remain dormant until paid plans are introduced.
 
 The plan catalog maps `(plan, planVersion)` to commercial and entitlement
 configuration. Only `free@1` is currently assignable. The protocol reserves the
-future `pro` and `business` keys, but they are intentionally absent from the
+reserved `pro` and `business` keys, but they are intentionally absent from the
 assignable application registry until paid-plan workflows exist. A version
 change creates a new immutable definition; historical periods continue to
 reference the version under which their usage occurred.
@@ -68,7 +68,7 @@ are also hard limits because Free has no overage path.
 The gas meter stores `$3.00` as `3,000,000` micro-USD. Meter versions and units
 are part of the registry and are snapshotted into each period balance.
 
-Software/HSM entitlements remain in the internal model for future managed
+Software/HSM entitlements remain in the internal model for managed
 custody. The beta API rejects managed wallet creation, and the dashboard does
 not advertise those entitlements. Its plan and usage cards show members,
 user-owned accounts, and all four operation/gas meters from the billing response.
@@ -311,12 +311,15 @@ projection.
 
 ## Recovery and reconciliation
 
-The server runs a scoped billing worker every minute after migrations. Each run:
+The server runs a scoped billing worker after migrations. Sponsorship checks run
+every 10 seconds; anniversary, expiry and projection maintenance runs once per
+minute. A maintenance run:
 
 1. advances expired open anniversary periods in bounded batches;
-2. claims up to 20 due sponsored-gas holds with `FOR UPDATE SKIP LOCKED`, defers
-   them by five minutes, commits, then looks up provider costs outside database
-   transactions with concurrency two;
+2. claims up to 20 due sponsored-gas holds with `FOR UPDATE SKIP LOCKED`, increments
+   their persisted attempt counts and sets a ten-minute crash-recovery lease,
+   commits, then looks up provider costs outside database transactions with
+   concurrency two;
 3. claims other expired active reservations with `FOR UPDATE SKIP LOCKED`;
 4. settles terminal successful execution/signature sources, releases terminal
    failures and manual sources, and defers operations still in flight or whose
@@ -336,6 +339,14 @@ releases these gas holds, including across period rollover. Settlement uses the
 existing reservation lock and unique ledger identity, atomically recording the
 provider total and transaction identities while releasing unused capacity.
 No separate audit event is added: the immutable usage event is billing evidence.
+
+After an unsuccessful lookup, the next attempt is scheduled from completion:
+10, 20, 40, 80, 160, then 300 seconds, capped at 300 seconds thereafter. The
+10-second worker poll and provider/batch processing can add scheduling delay.
+Attempt counts survive restarts. A stale claim cannot overwrite a newer claim
+or a terminal reservation. Unexpected interruption retains the ten-minute lease;
+normal missing-cost and provider-error results use the faster retry schedule.
+There is no retry limit and unresolved cost never releases the hold.
 
 The server-only `ALCHEMY_ACCESS_TOKEN` must have management access to the
 configured policy. Missing credentials, missing/pending costs, malformed
@@ -368,37 +379,14 @@ Big integer quantities are encoded as decimal strings on HTTP and decoded by
 the typed client. The route requires billing read permission and never contacts
 a payment or pricing provider.
 
-## Provider synchronization
+## Provider integration boundary
 
-### Outbound usage
-
-When an event maps to a metered provider component, settlement inserts a
-`usage_delivery` row in the same transaction. A worker claims pending/retrying
-rows, reports usage with the stored idempotency key, and marks the row delivered.
-Transient failures schedule `nextAttemptAt`; terminal failures remain queryable.
-
-One event may have multiple delivery destinations during provider migrations.
-The unique event, provider, and destination tuple prevents duplicate work items.
-
-### Inbound webhooks
-
-The server verifies the provider signature against the raw request body and
-inserts `provider_event` before acknowledging receipt. The unique provider event
-ID makes retries safe. A worker interprets the event and updates account,
-subscription, and item state. Checkout redirects never grant product access.
-
-## Commercial mapping
-
-- Base price is `subscription_item(plan.base, licensed)`.
-- Software/HSM wallet overage is represented by licensed quantities. Changing a
-  recurring quantity must be explicit; wallet creation must not silently raise
-  a bill.
-- Execution and signature overage is derived from immutable events beyond the
-  included allowance and delivered through the matching metered component.
-- Gas sponsorship is measured in micro-USD; the included amount is snapshotted
-  on the period balance.
-- Testnet execution is a separate generous hard-capped meter so it does not
-  contaminate paid mainnet usage or permit unbounded abuse.
+The schema and repositories include `provider_event`, `usage_delivery`, and
+subscription items. The running product uses the Free plan and internal usage
+ledger. It does not run a provider delivery worker, verify payment webhooks, or
+expose Stripe Checkout/customer portal flows. These persistence capabilities do
+not grant paid entitlements. Alchemy BSO cost reconciliation is active and is
+separate from payment-provider synchronization.
 
 ## Current implementation boundary
 
@@ -440,18 +428,3 @@ Deliberately inactive until paid plans:
 
 - provider delivery worker;
 - Stripe customer, Checkout, portal, price mapping, and webhook processing.
-
-## Pending before production
-
-- Define the production catalog, price mappings, overage rounding, proration,
-  trial, grace-period, delinquency, and cancellation semantics.
-- Implement Stripe, verified raw-body webhook processing, Checkout/portal, and
-  subscription reconciliation.
-- Reconcile reported `confirmedTotalUsd` against provider invoices and retain
-  historical policy identities/cursors before introducing policy rotation or
-  volumes beyond the bounded scan window.
-- Add an operator resolution workflow for costs exceeding their reserved amount.
-- Add production alerts for repeated recovery failures, projection repairs,
-  hard-limit denial spikes, stale reservations, and pricing outages.
-- Add future paid-path tests for credit corrections, webhook replay, delivery
-  retries, and overage reporting.

@@ -3,7 +3,7 @@
 `namera mcp serve` runs ten SDK-backed tools over stdio. The parent MCP client
 starts and stops the process; no permanent HTTP listener or local OAuth issuer
 exists. The API retains OAuth registration, browser consent, token, refresh,
-revocation and authorization management. No database backfill is required.
+revocation and authorization management.
 
 ## Setup
 
@@ -18,7 +18,7 @@ For other local clients, configure command `namera` and arguments
 `["mcp", "serve", "--profile", "agent"]`. GUI clients may need the absolute
 executable path. Cloud-only clients cannot launch this local process.
 
-All MCP commands accept `--host` (API origin, default `http://localhost:8080`)
+All MCP commands accept `--host` (API origin, default `https://api.namera.ai`)
 and `--profile` (default `default`). Profiles separate saved grants, not OS
 identities: another process under the same OS user may select the same profile.
 CLI login and `NAMERA_API_KEY` are not used for MCP authorization.
@@ -117,7 +117,5 @@ For each supported revision, subprocess tests start the actual CLI source with
 stdin/stdout pipes, check protocol-only output and discovery without login, and
 verify exit on stdin EOF. The stdio tool tests also exercise all three revisions
 for JSON encoding, encrypted-key signing, live revocation, and narrowed grants.
-Existing opt-in OS-keyring tests remain separate. Physical browser/agent consent
-with this new transport and Windows/Linux keyring behavior still require manual
-platform verification. The former HTTP transport's live Sepolia result is not
-evidence that the new stdio/browser flow has been exercised end to end.
+Existing opt-in OS-keyring tests remain separate. Physical browser/agent consent and platform-specific keyring behavior require
+verification on the target client.

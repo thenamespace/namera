@@ -314,11 +314,3 @@ sequenceDiagram
   App->>DB: Atomically mark consumed and issue token family
   App-->>CLI: Raw access and refresh tokens
 ```
-
-## Pending before production
-
-- Complete conformance/security tests for redirect matching, PKCE, resource binding, state reflection, device polling, and refresh reuse.
-- Define dynamic client registration trust and metadata-document validation policy.
-- Add scheduled cleanup/retention for expired requests, codes, device rows, and tokens.
-- Verify authorization revocation invalidates all live access and refresh tokens atomically.
-- Publish client-facing OAuth error semantics and retry guidance.
