@@ -44,9 +44,10 @@ const showAccountIdCopySuccess = () =>
 
 type AccountOverviewProps = {
   account: WalletResponse;
+  variant?: "full" | "summary";
 };
 
-export function AccountOverview({ account }: AccountOverviewProps) {
+export function AccountOverview({ account, variant = "full" }: AccountOverviewProps) {
   return (
     <div className="mx-auto w-full max-w-5xl py-4 sm:px-2 sm:py-8">
       <header className="flex flex-col items-start">
@@ -75,9 +76,11 @@ export function AccountOverview({ account }: AccountOverviewProps) {
           Properties
         </Typography.Heading>
         <div className="grid gap-2">
-          <Property label="Status">
-            <WalletStatusDisplay status={account.status} />
-          </Property>
+          {variant === "full" ? (
+            <Property label="Status">
+              <WalletStatusDisplay status={account.status} />
+            </Property>
+          ) : null}
           <Property label="Namespace">
             <NamespaceDisplay namespace={account.namespace} />
           </Property>
@@ -97,21 +100,25 @@ export function AccountOverview({ account }: AccountOverviewProps) {
           <Property label="Address">
             <EvmAddressDisplay address={account.address} />
           </Property>
-          <Property label="Account ID">
-            <div className="flex min-w-0 items-center gap-2">
-              <TechnicalValue>{account.id}</TechnicalValue>
-              <CopyIconButton
-                className="size-7"
-                label="Account ID"
-                value={account.id}
-                onCopyError={showAccountIdCopyError}
-                onCopySuccess={showAccountIdCopySuccess}
-              />
-            </div>
-          </Property>
-          <Property label="Created">
-            <DateDisplay label="Created" value={account.createdAt} />
-          </Property>
+          {variant === "full" ? (
+            <>
+              <Property label="Account ID">
+                <div className="flex min-w-0 items-center gap-2">
+                  <TechnicalValue>{account.id}</TechnicalValue>
+                  <CopyIconButton
+                    className="size-7"
+                    label="Account ID"
+                    value={account.id}
+                    onCopyError={showAccountIdCopyError}
+                    onCopySuccess={showAccountIdCopySuccess}
+                  />
+                </div>
+              </Property>
+              <Property label="Created">
+                <DateDisplay label="Created" value={account.createdAt} />
+              </Property>
+            </>
+          ) : null}
         </div>
       </section>
     </div>

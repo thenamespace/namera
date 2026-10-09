@@ -144,11 +144,11 @@ function SessionKeysTableContent({
   }, [data]);
   const namespaceOptions = useMemo(() => {
     const counts = countTableValues(data, (item) => item.namespace);
-    return [...uniqueTableValues(data, (item) => item.namespace).values()].map((item) => ({
-      id: item.namespace,
-      label: item.namespace,
-      content: <NamespaceDisplay namespace={item.namespace} />,
-      count: counts.get(item.namespace) ?? 0,
+    return (["eip155"] as const).map((namespace) => ({
+      id: namespace,
+      label: "EVM",
+      content: <NamespaceDisplay namespace={namespace} />,
+      count: counts.get(namespace) ?? 0,
     }));
   }, [data]);
   const filtered = useMemo(
@@ -228,6 +228,7 @@ function SessionKeysTableContent({
         icon: <HugeiconsIcon className="size-4 text-muted" icon={Key01Icon} />,
         selectedKeys: accounts,
         options: accountOptions,
+        emptyLabel: "No accounts",
         onSelectionChange: (keys) =>
           setAccounts(
             toTableSelection(
@@ -261,7 +262,7 @@ function SessionKeysTableContent({
     data.length === 0 ? (
       <ResourceEmptyState
         actionLabel="Create session key"
-        description="Grant an agent a scoped key — limited to the spend, contracts, networks, and expiry you set."
+        description="Grant an agent a scoped key with the spend, contract, network, and expiry limits you set."
         icon={Key01Icon}
         onCreate={createSessionKey}
         title="No session keys yet"

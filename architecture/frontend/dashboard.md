@@ -53,11 +53,18 @@ response contains resource totals, execution/signature series and execution
 source distribution. The current EVM series has daily, weekly and monthly
 buckets. When the execution-source distribution is empty, the overview shows
 permission-aware quick-action links for account/session-key creation, MCP setup,
-and API-key management instead of the source chart. Recent executions reuse the Activity table; quota and period consumption
+API-key management, and member invitations instead of the source chart. Recent executions reuse the Activity table; quota and period consumption
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
 
 ## Account creation and portfolio
+
+Successful account creation opens `/accounts/created/$accountId`, a protected,
+refresh-safe next-steps page loaded through the shared wallet atom. It shows the
+same account identity and properties as the account overview, followed by a
+permission-aware session-key shortcut. The shortcut preselects only an eligible
+account from the current workspace's wallet list; invalid or unavailable search
+IDs do not select an account. Normal account links still open the overview.
 
 Account creation requires a form-only recovery acknowledgement before the browser
 passkey ceremony. WebAuthn display labels use the account name; the challenge,
@@ -81,8 +88,12 @@ spending limit, Gas budget, Signatures and Unrestricted account access. Contract
 access covers one contract/all functions, one contract/selected functions, or
 selected functions on any contract. Native/gas amounts serialize exact base
 units; token allowances use explicit token base units. Budgets are lifetime per
-network. Networks and optional start/required expiry are separate configuration;
-dates represent local midnight at the start of the selected date.
+network. Networks and Lifetime appear as required, non-removable policy cards
+with dialog editors, still mapped to the existing onchain configuration fields.
+Dialog edits apply on Save; cancelling leaves the form unchanged.
+New forms select Ethereum mainnet, start immediately, and expire 30
+days after opening the form. Editing dates selects local midnight at the start
+of the chosen date. At least one network and an expiry remain required.
 
 Root requires acknowledgement and is exclusive with other transaction
 permissions. Limits alone do not grant access. Signatures adds the API rule and
@@ -98,6 +109,12 @@ permissions before constructing local export bindings. Encrypted export/import
 is followed by network approval and then login/grant setup. Pending sessions are
 not available to delegated-client selectors. Navigation warns until the local
 key is acknowledged as saved. See [local key storage](../clients/local-keystore.md).
+
+After import acknowledgement, the network approval step offers Skip for now (or
+Continue once active), opening `/session-keys/created/$sessionKeyId`. This
+refresh-safe page reads the shared session atom, shows confirmed network state,
+and links to permission-aware MCP/API-key setup. Pending keys retain an enable
+networks action; skipping never activates a key.
 
 Approval independently checks the prepared operation against the reviewed
 installation before opening WebAuthn. Completion and receipt polling update the
@@ -135,6 +152,10 @@ Settings provides local CLI stdio setup and authorization management. The agent
 launches `namera mcp serve`; browser OAuth consent is separate from CLI device
 login and API keys. Imported local keys provide signing. Credentials persist in
 the OS keyring across process restarts; see [local MCP](../clients/local-mcp.md).
+The setup selector includes Codex, Claude Code and Gemini CLI with
+add-server commands. Each uses a distinct
+MCP profile. These presets do not imply end-to-end signing verification in every
+client. Client logos are locally served SVGs from theSVG with source attribution.
 
 ## Browser boundary
 

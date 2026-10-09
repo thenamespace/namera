@@ -11,6 +11,7 @@ type CopyIconButtonProps = {
   label: string;
   value: string;
   className?: string;
+  tooltipLabel?: string;
   onCopyError?: () => void;
   onCopySuccess?: () => void;
 };
@@ -87,6 +88,7 @@ export function CopyIconButton({
   label,
   value,
   className,
+  tooltipLabel,
   onCopyError,
   onCopySuccess,
 }: CopyIconButtonProps) {
@@ -109,7 +111,7 @@ export function CopyIconButton({
       </Tooltip.Trigger>
       <Tooltip.Content showArrow>
         <Tooltip.Arrow />
-        {isCopied ? "Copied" : `Copy ${label.toLowerCase()}`}
+        {isCopied ? "Copied" : (tooltipLabel ?? `Copy ${label.toLowerCase()}`)}
       </Tooltip.Content>
     </Tooltip>
   );

@@ -64,7 +64,11 @@ export const pageSeo = {
   },
   "/_authenticated/accounts/new": {
     title: "Create an account",
-    description: "Create a passkey-protected Namera smart account for your agents.",
+    description: "Create a programmable smart account for your workspace.",
+  },
+  "/_authenticated/accounts/created/$accountId": {
+    title: "Account created",
+    description: "Set up scoped agent access and review next steps for your account.",
   },
   "/_authenticated/account/$accountId": account,
   "/_authenticated/account/$accountId/": account,
@@ -92,6 +96,10 @@ export const pageSeo = {
     title: "Create a session key",
     description:
       "Define agent permissions, encrypt your session key, import it into the CLI, and approve network access.",
+  },
+  "/_authenticated/session-keys/created/$sessionKeyId": {
+    title: "Session key created",
+    description: "Review your session key and connect your agent.",
   },
   "/_authenticated/session-key/$sessionKeyId": session,
   "/_authenticated/session-key/$sessionKeyId/": session,

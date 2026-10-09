@@ -6,10 +6,7 @@ import { useEventCallback } from "usehooks-ts";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
-import { env } from "@/env";
 import { useSessionKey } from "@/hooks/session-key";
-
-import { CommandBlock } from "./command-block";
 
 export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyResponse }) {
   const query = useSessionKey(sessionKey.id);
@@ -19,12 +16,10 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
   const installed = session.installations.filter(
     (installation) => installation.status === "installed",
   ).length;
-  const host = new URL(env.backendUrl).origin.replaceAll("'", "'\\''");
-  const command = `namera login --host '${host}'`;
-  const openSession = useEventCallback(
+  const finishSetup = useEventCallback(
     () =>
       void navigate({
-        to: "/session-key/$sessionKeyId/overview",
+        to: "/session-keys/created/$sessionKeyId",
         params: { sessionKeyId: sessionKey.id },
       }),
   );
@@ -41,21 +36,10 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
           later.
         </Typography.Paragraph>
         <SessionKeyInstallations sessionKey={sessionKey} compact />
-        <Button variant="tertiary" onPress={openSession}>
-          View Session key
+        <Button variant={active ? "primary" : "tertiary"} onPress={finishSetup}>
+          {active ? "Continue" : "Skip for now"}
         </Button>
       </section>
-      {active ? (
-        <section className="grid min-w-0 gap-3 border-t border-separator pt-5">
-          <HeadingGroup.Title size="sm">Ready to use the CLI?</HeadingGroup.Title>
-          <Typography.Paragraph color="muted" size="sm">
-            {active
-              ? "Run this command, then select this key in the browser to give the CLI access."
-              : "Available after at least one network is confirmed."}
-          </Typography.Paragraph>
-          {active ? <CommandBlock command={command} label="Log in command" /> : null}
-        </section>
-      ) : null}
     </>
   );
 }

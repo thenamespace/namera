@@ -1,5 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { Schema } from "effect";
+
+import { WalletId } from "@namera-ai/protocol";
+
 import { currentUserAtom } from "@/atoms/auth/session";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
@@ -15,6 +19,8 @@ import { CreateSessionKeyForm } from "./-components/create-session-key-form";
 const sessionKeyCreatePermission = ["session-key:create"] as const;
 
 export const Route = createFileRoute("/_authenticated/session-keys/new")({
+  validateSearch: (search: Record<string, unknown>): { accountId?: WalletId } =>
+    Schema.is(WalletId)(search.accountId) ? { accountId: search.accountId } : {},
   loader: async ({ abortController, context }) => {
     const currentUser = await prefetchQuery(
       context.atomRegistry,
@@ -32,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/session-keys/new")({
 });
 
 function CreateSessionKeyPage() {
+  const { accountId } = Route.useSearch();
   const { canCreate } = Route.useLoaderData();
   const wallets = useWallets();
 
@@ -44,7 +51,7 @@ function CreateSessionKeyPage() {
         {canCreate ? (
           <>
             {wallets.data ? (
-              <CreateSessionKeyForm wallets={wallets.data} />
+              <CreateSessionKeyForm wallets={wallets.data} initialAccountId={accountId} />
             ) : wallets.isError ? (
               <DataError
                 label="accounts"

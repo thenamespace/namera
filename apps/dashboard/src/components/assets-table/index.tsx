@@ -50,6 +50,7 @@ export function AssetsTable({
   const chainOptions = useMemo(() => {
     const counts = countTableValues(portfolio.rows, (row) => row.chainId);
     return [...uniqueTableValues(portfolio.rows, (row) => row.chainId).values()].map((row) => ({
+      group: getChainDataByCaip2(row.chainId)?.chain.testnet ? "Testnets" : "Mainnets",
       id: row.chainId,
       label: getChainDataByCaip2(row.chainId)?.chain.name ?? row.chainId,
       content: <ChainDisplay chainId={row.chainId} />,
@@ -110,6 +111,7 @@ export function AssetsTable({
         label: "Chain",
         icon: <ChainIcon className="size-4" chain="ethereum" namespace="eip155" />,
         options: chainOptions,
+        groups: ["Mainnets", "Testnets"],
         selectedKeys: chains,
         onSelectionChange: (keys) =>
           setChains(

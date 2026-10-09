@@ -29,7 +29,7 @@ import {
 } from "@/components/dashboard-card";
 import { WalletOwnerDisplay } from "@/components/display/wallet-owner-display";
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { showErrorToast } from "@/lib/toasts";
 
 import {
   CreateAccountFormValues,
@@ -55,12 +55,12 @@ export function CreateAccountForm() {
         title: "Couldn’t create account",
         description: "Review the account details and try again.",
       }),
-    onSuccess: () => {
-      showSuccessToast({
-        title: "Account created",
-        description: "Your smart account was created successfully.",
+    onSuccess: (account) => {
+      void navigate({
+        to: "/accounts/created/$accountId",
+        params: { accountId: account.id },
+        replace: true,
       });
-      void navigate({ to: "/accounts", replace: true });
     },
   });
   const form = useForm<CreateAccountFormValuesEncoded, unknown, CreateAccountFormValues>({

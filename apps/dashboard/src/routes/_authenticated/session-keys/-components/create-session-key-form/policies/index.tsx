@@ -13,6 +13,7 @@ import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../t
 import { SessionPolicyCard } from "./card";
 import { policyChoiceFor } from "./catalog";
 import { AddPolicyButton, SessionPolicyDialog, type PolicyEdit } from "./dialog";
+import { RequiredPolicies } from "./required-policies";
 import { signatureConfiguration } from "./signature-configuration";
 
 export function PolicySection({
@@ -49,22 +50,25 @@ export function PolicySection({
           <HeadingGroup.Description>
             Choose what this key can do, then add any limits.
           </HeadingGroup.Description>
-          <div className="min-h-5">
-            <FieldError
-              errors={[
-                errors?.permissions,
-                errors?.permissions?.root,
-                errors?.allowSignatures,
-                form.formState.errors.policies,
-              ]}
-            />
-          </div>
+          {errors?.permissions || errors?.allowSignatures || form.formState.errors.policies ? (
+            <div>
+              <FieldError
+                errors={[
+                  errors?.permissions,
+                  errors?.permissions?.root,
+                  errors?.allowSignatures,
+                  form.formState.errors.policies,
+                ]}
+              />
+            </div>
+          ) : null}
         </HeadingGroup>
         <AddPolicyButton
           disabled={!wallets.some((wallet) => wallet.id === walletId)}
           onPress={() => setDialog({})}
         />
       </div>
+      <RequiredPolicies form={form} />
       {permissionFields.fields.map((field, index) => {
         const permission = permissions[index];
         if (!permission) return null;

@@ -1,7 +1,15 @@
 import { Link } from "@tanstack/react-router";
 
 import { buttonVariants, Typography, Widget } from "@namera-ai/ui";
-import { ApiIcon, BotIcon, HugeiconsIcon, Key01Icon, Wallet01Icon } from "@namera-ai/ui/icons";
+import {
+  ApiIcon,
+  ArrowRight01Icon,
+  BotIcon,
+  HugeiconsIcon,
+  Key01Icon,
+  UserAdd01Icon,
+  Wallet01Icon,
+} from "@namera-ai/ui/icons";
 
 import { hasPermissions } from "@/components/permission";
 import { useCurrentUser } from "@/hooks/auth";
@@ -31,6 +39,12 @@ const actions = [
     to: "/settings/workspace/api-keys",
     permissions: ["api-key:read", "api-key:create"],
   },
+  {
+    label: "Invite members",
+    icon: UserAdd01Icon,
+    to: "/settings/workspace/members",
+    permissions: ["invitation:create"],
+  },
 ] as const;
 
 export function QuickActions() {
@@ -45,22 +59,28 @@ export function QuickActions() {
       <Widget.Header className="pt-4 pb-4">
         <Widget.Title>Quick actions</Widget.Title>
       </Widget.Header>
-      <Widget.Content className="px-4 pb-4">
+      <div className="flex-1 px-2 pb-2">
         {availableActions.length > 0 ? (
-          <nav aria-label="Quick actions" className="grid gap-3">
+          <nav aria-label="Quick actions" className="grid gap-1">
             {availableActions.map((action) => (
               <Link
                 className={buttonVariants({
-                  variant: "tertiary",
-                  className: "h-14 w-full justify-start gap-3 rounded-xl border px-3",
+                  variant: "ghost",
+                  className:
+                    "h-14 w-full justify-start gap-3 rounded-lg bg-default/40 px-2 transition-colors hover:bg-default/80",
                 })}
                 key={action.to}
                 to={action.to}
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface/60">
                   <HugeiconsIcon aria-hidden className="size-4 text-muted" icon={action.icon} />
                 </span>
                 {action.label}
+                <HugeiconsIcon
+                  aria-hidden
+                  className="ml-auto size-4 shrink-0 text-muted"
+                  icon={ArrowRight01Icon}
+                />
               </Link>
             ))}
           </nav>
@@ -69,7 +89,7 @@ export function QuickActions() {
             Ask a workspace admin to help set up accounts and agent access.
           </Typography.Paragraph>
         )}
-      </Widget.Content>
+      </div>
     </Widget>
   );
 }

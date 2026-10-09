@@ -28,7 +28,6 @@ import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-regis
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
-import { OnchainSettings } from "./onchain-settings";
 import { PolicySection } from "./policies";
 import { CreateSessionKeyFormSchema } from "./schema";
 import { SetupSessionKey } from "./setup-key";
@@ -45,7 +44,7 @@ const defaultValues = {
   },
   policies: [],
   onchain: {
-    chains: [],
+    chains: ["eip155:1"],
     validAfter: 0,
     validUntil: 0,
     permissions: [],
@@ -54,10 +53,26 @@ const defaultValues = {
 } satisfies DefaultValues<CreateSessionKeyFormInput>;
 
 type CreateSessionKeyFormProps = {
+  initialAccountId?: string | undefined;
   wallets: ListWalletsResponse;
 };
 
-export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
+export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessionKeyFormProps) {
+  const [initialValues] = useState(() => ({
+    ...defaultValues,
+    walletId:
+      wallets.find(
+        (wallet) =>
+          wallet.id === initialAccountId &&
+          wallet.status === "active" &&
+          wallet.owner.custody === "local" &&
+          wallet.owner.algorithm === "p256",
+      )?.id ?? "",
+    onchain: {
+      ...defaultValues.onchain,
+      validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+    },
+  }));
   const navigate = useNavigate();
   const draft = useRef<LocalSessionKeyDraft | null>(null);
   const submitting = useRef(false);
@@ -147,7 +162,7 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
     onSuccess: (created, { payload }) => acceptRegistration(created, payload),
   });
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
-    defaultValues,
+    defaultValues: initialValues,
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
@@ -241,7 +256,6 @@ export function CreateSessionKeyForm({ wallets }: CreateSessionKeyFormProps) {
               <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
               <SessionKeyDetailsCard control={form.control} wallets={wallets} />
             </section>
-            <OnchainSettings form={form} />
             <PolicySection form={form} wallets={wallets} />
           </div>
           {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
