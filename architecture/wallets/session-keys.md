@@ -71,12 +71,20 @@ changing clients.
   ensure cleanup cannot expire an in-flight signing lease. Reuse these records;
   do not introduce a second submission/provisioning table. Persist the signer
   identity in the prepared snapshot if the existing snapshot is insufficient.
-- Signature operations contain idempotency and request data, but no signing
-  lease or replayable signature result. Phase 15 must add lease token/expiry
-  columns with a paired-null constraint, a durable protected result and a bound
-  signer snapshot. Completion/retries must return the accepted result without
-  another provider call or billing settlement. These columns are deferred until
-  their transitions and cleanup behavior are implemented and tested.
+- Returned message/typed-data signatures must not be persisted in the database,
+  including encrypted result caches, or written to logs. Keep operation metadata,
+  authorization, billing and audit state, but do not promise response replay.
+  If provider signing succeeds and the response is lost, an explicit retry may
+  sign again and incur another signature charge. This is an accepted product
+  trade-off, not an exactly-once delivery guarantee. Phase 15 must define a fresh
+  attempt with renewed authorization, quota and policy checks; never double-settle
+  one billing reservation or blindly retry an ambiguous provider response.
+  Concurrency/expiry fencing remains necessary, but recovery columns should be
+  added only where needed for those transitions, not for storing signature bytes.
+
+This no-result-storage decision applies to message/typed-data signing. It does
+not change existing signed execution submission persistence or broadcast recovery;
+duplicate onchain execution must still be prevented.
 
 Neither path may expose a general-purpose raw-signing API or substitute a root
 owner signature for a session signature.
