@@ -32,18 +32,19 @@ layer(TestServerLayer)("billing routes", (it) => {
       expect(personalBilling).toMatchObject({
         organizationId: signedIn.actor.organization.id,
         plan: "free",
-        planVersion: 1,
+        planVersion: 2,
         status: "active",
         resources: [
           { key: "members", includedAmount: 5n, usedAmount: 1n, remainingAmount: 4n },
+          { key: "local-wallets", includedAmount: 10n, usedAmount: 0n, remainingAmount: 10n },
+          { key: "oneclaw-wallets", includedAmount: 3n, usedAmount: 0n, remainingAmount: 3n },
           {
-            key: "software-wallets",
-            includedAmount: 5n,
+            key: "local-session-keys",
+            includedAmount: 100n,
             usedAmount: 0n,
-            remainingAmount: 5n,
+            remainingAmount: 100n,
           },
-          { key: "hsm-wallets", includedAmount: 0n, usedAmount: 0n, remainingAmount: 0n },
-          { key: "local-wallets", includedAmount: 50n, usedAmount: 0n, remainingAmount: 50n },
+          { key: "oneclaw-session-keys", includedAmount: 5n, usedAmount: 0n, remainingAmount: 5n },
         ],
       });
       expect(personalBilling.meters).toEqual([
@@ -59,11 +60,11 @@ layer(TestServerLayer)("billing routes", (it) => {
         {
           key: "execution.testnet",
           unit: "operation",
-          includedAmount: 1_000n,
-          hardLimitAmount: 1_000n,
+          includedAmount: 500n,
+          hardLimitAmount: 500n,
           consumedAmount: 0n,
           reservedAmount: 0n,
-          remainingAmount: 1_000n,
+          remainingAmount: 500n,
         },
         {
           key: "gas-sponsorship",
@@ -77,11 +78,11 @@ layer(TestServerLayer)("billing routes", (it) => {
         {
           key: "signature",
           unit: "operation",
-          includedAmount: 10_000n,
-          hardLimitAmount: 10_000n,
+          includedAmount: 1_000n,
+          hardLimitAmount: 1_000n,
           consumedAmount: 0n,
           reservedAmount: 0n,
-          remainingAmount: 10_000n,
+          remainingAmount: 1_000n,
         },
       ]);
 
@@ -127,8 +128,8 @@ layer(TestServerLayer)("billing routes", (it) => {
         {
           key: "execution.testnet",
           unit: "operation",
-          included: 1_000n,
-          hardLimit: 1_000n,
+          included: 500n,
+          hardLimit: 500n,
           consumed: 0n,
           reserved: 0n,
         },
@@ -143,8 +144,8 @@ layer(TestServerLayer)("billing routes", (it) => {
         {
           key: "signature",
           unit: "operation",
-          included: 10_000n,
-          hardLimit: 10_000n,
+          included: 1_000n,
+          hardLimit: 1_000n,
           consumed: 0n,
           reserved: 0n,
         },
@@ -158,7 +159,7 @@ layer(TestServerLayer)("billing routes", (it) => {
       expect(yield* repository.billing.account.findByOrganizationId(organization.id)).toBeDefined();
       expect(yield* repository.billing.subscription.findCurrent(organization.id)).toMatchObject({
         plan: "free",
-        planVersion: 1,
+        planVersion: 2,
       });
     }),
   );

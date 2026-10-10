@@ -29,7 +29,11 @@ import {
   McpAuthorizationApprovedEventData,
   McpAuthorizationRevokedEventData,
 } from "./oauth-authorization.js";
-import { OrganizationCreatedEventData, OrganizationUpdatedEventData } from "./organization.js";
+import {
+  BillingPlanChangedEventData,
+  OrganizationCreatedEventData,
+  OrganizationUpdatedEventData,
+} from "./organization.js";
 import {
   SessionKeyCreatedEventData,
   SessionKeyRevokedEventData,
@@ -47,6 +51,7 @@ const organizationEvent = <Fields extends Schema.Struct.Fields>(fields: Schema.S
 
 export const OrganizationCreatedEvent = organizationEvent(OrganizationCreatedEventData);
 export const OrganizationUpdatedEvent = organizationEvent(OrganizationUpdatedEventData);
+export const BillingPlanChangedEvent = organizationEvent(BillingPlanChangedEventData);
 export const InvitationCreatedEvent = organizationEvent(InvitationCreatedEventData);
 export const InvitationAcceptedEvent = organizationEvent(InvitationAcceptedEventData);
 export const InvitationRejectedEvent = organizationEvent(InvitationRejectedEventData);
@@ -75,6 +80,7 @@ export const SignatureCreatedEvent = organizationEvent(SignatureCreatedEventData
 export const OrganizationEvent = Schema.Union([
   OrganizationCreatedEvent,
   OrganizationUpdatedEvent,
+  BillingPlanChangedEvent,
   InvitationCreatedEvent,
   InvitationAcceptedEvent,
   InvitationRejectedEvent,

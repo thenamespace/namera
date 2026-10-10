@@ -2,7 +2,7 @@ import { NodeCrypto } from "@effect/platform-node";
 import { Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
-import { Application, googleIdentityTestLayer } from "@namera-ai/application";
+import { Application, Audit, googleIdentityTestLayer } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { type Database, Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
@@ -74,6 +74,7 @@ export const makeTestServerLayer = (
 ) => {
   const TestServicesLayer = Layer.mergeAll(
     googleLayer,
+    Audit.layer,
     EmailJobs.layer,
     EnsTestLayer,
     Evm.testLayerWith(evmOptions),

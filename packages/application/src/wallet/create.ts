@@ -24,6 +24,7 @@ import {
   enforceLocalWalletLimit,
   enforceWalletLimit,
   lockOrganizationBilling,
+  makeBillingPeriods,
 } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
@@ -38,6 +39,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
+  const periods = yield* makeBillingPeriods;
   const gcp = yield* GcpService;
   const createNotification = yield* makeCreateNotification;
   const verifyPasskeyRegistration = yield* makeVerifyPasskeyRegistration;
@@ -64,8 +66,13 @@ export const makeCreateWallet = Effect.gen(function* () {
 
     const initialLimitCheck =
       requestedOwner.type === "passkey"
-        ? enforceLocalWalletLimit(repository, input.organizationId)
-        : enforceWalletLimit(repository, input.organizationId, requestedOwner.protectionLevel);
+        ? enforceLocalWalletLimit(repository, input.organizationId, periods)
+        : enforceWalletLimit(
+            repository,
+            input.organizationId,
+            requestedOwner.protectionLevel,
+            periods,
+          );
     yield* initialLimitCheck.pipe(
       Effect.tapErrorTag("BillingError", () =>
         Metric.update(Metric.withAttributes(creationResults, { result: "limit_exceeded" }), 1),
@@ -182,7 +189,7 @@ export const makeCreateWallet = Effect.gen(function* () {
         Effect.gen(function* () {
           yield* lockOrganizationBilling(repository, input.organizationId);
           if (requestedOwner.type === "passkey") {
-            yield* enforceLocalWalletLimit(repository, input.organizationId);
+            yield* enforceLocalWalletLimit(repository, input.organizationId, periods);
             const consumed = yield* repository.auth.verification.consume({
               verificationId: requestedOwner.verificationId,
               consumedAt: yield* DateTime.now,
@@ -196,6 +203,7 @@ export const makeCreateWallet = Effect.gen(function* () {
               repository,
               input.organizationId,
               requestedOwner.protectionLevel,
+              periods,
             );
           }
 

@@ -59,7 +59,10 @@ export interface SessionKeyApplication {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly request: CreateSessionKeyRequest;
-  }) => Effect.Effect<SessionKeyView, WalletNotFoundError | SessionKeyCreationError>;
+  }) => Effect.Effect<
+    SessionKeyView,
+    WalletNotFoundError | SessionKeyCreationError | BillingLimitExceededError
+  >;
   readonly get: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;

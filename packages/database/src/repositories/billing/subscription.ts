@@ -10,6 +10,9 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { billingSubscription } from "#/schema/index";
 
 export interface BillingSubscriptionRepositoryService {
+  readonly upgradeFreeV2: (
+    organizationId: OrganizationId,
+  ) => Effect.Effect<BillingSubscription | undefined, DatabaseError>;
   readonly insert: (
     data: BillingSubscriptionInsert,
   ) => Effect.Effect<BillingSubscription, DatabaseError>;
@@ -28,6 +31,24 @@ export class BillingSubscriptionRepository extends Context.Service<
       const database = yield* Database;
 
       return BillingSubscriptionRepository.of({
+        upgradeFreeV2: Effect.fn("database.billingSubscriptionRepository.upgradeFreeV2")(function* (
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(billingSubscription)
+            .set({ planVersion: 2 })
+            .where(
+              and(
+                eq(billingSubscription.organizationId, organizationId),
+                eq(billingSubscription.plan, "free"),
+                eq(billingSubscription.planVersion, 1),
+                inArray(billingSubscription.status, ["trialing", "active", "past_due"]),
+              ),
+            )
+            .returning();
+          return rows[0] ? Schema.decodeSync(BillingSubscription)(rows[0]) : undefined;
+        }, mapRepositoryError),
         insert: Effect.fn("database.billingSubscriptionRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(BillingSubscriptionInsert)(data);

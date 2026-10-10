@@ -81,7 +81,7 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
             const stored = yield* repository.core.wallet.findById(template.id, organizationId);
             if (!stored) return yield* Effect.die("Missing capacity wallet");
             // Seed occupancy only. Every competing admission uses real HTTP and WebAuthn verification.
-            for (let index = 1; index < 49; index++) {
+            for (let index = 1; index < 9; index++) {
               yield* repository.core.wallet.insert({
                 organizationId,
                 signingKeyId: template.owner.signingKeyId,
@@ -121,7 +121,7 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               (yield* ownerClient.billing.get()).resources.find(
                 ({ key }) => key === "local-wallets",
               ),
-            ).toMatchObject({ usedAmount: 50n, remainingAmount: 0n });
+            ).toMatchObject({ usedAmount: 10n, remainingAmount: 0n });
             const events = yield* repository.audit.organization.findForOrganization(organizationId);
             expect(events.filter(({ event }) => event === "wallet.created")).toHaveLength(2);
             expect(events.filter(({ event }) => event === "signing_key.created")).toHaveLength(2);

@@ -33,7 +33,7 @@ import {
   canAssignOrganizationRole,
   type OrganizationRoleAuthority,
 } from "#/auth/organization/permissions";
-import { enforceMemberLimit, lockOrganizationBilling } from "#/billing/index";
+import { enforceMemberLimit, lockOrganizationBilling, makeBillingPeriods } from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 
 export interface InvitationView {
@@ -83,6 +83,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
   const audit = yield* Audit;
   const emailJobs = yield* EmailJobs;
   const repository = yield* Repository;
+  const periods = yield* makeBillingPeriods;
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
 
@@ -165,7 +166,7 @@ export const makeInvitationApplication = Effect.gen(function* () {
           if (concurrent) {
             return { invitation: concurrent, created: false } as const;
           }
-          yield* enforceMemberLimit(repository, input.organizationId);
+          yield* enforceMemberLimit(repository, input.organizationId, periods);
           yield* repository.auth.invitation.expirePendingForEmail(
             input.organizationId,
             input.email,

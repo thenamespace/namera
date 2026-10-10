@@ -26,6 +26,11 @@ import { Base64, generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import {
+  enforceSessionKeyLimit,
+  lockOrganizationBilling,
+  makeBillingPeriods,
+} from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
@@ -40,6 +45,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   const repository = yield* Repository;
   const evm = yield* Evm;
   const transaction = yield* TransactionService;
+  const periods = yield* makeBillingPeriods;
   const createNotification = yield* makeCreateNotification;
   const loadViews = yield* makeLoadSessionKeyViews;
 
@@ -192,6 +198,8 @@ export const makeCreateSessionKey = Effect.gen(function* () {
 
       const sessionKey = yield* transaction.run(
         Effect.gen(function* () {
+          yield* lockOrganizationBilling(repository, input.organizationId);
+          yield* enforceSessionKeyLimit(repository, input.organizationId, "local", periods);
           const current = yield* repository.core.wallet.findByIdForUpdate(
             wallet.wallet.id,
             input.organizationId,

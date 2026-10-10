@@ -144,6 +144,7 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
             });
             const repository = yield* Repository;
             const transaction = yield* TransactionService;
+            const periods = yield* makeBillingPeriods;
             const stored = yield* repository.core.wallet.findById(wallet.id, organizationId);
             if (stored === undefined) return yield* Effect.die("Expected capacity fixture wallet");
             const insert = {
@@ -156,11 +157,11 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               status: "active" as const,
             };
             // Seed resource occupancy directly; only admission is under test here.
-            for (let index = 1; index < 49; index++) yield* repository.core.wallet.insert(insert);
+            for (let index = 1; index < 9; index++) yield* repository.core.wallet.insert(insert);
             const admit = transaction.run(
               Effect.gen(function* () {
                 yield* lockOrganizationBilling(repository, organizationId);
-                yield* enforceLocalWalletLimit(repository, organizationId);
+                yield* enforceLocalWalletLimit(repository, organizationId, periods);
                 return yield* repository.core.wallet.insert(insert);
               }),
             );
@@ -178,7 +179,7 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               });
             expect(
               (yield* client.billing.get()).resources.find(({ key }) => key === "local-wallets"),
-            ).toMatchObject({ usedAmount: 50n, remainingAmount: 0n });
+            ).toMatchObject({ usedAmount: 10n, remainingAmount: 0n });
           }),
       );
 

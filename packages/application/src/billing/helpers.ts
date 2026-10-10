@@ -4,46 +4,31 @@ import type { RepositoryService } from "@namera-ai/database";
 import { BillingLimitExceededError, type OrganizationId } from "@namera-ai/protocol";
 import type { BillingSubscription, WalletKeyProtectionLevel } from "@namera-ai/protocol/model";
 
-import { freeBillingPlan } from "./data.js";
+import { resolveBillingPlan, type FreeBillingPlan } from "./data.js";
+import type { makeBillingPeriods } from "./periods.js";
+export { lockOrganizationBilling } from "./lock.js";
 
 export interface OrganizationBillingSnapshot {
   readonly subscription: BillingSubscription;
-  readonly limits: typeof freeBillingPlan.resources;
+  readonly limits: FreeBillingPlan["resources"];
   readonly usage: {
     readonly members: number;
     readonly pendingInvitations: number;
     readonly softwareWallets: number;
     readonly hsmWallets: number;
     readonly localWallets: number;
+    readonly oneClawWallets: number;
+    readonly localSessionKeys: number;
+    readonly oneClawSessionKeys: number;
   };
 }
-
-export const resolveBillingPlan = (subscription: BillingSubscription) => {
-  if (
-    subscription.plan !== freeBillingPlan.key ||
-    subscription.planVersion !== freeBillingPlan.version
-  ) {
-    throw new Error(
-      `Unsupported billing plan version: ${subscription.plan}@${subscription.planVersion}`,
-    );
-  }
-  return freeBillingPlan;
-};
-
-export const lockOrganizationBilling = Effect.fn("application.lockOrganizationBilling")(function* (
-  repository: RepositoryService,
-  organizationId: OrganizationId,
-) {
-  const account = yield* repository.billing.account.lockByOrganizationId(organizationId);
-  if (!account) {
-    return yield* Effect.die("Organization billing account is missing");
-  }
-});
 
 export const loadOrganizationBilling = Effect.fnUntraced(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
+  periods: Effect.Success<typeof makeBillingPeriods>,
 ) {
+  yield* periods.current(organizationId, yield* DateTime.now);
   const subscription = yield* repository.billing.subscription.findCurrent(organizationId);
   if (!subscription) {
     return yield* Effect.die("Organization billing subscription is missing");
@@ -57,11 +42,43 @@ export const loadOrganizationBilling = Effect.fnUntraced(function* (
   return result;
 });
 
+export const enforceOneClawWalletLimit = Effect.fn("application.enforceOneClawWalletLimit")(
+  function* (
+    repository: RepositoryService,
+    organizationId: OrganizationId,
+    periods: Effect.Success<typeof makeBillingPeriods>,
+  ) {
+    const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId, periods);
+    if (usage.oneClawWallets >= limits.maxOneClawWallets)
+      return yield* new BillingLimitExceededError({
+        code: "LIMIT_EXCEEDED",
+        limit: "oneClawWallets",
+      });
+  },
+);
+
+export const enforceSessionKeyLimit = Effect.fn("application.enforceSessionKeyLimit")(function* (
+  repository: RepositoryService,
+  organizationId: OrganizationId,
+  provider: "local" | "1claw",
+  periods: Effect.Success<typeof makeBillingPeriods>,
+) {
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId, periods);
+  const limit = provider === "local" ? limits.maxLocalSessionKeys : limits.maxOneClawSessionKeys;
+  const used = provider === "local" ? usage.localSessionKeys : usage.oneClawSessionKeys;
+  if (limit !== null && used >= limit)
+    return yield* new BillingLimitExceededError({
+      code: "LIMIT_EXCEEDED",
+      limit: provider === "local" ? "localSessionKeys" : "oneClawSessionKeys",
+    });
+});
+
 export const enforceMemberLimit = Effect.fn("application.enforceMemberLimit")(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
+  periods: Effect.Success<typeof makeBillingPeriods>,
 ) {
-  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId, periods);
   if (usage.members + usage.pendingInvitations >= limits.maxMembers) {
     return yield* new BillingLimitExceededError({
       code: "LIMIT_EXCEEDED",
@@ -74,8 +91,9 @@ export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(fu
   repository: RepositoryService,
   organizationId: OrganizationId,
   protectionLevel: WalletKeyProtectionLevel,
+  periods: Effect.Success<typeof makeBillingPeriods>,
 ) {
-  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId, periods);
   if (protectionLevel === "software" && usage.softwareWallets >= limits.maxSoftwareWallets) {
     return yield* new BillingLimitExceededError({
       code: "LIMIT_EXCEEDED",
@@ -93,8 +111,9 @@ export const enforceWalletLimit = Effect.fn("application.enforceWalletLimit")(fu
 export const enforceLocalWalletLimit = Effect.fn("application.enforceLocalWalletLimit")(function* (
   repository: RepositoryService,
   organizationId: OrganizationId,
+  periods: Effect.Success<typeof makeBillingPeriods>,
 ) {
-  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId);
+  const { limits, usage } = yield* loadOrganizationBilling(repository, organizationId, periods);
   if (usage.localWallets >= limits.maxLocalWallets) {
     return yield* new BillingLimitExceededError({
       code: "LIMIT_EXCEEDED",

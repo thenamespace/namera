@@ -57,7 +57,12 @@ export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
     HttpApiEndpoint.post("create", "/", {
       payload: CreateSessionKeyRequest,
       success: CreateSessionKeyResponse.pipe(HttpApiSchema.status("Created")),
-      error: [WalletNotFoundError, SessionKeyCreationError, ...CommonErrors],
+      error: [
+        WalletNotFoundError,
+        SessionKeyCreationError,
+        BillingLimitExceededError,
+        ...CommonErrors,
+      ],
     }).annotate(OpenApi.Summary, "Create a session key"),
     HttpApiEndpoint.get("listForOrganization", "/", {
       success: ListSessionKeysForOrganizationResponse,

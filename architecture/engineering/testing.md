@@ -108,7 +108,7 @@ seeded and registration verification uses the package test provider.
 `billing/wallet-cap.test.ts` additionally races five separate organization members
 with fixed per-client cookies and distinct challenges/credentials. Package-owned
 P-256 packed self-attestations pass through the live WebAuthn verifier. Only one
-wallet is created at the last slot, with one audit pair and usage of 50.
+wallet is created at the last slot, with one audit pair and usage of 10 under Free v2.
 Chain account derivation remains a deterministic substitute; this lane does not
 verify browser hardware or live bundlers.
 
