@@ -4,7 +4,6 @@ import * as HexEncoding from "effect/encoding/Hex";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
-  createPublicKeyWebAuthnAccount,
   Evm,
   findEvmPolicyCardinalityViolation,
   materializeEvmPolicy,
@@ -34,6 +33,7 @@ import {
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
+import { makeLoadPublicSessionOwner } from "#/wallet/public-owner";
 
 import { hashSessionKeyPolicies } from "./hash.js";
 import { makeLoadSessionKeyViews } from "./view.js";
@@ -48,6 +48,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   const periods = yield* makeBillingPeriods;
   const createNotification = yield* makeCreateNotification;
   const loadViews = yield* makeLoadSessionKeyViews;
+  const loadOwner = yield* makeLoadPublicSessionOwner;
 
   return Effect.fn("application.sessionKey.create")(
     function* (input: {
@@ -112,27 +113,15 @@ export const makeCreateSessionKey = Effect.gen(function* () {
         return yield* new SessionKeyCreationError({ code: "WALLET_NAMESPACE_MISMATCH" });
       }
 
-      if (
-        wallet.wallet.data.validatorType !== "webauthn_p256" ||
-        wallet.signingKey.custody !== "local" ||
-        wallet.signingKey.data.type !== "passkey" ||
-        wallet.signingKey.status !== "active"
-      ) {
-        return yield* new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" });
-      }
+      const { account } = yield* loadOwner(wallet).pipe(
+        Effect.mapError(() => new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" })),
+      );
       const signer = yield* resolveEvmSessionSigner(input.request.signer.publicKey).pipe(
         Effect.mapError(() => new SessionKeyCreationError({ code: "LOCAL_SIGNER_INVALID" })),
       );
       const signingKeyId = SigningKeyId.make(generateUniqueId());
       // Entity IDs are public routing identifiers; the database rejects reuse.
       const entityId = Number.parseInt(generateUniqueId().slice(-7), 16) + 1;
-      const account = {
-        wallet: wallet.wallet.data,
-        owner: {
-          validatorType: "webauthn_p256" as const,
-          account: createPublicKeyWebAuthnAccount(wallet.signingKey.publicKeyHex),
-        },
-      };
       const installations = yield* Effect.forEach(
         input.request.onchain.chains,
         (chainId) =>

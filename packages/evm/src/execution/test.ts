@@ -15,6 +15,7 @@ import type { EvmExecutionService } from "./types.js";
 
 export const makeTestEvmExecutionService = (
   overrides: Partial<EvmExecutionService> = {},
+  options: { readonly signWithOwner?: boolean } = {},
 ): EvmExecutionService => {
   const entryPoint = EthereumAddress.make(entryPoint07Address);
   const userOperationHash = UserOperationHash.make(`0x${"1".repeat(64)}`);
@@ -158,8 +159,22 @@ export const makeTestEvmExecutionService = (
         },
       }),
     ),
-    sign: Effect.fn("evm.execution.test.sign")((input) =>
-      Effect.succeed({
+    sign: Effect.fn("evm.execution.test.sign")(function* (input) {
+      const signature = options.signWithOwner
+        ? yield* Effect.tryPromise({
+            try: async () => {
+              if (input.account.owner.validatorType !== "ecdsa_secp256k1")
+                throw new Error("Test managed signing requires an ECDSA owner");
+              return Hex.make(
+                await input.account.owner.account.signMessage({
+                  message: { raw: userOperationHash },
+                }),
+              );
+            },
+            catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
+          })
+        : Hex.make(`0x${"4".repeat(128)}`);
+      return {
         version: 1,
         namespace: "eip155",
         chainId: input.prepared.chainId,
@@ -168,12 +183,12 @@ export const makeTestEvmExecutionService = (
         sponsorship: input.prepared.sponsorship,
         userOperation: {
           ...input.prepared.userOperation,
-          signature: Hex.make(`0x${"4".repeat(128)}`),
+          signature,
         },
         userOperationHash,
         billing: input.prepared.billing,
-      }),
-    ),
+      };
+    }),
     submit: Effect.fn("evm.execution.test.submit")((input) =>
       Effect.succeed({
         version: 1,

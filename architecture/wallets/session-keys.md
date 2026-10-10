@@ -37,7 +37,7 @@ sequenceDiagram
   participant Tx as PostgreSQL transaction
 
   Admin->>App: wallet + public signer + chains + lifetime + permissions + API policies
-  App->>App: verify active tenant wallet and local passkey owner
+  App->>App: verify active tenant wallet and supported public owner
   App->>EVM: validate signer curve point and compile each chain installation
   EVM-->>App: canonical signer and installation calldata/configuration
   App->>App: canonical policy hash excluding generated IDs
@@ -61,6 +61,13 @@ the requested chain's installation. Receipt reconciliation invokes activation
 only after confirming the installation.
 
 ## Owner approval
+
+Registration and delegated execution reconstruct the parent account using only
+public owner material: either a local passkey or a 1Claw-managed Ethereum
+secp256k1 factory-account owner. Compilation, simulation and local session
+preparation do not decrypt provider credentials or invoke the root signer.
+Session keys themselves remain locally held; managed session custody is not
+implemented.
 
 `POST /session-keys/operations/prepare` takes an installation ID, install/uninstall
 kind, idempotency key and sponsorship choice. It accepts no arbitrary calldata.
@@ -98,6 +105,40 @@ response. Registration/approval alone never sets a session to active.
 `session-key:read` to poll only operation ID and status. Cross-tenant IDs return
 `OPERATION_UNAVAILABLE`; machine credentials cannot read owner approval records.
 Neither signed envelopes nor private approval/lease data cross this boundary.
+
+### 1Claw-managed owner
+
+`POST /session-keys/operations/managed/prepare` uses the same preparation input
+and ledger, but returns `approval: "1claw"` instead of WebAuthn options. It
+snapshots the owner signing-key ID and public key. The passkey endpoints retain
+their existing contracts and reject managed owners.
+
+`POST /session-keys/operations/managed/approve` accepts only an operation ID.
+It requires the initiating user and the corresponding create/revoke permission;
+API keys and OAuth machine actors cannot invoke it. Before signing and again
+before acceptance, the application verifies current membership/permission,
+owner binding, ready provider connection, expiry and installation lifecycle.
+The operation must contain the exact stored installation/removal self-call.
+The EVM signer validates its encoded envelope; this is not an arbitrary owner
+signing endpoint.
+
+A wallet-locked transaction claims a two-minute signing lease. Concurrent
+approvals cannot use an already-held lease. The provider call runs outside the
+transaction with a 90-second signing timeout. Signature acceptance requires the
+same still-live lease, then atomically reserves billing and writes the approval
+audit event. Failure releases only that request's unsigned lease; a crashed
+request can be retried after lease expiry. Stale requests cannot accept a
+signature or clear a replacement lease. A provider may have signed before a
+later database failure, but these bytes are neither returned nor broadcast.
+
+Accepted operations use the existing receipt worker for installation/removal.
+Boundary tests cover real test-provider digest signatures, idempotency,
+concurrency on PostgreSQL, lease recovery, provider failure, tenant/actor
+isolation, expiry, revoked sessions, disabled connections, calldata substitution
+and billing rollback. Routine local-session preparation/simulation is tested
+without owner signing. Network submission remains substituted; live 1Claw and
+bundler end-to-end verification is still required. Dashboard managed-owner
+selection and approval UI remain a separate phase.
 
 ## Receipt recovery
 

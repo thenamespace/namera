@@ -12,6 +12,83 @@ const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).p
 const time = DateTime.fromEpochSeconds;
 
 layer(Persistence)("durable session owner operations", (it) => {
+  it.effect("fences unsigned signing leases, stale acceptance and expiry", () =>
+    Effect.gen(function* () {
+      yield* (yield* TestDatabase).reset;
+      const repository = (yield* Repository).core.sessionKeyOperation;
+      const fixture = yield* sessionOperationFixture("managed-lease");
+      const { operation } = yield* repository.insert(fixture.input);
+      const scope = { id: operation.id, organizationId: operation.organizationId };
+      const claim = {
+        ...scope,
+        actorId: fixture.actor.id,
+        now: time(50),
+        leaseToken: "first",
+        leaseExpiresAt: time(60),
+      };
+      expect((yield* repository.claimForSigning(claim))?.leaseToken).toBe("first");
+      expect(yield* repository.claimForSigning({ ...claim, leaseToken: "second" })).toBeUndefined();
+      const approval = {
+        ...scope,
+        actorId: fixture.actor.id,
+        requestHash: operation.requestHash,
+        signed: fixture.signed,
+        now: time(51),
+        leaseToken: "worker",
+        leaseExpiresAt: time(90),
+      };
+      expect(yield* repository.acceptSignature(approval)).toBeUndefined();
+      expect(
+        yield* repository.acceptSignature({ ...approval, signingLeaseToken: "wrong" }),
+      ).toBeUndefined();
+      expect(
+        (yield* repository.claimForSigning({
+          ...claim,
+          now: time(60),
+          leaseToken: "second",
+          leaseExpiresAt: time(80),
+        }))?.leaseToken,
+      ).toBe("second");
+      expect(
+        yield* repository.releaseSigningLease({ ...scope, leaseToken: "first" }),
+      ).toBeUndefined();
+      expect(
+        yield* repository.acceptSignature({
+          ...approval,
+          now: time(61),
+          signingLeaseToken: "first",
+        }),
+      ).toBeUndefined();
+      expect(
+        (yield* repository.acceptSignature({
+          ...approval,
+          now: time(61),
+          signingLeaseToken: "second",
+        }))?.status,
+      ).toBe("signed");
+      expect(
+        yield* repository.releaseSigningLease({ ...scope, leaseToken: "second" }),
+      ).toBeUndefined();
+
+      const other = yield* sessionOperationFixture("expired-managed-lease");
+      const { operation: expiring } = yield* repository.insert(other.input);
+      yield* repository.claimForSigning({
+        id: expiring.id,
+        organizationId: expiring.organizationId,
+        actorId: other.actor.id,
+        now: time(90),
+        leaseToken: "expiring",
+        leaseExpiresAt: time(110),
+      });
+      const expired = yield* repository.expireAwaitingSignatures({ now: time(100), limit: 10 });
+      expect(expired).toHaveLength(1);
+      expect(expired[0]).toMatchObject({
+        status: "expired",
+        leaseToken: null,
+        leaseExpiresAt: null,
+      });
+    }),
+  );
   it.effect(
     "binds approvals, persists exact JSON, rejects replays and reconciles only under a live lease",
     () =>

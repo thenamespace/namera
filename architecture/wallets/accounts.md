@@ -106,7 +106,10 @@ The internal owner loader authenticates encrypted agent credentials and rechecks
 wallet/key lifecycle, org/app connection readiness and pinned agent/key identity
 at signing time. Provider signing verifies the exact digest and returned signer;
 failures never fall back to GCP/local. No arbitrary root-signing HTTP endpoint is
-added. Managed session keys and managed-owner installation/removal remain later work.
+added. Managed-owner installation/removal of local session keys is implemented
+through explicit user approval and the existing receipt worker; see
+[session keys](session-keys.md). Managed session-key custody and dashboard
+managed-owner approval remain later work.
 
 `/providers/1claw/.well-known/openid-configuration` and `/providers/1claw/jwks.json`
 publish issuer metadata and public RSA fields only. Configure the Platform app's

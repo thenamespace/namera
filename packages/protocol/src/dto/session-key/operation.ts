@@ -34,6 +34,27 @@ export const CompleteSessionKeyOperationRequest = Schema.Struct({
   response: PasskeyAuthenticationResponse,
 }).annotate({ identifier: "CompleteSessionKeyOperationRequest" });
 
+export const PrepareManagedSessionKeyOperationResponse = Schema.Struct({
+  operationId: SessionKeyOperationId,
+  namespace: Schema.Literal("eip155"),
+  approval: Schema.Literal("1claw"),
+  prepared: EvmPreparedExecution,
+  expiresAt: Schema.DateTimeUtcFromDate,
+}).annotate({ identifier: "PrepareManagedSessionKeyOperationResponse" });
+
+export const ApproveManagedSessionKeyOperationRequest = Schema.Struct({
+  operationId: SessionKeyOperationId,
+}).annotate({
+  identifier: "ApproveManagedSessionKeyOperationRequest",
+  description:
+    "Explicitly approve the stored installation/removal using its 1Claw account owner. No digest, calls or signature may be supplied.",
+});
+
+export type PrepareManagedSessionKeyOperationResponse =
+  typeof PrepareManagedSessionKeyOperationResponse.Type;
+export type ApproveManagedSessionKeyOperationRequest =
+  typeof ApproveManagedSessionKeyOperationRequest.Type;
+
 export const SessionKeyOperationResponse = Schema.Struct({
   operationId: SessionKeyOperationId,
   status: SessionKeyOperationStatus,

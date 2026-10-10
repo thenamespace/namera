@@ -72,6 +72,8 @@ const staticHttpRoutes = new Set([
   "/session-keys",
   "/session-keys/operations/prepare",
   "/session-keys/operations/complete",
+  "/session-keys/operations/managed/prepare",
+  "/session-keys/operations/managed/approve",
   "/signatures",
   "/signatures/prepare",
   "/signatures/complete",

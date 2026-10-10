@@ -1,19 +1,18 @@
 import { Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
-import { createPublicKeyWebAuthnAccount } from "@namera-ai/evm";
 import {
   SessionKeyOperationError,
   type OrganizationId,
   type SessionKeyInstallationId,
 } from "@namera-ai/protocol";
 
-import { AuthConfig } from "#/auth/config";
+import { makeLoadPublicSessionOwner } from "#/wallet/public-owner";
 
 /** Resolve stored authority; callers never choose the owner or operation calldata. */
 export const makeLoadSessionOperationOwner = Effect.gen(function* () {
   const repository = yield* Repository;
-  const config = yield* AuthConfig;
+  const loadPublicOwner = yield* makeLoadPublicSessionOwner;
   return Effect.fn("application.sessionKey.loadOperationOwner")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly installationId: SessionKeyInstallationId;
@@ -39,28 +38,12 @@ export const makeLoadSessionOperationOwner = Effect.gen(function* () {
     ) {
       return yield* new SessionKeyOperationError({ code: "INSTALLATION_UNAVAILABLE" });
     }
-    if (
-      wallet.wallet.status !== "active" ||
-      wallet.wallet.data.validatorType !== "webauthn_p256" ||
-      wallet.signingKey.custody !== "local" ||
-      wallet.signingKey.status !== "active" ||
-      wallet.signingKey.data.type !== "passkey" ||
-      wallet.signingKey.data.rpId !== config.dashboardPublicOrigin.hostname
-    ) {
-      return yield* new SessionKeyOperationError({ code: "OWNER_UNAVAILABLE" });
-    }
+    const owner = yield* loadPublicOwner(wallet);
     return {
       installation,
       session,
       wallet,
-      credential: wallet.signingKey.data,
-      account: {
-        wallet: wallet.wallet.data,
-        owner: {
-          validatorType: "webauthn_p256" as const,
-          account: createPublicKeyWebAuthnAccount(wallet.signingKey.publicKeyHex),
-        },
-      },
+      ...owner,
     };
   });
 });

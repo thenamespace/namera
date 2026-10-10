@@ -112,7 +112,12 @@ The factory ECDSA suite additionally installs a restricted local session on a
 normal SemiModularAccountBytecode account, executes an allowed transfer, rejects
 another target and verifies removal. Compilation uses public-only owner material;
 owner operations use an application-style recoverable digest-signing callback.
-Managed-owner application approval and managed-session custody remain separate work.
+Managed-owner application approval is wired through explicit 1Claw prepare/approve
+API endpoints and the existing receipt worker; see
+[session keys](../../wallets/session-keys.md). Managed-session custody and
+dashboard managed-owner approval remain separate work. Server boundary tests
+exercise real test-provider signatures with substituted chain submission; live
+1Claw/bundler verification remains outstanding.
 The token tests deploy the checked-in test token and assert both UserOperation
 outcomes and token balances/allowances. They exercise Namera's compilation through
 the deployed permission modules, not a substitute policy evaluator.

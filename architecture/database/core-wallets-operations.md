@@ -343,17 +343,29 @@ without overwriting history. It contains public signatures, never private keys.
   the prepared JSON. Cryptographic hash/signature verification remains EVM-owned.
 - Confirmed/failed states require a transaction hash. Terminal states require
   `finished_at`; nonterminal states cannot carry either terminal field.
-- Only signed/submitted states can carry lease fields; a token requires a deadline.
+- Awaiting-signature, signed and submitted states can carry lease fields; a token
+  requires a deadline. Unsigned leases serialize managed-provider signing.
 - Recovery index `(status, lease_expires_at)`; unsigned-expiry partial index on
   `expires_at`; history index `(organization_id, installation_id, created_at)`.
 
 ### Repository lifecycle
 
+Prepared JSON optionally carries `managedOwner` with the signing-key ID and
+public key that must still own the account at approval. Existing passkey rows
+remain valid without it.
+
 Signature acceptance atomically requires the initiating actor, request hash,
-awaiting status and `now < expires_at`. It persists the signed payload and leases
+awaiting status and `now < expires_at`. Managed acceptance additionally requires
+the current live signing lease; passkey acceptance requires no signing lease.
+It persists the signed payload and leases
 the initial submission before any broadcast. Duplicate completion returns no row.
 The application must verify the passkey first and compose counter advancement,
 approval consumption, billing and audit changes in the same transaction.
+
+`claimForSigning` conditionally claims an unexpired unsigned approval with no
+live lease. `releaseSigningLease` clears only the matching token while still
+unsigned. Expiry/revocation clear unsigned leases; a stale holder cannot accept
+or clear a replacement. Remote signing never holds a database transaction open.
 
 Reconciliation claims signed/submitted rows with `FOR UPDATE SKIP LOCKED`.
 Submit, receipt finalization and rescheduling require the current token and a

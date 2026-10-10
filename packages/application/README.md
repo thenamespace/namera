@@ -130,7 +130,10 @@ second instance only for policy types declared singleton; repeatable types and
 the total policy array have no product-level maximum. The same registry assigns
 IDs and code-owned applicability without application policy switches. Registration
 persists a dedicated local signer and pending onchain installations. Owner passkey
-approval records an immutable signed attempt; receipt recovery activates it.
+or explicit 1Claw approval records an immutable signed attempt; receipt recovery
+activates it. Managed approval signs only a stored install/remove operation under
+a fenced signing lease. Public reconstruction and routine local-session use never
+load managed root credentials. Managed session-key custody is not implemented.
 Revocation immediately removes API grants, then waits for owner-approved onchain
 removal before finalizing the session and notifying members. Signed installation
 attempts remain recoverable without restoring API authority. Policy hashes are purpose-separated and

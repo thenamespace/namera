@@ -20,17 +20,33 @@ import type {
   SessionKeyOperationResponse,
   GetActiveSessionKeyOperationRequest,
   GetActiveSessionKeyOperationResponse,
+  PrepareManagedSessionKeyOperationResponse,
+  ApproveManagedSessionKeyOperationRequest,
 } from "@namera-ai/protocol/dto";
 
-import { makeCompleteSessionKeyOperation } from "./complete-operation.js";
+import { makeCompleteSessionKeyOperations } from "./complete-operation.js";
 import { makeCreateSessionKey } from "./create.js";
-import { makePrepareSessionKeyOperation } from "./prepare-operation.js";
+import { makePrepareSessionKeyOperations } from "./prepare-operation.js";
 import { makeReadSessionKeys } from "./read.js";
 import { makeReconcileSessionKeyOperations } from "./reconcile-operations.js";
 import { makeRevokeSessionKey } from "./revoke.js";
 import type { SessionKeyView } from "./view.js";
 
 export interface SessionKeyApplication {
+  readonly prepareManagedOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly request: PrepareSessionKeyOperationRequest;
+  }) => Effect.Effect<PrepareManagedSessionKeyOperationResponse, SessionKeyOperationError>;
+  readonly approveManagedOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly allowedKinds: ReadonlyArray<"install" | "uninstall">;
+    readonly request: ApproveManagedSessionKeyOperationRequest;
+  }) => Effect.Effect<
+    SessionKeyOperationResponse,
+    SessionKeyOperationError | BillingLimitExceededError
+  >;
   readonly getActiveOperation: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -88,16 +104,16 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   const create = yield* makeCreateSessionKey;
   const read = yield* makeReadSessionKeys;
   const revoke = yield* makeRevokeSessionKey;
-  const prepareOperation = yield* makePrepareSessionKeyOperation;
-  const completeOperation = yield* makeCompleteSessionKeyOperation;
+  const prepare = yield* makePrepareSessionKeyOperations;
+  const complete = yield* makeCompleteSessionKeyOperations;
   const reconcileOperations = yield* makeReconcileSessionKeyOperations;
 
   return {
     create,
     ...read,
     revoke,
-    prepareOperation,
-    completeOperation,
+    ...prepare,
+    ...complete,
     reconcileOperations,
   } satisfies SessionKeyApplication;
 });
