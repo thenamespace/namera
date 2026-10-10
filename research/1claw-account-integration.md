@@ -1,6 +1,7 @@
 # 1Claw managed account integration plan
 
-Status: phase 3 persistence implemented; runtime integration not enabled. Updated: 10 October 2026.
+Status: original phases 2 and 3 implemented; Platform/OIDC follow-ups pending;
+runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
 later project. The first complete milestone is a managed account that can install
@@ -72,7 +73,9 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 
 - [ ] Phase 1: provider and account compatibility
 - [x] Phase 2: protocol contracts
+- [ ] Phase 2A: organization connection and customer-authority contracts
 - [x] Phase 3: persistence and recovery model
+- [ ] Phase 3A: organization connections and encrypted customer authority
 - [ ] Phase 4: 1Claw key-provider implementation
 - [ ] Phase 5: EVM managed-owner integration
 - [ ] Phase 6: account provisioning workflow
@@ -81,13 +84,180 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 - [ ] Phase 9: dashboard and client integration
 - [ ] Phase 10: end-to-end verification and controlled rollout
 
+The completed phase 2/3 checkboxes describe the original signer work only. They
+do not imply that Platform connections, OIDC issuance, customer-token renewal or
+provider calls exist. Implement 2A then 3A before phase 4; keep the phase 1
+production gates open until their evidence is recorded.
+
+## Selected Platform flow
+
+Use one Platform app per deployment environment, not one per customer. Namera
+operates the app under its enterprise arrangement. Provision a 1Claw customer
+connection lazily when a Namera organization creates its first managed account;
+ordinary Namera signup and sign-in do not create provider resources.
+
+```text
+Namera organization
+  -> stable OIDC identity + organization email
+  -> one 1Claw customer / isolated sub-organization / connection
+       -> account A: dedicated agent + Ethereum owner key
+       -> account B: dedicated agent + Ethereum owner key
+       -> future managed session: separate agent + key (out of current scope)
+```
+
+### Organization identity
+
+- Stable subject: `namera:org:<organization-id>`.
+- Stable email: `org-<organization-id>@namera.ai`, with environment isolation for
+  non-production identities. This is the selected convention, not a claim that
+  provider support for synthetic organization identities has been approved.
+- Never use the current member's email, organization display name or mutable slug
+  as identity. Membership changes must not change provider ownership.
+- Never reuse an organization email or subject after organization deletion.
+- Route production addresses to a controlled mailbox/alias for security and
+  recovery messages. Define who can access it; avoid unattended catch-all recovery
+  authority. Do not claim `email_verified` unless the trust arrangement supports it.
+- Issue short-lived RS256 tokens server-side with configured `iss`, `aud`, `sub`,
+  `email`, `iat`, `exp` and unique `jti`. Select keys through `kid`. Bind the subject
+  to the authorized organization, never to arbitrary caller-supplied claims.
+- Publish only public keys at a stable HTTPS JWKS endpoint. No temporary tunnel
+  in production; private issuer keys stay in server secret storage. Support key
+  overlap during rotation. Existing Namera browser authentication is unchanged;
+  this does not require making Namera a general-purpose interactive OIDC provider.
+
+### Authentication boundaries
+
+| Credential                                | Responsibility                                                                | Storage / lifetime                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Platform app API key                      | Upsert, bootstrap, connection lookup, claim reissue, delegated agent creation | Deployment secret; not copied per account               |
+| Organization OIDC JWT                     | Establish organization identity during upsert                                 | Short-lived, generated on demand; not persisted         |
+| Customer auth token from claim redemption | Grant delegation, provision signing keys, enable raw signing                  | Organization-bound encrypted credential, expiry tracked |
+| Dedicated agent API key                   | Authenticate account owner signing                                            | Encrypted per-agent credential                          |
+| Agent access token                        | Authenticated signing requests                                                | Short-lived provider cache; not persisted               |
+
+SDK Platform authentication uses `{ token: platformApiKey }`, not the user-key
+`apiKey` exchange. Agent authentication uses `{ agentId, apiKey: agentApiKey }`.
+Human API credentials used to register the Platform app in experiments are not
+normal application runtime credentials. Application/EVM do not import the SDK.
+
+### First managed account
+
+1. Authorize the Namera actor in its organization and precheck account capacity.
+2. Resolve the organization connection locally. If missing, first attempt provider
+   recovery by exact OIDC subject within the configured app. If genuinely absent,
+   issue the OIDC JWT and upsert with `create_sub_org: true`. Persist the returned
+   customer and connection mapping before further remote work.
+3. Bootstrap the unbootstrapped connection using the configured, versioned account
+   template. It creates exactly one agent, one Ethereum key, and enables raw
+   signing. The tested agent template fields are `intents_api_enabled: true` and
+   `raw_signing_enabled: true`, with top-level `signing_keys: [{chain: "ethereum"}]`.
+   Do not use the earlier unproven `execution.raw_signing_enabled` nesting.
+4. Protect the one-time agent credential as soon as it is returned. Redeem the
+   bootstrap claim, validate the customer token by authenticated identity lookup,
+   and compare the customer ID with the connection's user ID before retaining it.
+5. Grant only the needed delegation scopes (`agents:read`, `agents:write` were
+   tested), then verify the grant. Record local readiness only after successful
+   checks. These scopes do not authorize delegated wallet provisioning.
+6. Validate agent/key identity, chain, curve, public key, address and raw-signing
+   state. Construct the existing EVM account mode and perform the final locked
+   billing check and transactional account persistence described in phase 6.
+7. Return the existing account-created experience. Account registration is not
+   proof of network delegation, deployment or active session permissions.
+
+Template bootstrap is one-time per connection. A 409 must trigger reconciliation,
+not another customer, template, or bootstrap attempt. Recovering a connection ID
+does not recover a lost one-time agent API key.
+
+### Subsequent accounts
+
+Reuse the same connection and obtain valid customer authority. Create a new agent
+with `withConnection(connectionId).agents.create()`, protect its API key, create
+its Ethereum signing key using the **customer token**, then enable raw signing
+using that customer token. Validate and persist exactly as for the first account.
+Never rotate or reuse an existing account's agent/key to create another account.
+
+The tested delegated Platform call to create a signing key returned 403 requiring
+a human user token; the customer token from claim redemption succeeded. Treat
+these as distinct capabilities, not interchangeable authentication options.
+Additional agents were absent from the connection's `agent_ids`; Namera's
+tenant-scoped signer mapping is authoritative for its own accounts. Confirm
+provider resource attachment semantics before relying on provider listings for
+revocation, billing, deletion or recovery.
+
+### Customer authority renewal
+
+Track customer token expiration and renew before a management operation when
+expired or within a small skew window. Use the Platform key to call
+`reissueClaim(connectionId)`, redeem the new claim, verify the same customer
+identity, and atomically replace the encrypted token and expiration. Serialize
+renewal per connection so concurrent requests do not race one-time claims.
+Do not log or persist claim URLs/tokens; lost redemption responses require a
+bounded reconciliation/reissue path, not an unbounded retry loop.
+
+Repeated redemption on an already-claimed email-based customer returned a fresh
+86,400-second token with extended expiry. No old customer token was required for
+renewal, and no refresh token was returned. Exact post-expiry behavior and renewal
+on an OIDC-created customer are still untested. Confirm that server-side claim
+redemption is an approved production credential lifecycle, including revocation,
+disconnect and reissue limits. Do not bypass a revoked connection by re-claiming it.
+
+Routine signing uses agent credentials, not customer authority; a customer-token
+refresh is not required before every signature. Namera authorization and policy
+checks remain mandatory before owner operations.
+
+### Lost connection recovery
+
+Call `platform.listUsers(appId)` and match `external_subject` to the stable org
+subject. Accept exactly one match, validate the returned connection, and persist
+it with tenant uniqueness checks. Never match on display names or use another
+organization's connection. Zero matches after an ambiguous create can be eventual
+visibility, so stop for reconciliation rather than immediately creating again.
+Multiple matches require operator review.
+
+Live tests recovered the exact original OIDC connection this way. Active Platform
+key listing and OIDC subject recovery were tested separately; the latter used
+the owner key because its temporary app had been deactivated. The current list
+contract exposes no filtering/pagination arguments; test large-app completeness
+before assuming a missing row proves absence. Repeated OIDC upsert returned
+`409 / link_required`; do not treat this as permission to link accounts silently.
+
+### Live evidence and limits
+
+Experiments used disposable resources, verified raw signatures locally and sent
+no transactions. Scripts 18–27 and sanitized findings live in the temporary
+`namera-1claw-test` project; private response files contain credentials and must
+not be copied into this repository. Tested against SDK 0.61.38 and the live API.
+
+| Test                                                     | Result                                    |
+| -------------------------------------------------------- | ----------------------------------------- |
+| Wrong OIDC audience                                      | 400 rejected                              |
+| Valid OIDC without email                                 | 400, email claim required                 |
+| OIDC with email and isolated customer request            | 201                                       |
+| Repeat identical OIDC token                              | 409 / link_required                       |
+| OIDC JWT directly as customer API token                  | 401                                       |
+| Bootstrap and initial raw signature                      | Success, signature verified               |
+| Claim redemption and customer identity                   | 200, identity matched                     |
+| Customer grants delegation                               | 204                                       |
+| Delegated list / second agent creation                   | 200 / 201                                 |
+| Delegated signing-key creation                           | 403                                       |
+| Customer-token signing-key creation / raw-signing update | 201 / 200                                 |
+| Both agents sign after second key creation               | Both signatures verified                  |
+| Claim reissue / repeated redemption                      | 200 / 200; extended customer token expiry |
+| Existing connection recovery by subject                  | Exact original connection recovered       |
+
+This proves useful provider primitives, not the EIP-7702 account lifecycle,
+sub-organization isolation, production recovery guarantees or custody claims.
+
 ### Phase 1: provider and account compatibility
 
 Use an explicitly authorized disposable provider agent/key. Do not use production
 funds. Extend the previously reported digest experiment with reproducible vectors.
 
-- Confirm management authentication: organization API or Platform connections.
-- Decide how Namera organizations map to provider tenants and agents.
+- Use the selected Platform/OIDC model above; confirm enterprise approval for
+  organization email identities and server-side claim redemption/renewal.
+- Verify sub-organization isolation and cross-connection denial, not just a
+  successful `create_sub_org` response. Verify actual post-expiry renewal on an
+  OIDC-created customer and revoked/disconnected-customer behavior.
 - Confirm one dedicated agent/key per account owner, creation limits, signing
   quotas, billing, incremental provisioning, and credential rotation.
 - Verify public-key encoding, derived address, exact digest signing without extra
@@ -163,13 +333,38 @@ Verification: protocol suite (40 tests), wallet-key provider suite (6 tests),
 wallet/passkey/OpenAPI boundary suites (12 tests), wallet response mapping
 (3 tests), and `pnpm check` passed. No live 1Claw resources were created or used.
 
+### Phase 2A: organization connection and customer-authority contracts
+
+Owner: `packages/protocol`. This is new work, not part of completed phase 2.
+
+- Define an internal provider-connection model: organization, provider, app ID,
+  stable subject/email, customer ID, connection ID, readiness and timestamps.
+  Readiness records observed setup state, not an arbitrary provider status string.
+- Extend generic credentials with a distinct `1claw-customer` variant. Its
+  encrypted envelope binds credential/organization/app/connection/customer IDs,
+  token and expiration. Do not overload `1claw-agent` or a signer's credential FK.
+- Extend provisioning contracts to distinguish bootstrap-first-owner from
+  incremental-owner creation, and to return one-time credentials for immediate
+  application-owned encryption. Expose connection management through a focused
+  capability owned by wallet-keys, not an SDK imported into application.
+- Define bounded errors for linking required, ambiguous recovery, revoked
+  connection, expired authority, identity mismatch and incomplete provisioning.
+- Decode the actual claim response's `auth_token` and expiry explicitly; the
+  installed SDK's claim-response type omitted those fields despite live responses.
+  Check HTTP status and required fields as well as SDK `error`; the tested 409
+  upsert response had a null SDK error.
+
+**Exit gate:** schema/redaction tests cover both credential types, identity
+bindings, missing response fields and preservation of existing signer contracts.
+
 ### Phase 3: persistence and recovery model
 
 Owners: `packages/database`, protocol persistence models.
 
 - Extend `core.signing_key` discriminator/custody checks for 1Claw metadata.
 - Retain `core.wallet.signing_key_id` and existing tenant-safe relationships.
-- Add a provider-tenant mapping only if required by the selected management model.
+- Add the selected provider-tenant mapping in phase 3A; it was not implemented
+  in the original phase 3.
 - Add generic `core.credentials`, initially typed as `1claw-agent`, with encrypted
   payloads using existing crypto infrastructure. Credentials cannot be hashed
   because provider authentication needs their original value.
@@ -181,8 +376,9 @@ Owners: `packages/database`, protocol persistence models.
   automatic crash recovery and exactly-once remote creation are not promised.
 - Handle the crash window after a one-time credential is issued but before it is
   stored: define provider-assisted rotation/recovery or safe cleanup.
-- Keep private keys and temporary JWTs out of the database; do not duplicate signer
-  identity in a competing provider-wallet table.
+- Keep private keys, OIDC JWTs and agent access JWTs out of the database. The
+  organization customer token is an explicit encrypted, expiring exception in
+  phase 3A. Do not duplicate signer identity in a competing provider-wallet table.
 
 **Exit gate:** migrations and repository tests prove tenant isolation, uniqueness,
 credential scoping and atomic local writes. Document manual recovery for remote
@@ -209,12 +405,49 @@ Manual recovery policy for the later provisioning workflow:
   before any separately authorized cleanup. Never record API keys or temporary
   JWTs in logs or recovery notes.
 
+### Phase 3A: organization connections and encrypted customer authority
+
+Owners: database, protocol and existing application encryption boundary.
+
+- Add `core.provider_connections` (proposed name, not implemented) with a local
+  ID, organization ID, provider, app ID, subject, email, provider customer ID,
+  connection ID, customer credential reference, readiness and timestamps.
+- Enforce one mapping per organization/provider/app, unique provider/app/subject
+  and provider/app/connection IDs, plus organization-scoped credential FKs.
+  Application verifies that the referenced credential is the customer variant
+  and its decrypted identity bindings match the row.
+- Extend `core.credentials` type/data constraints for `1claw-customer`; retain
+  encrypted payloads using `cryptoPurpose.providerCredential` and
+  `CRYPTO_ENCRYPTION_KEY`. Store a validated non-secret expiry alongside the
+  encrypted envelope for renewal scheduling; compare both when decrypting.
+- Add transaction-aware lookup by organization/app, insert/reconcile mapping,
+  readiness transition, and compare-and-swap customer credential replacement.
+  Add a cross-instance serialization strategy for initial setup and renewal.
+  Do not hold a long database transaction open across provider HTTP calls.
+- Encrypt and persist returned one-time agent credentials promptly, before
+  wallet provisioning/final account persistence. Unattached credential records
+  may remain after failure and require operator reconciliation. This intentionally
+  revises the original all-at-final-transaction credential plan.
+- Keep `wallet_provisioning` out of scope. A connection mapping is durable tenant
+  identity, not a per-wallet attempt ledger. Uniqueness alone does not make remote
+  creation exactly-once; crashes during external creation still require recovery.
+
+**Exit gate:** migrations/repositories prove tenant isolation, unique mappings,
+encrypted credential type/binding checks, renewal contention, idempotent local
+reconciliation and atomic readiness/audit transitions. No runtime API enabled.
+
 ### Phase 4: 1Claw key-provider implementation
 
 Owner: `packages/wallet-keys`.
 
-- Implement management/signing authentication, token refresh, and key provisioning
-  or recovery using the phase 1 contract.
+- Implement OIDC JWT issuance/JWKS material handling, upsert and subject lookup,
+  bootstrap, claim redemption/reissue, authenticated customer identity checks,
+  delegation management, scoped agent creation, customer-authenticated key
+  creation/raw enablement, and agent-authenticated signing.
+- Separate Platform, customer and agent authentication in the provider. Handle
+  token expiry with bounded renewal, never a fallback to a deployment human key.
+  Application owns encrypted persistence and org authorization; provider code
+  receives decoded, bound credentials without importing database/application.
 - Validate external public material and derive/compare the returned signer address.
 - Implement exact digest signing and only other operations genuinely supported.
 - Adapt signature formats to the existing provider boundary; keep Ethereum-specific
@@ -250,12 +483,19 @@ Existing P-256 account tests remain green.
 Owner: `packages/application`.
 
 1. Authorize the actor and precheck managed-account entitlement/capacity.
-2. Allocate local signing-key and credential IDs for the request.
-3. Provision one dedicated provider agent and protect its credential.
-4. Provision one Ethereum key, enable raw signing and validate its identity.
+2. Resolve/recover or create the organization connection using the selected flow;
+   persist the mapping and serialize first-time setup across concurrent requests.
+3. Allocate local signer/credential IDs. Bootstrap only an unbootstrapped
+   connection; otherwise create a dedicated agent incrementally. Immediately
+   encrypt/persist its credential, with an audit, so later failures do not discard
+   the only copy. Reconcile ambiguous results rather than silently provisioning.
+4. Obtain verified customer authority, enable delegation during initial setup,
+   and provision/validate one Ethereum key with raw signing enabled. Bootstrap
+   already creates the first key; never create a duplicate for that agent.
 5. Construct the selected EVM account.
 6. Lock billing state, repeat capacity checks, and atomically persist the signer,
-   credential, wallet, required audits and notifications.
+   wallet, binding to the previously protected credential, required audits and
+   notifications. Recheck credential/connection organization and readiness.
 7. Report partial or ambiguous failures for manual recovery. Never blindly retry
    remote creation or claim that a remote resource was rolled back.
 
@@ -265,7 +505,7 @@ Never destroy a provider key automatically if it might control a funded account.
 
 **Exit gate:** workflow tests cover concurrent capacity checks, provider success
 followed by database failure, lost responses and safe orphan handling. Successful
-local account, credential, signer and audit writes are atomic; ambiguous remote
+local account, signer, credential binding and audit writes are atomic; ambiguous remote
 outcomes require the documented manual procedure.
 
 ### Phase 7: managed-owner session authorization
@@ -299,6 +539,12 @@ Owners: `packages/api`, `apps/server`, configuration and feature gating.
 - Expose managed account creation behind explicit deployment/organization gating.
 - Replace the blanket managed-custody rejection only for supported configurations.
 - Compose the provider without enabling unavailable custody modes accidentally.
+- Configure Platform app ID/key, template ID/version, stable OIDC issuer/audience,
+  private signing key/key ID, public JWKS and organization email convention. Keep
+  all private material server-only; never expose a public JWT-minting endpoint.
+- Publish only public JWKS through the server and test issuer-key rotation.
+  Keep customer-token renewal and connection recovery internal; public callers
+  cannot select arbitrary provider connection IDs or request customer tokens.
 - Expose managed-owner authorization through deliberate typed endpoints or request
   variants; preserve existing passkey prepare/complete contracts.
 - Apply existing actor permissions, transport limits, and concise error mapping.
@@ -330,6 +576,13 @@ network approval, and errors without claiming an account is usable prematurely.
   session → execute → revoke/uninstall on explicitly supported test networks.
 - Test signature functionality where permitted, provider outages, disabled owner
   keys, unexpected rotation, and recovery after interrupted provisioning/signing.
+- Test two accounts in one org and another isolated org; verify no agent/key or
+  customer credential crosses tenants. Test simultaneous first-account requests,
+  lost upsert response, subject lookup, already-bootstrapped recovery, customer
+  renewal after actual expiry, and refusal after revocation/disconnection.
+- Confirm the organization email delivery/recovery policy with 1Claw and exercise
+  it. Verify incremental resource attachment and list completeness at expected
+  scale. Do not treat temporary experiment success as a production guarantee.
 - Review root-signing permission boundaries, credential handling, and raw-digest
   policy limitations. Provider blind signing does not replace Namera enforcement.
 - Document operational disablement, recovery, supported networks, costs, and
@@ -358,7 +611,7 @@ conventions before editing their code. Commit each coherent phase separately.
 - [EVM account modes](../architecture/evm/accounts/README.md)
 - [Session authorization and revocation](../architecture/wallets/session-keys.md)
 - [Database catalog](../architecture/database/core-wallets-operations.md)
-- [1Claw OpenAPI](https://1claw.co/openapi.json)
+- [1Claw OpenAPI](https://api.1claw.co/openapi.json)
 - [1Claw Platform API](https://docs.1claw.co/docs/platform-api/overview)
 - [1Claw signing capabilities](https://1claw.co/intents)
 
