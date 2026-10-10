@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { PortfolioResponse, WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Card, ChartTooltip, PieChart, Tooltip, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon, InformationCircleIcon, RefreshIcon } from "@namera-ai/ui/icons";
@@ -286,28 +285,6 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
       query: { refresh: true, pageSize: 100 },
     }),
   );
-  const [showTestnets, setShowTestnets] = useState(false);
-  const visibleAssets = useMemo(
-    () =>
-      showTestnets
-        ? (portfolio?.items ?? [])
-        : (portfolio?.items ?? []).filter(
-            (asset) => getChainDataByCaip2(asset.chainId)?.environment !== "testnet",
-          ),
-    [portfolio?.items, showTestnets],
-  );
-  const visiblePortfolio = useMemo(
-    () => (portfolio ? { ...portfolio, items: visibleAssets } : undefined),
-    [portfolio, visibleAssets],
-  );
-  const unavailableNetworkCount = useMemo(
-    () =>
-      (portfolio?.partialFailures ?? []).filter(
-        (failure) =>
-          showTestnets || getChainDataByCaip2(failure.chainId)?.environment !== "testnet",
-      ).length,
-    [portfolio?.partialFailures, showTestnets],
-  );
 
   return (
     <div className="grid w-full gap-7 px-3">
@@ -344,11 +321,11 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
         </output>
       ) : null}
 
-      {visiblePortfolio ? (
+      {portfolio ? (
         <PortfolioOverview
           account={account}
-          portfolio={visiblePortfolio}
-          unavailableNetworkCount={unavailableNetworkCount}
+          portfolio={portfolio}
+          unavailableNetworkCount={portfolio.partialFailures.length}
         />
       ) : (
         <DataLoading className="min-h-64" label="Loading portfolio overview" />
@@ -364,12 +341,7 @@ export function AccountAssets({ account, initialPortfolio }: AccountAssetsProps)
           </Typography>
         </div>
         {portfolio ? (
-          <AssetsTable
-            address={account.address}
-            assets={visibleAssets}
-            showTestnets={showTestnets}
-            onShowTestnetsChange={setShowTestnets}
-          />
+          <AssetsTable address={account.address} assets={portfolio.items} />
         ) : (
           <DataLoading className="min-h-64" label="Loading asset balances" />
         )}

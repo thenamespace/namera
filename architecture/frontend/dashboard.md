@@ -99,6 +99,9 @@ the same exact-valued response and network visibility filters. Unpriced assets
 remain visible and are excluded from USD allocation; small slices group into
 Other. The tertiary refresh icon requests a fresh server snapshot and invalidates
 the account query. Failures retain the displayed snapshot and show feedback.
+All networks are visible by default. The table has no view-options control; its
+Chain filter includes every supported mainnet and testnet, grouped by environment,
+even when there are no balances. Filters affect table rows, not the portfolio summary.
 The server's five-minute cache is independent of frontend query lifetime; see
 [portfolio](../evm/portfolio.md) for cache keys, paging and provider limits.
 

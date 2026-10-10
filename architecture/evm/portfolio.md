@@ -49,8 +49,11 @@ The dashboard retains each account query for five minutes while idle, loads all
 API pages, and uses the result for both table and charts. The tertiary refresh
 icon fetches a new snapshot, then invalidates that account's query so table and
 charts update together. Refresh failures retain the displayed snapshot and show
-an error. Mainnet/testnet visibility applies consistently to totals, charts,
-assets, and unavailable-network counts. Unpriced assets remain visible but do not
+an error. All supported mainnets and testnets are included in totals, charts,
+assets, and unavailable-network counts by default. The table's Chain filter lists
+every supported network in Mainnets/Testnets groups, including zero-balance networks;
+there is no separate view-options control. Table filters do not change the portfolio summary.
+Unpriced assets remain visible but do not
 contribute to USD allocation. Asset slices are identified by chain and contract,
 with small holdings grouped into Other; chain slices use the same asset values.
 
