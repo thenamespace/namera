@@ -1,7 +1,10 @@
+// oxlint-disable react-perf/jsx-no-jsx-as-prop
+import { evmPolicyDisplayNames } from "@namera-ai/protocol";
 import type { SessionKeyCreatedEmailVariables } from "@namera-ai/protocol/model";
 
 import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
+import { EmailCustody } from "../components/custody.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
@@ -12,6 +15,9 @@ export type SessionKeyCreatedEmailProps = SessionKeyCreatedEmailVariables;
 
 export const SessionKeyCreatedEmail = ({
   actionUrl,
+  custody,
+  provider,
+  policyTypes,
   expiresAt,
   organizationName,
   sessionKeyName,
@@ -27,6 +33,18 @@ export const SessionKeyCreatedEmail = ({
           <EmailDetails>
             <EmailDetail label="Session key" value={sessionKeyName} />
             <EmailDetail label="Account" value={walletName} />
+            {custody ? (
+              <EmailDetail
+                label="Custody"
+                value={<EmailCustody custody={custody} provider={provider} />}
+              />
+            ) : null}
+            {policyTypes?.length ? (
+              <EmailDetail
+                label="Policies"
+                value={policyTypes.map((type) => evmPolicyDisplayNames[type]).join(", ")}
+              />
+            ) : null}
             <EmailDetail label="Expires" value={formatEmailDate(expiresAt)} />
           </EmailDetails>
           <EmailAction href={actionUrl}>View session key</EmailAction>
@@ -41,6 +59,9 @@ export const SessionKeyCreatedEmail = ({
 };
 
 SessionKeyCreatedEmail.PreviewProps = {
+  custody: "namera-managed",
+  provider: "1claw",
+  policyTypes: ["evm.signature", "evm.time-window"],
   actionUrl:
     "https://dashboard.namera.ai/auth?returnTo=%2Fsession-key%2Fexample-session-key-id%2Foverview",
   expiresAt: "2026-09-14T08:30:00.000Z",

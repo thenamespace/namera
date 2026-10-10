@@ -62,6 +62,14 @@ layer(Live)("1Claw session creation", (it) => {
         const first = yield* client.sessionKey.create({ payload: request });
         expect(first.status).toBe("pending");
         expect(first.signer).toMatchObject(managedSigner);
+        const createdNotice = (yield* client.notification.list({ query: {} })).items.find(
+          ({ notification }) =>
+            notification.type === "session_key.created" && notification.resourceId === first.id,
+        );
+        expect(createdNotice?.notification.data).toMatchObject({
+          custody: "namera-managed",
+          provider: "1claw",
+        });
         expect(first.installations.every((installation) => installation.status === "pending")).toBe(
           true,
         );

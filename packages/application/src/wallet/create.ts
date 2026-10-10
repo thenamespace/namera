@@ -386,6 +386,7 @@ export const makeCreateWallet = Effect.gen(function* () {
                     addressUrl,
                     implementation: account.implementation,
                     ownership,
+                    ...(signingKey.data.type === "1claw" ? { provider: "1claw" as const } : {}),
                   },
                 },
               })),

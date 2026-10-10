@@ -71,13 +71,22 @@ export const makeFinishSessionKeyRevocation = Effect.gen(function* () {
           input.organizationId,
         );
         const now = yield* DateTime.now;
+        const signer = yield* repository.core.signingKey.findById(
+          session.signingKeyId,
+          input.organizationId,
+        );
+        if (!signer) return yield* Effect.die("Revoking session has no signer");
+        const custody = {
+          custody: signer.custody,
+          ...(signer.data.type === "1claw" ? { provider: "1claw" as const } : {}),
+        };
         yield* createNotification({
           organizationId: input.organizationId,
           actorId: revoked.revokedByActorId,
           type: "session_key.revoked",
           resourceType: "session-key",
           resourceId: revoked.id,
-          data,
+          data: { ...data, ...custody },
           idempotencyKey: `notification:session_key.revoked:${revoked.id}`,
           correlationId: event.correlationId,
           expiresAt: null,
@@ -96,6 +105,7 @@ export const makeFinishSessionKeyRevocation = Effect.gen(function* () {
                 ),
                 variables: {
                   sessionKeyName: revoked.metadata.name,
+                  ...custody,
                   actionUrl: dashboardEmailLink(
                     config.dashboardPublicOrigin,
                     `/session-key/${revoked.id}/overview`,

@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 
@@ -19,17 +19,21 @@ import {
   type LocalSessionKeyDraft,
 } from "@namera-ai/sdk";
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
-import { useForm, type DefaultValues } from "react-hook-form";
+import { useForm, useWatch, type DefaultValues } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
+import { hasPermissions } from "@/components/permission";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
+import { useCurrentUser } from "@/hooks/auth";
+import { useBilling } from "@/hooks/billing";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
 import { supportsSessionKeys } from "@/lib/session-owner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { ActivateSessionKey } from "./activate-key";
-import { CustodyCapacity } from "./custody-capacity";
+import type { CustodyLimits } from "./custody-field";
+import { sessionCustodyLimits } from "./custody-limits";
 import { SessionKeyDetailsCard } from "./details-card";
 import { validateManagedRegistration } from "./managed-registration";
 import { PolicySection } from "./policies";
@@ -62,7 +66,31 @@ type CreateSessionKeyFormProps = {
   wallets: ListWalletsResponse;
 };
 
-export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessionKeyFormProps) {
+const unknownLimits: CustodyLimits = { local: false, managed: false };
+
+export function CreateSessionKeyForm(props: CreateSessionKeyFormProps) {
+  const user = useCurrentUser();
+  return hasPermissions(user.data?.role.permissions ?? [], ["billing:read"]) ? (
+    <BillingSessionKeyForm {...props} />
+  ) : (
+    <SessionKeyForm {...props} limits={unknownLimits} />
+  );
+}
+
+function BillingSessionKeyForm(props: CreateSessionKeyFormProps) {
+  const billing = useBilling();
+  const limits = useMemo(
+    () => sessionCustodyLimits(billing.data?.resources),
+    [billing.data?.resources],
+  );
+  return <SessionKeyForm {...props} limits={limits} />;
+}
+
+function SessionKeyForm({
+  wallets,
+  initialAccountId,
+  limits,
+}: CreateSessionKeyFormProps & { limits: CustodyLimits }) {
   const [initialValues] = useState(() => ({
     ...defaultValues,
     walletId:
@@ -183,6 +211,8 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
+  const selectedCustody = useWatch({ control: form.control, name: "custody" });
+  const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (
@@ -190,6 +220,7 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
       createSessionKey.isPending ||
       registration ||
       managedCreationFailed ||
+      limitReached ||
       !form.formState.isValid
     )
       return;
@@ -299,9 +330,9 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
               <SessionKeyDetailsCard
                 control={form.control}
                 wallets={wallets}
+                limits={limits}
                 custodyLocked={needsBackup || createSessionKey.isPending || managedCreationFailed}
               />
-              <CustodyCapacity control={form.control} />
             </section>
             <PolicySection form={form} wallets={wallets} />
           </div>
@@ -317,6 +348,7 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
             fullWidth
             isDisabled={
               managedCreationFailed ||
+              limitReached ||
               createSessionKey.isPending ||
               form.formState.isSubmitting ||
               !form.formState.isValid

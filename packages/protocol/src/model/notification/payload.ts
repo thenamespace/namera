@@ -101,6 +101,8 @@ export const SessionKeyCreatedNotificationPayload = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     policyTypes: Schema.Array(EvmSessionPolicyType),
+    custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+    provider: Schema.optionalKey(Schema.Literal("1claw")),
   }),
 });
 
@@ -113,6 +115,8 @@ export const SessionKeyRevokedNotificationPayload = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+    provider: Schema.optionalKey(Schema.Literal("1claw")),
   }),
 });
 

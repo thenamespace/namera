@@ -99,7 +99,7 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
               />
             </Link>
           </Property>
-          <Property label="Key custody">
+          <Property label="Custody">
             <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
           </Property>
           <Property label="Namespace">

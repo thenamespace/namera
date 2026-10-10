@@ -104,13 +104,17 @@ The server's five-minute cache is independent of frontend query lifetime; see
 
 ## Session authority and custody
 
-Creation offers Local key and 1Claw Managed independently of the parent account.
+Creation offers User Owned and 1Claw Managed independently of the parent account.
 Managed registration validates the returned public identity, permissions and
 networks before enabling approval. It skips generation/export/import and proceeds
 to network approval; it never downloads provider credentials. Ambiguous errors
 block resubmission and direct the user to inspect existing sessions or support.
-Members with billing read access see current custody-specific remaining capacity.
-Selectors, detail and success pages display custody; managed next steps require
+Members with billing read access cannot select exhausted custody options; the options
+show a Limit reached pill, and submission is blocked if the selected custody becomes full.
+Quota checks on the server remain authoritative. Custody follows Account in the form;
+an inline error explains why Networks/Lifetime alone do not grant access.
+Account and session-key pickers omit custody, while account tables default to Ownership
+instead of Implementation. Detail and success pages display custody; managed next steps require
 login/grants but no import. Namera Managed remains disabled.
 
 ### Local keys

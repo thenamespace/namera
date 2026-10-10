@@ -209,11 +209,11 @@ layer(fixture.layer)("onchain session revocation", (it) => {
         expect(events.find(({ event }) => event === "session_key.revoked")?.data).toMatchObject({
           revokedGrantCount: 1,
         });
-        expect(
-          (yield* client.notification.list({ query: {} })).items.filter(
-            ({ notification }) => notification.type === "session_key.revoked",
-          ),
-        ).toHaveLength(1);
+        const revokedNotices = (yield* client.notification.list({ query: {} })).items.filter(
+          ({ notification }) => notification.type === "session_key.revoked",
+        );
+        expect(revokedNotices).toHaveLength(1);
+        expect(revokedNotices[0]?.notification.data).toMatchObject({ custody: "local" });
       }),
   );
 });

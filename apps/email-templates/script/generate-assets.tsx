@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { EvmChainName } from "@namera-ai/protocol/evm";
 import { ChainIcon } from "@namera-ai/ui/chain-icon";
-import { NameraIcon } from "@namera-ai/ui/icons";
+import { BrandOneClawIcon, NameraIcon } from "@namera-ai/ui/icons";
 import sharp from "sharp";
 
 const outputDirectory = resolve(import.meta.dirname, "../../../assets/email-assets");
@@ -76,6 +76,19 @@ await Promise.all(
   (["website", "github", "x", "email", "linkedin"] as const).flatMap((type) =>
     Object.entries(monochromeColors).map(([theme, color]) =>
       renderPng("social", `${type}-${theme}`, socialIcon(type, color)),
+    ),
+  ),
+);
+
+await Promise.all(
+  Object.entries(monochromeColors).map(([theme, color]) =>
+    renderPng(
+      "brand",
+      `oneclaw-${theme}`,
+      renderToStaticMarkup(<BrandOneClawIcon width={512} height={512} />).replaceAll(
+        "var(--foreground)",
+        color,
+      ),
     ),
   ),
 );

@@ -5,6 +5,10 @@ export const emailAssetCdnBaseUrl = "https://cdn.namera.ai/email-assets";
 const emailAssetUrl = (path: string) => `${emailAssetCdnBaseUrl}/${path}`;
 
 export const emailAssets = {
+  oneclaw: {
+    light: emailAssetUrl("brand/oneclaw-light.png"),
+    dark: emailAssetUrl("brand/oneclaw-dark.png"),
+  },
   brand: {
     light: emailAssetUrl("brand/namera-light.png"),
     dark: emailAssetUrl("brand/namera-dark.png"),

@@ -24,7 +24,6 @@ import {
   EvmAddressDisplay,
   MetadataDisplay,
   NamespaceDisplay,
-  WalletImplementationDisplay,
   WalletOwnerDisplay,
   WalletStatusDisplay,
 } from "@/components/display";
@@ -51,16 +50,9 @@ const defaultSort: DataGridSortDescriptor = {
   direction: "descending",
 };
 
-const columnIds = [
-  "namespace",
-  "address",
-  "implementation",
-  "status",
-  "ownership",
-  "createdAt",
-] as const;
+const columnIds = ["namespace", "address", "ownership", "status", "createdAt"] as const;
 
-const defaultColumnIds = columnIds.filter((id) => id !== "ownership");
+const defaultColumnIds = columnIds;
 
 type ConfigurableColumnId = (typeof columnIds)[number];
 
@@ -121,8 +113,6 @@ const accountSorters: Record<
   status: (left, right) => accountCollator.compare(left.status, right.status),
   namespace: (left, right) => accountCollator.compare(left.namespace, right.namespace),
   address: (left, right) => accountCollator.compare(left.address, right.address),
-  implementation: (left, right) =>
-    accountCollator.compare(left.implementation, right.implementation),
   ownership: (left, right) =>
     accountCollator.compare(accountOwnership(left), accountOwnership(right)),
   createdAt: (left, right) =>
@@ -161,25 +151,6 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     allowsSorting: true,
     cell: (row) =>
       isAccountGroup(row) ? null : (
-        <WalletImplementationDisplay implementation={row.implementation} />
-      ),
-    header: "Implementation",
-    id: "implementation",
-    minWidth: 125,
-    width: 140,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
-    header: "Status",
-    id: "status",
-    minWidth: 90,
-    width: 105,
-  },
-  {
-    allowsSorting: true,
-    cell: (row) =>
-      isAccountGroup(row) ? null : (
         <WalletOwnerDisplay
           custody={row.owner.custody}
           provider={row.owner.custody === "namera-managed" ? row.owner.provider : undefined}
@@ -192,6 +163,14 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
     id: "ownership",
     minWidth: 190,
     width: 210,
+  },
+  {
+    allowsSorting: true,
+    cell: (row) => (isAccountGroup(row) ? null : <WalletStatusDisplay status={row.status} />),
+    header: "Status",
+    id: "status",
+    minWidth: 90,
+    width: 105,
   },
   {
     allowsSorting: true,

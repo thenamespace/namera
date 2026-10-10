@@ -4,6 +4,7 @@ import { Link } from "react-email";
 
 import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
+import { EmailCustody } from "../components/custody.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
@@ -18,6 +19,7 @@ export const WalletCreatedEmail = ({
   addressUrl,
   organizationName,
   ownership,
+  provider,
   walletName,
 }: WalletCreatedEmailProps) => {
   const addressDisplay = formatEvmAddress(address);
@@ -32,6 +34,7 @@ export const WalletCreatedEmail = ({
         >
           <EmailDetails>
             <EmailDetail label="Account" value={walletName} />
+            <EmailDetail label="Namespace" value="EVM" />
             <EmailDetail
               label="Address"
               mono
@@ -42,7 +45,16 @@ export const WalletCreatedEmail = ({
               }
             />
             <EmailDetail label="Implementation" value={implementationName} />
-            <EmailDetail label="Ownership" value={ownership} />
+            <EmailDetail
+              label="Ownership"
+              value={
+                provider === "1claw" ? (
+                  <EmailCustody custody="namera-managed" provider={provider} />
+                ) : (
+                  ownership
+                )
+              }
+            />
           </EmailDetails>
           <EmailAction href={actionUrl}>View account</EmailAction>
           <EmailNotice>

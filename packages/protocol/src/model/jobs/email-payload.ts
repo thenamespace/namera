@@ -2,6 +2,7 @@ import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
 import { NonEmptyString } from "#/model/common";
+import { EvmSessionPolicyType } from "#/model/core/session-key";
 
 export const EmailJobType = Schema.Literals([
   "waitlist-confirmed",
@@ -75,9 +76,13 @@ export const WalletCreatedEmailVariables = Schema.Struct({
   addressUrl: NonEmptyString,
   implementation: Schema.Literal("alchemy-modular-v2"),
   ownership: NonEmptyString,
+  provider: Schema.optionalKey(Schema.Literal("1claw")),
 });
 
 export const SessionKeyCreatedEmailVariables = Schema.Struct({
+  policyTypes: Schema.optionalKey(Schema.Array(EvmSessionPolicyType)),
+  custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+  provider: Schema.optionalKey(Schema.Literal("1claw")),
   actionUrl: Schema.optionalKey(NonEmptyString),
   sessionKeyName: NonEmptyString,
   walletName: NonEmptyString,
@@ -86,6 +91,8 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyRevokedEmailVariables = Schema.Struct({
+  custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+  provider: Schema.optionalKey(Schema.Literal("1claw")),
   actionUrl: Schema.optionalKey(NonEmptyString),
   sessionKeyName: NonEmptyString,
   walletName: NonEmptyString,

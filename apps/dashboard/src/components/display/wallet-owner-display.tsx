@@ -1,5 +1,5 @@
 import type { WalletKeyProtectionLevel } from "@namera-ai/protocol/model";
-import { BrandOneClawIcon, ComputerIcon, SecurityKeyUsbIcon } from "@namera-ai/ui/icons";
+import { BrandOneClawIcon, ComputerIcon, NameraIcon } from "@namera-ai/ui/icons";
 
 import { StatusDisplay } from "./status-display";
 
@@ -27,17 +27,16 @@ export function WalletOwnerDisplay({
   }
 
   return (
-    <StatusDisplay
-      icon={SecurityKeyUsbIcon}
-      label={
-        protectionLevel === undefined
+    <span className="inline-flex min-w-0 items-center gap-2 text-sm">
+      <NameraIcon aria-hidden className="size-4 shrink-0 fill-current" />
+      <span className="truncate text-foreground">
+        {protectionLevel === undefined
           ? "Namera managed"
           : protectionLevel === "hsm"
             ? "Namera managed · HSM"
-            : "Namera managed · Software"
-      }
-      tone="muted"
-    />
+            : "Namera managed · Software"}
+      </span>
+    </span>
   );
 }
 

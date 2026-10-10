@@ -11,7 +11,7 @@ import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summar
 
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
 import { SessionPolicyCard } from "./card";
-import { policyChoiceFor } from "./catalog";
+import { hasTransactionAccess, policyChoiceFor } from "./catalog";
 import { AddPolicyButton, SessionPolicyDialog, type PolicyEdit } from "./dialog";
 import { RequiredPolicies } from "./required-policies";
 import { signatureConfiguration } from "./signature-configuration";
@@ -50,7 +50,11 @@ export function PolicySection({
           <HeadingGroup.Description>
             Choose what this key can do, then add any limits.
           </HeadingGroup.Description>
-          {errors?.permissions || errors?.allowSignatures || form.formState.errors.policies ? (
+          {!hasTransactionAccess(permissions) && !onchain?.allowSignatures ? (
+            <FieldError>
+              Add an access policy or Signatures to continue. Networks and Lifetime only set limits.
+            </FieldError>
+          ) : errors?.permissions || errors?.allowSignatures || form.formState.errors.policies ? (
             <div>
               <FieldError
                 errors={[

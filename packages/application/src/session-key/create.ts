@@ -364,6 +364,8 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                 walletId: created.walletId,
                 namespace: created.namespace,
                 policyTypes,
+                custody,
+                ...(custody === "namera-managed" ? { provider: "1claw" as const } : {}),
               },
               idempotencyKey: `notification:session_key.created:${created.id}`,
               correlationId: event.correlationId,
@@ -380,6 +382,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                     expiresAt: emailExpiry,
                     variables: {
                       sessionKeyName: created.metadata.name,
+                      policyTypes,
+                      custody,
+                      ...(custody === "namera-managed" ? { provider: "1claw" as const } : {}),
                       actionUrl: dashboardEmailLink(
                         config.dashboardPublicOrigin,
                         `/session-key/${created.id}/overview`,

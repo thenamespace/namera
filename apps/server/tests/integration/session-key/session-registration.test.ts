@@ -40,6 +40,12 @@ layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
         expect(yield* client.sessionKey.listForOrganization()).toEqual([]);
         const created = yield* client.sessionKey.create({ payload: request });
         expect(created.signer).toEqual(request.signer);
+        const createdNotice = (yield* client.notification.list({ query: {} })).items.find(
+          ({ notification }) =>
+            notification.type === "session_key.created" && notification.resourceId === created.id,
+        );
+        expect(createdNotice?.notification.data).toMatchObject({ custody: "local" });
+        expect(createdNotice?.notification.data).not.toHaveProperty("provider");
         expect(
           (yield* client.sessionKey.get({ params: { sessionKeyId: created.id } })).signer,
         ).toEqual(request.signer);

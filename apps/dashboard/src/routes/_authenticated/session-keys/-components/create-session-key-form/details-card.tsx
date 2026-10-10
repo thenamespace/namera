@@ -20,10 +20,10 @@ import {
   DashboardCardRoot,
   DashboardCardRow,
 } from "@/components/dashboard-card";
-import { MetadataDisplay, WalletOwnerDisplay } from "@/components/display";
-import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
+import { MetadataDisplay } from "@/components/display";
 import { supportsSessionKeys } from "@/lib/session-owner";
 
+import { CustodyField, type CustodyLimits } from "./custody-field";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -33,12 +33,14 @@ type SessionKeyDetailsCardProps = {
   control: Control<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   wallets: ListWalletsResponse;
   custodyLocked: boolean;
+  limits: CustodyLimits;
 };
 
 export function SessionKeyDetailsCard({
   control,
   wallets,
   custodyLocked,
+  limits,
 }: SessionKeyDetailsCardProps) {
   const activeWallets = wallets.filter(supportsSessionKeys);
 
@@ -46,50 +48,6 @@ export function SessionKeyDetailsCard({
     <DashboardCardRoot>
       <DashboardCardContent>
         <FieldGroup className="divide-separator contents divide-y">
-          <Controller
-            control={control}
-            name="custody"
-            render={({ field }) => (
-              <DashboardCardRow>
-                <Field className="contents">
-                  <FieldLabel id="session-custody-label">Key custody</FieldLabel>
-                  <Select
-                    aria-labelledby="session-custody-label"
-                    fullWidth
-                    variant="secondary"
-                    isDisabled={custodyLocked}
-                    name={field.name}
-                    selectedKey={field.value}
-                    onSelectionChange={field.onChange}
-                  >
-                    <Select.Trigger ref={field.ref} onBlur={field.onBlur}>
-                      <Select.Value>
-                        <SessionKeyCustodyDisplay custody={field.value} />
-                      </Select.Value>
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        <ListBox.Item id="local" textValue="Local key">
-                          <SessionKeyCustodyDisplay custody="local" />
-                        </ListBox.Item>
-                        <ListBox.Item id="namera-managed" textValue="1Claw Managed">
-                          <SessionKeyCustodyDisplay custody="namera-managed" />
-                        </ListBox.Item>
-                        <ListBox.Item
-                          id="coming-soon"
-                          isDisabled
-                          textValue="Namera Managed — coming soon"
-                        >
-                          Namera Managed · Coming soon
-                        </ListBox.Item>
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                </Field>
-              </DashboardCardRow>
-            )}
-          />
           <Controller
             control={control}
             name="metadata.logo"
@@ -242,14 +200,6 @@ export function SessionKeyDetailsCard({
                                     fallbackName="Unnamed account"
                                     metadata={wallet.metadata}
                                   />
-                                  <WalletOwnerDisplay
-                                    custody={wallet.owner.custody}
-                                    provider={
-                                      wallet.owner.custody === "namera-managed"
-                                        ? wallet.owner.provider
-                                        : undefined
-                                    }
-                                  />
                                 </div>
                                 <span className="text-muted shrink-0 font-mono text-xs">
                                   {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
@@ -265,6 +215,7 @@ export function SessionKeyDetailsCard({
               );
             }}
           />
+          <CustodyField control={control} locked={custodyLocked} limits={limits} />
         </FieldGroup>
       </DashboardCardContent>
     </DashboardCardRoot>
