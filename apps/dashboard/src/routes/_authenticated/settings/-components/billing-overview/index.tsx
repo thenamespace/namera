@@ -195,16 +195,10 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
 
   return (
     <section aria-labelledby="current-usage-heading">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4">
         <HeadingGroup>
           <HeadingGroup.Title id="current-usage-heading">Current usage</HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Accounts, unexpired session keys and members are capacity limits, not monthly quotas.
-          </HeadingGroup.Description>
         </HeadingGroup>
-        <span className="pb-0.5 text-xs tabular-nums text-muted">
-          Monthly usage resets {resetDate}
-        </span>
       </div>
 
       <Surface className="rounded-xl border px-5 py-5 sm:px-6" variant="secondary">
@@ -217,6 +211,9 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
           ))}
         </div>
       </Surface>
+      <p className="mt-3 text-right text-xs tabular-nums text-muted">
+        Monthly usage resets {resetDate}
+      </p>
     </section>
   );
 }
