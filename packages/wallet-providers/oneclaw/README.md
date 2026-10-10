@@ -79,18 +79,19 @@ verification remain integration work. Do not use an arbitrary member's email.
 The server env examples contain all fields. Values are loaded only when the
 corresponding layer is built; public runtime composition is unchanged.
 
-| Variable                         | Meaning                                           |
-| -------------------------------- | ------------------------------------------------- |
-| `ONECLAW_PLATFORM_APP_ID`        | Dashboard-created Platform app ID                 |
-| `ONECLAW_PLATFORM_API_KEY`       | Redacted Platform API key, not a human API key    |
-| `ONECLAW_EMPTY_TEMPLATE_ID`      | Dashboard-created empty template                  |
-| `ONECLAW_EMPTY_TEMPLATE_VERSION` | Required pinned integer version                   |
-| `ONECLAW_API_BASE_URL`           | Defaults to `https://api.1claw.co`                |
-| `ONECLAW_REQUEST_TIMEOUT`        | Per SDK call wait limit; defaults to `30 seconds` |
-| `ONECLAW_OIDC_ISSUER`            | Exact issuer registered in the Platform app       |
-| `ONECLAW_OIDC_AUDIENCE`          | Exact audience registered in the Platform app     |
-| `ONECLAW_OIDC_KEY_ID`            | Stable signing key ID published in JWKS           |
-| `ONECLAW_OIDC_PRIVATE_KEY`       | Redacted RSA PKCS#8 PEM; literal `\n` accepted    |
+| Variable                         | Meaning                                        |
+| -------------------------------- | ---------------------------------------------- |
+| `ONECLAW_PLATFORM_APP_ID`        | Dashboard-created Platform app ID              |
+| `ONECLAW_PLATFORM_API_KEY`       | Redacted Platform API key, not a human API key |
+| `ONECLAW_EMPTY_TEMPLATE_ID`      | Dashboard-created empty template               |
+| `ONECLAW_EMPTY_TEMPLATE_VERSION` | Required pinned integer version                |
+| `ONECLAW_OIDC_ISSUER`            | Exact issuer registered in the Platform app    |
+| `ONECLAW_OIDC_AUDIENCE`          | Exact audience registered in the Platform app  |
+| `ONECLAW_OIDC_KEY_ID`            | Stable signing key ID published in JWKS        |
+| `ONECLAW_OIDC_PRIVATE_KEY`       | Redacted RSA PKCS#8 PEM; literal `\n` accepted |
+
+The API base URL (`https://api.1claw.co`) and per-call timeout (30 seconds)
+are code constants, not deployment settings.
 
 Customer/agent credentials are not deployment env vars. Later application
 workflows protect them with the existing `CRYPTO_ENCRYPTION_KEY` and

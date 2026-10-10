@@ -18,8 +18,6 @@ export const Live = OneClawService.layer.pipe(
         ONECLAW_PLATFORM_API_KEY: "synthetic-platform-key",
         ONECLAW_EMPTY_TEMPLATE_ID: "empty-template",
         ONECLAW_EMPTY_TEMPLATE_VERSION: 1,
-        ONECLAW_API_BASE_URL: "https://oneclaw.invalid",
-        ONECLAW_REQUEST_TIMEOUT: "1 second",
       }),
     ),
   ),

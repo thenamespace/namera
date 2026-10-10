@@ -58,7 +58,7 @@ it.effect("bounds waiting without silently retrying an unresolved SDK request", 
     const service = yield* OneClawService;
     fetchMock.mockImplementationOnce(() => new Promise(() => {}));
     const fiber = yield* service.connections.get("test").pipe(Effect.flip, Effect.forkChild);
-    yield* TestClock.adjust("2 seconds");
+    yield* TestClock.adjust("31 seconds");
     expect((yield* Fiber.join(fiber)).code).toBe("TIMEOUT");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   }).pipe(Effect.provide(Live)),
