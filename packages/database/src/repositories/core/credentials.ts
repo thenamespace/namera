@@ -1,7 +1,10 @@
 import { Context, Effect, Layer, Schema } from "effect";
 
 import { DatabaseError, type CredentialId, type OrganizationId } from "@namera-ai/protocol";
-import { Credential, CredentialInsert } from "@namera-ai/protocol/model";
+import {
+  OneClawAgentCredential as Credential,
+  OneClawAgentCredentialInsert as CredentialInsert,
+} from "@namera-ai/protocol/model";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";

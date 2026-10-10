@@ -1,5 +1,5 @@
 import type { CredentialId, OrganizationId } from "@namera-ai/protocol";
-import type { Credential } from "@namera-ai/protocol/model";
+import type { OneClawAgentCredential } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
 import { check, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
@@ -16,8 +16,8 @@ export const credentials = coreSchema.table(
       .notNull()
       .$type<OrganizationId>()
       .references(() => organization.id, { onDelete: "restrict" }),
-    type: text("type").notNull().$type<Credential["type"]>(),
-    data: jsonb("data").notNull().$type<Credential["data"]>(),
+    type: text("type").notNull().$type<OneClawAgentCredential["type"]>(),
+    data: jsonb("data").notNull().$type<OneClawAgentCredential["data"]>(),
     encryptedPayload: text("encrypted_payload").notNull(),
     ...timestamps,
   },

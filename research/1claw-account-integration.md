@@ -1,6 +1,7 @@
 # 1Claw managed account integration plan
 
-Status: original phases 2 and 3 implemented; Platform/OIDC follow-ups pending;
+Status: original phases 2 and 3 implemented; phase 2A connection/authority contracts
+implemented with factory-schema gate open; Platform/OIDC runtime follow-ups pending;
 runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
@@ -405,6 +406,25 @@ Owner: `packages/protocol`. This is new work, not part of completed phase 2.
 
 **Exit gate:** schema/redaction tests cover both credential types, identity
 bindings, missing response fields and preservation of existing signer contracts.
+
+Implemented protocol slice: branded local connection IDs, versioned connection
+identity/readiness models, discriminated customer credentials with required expiry,
+redacted decrypted envelopes, connection/credential/payload binding validation,
+bootstrap versus incremental request contracts, early one-time agent credential
+results and bounded connection error codes. Existing agent credential shapes and
+public owner projections remain compatible. Database types/repositories remain
+explicitly agent-only until phase 3A; no table, migration or live call was added.
+
+Phase 2A remains partially complete: factory reconstruction metadata is gated on
+phase 1 factory evidence, and vendor claim-response/status decoding will live in
+the phase 4B provider package rather than protocol. No arbitrary factory fields or
+shared provider service were introduced. Expiry-clock checks, token verification,
+revocation and transactional ownership checks remain runtime responsibilities.
+
+Verification: 66 protocol tests (including 26 new connection/provisioning cases),
+7 existing credential persistence tests, and `pnpm check` (74 tasks) passed.
+No external resources were used. Phase 3A is still required before storing customer
+credentials or connection rows.
 
 ### Phase 3: persistence and recovery model
 

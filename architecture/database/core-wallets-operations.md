@@ -9,6 +9,10 @@ Source: [`packages/database/src/schema/core`](../../packages/database/src/schema
 Internal, tenant-scoped encrypted provider credentials. This is a general-purpose
 table with an explicit typed variant, currently only `1claw-agent`.
 
+Protocol additionally describes future `1claw-customer` credentials, but this
+table and repository remain explicitly agent-only until the phase 3A migration.
+The customer expiration column and provider-connection table do not exist yet.
+
 | Column                     | PostgreSQL type | Required | Description                                                             |
 | -------------------------- | --------------- | -------- | ----------------------------------------------------------------------- |
 | `id`                       | `text`          | Yes      | UUIDv7 primary key.                                                     |

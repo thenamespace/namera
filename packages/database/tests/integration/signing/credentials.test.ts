@@ -2,7 +2,10 @@ import { expect, layer } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 
 import { CredentialId, Email, SigningKeyId } from "@namera-ai/protocol";
-import { CredentialInsert, SigningKeyInsert } from "@namera-ai/protocol/model";
+import {
+  OneClawAgentCredentialInsert as CredentialInsert,
+  SigningKeyInsert,
+} from "@namera-ai/protocol/model";
 import { eq, sql } from "drizzle-orm";
 
 import { Database, Repository, TestDatabase, TransactionService } from "../../../src/index.js";

@@ -92,6 +92,24 @@ No encryption/decryption workflow, provisioning-attempt table or provider API ca
 is wired. Database checks validate metadata shape and chain/algorithm pairing;
 the future provider must still verify credential type and agent identity.
 
+Phase 2A adds internal `ProviderConnection` readiness/identity schemas, a
+`1claw-customer` credential variant with required expiration and redacted token,
+and `OneClawCustomerAuthority` binding checks across connection, credential row
+and decrypted payload. Bootstrap and incremental owner requests are distinct;
+the early agent result binds its one-time credential to the request's organization
+and credential ID. `ProviderConnectionError` carries bounded internal failure codes.
+These schemas do not verify token signatures, current-time expiry, provider
+revocation or database ownership by themselves. JSON encoding of decrypted
+envelopes is only for encryption, never public responses or logging.
+
+The existing database table/repository deliberately remain agent-only until phase
+3A adds customer credential storage and provider connections. No migration,
+customer-token renewal, OIDC endpoint or public capability is enabled here. The
+factory-based ECDSA schema remains gated on factory compatibility evidence; current
+passkey and 7702 shapes are unchanged. Vendor claim-response decoding belongs in
+the future 1Claw package. The planned provider-specific package split is also
+not implemented by these protocol contracts.
+
 Next steps are provider implementation and managed EVM
 workflows. Partial remote provisioning will use manual recovery in this iteration;
 no automatic retry of ambiguous creation or automatic key destruction is allowed.
