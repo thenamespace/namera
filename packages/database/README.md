@@ -251,6 +251,13 @@ from the user's current memberships.
 
 ## Wallet persistence
 
+`core.provider_connections` stores organization-scoped 1Claw identity and setup
+readiness. Its repository provides expiring token-owned setup/renewal leases and
+guarded transitions. `core.credentials` accepts encrypted agent/customer variants;
+customer expiry and ciphertext are replaced together under lease ownership and
+compare-and-swap. Provider HTTP calls and encryption remain outside repositories.
+See [wallet persistence invariants](../../architecture/database/core-wallets-operations.md).
+
 `core.signing_key` stores the public key and custody-specific reference while
 `core.wallet` stores the organization-owned address and namespace-specific
 account data. The repositories expose organization-scoped wallet reads,

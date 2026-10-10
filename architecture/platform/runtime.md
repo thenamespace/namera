@@ -19,6 +19,7 @@ sequenceDiagram
   Process->>DB: Open pool and acquire migration advisory lock
   DB-->>Process: Apply migrations
   Process->>Roles: Synchronize owner/admin/member definitions
+  Process->>DB: Upgrade remaining Free v1 subscriptions to v2 under billing locks
   Process->>DB: Bootstrap configured platform owner if none exists
   Process->>Workers: Start email, execution, billing, and session-operation workers
   Process->>HTTP: Bind configured host and port
@@ -26,6 +27,12 @@ sequenceDiagram
 
 Effect scopes close the server, workers, provider clients, exporters, and
 database resources during shutdown.
+
+HTTP and all four workers await the shared `BillingStartupUpgrade` layer after
+migrations. The temporary upgrade uses existing server database credentials,
+fails startup on errors, and skips subscriptions already on v2. See
+[billing rollout](../billing/README.md#rollout-and-historical-periods) for
+transaction, over-limit preservation, restart and removal semantics.
 
 Before HTTP binds, `ADMIN_BOOTSTRAP_OWNER_EMAIL` optionally grants the first
 platform owner to an existing verified user through the application workflow.
@@ -38,7 +45,7 @@ See [admin authorization](../auth/admin.md) for rollout and audit details.
 
 The live graph includes PostgreSQL repositories and transactions, Node Crypto,
 the encrypted EmailJobs service, the selected email provider, disabled
-WalletKeys layer, EVM clients, passkey and Google verification, ENS, application workflows, route handlers, and
+GcpService and LocalService layers, EVM clients, passkey and Google verification, ENS, application workflows, route handlers, and
 telemetry. Provider selection is environment-owned:
 
 - wallet keys: disabled in every server environment for the self-custodial beta;

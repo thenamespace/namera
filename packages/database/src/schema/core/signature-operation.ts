@@ -36,6 +36,8 @@ export const signatureOperation = coreSchema.table(
     requestHash: text("request_hash").notNull(),
     policyHash: text("policy_hash").notNull(),
     status: text("status").notNull().default("reserved").$type<SignatureOperation["status"]>(),
+    leaseToken: text("lease_token"),
+    leaseExpiresAt: createTimestampField("lease_expires_at"),
     data: jsonb("data").notNull().$type<SignatureOperationEncoded["data"]>(),
     failureCode: text("failure_code").$type<NonNullable<SignatureOperation["failureCode"]>>(),
     reservationExpiresAt: createTimestampField("reservation_expires_at").notNull(),
@@ -44,6 +46,10 @@ export const signatureOperation = coreSchema.table(
     ...timestamps,
   },
   (table) => [
+    check(
+      "signature_operation_lease_check",
+      sql`(${table.leaseToken} IS NULL AND ${table.leaseExpiresAt} IS NULL) OR (${table.status} = 'reserved' AND ${table.leaseToken} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL)`,
+    ),
     unique("signature_operation_id_organization_unique").on(table.id, table.organizationId),
     foreignKey({
       name: "signature_operation_actor_organization_fk",

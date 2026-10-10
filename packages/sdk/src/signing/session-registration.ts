@@ -12,7 +12,14 @@ import { publicKeyToAddress } from "viem/accounts";
 
 export class LocalSessionRegistrationError extends Schema.TaggedError<LocalSessionRegistrationError>()(
   "LocalSessionRegistrationError",
-  { code: Schema.Literals(["IDENTITY_MISMATCH", "NETWORK_MISMATCH", "PERMISSION_MISMATCH"]) },
+  {
+    code: Schema.Literals([
+      "IDENTITY_MISMATCH",
+      "NETWORK_MISMATCH",
+      "PERMISSION_MISMATCH",
+      "UNSUPPORTED_CUSTODY",
+    ]),
+  },
 ) {}
 
 type Registration = Pick<
@@ -32,6 +39,8 @@ export const createLocalSessionBindings = ({
   readonly wallet: Pick<WalletResponse, "id" | "address">;
   readonly registration: Registration;
 }): ReadonlyArray<LocalEvmSessionBinding> => {
+  if (request.signer.custody !== "local")
+    throw new LocalSessionRegistrationError({ code: "UNSUPPORTED_CUSTODY" });
   if (
     request.walletId !== wallet.id ||
     registration.walletId !== wallet.id ||

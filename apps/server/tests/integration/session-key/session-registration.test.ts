@@ -17,6 +17,40 @@ import {
 layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
   "local session registration",
   (it) => {
+    it.effect("rejects managed creation before persistence while its runtime is unavailable", () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        yield* signIn(client, testEmail("managed-session-contract@namera.test"));
+        const wallet = yield* createTestPasskeyWallet(client);
+        const request = yield* localSessionRequest(wallet.id);
+        expect(
+          yield* client.sessionKey
+            .create({
+              payload: {
+                ...request,
+                signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+              },
+            })
+            .pipe(Effect.flip),
+        ).toMatchObject({
+          _tag: "SessionKeyCreationError",
+          code: "MANAGED_SESSION_KEYS_UNAVAILABLE",
+        });
+        expect(yield* client.sessionKey.listForOrganization()).toEqual([]);
+        const created = yield* client.sessionKey.create({ payload: request });
+        expect(created.signer).toEqual(request.signer);
+        const createdNotice = (yield* client.notification.list({ query: {} })).items.find(
+          ({ notification }) =>
+            notification.type === "session_key.created" && notification.resourceId === created.id,
+        );
+        expect(createdNotice?.notification.data).toMatchObject({ custody: "local" });
+        expect(createdNotice?.notification.data).not.toHaveProperty("provider");
+        expect(
+          (yield* client.sessionKey.get({ params: { sessionKeyId: created.id } })).signer,
+        ).toEqual(request.signer);
+      }),
+    );
     it.effect(
       "round trips offchain call and token rules through registration, storage and audit",
       () =>

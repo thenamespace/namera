@@ -123,10 +123,12 @@ export function SessionKeySelect({
                       textValue={`${sessionKey.metadata.name} ${group.wallet.metadata.name}`}
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pl-2">
-                        <MetadataDisplay
-                          fallbackName="Unnamed session key"
-                          metadata={sessionKey.metadata}
-                        />
+                        <div className="grid min-w-0 gap-1">
+                          <MetadataDisplay
+                            fallbackName="Unnamed session key"
+                            metadata={sessionKey.metadata}
+                          />
+                        </div>
                         <Typography className="shrink-0 text-xs! pr-6" color="muted">
                           {count} {count === 1 ? "policy" : "policies"}
                         </Typography>

@@ -42,26 +42,26 @@ READMEs document development. Repository-wide rules are in [AGENTS.md](AGENTS.md
 
 ## Workspaces
 
-| Workspace              | Responsibility                                                               |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `apps/server`          | HTTP runtime, authorization, route handlers, workers, and live composition.  |
-| `apps/dashboard`       | React dashboard and authorization consent UI.                                |
-| `apps/cli`             | OAuth client, local stdio MCP server, and delegated wallet commands.         |
-| `apps/web`             | Public website, pricing, and waitlist form.                                  |
-| `apps/email-templates` | Runtime-template preview and email asset generation.                         |
-| `packages/protocol`    | Effect Schemas, models, DTOs, identities, and expected errors.               |
-| `packages/database`    | Drizzle schemas, migrations, transactions, and repositories.                 |
-| `packages/application` | Business workflows and transaction orchestration.                            |
-| `packages/api`         | Public Effect HttpApi contract.                                              |
-| `packages/evm`         | Chains, smart accounts, execution, signing, verification, and policies.      |
-| `packages/wallet-keys` | Provider abstraction; signing disabled in the self-custodial server runtime. |
-| `packages/ens`         | Namespace-backed offchain ENS subname and record management.                 |
-| `packages/emails`      | Encrypted durable email outbox and React Email delivery.                     |
-| `packages/crypto`      | Purpose-separated hashing, HMAC, encryption, and credentials.                |
-| `packages/telemetry`   | OTLP exporters and shared bounded metrics.                                   |
-| `packages/sdk`         | Promise client for API-key and OAuth-bearer consumers.                       |
-| `packages/ui`          | Shared source-only React UI.                                                 |
-| `packages/utils`       | Dependency-light shared helpers.                                             |
+| Workspace                     | Responsibility                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------- |
+| `apps/server`                 | HTTP runtime, authorization, route handlers, workers, and live composition.     |
+| `apps/dashboard`              | React dashboard and authorization consent UI.                                   |
+| `apps/cli`                    | OAuth client, local stdio MCP server, and delegated wallet commands.            |
+| `apps/web`                    | Public website, pricing, and waitlist form.                                     |
+| `apps/email-templates`        | Runtime-template preview and email asset generation.                            |
+| `packages/protocol`           | Effect Schemas, models, DTOs, identities, and expected errors.                  |
+| `packages/database`           | Drizzle schemas, migrations, transactions, and repositories.                    |
+| `packages/application`        | Business workflows and transaction orchestration.                               |
+| `packages/api`                | Public Effect HttpApi contract.                                                 |
+| `packages/evm`                | Chains, smart accounts, execution, signing, verification, and policies.         |
+| `packages/wallet-providers/*` | Independent GCP/local services; managed signing disabled in the server runtime. |
+| `packages/ens`                | Namespace-backed offchain ENS subname and record management.                    |
+| `packages/emails`             | Encrypted durable email outbox and React Email delivery.                        |
+| `packages/crypto`             | Purpose-separated hashing, HMAC, encryption, and credentials.                   |
+| `packages/telemetry`          | OTLP exporters and shared bounded metrics.                                      |
+| `packages/sdk`                | Promise client for API-key and OAuth-bearer consumers.                          |
+| `packages/ui`                 | Shared source-only React UI.                                                    |
+| `packages/utils`              | Dependency-light shared helpers.                                                |
 
 ## Local development
 

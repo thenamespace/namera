@@ -34,6 +34,17 @@ later bind to a provider customer.
 Plan selection and lifecycle history. Providerless Free rows and provider-backed
 paid/trial rows use one model.
 
+New organization workflows explicitly write `plan_version = 2`. Free v1 rows
+receive `data.freeV2RolloutAt` (ISO timestamp) from the rollout migration. The
+application advances them to v2 at the first anniversary after that timestamp,
+under the billing account lock. The temporary immediate startup upgrade supersedes
+that wait: it updates the current open period and subscription together, merges
+`data.freeV2UpgradedAt`, and appends `billing.plan_changed` transactionally. Closed
+periods remain unchanged. Version 2 is the durable rerun skip marker. Current
+meter hard limits retain already-consumed/reserved usage above the new allowance;
+see [rollout semantics](../billing/README.md#rollout-and-historical-periods).
+The SQL default remains 1 for historical compatibility, not new-org selection.
+
 | Column                     | Type          | Required | Default  | Description                       |
 | -------------------------- | ------------- | -------- | -------- | --------------------------------- |
 | `id`                       | `text`        | Yes      | UUIDv7   | Internal subscription ID.         |
@@ -302,7 +313,7 @@ Billing history uses `ON DELETE RESTRICT`; product cleanup cannot cascade-delete
 invoice evidence. Production retention should archive or anonymize eligible
 contact/provider data without removing financial evidence.
 
-Free v1 initializes these rows with every organization and uses the reservation,
+Free v2 initializes these rows with every organization and uses the reservation,
 ledger, balance, period, recovery, and reconciliation paths in production code.
 Payment-provider delivery and webhook processing are inactive. Their tables and
 repositories are retained independently of the active Free-plan ledger; see

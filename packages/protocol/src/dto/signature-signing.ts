@@ -19,7 +19,7 @@ export const PrepareSignatureRequest = Schema.Union(
 ).annotate({
   identifier: "PrepareSignatureRequest",
   description:
-    "Prepare a message or typed-data signature for one explicitly granted, installed local session. Never send private key material.",
+    "Prepare a message or typed-data signature for the selected installed session. The server resolves custody. Never send private key material.",
 });
 
 export const PrepareSignatureResponse = Schema.Struct({
@@ -28,10 +28,13 @@ export const PrepareSignatureResponse = Schema.Struct({
   installationId: SessionKeyInstallationId,
   signingKeyId: SigningKeyId,
   request: PrepareSignatureRequest,
-  signing: Schema.Struct({
-    method: Schema.Literal("eth_signTypedData_v4"),
-    typedData: EvmTypedData,
-  }),
+  signing: Schema.Union([
+    Schema.Struct({
+      method: Schema.Literal("eth_signTypedData_v4"),
+      typedData: EvmTypedData,
+    }),
+    Schema.Struct({ method: Schema.Literal("server") }),
+  ]),
   expiresAt: Schema.DateTimeUtcFromDate,
 }).annotate({
   identifier: "PrepareSignatureResponse",
@@ -42,10 +45,12 @@ export const PrepareSignatureResponse = Schema.Struct({
 export const CompleteSignatureRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   operationId: SignatureOperationId,
-  signature: Hex.check(Schema.isPattern(/^0x[0-9a-fA-F]{130}$/)).annotate({
-    description:
-      "Local session signer's raw 65-byte ECDSA signature of the prepared typed data, without the ERC-1271 validation envelope.",
-  }),
+  signature: Schema.optionalKey(
+    Hex.check(Schema.isPattern(/^0x[0-9a-fA-F]{130}$/)).annotate({
+      description:
+        "Local session signer's raw 65-byte ECDSA signature of the prepared typed data, without the ERC-1271 validation envelope.",
+    }),
+  ),
 }).annotate({ identifier: "CompleteSignatureRequest" });
 
 export const CompleteSignatureResponse = SignResponse.annotate({

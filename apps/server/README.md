@@ -35,10 +35,16 @@ the server/application ownership split.
 
 Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
-`@namera-ai/database/DatabaseMigration`. It then optionally bootstraps the first
+`@namera-ai/database/DatabaseMigration`. The temporary `BillingStartupUpgrade`
+then upgrades current Free v1 subscriptions to v2, preserving usage and reset
+dates. HTTP and every worker wait for completion; errors fail startup and the
+next run safely resumes. No extra environment variables are required. See
+[billing rollout](../../architecture/billing/README.md#rollout-and-historical-periods)
+before removing the hook after all environments have migrated.
+It then optionally bootstraps the first
 platform owner from `ADMIN_BOOTSTRAP_OWNER_EMAIL` before accepting traffic.
 
-After migrations complete, the server starts scoped email, execution, and
+After migrations and the billing upgrade complete, the server starts scoped email, execution, and
 billing workers. They use locked/leased claims safe for multiple instances and
 stop with the server scope. The execution worker claims bounded batches, checks receipts concurrently,
 and settles, releases, or reschedules submissions left pending by HTTP requests.
@@ -95,9 +101,11 @@ requests-per-minute actor rate limit.
 ceremony for a user with `wallet:create`. It returns ES256-only, resident-key,
 user-verification-required options and replaces that user's older pending
 ceremony in the active organization. `POST /wallets` completes that ceremony
-when its discriminated owner is `passkey`. Beta requests with a `namera-managed`
-owner return 403 `MANAGED_WALLETS_DISABLED` before provider or billing work.
-Managed creation remains an internal application capability for future use.
+when its discriminated owner is `passkey`. It also accepts
+`{type: "namera-managed", provider: "1claw"}` for account creation and internal
+owner signing. GCP requests still return 403 `MANAGED_WALLETS_DISABLED` before
+provider or billing work. Managed creation is limited to 20 attempts/org/hour.
+No public arbitrary owner-signing endpoint is exposed.
 The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
@@ -171,6 +179,19 @@ their own IP/email policies.
 API-key creation is limited to 20 attempts per active organization per hour.
 Revocation is limited to 60 attempts per active organization per hour. Read
 operations use only the global limit.
+
+Managed session creation accepts the 1Claw signer variant and is limited to 20
+attempts per active organization per hour, before any provider call. It creates
+pending sessions under either passkey or 1Claw accounts, never approvals or active
+grants. Both session custody types use the existing owner-operation endpoints:
+passkey prepare/complete for passkey parents and managed prepare/approve for
+1Claw parents. Only receipt confirmation activates an installation; revocation
+immediately removes grants before owner-approved onchain removal. Managed session
+execution/signing uses the unified `/executions/*` and `/signatures/*`
+prepare/complete routes. Stored custody selects the signer; local completion requires
+a signature and managed completion forbids one. They retain the existing delegated
+actor scopes and rate limits. Managed client selection remains a separate phase.
+Local creation is unchanged. No additional environment configuration is required.
 
 Session-key revocation is limited to 60 attempts per active organization per
 hour. It revokes the key and every active grant in one application transaction.
@@ -309,21 +330,28 @@ The composition root also loads:
 - authentication origins from `@namera-ai/application`;
 - cryptographic secrets from `@namera-ai/crypto`;
 - Alchemy RPC credentials and BSO policy configuration from `@namera-ai/evm`;
-- a disabled managed signer from `@namera-ai/wallet-keys` (no configuration);
+- independent `GcpService.disabledLayer` and `LocalService.disabledLayer` managed signers (no configuration);
+- live 1Claw SDK and OIDC services with required Platform/template/trust configuration;
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.
 
-The complete local set and provider-specific comments are kept in
-`apps/server/.env.example`. Package READMEs remain authoritative for each
-service's variables.
+Local configuration defaults are kept in `apps/server/.env.example`.
+Package READMEs remain authoritative for each service's variables.
 
 The dashboard and internal admin surfaces each use their configured exact origin;
 credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
 is a separate step; see the admin architecture for rollout limitations.
 
-All server environments use `WalletKeys.disabledLayer`. Owner passkeys and local
-session keys sign on the client; managed-key operations fail closed. Local and
-KMS provider implementations remain available for explicit package use and tests.
+All environments keep GCP and local-file signing disabled. Owner passkeys and local
+session keys sign on the client. 1Claw is always composed, without an enable flag;
+missing required provider/OIDC configuration fails startup. The API URL and
+30-second provider timeout are code constants. Set `ONECLAW_ORG_EMAIL_DOMAIN`
+to a domain Namera controls, and configure the dashboard-created Platform app and
+pinned empty template. `ONECLAW_OIDC_ISSUER` must equal
+`${AUTH_API_PUBLIC_ORIGIN}/providers/1claw`. Discovery and `jwks.json` are hosted
+beneath that issuer and publish no private material or tokens. See the
+[provider README](../../packages/wallet-providers/oneclaw/README.md) and
+[account setup/recovery](../../architecture/wallets/accounts.md).
 Set `TELEMETRY_SERVICE_VERSION` to the deployed release tag or Git SHA to identify
 the version producing logs, traces, and metrics. It defaults to `development`
 when omitted, so supply a meaningful value in production.

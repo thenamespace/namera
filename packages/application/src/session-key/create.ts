@@ -4,7 +4,6 @@ import * as HexEncoding from "effect/encoding/Hex";
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
-  createPublicKeyWebAuthnAccount,
   Evm,
   findEvmPolicyCardinalityViolation,
   materializeEvmPolicy,
@@ -18,17 +17,29 @@ import {
   WalletNotFoundError,
   type ActorId,
   type OrganizationId,
+  type EthereumAddress,
 } from "@namera-ai/protocol";
 import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
-import { EvmSessionInstallationData, type EvmSessionKeyPolicies } from "@namera-ai/protocol/model";
+import {
+  EvmSessionInstallationData,
+  type EvmSessionKeyPolicies,
+  type SigningKeyInsert,
+} from "@namera-ai/protocol/model";
 import { sessionKeyCreationDuration, sessionKeyCreationResults } from "@namera-ai/telemetry";
 import { Base64, generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import {
+  enforceSessionKeyLimit,
+  lockOrganizationBilling,
+  makeBillingPeriods,
+} from "#/billing/index";
 import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
+import { makeProvisionOneClawSigner } from "#/oneclaw/provision";
+import { makeLoadPublicSessionOwner } from "#/wallet/public-owner";
 
 import { hashSessionKeyPolicies } from "./hash.js";
 import { makeLoadSessionKeyViews } from "./view.js";
@@ -40,8 +51,11 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   const repository = yield* Repository;
   const evm = yield* Evm;
   const transaction = yield* TransactionService;
+  const periods = yield* makeBillingPeriods;
   const createNotification = yield* makeCreateNotification;
   const loadViews = yield* makeLoadSessionKeyViews;
+  const loadOwner = yield* makeLoadPublicSessionOwner;
+  const provisionOneClaw = yield* makeProvisionOneClawSigner;
 
   return Effect.fn("application.sessionKey.create")(
     function* (input: {
@@ -49,6 +63,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
       readonly actorId: ActorId;
       readonly request: CreateSessionKeyRequest;
     }) {
+      const requestedSigner = input.request.signer;
+      const custody = requestedSigner.custody;
+      const provider = custody === "local" ? "local" : "1claw";
       const creationResults = Metric.withAttributes(sessionKeyCreationResults, {
         namespace: input.request.namespace,
       });
@@ -106,72 +123,120 @@ export const makeCreateSessionKey = Effect.gen(function* () {
         return yield* new SessionKeyCreationError({ code: "WALLET_NAMESPACE_MISMATCH" });
       }
 
-      if (
-        wallet.wallet.data.validatorType !== "webauthn_p256" ||
-        wallet.signingKey.custody !== "local" ||
-        wallet.signingKey.data.type !== "passkey" ||
-        wallet.signingKey.status !== "active"
-      ) {
-        return yield* new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" });
-      }
-      const signer = yield* resolveEvmSessionSigner(input.request.signer.publicKey).pipe(
-        Effect.mapError(() => new SessionKeyCreationError({ code: "LOCAL_SIGNER_INVALID" })),
+      const { account } = yield* loadOwner(wallet).pipe(
+        Effect.mapError(() => new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" })),
       );
-      const signingKeyId = SigningKeyId.make(generateUniqueId());
       // Entity IDs are public routing identifiers; the database rejects reuse.
       const entityId = Number.parseInt(generateUniqueId().slice(-7), 16) + 1;
-      const account = {
-        wallet: wallet.wallet.data,
-        owner: {
-          validatorType: "webauthn_p256" as const,
-          account: createPublicKeyWebAuthnAccount(wallet.signingKey.publicKeyHex),
-        },
-      };
-      const installations = yield* Effect.forEach(
-        input.request.onchain.chains,
-        (chainId) =>
-          Effect.gen(function* () {
-            const data = yield* evm.sessions.compile({
-              chainId,
-              account,
-              authorization: {
-                version: 1,
-                entityId,
-                signerAddress: signer.address,
-                validAfter: input.request.onchain.validAfter,
-                validUntil: input.request.onchain.validUntil,
-                permissions: input.request.onchain.permissions,
-                allowSignatures: input.request.onchain.allowSignatures ?? false,
-              },
-            });
-            const hash = yield* crypto.hash({
-              purpose: "session-key.installation",
-              value: JSON.stringify({
-                walletId: wallet.wallet.id,
-                signingKeyId,
+      const compileInstallations = (signerAddress: EthereumAddress, signingKeyId: SigningKeyId) =>
+        Effect.forEach(
+          input.request.onchain.chains,
+          (chainId) =>
+            Effect.gen(function* () {
+              const data = yield* evm.sessions.compile({
                 chainId,
-                data: Schema.encodeSync(EvmSessionInstallationData)(data),
-              }),
-            });
-            return {
-              chainId,
-              data,
-              configurationHash: Bytes32.make(`0x${HexEncoding.encode(Base64.toUint8Array(hash))}`),
-            };
+                account,
+                authorization: {
+                  version: 1,
+                  entityId,
+                  signerAddress,
+                  validAfter: input.request.onchain.validAfter,
+                  validUntil: input.request.onchain.validUntil,
+                  permissions: input.request.onchain.permissions,
+                  allowSignatures: input.request.onchain.allowSignatures ?? false,
+                },
+              });
+              const hash = yield* crypto.hash({
+                purpose: "session-key.installation",
+                value: JSON.stringify({
+                  walletId: wallet.wallet.id,
+                  signingKeyId,
+                  chainId,
+                  data: Schema.encodeSync(EvmSessionInstallationData)(data),
+                }),
+              });
+              return {
+                chainId,
+                data,
+                configurationHash: Bytes32.make(
+                  `0x${HexEncoding.encode(Base64.toUint8Array(hash))}`,
+                ),
+              };
+            }),
+          { concurrency: 4 },
+        ).pipe(
+          Effect.catchTags({
+            EvmExecutionError: (error) =>
+              Effect.fail(
+                new SessionKeyCreationError({
+                  code:
+                    error.code === "NETWORK_PAUSED"
+                      ? "NETWORK_PAUSED"
+                      : "ONCHAIN_PREPARATION_FAILED",
+                }),
+              ),
+            UnsupportedChainError: () =>
+              Effect.fail(new SessionKeyCreationError({ code: "ONCHAIN_PREPARATION_FAILED" })),
           }),
-        { concurrency: 4 },
-      ).pipe(
-        Effect.catchTags({
-          EvmExecutionError: (error) =>
-            Effect.fail(
-              new SessionKeyCreationError({
-                code:
-                  error.code === "NETWORK_PAUSED" ? "NETWORK_PAUSED" : "ONCHAIN_PREPARATION_FAILED",
+        );
+
+      yield* enforceSessionKeyLimit(repository, input.organizationId, provider, periods);
+      const preparedSigner = yield* requestedSigner.custody === "local"
+        ? Effect.gen(function* () {
+            const signer = yield* resolveEvmSessionSigner(requestedSigner.publicKey).pipe(
+              Effect.mapError(() => new SessionKeyCreationError({ code: "LOCAL_SIGNER_INVALID" })),
+            );
+            return {
+              id: SigningKeyId.make(generateUniqueId()),
+              organizationId: input.organizationId,
+              purpose: "session",
+              custody: "local",
+              algorithm: "secp256k1",
+              publicKeyHex: signer.publicKey,
+              status: "active",
+              data: { version: 1, type: "local-key" },
+            } satisfies SigningKeyInsert;
+          })
+        : Effect.gen(function* () {
+            // Discard this public-only compilation. It validates networks and permissions
+            // before remote allocation; persisted calldata is compiled with the real key.
+            yield* compileInstallations(
+              wallet.wallet.data.address,
+              SigningKeyId.make(generateUniqueId()),
+            );
+            const provisioned = yield* provisionOneClaw({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              purpose: "session",
+            }).pipe(
+              Effect.catchTags({
+                WalletCustodyUnavailableError: () =>
+                  Effect.fail(
+                    new SessionKeyCreationError({ code: "MANAGED_SESSION_KEYS_UNAVAILABLE" }),
+                  ),
+                WalletCreationError: (error) =>
+                  Effect.fail(
+                    new SessionKeyCreationError({
+                      code:
+                        error.code === "PROVIDER_RECOVERY_REQUIRED"
+                          ? "PROVIDER_RECOVERY_REQUIRED"
+                          : "PROVIDER_SETUP_FAILED",
+                    }),
+                  ),
               }),
-            ),
-          UnsupportedChainError: () =>
-            Effect.fail(new SessionKeyCreationError({ code: "ONCHAIN_PREPARATION_FAILED" })),
-        }),
+            );
+            return provisioned.signingKey;
+          });
+      const signingKeyId = preparedSigner.id;
+      const signer = yield* resolveEvmSessionSigner(preparedSigner.publicKeyHex).pipe(
+        Effect.mapError(() => new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" })),
+      );
+      const installations = yield* compileInstallations(signer.address, signingKeyId).pipe(
+        Effect.mapError((error) =>
+          custody === "local"
+            ? error
+            : new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" }),
+        ),
       );
 
       const policies = input.request.policies.map((policy) =>
@@ -190,125 +255,161 @@ export const makeCreateSessionKey = Effect.gen(function* () {
           DateTime.fromEpochSeconds(input.request.onchain.validUntil),
         );
 
-      const sessionKey = yield* transaction.run(
-        Effect.gen(function* () {
-          const current = yield* repository.core.wallet.findByIdForUpdate(
-            wallet.wallet.id,
-            input.organizationId,
-          );
-          if (current === undefined || current.wallet.status !== "active")
-            return yield* new SessionKeyCreationError({ code: "WALLET_NOT_ACTIVE" });
-          if (
-            current.signingKey.id !== wallet.signingKey.id ||
-            current.signingKey.status !== "active"
-          )
-            return yield* new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" });
-          if (
-            DateTime.toEpochMillis(effectiveExpiry) <= DateTime.toEpochMillis(yield* DateTime.now)
-          )
-            return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
-          const registeredSigner = yield* repository.core.signingKey.insertIfPublicKeyAvailable({
-            id: signingKeyId,
-            organizationId: input.organizationId,
-            purpose: "session",
-            custody: "local",
-            algorithm: "secp256k1",
-            publicKeyHex: signer.publicKey,
-            status: "active",
-            data: { version: 1, type: "local-key" },
-          });
-          if (registeredSigner === undefined) {
-            return yield* new SessionKeyCreationError({ code: "SIGNER_ALREADY_REGISTERED" });
-          }
-          const created = yield* repository.core.sessionKey.insert({
-            organizationId: input.organizationId,
-            walletId: wallet.wallet.id,
-            signingKeyId,
-            createdByActorId: input.actorId,
-            namespace: input.request.namespace,
-            metadata: input.request.metadata,
-            policies,
-            policyHash,
-          });
-          for (const installation of installations) {
-            yield* repository.core.sessionKeyInstallation.insert({
-              ...installation,
-              organizationId: input.organizationId,
-              sessionKeyId: created.id,
-              walletId: wallet.wallet.id,
-              namespace: "eip155",
-              entityId,
-            });
-          }
-          const event = yield* audit.organization({
-            organizationId: input.organizationId,
-            actorId: input.actorId,
-            event: "session_key.created",
-            resourceType: "session-key",
-            resourceId: created.id,
-            data: {
-              version: 1,
-              walletId: created.walletId,
-              namespace: created.namespace,
-              policyTypes,
-            },
-          });
-          const organization = yield* repository.auth.organization.findById(input.organizationId);
-          if (organization === undefined) {
-            return yield* Effect.die("Session-key organization disappeared during creation");
-          }
-          const members = yield* repository.auth.member.findOrganizationMembersForOrg(
-            input.organizationId,
-          );
-          const configuredEmailExpiry = DateTime.addDuration(
-            now,
-            notificationPolicy["session_key.created"].emailTimeToLive,
-          );
-          const emailExpiry =
-            DateTime.toEpochMillis(effectiveExpiry) < DateTime.toEpochMillis(configuredEmailExpiry)
-              ? effectiveExpiry
-              : configuredEmailExpiry;
-          yield* createNotification({
-            organizationId: input.organizationId,
-            actorId: input.actorId,
-            type: "session_key.created",
-            resourceType: "session-key",
-            resourceId: created.id,
-            data: {
-              version: 1,
-              walletId: created.walletId,
-              namespace: created.namespace,
-              policyTypes,
-            },
-            idempotencyKey: `notification:session_key.created:${created.id}`,
-            correlationId: event.correlationId,
-            expiresAt: effectiveExpiry,
-            recipients: members
-              .filter(({ organizationRole }) =>
-                organizationRole.permissions.includes("session-key:read"),
+      const sessionKey = yield* transaction
+        .run(
+          Effect.gen(function* () {
+            yield* lockOrganizationBilling(repository, input.organizationId);
+            yield* enforceSessionKeyLimit(repository, input.organizationId, provider, periods);
+            const current = yield* repository.core.wallet.findByIdForUpdate(
+              wallet.wallet.id,
+              input.organizationId,
+            );
+            if (current === undefined || current.wallet.status !== "active")
+              return yield* new SessionKeyCreationError({ code: "WALLET_NOT_ACTIVE" });
+            if (
+              current.signingKey.id !== wallet.signingKey.id ||
+              current.signingKey.status !== "active"
+            )
+              return yield* new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" });
+            if (
+              DateTime.toEpochMillis(effectiveExpiry) <= DateTime.toEpochMillis(yield* DateTime.now)
+            )
+              return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
+            if (preparedSigner.data.type === "1claw") {
+              if (
+                preparedSigner.purpose !== "session" ||
+                !("credentialId" in preparedSigner) ||
+                !("providerConnectionId" in preparedSigner)
               )
-              .map(({ user }) => ({
-                userId: user.id,
-                email: {
-                  type: "session-key-created" as const,
-                  to: user.email,
-                  expiresAt: emailExpiry,
-                  variables: {
-                    sessionKeyName: created.metadata.name,
-                    actionUrl: dashboardEmailLink(
-                      config.dashboardPublicOrigin,
-                      `/session-key/${created.id}/overview`,
-                    ),
-                    walletName: wallet.wallet.metadata.name,
-                    organizationName: organization.metadata.name,
-                    expiresAt: DateTime.formatIso(effectiveExpiry),
+                return yield* Effect.die("Invalid managed session signer binding");
+              const credential = yield* repository.core.credentials.findById(
+                preparedSigner.credentialId,
+                input.organizationId,
+              );
+              const connection = yield* repository.core.providerConnections.findByIdForUpdate(
+                preparedSigner.providerConnectionId,
+                input.organizationId,
+              );
+              if (
+                !credential ||
+                credential.type !== "1claw-agent" ||
+                credential.data.agentId !== preparedSigner.data.agentId ||
+                !connection ||
+                connection.status !== "ready"
+              )
+                return yield* new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" });
+            }
+            const registeredSigner =
+              yield* repository.core.signingKey.insertIfPublicKeyAvailable(preparedSigner);
+            if (registeredSigner === undefined) {
+              return yield* new SessionKeyCreationError({ code: "SIGNER_ALREADY_REGISTERED" });
+            }
+            const created = yield* repository.core.sessionKey.insert({
+              organizationId: input.organizationId,
+              walletId: wallet.wallet.id,
+              signingKeyId,
+              createdByActorId: input.actorId,
+              namespace: input.request.namespace,
+              metadata: input.request.metadata,
+              policies,
+              policyHash,
+            });
+            for (const installation of installations) {
+              yield* repository.core.sessionKeyInstallation.insert({
+                ...installation,
+                organizationId: input.organizationId,
+                sessionKeyId: created.id,
+                walletId: wallet.wallet.id,
+                namespace: "eip155",
+                entityId,
+              });
+            }
+            const event = yield* audit.organization({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              event: "session_key.created",
+              resourceType: "session-key",
+              resourceId: created.id,
+              data: {
+                version: 1,
+                walletId: created.walletId,
+                namespace: created.namespace,
+                policyTypes,
+              },
+            });
+            const organization = yield* repository.auth.organization.findById(input.organizationId);
+            if (organization === undefined) {
+              return yield* Effect.die("Session-key organization disappeared during creation");
+            }
+            const members = yield* repository.auth.member.findOrganizationMembersForOrg(
+              input.organizationId,
+            );
+            const configuredEmailExpiry = DateTime.addDuration(
+              now,
+              notificationPolicy["session_key.created"].emailTimeToLive,
+            );
+            const emailExpiry =
+              DateTime.toEpochMillis(effectiveExpiry) <
+              DateTime.toEpochMillis(configuredEmailExpiry)
+                ? effectiveExpiry
+                : configuredEmailExpiry;
+            yield* createNotification({
+              organizationId: input.organizationId,
+              actorId: input.actorId,
+              type: "session_key.created",
+              resourceType: "session-key",
+              resourceId: created.id,
+              data: {
+                version: 1,
+                walletId: created.walletId,
+                namespace: created.namespace,
+                policyTypes,
+                custody,
+                ...(custody === "namera-managed" ? { provider: "1claw" as const } : {}),
+              },
+              idempotencyKey: `notification:session_key.created:${created.id}`,
+              correlationId: event.correlationId,
+              expiresAt: effectiveExpiry,
+              recipients: members
+                .filter(({ organizationRole }) =>
+                  organizationRole.permissions.includes("session-key:read"),
+                )
+                .map(({ user }) => ({
+                  userId: user.id,
+                  email: {
+                    type: "session-key-created" as const,
+                    to: user.email,
+                    expiresAt: emailExpiry,
+                    variables: {
+                      sessionKeyName: created.metadata.name,
+                      ...(created.metadata.logo ? { sessionKeyLogo: created.metadata.logo } : {}),
+                      ...(wallet.wallet.metadata.logo
+                        ? { walletLogo: wallet.wallet.metadata.logo }
+                        : {}),
+                      policyTypes,
+                      custody,
+                      ...(custody === "namera-managed" ? { provider: "1claw" as const } : {}),
+                      actionUrl: dashboardEmailLink(
+                        config.dashboardPublicOrigin,
+                        `/session-key/${created.id}/overview`,
+                      ),
+                      walletName: wallet.wallet.metadata.name,
+                      organizationName: organization.metadata.name,
+                      expiresAt: DateTime.formatIso(effectiveExpiry),
+                    },
                   },
-                },
-              })),
-          });
-          return created;
-        }),
-      );
+                })),
+            });
+            return created;
+          }),
+        )
+        .pipe(
+          Effect.catchTag("DatabaseError", (error) =>
+            custody === "local"
+              ? Effect.die(error)
+              : Effect.fail(new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" })),
+          ),
+        );
 
       yield* Metric.update(Metric.withAttributes(creationResults, { result: "success" }), 1);
       yield* Effect.logInfo("session_key.created").pipe(

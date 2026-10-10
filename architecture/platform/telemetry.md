@@ -37,8 +37,11 @@ appear in trace attributes. See [Google authentication](../auth/core/google.md).
   external providers when they explain meaningful work.
 - Use stable names such as `http.server POST /wallets`, never raw identifiers or
   query strings.
+- 1Claw discovery and JWKS use fixed `/providers/1claw/*` route templates.
+  Provider/customer/agent credentials are never span attributes; setup and
+  credential transitions are recorded by sanitized transactional audit events.
 - Project span namespaces are lowercase owning boundaries: `server.*`,
-  `application.*`, `database.*`, `emails.*`, `wallet-keys.*`, and `evm.*`.
+  `application.*`, `database.*`, `emails.*`, `wallet-providers.*`, and `evm.*`.
 - Repository spans are the normal database detail boundary. Low-level Drizzle
   and SQL-execute spans stay suppressed to avoid duplication.
 - Context lookup, decoding, field construction, cryptographic primitives, idle

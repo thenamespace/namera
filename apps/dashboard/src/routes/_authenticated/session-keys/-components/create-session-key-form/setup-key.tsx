@@ -17,7 +17,7 @@ const steps = [
   },
   {
     title: "Enable networks",
-    description: "Approve with your passkey now, or return to this later.",
+    description: "Approve with your account owner now, or return to this later.",
   },
 ];
 

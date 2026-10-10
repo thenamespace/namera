@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { DateTime } from "effect";
 
 import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
+import { evmPolicyDisplayNames } from "@namera-ai/protocol";
 import type { NotificationResponse } from "@namera-ai/protocol/dto";
 import type { NotificationType } from "@namera-ai/protocol/model";
 import { buttonVariants, Surface, Typography } from "@namera-ai/ui";
@@ -21,6 +22,7 @@ import {
 
 import { notificationPresentation } from "./data";
 import { NotificationIcon } from "./notification-icon";
+import { SessionNotificationCustody } from "./session-custody";
 
 type NotificationOf<Type extends NotificationType> = Extract<
   NotificationResponse,
@@ -201,6 +203,9 @@ export function WalletCreatedNotificationDetail({
       item={item}
     >
       <DetailList>
+        <DetailRow label="Namespace">
+          <NamespaceDisplay namespace="eip155" />
+        </DetailRow>
         <DetailRow label="Address">
           <EvmAddressDisplay address={item.notification.data.address} />
         </DetailRow>
@@ -210,6 +215,9 @@ export function WalletCreatedNotificationDetail({
         <DetailRow label="Ownership">
           <WalletOwnerDisplay
             custody={item.notification.data.custody}
+            provider={
+              "provider" in item.notification.data ? item.notification.data.provider : undefined
+            }
             protectionLevel={
               item.notification.data.custody === "namera-managed"
                 ? item.notification.data.protectionLevel
@@ -242,21 +250,21 @@ function SessionKeyNotificationDetail({
     <NotificationDetailLayout
       description={
         revoked
-          ? "Namera API, CLI, and MCP access for this session key was revoked, including its active grants. The local key can still exercise installed onchain permissions until the account owner removes them on each network. Open the session key to review removal status."
-          : "A local session key was registered. Its onchain permissions require the account owner’s passkey approval before use. Additional API policies apply to operations sent through Namera."
+          ? "Access for this session key was revoked, including its active grants. Open the session key to review its network status."
+          : "A session key was registered. Its onchain permissions require account-owner approval before use. Additional API policies apply to operations sent through Namera."
       }
       item={item}
     >
       <DetailList>
-        <DetailRow label="Namespace">
-          <NamespaceDisplay namespace={item.notification.data.namespace} />
+        <DetailRow label="Custody">
+          <SessionNotificationCustody notification={item.notification} />
         </DetailRow>
         {item.notification.type === "session_key.created" ? (
           <DetailRow label="Policies">
             <div className="flex flex-wrap gap-1.5">
               {item.notification.data.policyTypes.map((policy) => (
                 <span className="rounded-md bg-tertiary px-2 py-1 text-xs" key={policy}>
-                  {policy.replace("evm.", "").replaceAll("-", " ")}
+                  {evmPolicyDisplayNames[policy]}
                 </span>
               ))}
             </div>

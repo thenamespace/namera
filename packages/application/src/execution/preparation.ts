@@ -13,8 +13,13 @@ export const makePrepareExecution = Effect.gen(function* () {
   return Effect.fn("application.execution.prepareUnsigned")(function* (input: {
     readonly actor: GrantedActorData;
     readonly request: PrepareExecutionRequest;
+    readonly custody?: "local" | "namera-managed" | "either";
   }) {
-    const authority = yield* loadAuthority({ ...input.request, actor: input.actor });
+    const authority = yield* loadAuthority({
+      ...input.request,
+      actor: input.actor,
+      custody: input.custody ?? "local",
+    });
     const prepared = yield* evm.execution
       .prepare({
         account: authority.account,

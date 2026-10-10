@@ -14,6 +14,11 @@ export const BillingSubscriptionStatus = Schema.Literals([
   "ended",
 ]);
 
+/** Deployment migration marker; absent on newly created Free v2 subscriptions. */
+export const FreeBillingRolloutData = Schema.Struct({
+  freeV2RolloutAt: Schema.optionalKey(Schema.DateTimeUtcFromString),
+});
+
 export const BillingSubscription = Schema.Struct({
   id: BillingSubscriptionId,
   organizationId: OrganizationId,

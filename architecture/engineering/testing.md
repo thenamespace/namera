@@ -16,9 +16,11 @@ layers. Tests do not mock each application function independently.
 Application behavior exercised through the server boundary is not duplicated in
 a second application-only suite.
 
-Managed-wallet compatibility fixtures invoke the internal application directly:
-the beta HTTP create route rejects managed custody. A dedicated route regression
-covers that rejection without changing wallet, billing, or audit state; passkey
+Legacy GCP compatibility fixtures invoke the internal application directly; the
+HTTP route continues to reject GCP. 1Claw account suites compose its package-owned
+test layer with real HTTP/application/database boundaries. Owner callback tests
+live in application because no public arbitrary root-signing endpoint exists;
+they use migrated PGlite, real encryption and the EVM signature verifier. Passkey
 creation tests continue to use the public ceremony and create routes.
 
 Organize suites by boundary within their owning package: `tests/unit/` for pure
@@ -108,7 +110,7 @@ seeded and registration verification uses the package test provider.
 `billing/wallet-cap.test.ts` additionally races five separate organization members
 with fixed per-client cookies and distinct challenges/credentials. Package-owned
 P-256 packed self-attestations pass through the live WebAuthn verifier. Only one
-wallet is created at the last slot, with one audit pair and usage of 50.
+wallet is created at the last slot, with one audit pair and usage of 10 under Free v2.
 Chain account derivation remains a deterministic substitute; this lane does not
 verify browser hardware or live bundlers.
 
@@ -226,7 +228,7 @@ NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.
 ```sh
 pnpm --filter @namera-ai/server test
 pnpm --filter @namera-ai/server typecheck:test
-pnpm --filter @namera-ai/wallet-keys test
+pnpm --filter '@namera-ai/wallet-provider-*' test
 pnpm test
 pnpm typecheck:test
 pnpm check

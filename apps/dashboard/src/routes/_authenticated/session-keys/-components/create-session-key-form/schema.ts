@@ -10,6 +10,7 @@ import { hasTransactionAccess } from "./policies/catalog";
 export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields(
   ({ signer: _signer, ...fields }) => ({
     ...fields,
+    custody: Schema.Literals(["local", "namera-managed"]),
     metadata: fields.metadata.mapFields((metadata) => ({
       ...metadata,
       description: OptionalFormDescription,

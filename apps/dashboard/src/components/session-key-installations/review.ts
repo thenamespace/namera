@@ -9,6 +9,8 @@ import type {
 import type { ReviewedOwnerOperation } from "@namera-ai/sdk";
 import { createPublicClient, http } from "viem";
 
+import { isOneClawAccount } from "@/lib/session-owner";
+
 export async function reviewSessionInstallation(
   wallet: WalletResponse,
   installation: SessionKeyResponse["installations"][number],
@@ -47,4 +49,40 @@ export async function reviewSessionInstallation(
     { signal },
   );
   return { ...reviewed, credentialId: owner.credentialId, rpId: owner.rpId, sponsor: true };
+}
+
+export async function reviewManagedSessionInstallation(
+  wallet: WalletResponse,
+  installation: SessionKeyResponse["installations"][number],
+  kind: "install" | "uninstall",
+  signal: AbortSignal,
+  apiOrigin: string,
+) {
+  if (
+    !isOneClawAccount(wallet) ||
+    wallet.status !== "active" ||
+    wallet.data.validatorType !== "ecdsa_secp256k1" ||
+    wallet.data.accountMode !== "factory"
+  ) {
+    throw new Error("Managed owner does not match this account");
+  }
+  const { reviewManagedEvmSessionOperation } = await import("@namera-ai/evm/session-review");
+  const chain = getChainDataByCaip2(installation.chainId);
+  if (!chain) throw new Error("Unsupported approval chain");
+  const reviewed = await Effect.runPromise(
+    reviewManagedEvmSessionOperation(
+      {
+        wallet: { ...wallet.data, address: wallet.address, implementation: wallet.implementation },
+        chainId: installation.chainId,
+        authorization: installation.authorization,
+        kind,
+      },
+      createPublicClient({
+        chain: chain.chain,
+        transport: http(`${apiOrigin}/rpc/eip155/${chain.chain.id}`),
+      }),
+    ),
+    { signal },
+  );
+  return { ...reviewed, sponsor: true };
 }

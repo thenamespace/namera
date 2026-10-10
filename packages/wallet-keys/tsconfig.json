@@ -1,8 +1,0 @@
-{
-  "extends": ["../../tsconfig.json", "klarity/tsconfig/library/node"],
-  "compilerOptions": {
-    "customConditions": ["namera-source"],
-    "rootDir": "src"
-  },
-  "include": ["src/**/*.ts"]
-}

@@ -5,34 +5,42 @@ compiler and its contract-test coverage.
 
 Namera supports one EVM smart-account implementation: Alchemy Modular Account
 V2 with EntryPoint `0.7`. Its account boundary accepts two discriminated owner
-modes:
+modes, with separate account modes for ECDSA:
 
 - `webauthn_p256` uses Namera's counterfactual WebAuthn factory integration;
-- `ecdsa_secp256k1` uses Alchemy's Semi-Modular Account in EIP-7702 mode.
+- `ecdsa_secp256k1` with `accountMode: "factory"` uses a factory-deployed
+  Semi-Modular Account with an EOA owner and a separate smart-account address;
+- `ecdsa_secp256k1` with `accountMode: "7702"` preserves the legacy delegated EOA.
 
 The public create-wallet workflow creates only passkey-owned P-256 accounts. The
 secp256k1 construction, persistence, response, and reconstruction contracts are
 implemented internally; public creation does not expose 7702 accounts.
+The factory ECDSA adapter is also internal. Managed-account provisioning,
+credential persistence/renewal and public runtime exposure are not wired yet.
 
 The database stores only the public data needed to reconstruct the account.
 Public wallet creation uses a browser passkey; its private key remains with
-the authenticator. Internal managed-provider adapters belong to `wallet-keys`,
-whose server layer is disabled.
+the authenticator. Internal managed-provider adapters belong to independent
+`wallet-providers/gcp` and `wallet-providers/local` packages, whose server layers
+are disabled. Application supplies their signing callbacks to EVM.
 
 ## Stored account data
 
-| Field                   | Required | Owner mode | Description                                                               |
-| ----------------------- | -------- | ---------- | ------------------------------------------------------------------------- |
-| `version`               | Yes      | Both       | Namera wallet-data schema version. Currently `1`.                         |
-| `implementation`        | Yes      | Both       | Constant discriminator: `alchemy-modular-v2`.                             |
-| `modularAccountVersion` | Yes      | Both       | Alchemy Modular Account contract family version. Currently `2.0.0`.       |
-| `entryPointVersion`     | Yes      | Both       | ERC-4337 EntryPoint version. Currently `0.7`.                             |
-| `validatorType`         | Yes      | Both       | Union discriminator: `webauthn_p256` or `ecdsa_secp256k1`.                |
-| `salt`                  | Yes      | P-256      | Deterministic salt used by the WebAuthn Modular Account factory.          |
-| `entityId`              | Yes      | P-256      | Validation entity encoded into WebAuthn signatures and factory calls.     |
-| `accountMode`           | Yes      | secp256k1  | Constant `7702`; prevents confusing delegated EOAs with factory accounts. |
-| `delegationVersion`     | Yes      | secp256k1  | Alchemy 7702 delegation version used to reconstruct the account.          |
-| `address`               | Yes      | Both       | Counterfactual account or delegated EOA address.                          |
+| Field                   | Required | Owner mode       | Description                                                                 |
+| ----------------------- | -------- | ---------------- | --------------------------------------------------------------------------- |
+| `version`               | Yes      | Both             | Namera wallet-data schema version. Currently `1`.                           |
+| `implementation`        | Yes      | Both             | Constant discriminator: `alchemy-modular-v2`.                               |
+| `modularAccountVersion` | Yes      | Both             | Alchemy Modular Account contract family version. Currently `2.0.0`.         |
+| `entryPointVersion`     | Yes      | Both             | ERC-4337 EntryPoint version. Currently `0.7`.                               |
+| `validatorType`         | Yes      | Both             | Union discriminator: `webauthn_p256` or `ecdsa_secp256k1`.                  |
+| `salt`                  | Yes      | Factory accounts | Deterministic uint256 salt; encoded as a decimal string.                    |
+| `entityId`              | Yes      | P-256            | Validation entity encoded into WebAuthn signatures and factory calls.       |
+| `accountMode`           | Yes      | secp256k1        | `factory` or `7702`; never infer the mode from an ECDSA key alone.          |
+| `delegationVersion`     | Yes      | 7702             | Alchemy 7702 delegation version used to reconstruct the account.            |
+| `ownerAddress`          | Yes      | Factory ECDSA    | EOA derived from the supplied uncompressed secp256k1 public key.            |
+| `factoryVersion`        | Yes      | Factory ECDSA    | `2.0.0`, resolving the pinned AccountFactory deployment.                    |
+| `implementationVersion` | Yes      | Factory ECDSA    | `v1.0.0`, resolving SemiModularAccountBytecode (not the MA family version). |
+| `address`               | Yes      | Both             | Counterfactual account or delegated EOA address.                            |
 
 The public create-wallet DTO does not expose an implementation selector. EVM
 wallet creation always chooses this implementation and generates the derivation
@@ -85,6 +93,33 @@ flowchart LR
 The comparison detects mismatched owner keys, derivation inputs, account data,
 or addresses before Namera signs an operation.
 
+Factory ECDSA reconstruction also decodes its versioned metadata, validates the
+owner public point and EOA binding, and rejects an unsupported client chain before
+returning the account. Preparation/signing use the existing supported-chain
+registry and operational pause checks. Prepared factory-owner operations must
+match the client network and current canonical factory arguments and must not
+contain a 7702 authorization. If deployment occurs after preparation, reprepare
+instead of signing stale init data. No factory address or initialization bytes
+are accepted from persistence as authoritative derivation inputs.
+
+### Pinned factory ECDSA deployment
+
+`factory-ecdsa.ts` pins AccountFactory `2.0.0` at
+`0x00000000000017c61b5bEe81050EC8eFc9c6fecd` and
+SemiModularAccountBytecode `v1.0.0` at
+`0x000000000000c5A9089039570Dd36455b5C07383`.
+These match the installed SDK and [Alchemy deployments](https://www.alchemy.com/docs/wallets/smart-contracts/deployed-addresses).
+The SDK's `mode: "default"` computes CREATE2 using the owner/salt and encodes
+`createSemiModularAccount(owner, salt)`. The bytecode implementation embeds the
+fallback owner; no separately supplied owner initialization is needed.
+Persisted versions deliberately do not track changing SDK defaults.
+
+The existing eight-chain registry is the adapter's network boundary. Contract
+tests were run on a local Sepolia fork, not every production chain. Registration
+is offline derivation, not proof of onchain deployment, installed permissions,
+provider availability or enabled networks. Production rollout must verify each
+enabled network and hosted bundler/sponsorship separately.
+
 ## P-256 owner encoding and internal managed adapter
 
 `createWalletKeyWebAuthnAccount` adapts the provider-neutral P-256 signer to the
@@ -92,7 +127,7 @@ WebAuthn account expected by the Alchemy SDK:
 
 1. create a WebAuthn sign payload for the requested hash and configured origin
    and RP ID;
-2. ask `WalletKeys` to sign the payload bytes;
+2. invoke the application-supplied callback to sign the payload bytes;
 3. decode the provider's DER P-256 signature;
 4. construct the serialized WebAuthn response metadata;
 5. expose `sign`, `signMessage`, and `signTypedData` without exposing private
@@ -117,11 +152,20 @@ reconciliation updates installation state; see [session keys](../../wallets/sess
 
 ## secp256k1 owner adapter
 
+`createSecp256k1OwnerAccount` supports DER (default) and explicit `recoverable`
+65-byte signatures. It validates recovery against the stored public key and exact
+digest, accepts recovery bytes 0/1/27/28, and normalizes high-S plus parity. It does
+not expose `signAuthorization`. The callback must sign the supplied 32 bytes
+without hashing them again. Alchemy's UserOperation flow requests EIP-191 signing
+of the UserOperation hash; contract-message signing uses its replay-safe typed
+data. Those hashes are computed once before invoking the callback. The EVM package
+never imports a provider service or credential type.
+
 `createWalletKeySecp256k1Account` adapts a provider-neutral digest signer into
 the Viem local account required by Alchemy's 7702 mode:
 
 1. derive the EOA address from the stored uncompressed secp256k1 public key;
-2. ask `WalletKeys` to sign exact Keccak-256 digests;
+2. invoke the application-supplied callback to sign exact Keccak-256 digests;
 3. normalize DER signatures to low-S Ethereum signatures and recover parity
    against the stored public key;
 4. implement message, typed-data, and EIP-7702 authorization signing;
@@ -134,12 +178,31 @@ address must equal the owner address.
 
 ## Counterfactual behavior
 
-P-256 accounts may be undeployed. Preparation includes factory data when needed,
+P-256 and factory ECDSA accounts may be undeployed. Preparation includes factory data when needed,
 and the first successful UserOperation deploys the account. Signature
 verification supplies factory data when bytecode is absent so ERC-6492/ERC-1271
 verification can validate a counterfactual account. A 7702 account has no
 factory arguments; its authorization delegates the existing EOA to the selected
 Semi-Modular Account implementation.
+
+## Factory ECDSA verification
+
+Unit tests cover version/salt/owner/address corruption, substituted prepared
+factory data, unexpected authorization, unsupported/cross-chain inputs and
+recoverable signature failures. Protocol tests round-trip the salt without loss
+and reject missing or unsupported metadata. The existing wallet JSON column and
+repository schema decoding need no table or migration change for this variant.
+
+The opt-in `factory-ecdsa.test.ts` uses ephemeral local digest signing with the
+same callback shape as 1Claw. On a local Sepolia Anvil fork it compares prediction
+with `getAddressSemiModular`, deploys through EntryPoint `handleOps`, reconstructs
+and executes again without factory arguments, verifies message and typed-data
+signatures before/after deployment, and installs/executes/removes a restricted
+session. Wrong messages, typed data, session targets and removed validators are
+rejected. Existing passkey/session contract suites and 7702 unit tests remain.
+This is contract compatibility evidence, not live 1Claw or hosted bundler coverage.
+No audit mutation is added here: account registration and its atomic audits remain
+application-owned work in Phase 6.
 
 ## Adding another account implementation
 

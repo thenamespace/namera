@@ -588,9 +588,15 @@ importers:
       '@namera-ai/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
-      '@namera-ai/wallet-keys':
+      '@namera-ai/wallet-provider-gcp':
         specifier: workspace:*
-        version: link:../../packages/wallet-keys
+        version: link:../../packages/wallet-providers/gcp
+      '@namera-ai/wallet-provider-local':
+        specifier: workspace:*
+        version: link:../../packages/wallet-providers/local
+      '@namera-ai/wallet-provider-oneclaw':
+        specifier: workspace:*
+        version: link:../../packages/wallet-providers/oneclaw
       effect:
         specifier: 'catalog:'
         version: 4.0.1
@@ -768,9 +774,15 @@ importers:
       '@namera-ai/utils':
         specifier: workspace:*
         version: link:../utils
-      '@namera-ai/wallet-keys':
+      '@namera-ai/wallet-provider-gcp':
         specifier: workspace:*
-        version: link:../wallet-keys
+        version: link:../wallet-providers/gcp
+      '@namera-ai/wallet-provider-local':
+        specifier: workspace:*
+        version: link:../wallet-providers/local
+      '@namera-ai/wallet-provider-oneclaw':
+        specifier: workspace:*
+        version: link:../wallet-providers/oneclaw
       effect:
         specifier: 'catalog:'
         version: 4.0.1
@@ -1181,7 +1193,7 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
-  packages/wallet-keys:
+  packages/wallet-providers/gcp:
     dependencies:
       '@aws-crypto/crc32c':
         specifier: 5.2.0
@@ -1191,7 +1203,35 @@ importers:
         version: 6.2.1(supports-color@7.2.0)
       '@namera-ai/protocol':
         specifier: workspace:*
-        version: link:../protocol
+        version: link:../../protocol
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.1
+    devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.1(effect@4.0.1)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      klarity:
+        specifier: 'catalog:'
+        version: 0.3.0(@commitlint/cli@21.2.3(@types/node@26.6.4)(conventional-commits-parser@7.1.2)(typescript@7.0.2))(@commitlint/config-conventional@21.2.3)(lefthook@2.1.16)(oxfmt@0.71.0)(oxlint@1.86.0)(publint@0.3.25)(tsdown@0.23.0(@arethetypeswrong/core@0.18.5)(publint@0.3.25)(tsx@4.23.15)(typescript@7.0.2))(turbo@2.11.7)(typescript@7.0.2)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.23.0(@arethetypeswrong/core@0.18.5)(publint@0.3.25)(tsx@4.23.15)(typescript@7.0.2)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/wallet-providers/local:
+    dependencies:
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../../protocol
       '@noble/curves':
         specifier: 2.4.0
         version: 2.4.0
@@ -1218,7 +1258,50 @@ importers:
         specifier: 'catalog:'
         version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/wallet-providers/oneclaw:
+    dependencies:
+      '@1claw/sdk':
+        specifier: 0.61.38
+        version: 0.61.38
+      '@namera-ai/protocol':
+        specifier: workspace:*
+        version: link:../../protocol
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.1
+      jose:
+        specifier: ^6.2.12
+        version: 6.2.12
+      ox:
+        specifier: 'catalog:'
+        version: 1.8.5(typescript@7.0.2)
+      viem:
+        specifier: 'catalog:'
+        version: 2.57.2(typescript@7.0.2)(zod@4.6.5)
+    devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.1(effect@4.0.1)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      klarity:
+        specifier: 'catalog:'
+        version: 0.3.0(@commitlint/cli@21.2.3(@types/node@26.6.4)(conventional-commits-parser@7.1.2)(typescript@7.0.2))(@commitlint/config-conventional@21.2.3)(lefthook@2.1.16)(oxfmt@0.71.0)(oxlint@1.86.0)(publint@0.3.25)(tsdown@0.23.0(@arethetypeswrong/core@0.18.5)(publint@0.3.25)(tsx@4.23.15)(typescript@7.0.2))(turbo@2.11.7)(typescript@7.0.2)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.23.0(@arethetypeswrong/core@0.18.5)(publint@0.3.25)(tsx@4.23.15)(typescript@7.0.2)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
 packages:
+
+  '@1claw/sdk@0.61.38':
+    resolution: {integrity: sha512-ZFZ7r0Xzn5uyI04vRT2wPArQRg5Dp5ys4nSXoVDOn5gLtrbxxZBE24tAXc2SNidQCmDKb7daeZuVow7pbDGI+w==}
 
   '@adobe/react-spectrum-ui@1.2.1':
     resolution: {integrity: sha512-wcrbEE2O/9WnEn6avBnaVRRx88S5PLFsPLr4wffzlbMfXeQsy+RMQwaJd3cbzrn18/j04Isit7f7Emfn0dhrJA==}
@@ -8808,6 +8891,8 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@1claw/sdk@0.61.38': {}
 
   '@adobe/react-spectrum-ui@1.2.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:

@@ -158,23 +158,28 @@ export function ConnectedAccounts({
       ) : null}
       <AlertDialog.Backdrop isOpen={disconnectId !== null} onOpenChange={onDialogOpenChange}>
         <AlertDialog.Container size="sm">
-          <AlertDialog.Dialog>
+          <AlertDialog.Dialog className="rounded-xl">
             <AlertDialog.Header>
               <AlertDialog.Heading>Disconnect Google?</AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
-              You will no longer be able to sign in with this Google account. You can still sign in
-              using your Namera email. Existing sessions stay active.
+              Google sign-in will be disabled. Email sign-in and existing sessions stay active.
             </AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
+                size="sm"
                 variant="tertiary"
                 isDisabled={disconnect.isPending}
                 onPress={cancelDisconnect}
               >
                 Cancel
               </Button>
-              <Button variant="danger" isPending={disconnect.isPending} onPress={confirmDisconnect}>
+              <Button
+                size="sm"
+                variant="danger"
+                isPending={disconnect.isPending}
+                onPress={confirmDisconnect}
+              >
                 Disconnect Google
               </Button>
             </AlertDialog.Footer>

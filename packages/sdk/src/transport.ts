@@ -21,6 +21,8 @@ type NameraClientBaseConfig = {
   readonly baseUrl?: string;
   readonly fetch?: NameraFetch;
   readonly resolveSessionSigner?: ResolveSessionSigner;
+  /** Caller-approved fee ceiling for self-funded managed executions. */
+  readonly maxGasCostWei?: bigint;
 };
 
 export type NameraClientConfig = NameraClientBaseConfig &

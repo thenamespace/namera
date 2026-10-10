@@ -7,7 +7,6 @@ import { SiteFooter } from "#/components/marketing/site-footer";
 import { SiteHeader } from "#/components/marketing/site-header";
 import { Comparison } from "#/components/pricing/comparison";
 import { PlanCards } from "#/components/pricing/plan-cards";
-import { PLANS } from "#/components/pricing/plans";
 import { jsonLd, seo, SITE } from "#/lib/seo";
 
 /*
@@ -19,7 +18,7 @@ import { jsonLd, seo, SITE } from "#/lib/seo";
 const QUESTIONS: readonly AccordionItem[] = [
   {
     q: "What counts as an execution?",
-    a: "One transaction that Namera prepares, checks against your rules, signs and sends. A request that a rule refuses is not an execution: nothing is signed, nothing reaches the network, and it does not come out of your allowance.",
+    a: "A confirmed onchain operation submitted through Namera, including session-key installation and removal. Namera reserves capacity while an operation is in flight. Failed operations release that execution reservation; sponsored gas that was actually spent can still count.",
   },
   {
     q: "When does the month reset?",
@@ -27,11 +26,23 @@ const QUESTIONS: readonly AccordionItem[] = [
   },
   {
     q: "What happens when I reach a limit on the Free plan?",
-    a: "The operation is refused, the same way a policy refusal works: you get an error naming the limit, and nothing is signed or spent. Free has no overage path, so it stops rather than quietly costing you money.",
+    a: "Namera refuses new work when the required allowance is exhausted. Free does not charge overages. Existing accounts and keys are not deleted. Resource limits do not reset, but execution, signature and sponsored-gas allowances renew each month.",
   },
   {
     q: "How is sponsored gas measured?",
-    a: "At what the gas actually cost when it was paid, recorded per execution. The allowance is a dollar balance rather than a transaction count, because the cost of a transaction depends on the chain and how busy it is.",
+    a: "Using the provider-reported cost, including its sponsorship fee. Free includes $3 per workspace each month. Gas is a dollar allowance rather than a transaction count because costs vary by network and activity.",
+  },
+  {
+    q: "How many workspaces can I create?",
+    a: "You can own up to 3 workspaces, including your Personal workspace. Joining someone else’s workspace does not use one of those slots. Plan allowances apply separately to each workspace.",
+  },
+  {
+    q: "When does my existing workspace move to Free v2?",
+    a: "At its next monthly billing anniversary after the rollout. Your current allowances stay unchanged until then. Accounts and keys above a new capacity limit are retained, but you cannot create more while at or above that limit.",
+  },
+  {
+    q: "Can I use managed accounts or buy a paid plan now?",
+    a: "Not yet. 1Claw-managed account and session-key creation is coming soon. Pro, Business and Enterprise are future plans; displayed paid pricing and allowances are provisional and cannot be purchased.",
   },
 ];
 
@@ -72,14 +83,6 @@ export const Route = createFileRoute("/pricing")({
               name: SITE.name,
               description: DESCRIPTION,
               brand: { "@id": `${SITE.origin}/#organization` },
-              offers: PLANS.filter((plan) => plan.price.startsWith("$")).map((plan) => ({
-                "@type": "Offer",
-                name: plan.name,
-                price: plan.price.replace("$", ""),
-                priceCurrency: "USD",
-                availability: "https://schema.org/PreOrder",
-                url: `${SITE.origin}/pricing`,
-              })),
             },
             {
               "@type": "FAQPage",
@@ -107,6 +110,10 @@ function PricingPage() {
           <Container>
             <Reveal>
               <h1 className="type-display-lg text-center text-foreground">Pricing</h1>
+              <p className="mx-auto mt-5 max-w-2xl text-balance text-center text-muted">
+                Start with Free. Allowances apply per workspace, with up to 3 owned workspaces per
+                user. Paid plans and 1Claw-managed creation are coming later.
+              </p>
             </Reveal>
 
             <div className="mt-20 md:mt-28">

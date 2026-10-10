@@ -1,8 +1,6 @@
 import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
-import type { Hex } from "viem";
+import type { Hex, LocalAccount } from "viem";
 import type { WebAuthnAccount } from "viem/account-abstraction";
-
-import type { Secp256k1OwnerAccount } from "./secp256k1.js";
 
 export type AlchemyModularV2Owner =
   | {
@@ -11,7 +9,7 @@ export type AlchemyModularV2Owner =
     }
   | {
       readonly validatorType: "ecdsa_secp256k1";
-      readonly account: Secp256k1OwnerAccount;
+      readonly account: LocalAccount<"namera-secp256k1">;
     };
 
 export type AlchemyModularV2CreationOwner =

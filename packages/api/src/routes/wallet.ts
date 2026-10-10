@@ -42,10 +42,7 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
         ...BillingErrors,
         ...CommonErrors,
       ],
-    }).annotate(
-      OpenApi.Summary,
-      "Create a passkey-owned wallet (managed custody is disabled in beta)",
-    ),
+    }).annotate(OpenApi.Summary, "Create a passkey-owned or 1Claw-managed smart account"),
     HttpApiEndpoint.get("list", "/", {
       success: ListWalletsResponse,
       error: CommonErrors,

@@ -5,11 +5,16 @@ import { AtomRegistry } from "effect/reactivity";
 
 import { DashboardSeo } from "@/components/dashboard-seo";
 import { DataLoading } from "@/components/data-loading";
+import { RouteState } from "@/components/page/route-state";
 import { RouterError, RouterNotFound } from "@/components/route-failure";
 import { routeTree } from "@/routeTree.gen";
 
 function RouterPending() {
-  return <DataLoading className="min-h-[50vh]" label="Loading page" />;
+  return (
+    <RouteState>
+      <DataLoading className="min-h-[50vh]" label="Loading page" />
+    </RouteState>
+  );
 }
 
 export function getRouter() {

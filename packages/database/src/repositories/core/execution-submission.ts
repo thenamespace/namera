@@ -23,6 +23,14 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { executionSubmission } from "#/schema/index";
 
 export interface ExecutionSubmissionRepositoryService {
+  readonly claimForSigning: (input: {
+    readonly id: ExecutionSubmissionId;
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly leaseToken: string;
+    readonly now: DateTime.Utc;
+    readonly leaseExpiresAt: DateTime.Utc;
+  }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly getBacklog: (
     now: DateTime.Utc,
   ) => Effect.Effect<{ readonly count: number; readonly oldestAgeSeconds: number }, DatabaseError>;
@@ -33,6 +41,7 @@ export interface ExecutionSubmissionRepositoryService {
     readonly now: DateTime.Utc;
   }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly acceptSignature: (input: {
+    readonly leaseToken?: string;
     readonly id: ExecutionSubmissionId;
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -118,6 +127,36 @@ export class ExecutionSubmissionRepository extends Context.Service<
       const database = yield* Database;
 
       return ExecutionSubmissionRepository.of({
+        claimForSigning: Effect.fn("database.executionSubmissionRepository.claimForSigning")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(executionSubmission)
+              .set({
+                leaseToken: input.leaseToken,
+                leaseExpiresAt: encodeDate(input.leaseExpiresAt),
+              })
+              .where(
+                and(
+                  eq(executionSubmission.id, input.id),
+                  eq(executionSubmission.organizationId, input.organizationId),
+                  eq(executionSubmission.actorId, input.actorId),
+                  eq(executionSubmission.status, "reserved"),
+                  gt(executionSubmission.expiresAt, encodeDate(input.now)),
+                  or(
+                    isNull(executionSubmission.leaseExpiresAt),
+                    lte(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
+                  ),
+                  sql`${executionSubmission.data}->>'managedSignerBinding' IS NOT NULL`,
+                ),
+              )
+              .returning();
+            return rows[0] === undefined
+              ? undefined
+              : Schema.decodeUnknownSync(ExecutionSubmission)(rows[0]);
+          },
+          mapRepositoryError,
+        ),
         getBacklog: Effect.fnUntraced(function* (now: DateTime.Utc) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
@@ -178,6 +217,12 @@ export class ExecutionSubmissionRepository extends Context.Service<
                 eq(executionSubmission.organizationId, input.organizationId),
                 eq(executionSubmission.actorId, input.actorId),
                 eq(executionSubmission.requestHash, input.requestHash),
+                input.leaseToken === undefined
+                  ? sql`${executionSubmission.data}->>'managedSignerBinding' IS NULL`
+                  : and(
+                      eq(executionSubmission.leaseToken, input.leaseToken),
+                      gt(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
+                    ),
                 eq(executionSubmission.status, "reserved"),
                 gt(executionSubmission.expiresAt, encodeDate(input.now)),
                 sql`${executionSubmission.data}->'signedExecution' = 'null'::jsonb`,

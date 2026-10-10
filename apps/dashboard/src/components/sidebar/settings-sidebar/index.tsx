@@ -2,6 +2,8 @@ import type { PropsWithChildren } from "react";
 
 import { Sidebar } from "@namera-ai/ui";
 
+import { DashboardShellContext } from "@/components/page/route-state";
+
 import { SidebarGroup } from "../sidebar-group";
 import { SidebarHeader } from "./header";
 import { primaryGroupItems } from "./primary";
@@ -17,7 +19,7 @@ export const SettingsSidebar = ({ children }: PropsWithChildren) => {
           <SidebarGroup {...workspaceGroupItems} />
         </Sidebar.Content>
       </Sidebar>
-      {children}
+      <DashboardShellContext.Provider value={true}>{children}</DashboardShellContext.Provider>
     </Sidebar.Provider>
   );
 };

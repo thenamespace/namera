@@ -16,6 +16,7 @@ export const useSessionKey = toQuery(sessionKeyAtom);
 
 export const useCreateSessionKey = toMutation(createSessionKeyMutation, {
   invalidates: ({ payload }) => [
+    ...QueryKeys.billing.current,
     ...QueryKeys.sessionKey.all,
     ...QueryKeys.sessionKey.lists,
     ...QueryKeys.sessionKey.organizationLists,

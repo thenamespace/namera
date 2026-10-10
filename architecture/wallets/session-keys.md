@@ -1,8 +1,9 @@
 # Session keys and grants
 
 A session key is an immutable delegation attached to one wallet and one
-`signing_key`. Registration accepts a local secp256k1 public key; Namera never
-receives its private key. Chain installations store the compiled onchain
+`signing_key`. Registration accepts a local secp256k1 public key or provisions a
+dedicated 1Claw-managed session key; local private keys never reach Namera.
+Chain installations store the compiled onchain
 authorization separately from additional API policies. Registration is pending,
 not authority to execute. Machine actors additionally require an active grant.
 
@@ -13,7 +14,8 @@ the owner-approved configuration. Alchemy's execution time/spend hooks do not
 constrain ERC-1271 signatures; only onchain uninstall removes that authority.
 See [onchain session compilation](../evm/accounts/onchain-sessions.md).
 
-The SDK and local MCP sign delegated operations using client-held session keys.
+The SDK and local MCP use client-held local keys or server-held 1Claw session keys
+through the same execute/sign methods and HTTP endpoints.
 The dashboard can register/export a local signer and approve installation/removal.
 
 ## Persistence and policy references
@@ -29,6 +31,101 @@ codes.
 
 ## Creation
 
+### Managed-custody contract foundation (Phase 11)
+
+The creation schema accepts either the existing local signer or
+`{ custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" }`.
+Managed input must not contain public/private key material, agent IDs, credential
+IDs or connection IDs. Phase 12 enables pending managed-session creation through
+the existing endpoint. `MANAGED_SESSION_KEYS_UNAVAILABLE` remains the failure
+when the provider services are absent, not a deployment feature flag.
+
+Full session responses expose `signer` with custody, algorithm and public key,
+plus provider for managed custody. Mapping explicitly excludes credential and
+provider-resource references. Summary projections remain unchanged: consumers
+must load a full session before selecting its signing path. Parent account
+ownership determines installation approval, not session signer custody. Local
+SDK bindings and dashboard registration recovery reject managed requests.
+
+The signing-key lookup is tenant- and session-purpose-scoped. The database binds
+each session to a `purpose = session` signer and requires a provider connection
+for 1Claw session signers. Existing credential/connection foreign keys enforce
+tenant ownership; encrypted credential-to-agent binding remains a provisioning
+and signing boundary check, not a JSON foreign-key guarantee. Typed creation
+errors map setup failures to `PROVIDER_SETUP_FAILED` and ambiguous/partial
+provisioning to `PROVIDER_RECOVERY_REQUIRED`; vendor responses are not public errors.
+
+Contract, mapper, local compatibility and database boundary tests cover these
+invariants, including root-key substitution and cross-tenant references.
+
+### Managed provisioning (Phase 12)
+
+User authorization precedes the application call. Managed creation is limited to
+20 attempts per organization per hour; local creation retains its existing behavior.
+The application validates the parent, lifetime, policy cardinality and the managed
+session allowance. A discarded public-only compilation using the account address
+checks network/permission eligibility before provider allocation. It is never
+stored or signed; final installation calldata is compiled with the new session key.
+
+The shared 1Claw provisioner receives explicit `session` purpose (`wallet-root`
+for account creation). It reuses or initializes the organization's empty-bootstrap
+connection, saves the one-time agent credential encrypted with its audit, creates
+one Ethereum key, enables raw signing and verifies key metadata. The session
+agent/key is separate from the account owner, regardless of owner custody.
+
+The final transaction locks billing, repeats the custody-specific capacity and
+account/lifetime checks, validates the agent credential binding and ready tenant
+connection, and inserts signer, pending session, pending installations, audit,
+notifications and email jobs atomically. No installation approval, activation,
+grant or signature is performed. No new table, migration or configuration is needed.
+
+Remote resources cannot roll back with the final transaction. Persisted encrypted
+credentials and their audits survive later failure for operator reconciliation;
+there is no automatic agent-create retry or orphan deletion. Compilation/storage
+failure after provisioning returns `PROVIDER_RECOVERY_REQUIRED`. A lost final quota
+race or expiry still returns the corresponding domain error and may leave an
+unreferenced agent; inspect saved credential audits before manual cleanup.
+
+HTTP tests cover both parent owners, first setup and connection reuse, independent
+quotas, encrypted/non-public credentials, permission/tenant/expiry rejection,
+ambiguous bootstrap, rate limits, disabled connections and transaction rollback.
+Disposable PostgreSQL verifies last-slot concurrent admission. Provider and chain
+services are substitutes; this is not live-provider or mainnet verification.
+Lifecycle compatibility, managed execution/signing and client/dashboard custody
+selection are implemented. Development provider verification remains Phase 17.
+
+### Managed operation recovery (Phases 14–15)
+
+The unified `/executions/prepare` and `/signatures/prepare` endpoints resolve
+custody from the granted session. Managed responses return `signing.method = server`;
+completion on the shared routes accepts only stored operation identifiers, with the same actor, grant, installation, expiry and policy checks.
+The shared 1Claw session resolver rejects wallet-root keys and verifies encrypted
+credential, tenant, connection, agent and public-key bindings.
+
+- Execution submissions already contain actor-bound idempotency, lease tokens,
+  lease expiry, prepared data, signed execution and a broadcast-attempt marker.
+  Phase 14 adds fenced claim/accept transitions, a public signer-binding snapshot,
+  and two-minute exclusive signing leases. Existing reconciliation and signed
+  envelope storage are reused without a second submission/provisioning table.
+- Returned message/typed-data signatures must not be persisted in the database,
+  including encrypted result caches, or written to logs. Keep operation metadata,
+  authorization, billing and audit state, but do not promise response replay.
+  If provider signing succeeds and the response is lost, an explicit retry may
+  sign again and incur another signature charge. This is an accepted product
+  trade-off, not an exactly-once delivery guarantee. A succeeded managed operation
+  cannot replay; a fresh idempotency key reserves a fresh authorized billable
+  attempt. Two nullable signature-operation lease columns fence provider work.
+  Expiry recovery clears the lease and holds; late results cannot settle them.
+  See [executions](../operations/executions.md) and
+  [signatures](../operations/signatures.md) for the exact transitions.
+
+This no-result-storage decision applies to message/typed-data signing. It does
+not change existing signed execution submission persistence or broadcast recovery;
+duplicate onchain execution must still be prevented.
+
+Neither path may expose a general-purpose raw-signing API or substitute a root
+owner signature for a session signature.
+
 ```mermaid
 sequenceDiagram
   actor Admin
@@ -37,7 +134,7 @@ sequenceDiagram
   participant Tx as PostgreSQL transaction
 
   Admin->>App: wallet + public signer + chains + lifetime + permissions + API policies
-  App->>App: verify active tenant wallet and local passkey owner
+  App->>App: verify active tenant wallet and supported public owner
   App->>EVM: validate signer curve point and compile each chain installation
   EVM-->>App: canonical signer and installation calldata/configuration
   App->>App: canonical policy hash excluding generated IDs
@@ -61,6 +158,43 @@ the requested chain's installation. Receipt reconciliation invokes activation
 only after confirming the installation.
 
 ## Owner approval
+
+Registration and delegated execution reconstruct the parent account using only
+public owner material: either a local passkey or a 1Claw-managed Ethereum
+secp256k1 factory-account owner. Compilation, simulation and local session
+preparation do not decrypt provider credentials or invoke the root signer.
+Session signers may be local or 1Claw-managed. Installation and removal use the
+stored public authorization and parent owner only, never the session credential.
+
+### Custody compatibility (Phase 13)
+
+Both session custody types use the existing owner-operation routes and ledger:
+
+| Parent account | Session key | Installation/removal approval |
+| -------------- | ----------- | ----------------------------- |
+| Passkey        | Local       | Passkey prepare/complete      |
+| Passkey        | 1Claw       | Passkey prepare/complete      |
+| 1Claw          | Local       | Managed prepare/approve       |
+| 1Claw          | 1Claw       | Managed prepare/approve       |
+
+No additional route, table, configuration or provider-signing path is needed.
+The dedicated session key remains distinct from the wallet-root signing key;
+managed owner operations snapshot the latter. Operation audits identify the
+session, installation and operation; the operation's wallet identifies its owner.
+Revocation does not destroy either provider key or disable the owner. A disabled
+session signer does not prevent its owner approving removal.
+
+The HTTP custody matrix covers two-network installation/removal, wrong owner
+route rejection, idempotent preparation/approval, pending-to-active receipt
+transitions, missing receipt recovery, settled billing, expired approval and
+session lifetime, immediate grant revocation, late installation after revocation,
+failed installation/removal retries and single final audit. The matrix and
+managed-owner lease/concurrency suite also pass against disposable PostgreSQL.
+Passkey assertions use the real
+verifier; managed owner signatures use separate deterministic provider keys and
+the real signature verifier. Chain submission/receipts are substitutes, not live
+1Claw/bundler verification. Managed session execution, message signing and
+dashboard/client support use the same delegated APIs as local sessions.
 
 `POST /session-keys/operations/prepare` takes an installation ID, install/uninstall
 kind, idempotency key and sponsorship choice. It accepts no arbitrary calldata.
@@ -98,6 +232,40 @@ response. Registration/approval alone never sets a session to active.
 `session-key:read` to poll only operation ID and status. Cross-tenant IDs return
 `OPERATION_UNAVAILABLE`; machine credentials cannot read owner approval records.
 Neither signed envelopes nor private approval/lease data cross this boundary.
+
+### 1Claw-managed owner
+
+`POST /session-keys/operations/managed/prepare` uses the same preparation input
+and ledger, but returns `approval: "1claw"` instead of WebAuthn options. It
+snapshots the owner signing-key ID and public key. The passkey endpoints retain
+their existing contracts and reject managed owners.
+
+`POST /session-keys/operations/managed/approve` accepts only an operation ID.
+It requires the initiating user and the corresponding create/revoke permission;
+API keys and OAuth machine actors cannot invoke it. Before signing and again
+before acceptance, the application verifies current membership/permission,
+owner binding, ready provider connection, expiry and installation lifecycle.
+The operation must contain the exact stored installation/removal self-call.
+The EVM signer validates its encoded envelope; this is not an arbitrary owner
+signing endpoint.
+
+A wallet-locked transaction claims a two-minute signing lease. Concurrent
+approvals cannot use an already-held lease. The provider call runs outside the
+transaction with a 90-second signing timeout. Signature acceptance requires the
+same still-live lease, then atomically reserves billing and writes the approval
+audit event. Failure releases only that request's unsigned lease; a crashed
+request can be retried after lease expiry. Stale requests cannot accept a
+signature or clear a replacement lease. A provider may have signed before a
+later database failure, but these bytes are neither returned nor broadcast.
+
+Accepted operations use the existing receipt worker for installation/removal.
+Boundary tests cover real test-provider digest signatures, idempotency,
+concurrency on PostgreSQL, lease recovery, provider failure, tenant/actor
+isolation, expiry, revoked sessions, disabled connections, calldata substitution
+and billing rollback. Routine local-session preparation/simulation is tested
+without owner signing. Network submission remains substituted; live 1Claw and
+bundler end-to-end verification is still required. Dashboard managed-owner
+selection and explicit approval UI are wired.
 
 ## Receipt recovery
 
@@ -198,9 +366,15 @@ optional API policies. Native/gas budgets serialize exact base units and apply
 per network over the installation lifetime. Dates use local midnight. Root
 requires explicit acknowledgement and does not implicitly enable signatures.
 Signature consent defaults off; execution expiry does not remove ERC-1271
-authority. Only active local P-256 owners appear in the account picker.
+authority. The account picker admits active local P-256 owners and 1Claw-managed
+secp256k1 factory accounts; GCP and legacy 7702 owners are not selectable.
 
-Creation generates a local SDK draft on first submission and puts only its public
+Managed custody skips export/import and validates the returned public signer,
+account, networks and permissions before offering owner approval. Capacity is
+read from billing; ambiguous creation errors block blind retries. Local and
+managed sessions appear in the same grant selectors, with a distinct custody label.
+
+Local creation generates an SDK draft on first submission and puts only its public
 signer in form/API state. The draft stays in a ref and is disposed on unmount or
 after the user acknowledges importing/backing it up. Successful registration is
 checked against the submitted configuration and selected wallet before constructing
@@ -246,6 +420,17 @@ consent and API policies must match the submitted request before export.
 Lookup failure retains the same draft for retry. This reuses the existing
 authorized list endpoint; it does not send private material or create a second
 signer. Closing the page still loses an unexported local key.
+
+Managed-owner review reconstructs the factory account from public owner address,
+salt and pinned versions and compiles the selected installation independently.
+`validateManagedOwnerApproval` applies the same account, chain, owner nonce,
+factory, self-call, expiry and sponsored-gas checks as passkey approval, without
+a WebAuthn challenge. Clicking Approve prepares, validates and submits installation
+directly, without a second dialog. Removal still requires a confirmation dialog
+showing the account, network, permissions, lifetime and signature authority before
+calling managed approve with the operation ID. Cancellation does not sign; retries
+retain the preparation identity. Expiry is checked again after removal confirmation. Accepted
+operations use existing receipt polling; no optimistic activation is added.
 
 ### Recovering an owner approval
 

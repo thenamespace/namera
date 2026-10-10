@@ -31,6 +31,8 @@ export const SystemRoleId = createBrandedId("SystemRoleId");
 // Core Tables
 export const WalletKeyId = createBrandedId("WalletKeyId");
 export const SigningKeyId = createBrandedId("SigningKeyId");
+export const CredentialId = createBrandedId("CredentialId");
+export const ProviderConnectionId = createBrandedId("ProviderConnectionId");
 export const WalletId = createBrandedId("WalletId");
 export const SessionKeyId = createBrandedId("SessionKeyId");
 export const SessionKeyInstallationId = createBrandedId("SessionKeyInstallationId");
@@ -83,6 +85,8 @@ export type InvitationId = typeof InvitationId.Type;
 export type SystemRoleId = typeof SystemRoleId.Type;
 export type WalletKeyId = typeof WalletKeyId.Type;
 export type SigningKeyId = typeof SigningKeyId.Type;
+export type CredentialId = typeof CredentialId.Type;
+export type ProviderConnectionId = typeof ProviderConnectionId.Type;
 export type WalletId = typeof WalletId.Type;
 export type SessionKeyId = typeof SessionKeyId.Type;
 export type SessionKeyInstallationId = typeof SessionKeyInstallationId.Type;

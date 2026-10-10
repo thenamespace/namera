@@ -26,6 +26,10 @@ type Result = Effect.Effect<SessionKeyOperation | undefined, DatabaseError>;
 type Batch = Effect.Effect<ReadonlyArray<SessionKeyOperation>, DatabaseError>;
 
 export interface SessionKeyOperationRepositoryService {
+  readonly claimForSigning: (
+    input: Lease & { readonly actorId: ActorId; readonly leaseExpiresAt: DateTime.Utc },
+  ) => Result;
+  readonly releaseSigningLease: (input: Scope & { readonly leaseToken: string }) => Result;
   readonly getBacklog: (
     now: DateTime.Utc,
   ) => Effect.Effect<{ readonly count: number; readonly oldestAgeSeconds: number }, DatabaseError>;
@@ -59,6 +63,7 @@ export interface SessionKeyOperationRepositoryService {
       readonly now: DateTime.Utc;
       readonly leaseToken: string;
       readonly leaseExpiresAt: DateTime.Utc;
+      readonly signingLeaseToken?: string;
     },
   ) => Result;
   readonly markSubmitted: (input: Lease) => Result;
@@ -110,6 +115,49 @@ export class SessionKeyOperationRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return SessionKeyOperationRepository.of({
+        claimForSigning: Effect.fn("database.sessionKeyOperation.claimForSigning")(function* (
+          input,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                leaseToken: input.leaseToken,
+                leaseExpiresAt: date(input.leaseExpiresAt),
+              })
+              .where(
+                and(
+                  scoped(input),
+                  eq(table.actorId, input.actorId),
+                  eq(table.status, "awaiting-signature"),
+                  gt(table.expiresAt, date(input.now)),
+                  or(isNull(table.leaseExpiresAt), lte(table.leaseExpiresAt, date(input.now))),
+                  sql`${date(input.leaseExpiresAt)}::timestamptz > ${date(input.now)}::timestamptz`,
+                ),
+              )
+              .returning(),
+          );
+        }, mapRepositoryError),
+        releaseSigningLease: Effect.fn("database.sessionKeyOperation.releaseSigningLease")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            return decode(
+              yield* db
+                .update(table)
+                .set({ leaseToken: null, leaseExpiresAt: null })
+                .where(
+                  and(
+                    scoped(input),
+                    eq(table.status, "awaiting-signature"),
+                    eq(table.leaseToken, input.leaseToken),
+                  ),
+                )
+                .returning(),
+            );
+          },
+          mapRepositoryError,
+        ),
         getBacklog: Effect.fnUntraced(function* (now: DateTime.Utc) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
@@ -240,6 +288,12 @@ export class SessionKeyOperationRepository extends Context.Service<
                   eq(table.actorId, input.actorId),
                   eq(table.requestHash, input.requestHash),
                   eq(table.status, "awaiting-signature"),
+                  input.signingLeaseToken === undefined
+                    ? isNull(table.leaseToken)
+                    : and(
+                        eq(table.leaseToken, input.signingLeaseToken),
+                        gt(table.leaseExpiresAt, date(input.now)),
+                      ),
                   gt(table.expiresAt, date(input.now)),
                   sql`${date(input.leaseExpiresAt)}::timestamptz > ${date(input.now)}::timestamptz`,
                 ),
@@ -331,7 +385,12 @@ export class SessionKeyOperationRepository extends Context.Service<
           return decodeBatch(
             yield* db
               .update(table)
-              .set({ status: "expired", finishedAt: date(input.now) })
+              .set({
+                status: "expired",
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
               .where(inArray(table.id, due))
               .returning(),
           );
@@ -352,7 +411,12 @@ export class SessionKeyOperationRepository extends Context.Service<
           return decodeBatch(
             yield* db
               .update(table)
-              .set({ status: "expired", finishedAt: date(input.now) })
+              .set({
+                status: "expired",
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
               .where(
                 and(
                   eq(table.organizationId, input.organizationId),

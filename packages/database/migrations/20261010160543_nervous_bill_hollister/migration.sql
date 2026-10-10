@@ -1,0 +1,3 @@
+ALTER TABLE "core"."signature_operation" ADD COLUMN "lease_token" text;--> statement-breakpoint
+ALTER TABLE "core"."signature_operation" ADD COLUMN "lease_expires_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "core"."signature_operation" ADD CONSTRAINT "signature_operation_lease_check" CHECK (("lease_token" IS NULL AND "lease_expires_at" IS NULL) OR ("status" = 'reserved' AND "lease_token" IS NOT NULL AND "lease_expires_at" IS NOT NULL));

@@ -13,7 +13,7 @@ import { ExecuteEvmRequest } from "./execution.js";
 export const PrepareEvmExecutionRequest = ExecuteEvmRequest.annotate({
   identifier: "PrepareEvmExecutionRequest",
   description:
-    "Prepare one call batch for one explicitly selected local session key. Does not sign or broadcast. The SDK reuses its internal idempotency key when retrying preparation.",
+    "Prepare one call batch for the selected session key. The server resolves custody. Does not sign or broadcast.",
 });
 
 export const PrepareExecutionRequest = Schema.Union([PrepareEvmExecutionRequest], {
@@ -27,18 +27,21 @@ export const PrepareEvmExecutionResponse = Schema.Struct({
   installationId: SessionKeyInstallationId,
   signingKeyId: SigningKeyId,
   prepared: EvmPreparedExecution,
-  signing: Schema.Struct({
-    method: Schema.Literal("personal_sign"),
-    message: Bytes32.annotate({
-      description:
-        "Canonical ERC-4337 UserOperation hash. Sign these 32 raw bytes with EIP-191 personal-sign, not the UTF-8 hex string and not an unprefixed digest. The client must recompute this hash from prepared before signing.",
+  signing: Schema.Union([
+    Schema.Struct({
+      method: Schema.Literal("personal_sign"),
+      message: Bytes32.annotate({
+        description:
+          "Canonical ERC-4337 UserOperation hash. Sign these 32 raw bytes with EIP-191 personal-sign, not the UTF-8 hex string and not an unprefixed digest. The client must recompute this hash from prepared before signing.",
+      }),
     }),
-  }),
+    Schema.Struct({ method: Schema.Literal("server") }),
+  ]),
   expiresAt: Schema.DateTimeUtcFromDate,
 }).annotate({
   identifier: "PrepareEvmExecutionResponse",
   description:
-    "The persisted unsigned operation and local signer identity. The stub signature in prepared is not authorization. No private key or provider credential is returned.",
+    "The persisted unsigned operation and session signer identity. Local custody returns a challenge; managed custody returns method server. The stub signature in prepared is not authorization. No private key or provider credential is returned.",
 });
 
 export const PrepareExecutionResponse = Schema.Union([PrepareEvmExecutionResponse], {
@@ -48,14 +51,16 @@ export const PrepareExecutionResponse = Schema.Union([PrepareEvmExecutionRespons
 export const CompleteEvmExecutionRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   submissionId: ExecutionSubmissionId,
-  signature: Hex.check(
-    Schema.isPattern(/^0x[0-9a-fA-F]{130}$/, {
-      message: "Expected a 65-byte secp256k1 personal-sign signature",
+  signature: Schema.optionalKey(
+    Hex.check(
+      Schema.isPattern(/^0x[0-9a-fA-F]{130}$/, {
+        message: "Expected a 65-byte secp256k1 personal-sign signature",
+      }),
+    ).annotate({
+      description:
+        "The local session signer's 65-byte r/s/v signature. Do not include the Modular Account validation envelope; the server verifies the signer and constructs that envelope from stored authority.",
     }),
-  ).annotate({
-    description:
-      "The local session signer's 65-byte r/s/v signature. Do not include the Modular Account validation envelope; the server verifies the signer and constructs that envelope from stored authority.",
-  }),
+  ),
 }).annotate({
   identifier: "CompleteEvmExecutionRequest",
   description:
@@ -81,6 +86,6 @@ export const CompleteExecutionResponse = Schema.Struct({
 }).annotate({
   identifier: "CompleteExecutionResponse",
   description:
-    "Durable local-signature acceptance. Prepared means queued for broadcast, not submitted or confirmed. Poll submission status for the chain outcome.",
+    "Durable session-signature acceptance. Prepared means queued for broadcast, not submitted or confirmed. Poll submission status for the chain outcome.",
 });
 export type CompleteExecutionResponse = typeof CompleteExecutionResponse.Type;

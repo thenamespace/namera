@@ -26,6 +26,12 @@ and decoding failures reach retry feedback. Detail parents validate IDs and
 prefetch their data. Query failures use local `DataError` boundaries where the
 surrounding shell can remain useful. Feedback never exposes raw exceptions.
 
+Sidebar layouts mark the dashboard shell so route loading, error and not-found
+fallbacks retain the bordered page panel and center their feedback inside it.
+Nested failures reuse an existing panel rather than adding another main region;
+authentication failures outside the shell do not require a sidebar. Rendering
+tests cover loading, errors, authentication and nested-panel reuse.
+
 Denied `Unauthorized`/`Forbidden` query results expose no cached data, including
 while retrying. Denied queries/mutations refresh current-user authority. Ordinary
 network failures retain already-loaded data. The current-user atom revalidates
@@ -56,6 +62,10 @@ permission-aware quick-action links for account/session-key creation, MCP setup,
 API-key management, and member invitations instead of the source chart. Recent executions reuse the Activity table; quota and period consumption
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
+Free v2 includes separate self-owned and 1Claw-managed account/session capacities.
+1Claw account and session-key creation are available. Legacy organizations see the scheduled
+Free v2 date from the API; over-limit capacity stays visible without implying
+that existing resources were removed. Paid upgrades remain unavailable.
 
 ## Account creation and portfolio
 
@@ -66,10 +76,21 @@ permission-aware session-key shortcut. The shortcut preselects only an eligible
 account from the current workspace's wallet list; invalid or unavailable search
 IDs do not select an account. Normal account links still open the overview.
 
-Account creation requires a form-only recovery acknowledgement before the browser
-passkey ceremony. WebAuthn display labels use the account name; the challenge,
+Account creation defaults to 1Claw Managed, followed by User-owned passkey in the
+selector; Namera Managed remains last and disabled. Managed creation posts the 1Claw owner variant without a
+WebAuthn ceremony and uses the existing success page. Ownership displays show
+the provider logo, without an HSM claim. WebAuthn display labels use the account name; the challenge,
 user handle and RP ID remain server-issued. No private owner key enters API or
 form state. See [accounts](../wallets/accounts.md).
+
+Network installation/removal selects passkey approval or managed prepare/approve
+from the parent account, independently of session-key custody. Managed approval
+independently reconstructs and validates the operation before an explicit
+confirmation dialog. Cancel signs nothing; retry retains the idempotency key,
+and signed operations use existing receipt polling. Quota feedback uses the
+current subscription response, not hardcoded Free v2 limits. Browser checks
+cover ownership selection and fallback layout; live provisioning, encrypted
+import and onchain approval still require the configured development environment.
 
 Assets prefetches the account's paginated portfolio into the shared registry and
 loads all pages. Token rows display the token icon with a chain badge, balance,
@@ -78,10 +99,29 @@ the same exact-valued response and network visibility filters. Unpriced assets
 remain visible and are excluded from USD allocation; small slices group into
 Other. The tertiary refresh icon requests a fresh server snapshot and invalidates
 the account query. Failures retain the displayed snapshot and show feedback.
+All networks are visible by default. The table has no view-options control; its
+Chain filter includes every supported mainnet and testnet, grouped by environment,
+even when there are no balances. Filters affect table rows, not the portfolio summary.
 The server's five-minute cache is independent of frontend query lifetime; see
 [portfolio](../evm/portfolio.md) for cache keys, paging and provider limits.
 
-## Session authority and local keys
+## Session authority and custody
+
+Creation defaults to 1Claw Managed independently of the parent account. The selector
+lists 1Claw Managed, User Owned, then disabled Namera Managed (coming soon).
+Managed registration validates the returned public identity, permissions and
+networks before enabling approval. It skips generation/export/import and proceeds
+to network approval; it never downloads provider credentials. Ambiguous errors
+block resubmission and direct the user to inspect existing sessions or support.
+Members with billing read access cannot select exhausted custody options; the options
+show a Limit reached pill, and submission is blocked if the selected custody becomes full.
+Quota checks on the server remain authoritative. Custody follows Account in the form;
+an inline error explains why Networks/Lifetime alone do not grant access.
+Account and session-key pickers omit custody, while account tables default to Ownership
+instead of Implementation. Detail and success pages display custody; managed next steps require
+login/grants but no import. Namera Managed remains disabled.
+
+### Local keys
 
 Creation presents six capabilities: Contract access, Token spending, Native
 spending limit, Gas budget, Signatures and Unrestricted account access. Contract
@@ -150,7 +190,7 @@ available through filters. Detail pages fetch expanded relations separately.
 
 Settings provides local CLI stdio setup and authorization management. The agent
 launches `namera mcp serve`; browser OAuth consent is separate from CLI device
-login and API keys. Imported local keys provide signing. Credentials persist in
+login and API keys. Imported local keys or server-held 1Claw session keys provide signing. Credentials persist in
 the OS keyring across process restarts; see [local MCP](../clients/local-mcp.md).
 The setup selector includes Codex, Claude Code and Gemini CLI with
 add-server commands. Each uses a distinct

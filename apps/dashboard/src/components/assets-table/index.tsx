@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
+import { chains as supportedChains, getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { EthereumAddress } from "@namera-ai/protocol";
 import type { PortfolioAsset } from "@namera-ai/protocol/dto";
 import { Button, DataGrid, SearchField, type DataGridSortDescriptor } from "@namera-ai/ui";
@@ -12,28 +12,19 @@ import {
   TableControls,
   TableFilterControl,
   toTableSelection,
-  uniqueTableValues,
   type TableFilterFacet,
 } from "@/components/common/table";
 import { ChainDisplay } from "@/components/display";
 
-import { AssetViewOptions } from "./asset-view-options";
 import { assetColumns, assetSorters, getAssetRowId, type AssetGridRow } from "./columns";
 import { getAssetName, getAssetSymbol, summarizePortfolio } from "./data";
 
 type AssetsTableProps = {
   readonly address: EthereumAddress;
   readonly assets: ReadonlyArray<PortfolioAsset>;
-  readonly showTestnets: boolean;
-  readonly onShowTestnetsChange: (showTestnets: boolean) => void;
 };
 
-export function AssetsTable({
-  address,
-  assets,
-  showTestnets,
-  onShowTestnetsChange,
-}: AssetsTableProps) {
+export function AssetsTable({ address, assets }: AssetsTableProps) {
   const portfolio = useMemo(() => summarizePortfolio(assets, address), [address, assets]);
   const [query, setQuery] = useState("");
   const [chains, setChains] = useState<ReadonlySet<string>>(new Set());
@@ -49,12 +40,12 @@ export function AssetsTable({
 
   const chainOptions = useMemo(() => {
     const counts = countTableValues(portfolio.rows, (row) => row.chainId);
-    return [...uniqueTableValues(portfolio.rows, (row) => row.chainId).values()].map((row) => ({
-      group: getChainDataByCaip2(row.chainId)?.chain.testnet ? "Testnets" : "Mainnets",
-      id: row.chainId,
-      label: getChainDataByCaip2(row.chainId)?.chain.name ?? row.chainId,
-      content: <ChainDisplay chainId={row.chainId} />,
-      count: counts.get(row.chainId) ?? 0,
+    return Object.values(supportedChains).map((chain) => ({
+      group: chain.chain.testnet ? "Testnets" : "Mainnets",
+      id: chain.chainId,
+      label: chain.chain.name,
+      content: <ChainDisplay chainId={chain.chainId} />,
+      count: counts.get(chain.chainId) ?? 0,
     }));
   }, [portfolio.rows]);
   const typeOptions = useMemo(() => {
@@ -192,10 +183,6 @@ export function AssetsTable({
               ariaLabel="Apply asset filters"
               facets={facets}
               onClear={clearFilters}
-            />
-            <AssetViewOptions
-              showTestnets={showTestnets}
-              onShowTestnetsChange={onShowTestnetsChange}
             />
           </TableControls>
         </div>

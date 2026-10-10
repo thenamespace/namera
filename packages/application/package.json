@@ -47,7 +47,9 @@
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/utils": "workspace:*",
-    "@namera-ai/wallet-keys": "workspace:*",
+    "@namera-ai/wallet-provider-gcp": "workspace:*",
+    "@namera-ai/wallet-provider-local": "workspace:*",
+    "@namera-ai/wallet-provider-oneclaw": "workspace:*",
     "effect": "catalog:",
     "jose": "^6.2.12"
   },

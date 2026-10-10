@@ -137,7 +137,13 @@ presenting confirmation and refreshes billing/session queries at terminal states
 Both features refresh with the active organization; session-key creation also
 invalidates the list for its wallet, while API-key creation invalidates the
 organization API-key list.
-The session creation form generates its local secp256k1 draft through the SDK,
+The session creation form offers Local key or 1Claw Managed independently of account
+ownership. Managed setup verifies the returned public registration and moves directly
+to network approval without export/import. Ambiguous creation errors block blind
+resubmission. Custody appears in selectors and session details; billing capacity
+comes from the current subscription. Namera Managed remains unavailable.
+
+For local custody, the form generates its secp256k1 draft through the SDK,
 submits only the public signer, validates returned installation configuration,
 and offers an encrypted CLI export. The draft is held outside form/atom state.
 Passphrase fields clear after encryption; leaving with an unsaved key requires

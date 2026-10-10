@@ -167,7 +167,7 @@ layer(fixture.layer)("owner approval", (it) => {
         const fullQuota = yield* metering.reserve({
           organizationId: owner.actor.organization.id,
           meterKey: "execution.testnet",
-          amount: 1000n,
+          amount: 500n,
           sourceType: "manual-adjustment",
           sourceId: crypto.randomUUID(),
           expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.hours(1)),

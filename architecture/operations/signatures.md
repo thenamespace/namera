@@ -49,6 +49,46 @@ requests from crossing the organization's anniversary-period quota.
 The exact session must also have owner-approved `onchain.allowSignatures`.
 The server never signs with the wallet owner. Clients use prepare/complete.
 
+### Managed session signing
+
+`POST /signatures/prepare` reserves the same supported message or typed-data
+operation for an installed 1Claw session. `/signatures/complete` accepts
+only namespace and operation ID, not a digest or signature. Both require the same
+machine-actor grants, OAuth scopes and rate limits as local signing. Preparation
+retains the installation ID and an internal public signer-binding snapshot, while
+the response returns `signing: { method: "server" }`. The same endpoints serve
+local sessions with an EIP-712 challenge and mandatory completion signature.
+Custody comes from the stored session/preparation, never a caller flag.
+SDK `sign`, CLI and MCP select the path automatically; managed completion has no
+automatic transport retry, because its signature bytes are not stored.
+
+Completion exclusively claims a two-minute signing lease, loads the encrypted
+agent credential for the session-purpose key, and signs the EVM adapter's
+replay-safe EIP-712 challenge outside transactions. The existing adapter verifies
+ECDSA identity and installed ERC-1271 authority and builds the account envelope.
+Acceptance locks the wallet, grant, signer and provider connection and rechecks
+policy, installation, identity, expiry and lease ownership before atomically
+settling billing, marking success and auditing. Revocation during provider work
+cannot return the resulting signature. Expired lease owners cannot settle.
+
+No returned signature bytes are persisted, even encrypted. A successful managed
+operation cannot replay its result: repeated completion or preparation with the
+same idempotency key returns `SIGNATURE_UNAVAILABLE`. If a successful response was
+lost, explicitly prepare with a fresh idempotency key; authorization, policy and
+quota are checked again and another successful attempt is charged. An interrupted
+reserved attempt may be retried after its lease expires, before the reservation
+deadline. Provider failures do not automatically retry. Expiry recovery clears
+the lease and releases the hold; late provider results are rejected. Local
+completion retains its existing client-supplied-signature replay behavior.
+
+Managed HTTP tests cover both parent custodians, messages and typed data, real
+ECDSA verification, concurrent single completion, fresh billable retries,
+disabled signature permission, policy denial, actor isolation, payload-bound
+idempotency, installation eligibility, expiry, stale leases and revocation during
+verification. PostgreSQL runs exercise real row locks and settlement. Provider
+and ERC-1271 responses are substitutes; live signing remains a deployment smoke
+test, not something performed by these tests.
+
 Preparation reserves one unit for at most five minutes, bounded by session and
 API time-window expiry. Reusing the same actor/idempotency key with different
 input fails; identical retries reuse the operation and reservation. Completion
@@ -91,7 +131,12 @@ signature. The EVM adapter reconstructs the smart account and:
 - returns an invalid signature as data rather than an exceptional defect.
 
 Verification requires an active wallet grant but no signature policy because it
-does not create authority. It does not persist an operation, consume billing,
+does not create authority. Both passkey and 1Claw-owned accounts use the shared
+public-only owner reconstruction, independently of session-key custody. This
+validates the active owner binding without loading credentials or invoking a
+provider signer. HTTP regression coverage verifies message and typed-data
+results for both owner types, including invalid signatures as `valid: false`.
+It does not persist an operation, consume billing,
 write audit, or return private provider details. A dedicated actor rate limit
 and bounded verification metrics protect the boundary.
 

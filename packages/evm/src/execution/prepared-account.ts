@@ -27,17 +27,39 @@ export const makeReconstructPreparedAccount = (
       });
     }
 
-    const account = yield* reconstructExecutionAccount(
-      input,
-      chain,
-      getClients(chain).publicClient,
-    );
+    const publicClient = getClients(chain).publicClient;
+    const factoryOwner =
+      input.account.wallet.validatorType === "ecdsa_secp256k1" &&
+      input.account.wallet.accountMode === "factory";
+    if (factoryOwner && publicClient.chain?.id !== chain.chain.id) {
+      return yield* new EvmExecutionError({
+        code: "SIGNING_FAILED",
+        cause: new Error("Prepared network does not match the factory account client"),
+      });
+    }
+    const account = yield* reconstructExecutionAccount(input, chain, publicClient);
     const encodedCalls = yield* Effect.tryPromise({
       try: () => account.encodeCalls(input.prepared.context.calls),
       catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
     });
     const contextGas = input.prepared.context.userOperation.gas;
     const operation = input.prepared.userOperation;
+    if (factoryOwner && input.session === undefined) {
+      const factory = yield* Effect.tryPromise({
+        try: () => account.getFactoryArgs(),
+        catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
+      });
+      if (
+        operation.authorization !== undefined ||
+        (operation.factory ?? "").toLowerCase() !== (factory.factory ?? "").toLowerCase() ||
+        (operation.factoryData ?? "").toLowerCase() !== (factory.factoryData ?? "").toLowerCase()
+      ) {
+        return yield* new EvmExecutionError({
+          code: "SIGNING_FAILED",
+          cause: new Error("Prepared deployment does not match the stored factory account"),
+        });
+      }
+    }
     if (input.session !== undefined) {
       const nonceKey =
         (BigInt(input.session.authorization.entityId) << 8n) | (input.session.isGlobal ? 1n : 0n);

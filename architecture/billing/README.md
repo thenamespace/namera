@@ -4,7 +4,7 @@ Billing is organization-scoped. Namera owns product access, quota decisions,
 usage evidence, and plan definitions. A payment provider owns payment methods,
 invoices, tax, collection, and the provider-side subscription representation.
 
-This document describes the implemented Free v1 billing system. Protocol
+This document describes Free v2 and the retained Free v1 compatibility path. Protocol
 contracts, normalized persistence, anniversary periods, transactional metering,
 EVM sponsorship measurement, operation integration, recovery, reconciliation,
 the read API, metrics, and boundary tests are active. Stripe-facing delivery
@@ -31,8 +31,8 @@ tables remain dormant until paid plans are introduced.
 ### Plans
 
 The plan catalog maps `(plan, planVersion)` to commercial and entitlement
-configuration. Only `free@1` is currently assignable. The protocol reserves the
-reserved `pro` and `business` keys, but they are intentionally absent from the
+configuration. Only `free@2` is assigned to new organizations. The protocol reserves the
+`pro` and `business` keys, but they are intentionally absent from the
 assignable application registry until paid-plan workflows exist. A version
 change creates a new immutable definition; historical periods continue to
 reference the version under which their usage occurred.
@@ -49,7 +49,80 @@ A plan definition is expected to describe:
 - included gas sponsorship measured in micro-USD;
 - whether a meter has a hard product limit or allows paid overage.
 
-### Free v1
+### Free v2
+
+The plan is $0 per organization. Capacity limits do not reset; the four meters
+reset on the monthly organization anniversary. There are no overages or paid
+checkout flows.
+
+| Capacity                                         | Included |
+| ------------------------------------------------ | -------: |
+| Members including pending invitations            |        5 |
+| Self-owned smart accounts                        |       10 |
+| 1Claw-managed smart accounts                     |        3 |
+| Self-owned session keys                          |      100 |
+| 1Claw-managed session keys                       |        5 |
+| Mainnet executions per period                    |      100 |
+| Testnet executions per period                    |      500 |
+| Signatures per period                            |    1,000 |
+| Sponsored gas including provider fees per period |       $3 |
+
+1Claw allowances are modeled and counted but **creation is not enabled**. They
+do not grant GCP/software or HSM capacity. The UI labels managed creation as
+coming soon. Paid marketing figures remain provisional, not billing definitions.
+
+Each user may own at most three organizations, including Personal. Joined
+organizations do not count. Creation locks the user row before counting active
+Owner memberships, so concurrent requests cannot cross the limit. Existing
+users above three retain their organizations but cannot create another.
+
+### Rollout and historical periods
+
+The temporary `BillingStartupUpgrade` now runs after migrations and before HTTP
+or any worker starts. It immediately upgrades all current Free v1 subscriptions,
+including unmarked ones, through `upgradeExistingFreeSubscriptions`. Each
+organization uses its existing billing-account row lock and a separate transaction.
+It catches up expired periods normally, then changes only the current period and
+subscription to v2 without changing the period ID or anniversary. Closed periods,
+usage events, reservations, consumed and reserved amounts remain unchanged.
+
+The current balances receive v2 included amounts. To retain already-authorized
+work and satisfy the balance constraint, each hard limit is the greater of the v2
+limit and consumed plus reserved usage at upgrade time. This exceptional ceiling
+lasts only for that period; releasing a reservation can free headroom below that
+ceiling. Renewal creates ordinary v2 limits. No existing accounts or keys are deleted.
+
+The saved subscription version is the durable skip marker; immediate transitions
+also merge `data.freeV2UpgradedAt` and append `billing.plan_changed` in the same
+transaction. Concurrent replicas recheck the version under the row lock, so only
+one applies the change. Failures stop startup; completed organizations remain
+committed and retries resume the rest. Startup logs aggregate upgraded/skipped
+counts, not tenant identifiers. No new environment variables or tables are needed.
+
+Remove the startup hook and temporary application/repository methods only after
+every environment has no current Free v1 subscriptions. Keep the existing SQL
+migration history, saved markers and audit rows. The anniversary fallback below
+remains available after this temporary hook is removed. Tests cover preservation,
+over-limit holds, renewal, rollback/retry and PostgreSQL concurrent startup.
+
+Migration `20261010121514_free-v2-rollout` adds `freeV2RolloutAt` to existing
+active Free v1 subscription JSON. No new table or column is needed. It does not
+rewrite period balances, reservations, or usage. Deploy with old server writers
+drained; run the migration before serving traffic with the new version.
+
+Lazy access and the billing worker advance missed periods under v1 until the
+first anniversary strictly after the marker. At that boundary they atomically
+update the subscription to v2, create v2 balances, and append one system
+`billing.plan_changed` audit event under the organization billing lock. Historical
+holds still settle against their original period. An unmarked v1 subscription
+stays v1; the release migration must not be skipped.
+
+Resource checks advance the period before resolving limits. Over-limit existing
+accounts/keys are preserved; creation is blocked, not reading or revocation.
+`GET /billing` reports the active period version and optional `scheduledChange`
+with the next effective date. Dashboard and pricing copy explain the transition.
+
+### Free v1 (historical only)
 
 Free v1 uses a one-month organization-anniversary period. All included amounts
 are also hard limits because Free has no overage path.
@@ -282,13 +355,19 @@ releases it. Verification is read-only and never consumes billing usage.
 
 ### Resource limits
 
-Members (including pending invitations), managed software wallets, managed HSM
-wallets, and user-owned wallets are current-resource entitlements rather than
-period meters. Local wallets have a Free v1 cap of 50 but are not billable and
-have no overage component. Their workflows use the stored plan version and
+Members (including pending invitations), accounts and session keys are current
+resource entitlements rather than period meters. Self-owned accounts have a v2
+cap of 10 (historical v1: 50). Their workflows use the stored plan version and
 organization billing lock. Managed provider work may happen before persistence,
 but the custody-specific locked capacity check is repeated in the final
 transaction.
+
+Session creation takes the billing lock before the wallet lock and checks its
+custody-specific capacity before persistence. Pending, active and revoking keys
+count once, regardless of network count; revoked keys do not. Disabled signers
+retain capacity. Expired time-window policies or all expired installation
+authorizations release capacity; missing installations retain it conservatively.
+1Claw resources are identified by custody plus provider data, not protection level.
 
 ## Immutable usage and corrections
 
@@ -394,7 +473,7 @@ separate from payment-provider synchronization.
 - code-owned component, meter, unit, and source discriminators;
 - Drizzle tables, tenant-safe relations, checks, indexes, and migration;
 - test-database reset ordering;
-- a code-owned, Free-only v1 plan and meter registry;
+- a code-owned Free v2 registry with historical v1 resolution;
 - transaction-aware repositories for every billing table;
 - atomic Free account, subscription, anniversary-period, and meter-balance
   initialization during organization creation;
@@ -421,10 +500,14 @@ separate from payment-provider synchronization.
   rollover. These use the production driver and migrations, not PGlite locks.
 - wallet-cap PostgreSQL tests cover both retrying one ceremony and five
   independent users with real verified P-256 registration attestations. At
-  49 occupied slots, exactly one new wallet and its audit pair are committed;
+  9 occupied v2 slots (49 in the legacy compatibility case), exactly one new wallet and its audit pair are committed;
   unsuccessful admissions return the local-wallet limit error.
 
 Deliberately inactive until paid plans:
 
 - provider delivery worker;
 - Stripe customer, Checkout, portal, price mapping, and webhook processing.
+
+Free v2 tests cover the real rollout SQL, delayed-period catch-up, legacy hold
+settlement, one audit per transition, pending multi-network session capacity,
+expiry release, and PostgreSQL races for the final organization/session slot.

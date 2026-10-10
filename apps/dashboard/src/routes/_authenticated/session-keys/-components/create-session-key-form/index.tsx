@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 
@@ -19,15 +19,23 @@ import {
   type LocalSessionKeyDraft,
 } from "@namera-ai/sdk";
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
-import { useForm, type DefaultValues } from "react-hook-form";
+import { useForm, useWatch, type DefaultValues } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
+import { hasPermissions } from "@/components/permission";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
+import { useCurrentUser } from "@/hooks/auth";
+import { useBilling } from "@/hooks/billing";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
+import { supportsSessionKeys } from "@/lib/session-owner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
+import { ActivateSessionKey } from "./activate-key";
+import type { CustodyLimits } from "./custody-field";
+import { sessionCustodyLimits } from "./custody-limits";
 import { SessionKeyDetailsCard } from "./details-card";
+import { validateManagedRegistration } from "./managed-registration";
 import { PolicySection } from "./policies";
 import { CreateSessionKeyFormSchema } from "./schema";
 import { SetupSessionKey } from "./setup-key";
@@ -35,6 +43,7 @@ import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./ty
 
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
 const defaultValues = {
+  custody: "namera-managed",
   namespace: "eip155",
   metadata: {
     version: 1,
@@ -57,17 +66,36 @@ type CreateSessionKeyFormProps = {
   wallets: ListWalletsResponse;
 };
 
-export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessionKeyFormProps) {
+const unknownLimits: CustodyLimits = { local: false, managed: false };
+
+export function CreateSessionKeyForm(props: CreateSessionKeyFormProps) {
+  const user = useCurrentUser();
+  return hasPermissions(user.data?.role.permissions ?? [], ["billing:read"]) ? (
+    <BillingSessionKeyForm {...props} />
+  ) : (
+    <SessionKeyForm {...props} limits={unknownLimits} />
+  );
+}
+
+function BillingSessionKeyForm(props: CreateSessionKeyFormProps) {
+  const billing = useBilling();
+  const limits = useMemo(
+    () => sessionCustodyLimits(billing.data?.resources),
+    [billing.data?.resources],
+  );
+  return <SessionKeyForm {...props} limits={limits} />;
+}
+
+function SessionKeyForm({
+  wallets,
+  initialAccountId,
+  limits,
+}: CreateSessionKeyFormProps & { limits: CustodyLimits }) {
   const [initialValues] = useState(() => ({
     ...defaultValues,
     walletId:
-      wallets.find(
-        (wallet) =>
-          wallet.id === initialAccountId &&
-          wallet.status === "active" &&
-          wallet.owner.custody === "local" &&
-          wallet.owner.algorithm === "p256",
-      )?.id ?? "",
+      wallets.find((wallet) => wallet.id === initialAccountId && supportsSessionKeys(wallet))?.id ??
+      "",
     onchain: {
       ...defaultValues.onchain,
       validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
@@ -87,6 +115,7 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     bindings: ReadonlyArray<LocalEvmSessionBinding>;
   }>();
   const [registrationError, setRegistrationError] = useState(false);
+  const [managedCreationFailed, setManagedCreationFailed] = useState(false);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -110,6 +139,14 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     const wallet = reviewedWallet.current;
     try {
       if (!wallet) throw new Error("Selected wallet unavailable");
+      if (payload.signer.custody === "namera-managed") {
+        validateManagedRegistration(payload, wallet, created);
+        showSuccessToast({
+          title: "Session key registered",
+          description: "Approve network access before using it.",
+        });
+        return;
+      }
       if (!draft.current) throw new Error("Local session key unavailable");
       setSetup({
         draft: draft.current,
@@ -134,6 +171,14 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     },
     onError: async (error, { payload }) => {
       if (!mounted.current) return;
+      if (payload.signer.custody === "namera-managed") {
+        setManagedCreationFailed(true);
+        showErrorToast(error, {
+          title: "Couldn’t confirm session creation",
+          description: "Check your session keys before creating another managed key.",
+        });
+        return;
+      }
       const abort = new AbortController();
       recoveryAbort.current = abort;
       try {
@@ -166,14 +211,25 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
+  const selectedCustody = useWatch({ control: form.control, name: "custody" });
+  const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (submitting.current || createSessionKey.isPending || registration || !form.formState.isValid)
+    if (
+      submitting.current ||
+      createSessionKey.isPending ||
+      registration ||
+      managedCreationFailed ||
+      limitReached ||
+      !form.formState.isValid
+    )
       return;
     submitting.current = true;
     try {
-      draft.current ??= createLocalSessionKeyDraft();
-      setNeedsBackup(true);
+      if (form.getValues("custody") === "local") {
+        draft.current ??= createLocalSessionKeyDraft();
+        setNeedsBackup(true);
+      }
     } catch (error) {
       submitting.current = false;
       showErrorToast(error, {
@@ -184,8 +240,17 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
     }
     void form
       .handleSubmit(
-        (payload) => {
+        ({ custody, ...payload }) => {
           reviewedWallet.current = wallets.find((wallet) => wallet.id === payload.walletId);
+          if (custody === "namera-managed") {
+            createSessionKey.mutate({
+              payload: {
+                ...payload,
+                signer: { custody, provider: "1claw", algorithm: "secp256k1" },
+              },
+            });
+            return;
+          }
           if (!draft.current) {
             submitting.current = false;
             return;
@@ -224,6 +289,8 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
               The returned configuration differs from your choices. No export or approval is
               available.
             </Typography.Paragraph>
+          ) : registration.signer.custody === "namera-managed" ? (
+            <ActivateSessionKey sessionKey={registration} />
           ) : setup ? (
             <SetupSessionKey
               sessionKey={registration}
@@ -251,10 +318,21 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
         </div>
       ) : (
         <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>
+          {managedCreationFailed ? (
+            <Typography.Paragraph role="alert" className="mb-4" color="muted" size="sm">
+              Creation could not be confirmed. Check the session-key list before trying again. If no
+              key appears, contact support; a provider resource may still have been created.
+            </Typography.Paragraph>
+          ) : null}
           <div className="grid gap-8">
             <section className="grid gap-4">
               <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
-              <SessionKeyDetailsCard control={form.control} wallets={wallets} />
+              <SessionKeyDetailsCard
+                control={form.control}
+                wallets={wallets}
+                limits={limits}
+                custodyLocked={needsBackup || createSessionKey.isPending || managedCreationFailed}
+              />
             </section>
             <PolicySection form={form} wallets={wallets} />
           </div>
@@ -269,7 +347,11 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
             form="create-session-key-form"
             fullWidth
             isDisabled={
-              createSessionKey.isPending || form.formState.isSubmitting || !form.formState.isValid
+              managedCreationFailed ||
+              limitReached ||
+              createSessionKey.isPending ||
+              form.formState.isSubmitting ||
+              !form.formState.isValid
             }
             type="submit"
           >
@@ -285,19 +367,19 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
           }}
         >
           <AlertDialog.Container size="md">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog className="rounded-xl">
               <AlertDialog.Header>
                 <AlertDialog.Heading>Leave without saving your key?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                The local key will be lost. Namera cannot recover it. Any pending registration will
-                remain, but it will not activate without your passkey approval.
+                Your local key will be lost permanently. Pending registrations stay inactive until
+                the account owner approves them.
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button variant="tertiary" onPress={() => blocker.reset?.()}>
+                <Button size="sm" variant="tertiary" onPress={() => blocker.reset?.()}>
                   Stay and save key
                 </Button>
-                <Button variant="danger" onPress={() => blocker.proceed?.()}>
+                <Button size="sm" variant="danger" onPress={() => blocker.proceed?.()}>
                   Discard local key
                 </Button>
               </AlertDialog.Footer>

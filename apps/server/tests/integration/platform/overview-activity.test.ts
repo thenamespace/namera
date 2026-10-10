@@ -21,6 +21,7 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { localSignatureChallenge } from "../../fixtures/local-signature-challenge.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 import { platformIdentity } from "../../fixtures/platform.js";
 
@@ -77,7 +78,7 @@ it.effect("counts platform resources and completed operations, not signature res
       headers: { "idempotency-key": "overview-success" },
       payload,
     });
-    const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+    const signature = yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared)));
     yield* client.signature.complete({
       payload: { namespace: "eip155", operationId: prepared.operationId, signature },
     });

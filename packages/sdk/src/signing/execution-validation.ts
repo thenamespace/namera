@@ -38,6 +38,8 @@ export const validateLocalExecution = ({
   readonly maxGasCostWei?: bigint;
 }) => {
   const { prepared } = response;
+  if (response.signing.method !== "personal_sign")
+    throw new LocalExecutionValidationError({ reason: "identity" });
   const operation = prepared.userOperation;
   if (
     request.walletId !== binding.walletId ||
@@ -134,4 +136,49 @@ export const validateLocalExecution = ({
     throw new LocalExecutionValidationError({ reason: "hash" });
   }
   return message;
+};
+
+/** Managed signing still requires caller consent to the exact calls and fee ceiling. */
+export const validateManagedExecution = (
+  request: PrepareExecutionRequest,
+  response: PrepareExecutionResponse,
+  maxGasCostWei?: bigint,
+) => {
+  const { prepared } = response;
+  const op = prepared.userOperation;
+  if (
+    response.sessionKeyId !== request.sessionKeyId ||
+    prepared.chainId !== request.chainId ||
+    prepared.context.chainId !== request.chainId ||
+    DateTime.toEpochMillis(response.expiresAt) <= Date.now() ||
+    prepared.context.calls.length !== request.calls.length ||
+    prepared.context.calls.some((call, index) => {
+      const expected = request.calls[index];
+      return (
+        !expected ||
+        !isAddressEqual(call.to, expected.to) ||
+        call.value !== expected.value ||
+        call.data.toLowerCase() !== expected.data.toLowerCase()
+      );
+    })
+  )
+    throw new LocalExecutionValidationError({ reason: "calls" });
+  const sponsored = request.sponsor !== false;
+  if (
+    prepared.sponsorship !== (sponsored ? "alchemy-bso" : "none") ||
+    op.paymaster !== undefined ||
+    op.paymasterData !== undefined ||
+    op.paymasterVerificationGasLimit !== undefined ||
+    op.paymasterPostOpGasLimit !== undefined ||
+    (sponsored &&
+      (op.maxFeePerGas !== 0n || op.maxPriorityFeePerGas !== 0n || op.preVerificationGas !== 0n))
+  )
+    throw new LocalExecutionValidationError({ reason: "sponsorship" });
+  const cost =
+    (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * op.maxFeePerGas;
+  if (
+    op.maxPriorityFeePerGas > op.maxFeePerGas ||
+    (!sponsored && (maxGasCostWei === undefined || maxGasCostWei < 0n || cost > maxGasCostWei))
+  )
+    throw new LocalExecutionValidationError({ reason: "gas" });
 };

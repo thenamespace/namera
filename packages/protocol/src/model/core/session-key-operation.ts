@@ -6,12 +6,14 @@ import {
   SessionKeyInstallationId,
   SessionKeyOperationId,
   WalletId,
+  SigningKeyId,
 } from "#/common/index";
 import {
   EvmPreparedExecution,
   EvmSignedExecution,
   SupportedEvmChainId,
   TransactionHash,
+  Hex,
 } from "#/evm/index";
 import { NonEmptyString } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
@@ -31,6 +33,7 @@ export const SessionKeyOperationData = Schema.Struct({
   // The canonical JSON codec preserves decoded context timestamps across JSONB.
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signed: Schema.NullOr(EvmSignedExecution),
+  managedOwner: Schema.optional(Schema.Struct({ signingKeyId: SigningKeyId, publicKey: Hex })),
 });
 
 export const SessionKeyOperation = Schema.Struct({

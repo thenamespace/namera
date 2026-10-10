@@ -1,12 +1,14 @@
 import { Effect } from "effect";
 
 import { Repository } from "@namera-ai/database";
-import { createPublicKeyWebAuthnAccount } from "@namera-ai/evm";
 import { SignatureError } from "@namera-ai/protocol";
 import type { GrantedActorData, VerifySignatureRequest } from "@namera-ai/protocol/dto";
 
+import { makeLoadPublicSessionOwner } from "#/wallet/public-owner";
+
 export const makeLoadSignatureAccount = Effect.gen(function* () {
   const repository = yield* Repository;
+  const loadPublicOwner = yield* makeLoadPublicSessionOwner;
 
   return Effect.fnUntraced(function* (input: {
     readonly organizationId: GrantedActorData["organizationId"];
@@ -16,25 +18,15 @@ export const makeLoadSignatureAccount = Effect.gen(function* () {
       input.request.walletId,
       input.organizationId,
     );
-    if (
-      wallet === undefined ||
-      wallet.wallet.namespace !== input.request.namespace ||
-      wallet.wallet.status !== "active" ||
-      wallet.signingKey.status !== "active" ||
-      wallet.signingKey.custody !== "local" ||
-      wallet.signingKey.data.type !== "passkey" ||
-      wallet.wallet.data.validatorType !== "webauthn_p256"
-    ) {
+    if (wallet === undefined || wallet.wallet.namespace !== input.request.namespace) {
       return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
     }
 
-    const account = {
-      wallet: wallet.wallet.data,
-      owner: {
-        validatorType: "webauthn_p256" as const,
-        account: createPublicKeyWebAuthnAccount(wallet.signingKey.publicKeyHex),
-      },
-    };
+    const { account } = yield* loadPublicOwner(wallet).pipe(
+      Effect.catchTag("SessionKeyOperationError", () =>
+        Effect.fail(new SignatureError({ code: "SIGNATURE_UNAVAILABLE" })),
+      ),
+    );
     return { wallet, account } as const;
   });
 });

@@ -6,6 +6,7 @@ import type {
   BillingError,
   OrganizationId,
   WalletCreationError,
+  WalletCustodyUnavailableError,
   WalletId,
   WalletNotFoundError,
   PortfolioUnavailableError,
@@ -40,7 +41,10 @@ export interface WalletApplication {
     readonly actorId: ActorId;
     readonly userId: UserId;
     readonly request: CreateWalletRequest;
-  }) => Effect.Effect<WalletView, BillingError | PasskeyVerificationError | WalletCreationError>;
+  }) => Effect.Effect<
+    WalletView,
+    BillingError | PasskeyVerificationError | WalletCreationError | WalletCustodyUnavailableError
+  >;
   readonly list: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId?: ActorId;

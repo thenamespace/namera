@@ -22,6 +22,8 @@ export function recoverSessionRegistration<T extends Registration>(
   wallet: Pick<WalletResponse, "id" | "address">,
   sessions: ReadonlyArray<T>,
 ) {
+  if (request.signer.custody !== "local")
+    throw new Error("Only local session registrations can be recovered from a public key");
   const signer = publicKeyToAddress(request.signer.publicKey);
   const candidates = sessions.filter((session) =>
     session.installations.some(({ authorization }) =>

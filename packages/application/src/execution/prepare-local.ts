@@ -24,6 +24,7 @@ import {
 import { Audit } from "#/audit/layer";
 import { makeBillingMetering } from "#/billing/index";
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
+import { sessionSignerBinding } from "#/oneclaw/session-signer";
 
 import { makeLoadExecutionAuthority } from "./authority.js";
 import { makePrepareExecution } from "./preparation.js";
@@ -49,6 +50,8 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
       ExecutionError | DatabaseError | BillingError | EvmPolicyError
     > {
       const request = { ...input.request, sponsor: input.request.sponsor ?? true };
+      const selected = yield* loadAuthority({ ...request, actor: input.actor, custody: "either" });
+      const custody = selected.signer.custody;
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.executionRequest,
         value: JSON.stringify(Schema.encodeSync(PrepareExecutionRequest)(request)),
@@ -60,11 +63,16 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
       );
       if (prior !== undefined && prior.requestHash !== requestHash)
         return yield* new ExecutionError({ code: "IDEMPOTENCY_CONFLICT" });
+      if (
+        prior !== undefined &&
+        (prior.data.managedSignerBinding !== undefined) !== (custody === "namera-managed")
+      )
+        return yield* new ExecutionError({ code: "IDEMPOTENCY_CONFLICT" });
       const { authority, prepared } =
         prior === undefined
-          ? yield* prepareExecution({ actor: input.actor, request })
+          ? yield* prepareExecution({ actor: input.actor, request, custody })
           : {
-              authority: yield* loadAuthority({ ...request, actor: input.actor }),
+              authority: yield* loadAuthority({ ...request, actor: input.actor, custody }),
               prepared: prior.data.prepared,
             };
 
@@ -82,6 +90,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
               ...request,
               actor: input.actor,
               forUpdate: true,
+              custody,
             });
             if (current.installation.id !== authority.installation.id)
               return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
@@ -149,6 +158,9 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 calls: request.calls,
                 prepared,
                 signedExecution: null,
+                ...(custody === "namera-managed"
+                  ? { managedSignerBinding: sessionSignerBinding(current.signer) }
+                  : {}),
               },
             });
             if (!inserted.inserted) {
@@ -239,7 +251,10 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
         installationId: submission.installationId,
         signingKeyId: authority.signer.id,
         prepared: submission.data.prepared,
-        signing: { method: "personal_sign", message: Schema.decodeSync(Bytes32)(message) },
+        signing:
+          custody === "namera-managed"
+            ? { method: "server" }
+            : { method: "personal_sign", message: Schema.decodeSync(Bytes32)(message) },
         expiresAt: submission.expiresAt,
       };
     },

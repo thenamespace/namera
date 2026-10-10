@@ -81,6 +81,14 @@ export const WalletCreatedNotificationPayload = Schema.Struct({
       custody: Schema.Literal("namera-managed"),
       protectionLevel: WalletKeyProtectionLevel,
     }),
+    Schema.Struct({
+      version: Schema.Literal(1),
+      address: EthereumAddress,
+      implementation: Schema.Literal("alchemy-modular-v2"),
+      custody: Schema.Literal("namera-managed"),
+      provider: Schema.Literal("1claw"),
+      protectionLevel: Schema.optionalKey(Schema.Never),
+    }),
   ]),
 });
 
@@ -93,6 +101,8 @@ export const SessionKeyCreatedNotificationPayload = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     policyTypes: Schema.Array(EvmSessionPolicyType),
+    custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+    provider: Schema.optionalKey(Schema.Literal("1claw")),
   }),
 });
 
@@ -105,6 +115,8 @@ export const SessionKeyRevokedNotificationPayload = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     revokedGrantCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
+    provider: Schema.optionalKey(Schema.Literal("1claw")),
   }),
 });
 

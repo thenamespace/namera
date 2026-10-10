@@ -15,7 +15,7 @@ import {
 import { verifyMessage } from "viem";
 
 import { failure } from "#/result";
-import { validateLocalExecution } from "#/signing/execution-validation";
+import { validateLocalExecution, validateManagedExecution } from "#/signing/execution-validation";
 import type { ResolveSessionSigner, LocalSessionSigner } from "#/signing/local-session";
 import type { NameraTransport } from "#/transport";
 
@@ -29,6 +29,7 @@ export class ExecutionClient {
   constructor(
     private readonly transport: NameraTransport,
     private readonly resolveSigner?: ResolveSessionSigner,
+    private readonly maxGasCostWei?: bigint,
   ) {}
 
   prepare(request: PrepareExecutionRequest) {
@@ -51,6 +52,25 @@ export class ExecutionClient {
   }
 
   async execute(request: ExecuteRequestType) {
+    const prepared = await this.prepare(request);
+    if (!prepared.success) return prepared;
+    if (prepared.data.signing.method === "server") {
+      try {
+        validateManagedExecution(request, prepared.data, this.maxGasCostWei);
+      } catch {
+        return failure({
+          kind: "signer",
+          code: "PREPARED_EXECUTION_INVALID",
+          message: "The prepared execution does not match the request or fee consent.",
+          status: null,
+          cause: null,
+        });
+      }
+      return this.complete({
+        namespace: request.namespace,
+        submissionId: prepared.data.submissionId,
+      });
+    }
     if (this.resolveSigner === undefined)
       return failure({
         kind: "signer",
@@ -73,9 +93,6 @@ export class ExecutionClient {
         cause: null,
       });
     }
-    const prepared = await this.prepare(request);
-    if (!prepared.success) return prepared;
-
     let message: `0x${string}`;
     try {
       message = validateLocalExecution({

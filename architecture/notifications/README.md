@@ -75,6 +75,17 @@ notification and its unread state visible; successful archive clears only the
 selection for that notification. Initial and additional-page failures offer
 local retry. Additional pages retain their cursor while retrying, and the empty
 filtered view keeps Load more available when the server has another page.
+Session creation/revocation notifications and emails snapshot signer custody and
+the 1Claw provider, independently of account ownership. Optional fields preserve
+older stored payloads and queued emails. For old inbox events without a snapshot,
+the dashboard reads the current session only with session read permission in the
+active organization; otherwise it shows Not recorded. Account-created inbox and
+email details include the EVM namespace (their supported implementation is EVM-only).
+Policy display names live in the protocol registry and are shared by dashboard
+definitions, inbox chips and creation emails; policy identifiers stay unchanged.
+1Claw light/dark email PNGs are generated under `assets/email-assets/brand/` and
+must be uploaded to the existing email CDN before email rollout.
+
 Session notifications distinguish registration, API access revocation and
 onchain authority. Revoking API grants does not by itself uninstall permissions
 or prevent the local key holder from signing outside Namera.

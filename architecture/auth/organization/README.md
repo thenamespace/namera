@@ -31,6 +31,12 @@ sequenceDiagram
 
 The first-login helper executes the same organization construction inside the larger verification transaction. No partially initialized organization should be visible.
 
+Free v2 creates at most three owned organizations per user, including Personal.
+Explicit creation locks the user row and counts active Owner memberships inside
+the transaction. Joined organizations do not count. Existing organizations are
+never deleted to enforce the cap. Creation can return `BillingError` with limit
+`ownedOrganizations`; all new organizations initialize Free v2.
+
 ## Read and update behavior
 
 - List returns active membership views for a user.

@@ -1,4 +1,4 @@
-import { DateTime, Effect, Option } from "effect";
+import { DateTime, Effect, Option, type Duration } from "effect";
 
 import {
   Bytes32,
@@ -8,6 +8,7 @@ import {
   UserOperationHash,
   EvmExecutionError,
 } from "@namera-ai/protocol";
+import { verifyMessage } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 
 import { getChainDataByCaip2 } from "../chains/helpers.js";
@@ -15,6 +16,12 @@ import type { EvmExecutionService } from "./types.js";
 
 export const makeTestEvmExecutionService = (
   overrides: Partial<EvmExecutionService> = {},
+  options: {
+    readonly signWithOwner?: boolean;
+    readonly verifySessionSignature?: boolean;
+    readonly sessionVerificationDelay?: Duration.Input;
+    readonly onSessionVerification?: Effect.Effect<void>;
+  } = {},
 ): EvmExecutionService => {
   const entryPoint = EthereumAddress.make(entryPoint07Address);
   const userOperationHash = UserOperationHash.make(`0x${"1".repeat(64)}`);
@@ -45,13 +52,36 @@ export const makeTestEvmExecutionService = (
         }),
       ),
     ),
-    completeSessionExecution: Effect.fn("evm.execution.test.completeSessionExecution")(() =>
-      Effect.fail(
-        new EvmExecutionError({
-          code: "SIGNING_FAILED",
-          cause: new Error("Configure an explicit local session test adapter"),
-        }),
-      ),
+    completeSessionExecution: Effect.fn("evm.execution.test.completeSessionExecution")(
+      function* (input) {
+        if (options.verifySessionSignature) {
+          if (options.onSessionVerification !== undefined) yield* options.onSessionVerification;
+          if (options.sessionVerificationDelay !== undefined)
+            yield* Effect.sleep(options.sessionVerificationDelay);
+          const valid = yield* Effect.tryPromise({
+            try: () =>
+              verifyMessage({
+                address: input.session.authorization.signerAddress,
+                message: { raw: Hex.make(`0x${"22".repeat(32)}`) },
+                signature: input.signature,
+              }),
+            catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
+          });
+          if (valid) {
+            const signed = yield* makeTestEvmExecutionService().sign(input);
+            return {
+              ...signed,
+              userOperation: { ...signed.userOperation, signature: input.signature },
+            };
+          }
+        }
+        return yield* Effect.fail(
+          new EvmExecutionError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Configure an explicit local session test adapter"),
+          }),
+        );
+      },
     ),
     ownerApprovalChallenge: Effect.fn("evm.execution.test.ownerApprovalChallenge")(() =>
       Effect.fail(
@@ -158,8 +188,22 @@ export const makeTestEvmExecutionService = (
         },
       }),
     ),
-    sign: Effect.fn("evm.execution.test.sign")((input) =>
-      Effect.succeed({
+    sign: Effect.fn("evm.execution.test.sign")(function* (input) {
+      const signature = options.signWithOwner
+        ? yield* Effect.tryPromise({
+            try: async () => {
+              if (input.account.owner.validatorType !== "ecdsa_secp256k1")
+                throw new Error("Test managed signing requires an ECDSA owner");
+              return Hex.make(
+                await input.account.owner.account.signMessage({
+                  message: { raw: userOperationHash },
+                }),
+              );
+            },
+            catch: (cause) => new EvmExecutionError({ code: "SIGNING_FAILED", cause }),
+          })
+        : Hex.make(`0x${"4".repeat(128)}`);
+      return {
         version: 1,
         namespace: "eip155",
         chainId: input.prepared.chainId,
@@ -168,12 +212,12 @@ export const makeTestEvmExecutionService = (
         sponsorship: input.prepared.sponsorship,
         userOperation: {
           ...input.prepared.userOperation,
-          signature: Hex.make(`0x${"4".repeat(128)}`),
+          signature,
         },
         userOperationHash,
         billing: input.prepared.billing,
-      }),
-    ),
+      };
+    }),
     submit: Effect.fn("evm.execution.test.submit")((input) =>
       Effect.succeed({
         version: 1,

@@ -28,6 +28,7 @@ export const makeSignatureOperationLifecycle = Effect.gen(function* () {
   const succeed = Effect.fn("application.signature.succeedOperation")(function* (input: {
     readonly actor: GrantedActorData;
     readonly operationId: SignatureOperationId;
+    readonly leaseToken?: string;
   }) {
     return yield* transaction.run(
       Effect.gen(function* () {
@@ -37,9 +38,14 @@ export const makeSignatureOperationLifecycle = Effect.gen(function* () {
         );
         if (operation === undefined || operation.actorId !== input.actor.actorId)
           return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
-        if (operation.status === "succeeded") return false;
+        if (operation.status === "succeeded" && input.leaseToken === undefined) return false;
         if (
           operation.status !== "reserved" ||
+          (input.leaseToken !== undefined &&
+            (operation.leaseToken !== input.leaseToken ||
+              operation.leaseExpiresAt === null ||
+              DateTime.toEpochMillis(operation.leaseExpiresAt) <=
+                DateTime.toEpochMillis(yield* DateTime.now))) ||
           DateTime.toEpochMillis(operation.reservationExpiresAt) <=
             DateTime.toEpochMillis(yield* DateTime.now)
         )
@@ -64,6 +70,7 @@ export const makeSignatureOperationLifecycle = Effect.gen(function* () {
           id: operation.id,
           organizationId: operation.organizationId,
           succeededAt: yield* DateTime.now,
+          ...(input.leaseToken === undefined ? {} : { leaseToken: input.leaseToken }),
         });
         if (succeeded === undefined) {
           return yield* Effect.die("Signature operation could not be completed");

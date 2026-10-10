@@ -18,7 +18,10 @@ export const createTestEvmSessionSigner = () => {
 
 /** HTTP/persistence fixture: real ECDSA, substituted chain/validation envelope. */
 export const makeTestEvmSessionSignatureService = (
-  options: { readonly verificationDelay?: Duration.Input } = {},
+  options: {
+    readonly verificationDelay?: Duration.Input;
+    readonly onVerification?: Effect.Effect<void>;
+  } = {},
 ): EvmSessionSignatureService => {
   const prepare: EvmSessionSignatureService["prepare"] = Effect.fnUntraced(function* (input) {
     const hash = yield* digestEvmSignature(input);
@@ -35,6 +38,7 @@ export const makeTestEvmSessionSignatureService = (
   return {
     prepare,
     complete: Effect.fnUntraced(function* (input) {
+      if (options.onVerification !== undefined) yield* options.onVerification;
       if (options.verificationDelay !== undefined) yield* Effect.sleep(options.verificationDelay);
       const typedData = yield* prepare(input);
       const valid = yield* Effect.tryPromise({

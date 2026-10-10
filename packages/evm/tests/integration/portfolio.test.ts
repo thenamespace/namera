@@ -1,9 +1,10 @@
 import { expect, it } from "@effect/vitest";
-import { BigDecimal, Effect, Redacted } from "effect";
+import { BigDecimal, Deferred, Effect, Predicate, Redacted, Schema } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 
 import { EthereumAddress } from "@namera-ai/protocol";
 
+import { chains } from "../../src/chains/data.js";
 import { makeAlchemyPortfolioService } from "../../src/portfolio/alchemy.js";
 
 const config = {
@@ -36,6 +37,88 @@ const clientWith = (body: () => unknown) =>
       ),
     ),
   );
+
+it.effect("fetches eight networks in two concurrent batches and follows each batch cursor", () =>
+  Effect.gen(function* () {
+    const started = yield* Deferred.make<void>();
+    const requests: Array<{ networks: ReadonlyArray<string>; pageKey: string | undefined }> = [];
+    const requestSchema = Schema.Struct({
+      addresses: Schema.Tuple([
+        Schema.Struct({ address: EthereumAddress, networks: Schema.Array(Schema.String) }),
+      ]),
+      pageKey: Schema.optional(Schema.String),
+    });
+    const client = HttpClient.make((request) =>
+      Effect.gen(function* () {
+        if (!Predicate.isTagged(request.body, "Uint8Array"))
+          return yield* Effect.die("Expected JSON body");
+        const body = Schema.decodeUnknownSync(Schema.fromJsonString(requestSchema))(
+          new TextDecoder().decode(request.body.body),
+        );
+        const networks = body.addresses[0].networks;
+        expect(body.addresses[0].address).toBe(address);
+        requests.push({ networks, pageKey: body.pageKey });
+        if (requests.length === 2) yield* Deferred.succeed(started, undefined);
+        yield* Deferred.await(started);
+        return HttpClientResponse.fromWeb(
+          request,
+          new Response(
+            JSON.stringify({
+              data: {
+                tokens: networks.flatMap((network) => [
+                  token({ network }),
+                  token({ network, tokenAddress: null }),
+                ]),
+                pageKey: body.pageKey ? null : networks[0],
+              },
+            }),
+          ),
+        );
+      }),
+    );
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({ address });
+    const initial = requests.filter((request) => request.pageKey === undefined);
+    expect(initial.map((request) => request.networks.length)).toEqual([4, 4]);
+    expect(initial.flatMap((request) => request.networks).toSorted()).toEqual(
+      Object.values(chains)
+        .map((chain) => chain.alchemyChain)
+        .toSorted(),
+    );
+    expect(requests).toHaveLength(4);
+    for (const request of requests.filter((entry) => entry.pageKey !== undefined)) {
+      expect(request.networks).toEqual(
+        initial.find((batch) => batch.networks[0] === request.pageKey)?.networks,
+      );
+    }
+    expect(result.items).toHaveLength(16);
+    expect(result.partialFailures).toEqual([]);
+  }),
+);
+
+it.effect("discards earlier balances for a network that fails on a later page", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const client = clientWith(() =>
+      ++calls === 1
+        ? {
+            data: { tokens: [token(), token({ network: "base-mainnet" })], pageKey: "next" },
+          }
+        : {
+            data: { tokens: [] },
+            error: { partialErrors: [{ network: "base-mainnet" }, { network: "base-mainnet" }] },
+          },
+    );
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({
+      address,
+      chainIds: ["eip155:1", "eip155:8453"],
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.chainId).toBe("eip155:1");
+    expect(result.partialFailures).toEqual([
+      { chainId: "eip155:8453", code: "PROVIDER_UNAVAILABLE" },
+    ]);
+  }),
+);
 
 it.effect("paginates and deduplicates balances without rounding USD values", () =>
   Effect.gen(function* () {
@@ -84,6 +167,7 @@ it.effect("paginates and deduplicates balances without rounding USD values", () 
 it.effect("preserves unknown token balances and reports partial network errors", () =>
   Effect.gen(function* () {
     const client = clientWith(() => ({
+      error: { partialErrors: [{ network: "base-mainnet" }] },
       data: {
         tokens: [
           token({
@@ -148,5 +232,33 @@ it.effect("sanitizes HTTP failures without exposing the credential URL", () =>
     );
     expect(error.code).toBe("PROVIDER_UNAVAILABLE");
     expect(String(error.cause)).not.toContain("test-api-key");
+  }),
+);
+
+it.effect("keeps the successful batch when the other request fails", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const client = HttpClient.make((request) =>
+      Effect.sync(() => {
+        const failed = calls++ === 0;
+        return HttpClientResponse.fromWeb(
+          request,
+          new Response(failed ? "rate limited" : JSON.stringify({ data: { tokens: [] } }), {
+            status: failed ? 429 : 200,
+          }),
+        );
+      }),
+    );
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({ address });
+    expect(calls).toBe(2);
+    expect(result.items).toEqual([]);
+    expect(result.partialFailures).toEqual(
+      Object.values(chains)
+        .slice(0, 4)
+        .map((chain) => ({
+          chainId: chain.chainId,
+          code: "PROVIDER_UNAVAILABLE",
+        })),
+    );
   }),
 );

@@ -21,6 +21,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
@@ -31,7 +32,7 @@ import { CommandBlock } from "../../-components/create-session-key-form/command-
 const actions = [
   {
     title: "Connect MCP",
-    description: "Connect your agent to Namera using your imported local key.",
+    description: "Connect your agent to Namera with this session key.",
     icon: BotIcon,
     to: "/settings/workspace/mcp",
     permissions: ["mcp-authorization:read"],
@@ -78,9 +79,20 @@ function ActionContent({
   );
 }
 
-function Property({ label, children }: { label: string; children: ReactNode }) {
+function Property({
+  label,
+  children,
+  align = "center",
+}: {
+  label: string;
+  children: ReactNode;
+  align?: "center" | "start";
+}) {
   return (
-    <div className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+    <div
+      className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 data-[align=start]:items-start sm:grid-cols-[11rem_minmax(0,1fr)]"
+      data-align={align}
+    >
       <Typography className="text-sm!" color="muted" weight="normal">
         {label}
       </Typography>
@@ -147,10 +159,13 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                   metadata={sessionKey.wallet.metadata}
                 />
               </Property>
+              <Property label="Custody">
+                <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
+              </Property>
               <Property label="Namespace">
                 <NamespaceDisplay namespace={sessionKey.namespace} />
               </Property>
-              <Property label="Networks">
+              <Property label="Networks" align="start">
                 <div className="grid gap-2">
                   {sessionKey.installations.map((network) => (
                     <ChainDisplay key={network.chainId} chainId={network.chainId} />
@@ -180,7 +195,7 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                 <ActionContent
                   icon={Globe02Icon}
                   title="Enable networks"
-                  description="Approve network access with your account’s passkey."
+                  description="Approve network access with your account owner."
                 />
               </Link>
             ) : null}
@@ -194,7 +209,11 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                 <ActionContent
                   icon={CommandLineIcon}
                   title="Connect CLI"
-                  description="Authorize your terminal to use your imported session key."
+                  description={
+                    sessionKey.signer.custody === "local"
+                      ? "Authorize your terminal to use your imported session key."
+                      : "Authorize your terminal. No private-key import is needed."
+                  }
                 />
               </Button>
             ) : null}

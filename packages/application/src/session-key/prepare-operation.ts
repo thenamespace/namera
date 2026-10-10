@@ -9,7 +9,8 @@ import { SessionKeyOperationError, type ActorId, type OrganizationId } from "@na
 import {
   PasskeyAuthenticationOptions,
   type PrepareSessionKeyOperationRequest,
-  type PrepareSessionKeyOperationResponse,
+  PrepareSessionKeyOperationResponse,
+  PrepareManagedSessionKeyOperationResponse,
 } from "@namera-ai/protocol/dto";
 import type { SessionKeyOperation } from "@namera-ai/protocol/model";
 import { sessionKeyOperationResults, sessionKeyOperationDuration } from "@namera-ai/telemetry";
@@ -19,7 +20,7 @@ import { AuthConfig } from "#/auth/config";
 
 import { makeLoadSessionOperationOwner } from "./operation-owner.js";
 
-export const makePrepareSessionKeyOperation = Effect.gen(function* () {
+export const makePrepareSessionKeyOperations = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const crypto = yield* CryptoService;
@@ -29,16 +30,21 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
   const config = yield* AuthConfig;
   const loadOwner = yield* makeLoadSessionOperationOwner;
 
-  return Effect.fn("application.sessionKey.prepareOperation")(
-    function* (input: {
-      readonly organizationId: OrganizationId;
-      readonly actorId: ActorId;
-      readonly request: PrepareSessionKeyOperationRequest;
-    }) {
+  const prepare = Effect.fn("application.sessionKey.prepareOperation")(
+    function* (
+      input: {
+        readonly organizationId: OrganizationId;
+        readonly actorId: ActorId;
+        readonly request: PrepareSessionKeyOperationRequest;
+      },
+      approval: "passkey" | "1claw",
+    ) {
       const owner = yield* loadOwner({
         organizationId: input.organizationId,
         installationId: input.request.installationId,
       });
+      if (owner.type !== approval)
+        return yield* new SessionKeyOperationError({ code: "OWNER_UNAVAILABLE" });
       const requestHash = yield* crypto.hash({
         purpose: "session-key.owner-operation",
         value: JSON.stringify({
@@ -61,6 +67,14 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
           return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });
         if (DateTime.toEpochMillis(operation.expiresAt) <= DateTime.toEpochMillis(now))
           return yield* new SessionKeyOperationError({ code: "APPROVAL_EXPIRED" });
+        if (owner.type === "1claw")
+          return {
+            operationId: operation.id,
+            namespace: "eip155" as const,
+            approval: "1claw" as const,
+            prepared: operation.data.prepared,
+            expiresAt: operation.expiresAt,
+          } satisfies PrepareManagedSessionKeyOperationResponse;
         const challenge = yield* evm.execution
           .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
           .pipe(
@@ -147,6 +161,12 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
             organizationId: input.organizationId,
             installationId: input.request.installationId,
           });
+          if (
+            current.type !== approval ||
+            current.wallet.signingKey.id !== owner.wallet.signingKey.id ||
+            current.wallet.signingKey.publicKeyHex !== owner.wallet.signingKey.publicKeyHex
+          )
+            return yield* new SessionKeyOperationError({ code: "OWNER_UNAVAILABLE" });
           yield* assertTransition(current);
           const existing =
             yield* repository.core.sessionKeyOperation.findByActorAndIdempotencyKey(scope);
@@ -165,7 +185,19 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
             chainId: owner.installation.chainId,
             kind: input.request.kind,
             requestHash,
-            data: { version: 1, prepared, signed: null },
+            data: {
+              version: 1,
+              prepared,
+              signed: null,
+              ...(owner.type === "1claw"
+                ? {
+                    managedOwner: {
+                      signingKeyId: owner.wallet.signingKey.id,
+                      publicKey: owner.wallet.signingKey.publicKeyHex,
+                    },
+                  }
+                : {}),
+            },
             expiresAt: DateTime.addDuration(yield* DateTime.now, config.passkey.timeToLive),
           });
           yield* audit.organization({
@@ -203,4 +235,17 @@ export const makePrepareSessionKeyOperation = Effect.gen(function* () {
     ),
     Effect.catchTag("DatabaseError", Effect.die),
   );
+  type Input = Parameters<typeof prepare>[0];
+  return {
+    prepareOperation: (input: Input) =>
+      prepare(input, "passkey").pipe(
+        Effect.map(Schema.decodeUnknownSync(Schema.toType(PrepareSessionKeyOperationResponse))),
+      ),
+    prepareManagedOperation: (input: Input) =>
+      prepare(input, "1claw").pipe(
+        Effect.map(
+          Schema.decodeUnknownSync(Schema.toType(PrepareManagedSessionKeyOperationResponse)),
+        ),
+      ),
+  };
 });

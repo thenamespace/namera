@@ -8,7 +8,9 @@ import { makeReconstructPreparedAccount } from "./prepared-account.js";
 import { completeSignedEvmExecution } from "./signed-operation.js";
 import type { SignEvmExecutionInput } from "./types.js";
 
-export const makeSignEvmExecution = (getClients: (chain: ChainData) => ExecutionClients) => {
+export const makeSignEvmExecution = (
+  getClients: (chain: ChainData) => Pick<ExecutionClients, "publicClient">,
+) => {
   const reconstruct = makeReconstructPreparedAccount(getClients);
 
   return Effect.fn("evm.execution.sign")(function* (input: SignEvmExecutionInput) {

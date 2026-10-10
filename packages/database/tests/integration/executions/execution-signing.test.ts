@@ -43,6 +43,64 @@ const fixture = Effect.fn("test.executionSigning.fixture")(function* (name: stri
 });
 
 layer(Persistence)("local execution persistence", (it) => {
+  it.effect("fences managed signing by actor, deadline and the latest lease token", () =>
+    Effect.gen(function* () {
+      yield* (yield* TestDatabase).reset;
+      const repository = (yield* Repository).core.executionSubmission;
+      const owner = yield* fixture("managed-execution-lease");
+      const other = yield* fixture("other-managed-execution");
+      const { submission } = yield* repository.insert({
+        ...owner.input,
+        data: { ...owner.input.data, managedSignerBinding: "test-public-binding" },
+      });
+      const claim = {
+        id: submission.id,
+        organizationId: owner.organization.id,
+        actorId: owner.actor.id,
+        leaseToken: "first",
+        now: DateTime.fromEpochSeconds(1),
+        leaseExpiresAt: DateTime.fromEpochSeconds(20),
+      };
+      expect(
+        yield* repository.claimForSigning({ ...claim, actorId: other.actor.id }),
+      ).toBeUndefined();
+      expect(
+        yield* repository.claimForSigning({ ...claim, organizationId: other.organization.id }),
+      ).toBeUndefined();
+      expect(yield* repository.claimForSigning(claim)).toBeDefined();
+      expect(yield* repository.claimForSigning({ ...claim, leaseToken: "second" })).toBeUndefined();
+      const acceptance = {
+        id: submission.id,
+        organizationId: owner.organization.id,
+        actorId: owner.actor.id,
+        requestHash: owner.input.requestHash,
+        signed: owner.signed,
+        now: DateTime.fromEpochSeconds(21),
+        nextReconcileAt: DateTime.fromEpochSeconds(40),
+      };
+      expect(yield* repository.acceptSignature(acceptance)).toBeUndefined();
+      expect(
+        yield* repository.acceptSignature({ ...acceptance, leaseToken: "first" }),
+      ).toBeUndefined();
+      expect(
+        yield* repository.claimForSigning({
+          ...claim,
+          now: acceptance.now,
+          leaseToken: "second",
+          leaseExpiresAt: DateTime.fromEpochSeconds(35),
+        }),
+      ).toBeDefined();
+      expect(
+        yield* repository.acceptSignature({ ...acceptance, leaseToken: "first" }),
+      ).toBeUndefined();
+      expect(
+        (yield* repository.acceptSignature({ ...acceptance, leaseToken: "second" }))?.status,
+      ).toBe("prepared");
+      expect(
+        yield* repository.claimForSigning({ ...claim, now: DateTime.fromEpochSeconds(50) }),
+      ).toBeUndefined();
+    }),
+  );
   it.effect("leases abandoned unsigned preparations only after their signing deadline", () =>
     Effect.gen(function* () {
       yield* (yield* TestDatabase).reset;

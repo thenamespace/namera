@@ -8,10 +8,12 @@ import type {
   OrganizationRole,
   User,
   SessionKeyInstallation,
+  SigningKey,
 } from "@namera-ai/protocol/model";
 
 export interface SessionKeyView {
   readonly sessionKey: EvmSessionKey;
+  readonly signingKey: SigningKey;
   readonly installations: ReadonlyArray<SessionKeyInstallation>;
   readonly wallet: WalletView;
   readonly creator: {
@@ -30,7 +32,7 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
   ) {
     if (sessionKeys.length === 0) return [];
 
-    const [wallets, creators, installations] = yield* Effect.all([
+    const [wallets, creators, installations, signers] = yield* Effect.all([
       repository.core.wallet.findForOrganization(organizationId),
       repository.auth.member.findByActorIds(organizationId, [
         ...new Set(sessionKeys.map((sessionKey) => sessionKey.createdByActorId)),
@@ -39,8 +41,13 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
         organizationId,
         sessionKeys.map(({ id }) => id),
       ),
+      repository.core.signingKey.findForSessions(
+        organizationId,
+        sessionKeys.map(({ signingKeyId }) => signingKeyId),
+      ),
     ]);
     const walletById = new Map(wallets.map((wallet) => [wallet.wallet.id, wallet]));
+    const signerById = new Map(signers.map((signer) => [signer.id, signer]));
     const creatorByActorId = new Map(
       creators.map((creator) => [creator.organizationMember.actorId, creator]),
     );
@@ -49,11 +56,13 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
     for (const sessionKey of sessionKeys) {
       const wallet = walletById.get(sessionKey.walletId);
       const creator = creatorByActorId.get(sessionKey.createdByActorId);
-      if (wallet === undefined || creator === undefined) {
+      const signingKey = signerById.get(sessionKey.signingKeyId);
+      if (wallet === undefined || creator === undefined || signingKey === undefined) {
         return yield* Effect.die("Session-key response relation is missing");
       }
       views.push({
         sessionKey,
+        signingKey,
         wallet,
         creator,
         installations: installations.filter(

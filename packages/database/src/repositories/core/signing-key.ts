@@ -9,13 +9,17 @@ import {
   type SigningKeyInsert as SigningKeyInsertModel,
   type SigningKeyStatus,
 } from "@namera-ai/protocol/model";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { signingKey } from "#/schema/index";
 
 export interface SigningKeyRepositoryService {
+  readonly findForSessions: (
+    organizationId: OrganizationId,
+    ids: ReadonlyArray<SigningKeyId>,
+  ) => Effect.Effect<ReadonlyArray<SigningKeyModel>, DatabaseError>;
   readonly insert: (input: SigningKeyInsertModel) => Effect.Effect<SigningKeyModel, DatabaseError>;
   readonly insertIfPublicKeyAvailable: (
     input: SigningKeyInsertModel,
@@ -23,6 +27,7 @@ export interface SigningKeyRepositoryService {
   readonly findById: (
     id: SigningKeyId,
     organizationId: OrganizationId,
+    forUpdate?: boolean,
   ) => Effect.Effect<SigningKeyModel | undefined, DatabaseError>;
   readonly findByPublicKey: (input: {
     readonly organizationId: OrganizationId;
@@ -56,12 +61,36 @@ export class SigningKeyRepository extends Context.Service<
       const database = yield* Database;
 
       return SigningKeyRepository.of({
+        findForSessions: Effect.fn("database.signingKeyRepository.findForSessions")(function* (
+          organizationId,
+          ids,
+        ) {
+          if (ids.length === 0) return [];
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(signingKey)
+            .where(
+              and(
+                eq(signingKey.organizationId, organizationId),
+                eq(signingKey.purpose, "session"),
+                inArray(signingKey.id, ids),
+              ),
+            );
+          return rows.map(decodeSigningKey);
+        }, mapRepositoryError),
         insert: Effect.fn("database.signingKeyRepository.insert")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(SigningKeyInsert)(input);
           const rows = yield* db
             .insert(signingKey)
-            .values({ ...encoded, id: input.id, organizationId: input.organizationId })
+            .values({
+              ...encoded,
+              id: input.id,
+              organizationId: input.organizationId,
+              credentialId: input.credentialId ?? null,
+              providerConnectionId: input.providerConnectionId ?? null,
+            })
             .returning();
           return decodeSigningKey(rows[0]);
         }, mapRepositoryError),
@@ -72,7 +101,13 @@ export class SigningKeyRepository extends Context.Service<
           const encoded = Schema.encodeSync(SigningKeyInsert)(input);
           const rows = yield* db
             .insert(signingKey)
-            .values({ ...encoded, id: input.id, organizationId: input.organizationId })
+            .values({
+              ...encoded,
+              id: input.id,
+              organizationId: input.organizationId,
+              credentialId: input.credentialId ?? null,
+              providerConnectionId: input.providerConnectionId ?? null,
+            })
             .onConflictDoNothing({
               target: [signingKey.organizationId, signingKey.algorithm, signingKey.publicKeyHex],
             })
@@ -82,8 +117,18 @@ export class SigningKeyRepository extends Context.Service<
         findById: Effect.fn("database.signingKeyRepository.findById")(function* (
           id,
           organizationId,
+          forUpdate = false,
         ) {
           const db = yield* transactionOrDatabase(database);
+          if (forUpdate) {
+            const rows = yield* db
+              .select()
+              .from(signingKey)
+              .where(and(eq(signingKey.id, id), eq(signingKey.organizationId, organizationId)))
+              .limit(1)
+              .for("update");
+            return rows[0] === undefined ? undefined : decodeSigningKey(rows[0]);
+          }
           const row = yield* db.query.signingKey.findFirst({
             where: {
               id: { eq: id },

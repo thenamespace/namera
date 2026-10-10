@@ -29,8 +29,9 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   PostgreSQL layer, transactions, and repositories.
 - [`packages/emails`](packages/emails/README.md) — durable typed email jobs,
   background delivery, and the Resend provider adapter.
-- [`packages/wallet-keys`](packages/wallet-keys/README.md) — provider-neutral
-  wallet-key creation and signing through local files or Google Cloud KMS.
+- [`packages/wallet-providers/gcp`](packages/wallet-providers/gcp/README.md) — Google Cloud KMS lifecycle and signing through `GcpService`.
+- [`packages/wallet-providers/local`](packages/wallet-providers/local/README.md) — development filesystem keys through `LocalService`.
+- [`packages/wallet-providers/oneclaw`](packages/wallet-providers/oneclaw/README.md) — SDK-backed Platform/customer/agent operations through `OneClawService`, plus org OIDC issuance; not yet wired into public custody.
 - [`packages/ens`](packages/ens/README.md) — Namespace-backed offchain ENS
   subname and record management.
 - [`packages/passkeys`](packages/passkeys/README.md) — provider-neutral
@@ -105,14 +106,14 @@ not duplicate secrets or arbitrary payloads.
 ## Dependency direction
 
 ```text
-apps/server      -> api, application, crypto, database, emails, telemetry, evm, wallet-keys
-application      -> crypto, database, emails, evm, passkeys, telemetry, protocol, utils, wallet-keys
+apps/server      -> api, application, crypto, database, emails, telemetry, evm, wallet-providers/*
+application      -> crypto, database, emails, evm, passkeys, telemetry, protocol, utils, wallet-providers/*
 api              -> protocol
 crypto           -> protocol, utils
 database         -> protocol, utils
 emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
-wallet-keys      -> protocol
+wallet-providers/*      -> protocol
 passkeys         -> utils
 apps/dashboard   -> api, protocol, telemetry, ui
 apps/admin-portal -> api, protocol, ui
@@ -123,7 +124,7 @@ ui               -> protocol, Namespace UIKit
 Additional rules:
 
 - `api` may depend on `protocol`; it must not contain handlers or business logic.
-- `crypto`, `database`, `evm`, and `wallet-keys` may depend on `protocol`; they
+- `crypto`, `database`, `evm`, and `wallet-providers/*` may depend on `protocol`; they
   must not depend on `application` or `api`.
 - `emails` may depend on `crypto`, `database`, `telemetry`, and `protocol` to
   own its durable encrypted outbox and runtime React Email templates. It must
@@ -136,9 +137,10 @@ Additional rules:
 - `utils` must not depend on project Effect services. Reuse it before creating
   duplicate low-level helpers.
 - `application` must not import `api` or `apps/server`.
-- Wallet key provider clients and private key material stay inside
-  `packages/wallet-keys`; application workflows receive only the
-  provider-neutral `WalletKeys` service.
+- Wallet provider clients and private key material stay inside their independent
+  `packages/wallet-providers/*` packages. Application workflows use explicit
+  provider services such as `GcpService` and `LocalService`; do not introduce a
+  shared provider interface or dispatcher. EVM receives signing callbacks only.
 - Application wallet workflows coordinate billing, key providers, chain
   adapters, persistence, audit events, notifications, and email enqueueing.
   Remote key/account creation happens before the final transaction; repeat the

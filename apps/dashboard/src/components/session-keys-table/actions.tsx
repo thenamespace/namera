@@ -45,7 +45,7 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
         description:
           result.status === "revoked"
             ? "This session no longer authorizes operations."
-            : "Open the session to remove its onchain permissions with your passkey.",
+            : "Open the session to approve removal of its onchain permissions.",
       });
       setIsRevokeOpen(false);
     },
@@ -111,22 +111,22 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
       <AlertDialog>
         <AlertDialog.Backdrop isOpen={isRevokeOpen} onOpenChange={setIsRevokeOpen}>
           <AlertDialog.Container size="md">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog className="rounded-xl">
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
                 <AlertDialog.Icon status="danger" />
                 <AlertDialog.Heading>Revoke {sessionKey.metadata.name}?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                Namera will immediately revoke its API, CLI, and MCP grants. Onchain permissions
-                remain until you approve their removal on every installed network using the account
-                owner’s passkey. Revoked grants cannot be restored.
+                API, CLI, and MCP access ends immediately and cannot be restored. Remove onchain
+                permissions separately on each network.
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button slot="close" variant="tertiary">
+                <Button slot="close" variant="tertiary" size="sm">
                   Cancel
                 </Button>
                 <Button
+                  size="sm"
                   isDisabled={revokeSessionKey.isPending}
                   variant="danger"
                   onPress={handleRevoke}

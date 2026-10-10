@@ -1,6 +1,7 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 
 import { EvmExecutionError } from "@namera-ai/protocol";
+import { AlchemyModularV2FactoryWalletData } from "@namera-ai/protocol/model";
 import { isAddressEqual } from "viem";
 import type { PublicClient } from "viem";
 import type { SmartAccount } from "viem/account-abstraction";
@@ -41,6 +42,23 @@ export const reconstructEvmAccount: (
           input.wallet.validatorType === "ecdsa_secp256k1" &&
           input.owner.validatorType === "ecdsa_secp256k1"
         ) {
+          if (input.wallet.accountMode === "factory") {
+            const wallet = Schema.decodeUnknownSync(
+              Schema.toType(AlchemyModularV2FactoryWalletData),
+            )(input.wallet);
+            if (!isAddressEqual(wallet.ownerAddress, input.owner.account.address)) {
+              throw new Error("Stored factory owner does not match the supplied owner");
+            }
+            return makeAlchemyModularV2Account(
+              {
+                accountMode: "factory",
+                entryPointVersion: wallet.entryPointVersion,
+                salt: wallet.salt,
+                owner: input.owner,
+              },
+              publicClient,
+            );
+          }
           return makeAlchemyModularV2Account(
             {
               entryPointVersion: input.wallet.entryPointVersion,

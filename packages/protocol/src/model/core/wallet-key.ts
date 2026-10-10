@@ -1,14 +1,17 @@
 import { Schema, Struct } from "effect";
 
-import { OrganizationId, SigningKeyId, WalletKeyId } from "#/common/index";
+import { CredentialId, OrganizationId, SigningKeyId, WalletKeyId } from "#/common/index";
 import { Hex } from "#/evm/index";
 import { TimestampFields } from "#/model/common";
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
+import { OneClawAgentCredentialPayload } from "./credential.js";
+import { OneClawEthereumKeyData } from "./one-claw.js";
+
 export const WalletKeyAlgorithm = Schema.Literals(["p256", "secp256k1", "ed25519"]);
 export const WalletKeyProtectionLevel = Schema.Literals(["software", "hsm"]);
 export const WalletKeyStatus = Schema.Literals(["active", "disabled", "destroyed"]);
-export const WalletKeyProvider = Schema.Literals(["gcp-kms", "local"]);
+export const WalletKeyProvider = Schema.Literals(["gcp-kms", "local", "1claw"]);
 export const LocalWalletKeyData = Schema.Struct({
   version: Schema.Literal(1),
   fileName: Schema.NonEmptyString,
@@ -25,20 +28,46 @@ export const GcpWalletKeyData = Schema.Struct({
 });
 export const WalletKeyData = Schema.Union([LocalWalletKeyData, GcpWalletKeyData]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const CreateWalletKeyInput = Schema.Union([
   Schema.Struct({
     id: SigningKeyId,
+    provider: Schema.optionalKey(Schema.Never),
     algorithm: Schema.Literals(["p256", "ed25519"]),
     protectionLevel: WalletKeyProtectionLevel,
   }),
   Schema.Struct({
     id: SigningKeyId,
+    provider: Schema.optionalKey(Schema.Never),
     algorithm: Schema.Literal("secp256k1"),
     protectionLevel: Schema.Literal("hsm"),
   }),
+  Schema.Struct({
+    id: SigningKeyId,
+    organizationId: OrganizationId,
+    credentialId: CredentialId,
+    provider: Schema.Literal("1claw"),
+    algorithm: Schema.Literal("secp256k1"),
+    chain: Schema.Literal("ethereum"),
+    protectionLevel: Schema.optionalKey(Schema.Never),
+  }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const CreatedWalletKey = Schema.Union([
+  Schema.Struct({
+    provider: Schema.Literal("1claw"),
+    algorithm: Schema.Literal("secp256k1"),
+    publicKeyHex: Hex,
+    data: OneClawEthereumKeyData,
+    credential: OneClawAgentCredentialPayload,
+  }).check(
+    Schema.makeFilter(({ data, credential }) =>
+      data.agentId === credential.agentId
+        ? undefined
+        : "Created key and credential must belong to the same agent",
+    ),
+  ),
   Schema.Struct({
     provider: Schema.Literal("local"),
     algorithm: WalletKeyAlgorithm,
@@ -59,6 +88,7 @@ export const WalletKeyHash = Schema.Uint8Array.check(
   Schema.isBetweenLength(32, 32, { message: "Wallet key hashes must be 32 bytes" }),
 );
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const SignWalletKeyMessageInput = Schema.Union([
   Schema.Struct({
     provider: Schema.Literal("local"),
@@ -74,7 +104,16 @@ export const SignWalletKeyMessageInput = Schema.Union([
   }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const SignWalletKeyHashInput = Schema.Union([
+  Schema.Struct({
+    provider: Schema.Literal("1claw"),
+    organizationId: OrganizationId,
+    credentialId: CredentialId,
+    algorithm: Schema.Literal("secp256k1"),
+    data: OneClawEthereumKeyData,
+    hash: WalletKeyHash,
+  }),
   Schema.Struct({
     provider: Schema.Literal("local"),
     algorithm: Schema.Literals(["p256", "secp256k1"]),
@@ -89,17 +128,29 @@ export const SignWalletKeyHashInput = Schema.Union([
   }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const DisableWalletKeyInput = Schema.Union([
+  Schema.Struct({
+    provider: Schema.Literal("1claw"),
+    organizationId: OrganizationId,
+    credentialId: CredentialId,
+    data: OneClawEthereumKeyData,
+  }),
   Schema.Struct({ provider: Schema.Literal("local"), data: LocalWalletKeyData }),
   Schema.Struct({ provider: Schema.Literal("gcp-kms"), data: GcpWalletKeyData }),
 ]);
 
-export const DestroyWalletKeyInput = DisableWalletKeyInput;
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
+export const DestroyWalletKeyInput = Schema.Union([
+  Schema.Struct({ provider: Schema.Literal("local"), data: LocalWalletKeyData }),
+  Schema.Struct({ provider: Schema.Literal("gcp-kms"), data: GcpWalletKeyData }),
+]);
 
 export const WalletKey = Schema.Struct({
   id: WalletKeyId,
   organizationId: OrganizationId,
-  provider: WalletKeyProvider,
+  // Legacy standalone model; new providers use the canonical SigningKey model.
+  provider: Schema.Literals(["gcp-kms", "local"]),
   algorithm: WalletKeyAlgorithm,
   protectionLevel: WalletKeyProtectionLevel,
   publicKeyHex: Hex,

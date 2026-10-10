@@ -110,6 +110,13 @@ rules; application only coordinates their results with persistence. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 
+Managed 1Claw account creation uses the focused operations in `src/oneclaw/`:
+organization setup/renewal, encrypted agent provisioning, and bound owner loading.
+It constructs factory smart accounts with a secp256k1 owner. The server enables
+1Claw only; legacy GCP/local services remain independent and disabled in runtime.
+There is no shared provider facade. See [accounts](../../architecture/wallets/accounts.md)
+for lease, credential, billing, audit and manual-recovery boundaries.
+
 Wallet creation performs a cheap quota precheck, creates the provider key and
 chain account, then repeats the locked quota check before atomically persisting
 the key, wallet, audit events, notification recipients, and durable email jobs.
@@ -122,8 +129,18 @@ persisting versioned policy instances. Registry-owned cardinality rejects a
 second instance only for policy types declared singleton; repeatable types and
 the total policy array have no product-level maximum. The same registry assigns
 IDs and code-owned applicability without application policy switches. Registration
-persists a dedicated local signer and pending onchain installations. Owner passkey
-approval records an immutable signed attempt; receipt recovery activates it.
+persists a dedicated local or 1Claw-managed signer and pending onchain installations.
+Managed creation reuses organization setup, saves the encrypted agent credential
+before key creation, and repeats its separate quota and provider-binding checks in
+the final transaction. Owner passkey
+or explicit 1Claw approval records an immutable signed attempt; receipt recovery
+activates it. Managed approval signs only a stored install/remove operation under
+a fenced signing lease. Public reconstruction and routine local-session use never
+load managed root credentials. Unified execution/signature preparation resolves
+session custody from the granted signer. Completion requires a local signature
+or invokes the managed session signer under a lease; it never uses a root key.
+SDK, CLI/MCP and dashboard support both custodians. Live provider verification
+remains separate from the substituted-provider integration suite.
 Revocation immediately removes API grants, then waits for owner-approved onchain
 removal before finalizing the session and notifying members. Signed installation
 attempts remain recoverable without restoring API authority. Policy hashes are purpose-separated and

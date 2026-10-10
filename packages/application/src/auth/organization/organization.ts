@@ -2,6 +2,7 @@ import { DateTime, Effect, Equal, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import {
+  BillingLimitExceededError,
   OrganizationNotFoundError,
   type ActorId,
   type OrganizationError,
@@ -23,6 +24,7 @@ import {
 } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+import { maxOwnedOrganizations } from "#/billing/data";
 
 import { createOrganizationWithOwner } from "./helpers.js";
 
@@ -38,7 +40,7 @@ export interface OrganizationApplication {
     userId: UserId,
     sessionId: SessionId,
     metadata: OrganizationMetadata,
-  ) => Effect.Effect<Organization, OrganizationError>;
+  ) => Effect.Effect<Organization, OrganizationError | BillingLimitExceededError>;
   readonly list: (userId: UserId) => Effect.Effect<ReadonlyArray<MembershipView>>;
   readonly get: (
     userId: UserId,
@@ -66,6 +68,12 @@ export const makeOrganizationApplication = Effect.gen(function* () {
       const now = yield* DateTime.now;
       const organization = yield* transaction.run(
         Effect.gen(function* () {
+          const owned = yield* repository.auth.organization.countOwnedForUpdate(userId);
+          if (owned >= maxOwnedOrganizations)
+            return yield* new BillingLimitExceededError({
+              code: "LIMIT_EXCEEDED",
+              limit: "ownedOrganizations",
+            });
           const created = yield* createOrganizationWithOwner(
             repository,
             audit,

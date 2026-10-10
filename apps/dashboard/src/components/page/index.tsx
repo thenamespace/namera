@@ -2,8 +2,14 @@ import type { ComponentProps, PropsWithChildren } from "react";
 
 import { cn, Sidebar } from "@namera-ai/ui";
 
+import { PagePanelContext } from "./context";
+
 const DashboardPageRoot = ({ children }: PropsWithChildren) => {
-  return <Sidebar.Main className="bg-background rounded-lg">{children}</Sidebar.Main>;
+  return (
+    <Sidebar.Main className="bg-background rounded-lg">
+      <PagePanelContext.Provider value={true}>{children}</PagePanelContext.Provider>
+    </Sidebar.Main>
+  );
 };
 
 const DashboardPageHeader = ({ children, className, ...props }: ComponentProps<"div">) => {

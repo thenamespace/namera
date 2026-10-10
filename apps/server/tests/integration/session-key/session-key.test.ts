@@ -34,7 +34,7 @@ layer(fixture.layer)("session-key routes", (it) => {
       const expiresAt = DateTime.addDuration(now, Duration.hours(1));
       const request = {
         ...(yield* localSessionRequest(wallet.id)),
-        metadata: metadata("Agent window"),
+        metadata: { ...metadata("Agent window"), logo: { type: "emoji" as const, value: "🔑" } },
         policies: [
           {
             type: "evm.time-window" as const,
@@ -166,6 +166,8 @@ layer(fixture.layer)("session-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         sessionKeyName: "Agent window",
+        sessionKeyLogo: { type: "emoji", value: "🔑" },
+        custody: "local",
         actionUrl: `http://dashboard.test/auth?returnTo=%2Fsession-key%2F${created.id}%2Foverview`,
         walletName: "Treasury",
         organizationName: owner.actor.organization.metadata.name,
@@ -389,7 +391,7 @@ layer(fixture.layer)("session-key routes", (it) => {
       const sessionKey = yield* client.sessionKey.create({
         payload: {
           ...(yield* localSessionRequest(wallet.id)),
-          metadata: metadata("Revocable key"),
+          metadata: { ...metadata("Revocable key"), logo: { type: "emoji", value: "🔑" } },
           policies: [
             {
               type: "evm.time-window",
@@ -477,6 +479,8 @@ layer(fixture.layer)("session-key routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         sessionKeyName: "Revocable key",
+        sessionKeyLogo: { type: "emoji", value: "🔑" },
+        custody: "local",
         actionUrl: `http://dashboard.test/auth?returnTo=%2Fsession-key%2F${sessionKey.id}%2Foverview`,
         walletName: "Revocation wallet",
         revokedGrantCount: 2,

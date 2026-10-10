@@ -9,13 +9,20 @@ import {
   type OrganizationMetadata,
   OrganizationUpdate,
 } from "@namera-ai/protocol/model";
-import { eq } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { organization } from "#/schema/index";
+import {
+  organization,
+  organizationMember,
+  organizationRole,
+  systemRole,
+  user,
+} from "#/schema/index";
 
 export interface OrganizationRepositoryService {
+  countOwnedForUpdate: (userId: UserId) => Effect.Effect<number, DatabaseError>;
   insert: (data: OrganizationInsert) => Effect.Effect<Organization, DatabaseError>;
   findById: (id: OrganizationId) => Effect.Effect<Organization | undefined, DatabaseError>;
   findOrgsCreatedByUserId: (
@@ -37,6 +44,29 @@ export class OrganizationRepository extends Context.Service<
       const database = yield* Database;
 
       return OrganizationRepository.of({
+        countOwnedForUpdate: Effect.fn("database.organization.countOwnedForUpdate")(function* (
+          userId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          // Serialize all ownership admissions for this user, including different orgs.
+          yield* db.select({ id: user.id }).from(user).where(eq(user.id, userId)).for("update");
+          const rows = yield* db
+            .select({ value: count() })
+            .from(organizationMember)
+            .innerJoin(
+              organizationRole,
+              eq(organizationMember.organizationRoleId, organizationRole.id),
+            )
+            .innerJoin(systemRole, eq(organizationRole.systemRoleId, systemRole.id))
+            .where(
+              and(
+                eq(organizationMember.userId, userId),
+                isNull(organizationMember.removedAt),
+                eq(systemRole.key, "owner"),
+              ),
+            );
+          return rows[0]?.value ?? 0;
+        }, mapRepositoryError),
         insert: Effect.fn("database.insertOrganization")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationInsert)(data);

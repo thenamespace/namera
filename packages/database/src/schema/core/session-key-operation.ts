@@ -98,7 +98,7 @@ export const sessionKeyOperation = coreSchema.table(
       "session_operation_lease_check",
       sql`
     (${table.leaseToken} IS NULL OR ${table.leaseExpiresAt} IS NOT NULL)
-    AND (${table.status} IN ('signed', 'submitted') OR (${table.leaseToken} IS NULL AND ${table.leaseExpiresAt} IS NULL))`,
+    AND (${table.status} IN ('awaiting-signature', 'signed', 'submitted') OR (${table.leaseToken} IS NULL AND ${table.leaseExpiresAt} IS NULL))`,
     ),
     index("session_operation_reconcile_idx").on(table.status, table.leaseExpiresAt),
     index("session_operation_expiry_idx")

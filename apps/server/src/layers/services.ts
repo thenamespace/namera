@@ -3,16 +3,20 @@ import { Config, Effect, Layer } from "effect";
 
 import { Application, GoogleIdentityProvider } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
-import { Database, DatabaseMigration, Repository, TransactionService } from "@namera-ai/database";
+import { Database, Repository, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
+import { LocalService } from "@namera-ai/wallet-provider-local";
+import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-oneclaw";
 
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
 import { SessionKeyWorkerLayer } from "#/workers/session-key";
+
+import { BillingStartupUpgrade } from "./billing-upgrade.js";
 
 const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
   Layer.provide(Database.layer),
@@ -41,12 +45,21 @@ const EvmLive = Layer.unwrap(
   ),
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));
 
+export const OneClawLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* Config.String("ONECLAW_ORG_EMAIL_DOMAIN");
+    return Layer.merge(OneClawService.layer, OneClawOidcService.layer);
+  }),
+);
+
 export const ServicesLive = Layer.mergeAll(
   GoogleIdentityProvider.layer.pipe(Layer.provide(NodeHttpClient.layerUndici)),
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,
-  WalletKeys.disabledLayer,
+  GcpService.disabledLayer,
+  LocalService.disabledLayer,
+  OneClawLive,
   EvmLive,
   Ens.layer,
   Passkeys.layer,
@@ -54,44 +67,44 @@ export const ServicesLive = Layer.mergeAll(
 
 export const ApplicationLive = Application.layer;
 
-// Workers wait for migrations independently because they are long-lived layers
+// Workers wait for the startup upgrade independently because they are long-lived layers
 // and may begin polling before the HTTP listener is constructed.
 export const EmailWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
-    yield* DatabaseMigration;
+    yield* BillingStartupUpgrade;
     return EmailWorkerLayer;
   }),
-).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
+).pipe(Layer.provide(BillingStartupUpgrade.layer), Layer.provide(ServicesLive));
 
 export const ExecutionWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
-    yield* DatabaseMigration;
+    yield* BillingStartupUpgrade;
     return ExecutionWorkerLayer;
   }),
 ).pipe(
-  Layer.provide(DatabaseMigration.layer),
+  Layer.provide(BillingStartupUpgrade.layer),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
 );
 
 export const BillingWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
-    yield* DatabaseMigration;
+    yield* BillingStartupUpgrade;
     return BillingWorkerLayer;
   }),
 ).pipe(
-  Layer.provide(DatabaseMigration.layer),
+  Layer.provide(BillingStartupUpgrade.layer),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
 );
 
 export const SessionKeyWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
-    yield* DatabaseMigration;
+    yield* BillingStartupUpgrade;
     return SessionKeyWorkerLayer;
   }),
 ).pipe(
-  Layer.provide(DatabaseMigration.layer),
+  Layer.provide(BillingStartupUpgrade.layer),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
 );

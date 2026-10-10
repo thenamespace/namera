@@ -93,7 +93,11 @@ const serve = Command.make(
           });
         }
         return yield* makeMcpApiClient(
-          { apiOrigin, resolveSessionSigner: resolveCliSessionSigner(apiOrigin, maxGasCostWei) },
+          {
+            apiOrigin,
+            resolveSessionSigner: resolveCliSessionSigner(apiOrigin, maxGasCostWei),
+            ...(maxGasCostWei === undefined ? {} : { maxGasCostWei }),
+          },
           {
             accessToken: Redacted.make(credentials.accessToken),
             clientId: credentials.clientId,

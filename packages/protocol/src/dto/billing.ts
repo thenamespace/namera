@@ -15,6 +15,9 @@ export const BillingResourceKey = Schema.Literals([
   "software-wallets",
   "hsm-wallets",
   "local-wallets",
+  "oneclaw-wallets",
+  "local-session-keys",
+  "oneclaw-session-keys",
 ]);
 
 export const BillingResourceUsage = Schema.Struct({
@@ -39,6 +42,13 @@ export const GetBillingResponse = Schema.Struct({
   plan: BillingPlan,
   planVersion: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
   status: BillingSubscriptionStatus,
+  scheduledChange: Schema.optionalKey(
+    Schema.Struct({
+      plan: BillingPlan,
+      planVersion: Schema.Int,
+      effectiveAt: Schema.DateTimeUtcFromDate,
+    }),
+  ),
   period: Schema.Struct({
     id: BillingPeriodId,
     startsAt: Schema.DateTimeUtcFromDate,

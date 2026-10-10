@@ -23,3 +23,15 @@ export const OrganizationUpdatedEventData = Schema.Struct({
     changedFields: Schema.Array(Schema.Literal("metadata")),
   }),
 });
+
+export const BillingPlanChangedEventData = Schema.Struct({
+  event: Schema.Literal("billing.plan_changed"),
+  ...OrganizationResource,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    plan: Schema.Literal("free"),
+    previousPlanVersion: Schema.Literal(1),
+    planVersion: Schema.Literal(2),
+    effectiveAt: Schema.DateTimeUtcFromString,
+  }),
+});

@@ -5,7 +5,7 @@ import type {
   BillingResourceUsage,
   GetBillingResponse,
 } from "@namera-ai/protocol/dto";
-import { Meter, Surface, Typography } from "@namera-ai/ui";
+import { buttonVariants, Meter, Surface, Typography } from "@namera-ai/ui";
 import { CheckIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
@@ -30,7 +30,7 @@ function UsageRow({ label, maximum, pending = 0n, unit, value }: UsageRowProps) 
 
   return (
     <div className="min-w-0">
-      <div className="mb-2 flex items-baseline justify-between gap-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <Typography className="text-sm!" weight="medium">
           {label}
         </Typography>
@@ -45,12 +45,18 @@ function UsageRow({ label, maximum, pending = 0n, unit, value }: UsageRowProps) 
         color={getMeterColor(value, maximum)}
         maxValue={Number(displayMaximum)}
         size="sm"
-        value={Number(hasAllowance ? value : 0n)}
+        value={Number(hasAllowance ? (value > maximum ? maximum : value) : 0n)}
+        valueLabel={`${formatBillingAmount(value, unit)} of ${formatBillingAmount(maximum, unit)}`}
       >
         <Meter.Track>
           <Meter.Fill />
         </Meter.Track>
       </Meter>
+      {hasAllowance && value > maximum ? (
+        <p className="mt-1.5 text-xs text-muted">
+          Over the current allowance. Existing resources are retained; new creation is blocked.
+        </p>
+      ) : null}
       {pending > 0n ? (
         <p className="mt-1.5 text-xs tabular-nums text-muted">
           Includes {formatBillingAmount(pending, unit)} reserved
@@ -108,21 +114,26 @@ function IncludedItem({ amount, label }: { amount: string; label: string }) {
 function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
   return (
     <section aria-labelledby="current-plan-heading">
-      <HeadingGroup className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <HeadingGroup.Title id="current-plan-heading">Current plan</HeadingGroup.Title>
-      </HeadingGroup>
+        <a
+          className={buttonVariants({ size: "sm", variant: "tertiary" })}
+          href="https://namera.ai/pricing"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View plans
+        </a>
+      </div>
 
       <Surface className="overflow-hidden rounded-xl border" variant="secondary">
         <div className="flex items-center justify-between gap-6 px-5 py-4 sm:px-6">
           <div>
             <div className="flex items-center gap-2.5">
               <Typography.Heading className="text-base" level={3} weight="medium">
-                Free plan
+                Free plan{billing.planVersion === 1 ? " (legacy)" : ""}
               </Typography.Heading>
             </div>
-            <Typography.Paragraph className="mt-1" color="muted" size="xs">
-              Everything you need to build and test with Namera.
-            </Typography.Paragraph>
           </div>
           <div className="shrink-0 text-right">
             <div className="text-base font-medium tabular-nums text-foreground">$0</div>
@@ -156,6 +167,20 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
             );
           })}
         </ul>
+        {billing.scheduledChange ? (
+          <div className="border-t border-border px-5 py-4 sm:px-6">
+            <Typography.Paragraph size="sm">
+              Free v2 starts{" "}
+              {DateTime.formatLocal(billing.scheduledChange.effectiveAt, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+              . Your current allowances stay in place until then. Existing accounts and keys will
+              not be deleted.
+            </Typography.Paragraph>
+          </div>
+        ) : null}
       </Surface>
     </section>
   );
@@ -170,14 +195,10 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
 
   return (
     <section aria-labelledby="current-usage-heading">
-      <div className="mb-4 flex items-end justify-between gap-6">
+      <div className="mb-4">
         <HeadingGroup>
           <HeadingGroup.Title id="current-usage-heading">Current usage</HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Current accounts and members, plus this period’s operation usage.
-          </HeadingGroup.Description>
         </HeadingGroup>
-        <span className="shrink-0 pb-0.5 text-xs tabular-nums text-muted">Resets {resetDate}</span>
       </div>
 
       <Surface className="rounded-xl border px-5 py-5 sm:px-6" variant="secondary">
@@ -190,6 +211,9 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
           ))}
         </div>
       </Surface>
+      <p className="mt-3 text-right text-xs tabular-nums text-muted">
+        Monthly usage resets {resetDate}
+      </p>
     </section>
   );
 }

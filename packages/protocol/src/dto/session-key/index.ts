@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 export * from "./operation.js";
+export * from "./signer.js";
 
 import {
   OrganizationId,
@@ -12,7 +13,6 @@ import {
 import {
   EvmSessionAuthorization,
   EvmSessionPermissions,
-  Hex,
   SupportedEvmChainId,
   TransactionHash,
 } from "#/evm/index";
@@ -26,16 +26,13 @@ import {
 
 import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
 import { WalletResponse } from "../wallet/index.js";
+import { EvmSessionSignerRequest, EvmSessionSignerResponse } from "./signer.js";
 
 export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,
-  signer: Schema.Struct({
-    custody: Schema.Literal("local"),
-    algorithm: Schema.Literal("secp256k1"),
-    publicKey: Hex.check(Schema.isPattern(/^0x04[0-9a-f]{128}$/)),
-  }),
+  signer: EvmSessionSignerRequest,
   onchain: Schema.Struct({
     chains: Schema.Array(SupportedEvmChainId)
       .check(Schema.isMinLength(1))
@@ -63,7 +60,7 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
 }).annotate({
   identifier: "CreateEvmSessionKeyRequest",
   description:
-    "Register a local secp256k1 session with mandatory onchain permissions and optional API policies. The key remains pending until its owner-approved installation is confirmed. Never send private key material.",
+    "Register a local or 1Claw-managed secp256k1 session with mandatory onchain permissions and optional API policies. The key remains pending until its owner-approved installation is confirmed. Managed execution and signing are not yet available. Never send private key material.",
 });
 
 export const CreateSessionKeyRequest = Schema.Union([CreateEvmSessionKeyRequest], {
@@ -108,6 +105,7 @@ export const SessionKeyInstallationResponse = Schema.Struct({
 
 export const EvmSessionKeyResponse = Schema.Struct({
   ...EvmSessionKeyResponseFields,
+  signer: EvmSessionSignerResponse,
   wallet: WalletResponse,
   creator: GetOrganizationMemberResponse,
   installations: Schema.Array(SessionKeyInstallationResponse),

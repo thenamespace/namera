@@ -21,7 +21,9 @@ import {
   DashboardCardRow,
 } from "@/components/dashboard-card";
 import { MetadataDisplay } from "@/components/display";
+import { supportsSessionKeys } from "@/lib/session-owner";
 
+import { CustodyField, type CustodyLimits } from "./custody-field";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -30,15 +32,17 @@ const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
 type SessionKeyDetailsCardProps = {
   control: Control<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   wallets: ListWalletsResponse;
+  custodyLocked: boolean;
+  limits: CustodyLimits;
 };
 
-export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCardProps) {
-  const activeWallets = wallets.filter(
-    (wallet) =>
-      wallet.status === "active" &&
-      wallet.owner.custody === "local" &&
-      wallet.owner.algorithm === "p256",
-  );
+export function SessionKeyDetailsCard({
+  control,
+  wallets,
+  custodyLocked,
+  limits,
+}: SessionKeyDetailsCardProps) {
+  const activeWallets = wallets.filter(supportsSessionKeys);
 
   return (
     <DashboardCardRoot>
@@ -191,10 +195,12 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
                               textValue={wallet.metadata.name || "Unnamed account"}
                             >
                               <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-                                <MetadataDisplay
-                                  fallbackName="Unnamed account"
-                                  metadata={wallet.metadata}
-                                />
+                                <div className="grid min-w-0 gap-1">
+                                  <MetadataDisplay
+                                    fallbackName="Unnamed account"
+                                    metadata={wallet.metadata}
+                                  />
+                                </div>
                                 <span className="text-muted shrink-0 font-mono text-xs">
                                   {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
                                 </span>
@@ -209,6 +215,7 @@ export function SessionKeyDetailsCard({ control, wallets }: SessionKeyDetailsCar
               );
             }}
           />
+          <CustodyField control={control} locked={custodyLocked} limits={limits} />
         </FieldGroup>
       </DashboardCardContent>
     </DashboardCardRoot>

@@ -1,12 +1,15 @@
 // oxlint-disable react-perf/jsx-no-jsx-as-prop
 import type { WalletCreatedEmailVariables } from "@namera-ai/protocol/model";
-import { Link } from "react-email";
+import { Img, Link } from "react-email";
 
 import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
+import { EmailCustody } from "../components/custody.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
+import { EmailIdentity } from "../components/identity.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
+import { emailAssets } from "../data.js";
 import { formatEvmAddress } from "../helpers/format.js";
 import { NameraEmail } from "../provider.js";
 
@@ -18,7 +21,10 @@ export const WalletCreatedEmail = ({
   addressUrl,
   organizationName,
   ownership,
+  custody,
+  provider,
   walletName,
+  walletLogo,
 }: WalletCreatedEmailProps) => {
   const addressDisplay = formatEvmAddress(address);
   const implementationName = "Alchemy Modular V2";
@@ -31,7 +37,25 @@ export const WalletCreatedEmail = ({
           title="Smart account created"
         >
           <EmailDetails>
-            <EmailDetail label="Account" value={walletName} />
+            <EmailDetail
+              label="Account"
+              value={<EmailIdentity name={walletName} logo={walletLogo} />}
+            />
+            <EmailDetail
+              label="Namespace"
+              value={
+                <>
+                  <Img
+                    alt=""
+                    src={emailAssets.chains.ethereum}
+                    width="16"
+                    height="16"
+                    className="mr-2 inline-block align-middle"
+                  />
+                  EVM
+                </>
+              }
+            />
             <EmailDetail
               label="Address"
               mono
@@ -41,8 +65,33 @@ export const WalletCreatedEmail = ({
                 </Link>
               }
             />
-            <EmailDetail label="Implementation" value={implementationName} />
-            <EmailDetail label="Ownership" value={ownership} />
+            <EmailDetail
+              label="Implementation"
+              value={
+                <>
+                  <Img
+                    alt=""
+                    src={emailAssets.alchemy}
+                    width="16"
+                    height="16"
+                    className="mr-2 inline-block align-middle"
+                  />
+                  {implementationName}
+                </>
+              }
+            />
+            <EmailDetail
+              label="Ownership"
+              value={
+                <EmailCustody
+                  custody={
+                    custody ?? (ownership === "User-owned passkey" ? "local" : "namera-managed")
+                  }
+                  provider={provider}
+                  label={provider === "1claw" ? "1Claw Managed" : ownership}
+                />
+              }
+            />
           </EmailDetails>
           <EmailAction href={actionUrl}>View account</EmailAction>
           <EmailNotice>
@@ -61,7 +110,11 @@ WalletCreatedEmail.PreviewProps = {
   addressUrl: "https://etherscan.io/address/0x55d28BFdA5a7f4c828260F44638DE627cd2765Ff",
   implementation: "alchemy-modular-v2",
   organizationName: "Atlas Labs",
-  ownership: "Namera managed · Software",
+  ownership: "1Claw Managed",
+  custody: "namera-managed",
+  provider: "1claw",
+  namespace: "eip155",
+  walletLogo: { type: "emoji", value: "💳" },
   walletName: "Treasury",
 } satisfies WalletCreatedEmailProps;
 

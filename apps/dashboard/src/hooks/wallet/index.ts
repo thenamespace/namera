@@ -15,7 +15,7 @@ export const useWallet = toQuery(walletAtom);
 export const useWalletPasskeyOwner = toQuery(walletPasskeyOwnerAtom);
 export const useWalletPortfolio = toQuery(walletPortfolioAtom);
 export const useCreateWallet = toMutation(createWalletMutation, {
-  invalidates: [...QueryKeys.wallet.all, ...QueryKeys.wallet.lists],
+  invalidates: [...QueryKeys.wallet.all, ...QueryKeys.wallet.lists, ...QueryKeys.billing.current],
 });
 export const useCreatePasskeyRegistrationOptions = toMutation(
   createPasskeyRegistrationOptionsMutation,

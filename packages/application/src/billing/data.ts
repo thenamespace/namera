@@ -13,6 +13,9 @@ const freeResourceLimits = {
   maxSoftwareWallets: 5,
   maxHsmWallets: 0,
   maxLocalWallets: 50,
+  maxOneClawWallets: 0,
+  maxLocalSessionKeys: null,
+  maxOneClawSessionKeys: 0,
 } as const;
 
 const freeMeters = {
@@ -46,7 +49,7 @@ const freeMeters = {
   },
 } as const satisfies Readonly<Record<BillingMeterKey, BillingMeterDefinition>>;
 
-export const freeBillingPlan = {
+export const legacyFreeBillingPlan = {
   key: "free",
   version: 1,
   period: {
@@ -57,7 +60,43 @@ export const freeBillingPlan = {
   meters: freeMeters,
 } as const;
 
-/** Only Free v1 is assignable until paid-plan workflows are implemented. */
+export const freeBillingPlan = {
+  ...legacyFreeBillingPlan,
+  version: 2,
+  resources: {
+    ...freeResourceLimits,
+    maxSoftwareWallets: 0,
+    maxLocalWallets: 10,
+    maxOneClawWallets: 3,
+    maxLocalSessionKeys: 100,
+    maxOneClawSessionKeys: 5,
+  },
+  meters: {
+    ...freeMeters,
+    "execution.testnet": {
+      ...freeMeters["execution.testnet"],
+      includedAmount: 500n,
+      hardLimitAmount: 500n,
+    },
+    signature: { ...freeMeters.signature, includedAmount: 1_000n, hardLimitAmount: 1_000n },
+  },
+} as const;
+
+export const maxOwnedOrganizations = 3;
+export type FreeBillingPlan = typeof legacyFreeBillingPlan | typeof freeBillingPlan;
+
+export const resolveBillingPlan = (selection: {
+  readonly plan: string;
+  readonly planVersion: number;
+}): FreeBillingPlan => {
+  if (selection.plan === "free") {
+    if (selection.planVersion === 1) return legacyFreeBillingPlan;
+    if (selection.planVersion === 2) return freeBillingPlan;
+  }
+  throw new Error(`Unsupported billing plan version: ${selection.plan}@${selection.planVersion}`);
+};
+
+/** Paid plans remain unavailable. Historical Free v1 stays readable. */
 export const billingPlans = {
   free: freeBillingPlan,
 } as const;

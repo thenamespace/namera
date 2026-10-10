@@ -1,8 +1,8 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
-import { SignatureError } from "@namera-ai/protocol";
+import { SignatureError, Hex } from "@namera-ai/protocol";
 import type {
   CompleteSignatureRequest,
   CompleteSignatureResponse,
@@ -10,6 +10,9 @@ import type {
   PrepareSignatureRequest,
 } from "@namera-ai/protocol/dto";
 import { signatureDuration, signatureResults } from "@namera-ai/telemetry";
+import { generateUniqueId } from "@namera-ai/utils";
+
+import { makeLoadOneClawSessionSigner, sessionSignerBinding } from "#/oneclaw/session-signer";
 
 import { makeSignatureAuthority } from "./authority.js";
 import { makeSignatureOperationLifecycle } from "./lifecycle.js";
@@ -20,6 +23,7 @@ export const makeCompleteSignature = Effect.gen(function* () {
   const evm = yield* Evm;
   const authority = yield* makeSignatureAuthority;
   const lifecycle = yield* makeSignatureOperationLifecycle;
+  const loadSigner = yield* makeLoadOneClawSessionSigner;
   return Effect.fn("application.signature.complete")(
     function* (input: {
       readonly actor: GrantedActorData;
@@ -31,8 +35,11 @@ export const makeCompleteSignature = Effect.gen(function* () {
         actor.organizationId,
         actor.actorId,
       );
+      const managed = operation?.data.managedSignerBinding !== undefined;
       if (
         operation === undefined ||
+        managed === (input.request.signature !== undefined) ||
+        (managed && operation.status === "succeeded") ||
         operation.status === "failed" ||
         (operation.status === "reserved" &&
           DateTime.toEpochMillis(operation.reservationExpiresAt) <=
@@ -45,20 +52,55 @@ export const makeCompleteSignature = Effect.gen(function* () {
         walletId: operation.walletId,
         sessionKeyId: operation.sessionKeyId,
       };
-      const scope = { ...request, actor };
+      const scope = {
+        ...request,
+        actor,
+        custody: managed ? ("namera-managed" as const) : ("local" as const),
+      };
       const selected = yield* authority.load(scope);
       if (
         selected.grant.id !== operation.sessionKeyGrantId ||
-        selected.sessionKey.policyHash !== operation.policyHash
+        selected.sessionKey.policyHash !== operation.policyHash ||
+        (managed &&
+          (sessionSignerBinding(selected.signer) !== operation.data.managedSignerBinding ||
+            selected.installation.id !== operation.data.installationId))
       )
         return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
       yield* authority.evaluate(selected, request);
+      const leaseToken = generateUniqueId();
+      const rawSignature = yield* Effect.gen(function* () {
+        if (!managed) {
+          if (input.request.signature === undefined)
+            return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
+          return input.request.signature;
+        }
+        const now = yield* DateTime.now;
+        const claimed = yield* repository.core.signatureOperation.claimForSigning({
+          id: operation.id,
+          organizationId: actor.organizationId,
+          actorId: actor.actorId,
+          leaseToken,
+          now,
+          leaseExpiresAt: DateTime.addDuration(now, Duration.minutes(2)),
+        });
+        if (!claimed) return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
+        const signer = yield* loadSigner(selected.signer).pipe(
+          Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })),
+        );
+        const typedData = yield* evm.sessionSignatures
+          .prepare({ ...request, account: selected.account, session: selected.installation.data })
+          .pipe(Effect.mapError(() => new SignatureError({ code: "SIGNING_FAILED" })));
+        return yield* Effect.tryPromise({
+          try: () => signer.signTypedData(typedData),
+          catch: () => new SignatureError({ code: "SIGNING_FAILED" }),
+        }).pipe(Effect.map(Schema.decodeSync(Hex)));
+      });
       const signature = yield* evm.sessionSignatures
         .complete({
           ...request,
           account: selected.account,
           session: selected.installation.data,
-          signature: input.request.signature,
+          signature: rawSignature,
         })
         .pipe(
           Effect.mapError(
@@ -81,11 +123,17 @@ export const makeCompleteSignature = Effect.gen(function* () {
           if (
             current.installation.id !== selected.installation.id ||
             current.grant.id !== operation.sessionKeyGrantId ||
-            current.sessionKey.policyHash !== operation.policyHash
+            current.sessionKey.policyHash !== operation.policyHash ||
+            (managed &&
+              sessionSignerBinding(current.signer) !== operation.data.managedSignerBinding)
           )
             return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
           yield* authority.evaluate(current, request);
-          return yield* lifecycle.succeed({ actor, operationId: operation.id });
+          return yield* lifecycle.succeed({
+            actor,
+            operationId: operation.id,
+            ...(managed ? { leaseToken } : {}),
+          });
         }),
       );
       if (settled)

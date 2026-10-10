@@ -1,3 +1,5 @@
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+
 export const operationWallet = {
   id: "01950000-0000-7000-8000-000000000001",
   organizationId: "01950000-0000-7000-8000-000000000002",
@@ -24,6 +26,11 @@ export const operationWallet = {
 };
 
 export const operationKey = {
+  signer: {
+    custody: "local",
+    algorithm: "secp256k1",
+    publicKey: privateKeyToAccount(generatePrivateKey()).publicKey,
+  },
   id: "01950000-0000-7000-8000-000000000005",
   organizationId: operationWallet.organizationId,
   walletId: operationWallet.id,

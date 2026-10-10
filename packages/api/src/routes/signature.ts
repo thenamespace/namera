@@ -21,14 +21,14 @@ export class SignatureGroup extends HttpApiGroup.make("signature")
       headers: SignRequestHeaders,
       success: PrepareSignatureResponse,
       error: [SignatureError, ...BillingErrors, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Prepare a locally signed session signature"),
+    }).annotate(OpenApi.Summary, "Prepare a signature for the selected session"),
   )
   .add(
     HttpApiEndpoint.post("complete", "/complete", {
       payload: CompleteSignatureRequest,
       success: CompleteSignatureResponse,
       error: [SignatureError, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Verify and meter a local session signature"),
+    }).annotate(OpenApi.Summary, "Complete and meter the prepared session signature"),
   )
   .add(
     HttpApiEndpoint.post("verify", "/verify", {

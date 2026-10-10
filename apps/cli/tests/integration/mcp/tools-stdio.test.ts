@@ -200,6 +200,44 @@ const harness = async (
 describe.each(["2026-07-28", "2025-11-25", "2025-06-18"])(
   "stdio MCP %s authorization and tools",
   (protocolVersion) => {
+    it("uses the existing sign tool for managed keys without opening local storage", async () => {
+      const fixture = mcpSignatureFixture();
+      const server = await harness(protocolVersion, {
+        fixture,
+        signer: async () => {
+          throw new Error("Managed keys must not open local storage");
+        },
+        fetch: async (input, init) => {
+          const path = new URL(String(input)).pathname;
+          if (path === "/signatures/prepare")
+            return Response.json(
+              Schema.encodeSync(PrepareSignatureResponse)({
+                ...fixture.response,
+                signing: { method: "server" },
+              }),
+            );
+          if (path === "/signatures/complete") {
+            expect(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array))).toEqual({
+              namespace: "eip155",
+              operationId: fixture.response.operationId,
+            });
+            return Response.json(fixture.complete("0x1234"));
+          }
+          throw new Error("Unexpected endpoint");
+        },
+      });
+      try {
+        await server.initialize();
+        const result = await server.rpc("tools/call", {
+          name: "sign",
+          arguments: { request: fixture.request },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(server.signer).not.toHaveBeenCalled();
+      } finally {
+        await server.runtime.dispose();
+      }
+    });
     it("serializes wallet dates and large integers consistently in structured and text results", async () => {
       const wallet = {
         id,

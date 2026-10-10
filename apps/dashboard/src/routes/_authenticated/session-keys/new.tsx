@@ -5,6 +5,7 @@ import { Schema } from "effect";
 import { WalletId } from "@namera-ai/protocol";
 
 import { currentUserAtom } from "@/atoms/auth/session";
+import { billingAtom } from "@/atoms/billing";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
 import { DataError } from "@/components/data-error";
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/session-keys/new")({
 
     const canCreate = hasPermissions(currentUser.role.permissions, sessionKeyCreatePermission);
     if (canCreate) startPrefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
+    if (canCreate && hasPermissions(currentUser.role.permissions, ["billing:read"]))
+      startPrefetchQuery(context.atomRegistry, billingAtom, abortController.signal);
 
     return { canCreate };
   },

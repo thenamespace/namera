@@ -135,6 +135,22 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "BillingError:LIMIT_EXCEEDED": (error) => {
     const limit = Reflect.get(error, "limit");
+    if (limit === "ownedOrganizations")
+      return {
+        title: "Workspace limit reached",
+        description:
+          "You can own up to 3 workspaces, including Personal. You can still join other workspaces.",
+      };
+    if (limit === "localSessionKeys" || limit === "oneClawSessionKeys")
+      return {
+        title: "Session key limit reached",
+        description: "Revoke an unused key or wait for a key to expire before creating another.",
+      };
+    if (limit === "oneClawWallets")
+      return {
+        title: "Managed account limit reached",
+        description: "Your workspace has reached its 1Claw-managed account allowance.",
+      };
     const resource =
       limit === "members"
         ? "member"
@@ -155,14 +171,31 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     title: "Account not found",
     description: "It may have been removed or belongs to another workspace.",
   },
-  "WalletCustodyUnavailableError:MANAGED_WALLETS_DISABLED": {
-    title: "Passkey ownership required",
+  "WalletCreationError:PROVIDER_SETUP_FAILED": {
+    title: "1Claw setup unavailable",
     description:
-      "Managed accounts are not available during beta. Create a user-owned passkey account.",
+      "Wait for workspace setup to finish, then try again. Contact support if this continues.",
+  },
+  "WalletCreationError:PROVIDER_RECOVERY_REQUIRED": {
+    title: "Account setup needs recovery",
+    description:
+      "Do not create another account yet. Contact support to recover the provider setup.",
+  },
+  "WalletCustodyUnavailableError:MANAGED_WALLETS_DISABLED": {
+    title: "Provider unavailable",
+    description: "Choose a user-owned passkey or 1Claw Managed account.",
   },
   "SessionKeyError:SESSION_KEY_NOT_FOUND": {
     title: "Session key not found",
     description: "It may have been revoked or belongs to another workspace.",
+  },
+  "SessionKeyCreationError:PROVIDER_SETUP_FAILED": {
+    title: "1Claw setup unavailable",
+    description: "Check workspace setup with an admin before trying again.",
+  },
+  "SessionKeyCreationError:PROVIDER_RECOVERY_REQUIRED": {
+    title: "Session key setup needs recovery",
+    description: "Do not create another key yet. Contact support to recover the provider setup.",
   },
   "SessionKeyCreationError:TIME_WINDOW_EXPIRED": {
     title: "Invalid time window",
@@ -186,7 +219,7 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "SessionKeyCreationError:WALLET_OWNER_UNAVAILABLE": {
     title: "Account owner unavailable",
-    description: "Select an active passkey-owned account.",
+    description: "Select an active passkey or 1Claw Managed account.",
   },
   "SessionKeyOperationError:INSTALLATION_UNAVAILABLE": {
     title: "Installation unavailable",
@@ -198,7 +231,7 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "SessionKeyOperationError:OWNER_UNAVAILABLE": {
     title: "Account owner unavailable",
-    description: "The account needs an active owner passkey to approve this operation.",
+    description: "The account owner is unavailable. Refresh the account before retrying.",
   },
   "SessionKeyOperationError:INVALID_TRANSITION": {
     title: "Session key state changed",
@@ -214,11 +247,11 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "SessionKeyOperationError:APPROVAL_EXPIRED": {
     title: "Approval expired",
-    description: "Prepare a new operation and approve it with your passkey.",
+    description: "Prepare a new operation and approve it with your account owner.",
   },
   "SessionKeyOperationError:APPROVAL_INVALID": {
-    title: "Passkey approval could not be verified",
-    description: "Use the passkey that owns this account and try again.",
+    title: "Owner approval could not be verified",
+    description: "Refresh the account and review the approval again.",
   },
   "SessionKeyOperationError:PREPARATION_FAILED": {
     title: "Couldn’t prepare the approval",

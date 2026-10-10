@@ -6,7 +6,10 @@ import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
 import { SessionKeyOperationError, type ActorId, type OrganizationId } from "@namera-ai/protocol";
-import type { CompleteSessionKeyOperationRequest } from "@namera-ai/protocol/dto";
+import type {
+  CompleteSessionKeyOperationRequest,
+  ApproveManagedSessionKeyOperationRequest,
+} from "@namera-ai/protocol/dto";
 import { sessionKeyOperationResults, sessionKeyOperationDuration } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
 
@@ -14,9 +17,10 @@ import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
 import { makeBillingMetering } from "#/billing/metering";
 
+import { makeManagedSessionApproval } from "./managed-approval.js";
 import { makeLoadSessionOperationOwner } from "./operation-owner.js";
 
-export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
+export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const evm = yield* Evm;
@@ -25,14 +29,20 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
   const audit = yield* Audit;
   const billing = yield* makeBillingMetering;
   const loadOwner = yield* makeLoadSessionOperationOwner;
+  const managed = yield* makeManagedSessionApproval;
 
-  return Effect.fn("application.sessionKey.completeOperation")(
-    function* (input: {
-      readonly organizationId: OrganizationId;
-      readonly actorId: ActorId;
-      readonly allowedKinds: ReadonlyArray<"install" | "uninstall">;
-      readonly request: CompleteSessionKeyOperationRequest;
-    }) {
+  const complete = Effect.fn("application.sessionKey.completeOperation")(
+    function* (
+      input: {
+        readonly organizationId: OrganizationId;
+        readonly actorId: ActorId;
+        readonly allowedKinds: ReadonlyArray<"install" | "uninstall">;
+        readonly request:
+          | CompleteSessionKeyOperationRequest
+          | ApproveManagedSessionKeyOperationRequest;
+      },
+      approval: "passkey" | "1claw",
+    ) {
       const scope = { id: input.request.operationId, organizationId: input.organizationId };
       const operation = yield* repository.core.sessionKeyOperation.findById(scope);
       if (
@@ -53,49 +63,61 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
         organizationId: input.organizationId,
         installationId: operation.installationId,
       });
-      const challenge = yield* evm.execution
-        .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
-        .pipe(
-          Effect.mapError(
-            (error) =>
-              new SessionKeyOperationError({
-                code:
-                  "code" in error && error.code === "NETWORK_PAUSED"
-                    ? "NETWORK_PAUSED"
-                    : "APPROVAL_INVALID",
-              }),
-          ),
-        );
-      const assertion = yield* passkeys
-        .verifyAuthentication({
-          response: input.request.response,
-          expectedChallenge: Base64Url.encode(
-            Result.getOrThrow(HexEncoding.decode(challenge.slice(2))),
-          ),
-          expectedOrigin: config.dashboardPublicOrigin.origin,
-          expectedRpId: owner.credential.rpId,
-          credentialId: owner.credential.credentialId,
-          publicKeyHex: owner.wallet.signingKey.publicKeyHex,
-          signCount: owner.credential.signCount,
-        })
-        .pipe(Effect.mapError(() => new SessionKeyOperationError({ code: "APPROVAL_INVALID" })));
-      const signed = yield* evm.execution
-        .completeOwnerApproval({
-          account: owner.account,
-          prepared: operation.data.prepared,
-          assertion,
-        })
-        .pipe(
-          Effect.mapError(
-            (error) =>
-              new SessionKeyOperationError({
-                code:
-                  "code" in error && error.code === "NETWORK_PAUSED"
-                    ? "NETWORK_PAUSED"
-                    : "APPROVAL_INVALID",
-              }),
-          ),
-        );
+      if (owner.type !== approval)
+        return yield* new SessionKeyOperationError({ code: "OWNER_UNAVAILABLE" });
+      const result = yield* Effect.gen(function* () {
+        if (approval === "1claw") {
+          const managedSignature = yield* managed.sign(operation);
+          return { ...managedSignature, assertion: undefined, credential: undefined };
+        }
+        if (owner.type !== "passkey" || !("response" in input.request))
+          return yield* new SessionKeyOperationError({ code: "APPROVAL_INVALID" });
+        const challenge = yield* evm.execution
+          .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new SessionKeyOperationError({
+                  code:
+                    "code" in error && error.code === "NETWORK_PAUSED"
+                      ? "NETWORK_PAUSED"
+                      : "APPROVAL_INVALID",
+                }),
+            ),
+          );
+        const assertion = yield* passkeys
+          .verifyAuthentication({
+            response: input.request.response,
+            expectedChallenge: Base64Url.encode(
+              Result.getOrThrow(HexEncoding.decode(challenge.slice(2))),
+            ),
+            expectedOrigin: config.dashboardPublicOrigin.origin,
+            expectedRpId: owner.credential.rpId,
+            credentialId: owner.credential.credentialId,
+            publicKeyHex: owner.wallet.signingKey.publicKeyHex,
+            signCount: owner.credential.signCount,
+          })
+          .pipe(Effect.mapError(() => new SessionKeyOperationError({ code: "APPROVAL_INVALID" })));
+        const signed = yield* evm.execution
+          .completeOwnerApproval({
+            account: owner.account,
+            prepared: operation.data.prepared,
+            assertion,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new SessionKeyOperationError({
+                  code:
+                    "code" in error && error.code === "NETWORK_PAUSED"
+                      ? "NETWORK_PAUSED"
+                      : "APPROVAL_INVALID",
+                }),
+            ),
+          );
+        return { signed, assertion, credential: owner.credential, leaseToken: undefined };
+      });
+      const { signed } = result;
 
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
@@ -133,15 +155,19 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
               !["installed", "revoking"].includes(current.installation.status))
           )
             return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });
-          const counter = yield* repository.core.signingKey.advancePasskeyCounter({
-            id: wallet.signingKey.id,
-            organizationId: input.organizationId,
-            credentialId: owner.credential.credentialId,
-            expectedCounter: owner.credential.signCount,
-            nextCounter: assertion.signCount,
-          });
-          if (counter === undefined)
-            return yield* new SessionKeyOperationError({ code: "APPROVAL_INVALID" });
+          if (result.assertion !== undefined && result.credential !== undefined) {
+            const counter = yield* repository.core.signingKey.advancePasskeyCounter({
+              id: wallet.signingKey.id,
+              organizationId: input.organizationId,
+              credentialId: result.credential.credentialId,
+              expectedCounter: result.credential.signCount,
+              nextCounter: result.assertion.signCount,
+            });
+            if (counter === undefined)
+              return yield* new SessionKeyOperationError({ code: "APPROVAL_INVALID" });
+          } else {
+            yield* managed.check(operation).pipe(Effect.catchTag("ConfigError", Effect.die));
+          }
           const now = yield* DateTime.now;
           const accepted = yield* repository.core.sessionKeyOperation.acceptSignature({
             ...scope,
@@ -151,6 +177,7 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
             now,
             leaseToken: generateUniqueId(),
             leaseExpiresAt: DateTime.addDuration(now, Duration.seconds(1)),
+            ...(result.leaseToken === undefined ? {} : { signingLeaseToken: result.leaseToken }),
           });
           if (accepted === undefined)
             return yield* new SessionKeyOperationError({ code: "APPROVAL_EXPIRED" });
@@ -207,6 +234,7 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
       // signature or its billing hold merely because the HTTP request ended.
       return { operationId: persistedOperation.id, status: persistedOperation.status };
     },
+    Effect.scoped,
     Effect.trackDuration(Metric.withAttributes(sessionKeyOperationDuration, { stage: "approve" })),
     Effect.tapErrorTag("SessionKeyOperationError", (error) =>
       Metric.update(
@@ -216,4 +244,12 @@ export const makeCompleteSessionKeyOperation = Effect.gen(function* () {
     ),
     Effect.catchTag("DatabaseError", Effect.die),
   );
+  type Input = Omit<Parameters<typeof complete>[0], "request">;
+  return {
+    completeOperation: (input: Input & { readonly request: CompleteSessionKeyOperationRequest }) =>
+      complete(input, "passkey"),
+    approveManagedOperation: (
+      input: Input & { readonly request: ApproveManagedSessionKeyOperationRequest },
+    ) => complete(input, "1claw"),
+  };
 });

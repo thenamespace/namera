@@ -1,10 +1,11 @@
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Schema } from "effect";
 
 import { Repository } from "@namera-ai/database";
 import type { OrganizationId } from "@namera-ai/protocol";
 import type { GetBillingResponse } from "@namera-ai/protocol/dto";
+import { FreeBillingRolloutData } from "@namera-ai/protocol/model";
 
-import { resolveBillingPlan } from "./helpers.js";
+import { resolveBillingPlan } from "./data.js";
 import { makeBillingPeriods } from "./periods.js";
 import { makeBillingReconciliation } from "./reconciliation.js";
 
@@ -27,12 +28,15 @@ export const makeBillingApplication = Effect.gen(function* () {
 
   const get = Effect.fn("application.billing.get")(
     function* (organizationId: OrganizationId) {
+      const period = yield* periods.current(organizationId, yield* DateTime.now);
       const subscription = yield* repository.billing.subscription.findCurrent(organizationId);
       if (subscription === undefined) {
         return yield* Effect.die("Organization billing subscription is missing");
       }
-      const plan = resolveBillingPlan(subscription);
-      const period = yield* periods.current(organizationId, yield* DateTime.now);
+      const plan = resolveBillingPlan(period);
+      const { freeV2RolloutAt } = Schema.decodeUnknownSync(FreeBillingRolloutData)(
+        subscription.data,
+      );
       const balances = yield* repository.billing.meterBalance.listForPeriod(
         organizationId,
         period.id,
@@ -43,9 +47,20 @@ export const makeBillingApplication = Effect.gen(function* () {
       );
       return {
         organizationId,
-        plan: subscription.plan,
-        planVersion: subscription.planVersion,
+        plan: period.plan,
+        planVersion: period.planVersion,
         status: subscription.status,
+        ...(plan.version === 1 &&
+        freeV2RolloutAt !== undefined &&
+        DateTime.toEpochMillis(freeV2RolloutAt) < DateTime.toEpochMillis(period.endsAt)
+          ? {
+              scheduledChange: {
+                plan: "free" as const,
+                planVersion: 2,
+                effectiveAt: period.endsAt,
+              },
+            }
+          : {}),
         period: { id: period.id, startsAt: period.startsAt, endsAt: period.endsAt },
         resources: [
           {
@@ -84,7 +99,41 @@ export const makeBillingApplication = Effect.gen(function* () {
               BigInt(usage.localWallets),
             ),
           },
-        ],
+          ...(plan.version === 2
+            ? [
+                {
+                  key: "oneclaw-wallets" as const,
+                  includedAmount: BigInt(plan.resources.maxOneClawWallets),
+                  usedAmount: BigInt(usage.oneClawWallets),
+                  remainingAmount: remaining(
+                    BigInt(plan.resources.maxOneClawWallets),
+                    BigInt(usage.oneClawWallets),
+                  ),
+                },
+                {
+                  key: "local-session-keys" as const,
+                  includedAmount: BigInt(plan.resources.maxLocalSessionKeys),
+                  usedAmount: BigInt(usage.localSessionKeys),
+                  remainingAmount: remaining(
+                    BigInt(plan.resources.maxLocalSessionKeys),
+                    BigInt(usage.localSessionKeys),
+                  ),
+                },
+                {
+                  key: "oneclaw-session-keys" as const,
+                  includedAmount: BigInt(plan.resources.maxOneClawSessionKeys),
+                  usedAmount: BigInt(usage.oneClawSessionKeys),
+                  remainingAmount: remaining(
+                    BigInt(plan.resources.maxOneClawSessionKeys),
+                    BigInt(usage.oneClawSessionKeys),
+                  ),
+                },
+              ]
+            : []),
+        ].filter(
+          (resource) =>
+            plan.version === 1 || !["software-wallets", "hsm-wallets"].includes(resource.key),
+        ),
         meters: balances.map((balance) => ({
           key: balance.meterKey,
           unit: balance.unit,

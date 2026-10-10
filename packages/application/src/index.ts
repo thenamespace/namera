@@ -1,5 +1,6 @@
 export * from "./auth/index.js";
 export * from "./application.js";
+export { Audit } from "./audit/layer.js";
 export * from "./billing/index.js";
 export * from "./dashboard/index.js";
 export * from "./execution/index.js";

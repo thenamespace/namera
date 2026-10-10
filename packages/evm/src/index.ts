@@ -18,6 +18,8 @@ export * from "./layer.js";
 export { resolveEvmSessionSigner } from "./sessions/signer.js";
 export {
   reviewEvmSessionOperation,
+  reviewManagedEvmSessionOperation,
+  type ReviewManagedEvmSessionOperationInput,
   type ReviewEvmSessionOperationInput,
   type ReviewedEvmSessionOperation,
 } from "./sessions/review.js";

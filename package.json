@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "billing:margin": "node script/calculate-margin.ts",
     "check": "oxfmt --check . && turbo run lint typecheck typecheck:test build",
     "changeset": "changeset",
     "cli:lock": "node script/cli-shrinkwrap.mjs --refresh",

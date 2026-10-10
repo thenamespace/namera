@@ -21,6 +21,7 @@ export const makeLoadSessionAuthority = Effect.gen(function* () {
     readonly sessionKeyId: SessionKeyId;
     readonly chainId: SupportedEvmChainId;
     readonly forUpdate?: boolean;
+    readonly custody?: "local" | "namera-managed" | "either";
   }) {
     const selected = input.actor.grants.find(
       ({ sessionKey }) => sessionKey.id === input.sessionKeyId,
@@ -59,15 +60,28 @@ export const makeLoadSessionAuthority = Effect.gen(function* () {
     const signer = yield* repository.core.signingKey.findById(
       current.sessionKey.signingKeyId,
       input.actor.organizationId,
+      input.forUpdate,
     );
     if (
       signer === undefined ||
       signer.status !== "active" ||
-      signer.custody !== "local" ||
+      (input.custody !== "either" && signer.custody !== (input.custody ?? "local")) ||
       signer.algorithm !== "secp256k1" ||
       signer.purpose !== "session"
     )
       return yield* new SessionKeyOperationError({ code: "INSTALLATION_UNAVAILABLE" });
+    if (signer.custody === "namera-managed") {
+      if (signer.data.type !== "1claw" || !signer.providerConnectionId)
+        return yield* new SessionKeyOperationError({ code: "INSTALLATION_UNAVAILABLE" });
+      if (input.forUpdate) {
+        const connection = yield* repository.core.providerConnections.findByIdForUpdate(
+          signer.providerConnectionId,
+          input.actor.organizationId,
+        );
+        if (!connection || connection.status !== "ready")
+          return yield* new SessionKeyOperationError({ code: "INSTALLATION_UNAVAILABLE" });
+      }
+    }
     const owner = yield* loadOwner({
       organizationId: input.actor.organizationId,
       installationId: installation.id,

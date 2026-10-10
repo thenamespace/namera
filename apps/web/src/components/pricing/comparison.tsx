@@ -163,6 +163,9 @@ export const Comparison = () => {
                 <span className="text-[0.9375rem] font-medium tracking-[-0.015em] text-foreground">
                   {group.title}
                 </span>
+                {group.note ? (
+                  <p className="mt-2 max-w-2xl text-sm font-normal text-muted">{group.note}</p>
+                ) : null}
               </th>
             </tr>
 

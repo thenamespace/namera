@@ -48,6 +48,8 @@ import {
   sessionKeyPolicyReservation,
   sessionKeyPolicyState,
   signingKey,
+  credentials,
+  providerConnections,
   signatureOperation,
   systemRole,
   user,
@@ -135,6 +137,8 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);
         yield* database.delete(signingKey);
+        yield* database.delete(providerConnections);
+        yield* database.delete(credentials);
         yield* database.delete(invitation);
         yield* database.delete(organizationMember);
         yield* database.delete(apiKey);

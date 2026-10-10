@@ -32,12 +32,12 @@ export class ExecutionGroup extends HttpApiGroup.make("execution")
       headers: ExecuteRequestHeaders,
       success: PrepareExecutionResponse,
       error: [ExecutionError, ...BillingErrors, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Prepare an operation for a locally held session signer"),
+    }).annotate(OpenApi.Summary, "Prepare an operation for a selected session signer"),
     HttpApiEndpoint.post("complete", "/complete", {
       payload: CompleteExecutionRequest,
       success: CompleteExecutionResponse,
       error: [ExecutionError, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Accept a local signature and queue the exact prepared operation"),
+    }).annotate(OpenApi.Summary, "Authorize and queue the exact prepared operation"),
   )
   .add(
     HttpApiEndpoint.post("simulate", "/simulate", {

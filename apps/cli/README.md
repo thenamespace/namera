@@ -168,8 +168,11 @@ permission requirements. Do not mix `--params` with individual input flags.
 
 Human summaries use arrow rows, account/key names when selected interactively
 or with individual flags, and network names. JSON retains all response details.
-Execution/signing requires an imported key, active grant,
-and appropriate authority. Gas is sponsored by default. Self-funded operations
+Execution/signing uses the same commands for local and 1Claw-managed session keys.
+Local keys require import; managed keys need no key file. Both require an active
+grant and appropriate installed authority. Account ownership is independent of
+session custody. A lost managed-signature response is not automatically retried;
+a new signing attempt may consume another signature allowance. Gas is sponsored by default. Self-funded operations
 also require `--max-gas-cost-wei <amount>`; MCP tools cannot raise that ceiling.
 
 ## Script-friendly output

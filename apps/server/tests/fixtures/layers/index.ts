@@ -2,14 +2,20 @@ import { NodeCrypto } from "@effect/platform-node";
 import { Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
-import { Application, googleIdentityTestLayer } from "@namera-ai/application";
+import { Application, Audit, googleIdentityTestLayer } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
 import { type Database, Repository, TestDatabase, TransactionService } from "@namera-ai/database";
 import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { EnsTestLayer } from "@namera-ai/ens";
 import { Evm, type EvmTestOptions } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
+import { LocalService } from "@namera-ai/wallet-provider-local";
+import type {
+  OneClawService,
+  OneClawOidcService,
+  OneClawTestControl,
+} from "@namera-ai/wallet-provider-oneclaw";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
@@ -70,13 +76,19 @@ export const makeTestServerLayer = (
   passkeysLayer: Layer.Layer<Passkeys> = Passkeys.testLayer,
   configLayer = TestConfigLayer,
   googleLayer = googleIdentityTestLayer(),
+  oneClawLayer:
+    | Layer.Layer<OneClawService | OneClawOidcService | OneClawTestControl, never, Repository>
+    | Layer.Layer<never> = Layer.empty,
 ) => {
   const TestServicesLayer = Layer.mergeAll(
     googleLayer,
+    oneClawLayer,
+    Audit.layer,
     EmailJobs.layer,
     EnsTestLayer,
     Evm.testLayerWith(evmOptions),
-    WalletKeys.testLayer,
+    GcpService.testLayer,
+    LocalService.testLayer,
     passkeysLayer,
   ).pipe(
     Layer.provideMerge(EmailService.testLayer),

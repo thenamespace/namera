@@ -24,6 +24,8 @@ import {
   GetSessionKeyOperationRequest,
   GetActiveSessionKeyOperationRequest,
   GetActiveSessionKeyOperationResponse,
+  PrepareManagedSessionKeyOperationResponse,
+  ApproveManagedSessionKeyOperationRequest,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -31,6 +33,16 @@ import { Authorization } from "#/middlewares/index";
 
 export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
   .add(
+    HttpApiEndpoint.post("prepareManagedOperation", "/operations/managed/prepare", {
+      payload: PrepareSessionKeyOperationRequest,
+      success: PrepareManagedSessionKeyOperationResponse,
+      error: [SessionKeyOperationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Prepare a session installation or removal for a 1Claw account"),
+    HttpApiEndpoint.post("approveManagedOperation", "/operations/managed/approve", {
+      payload: ApproveManagedSessionKeyOperationRequest,
+      success: SessionKeyOperationResponse,
+      error: [SessionKeyOperationError, BillingLimitExceededError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Approve the stored session operation with its 1Claw owner"),
     HttpApiEndpoint.get("getActiveOperation", "/installations/:installationId/operations/:kind", {
       params: GetActiveSessionKeyOperationRequest,
       success: GetActiveSessionKeyOperationResponse,
@@ -57,7 +69,12 @@ export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
     HttpApiEndpoint.post("create", "/", {
       payload: CreateSessionKeyRequest,
       success: CreateSessionKeyResponse.pipe(HttpApiSchema.status("Created")),
-      error: [WalletNotFoundError, SessionKeyCreationError, ...CommonErrors],
+      error: [
+        WalletNotFoundError,
+        SessionKeyCreationError,
+        BillingLimitExceededError,
+        ...CommonErrors,
+      ],
     }).annotate(OpenApi.Summary, "Create a session key"),
     HttpApiEndpoint.get("listForOrganization", "/", {
       success: ListSessionKeysForOrganizationResponse,

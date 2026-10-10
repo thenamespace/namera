@@ -14,13 +14,21 @@ import {
   type SignatureOperationFailureCode,
   type SignatureOperationInsert as SignatureOperationInsertModel,
 } from "@namera-ai/protocol/model";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { signatureOperation } from "#/schema/index";
 
 export interface SignatureOperationRepositoryService {
+  readonly claimForSigning: (input: {
+    readonly id: SignatureOperationId;
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly leaseToken: string;
+    readonly now: DateTime.Utc;
+    readonly leaseExpiresAt: DateTime.Utc;
+  }) => Effect.Effect<SignatureOperationModel | undefined, DatabaseError>;
   readonly insert: (
     data: SignatureOperationInsertModel,
   ) => Effect.Effect<
@@ -43,6 +51,7 @@ export interface SignatureOperationRepositoryService {
     actorId: ActorId,
   ) => Effect.Effect<SignatureOperationModel | undefined, DatabaseError>;
   readonly markSucceeded: (input: {
+    readonly leaseToken?: string;
     readonly id: SignatureOperationId;
     readonly organizationId: OrganizationId;
     readonly succeededAt: DateTime.Utc;
@@ -67,6 +76,36 @@ export class SignatureOperationRepository extends Context.Service<
       const database = yield* Database;
 
       return SignatureOperationRepository.of({
+        claimForSigning: Effect.fn("database.signatureOperationRepository.claimForSigning")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .update(signatureOperation)
+              .set({
+                leaseToken: input.leaseToken,
+                leaseExpiresAt: encodeDate(input.leaseExpiresAt),
+              })
+              .where(
+                and(
+                  eq(signatureOperation.id, input.id),
+                  eq(signatureOperation.organizationId, input.organizationId),
+                  eq(signatureOperation.actorId, input.actorId),
+                  eq(signatureOperation.status, "reserved"),
+                  gt(signatureOperation.reservationExpiresAt, encodeDate(input.now)),
+                  or(
+                    isNull(signatureOperation.leaseExpiresAt),
+                    lte(signatureOperation.leaseExpiresAt, encodeDate(input.now)),
+                  ),
+                  sql`${signatureOperation.data}->>'managedSignerBinding' IS NOT NULL`,
+                ),
+              )
+              .returning();
+            return rows[0] === undefined
+              ? undefined
+              : Schema.decodeUnknownSync(SignatureOperation)(rows[0]);
+          },
+          mapRepositoryError,
+        ),
         insert: Effect.fn("database.signatureOperationRepository.insert")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(SignatureOperationInsert)(data);
@@ -151,16 +190,29 @@ export class SignatureOperationRepository extends Context.Service<
           id,
           organizationId,
           succeededAt,
+          leaseToken,
         }) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(signatureOperation)
-            .set({ status: "succeeded", succeededAt: encodeDate(succeededAt) })
+            .set({
+              status: "succeeded",
+              succeededAt: encodeDate(succeededAt),
+              leaseToken: null,
+              leaseExpiresAt: null,
+            })
             .where(
               and(
                 eq(signatureOperation.id, id),
                 eq(signatureOperation.organizationId, organizationId),
                 eq(signatureOperation.status, "reserved"),
+                gt(signatureOperation.reservationExpiresAt, encodeDate(succeededAt)),
+                leaseToken === undefined
+                  ? sql`${signatureOperation.data}->>'managedSignerBinding' IS NULL`
+                  : and(
+                      eq(signatureOperation.leaseToken, leaseToken),
+                      gt(signatureOperation.leaseExpiresAt, encodeDate(succeededAt)),
+                    ),
               ),
             )
             .returning();
@@ -175,7 +227,13 @@ export class SignatureOperationRepository extends Context.Service<
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .update(signatureOperation)
-            .set({ status: "failed", failureCode, failedAt: encodeDate(failedAt) })
+            .set({
+              status: "failed",
+              failureCode,
+              failedAt: encodeDate(failedAt),
+              leaseToken: null,
+              leaseExpiresAt: null,
+            })
             .where(
               and(
                 eq(signatureOperation.id, id),

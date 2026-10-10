@@ -1,5 +1,7 @@
 import { Button, Typography } from "@namera-ai/ui";
 
+import { RouteState } from "@/components/page/route-state";
+
 const reloadPage = () => window.location.reload();
 const openOverview = () => window.location.assign("/");
 
@@ -34,9 +36,17 @@ function RouteFailure({ notFound = false }: { readonly notFound?: boolean }) {
 // Do not render router error messages: they can contain request URLs or details
 // from provider failures. Reload also clears failed atom results before retrying.
 export function RouterError() {
-  return <RouteFailure />;
+  return (
+    <RouteState>
+      <RouteFailure />
+    </RouteState>
+  );
 }
 
 export function RouterNotFound() {
-  return <RouteFailure notFound />;
+  return (
+    <RouteState>
+      <RouteFailure notFound />
+    </RouteState>
+  );
 }

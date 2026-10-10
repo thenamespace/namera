@@ -13,7 +13,7 @@ import type {
 } from "@namera-ai/protocol/model";
 import { billingMeterTransitions } from "@namera-ai/telemetry";
 
-import { freeBillingPlan } from "./data.js";
+import { resolveBillingPlan } from "./data.js";
 import { makeBillingPeriods } from "./periods.js";
 
 export interface ReserveUsageInput {
@@ -58,7 +58,7 @@ export const makeBillingMetering = Effect.gen(function* () {
       Effect.gen(function* () {
         const now = yield* DateTime.now;
         const period = yield* periods.current(input.organizationId, now);
-        const definition = freeBillingPlan.meters[input.meterKey];
+        const definition = resolveBillingPlan(period).meters[input.meterKey];
         const result = yield* repository.billing.usageReservation.reserve({
           organizationId: input.organizationId,
           periodId: period.id,

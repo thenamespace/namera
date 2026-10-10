@@ -6,6 +6,7 @@ import * as Application from "@namera-ai/application";
 import { WalletCustodyUnavailableError } from "@namera-ai/protocol";
 
 import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
+import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
@@ -35,10 +36,15 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["wallet:create"] },
           });
-          // Managed providers remain available internally for future products,
-          // but the beta never creates a server-controlled owner key.
-          if (payload.owner.type !== "passkey")
+          // Only the 1Claw managed provider is admitted by the public API.
+          if (payload.owner.type !== "passkey" && payload.owner.provider !== "1claw")
             return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
+          if (payload.owner.type === "namera-managed")
+            yield* consumeRateLimit(
+              "wallet.managed.create.organization",
+              data.organization.id,
+              rateLimitPolicy.managedWallet.createByOrganization,
+            );
           return toWalletResponse(
             yield* app.wallet.create({
               organizationId: data.organization.id,

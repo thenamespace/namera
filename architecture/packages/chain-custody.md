@@ -12,11 +12,18 @@ Rules:
 - Never log raw input, key material, ciphertext plaintext, or derived credentials.
 - Reuse shared encoding helpers instead of creating local `TextEncoder` instances.
 
-## `packages/wallet-keys`
+## `packages/wallet-providers/*`
 
-Wallet Keys owns custody-provider implementations and exposes provider-neutral key creation/signing. Current adapters support local development files and Google Cloud KMS. Application receives public metadata and a signing operation, never raw provider clients/private keys.
+Independent GCP and local packages expose `GcpService` and `LocalService`. Each owns its operation schemas, errors, configuration and test layer. Application calls the explicit provider and supplies signing callbacks to EVM; no shared provider interface or registry is used. Provider clients/private keys stay inside the owning package.
 
-The server installs `WalletKeys.disabledLayer` in every environment. Public
+`@namera-ai/wallet-provider-oneclaw` now exposes `OneClawService` for empty org
+bootstrap, claims, delegation, agents, Ethereum keys and digest signing, with
+`OneClawOidcService` for org JWT issuance/public JWKS. It uses the 1Claw SDK;
+bounded `OneClawError` contracts live in protocol. It has no database/application
+dependencies and is not yet composed by server or application. See
+[wallet-key providers](../wallets/wallet-keys.md) for authentication and safety boundaries.
+
+The server installs both provider-specific disabled layers in every environment. Public
 wallets use browser passkeys, and routine session execution/signing uses local
 client keys. The adapters below remain internal package capabilities.
 
@@ -39,15 +46,17 @@ EVM owns the `eip155` adapter. Detailed architecture is in [the EVM hub](../evm/
 
 ```mermaid
 flowchart LR
-  Application --> WalletKeys[WalletKeys: create/sign bytes]
+  Application --> GCP[GcpService]
+  Application --> Local[LocalService]
   Application --> EVM[EVM: account and operation semantics]
-  WalletKeys --> Provider[KMS/local custody]
+  GCP --> KMS[Google Cloud KMS]
+  Local --> Files[Local development files]
   EVM --> Owner[Provider-neutral owner adapter]
-  Owner --> WalletKeys
+  Application -. supplies signing callback .-> Owner
   EVM --> RPC[Alchemy RPC/Rundler/BSO]
 ```
 
-Wallet Keys does not know Modular Account V2, calls, UserOperations, or chain IDs. EVM does not know Google IAM/private-key files or persist provider secrets.
+Provider services do not know Modular Account V2, calls, UserOperations, or chain IDs. EVM does not know Google IAM/private-key files or persist provider secrets.
 
 ## Adding a namespace
 

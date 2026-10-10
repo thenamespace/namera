@@ -1,12 +1,15 @@
-import { DateTime, Effect, Metric } from "effect";
+import { DateTime, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import type { OrganizationId } from "@namera-ai/protocol";
 import type { BillingPeriod } from "@namera-ai/protocol/model";
+import { FreeBillingRolloutData } from "@namera-ai/protocol/model";
 import { billingPeriodRollovers } from "@namera-ai/telemetry";
 
-import { freeBillingPlan } from "./data.js";
-import { lockOrganizationBilling, resolveBillingPlan } from "./helpers.js";
+import { Audit } from "#/audit/layer";
+
+import { freeBillingPlan, resolveBillingPlan } from "./data.js";
+import { lockOrganizationBilling } from "./lock.js";
 
 const isBefore = (left: DateTime.Utc, right: DateTime.Utc) =>
   DateTime.toEpochMillis(left) < DateTime.toEpochMillis(right);
@@ -17,9 +20,10 @@ const contains = (period: BillingPeriod, at: DateTime.Utc) =>
 export const makeBillingPeriods = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
+  const audit = yield* Audit;
 
   const createBalances = Effect.fnUntraced(function* (period: BillingPeriod) {
-    const plan = freeBillingPlan;
+    const plan = resolveBillingPlan(period);
     yield* repository.billing.meterBalance.insertMany(
       Object.values(plan.meters).map((meter) => ({
         organizationId: period.organizationId,
@@ -45,7 +49,10 @@ export const makeBillingPeriods = Effect.gen(function* () {
         if (subscription === undefined) {
           return yield* Effect.die("Organization billing subscription is missing");
         }
-        const plan = resolveBillingPlan(subscription);
+        let plan = resolveBillingPlan(subscription);
+        const { freeV2RolloutAt } = Schema.decodeUnknownSync(FreeBillingRolloutData)(
+          subscription.data,
+        );
         const existing = yield* repository.billing.period.findContaining(organizationId, at);
         if (existing !== undefined) return existing;
 
@@ -70,6 +77,32 @@ export const makeBillingPeriods = Effect.gen(function* () {
 
         let periodCount = history.length;
         while (!contains(open, at)) {
+          if (
+            plan.version === 1 &&
+            freeV2RolloutAt !== undefined &&
+            isBefore(freeV2RolloutAt, open.endsAt)
+          ) {
+            const upgraded = yield* repository.billing.subscription.upgradeFreeV2(organizationId);
+            if (!upgraded) return yield* Effect.die("Free plan transition failed");
+            plan = freeBillingPlan;
+            yield* audit.organization(
+              {
+                organizationId,
+                actorId: null,
+                event: "billing.plan_changed",
+                resourceType: "organization",
+                resourceId: organizationId,
+                data: {
+                  version: 1,
+                  plan: "free",
+                  previousPlanVersion: 1,
+                  planVersion: 2,
+                  effectiveAt: open.endsAt,
+                },
+              },
+              { source: "system" },
+            );
+          }
           const closed = yield* repository.billing.period.close(organizationId, open.id, at);
           if (closed === undefined) return yield* Effect.die("Billing period could not be closed");
 

@@ -38,7 +38,7 @@ proxy-CIDR allowlist. TLS, final origins, secure cookies and static document
 security headers must match the deployed hosts.
 
 Public wallets are passkey-owned and session signing happens on clients.
-`WalletKeys.disabledLayer` is installed in every server environment; local/GCP
+`GcpService.disabledLayer` and `LocalService.disabledLayer` are installed in every server environment; local/GCP
 provider implementations are package capabilities, not active custody services.
 Alchemy RPC, Rundler, BSO and Portfolio APIs serve the supported EVM networks.
 The registry's `operationsEnabled` flag pauses new chain operations while signed

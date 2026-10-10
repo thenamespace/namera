@@ -1,6 +1,6 @@
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api";
 
-import { OrganizationErrors } from "@namera-ai/protocol";
+import { BillingLimitExceededError, OrganizationErrors } from "@namera-ai/protocol";
 import {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
@@ -20,7 +20,7 @@ export class OrganizationGroup extends HttpApiGroup.make("organization")
   .add(
     HttpApiEndpoint.post("create", "/create-organization", {
       payload: CreateOrganizationRequest,
-      error: [...OrganizationErrors, ...CommonErrors],
+      error: [BillingLimitExceededError, ...OrganizationErrors, ...CommonErrors],
       success: CreateOrganizationResponse,
     }).annotate(OpenApi.Summary, "Create an organization"),
     HttpApiEndpoint.get("list", "/list-user-organizations", {
