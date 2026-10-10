@@ -425,10 +425,11 @@ Managed-owner review reconstructs the factory account from public owner address,
 salt and pinned versions and compiles the selected installation independently.
 `validateManagedOwnerApproval` applies the same account, chain, owner nonce,
 factory, self-call, expiry and sponsored-gas checks as passkey approval, without
-a WebAuthn challenge. The confirmation dialog shows the account, network,
-permissions, lifetime and signature authority. Only explicit confirmation calls
-managed approve with the operation ID. Cancellation does not sign; retries retain
-the preparation identity. Expiry is checked again after confirmation. Accepted
+a WebAuthn challenge. Clicking Approve prepares, validates and submits installation
+directly, without a second dialog. Removal still requires a confirmation dialog
+showing the account, network, permissions, lifetime and signature authority before
+calling managed approve with the operation ID. Cancellation does not sign; retries
+retain the preparation identity. Expiry is checked again after removal confirmation. Accepted
 operations use existing receipt polling; no optimistic activation is added.
 
 ### Recovering an owner approval

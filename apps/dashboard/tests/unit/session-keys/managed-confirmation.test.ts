@@ -10,6 +10,7 @@ const { validate } = vi.hoisted(() => ({ validate: vi.fn() }));
 vi.mock("@namera-ai/sdk", () => ({ validateManagedOwnerApproval: validate }));
 const operationId = SessionKeyOperationId.make("01950000-0000-7000-8000-000000000001");
 const fixture = () => ({
+  kind: "uninstall" as const,
   reviewed: {} as ReviewedManagedOwnerOperation,
   response: { operationId } as PrepareManagedSessionKeyOperationResponse,
   signal: new AbortController().signal,
@@ -17,8 +18,34 @@ const fixture = () => ({
   approve: vi.fn(async () => undefined),
 });
 
-describe("explicit managed-owner confirmation", () => {
+describe("managed-owner approval consent", () => {
   beforeEach(() => validate.mockReset());
+  it("approves installation after validation without a second confirmation", async () => {
+    const input = { ...fixture(), kind: "install" as const };
+    await expect(confirmManagedApproval(input)).resolves.toBe(true);
+    expect(input.requestConfirmation).not.toHaveBeenCalled();
+    expect(validate).toHaveBeenCalledTimes(1);
+    expect(input.approve).toHaveBeenCalledExactlyOnceWith({ operationId });
+    expect(validate.mock.invocationCallOrder[0]).toBeLessThan(
+      Number(input.approve.mock.invocationCallOrder[0]),
+    );
+  });
+  it("does not approve an invalid installation", async () => {
+    const input = { ...fixture(), kind: "install" as const };
+    validate.mockImplementationOnce(() => {
+      throw new Error("Invalid");
+    });
+    await expect(confirmManagedApproval(input)).rejects.toThrow("Invalid");
+    expect(input.requestConfirmation).not.toHaveBeenCalled();
+    expect(input.approve).not.toHaveBeenCalled();
+  });
+  it("does not approve installation after navigation cancels it", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const input = { ...fixture(), kind: "install" as const, signal: controller.signal };
+    await expect(confirmManagedApproval(input)).resolves.toBe(false);
+    expect(input.approve).not.toHaveBeenCalled();
+  });
   it("sends only the reviewed operation ID after confirmation and a second validation", async () => {
     const input = fixture();
     await expect(confirmManagedApproval(input)).resolves.toBe(true);

@@ -107,6 +107,7 @@ export function useInstallationApproval(
         const response = current.managedPrepared;
         setOperationId(response.operationId);
         const confirmed = await confirmManagedApproval({
+          kind,
           reviewed,
           response,
           signal: abort.signal,

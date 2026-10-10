@@ -12,13 +12,11 @@ import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summar
 export function ManagedReviewDialog({
   session,
   installation,
-  kind,
   isOpen,
   confirm,
 }: {
   session: SessionKeyResponse;
   installation: SessionKeyResponse["installations"][number];
-  kind: "install" | "uninstall";
   isOpen: boolean;
   confirm: (confirmed: boolean) => void;
 }) {
@@ -35,9 +33,7 @@ export function ManagedReviewDialog({
           <Modal.Dialog className="sm:max-w-lg">
             <Modal.CloseTrigger />
             <Modal.Header>
-              <Modal.Heading>
-                {kind === "install" ? "Approve network access" : "Remove network access"}
-              </Modal.Heading>
+              <Modal.Heading>Remove network access</Modal.Heading>
             </Modal.Header>
             <Modal.Body className="grid gap-4">
               <div className="grid gap-2">
@@ -78,21 +74,16 @@ export function ManagedReviewDialog({
                 </Typography.Paragraph>
               </div>
               <Typography.Paragraph size="sm" color="muted">
-                {kind === "install"
-                  ? "1Claw will sign this permission change for your account. Access begins only after onchain confirmation."
-                  : "1Claw will sign the onchain removal. API access remains revoked while confirmation is pending."}{" "}
-                Gas is sponsored within your workspace’s available allowance.
+                1Claw will sign the onchain removal. API access remains revoked while confirmation
+                is pending. Gas is sponsored within your workspace’s available allowance.
               </Typography.Paragraph>
             </Modal.Body>
             <Modal.Footer>
               <Button variant="tertiary" onPress={() => confirm(false)}>
                 Cancel
               </Button>
-              <Button
-                variant={kind === "uninstall" ? "danger" : "primary"}
-                onPress={() => confirm(true)}
-              >
-                {kind === "install" ? "Approve with 1Claw" : "Remove with 1Claw"}
+              <Button variant="danger" onPress={() => confirm(true)}>
+                Remove with 1Claw
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

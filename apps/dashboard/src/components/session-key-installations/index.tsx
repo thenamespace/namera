@@ -218,13 +218,14 @@ function Installation({
           onTerminal={finish}
         />
       ) : null}
-      <ManagedReviewDialog
-        session={session}
-        installation={installation}
-        kind={kind}
-        isOpen={approval.reviewOpen}
-        confirm={approval.confirm}
-      />
+      {kind === "uninstall" ? (
+        <ManagedReviewDialog
+          session={session}
+          installation={installation}
+          isOpen={approval.reviewOpen}
+          confirm={approval.confirm}
+        />
+      ) : null}
     </article>
   );
 }
