@@ -134,9 +134,6 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
                 Free plan{billing.planVersion === 1 ? " (legacy)" : ""}
               </Typography.Heading>
             </div>
-            <Typography.Paragraph className="mt-1" color="muted" size="xs">
-              Allowances per workspace. Paid plans are not available yet.
-            </Typography.Paragraph>
           </div>
           <div className="shrink-0 text-right">
             <div className="text-base font-medium tabular-nums text-foreground">$0</div>
