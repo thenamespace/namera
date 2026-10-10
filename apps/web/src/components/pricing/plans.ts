@@ -26,7 +26,7 @@ export const PLANS: readonly Plan[] = [
       "100 mainnet executions",
       "500 testnet executions",
       "1,000 signatures",
-      "$3 of sponsored gas, fees included",
+      "$3 of sponsored gas",
     ],
   },
   {
@@ -43,7 +43,7 @@ export const PLANS: readonly Plan[] = [
       "25 managed session keys",
       "1,000 mainnet and 2,000 testnet executions",
       "5,000 signatures",
-      "$5 of sponsored gas, fees included",
+      "$5 of sponsored gas",
     ],
   },
   {
@@ -60,7 +60,7 @@ export const PLANS: readonly Plan[] = [
       "100 managed session keys",
       "5,000 mainnet and 15,000 testnet executions",
       "25,000 signatures",
-      "$15 of sponsored gas, fees included",
+      "$15 of sponsored gas",
     ],
   },
   {
@@ -69,9 +69,14 @@ export const PLANS: readonly Plan[] = [
     price: "Custom",
     action: "contact",
     features: [
-      "Discuss your account and signing volume",
-      "Custom limits and support requirements",
-      "Not available for purchase yet",
+      "Member limits tailored to your team",
+      "Custom user-owned account limits",
+      "Custom managed account limits",
+      "Custom local session key limits",
+      "Custom managed session key limits",
+      "Custom mainnet and testnet executions",
+      "Custom signature allowance",
+      "Custom sponsored gas allowance",
     ],
   },
 ];
