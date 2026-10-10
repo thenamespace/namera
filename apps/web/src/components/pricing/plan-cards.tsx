@@ -7,8 +7,8 @@ import { Check } from "./check";
 import { PLANS } from "./plans";
 
 /*
- * Columns divided by hairlines rather than boxed in cards, two rules inside
- * each one, and the actions aligned along the bottom whatever the lists above
+ * Columns divided by hairlines rather than boxed in cards, with the
+ * actions aligned along the bottom whatever the lists above
  * them do. The buttons keep this site's 8px radius rather than the reference's
  * pill, because every other button on the site is 8px (DESIGN.md).
  */
@@ -39,16 +39,7 @@ export const PlanCards = () => (
             )}
           </p>
 
-          <p
-            className={cn(
-              "mt-6 border-t-1 border-border py-5 text-[0.875rem]",
-              plan.available ? "text-muted" : "text-ink-subtle",
-            )}
-          >
-            {plan.summary}
-          </p>
-
-          <ul className="flex flex-col gap-3.5 border-t-1 border-border pt-7">
+          <ul className="mt-6 flex flex-col gap-3.5 border-t-1 border-border pt-7">
             {plan.features.map((feature) => (
               <li key={feature} className="flex items-start gap-3">
                 <Check className="mt-px" />

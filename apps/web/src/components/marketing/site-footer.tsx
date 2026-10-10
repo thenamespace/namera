@@ -78,6 +78,12 @@ export const SiteFooter = () => {
               The permission layer for agent wallets.
             </p>
 
+            {SITE_LINKS.contact ? (
+              <a href={SITE_LINKS.contact} className={cn(linkClass, "tap-target self-start")}>
+                {SITE_LINKS.contact.replace(/^mailto:/, "")}
+              </a>
+            ) : null}
+
             {socials.length > 0 ? (
               <ul className="-ml-2.5 mt-1 flex items-center gap-1">
                 {socials.map((social) => (

@@ -7,8 +7,6 @@ type Plan = {
   readonly name: string;
   readonly price: string;
   readonly cadence?: string;
-  readonly summary: string;
-  readonly available: boolean;
   readonly action: "waitlist" | "contact" | "none";
   readonly features: readonly string[];
 };
@@ -18,18 +16,17 @@ export const PLANS: readonly Plan[] = [
     id: "free",
     name: "Free",
     price: "$0",
-    summary: "Available in private beta",
-    available: true,
     action: "waitlist",
     features: [
       "5 members per workspace",
-      "10 self-owned accounts",
-      "100 self-owned session keys",
+      "10 user-owned accounts",
+      "3 managed accounts",
+      "100 local session keys",
+      "5 managed session keys",
       "100 mainnet executions",
       "500 testnet executions",
       "1,000 signatures",
       "$3 of sponsored gas, fees included",
-      "Coming soon: 3 managed accounts and 5 managed session keys with 1Claw",
     ],
   },
   {
@@ -37,14 +34,13 @@ export const PLANS: readonly Plan[] = [
     name: "Pro",
     price: "$29",
     cadence: "per month, planned",
-    summary: "Coming later. Limits may change.",
-    available: false,
     action: "none",
     features: [
       "10 members",
-      "50 self-owned accounts",
-      "500 self-owned session keys",
-      "10 managed accounts and 25 managed session keys with 1Claw",
+      "50 user-owned accounts",
+      "10 managed accounts",
+      "500 local session keys",
+      "25 managed session keys",
       "1,000 mainnet and 2,000 testnet executions",
       "5,000 signatures",
       "$5 of sponsored gas, fees included",
@@ -55,14 +51,13 @@ export const PLANS: readonly Plan[] = [
     name: "Business",
     price: "$149",
     cadence: "per month, planned",
-    summary: "Coming later. Limits may change.",
-    available: false,
     action: "none",
     features: [
       "50 members",
-      "250 self-owned accounts",
-      "2,500 self-owned session keys",
-      "50 managed accounts and 100 managed session keys with 1Claw",
+      "250 user-owned accounts",
+      "50 managed accounts",
+      "2,500 local session keys",
+      "100 managed session keys",
       "5,000 mainnet and 15,000 testnet executions",
       "25,000 signatures",
       "$15 of sponsored gas, fees included",
@@ -72,8 +67,6 @@ export const PLANS: readonly Plan[] = [
     id: "enterprise",
     name: "Enterprise",
     price: "Custom",
-    summary: "Tell us what you need",
-    available: false,
     action: "contact",
     features: [
       "Discuss your account and signing volume",
@@ -88,12 +81,10 @@ type Row = {
   readonly note?: string;
   readonly values: Readonly<Record<PlanId, string>>;
 };
-type Group = { readonly title: string; readonly note?: string; readonly rows: readonly Row[] };
+type Group = { readonly title?: string; readonly rows: readonly Row[] };
 
 export const GROUPS: readonly Group[] = [
   {
-    title: "Workspace capacity",
-    note: "Per workspace. These limits do not reset each month. Paid-plan limits are planned, not available today.",
     rows: [
       {
         label: "Members",
@@ -101,33 +92,30 @@ export const GROUPS: readonly Group[] = [
         values: { free: "5", pro: "10", business: "50", enterprise: "Custom" },
       },
       {
-        label: "Self-owned smart accounts",
+        label: "User-owned accounts",
         values: { free: "10", pro: "50", business: "250", enterprise: "Custom" },
       },
       {
-        label: "1Claw-managed smart accounts",
-        note: "Creation coming soon.",
+        label: "Managed accounts",
         values: { free: "3", pro: "10", business: "50", enterprise: "Custom" },
       },
       {
-        label: "Self-owned session keys",
+        label: "Local session keys",
         note: "Pending and active unexpired keys count. A key on multiple networks uses one slot.",
         values: { free: "100", pro: "500", business: "2,500", enterprise: "Custom" },
       },
       {
-        label: "1Claw-managed session keys",
-        note: "Creation coming soon.",
+        label: "Managed session keys",
         values: { free: "5", pro: "25", business: "100", enterprise: "Custom" },
       },
     ],
   },
   {
     title: "Each month",
-    note: "Resets on your workspace’s monthly anniversary, not the first of the month.",
     rows: [
       {
         label: "Mainnet executions",
-        note: "Confirmed operations, including session-key installation and removal.",
+        note: "Successful operations, including ENS operations and session-key installation and removal.",
         values: { free: "100", pro: "1,000", business: "5,000", enterprise: "Custom" },
       },
       {

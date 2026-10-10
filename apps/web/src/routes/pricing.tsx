@@ -17,32 +17,36 @@ import { jsonLd, seo, SITE } from "#/lib/seo";
 
 const QUESTIONS: readonly AccordionItem[] = [
   {
-    q: "What counts as an execution?",
-    a: "A confirmed onchain operation submitted through Namera, including session-key installation and removal. Namera reserves capacity while an operation is in flight. Failed operations release that execution reservation; sponsored gas that was actually spent can still count.",
+    q: "What can I do on the Free plan?",
+    a: "Each workspace includes 5 members, 10 user-owned accounts, 3 managed accounts, 100 local session keys and 5 managed session keys. You also get 100 mainnet executions, 500 testnet executions, 1,000 signatures and $3 in sponsored gas each month.",
   },
   {
-    q: "When does the month reset?",
-    a: "On the day your organization was created, every month. Executions, signatures and sponsored gas reset with it. Counts of things that exist rather than things that happen, like members, do not reset; they are a ceiling you sit under.",
+    q: "Are limits shared across my workspaces?",
+    a: "No. Each workspace has its own allowances. You can own up to 3 workspaces, including your Personal workspace. Workspaces you join do not count toward that limit.",
+  },
+  {
+    q: "What is the difference between user-owned and managed keys?",
+    a: "A user-owned account uses your passkey for owner approvals. A local session key uses a private key you hold. Managed accounts and session keys use a signing provider, so you do not need to store a private key yourself. Each type has its own allowance.",
+  },
+  {
+    q: "What counts as an execution?",
+    a: "Successful operations submitted through Namera count toward your execution allowance, including transactions, ENS operations, and session-key installation and removal. Mainnet and testnet executions have separate limits. Failed operations do not use an execution, but any sponsored gas spent can still count.",
+  },
+  {
+    q: "When do my allowances reset?",
+    a: "Executions, signatures and sponsored gas renew each month on your workspace’s billing anniversary. You can see the next reset date in Billing. Member, account and session-key limits do not reset each month. A session key used on multiple networks still takes one slot.",
   },
   {
     q: "What happens when I reach a limit on the Free plan?",
-    a: "Namera refuses new work when the required allowance is exhausted. Free does not charge overages. Existing accounts and keys are not deleted. Resource limits do not reset, but execution, signature and sponsored-gas allowances renew each month.",
+    a: "The action that needs the exhausted allowance is blocked. Your existing accounts and keys are not deleted, and Free has no overage charges. For monthly usage, wait until the next reset. For session-key capacity, revoke keys you no longer need.",
   },
   {
-    q: "How is sponsored gas measured?",
-    a: "Using the provider-reported cost, including its sponsorship fee. Free includes $3 per workspace each month. Gas is a dollar allowance rather than a transaction count because costs vary by network and activity.",
+    q: "What does the sponsored gas allowance cover?",
+    a: "It covers supported mainnet gas sponsorship, including the provider’s sponsorship fee. Free includes $3 per workspace each month. Gas is measured in dollars because costs vary by network and operation; a sponsored transaction also uses an execution.",
   },
   {
-    q: "How many workspaces can I create?",
-    a: "You can own up to 3 workspaces, including your Personal workspace. Joining someone else’s workspace does not use one of those slots. Plan allowances apply separately to each workspace.",
-  },
-  {
-    q: "When does my existing workspace move to Free v2?",
-    a: "At its next monthly billing anniversary after the rollout. Your current allowances stay unchanged until then. Accounts and keys above a new capacity limit are retained, but you cannot create more while at or above that limit.",
-  },
-  {
-    q: "Can I use managed accounts or buy a paid plan now?",
-    a: "Not yet. 1Claw-managed account and session-key creation is coming soon. Pro, Business and Enterprise are future plans; displayed paid pricing and allowances are provisional and cannot be purchased.",
+    q: "Can I upgrade to a paid plan?",
+    a: "Not yet. Pro, Business and Enterprise are coming soon. Their listed prices and allowances are planned and may change before launch. Contact hey@namera.ai if you need higher limits or want to discuss your team’s requirements.",
   },
 ];
 
@@ -110,10 +114,6 @@ function PricingPage() {
           <Container>
             <Reveal>
               <h1 className="type-display-lg text-center text-foreground">Pricing</h1>
-              <p className="mx-auto mt-5 max-w-2xl text-balance text-center text-muted">
-                Start with Free. Allowances apply per workspace, with up to 3 owned workspaces per
-                user. Paid plans and 1Claw-managed creation are coming later.
-              </p>
             </Reveal>
 
             <div className="mt-20 md:mt-28">
@@ -132,7 +132,7 @@ function PricingPage() {
           <Container>
             <Reveal>
               <h2 className="type-display-lg mx-auto max-w-[20ch] text-balance text-center text-foreground">
-                How the counting works
+                Pricing questions
               </h2>
             </Reveal>
             <Reveal delay={0.06} className="mx-auto mt-12 max-w-[46rem] md:mt-16">

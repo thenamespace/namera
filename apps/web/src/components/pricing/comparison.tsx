@@ -157,17 +157,20 @@ export const Comparison = () => {
         </thead>
 
         {GROUPS.map((group) => (
-          <tbody key={group.title}>
-            <tr>
-              <th scope="colgroup" colSpan={PLANS.length + 1} className="pt-12 pb-4 pl-3 text-left">
-                <span className="text-[0.9375rem] font-medium tracking-[-0.015em] text-foreground">
-                  {group.title}
-                </span>
-                {group.note ? (
-                  <p className="mt-2 max-w-2xl text-sm font-normal text-muted">{group.note}</p>
-                ) : null}
-              </th>
-            </tr>
+          <tbody key={group.rows[0]?.label}>
+            {group.title ? (
+              <tr>
+                <th
+                  scope="colgroup"
+                  colSpan={PLANS.length + 1}
+                  className="pt-12 pb-4 pl-3 text-left"
+                >
+                  <span className="text-[0.9375rem] font-medium tracking-[-0.015em] text-foreground">
+                    {group.title}
+                  </span>
+                </th>
+              </tr>
+            ) : null}
 
             {group.rows.map((row) => {
               const values = PLANS.map((item) => row.values[item.id]);

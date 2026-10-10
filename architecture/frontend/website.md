@@ -38,3 +38,9 @@ author, publication/update dates, image and canonical/noindex overrides.
 The homepage does not advertise an offer while its primary action is a waitlist.
 
 Authoring commands and frontmatter examples live in the package README.
+
+Pricing cards and the comparison table use provider-neutral user-owned account,
+managed account, local session key and managed session key labels. Free limits
+match Free v2; paid figures remain provisional, with no checkout. Eight pricing
+FAQs share their content with FAQPage structured data. The shared footer exposes
+the contact email from `SITE_LINKS` as a mailto link.
