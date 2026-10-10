@@ -131,7 +131,12 @@ signature. The EVM adapter reconstructs the smart account and:
 - returns an invalid signature as data rather than an exceptional defect.
 
 Verification requires an active wallet grant but no signature policy because it
-does not create authority. It does not persist an operation, consume billing,
+does not create authority. Both passkey and 1Claw-owned accounts use the shared
+public-only owner reconstruction, independently of session-key custody. This
+validates the active owner binding without loading credentials or invoking a
+provider signer. HTTP regression coverage verifies message and typed-data
+results for both owner types, including invalid signatures as `valid: false`.
+It does not persist an operation, consume billing,
 write audit, or return private provider details. A dedicated actor rate limit
 and bounded verification metrics protect the boundary.
 

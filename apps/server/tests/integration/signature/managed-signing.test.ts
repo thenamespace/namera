@@ -48,6 +48,21 @@ for (const owner of ["passkey", "1claw"] as const) {
           );
           const successes = outcomes.filter(Result.isSuccess);
           expect(successes).toHaveLength(1);
+          const signed = successes[0];
+          if (!signed) return yield* Effect.die("Missing completed signature");
+          const verification = {
+            ...request.payload,
+            signature: signed.success.signature,
+          };
+          for (const [signature, valid] of [
+            [signed.success.signature, true],
+            [Hex.make("0xdead"), false],
+          ] as const) {
+            const result = yield* verification.type === "message"
+              ? f.client.signature.verify({ payload: { ...verification, signature } })
+              : f.client.signature.verify({ payload: { ...verification, signature } });
+            expect(result).toMatchObject({ valid, type, account: f.wallet.address });
+          }
           expect(yield* Ref.get(f.control.calls)).toEqual(["signing.signDigest"]);
           const row = yield* f.repository.core.signatureOperation.findByIdForActor(
             prepared.operationId,
@@ -97,6 +112,11 @@ for (const owner of ["passkey", "1claw"] as const) {
         expect(
           yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip),
         ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
+        expect(
+          yield* f.client.signature.verify({
+            payload: { ...f.signatureRequest.payload, signature: Hex.make("0x1234") },
+          }),
+        ).toMatchObject({ valid: true });
         expect(yield* Ref.get(f.control.calls)).toEqual([]);
       }),
     );
