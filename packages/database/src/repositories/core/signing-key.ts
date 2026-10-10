@@ -66,6 +66,7 @@ export class SigningKeyRepository extends Context.Service<
               id: input.id,
               organizationId: input.organizationId,
               credentialId: input.credentialId ?? null,
+              providerConnectionId: input.providerConnectionId ?? null,
             })
             .returning();
           return decodeSigningKey(rows[0]);
@@ -82,6 +83,7 @@ export class SigningKeyRepository extends Context.Service<
               id: input.id,
               organizationId: input.organizationId,
               credentialId: input.credentialId ?? null,
+              providerConnectionId: input.providerConnectionId ?? null,
             })
             .onConflictDoNothing({
               target: [signingKey.organizationId, signingKey.algorithm, signingKey.publicKeyHex],

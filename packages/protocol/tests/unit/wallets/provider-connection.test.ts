@@ -61,6 +61,36 @@ const payload = {
 const authority = { connection, credential, payload };
 
 describe("provider connection and customer authority", () => {
+  it("reserves a local identity without treating it as a bootstrappable connection", () => {
+    const reserved = {
+      ...connection,
+      status: "pending",
+      externalConnectionId: null,
+      customerCredentialId: null,
+      data: {
+        ...connection.data,
+        customerId: null,
+        bootstrapCompletedAt: null,
+        delegationEnabledAt: null,
+      },
+    };
+    expect(() => Schema.decodeUnknownSync(ProviderConnection)(reserved)).not.toThrow();
+    for (const invalid of [
+      { ...reserved, externalConnectionId: "remote" },
+      { ...reserved, data: { ...reserved.data, customerId: "customer" } },
+      { ...reserved, data: { ...reserved.data, bootstrapCompletedAt: instant } },
+    ])
+      expect(() => Schema.decodeUnknownSync(ProviderConnection)(invalid)).toThrow();
+    expect(() =>
+      Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)({
+        mode: "bootstrap",
+        signingKeyId: otherId,
+        agentCredentialId: otherId,
+        templateId: "template",
+        connection: reserved,
+      }),
+    ).toThrow();
+  });
   it("round trips connection and encrypted credentials without discarding expiration", () => {
     expect(
       Schema.encodeSync(ProviderConnection)(

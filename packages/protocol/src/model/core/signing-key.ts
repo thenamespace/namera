@@ -1,6 +1,6 @@
 import { Schema, Struct } from "effect";
 
-import { CredentialId, OrganizationId, SigningKeyId } from "#/common/index";
+import { CredentialId, OrganizationId, ProviderConnectionId, SigningKeyId } from "#/common/index";
 import { Hex } from "#/evm/index";
 import { TimestampFields } from "#/model/common";
 
@@ -66,6 +66,7 @@ const SigningKeyFields = {
   publicKeyHex: Hex,
   status: SigningKeyStatus,
   credentialId: Schema.optionalKey(Schema.Null),
+  providerConnectionId: Schema.optionalKey(Schema.Null),
 };
 
 const LocalPasskeySigningKey = Schema.Struct({
@@ -97,6 +98,8 @@ const OneClawSigningKeyFields = {
   purpose: SigningKeyPurpose,
   custody: Schema.Literal("namera-managed"),
   credentialId: CredentialId,
+  // Legacy rows remain readable until an operator reconciles the provider tenant.
+  providerConnectionId: Schema.optionalKey(Schema.NullOr(ProviderConnectionId)),
 };
 
 const OneClawSecp256k1SigningKeyInsert = Schema.Struct({
@@ -125,6 +128,7 @@ const SigningKeyInsertFields = {
   publicKeyHex: Hex,
   status: SigningKeyStatus,
   credentialId: Schema.optionalKey(Schema.Null),
+  providerConnectionId: Schema.optionalKey(Schema.Null),
 };
 
 export const SigningKeyInsert = Schema.Union([

@@ -7,24 +7,23 @@ Source: [`packages/database/src/schema/core`](../../packages/database/src/schema
 ## `core.credentials`
 
 Internal, tenant-scoped encrypted provider credentials. This is a general-purpose
-table with an explicit typed variant, currently only `1claw-agent`.
+table with explicit `1claw-agent` and `1claw-customer` variants.
 
-Protocol additionally describes future `1claw-customer` credentials, but this
-table and repository remain explicitly agent-only until the phase 3A migration.
-The customer expiration column and provider-connection table do not exist yet.
-
-| Column                     | PostgreSQL type | Required | Description                                                             |
-| -------------------------- | --------------- | -------- | ----------------------------------------------------------------------- |
-| `id`                       | `text`          | Yes      | UUIDv7 primary key.                                                     |
-| `organization_id`          | `text`          | Yes      | Owning tenant; references `auth.organization` with restricted deletion. |
-| `type`                     | `text`          | Yes      | `1claw-agent`.                                                          |
-| `data`                     | `jsonb`         | Yes      | Version 1 metadata with a nonempty string `agentId`.                    |
-| `encrypted_payload`        | `text`          | Yes      | Nonempty ciphertext; never a plaintext provider API key.                |
-| `created_at`, `updated_at` | `timestamptz`   | Yes      | Standard timestamps, defaulting to `now()`.                             |
+| Column                     | PostgreSQL type | Required    | Description                                                                        |
+| -------------------------- | --------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `id`                       | `text`          | Yes         | UUIDv7 primary key.                                                                |
+| `organization_id`          | `text`          | Yes         | Owning tenant; references `auth.organization` with restricted deletion.            |
+| `type`                     | `text`          | Yes         | `1claw-agent` or `1claw-customer`.                                                 |
+| `data`                     | `jsonb`         | Yes         | Version 1 agent ID or customer connection/app/remote connection/customer identity. |
+| `encrypted_payload`        | `text`          | Yes         | Nonempty ciphertext; never a plaintext provider API key.                           |
+| `expires_at`               | `timestamptz`   | Conditional | Required for customer tokens, null for agent credentials.                          |
+| `created_at`, `updated_at` | `timestamptz`   | Yes         | Standard timestamps, defaulting to `now()`.                                        |
 
 Unique (`id`, `organization_id`) supports tenant-safe signer references. A partial
 unique index on organization, type and agent ID allows one credential per agent
 within a tenant. Checks reject unknown types, invalid metadata and empty payloads.
+Customer credentials have a unique JSON `providerConnectionId`, so renewal replaces
+the existing ciphertext rather than creating competing active token rows.
 
 `repository.core.credentials` exposes `insert` and tenant-scoped `findById` using
 the shared transaction context. Insert errors discard driver query parameters to
@@ -33,8 +32,55 @@ do not encrypt, decrypt, authenticate ciphertext or match agent IDs across rows;
 those checks belong to the later application/provider workflow. No public DTO,
 credential rotation workflow or provisioning table is introduced here.
 
+`replaceCustomerToken` compares the old ciphertext and requires an unexpired,
+token-owned connection lease. It locks that connection during replacement and
+atomically updates ciphertext and expiry; expired replacement tokens are rejected.
+Write errors discard driver query parameters. Application must authenticate the
+envelope and verify all identity/expiry bindings before insertion or replacement.
+
 Persistence tests cover tenant isolation, uniqueness, restricted deletion,
 metadata checks, atomic writes/rollback and legacy signer compatibility.
+
+## `core.provider_connections`
+
+Durable organization-to-1Claw customer identity, not a per-wallet attempt ledger.
+
+| Column                            | Meaning                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `id`, `organization_id`           | Local UUIDv7 identity and owning organization.                                     |
+| `provider`, `provider_app_id`     | Currently `1claw` and the deployment's platform app.                               |
+| `external_connection_id`          | Remote identity; null only while local setup is reserved.                          |
+| `customer_credential_id`          | Tenant-scoped restricted FK to encrypted customer authority.                       |
+| `status`                          | `pending`, `ready`, or terminal `disabled`.                                        |
+| `data`                            | Version 1 customer ID, stable OIDC subject/email, bootstrap/delegation timestamps. |
+| `lease_token`, `lease_expires_at` | Internal setup/renewal ownership, absent from decoded model.                       |
+| `created_at`, `updated_at`        | Standard timestamps.                                                               |
+
+Unique organization/provider/app, provider/app/subject and provider/app/remote ID
+indexes prevent competing mappings. A reservation has both remote/customer IDs
+null; reconciliation sets them together and cannot substitute an established
+identity. Ready rows require remote identity, customer credential, bootstrap and
+delegation timestamps. JSON/lease checks reject incomplete combinations.
+
+`repository.core.providerConnections` exposes reservation, organization/app lookup,
+lease acquisition/release, identity reconciliation, bootstrap recording, verified
+customer-credential attachment, readiness and disablement. All methods join the
+ambient transaction. Credential attachment checks tenant, variant and every cleartext
+identity binding. The FK itself enforces tenant ownership, not JSON equality;
+decrypted envelope verification remains an application responsibility.
+
+Acquire a unique token-owned 60-second lease before setup or renewal; use a fresh
+token for each acquisition. A takeover fences stale database writes. It does not
+cancel an earlier HTTP request or make remote creation exactly-once. After expiry
+or ambiguous provider results, reconcile remote state before taking more actions;
+never blindly repeat bootstrap/agent creation. No transaction spans provider HTTP.
+Disablement clears the lease and prevents further repository setup/renewal writes.
+
+Tests run on migrated PGlite and disposable PostgreSQL, including eight-way lease
+and ciphertext-CAS contention. Readiness/token changes roll back with an enclosing
+transaction. Application audit emission, encryption, token renewal HTTP, OIDC and
+live provisioning are not wired by this persistence phase. Future workflows must
+persist their audit rows in that same transaction.
 
 ## `core.signing_key`
 
@@ -42,19 +88,20 @@ Provider-neutral signing identity used by wallets and, in a later slice,
 cryptographic session keys. Private and encrypted local key material is never
 persisted by the server.
 
-| Column            | PostgreSQL type | Required | Default  | Description                                                                                |
-| ----------------- | --------------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
-| `id`              | `text`          | Yes      | UUIDv7   | Signing-key identifier.                                                                    |
-| `organization_id` | `text`          | Yes      | —        | Owning tenant.                                                                             |
-| `purpose`         | `text`          | Yes      | —        | `wallet-root` or `session`.                                                                |
-| `credential_id`   | `text`          | No       | —        | Required for 1Claw; null for other signer variants.                                        |
-| `custody`         | `text`          | Yes      | —        | `local` or `namera-managed`.                                                               |
-| `algorithm`       | `text`          | Yes      | —        | `p256`, `secp256k1`, or `ed25519` (not an EVM owner).                                      |
-| `public_key_hex`  | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                         |
-| `status`          | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                             |
-| `data`            | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, managed development-provider or 1Claw metadata. |
-| `created_at`      | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                             |
-| `updated_at`      | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                                                     |
+| Column                   | PostgreSQL type | Required | Default  | Description                                                                                |
+| ------------------------ | --------------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
+| `id`                     | `text`          | Yes      | UUIDv7   | Signing-key identifier.                                                                    |
+| `organization_id`        | `text`          | Yes      | —        | Owning tenant.                                                                             |
+| `purpose`                | `text`          | Yes      | —        | `wallet-root` or `session`.                                                                |
+| `credential_id`          | `text`          | No       | —        | Required for 1Claw; null for other signer variants.                                        |
+| `provider_connection_id` | `text`          | No       | `NULL`   | Tenant-scoped 1Claw connection; legacy unlinked signers remain readable.                   |
+| `custody`                | `text`          | Yes      | —        | `local` or `namera-managed`.                                                               |
+| `algorithm`              | `text`          | Yes      | —        | `p256`, `secp256k1`, or `ed25519` (not an EVM owner).                                      |
+| `public_key_hex`         | `text`          | Yes      | —        | Canonical lowercase public key used for verification and identity.                         |
+| `status`                 | `text`          | Yes      | `active` | `active`, `disabled`, or terminal `destroyed`.                                             |
+| `data`                   | `jsonb`         | Yes      | —        | Discriminated passkey, local-key, GCP KMS, managed development-provider or 1Claw metadata. |
+| `created_at`             | `timestamptz`   | Yes      | `now()`  | Creation time.                                                                             |
+| `updated_at`             | `timestamptz`   | Yes      | `now()`  | Last lifecycle update.                                                                     |
 
 ### Keys and uniqueness
 
@@ -69,6 +116,10 @@ persisted by the server.
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 - (`credential_id`, `organization_id`) → `core.credentials` (`id`, `organization_id`),
   `ON DELETE RESTRICT`. The foreign key enforces tenant ownership, not JSON agent matching.
+- (`provider_connection_id`, `organization_id`) references `core.provider_connections`
+  (`id`, `organization_id`) with restricted deletion and a supporting index.
+  Only 1Claw signers may carry this reference. Existing null links require verified
+  operator reconciliation; future live provisioning must supply the link.
 
 ### Checks
 

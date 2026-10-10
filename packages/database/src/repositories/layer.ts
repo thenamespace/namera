@@ -38,6 +38,7 @@ import {
 import {
   AdminOverviewRepository,
   CredentialsRepository,
+  ProviderConnectionsRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
@@ -99,6 +100,7 @@ export interface RepositoryService {
   };
   core: {
     credentials: CredentialsRepository["Service"];
+    providerConnections: ProviderConnectionsRepository["Service"];
     adminOverview: AdminOverviewRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
@@ -175,6 +177,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const sessionKeyPolicyState = yield* SessionKeyPolicyStateRepository;
       const signingKey = yield* SigningKeyRepository;
       const credentials = yield* CredentialsRepository;
+      const providerConnections = yield* ProviderConnectionsRepository;
       const signatureOperation = yield* SignatureOperationRepository;
 
       return Repository.of({
@@ -219,6 +222,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         },
         core: {
           credentials,
+          providerConnections,
           adminOverview,
           dashboardOverview,
           execution,
@@ -291,6 +295,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionKeyPolicyStateRepository.layer,
         SigningKeyRepository.layer,
         CredentialsRepository.layer,
+        ProviderConnectionsRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
       ),

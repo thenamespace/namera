@@ -5,7 +5,7 @@ import { TimestampFields } from "#/model/common";
 
 export const OneClawConnectionData = Schema.Struct({
   version: Schema.Literal(1),
-  customerId: Schema.NonEmptyString,
+  customerId: Schema.NullOr(Schema.NonEmptyString),
   oidcSubject: Schema.NonEmptyString,
   email: Email,
   bootstrapCompletedAt: Schema.NullOr(Schema.DateTimeUtcFromString),
@@ -17,7 +17,7 @@ const ProviderConnectionFields = {
   organizationId: OrganizationId,
   provider: Schema.Literal("1claw"),
   providerAppId: Schema.NonEmptyString,
-  externalConnectionId: Schema.NonEmptyString,
+  externalConnectionId: Schema.NullOr(Schema.NonEmptyString),
   customerCredentialId: Schema.NullOr(CredentialId),
   status: Schema.Literals(["pending", "ready", "disabled"]),
   data: OneClawConnectionData,
@@ -27,14 +27,30 @@ const setupComplete = Schema.makeFilter(
   (connection: {
     status: "pending" | "ready" | "disabled";
     customerCredentialId: unknown;
-    data: { bootstrapCompletedAt: unknown; delegationEnabledAt: unknown };
-  }) =>
-    connection.status !== "ready" ||
-    (connection.customerCredentialId !== null &&
-      connection.data.bootstrapCompletedAt !== null &&
-      connection.data.delegationEnabledAt !== null)
+    externalConnectionId: unknown;
+    data: { customerId: unknown; bootstrapCompletedAt: unknown; delegationEnabledAt: unknown };
+  }) => {
+    if ((connection.externalConnectionId === null) !== (connection.data.customerId === null)) {
+      return "Remote connection and customer identity must be recorded together";
+    }
+    if (connection.data.bootstrapCompletedAt !== null && connection.externalConnectionId === null) {
+      return "Bootstrap requires a remote connection";
+    }
+    if (
+      connection.data.delegationEnabledAt !== null &&
+      (connection.customerCredentialId === null || connection.data.bootstrapCompletedAt === null)
+    ) {
+      return "Delegation requires bootstrap and customer authority";
+    }
+    return connection.status !== "ready" ||
+      (connection.externalConnectionId !== null &&
+        connection.data.customerId !== null &&
+        connection.customerCredentialId !== null &&
+        connection.data.bootstrapCompletedAt !== null &&
+        connection.data.delegationEnabledAt !== null)
       ? undefined
-      : "Ready connections require verified setup and customer authority",
+      : "Ready connections require verified setup and customer authority";
+  },
 );
 
 export const ProviderConnectionInsert =
@@ -45,3 +61,4 @@ export const ProviderConnection = Schema.Struct(ProviderConnectionFields)
 
 export type ProviderConnection = typeof ProviderConnection.Type;
 export type ProviderConnectionInsert = typeof ProviderConnectionInsert.Type;
+export type ProviderConnectionEncoded = typeof ProviderConnection.Encoded;

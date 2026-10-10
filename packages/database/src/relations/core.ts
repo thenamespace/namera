@@ -3,6 +3,24 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const coreRelations = defineRelationsPart(schema, (r) => ({
+  providerConnections: {
+    // A provider tenant is owned by one Namera organization.
+    organization: r.one.organization({
+      from: r.providerConnections.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
+    // Customer authority is resolved only inside the owning tenant.
+    customerCredential: r.one.credentials({
+      from: [r.providerConnections.customerCredentialId, r.providerConnections.organizationId],
+      to: [r.credentials.id, r.credentials.organizationId],
+    }),
+    // Incrementally provisioned agents are tracked through Namera's signer rows.
+    signingKeys: r.many.signingKey({
+      from: [r.providerConnections.id, r.providerConnections.organizationId],
+      to: [r.signingKey.providerConnectionId, r.signingKey.organizationId],
+    }),
+  },
   credentials: {
     // Provider authentication material belongs to one tenant.
     organization: r.one.organization({
@@ -17,6 +35,11 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   signingKey: {
+    // Legacy signers may not yet have a reconciled provider tenant.
+    providerConnection: r.one.providerConnections({
+      from: [r.signingKey.providerConnectionId, r.signingKey.organizationId],
+      to: [r.providerConnections.id, r.providerConnections.organizationId],
+    }),
     // Local/passkey/KMS signers have no stored provider credential.
     credential: r.one.credentials({
       from: [r.signingKey.credentialId, r.signingKey.organizationId],

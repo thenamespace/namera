@@ -110,7 +110,7 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 - [x] Phase 2: protocol contracts
 - [ ] Phase 2A: organization connection and customer-authority contracts
 - [x] Phase 3: persistence and recovery model
-- [ ] Phase 3A: organization connections and encrypted customer authority
+- [x] Phase 3A: organization connection/customer authority persistence (factory data remains gated)
 - [ ] Phase 4A: provider package split and WalletKeys retirement
 - [ ] Phase 4B: provider-specific 1Claw service implementation
 - [ ] Phase 5: EVM managed-owner integration
@@ -476,9 +476,30 @@ Manual recovery policy for the later provisioning workflow:
 
 ### Phase 3A: organization connections and encrypted customer authority
 
-Owners: database, protocol and existing application encryption boundary.
+Owners: database and protocol; application encryption/runtime wiring follows in the provider workflow phases.
 
-- Add `core.provider_connections` (proposed name, not implemented) with a local
+**Implemented:** tenant-scoped connection reservations, remote identity reconciliation,
+bootstrap/delegation readiness, encrypted customer credential expiry and ciphertext
+replacement, nullable signer connection links, migrations and transaction-aware
+repositories. Setup/renewal uses a token-owned 60-second database lease; credential
+replacement also compares the previous ciphertext. PostgreSQL tests exercise
+eight-way contention; PGlite covers constraints, tenant isolation, stale leases,
+binding checks, rollback and legacy signer compatibility. No live API is enabled.
+
+Reservations temporarily allow null remote/customer IDs to coordinate first setup
+before HTTP. Lease expiry is not permission to repeat an ambiguous remote mutation;
+reconcile first. Old unlinked 1Claw signers require operator reconciliation. Database
+attachment validates cleartext identity metadata; the later application workflow
+must encrypt/decrypt using `cryptoPurpose.providerCredential`, validate the envelope,
+and emit transactional audits. Early agent-credential persistence is available, but
+the provider workflow that receives and encrypts it is not wired yet.
+
+**Deferred gate:** factory-based ECDSA reconstruction checks remain blocked on the
+phase 1 compatibility evidence, just as in phase 2A. This persistence change does
+not invent a factory schema or alter passkey/7702 data. Implement those checks with
+the verified factory adapter, before enabling account creation.
+
+- Add `core.provider_connections` with a local
   ID, organization ID, provider, app ID, subject, email, provider customer ID,
   connection ID, customer credential reference, readiness and timestamps.
 - Enforce one mapping per organization/provider/app, unique provider/app/subject
@@ -504,9 +525,11 @@ Owners: database, protocol and existing application encryption boundary.
   identity, not a per-wallet attempt ledger. Uniqueness alone does not make remote
   creation exactly-once; crashes during external creation still require recovery.
 
-**Exit gate:** migrations/repositories prove tenant isolation, unique mappings,
-encrypted credential type/binding checks, renewal contention, idempotent local
-reconciliation and atomic readiness/audit transitions. No runtime API enabled.
+**Persistence exit gate met:** migrations/repositories prove tenant isolation,
+unique mappings, credential type/metadata binding checks, renewal contention,
+idempotent local reconciliation and transaction rollback. Audit emission and
+authenticated encrypted-envelope checks remain in the later application workflow.
+No runtime API enabled; factory reconstruction remains gated as noted above.
 
 ### Phase 4A: provider package split and WalletKeys retirement
 

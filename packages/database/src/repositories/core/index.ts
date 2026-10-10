@@ -1,5 +1,6 @@
 export * from "./admin-overview.js";
 export * from "./credentials.js";
+export * from "./provider-connections.js";
 export * from "./dashboard-overview.js";
 export * from "./execution-submission.js";
 export * from "./execution.js";

@@ -1,4 +1,9 @@
-import type { CredentialId, OrganizationId, SigningKeyId } from "@namera-ai/protocol";
+import type {
+  CredentialId,
+  OrganizationId,
+  ProviderConnectionId,
+  SigningKeyId,
+} from "@namera-ai/protocol";
 import type { SigningKey, SigningKeyEncoded } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
 import { check, foreignKey, index, jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
@@ -8,6 +13,7 @@ import { generateUniqueId, timestamps } from "#/schema/common";
 import { organization } from "../auth/organization/organization.js";
 import { coreSchema } from "./common.js";
 import { credentials } from "./credentials.js";
+import { providerConnections } from "./provider-connections.js";
 
 export const signingKey = coreSchema.table(
   "signing_key",
@@ -19,6 +25,7 @@ export const signingKey = coreSchema.table(
       .references(() => organization.id, { onDelete: "restrict" }),
     purpose: text("purpose").notNull().$type<SigningKey["purpose"]>(),
     credentialId: text("credential_id").$type<CredentialId>(),
+    providerConnectionId: text("provider_connection_id").$type<ProviderConnectionId>(),
     custody: text("custody").notNull().$type<SigningKey["custody"]>(),
     algorithm: text("algorithm").notNull().$type<SigningKey["algorithm"]>(),
     publicKeyHex: text("public_key_hex").notNull().$type<SigningKey["publicKeyHex"]>(),
@@ -27,6 +34,16 @@ export const signingKey = coreSchema.table(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      name: "signing_key_connection_org_fk",
+      columns: [table.providerConnectionId, table.organizationId],
+      foreignColumns: [providerConnections.id, providerConnections.organizationId],
+    }).onDelete("restrict"),
+    index("signing_key_connection_idx").on(table.providerConnectionId, table.organizationId),
+    check(
+      "signing_key_connection_provider_check",
+      sql`${table.providerConnectionId} IS NULL OR ${table.data}->>'type' = '1claw'`,
+    ),
     foreignKey({
       name: "signing_key_credential_organization_fk",
       columns: [table.credentialId, table.organizationId],

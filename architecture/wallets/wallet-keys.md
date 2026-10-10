@@ -102,9 +102,14 @@ These schemas do not verify token signatures, current-time expiry, provider
 revocation or database ownership by themselves. JSON encoding of decrypted
 envelopes is only for encryption, never public responses or logging.
 
-The existing database table/repository deliberately remain agent-only until phase
-3A adds customer credential storage and provider connections. No migration,
-customer-token renewal, OIDC endpoint or public capability is enabled here. The
+Phase 3A adds customer credential expiry/storage, organization/provider connections,
+nullable legacy signer linkage, tenant-safe foreign keys and transaction-aware
+repositories. A pending local reservation may omit remote/customer IDs until
+reconciled; bootstrap requests require those IDs. Token-owned setup/renewal leases
+and ciphertext compare-and-swap protect local transitions, tested on PostgreSQL.
+See the [table catalog](../database/core-wallets-operations.md) for invariants and
+recovery limits. No customer-token renewal HTTP, OIDC endpoint or public capability
+is enabled here. The
 factory-based ECDSA schema remains gated on factory compatibility evidence; current
 passkey and 7702 shapes are unchanged. Vendor claim-response decoding belongs in
 the future 1Claw package. The planned provider-specific package split is also

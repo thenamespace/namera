@@ -50,9 +50,12 @@ export const OneClawOwnerProvisioningRequest = Schema.Union([
     templateId: Schema.NonEmptyString,
   }).check(
     Schema.makeFilter(({ connection }) =>
-      connection.status === "pending" && connection.data.bootstrapCompletedAt === null
+      connection.status === "pending" &&
+      connection.externalConnectionId !== null &&
+      connection.data.customerId !== null &&
+      connection.data.bootstrapCompletedAt === null
         ? undefined
-        : "Bootstrap requires an unbootstrapped pending connection",
+        : "Bootstrap requires a reconciled, unbootstrapped pending connection",
     ),
   ),
   Schema.Struct({
