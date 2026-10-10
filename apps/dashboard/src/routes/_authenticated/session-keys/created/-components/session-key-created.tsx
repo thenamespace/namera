@@ -79,9 +79,20 @@ function ActionContent({
   );
 }
 
-function Property({ label, children }: { label: string; children: ReactNode }) {
+function Property({
+  label,
+  children,
+  align = "center",
+}: {
+  label: string;
+  children: ReactNode;
+  align?: "center" | "start";
+}) {
   return (
-    <div className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+    <div
+      className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 data-[align=start]:items-start sm:grid-cols-[11rem_minmax(0,1fr)]"
+      data-align={align}
+    >
       <Typography className="text-sm!" color="muted" weight="normal">
         {label}
       </Typography>
@@ -154,7 +165,7 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
               <Property label="Namespace">
                 <NamespaceDisplay namespace={sessionKey.namespace} />
               </Property>
-              <Property label="Networks">
+              <Property label="Networks" align="start">
                 <div className="grid gap-2">
                   {sessionKey.installations.map((network) => (
                     <ChainDisplay key={network.chainId} chainId={network.chainId} />

@@ -20,18 +20,18 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
   },
   {
     key: "local-session-keys",
-    label: "Self-owned session keys",
-    planLabel: "self-owned session keys",
+    label: "Local session keys",
+    planLabel: "local session keys",
   },
   {
     key: "oneclaw-wallets",
-    label: "1Claw-managed accounts",
-    planLabel: "1Claw-managed accounts",
+    label: "Managed accounts",
+    planLabel: "managed accounts",
   },
   {
     key: "oneclaw-session-keys",
-    label: "1Claw-managed session keys",
-    planLabel: "1Claw-managed session keys",
+    label: "Managed session keys",
+    planLabel: "managed session keys",
   },
 ];
 

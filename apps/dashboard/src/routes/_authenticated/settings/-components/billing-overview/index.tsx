@@ -5,7 +5,7 @@ import type {
   BillingResourceUsage,
   GetBillingResponse,
 } from "@namera-ai/protocol/dto";
-import { Meter, Surface, Typography } from "@namera-ai/ui";
+import { buttonVariants, Meter, Surface, Typography } from "@namera-ai/ui";
 import { CheckIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
@@ -114,9 +114,17 @@ function IncludedItem({ amount, label }: { amount: string; label: string }) {
 function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
   return (
     <section aria-labelledby="current-plan-heading">
-      <HeadingGroup className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <HeadingGroup.Title id="current-plan-heading">Current plan</HeadingGroup.Title>
-      </HeadingGroup>
+        <a
+          className={buttonVariants({ size: "sm", variant: "tertiary" })}
+          href="https://namera.ai/pricing"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View plans
+        </a>
+      </div>
 
       <Surface className="overflow-hidden rounded-xl border" variant="secondary">
         <div className="flex items-center justify-between gap-6 px-5 py-4 sm:px-6">
@@ -162,12 +170,8 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
             );
           })}
         </ul>
-        <div className="space-y-2 border-t border-border px-5 py-4 sm:px-6">
-          <Typography.Paragraph color="muted" size="xs">
-            You can own up to 3 workspaces, including Personal. Joined workspaces do not count.
-            Members include pending invitations. Sponsored gas includes provider fees.
-          </Typography.Paragraph>
-          {billing.scheduledChange ? (
+        {billing.scheduledChange ? (
+          <div className="border-t border-border px-5 py-4 sm:px-6">
             <Typography.Paragraph size="sm">
               Free v2 starts{" "}
               {DateTime.formatLocal(billing.scheduledChange.effectiveAt, {
@@ -178,8 +182,8 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
               . Your current allowances stay in place until then. Existing accounts and keys will
               not be deleted.
             </Typography.Paragraph>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </Surface>
     </section>
   );
