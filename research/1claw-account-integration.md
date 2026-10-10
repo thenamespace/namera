@@ -26,9 +26,12 @@ unless explicitly selected during phase 1.
 - Keep account construction, signature encoding, and chain compatibility in EVM.
 - Keep authorization, policy checks, billing, audits, and workflows in application.
 - Keep UserOperation submission and receipt reconciliation in Namera.
-- Target the existing internal secp256k1/EIP-7702 account path, subject to phase 1
-  compatibility verification. Do not silently introduce Safe or another account
-  implementation if that path fails.
+- Target a normal factory-deployed ERC-4337 smart account with the 1Claw
+  Ethereum wallet as its ECDSA owner. Do not use EIP-7702 for this integration.
+- Prefer the existing Alchemy Modular Account V2 family, subject to verifying its
+  factory-based ECDSA owner and session-module compatibility. If unsupported,
+  stop for an explicit implementation decision; do not silently switch to Safe,
+  another implementation, or 7702.
 - Do not migrate or rotate existing passkey account owners.
 
 ### Package decision
@@ -53,14 +56,26 @@ and EVM must not import a 1Claw SDK or HTTP client directly.
 
 Custody, provider, algorithm, and account implementation are separate concepts:
 
-| Concept                         | Proposed value                           |
-| ------------------------------- | ---------------------------------------- |
-| Custody                         | `namera-managed`                         |
-| Provider metadata discriminator | `1claw`                                  |
-| Owner purpose                   | `wallet-root`                            |
-| Owner algorithm                 | `secp256k1`                              |
-| Account implementation          | Alchemy Modular Account V2               |
-| Account mode                    | EIP-7702, subject to compatibility proof |
+| Concept                         | Proposed value                         |
+| ------------------------------- | -------------------------------------- |
+| Custody                         | `namera-managed`                       |
+| Provider metadata discriminator | `1claw`                                |
+| Owner purpose                   | `wallet-root`                          |
+| Owner algorithm                 | `secp256k1`                            |
+| Account implementation          | Alchemy Modular Account V2             |
+| Account mode                    | Factory-deployed ERC-4337, ECDSA owner |
+
+The 1Claw EOA is the owner/signing identity; the smart account is a separate
+contract address derived from its factory and initialization data. Assets and
+session permissions belong to the smart account, not the owner EOA. Do not set
+the account address to the provider wallet address or fund that EOA as an account
+setup step. The contract can remain counterfactual until its first UserOperation.
+
+Namera's existing internal secp256k1 path is 7702-only. This plan therefore
+requires a new factory-based account variant, not a change of label on existing
+records. Preserve existing 7702 and passkey reconstruction behavior. Provider
+API delegation (connection permissions) remains required and is unrelated to
+EIP-7702 onchain delegation.
 
 Do not force 1Claw into the current `hsm` protection label. Confirm actual key
 generation, storage, signing, export, and TEE/HSM guarantees, then model them
@@ -159,10 +174,10 @@ normal application runtime credentials. Application/EVM do not import the SDK.
    tested), then verify the grant. Record local readiness only after successful
    checks. These scopes do not authorize delegated wallet provisioning.
 6. Validate agent/key identity, chain, curve, public key, address and raw-signing
-   state. Construct the existing EVM account mode and perform the final locked
+   state. Derive the factory-based smart account with this EOA as owner and perform the final locked
    billing check and transactional account persistence described in phase 6.
 7. Return the existing account-created experience. Account registration is not
-   proof of network delegation, deployment or active session permissions.
+   proof of contract deployment or active session permissions on any network.
 
 Template bootstrap is one-time per connection. A 409 must trigger reconciliation,
 not another customer, template, or bootstrap attempt. Recovering a connection ID
@@ -245,7 +260,7 @@ not be copied into this repository. Tested against SDK 0.61.38 and the live API.
 | Claim reissue / repeated redemption                      | 200 / 200; extended customer token expiry |
 | Existing connection recovery by subject                  | Exact original connection recovered       |
 
-This proves useful provider primitives, not the EIP-7702 account lifecycle,
+This proves useful provider primitives, not the factory-based smart-account lifecycle,
 sub-organization isolation, production recovery guarantees or custody claims.
 
 ### Phase 1: provider and account compatibility
@@ -262,7 +277,12 @@ funds. Extend the previously reported digest experiment with reproducible vector
   quotas, billing, incremental provisioning, and credential rotation.
 - Verify public-key encoding, derived address, exact digest signing without extra
   hashing, signature encoding, parity, and low-S normalization.
-- Verify signing the exact EIP-7702 authorization digest expected by our adapter.
+- Verify the chosen factory/initialization API, ECDSA owner validator, EntryPoint
+  version, deployment addresses and compatibility with existing session modules.
+- Verify the exact owner UserOperation signing convention required by that
+  validator, including any EIP-191 wrapping or typed-data hashing. Raw digest
+  support alone does not prove validator compatibility; apply required hashing
+  in EVM exactly once. No EIP-7702 authorization signature is needed.
 - Confirm stable key/version selection and behavior after provider key rotation.
 - Establish provisioning/signing retry semantics, lookup after ambiguous timeout,
   approval-required responses, and deactivation versus destruction.
@@ -271,8 +291,8 @@ funds. Extend the previously reported digest experiment with reproducible vector
 **Exit gate:** record supported primitives, verified test vectors, enterprise
 constraints, account-mode choice, credential strategy, and unresolved blockers in
 the research note. Do not proceed on assumed P-256 support or an unverified
-protection label. A failed EIP-7702 compatibility gate requires a new account-mode
-decision, not a silent fallback.
+protection label. A failed factory-based ECDSA/session compatibility gate requires
+an explicit implementation decision, not a fallback to 7702.
 
 ### Phase 2: protocol contracts
 
@@ -349,6 +369,13 @@ Owner: `packages/protocol`. This is new work, not part of completed phase 2.
   capability owned by wallet-keys, not an SDK imported into application.
 - Define bounded errors for linking required, ambiguous recovery, revoked
   connection, expired authority, identity mismatch and incomplete provisioning.
+- Add a factory-based secp256k1 wallet-data discriminator alongside the existing
+  7702 variant. Define reconstruction data required by the selected factory:
+  owner identity, salt, implementation/factory version, validator initialization
+  and EntryPoint version as applicable. Pin factory resolution through persisted
+  versioned metadata or explicit addresses; exact fields follow phase 1 evidence.
+  Do not reinterpret existing `accountMode: "7702"` records or require delegation
+  versions for new factory accounts. Public creation remains server-selected.
 - Decode the actual claim response's `auth_token` and expiry explicitly; the
   installed SDK's claim-response type omitted those fields despite live responses.
   Check HTTP status and required fields as well as SDK `error`; the tested 409
@@ -420,6 +447,9 @@ Owners: database, protocol and existing application encryption boundary.
   encrypted payloads using `cryptoPurpose.providerCredential` and
   `CRYPTO_ENCRYPTION_KEY`. Store a validated non-secret expiry alongside the
   encrypted envelope for renewal scheduling; compare both when decrypting.
+- Extend wallet JSON checks and persistence decoding for factory-based ECDSA
+  reconstruction data. Test round trips and migration compatibility for existing
+  passkey and 7702 rows. Do not migrate their owners, modes or addresses.
 - Add transaction-aware lookup by organization/app, insert/reconcile mapping,
   readiness transition, and compare-and-swap customer credential replacement.
   Add a cross-instance serialization strategy for initial setup and renewal.
@@ -466,17 +496,24 @@ in logs, traces, errors, or fixtures.
 
 Owner: `packages/evm`.
 
-- Wire the managed secp256k1 digest signer into the existing owner adapter.
-- Verify creation/reconstruction and persisted-address consistency.
-- Implement or complete the EIP-7702 delegation authorization path, including
-  chain/nonce binding and the explicitly supported delegation implementation.
+- Reuse compatible secp256k1 signing primitives, but add a factory-based smart
+  account constructor/reconstructor rather than calling the 7702 constructor.
+- Derive the owner EOA from its public key, encode the verified owner-validator
+  initialization and salt, and compute the counterfactual smart-account address.
+  Compare reconstructed address with persisted address on every account load.
+- Include factory/init data only when deployment is needed. Verify the first
+  successful UserOperation deploys the expected contract, then subsequent
+  operations use that same account. Do not generate 7702 authorizations.
 - Verify owner-operation signing and signature recovery against the stored key.
+- Verify ERC-1271 and counterfactual ERC-6492 behavior where supported, plus the
+  existing session installation/removal validators on the new account mode.
 - Define supported networks and reject unsupported ones before signing.
 - Keep account registration distinct from per-network onchain readiness.
 
-**Exit gate:** unit and fork/integration tests prove authorization encoding,
-delegation, reconstruction, and rejection of substituted account/key/network data.
-Existing P-256 account tests remain green.
+**Exit gate:** unit and fork/integration tests prove factory derivation, first-op
+deployment, owner validation, reconstruction, and rejection of substituted
+factory/initialization/owner/account/network data. Existing P-256 and internal
+7702 behavior remains unchanged.
 
 ### Phase 6: account provisioning workflow
 
@@ -492,7 +529,8 @@ Owner: `packages/application`.
 4. Obtain verified customer authority, enable delegation during initial setup,
    and provision/validate one Ethereum key with raw signing enabled. Bootstrap
    already creates the first key; never create a duplicate for that agent.
-5. Construct the selected EVM account.
+5. Construct the factory-based EVM smart account with the provider EOA as owner;
+   persist the smart-account address separately from the signer identity.
 6. Lock billing state, repeat capacity checks, and atomically persist the signer,
    wallet, binding to the previously protected credential, required audits and
    notifications. Recheck credential/connection organization and readiness.
@@ -561,6 +599,9 @@ Owners: dashboard, SDK, CLI where account assumptions require updates.
 - Offer managed custody only when available; skip WebAuthn creation for that mode.
 - Display provider/custody accurately and explain recovery/control implications.
 - Preserve the account-created page and existing next steps.
+- Show the smart-account address as the funding/receive address. Do not present
+  the 1Claw owner EOA as the account address. Represent per-network undeployed
+  state accurately without requiring a separate owner-EOA funding step.
 - Adapt network approval to the managed-owner flow, including pending provider
   approval, retry, and receipt states.
 - Keep local-session export/import and local signing intact. Do not remove backup
@@ -572,8 +613,10 @@ network approval, and errors without claiming an account is usable prematurely.
 
 ### Phase 10: end-to-end verification and controlled rollout
 
-- Prove create managed account → authorize network/delegation → install local
-  session → execute → revoke/uninstall on explicitly supported test networks.
+- Prove create counterfactual smart account → deploy through a UserOperation
+  (which may also install the local session) → confirm session installation →
+  execute → revoke/uninstall on explicitly supported test networks. Verify the
+  contract account, not the owner EOA, holds assets and session permissions.
 - Test signature functionality where permitted, provider outages, disabled owner
   keys, unexpected rotation, and recovery after interrupted provisioning/signing.
 - Test two accounts in one org and another isolated org; verify no agent/key or
