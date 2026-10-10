@@ -26,6 +26,12 @@ and decoding failures reach retry feedback. Detail parents validate IDs and
 prefetch their data. Query failures use local `DataError` boundaries where the
 surrounding shell can remain useful. Feedback never exposes raw exceptions.
 
+Sidebar layouts mark the dashboard shell so route loading, error and not-found
+fallbacks retain the bordered page panel and center their feedback inside it.
+Nested failures reuse an existing panel rather than adding another main region;
+authentication failures outside the shell do not require a sidebar. Rendering
+tests cover loading, errors, authentication and nested-panel reuse.
+
 Denied `Unauthorized`/`Forbidden` query results expose no cached data, including
 while retrying. Denied queries/mutations refresh current-user authority. Ordinary
 network failures retain already-loaded data. The current-user atom revalidates
