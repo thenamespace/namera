@@ -5,6 +5,7 @@ import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailCustody } from "../components/custody.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
+import { EmailIdentity } from "../components/identity.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
 import { formatEmailCount } from "../helpers/format.js";
@@ -19,7 +20,9 @@ export const SessionKeyRevokedEmail = ({
   organizationName,
   revokedGrantCount,
   sessionKeyName,
+  sessionKeyLogo,
   walletName,
+  walletLogo,
 }: SessionKeyRevokedEmailProps) => {
   const revokedGrants = formatEmailCount(revokedGrantCount, "grant", "grants");
 
@@ -31,8 +34,14 @@ export const SessionKeyRevokedEmail = ({
           title="Session key revoked"
         >
           <EmailDetails>
-            <EmailDetail label="Session key" value={sessionKeyName} />
-            <EmailDetail label="Account" value={walletName} />
+            <EmailDetail
+              label="Session key"
+              value={<EmailIdentity name={sessionKeyName} logo={sessionKeyLogo} />}
+            />
+            <EmailDetail
+              label="Account"
+              value={<EmailIdentity name={walletName} logo={walletLogo} />}
+            />
             {custody ? (
               <EmailDetail
                 label="Custody"
@@ -59,6 +68,8 @@ SessionKeyRevokedEmail.PreviewProps = {
   organizationName: "Atlas Labs",
   revokedGrantCount: 3,
   sessionKeyName: "Trading agent",
+  sessionKeyLogo: { type: "emoji", value: "🔑" },
+  walletLogo: { type: "emoji", value: "💳" },
   walletName: "Treasury",
 } satisfies SessionKeyRevokedEmailProps;
 

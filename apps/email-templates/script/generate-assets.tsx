@@ -8,7 +8,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { EvmChainName } from "@namera-ai/protocol/evm";
 import { ChainIcon } from "@namera-ai/ui/chain-icon";
-import { BrandOneClawIcon, NameraIcon } from "@namera-ai/ui/icons";
+import {
+  AlchemyIcon,
+  BrandOneClawIcon,
+  ComputerIcon,
+  HugeiconsIcon,
+  NameraIcon,
+} from "@namera-ai/ui/icons";
 import sharp from "sharp";
 
 const outputDirectory = resolve(import.meta.dirname, "../../../assets/email-assets");
@@ -89,6 +95,17 @@ await Promise.all(
         "var(--foreground)",
         color,
       ),
+    ),
+  ),
+);
+
+await renderPng("brand", "alchemy", renderToStaticMarkup(<AlchemyIcon width={512} height={512} />));
+await Promise.all(
+  Object.entries(monochromeColors).map(([theme, color]) =>
+    renderPng(
+      "custody",
+      `computer-${theme}`,
+      renderToStaticMarkup(<HugeiconsIcon icon={ComputerIcon} color={color} size={512} />),
     ),
   ),
 );

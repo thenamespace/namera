@@ -377,6 +377,9 @@ export const makeCreateWallet = Effect.gen(function* () {
                   ),
                   variables: {
                     walletName: wallet.metadata.name,
+                    ...(wallet.metadata.logo ? { walletLogo: wallet.metadata.logo } : {}),
+                    namespace: wallet.namespace,
+                    custody: signingKey.custody,
                     actionUrl: dashboardEmailLink(
                       config.dashboardPublicOrigin,
                       `/account/${wallet.id}/overview`,

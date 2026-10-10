@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
-import { NonEmptyString } from "#/model/common";
+import { MetadataLogo, NonEmptyString } from "#/model/common";
 import { EvmSessionPolicyType } from "#/model/core/session-key";
 
 export const EmailJobType = Schema.Literals([
@@ -61,6 +61,9 @@ export const NewSignInEmailVariables = Schema.Struct({
 });
 
 export const OrganizationInvitationEmailVariables = Schema.Struct({
+  organizationLogo: Schema.optionalKey(MetadataLogo),
+  inviterImage: Schema.optionalKey(MetadataLogo),
+  inviterAvatarSeed: Schema.optionalKey(NonEmptyString),
   invitationUrl: NonEmptyString,
   organizationName: NonEmptyString,
   inviterName: NonEmptyString,
@@ -69,6 +72,9 @@ export const OrganizationInvitationEmailVariables = Schema.Struct({
 });
 
 export const WalletCreatedEmailVariables = Schema.Struct({
+  walletLogo: Schema.optionalKey(MetadataLogo),
+  namespace: Schema.optionalKey(Schema.Literal("eip155")),
+  custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
   actionUrl: Schema.optionalKey(NonEmptyString),
   walletName: NonEmptyString,
   organizationName: NonEmptyString,
@@ -80,6 +86,8 @@ export const WalletCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyCreatedEmailVariables = Schema.Struct({
+  sessionKeyLogo: Schema.optionalKey(MetadataLogo),
+  walletLogo: Schema.optionalKey(MetadataLogo),
   policyTypes: Schema.optionalKey(Schema.Array(EvmSessionPolicyType)),
   custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
   provider: Schema.optionalKey(Schema.Literal("1claw")),
@@ -91,6 +99,8 @@ export const SessionKeyCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyRevokedEmailVariables = Schema.Struct({
+  sessionKeyLogo: Schema.optionalKey(MetadataLogo),
+  walletLogo: Schema.optionalKey(MetadataLogo),
   custody: Schema.optionalKey(Schema.Literals(["local", "namera-managed"])),
   provider: Schema.optionalKey(Schema.Literal("1claw")),
   actionUrl: Schema.optionalKey(NonEmptyString),

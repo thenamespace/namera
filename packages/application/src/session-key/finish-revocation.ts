@@ -105,6 +105,10 @@ export const makeFinishSessionKeyRevocation = Effect.gen(function* () {
                 ),
                 variables: {
                   sessionKeyName: revoked.metadata.name,
+                  ...(revoked.metadata.logo ? { sessionKeyLogo: revoked.metadata.logo } : {}),
+                  ...(wallet.wallet.metadata.logo
+                    ? { walletLogo: wallet.wallet.metadata.logo }
+                    : {}),
                   ...custody,
                   actionUrl: dashboardEmailLink(
                     config.dashboardPublicOrigin,

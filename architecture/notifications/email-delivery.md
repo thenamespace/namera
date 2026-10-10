@@ -52,6 +52,17 @@ harness and PNG asset generator. Templates use protocol-owned props, shared
 Namera layout/theme primitives, responsive spacing, light/dark support, and CDN
 PNG assets rather than embedded SVG.
 
+Organization invitations snapshot the organization logo, inviter image and an
+opaque user-ID avatar seed. Account and session lifecycle emails snapshot their
+metadata logos; custom icon-library glyphs are omitted, images use HTTPS URLs,
+and emoji badges use the email theme background (dashboard colors are computed
+with browser canvas and are not persisted). Missing inviter images use a seeded
+DiceBear Glass PNG, never an email address as the seed. New payload fields are
+optional for existing queued jobs. Account namespace/implementation and custody
+use email-safe PNG assets and the dashboard's ownership labels. Generate and sync
+`brand/alchemy.png` and `custody/computer-{light,dark}.png` alongside the existing
+1Claw assets before deployment. Templates do not fetch images on the server.
+
 API-key, session-key, account-creation and sign-in emails
 include a dashboard action without a raw fallback URL. Only magic-link sign-in
 emails include a copyable fallback URL. Application workflows build

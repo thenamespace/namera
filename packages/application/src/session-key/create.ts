@@ -382,6 +382,10 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                     expiresAt: emailExpiry,
                     variables: {
                       sessionKeyName: created.metadata.name,
+                      ...(created.metadata.logo ? { sessionKeyLogo: created.metadata.logo } : {}),
+                      ...(wallet.wallet.metadata.logo
+                        ? { walletLogo: wallet.wallet.metadata.logo }
+                        : {}),
                       policyTypes,
                       custody,
                       ...(custody === "namera-managed" ? { provider: "1claw" as const } : {}),

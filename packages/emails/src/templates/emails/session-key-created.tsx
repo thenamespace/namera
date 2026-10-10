@@ -6,6 +6,7 @@ import { EmailAction } from "../components/action.js";
 import { EmailContent } from "../components/content.js";
 import { EmailCustody } from "../components/custody.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
+import { EmailIdentity } from "../components/identity.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
 import { formatEmailDate } from "../helpers/date.js";
@@ -21,7 +22,9 @@ export const SessionKeyCreatedEmail = ({
   expiresAt,
   organizationName,
   sessionKeyName,
+  sessionKeyLogo,
   walletName,
+  walletLogo,
 }: SessionKeyCreatedEmailProps) => {
   return (
     <NameraEmail preview={`${sessionKeyName} was created for ${walletName}.`}>
@@ -31,8 +34,14 @@ export const SessionKeyCreatedEmail = ({
           title="Session key created"
         >
           <EmailDetails>
-            <EmailDetail label="Session key" value={sessionKeyName} />
-            <EmailDetail label="Account" value={walletName} />
+            <EmailDetail
+              label="Session key"
+              value={<EmailIdentity name={sessionKeyName} logo={sessionKeyLogo} />}
+            />
+            <EmailDetail
+              label="Account"
+              value={<EmailIdentity name={walletName} logo={walletLogo} />}
+            />
             {custody ? (
               <EmailDetail
                 label="Custody"
@@ -67,6 +76,8 @@ SessionKeyCreatedEmail.PreviewProps = {
   expiresAt: "2026-09-14T08:30:00.000Z",
   organizationName: "Atlas Labs",
   sessionKeyName: "Trading agent",
+  sessionKeyLogo: { type: "emoji", value: "🔑" },
+  walletLogo: { type: "emoji", value: "💳" },
   walletName: "Treasury",
 } satisfies SessionKeyCreatedEmailProps;
 

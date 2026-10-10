@@ -1,9 +1,11 @@
+// oxlint-disable react-perf/jsx-no-jsx-as-prop
 import type { OrganizationInvitationEmailVariables } from "@namera-ai/protocol/model";
 import { Section } from "react-email";
 
 import { EmailButton } from "../components/button.js";
 import { EmailContent } from "../components/content.js";
 import { EmailDetail, EmailDetails } from "../components/details.js";
+import { EmailIdentity } from "../components/identity.js";
 import { EmailLayout } from "../components/layout.js";
 import { EmailNotice } from "../components/notice.js";
 import { formatEmailDate } from "../helpers/date.js";
@@ -15,7 +17,10 @@ export const OrganizationInvitationEmail = ({
   expiresAt,
   invitationUrl,
   inviterName,
+  inviterImage,
+  inviterAvatarSeed,
   organizationName,
+  organizationLogo,
   roleName,
 }: OrganizationInvitationEmailProps) => {
   return (
@@ -26,8 +31,20 @@ export const OrganizationInvitationEmail = ({
           title={`Join ${organizationName}`}
         >
           <EmailDetails>
-            <EmailDetail label="Organization" value={organizationName} />
-            <EmailDetail label="Invited by" value={inviterName} />
+            <EmailDetail
+              label="Organization"
+              value={<EmailIdentity name={organizationName} logo={organizationLogo} />}
+            />
+            <EmailDetail
+              label="Invited by"
+              value={
+                <EmailIdentity
+                  name={inviterName}
+                  logo={inviterImage}
+                  avatarSeed={inviterAvatarSeed ?? "namera-inviter"}
+                />
+              }
+            />
             <EmailDetail label="Role" value={roleName} />
             <EmailDetail label="Invitation expires" value={formatEmailDate(expiresAt)} />
           </EmailDetails>
@@ -49,6 +66,8 @@ OrganizationInvitationEmail.PreviewProps = {
   invitationUrl: "https://example.com/?invitation=example-invitation-id",
   inviterName: "Alice Chen",
   organizationName: "Atlas Labs",
+  organizationLogo: { type: "emoji", value: "🌎" },
+  inviterAvatarSeed: "namera-preview-inviter",
   roleName: "Member",
 } satisfies OrganizationInvitationEmailProps;
 

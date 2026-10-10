@@ -164,6 +164,7 @@ layer(TestServerLayer)("notification delivery", (it) => {
       expect(delivered?.variables).toMatchObject({
         organizationName: owner.actor.organization.metadata.name,
         roleName: "Member",
+        inviterAvatarSeed: owner.actor.user.id,
       });
     }),
   );

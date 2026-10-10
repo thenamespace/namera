@@ -210,6 +210,11 @@ export const makeInvitationApplication = Effect.gen(function* () {
                 config.dashboardPublicOrigin,
               ).toString(),
               organizationName: view.organization.metadata.name,
+              ...(view.organization.metadata.logo
+                ? { organizationLogo: view.organization.metadata.logo }
+                : {}),
+              ...(view.inviter.metadata.image ? { inviterImage: view.inviter.metadata.image } : {}),
+              inviterAvatarSeed: view.inviter.id,
               inviterName: view.inviter.metadata.name ?? view.inviter.email,
               roleName: view.organizationRole.metadata.name,
               expiresAt: DateTime.formatIso(created.expiresAt),

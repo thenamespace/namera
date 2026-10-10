@@ -87,7 +87,7 @@ layer(TestServerLayer)("wallet routes", (it) => {
         payload: {
           namespace: "eip155",
           owner: { type: "namera-managed", protectionLevel: "software" },
-          metadata: metadata("Operations"),
+          metadata: { ...metadata("Operations"), logo: { type: "emoji", value: "💳" } },
         },
       });
 
@@ -170,6 +170,9 @@ layer(TestServerLayer)("wallet routes", (it) => {
       }
       expect(delivered?.variables).toMatchObject({
         walletName: "Operations",
+        walletLogo: { type: "emoji", value: "💳" },
+        namespace: "eip155",
+        custody: "namera-managed",
         actionUrl: `http://dashboard.test/auth?returnTo=%2Faccount%2F${operations.id}%2Foverview`,
         address: "0x3333333333333333333333333333333333333333",
         addressUrl: "https://etherscan.io/address/0x3333333333333333333333333333333333333333",

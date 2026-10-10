@@ -18,27 +18,28 @@ export function EmailCustody({
       : provider === "1claw"
         ? "1Claw Managed"
         : "Namera Managed");
-  const icon = provider === "1claw" ? emailAssets.oneclaw : emailAssets.brand;
+  const icon =
+    custody === "local"
+      ? emailAssets.computer
+      : provider === "1claw"
+        ? emailAssets.oneclaw
+        : emailAssets.brand;
   return (
     <>
-      {custody === "namera-managed" ? (
-        <>
-          <Img
-            alt=""
-            src={icon.light}
-            width="16"
-            height="16"
-            className="mr-2 inline-block align-middle dark:hidden"
-          />
-          <Img
-            alt=""
-            src={icon.dark}
-            width="16"
-            height="16"
-            className="mr-2 hidden align-middle dark:inline-block"
-          />
-        </>
-      ) : null}
+      <Img
+        alt=""
+        src={icon.light}
+        width="16"
+        height="16"
+        className="mr-2 inline-block align-middle dark:hidden"
+      />
+      <Img
+        alt=""
+        src={icon.dark}
+        width="16"
+        height="16"
+        className="mr-2 hidden align-middle dark:inline-block"
+      />
       {name}
     </>
   );
