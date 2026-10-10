@@ -1,8 +1,8 @@
 @import "@fontsource-variable/geist-mono";
 @import "fumadocs-ui/css/lib/shiki.css";
 
-@source "../node_modules/fumadocs-ui/dist/components/codeblock.js";
-@source "../node_modules/fumadocs-ui/dist/components/ui/button.js";
+@source "../../node_modules/fumadocs-ui/dist/components/codeblock.js";
+@source "../../node_modules/fumadocs-ui/dist/components/ui/button.js";
 
 @theme inline {
   --color-fd-card: var(--surface);

@@ -2,7 +2,62 @@
 
 Namera's public website, built with TanStack Start and React. `/` is the
 marketing landing page, `/pricing` the plan comparison, and `/blog` the MDX
-publication. `/docs` is still a placeholder.
+publication. `/docs` permanently redirects to `/docs/dashboard`. The Fumadocs preview has SDK,
+CLI, MCP, and Dashboard sections, with Dashboard first in the section picker.
+
+## Documentation preview
+
+Author documentation in `content/docs/*.mdx` and control sidebar ordering with
+`content/docs/meta.json`. `source.config.ts` defines the collection; the server
+source loader resolves pages and serializes their navigation tree. The docs
+route preloads the matching MDX module and renders Fumadocs' Spacious layout, sidebar, page body,
+code blocks, and table of contents using Namera theme tokens.
+
+The workspace aliases `fumadocs-ui` to `@fumadocs/base-ui`. Its core and UI
+versions are kept aligned.
+
+`src/styles/docs.css` owns the docs-only theme: Namera semantic tokens supply
+dark surfaces and neutral headings and links. Dashboard uses brand indigo,
+SDK uses blue, CLI uses mint,
+and MCP uses amber accents for section icons, active navigation, and focus.
+Route-scoped body tokens also reach portaled menus and search. Inter prose and
+Geist Mono code retain Fumadocs' native spacing and layout widths. Docs use
+tighter corner radii, larger page-action buttons, and a brand-colored active
+table-of-contents highlight. The top-right GitHub action uses `SITE_LINKS.github`.
+The scoped overrides do not change
+marketing or blog colors.
+
+The `dashboard/`, `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
+`meta.json`, producing section-specific sidebars. A sidebar picker switches
+between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
+Each section has a starter page while the documentation is being refined.
+
+Docs have generated 1200×630 PNG share cards at `/og/docs/<page>/image.png`
+for each published documentation page. `src/lib/docs/og-image.tsx` owns
+the Namera template: section icon and accent, title, and description.
+Takumi renders server-side with bundled Geist fonts and inline brand artwork;
+it does not fetch external images or fonts. Only pages in the docs collection
+can render, and unknown paths return 404. The docs route supplies these image
+URLs to both Open Graph and Twitter metadata. Other website images are unchanged.
+Production responses cache for one hour in browsers and one day at the CDN;
+development disables caching. Keep Takumi's native optional dependencies in the
+Node deployment. Build/deployment verification remains deferred during UI refinement.
+
+Search appears below the section picker and opens with Cmd/Ctrl+K. The
+`/api/docs/search` endpoint uses Fumadocs' built-in search index over the docs
+collection's structured content. Theme switching is disabled for this preview.
+The search dialog filters results by All, Dashboard, SDK, CLI, or MCP. Page headers use
+Fumadocs' Copy Markdown and Open controls. Appending `.md` to a docs URL serves bundled
+processed Markdown, including the page title and description, without runtime
+filesystem access. External AI options need the docs to be publicly deployed
+before those services can read them.
+Each page links to its source in `thenamespace/namera-core` for editing. The
+last-updated date is compiled from the file's latest Git author timestamp;
+uncommitted files and builds without Git history omit it. Use a full Git checkout
+for dated builds (`VERCEL_DEEP_CLONE=true` on Vercel). Pruned Docker builds do not
+include Git history. The footer's social row includes a mail link.
+Unknown docs paths return not found. Public docs are indexable and included in
+the sitemap, although the current content is still explicitly labeled as a preview.
 
 ## Blog
 
@@ -196,6 +251,10 @@ See the [official Vercel setup](https://vercel.com/docs/frameworks/full-stack/ta
 ## Structure
 
 - `src/routes` , the root document and one file per page.
+- `src/routes/blog/` , the blog layout, index, articles, and RSS endpoint.
+- `src/routes/(legal)/` , legal pages grouped without adding a URL segment.
+- `src/routes/(seo)/` , robots and sitemap endpoints, with unchanged public URLs.
+- `src/routes/docs/` , documentation routes.
 - `src/components/marketing` , landing-page sections. These are page
   composition, not shared UI; anything reused across applications belongs in
   `@namera-ai/ui`.
@@ -203,7 +262,8 @@ See the [official Vercel setup](https://vercel.com/docs/frameworks/full-stack/ta
   plan data.
 - `src/lib/seo.ts` , every page's head.
 - `src/lib/site-links.ts` , every destination the page can link to.
-- `src/marketing.css` , the marketing-only presentation layer.
+- `src/styles/` , website styles, with `index.css` as the entry point and
+  separate marketing, blog code, and documentation stylesheets.
 - `public/` , icons, the manifest, `robots.txt` and the Open Graph card.
 
 ## Links
@@ -241,9 +301,33 @@ The app-specific install manifest remains local and references the CDN icons. Bl
 previews use each article's cover URL directly, without generated images;
 coverless posts use `seo.image` or the static site image as a fallback.
 
-`/docs` carries `noindex`, is absent from `/sitemap.xml` and is disallowed in
-`robots.txt`. The blog is indexable; noindex posts are excluded from RSS and
+Public pages, including docs, allow indexing in metadata and `robots.txt`.
+The sitemap derives docs URLs and real Git modification dates from the Fumadocs
+collection, and blog URLs from the published catalog. Missing Git history does
+not produce a fabricated date. Docs emit `TechArticle` and breadcrumb JSON-LD,
+`Page title | Namera Docs` titles, and generated social cards. Blog and legal content use
+semantic articles, headings, and dates. The blog is indexable; noindex posts are excluded from RSS and
 the sitemap, and externally canonicalized posts are excluded from the sitemap.
+
+`src/start.ts` provides `/llms.txt`, `/llms-full.txt`, docs `.md` URLs, and
+Markdown content negotiation through Fumadocs. Send `Accept: text/markdown` to
+a docs, article, legal, or pricing URL to receive Markdown; both representations vary on `Accept`.
+Pricing Markdown is generated from the same plans and FAQ data as the page.
+Legal Markdown uses the bundled legal source; articles use the published blog
+catalog. The homepage and blog listing remain server-rendered HTML, so a
+site-wide documentation audit reports partial Markdown support and index coverage.
+The legacy `/api/docs/markdown/$` endpoint remains available. Markdown responses
+have canonical links and `X-Robots-Tag: noindex, follow` to avoid duplicate search
+results, without blocking agent access. Unknown pages return 404.
+HTML advertises the LLM index, RSS, sitemap, and page-specific Markdown alternate.
+Text exports cache for five minutes; HTML revalidates rather than using a shared
+public cache. Development discovery URLs use the request origin; production uses
+`SITE.origin`. RSS dates derive from published content, not the request time.
+The manifest includes CDN icons and docs/blog shortcuts; it does not imply offline support.
+
+These access paths help agents retrieve authored content, but do not guarantee
+search rankings or AI citations. Deploy before checking production crawlability,
+social previews, and Search Console sitemap submission.
 
 ## Motion
 
@@ -284,7 +368,7 @@ its contrast ratio. It draws a static frame under `prefers-reduced-motion`.
 ## Accessibility
 
 Contrast is verified against the rendered page, not against tokens.
-The homepage's `.landing-home` scope in `marketing.css` uses Linear-inspired
+The homepage's `.landing-home` scope in `src/styles/marketing.css` uses Linear-inspired
 cool neutrals: `#f7f8f8` primary text, `#d0d6e0` surface text, and `#8a8f98`
 supporting text on a `#08090a` canvas, with `#0f1011`, `#141516`, and `#191a1b`
 panel steps and `#5e6ad2` brand actions. All public routes share the `#08090a`

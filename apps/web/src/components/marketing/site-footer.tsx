@@ -2,7 +2,13 @@ import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { GithubIcon, Icon, LinkedinIcon, NameraIcon, NewTwitterIcon } from "@namera-ai/ui/icons";
+import {
+  BrandGithubIcon,
+  BrandLinkedinIcon,
+  BrandXIcon,
+  EmailIcon,
+  NameraIcon,
+} from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
 import { Container } from "#/components/marketing/primitives";
@@ -45,9 +51,10 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
 ];
 
 const SOCIALS = [
-  { icon: GithubIcon, label: "GitHub", href: SITE_LINKS.github },
-  { icon: NewTwitterIcon, label: "X", href: SITE_LINKS.x },
-  { icon: LinkedinIcon, label: "LinkedIn", href: SITE_LINKS.linkedin },
+  { icon: BrandGithubIcon, label: "GitHub", href: SITE_LINKS.github },
+  { icon: BrandXIcon, label: "X", href: SITE_LINKS.x },
+  { icon: BrandLinkedinIcon, label: "LinkedIn", href: SITE_LINKS.linkedin },
+  { icon: EmailIcon, label: "Email Namera", href: SITE_LINKS.contact },
 ];
 
 const linkClass = cn(
@@ -97,7 +104,7 @@ export const SiteFooter = () => {
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
                       )}
                     >
-                      <Icon icon={social.icon} aria-hidden strokeWidth={1.6} className="size-4" />
+                      <social.icon aria-hidden className="size-4" />
                     </a>
                   </li>
                 ))}

@@ -42,7 +42,7 @@ const Value = ({ value }: { readonly value: string }) => {
 
 const RowLabel = ({ label, note }: { readonly label: string; readonly note?: string }) => (
   <span className="flex items-center gap-2">
-    <span className="text-[0.875rem] text-muted">{label}</span>
+    <span className="text-[0.875rem] text-muted">{label}</span>{" "}
     {note === undefined ? null : (
       <span className="group/tip relative inline-flex">
         <button

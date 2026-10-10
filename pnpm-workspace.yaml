@@ -12,9 +12,9 @@ allowBuilds:
 catalog:
   "@tanstack/react-start": 1.168.60
   "@types/mdx": 2.0.14
-  "fumadocs-core": 16.15.10
+  "fumadocs-core": 16.17.1
   "fumadocs-mdx": 15.4.0
-  "fumadocs-ui": 16.15.10
+  "fumadocs-ui": npm:@fumadocs/base-ui@16.17.1
   "@adraffy/ens-normalize": 1.11.1
   "@arethetypeswrong/core": 0.18.5
   "@commitlint/cli": 21.2.3

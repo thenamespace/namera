@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { renderBlogRss } from "#/lib/blog/rss";
 import { getPublishedPosts } from "#/lib/blog/source.server";
 
-export const Route = createFileRoute("/blog_/rss.xml")({
+export const Route = createFileRoute("/blog/rss.xml")({
   server: {
     handlers: {
       GET: async () =>

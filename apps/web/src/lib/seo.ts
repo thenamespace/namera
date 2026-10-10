@@ -49,6 +49,9 @@ type SeoInput = {
   /** Pages that should not be indexed while they say "coming soon". */
   readonly noindex?: boolean;
   readonly type?: "website" | "article";
+  readonly image?: string;
+  readonly imageAlt?: string;
+  readonly dateModified?: string;
 };
 
 type MetaTag =
@@ -58,10 +61,19 @@ type MetaTag =
 
 type LinkTag = { rel: string; href: string };
 
-export const seo = ({ title, description, path, noindex = false, type = "website" }: SeoInput) => {
+export const seo = ({
+  title,
+  description,
+  path,
+  noindex = false,
+  type = "website",
+  image: imagePath,
+  imageAlt = SITE.ogImageAlt,
+  dateModified,
+}: SeoInput) => {
   const full = title ?? `${SITE.name} - ${SITE.tagline}`;
   const url = `${SITE.origin}${path}`;
-  const image = SITE.ogImage;
+  const image = imagePath ? new URL(imagePath, SITE.origin).href : SITE.ogImage;
 
   return {
     meta: [
@@ -78,7 +90,7 @@ export const seo = ({ title, description, path, noindex = false, type = "website
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:type", content: "image/png" },
-      { property: "og:image:alt", content: SITE.ogImageAlt },
+      { property: "og:image:alt", content: imageAlt },
       { property: "og:locale", content: "en_US" },
 
       { name: "twitter:card", content: "summary_large_image" },
@@ -86,12 +98,14 @@ export const seo = ({ title, description, path, noindex = false, type = "website
       { name: "twitter:title", content: full },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: image },
-      { name: "twitter:image:alt", content: SITE.ogImageAlt },
+      { name: "twitter:image:alt", content: imageAlt },
       { name: "twitter:creator", content: SITE.twitter },
 
       {
         name: "robots",
-        content: noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
+        content: noindex
+          ? "noindex, follow"
+          : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
     ] as MetaTag[],
     links: [{ rel: "canonical", href: url }] as LinkTag[],
@@ -106,6 +120,8 @@ export const seo = ({ title, description, path, noindex = false, type = "website
         isPartOf: { "@id": `${SITE.origin}/#website` },
         publisher: { "@id": `${SITE.origin}/#organization` },
         inLanguage: "en-US",
+        ...(dateModified ? { dateModified } : {}),
+        primaryImageOfPage: { "@type": "ImageObject", url: image },
       }),
     ],
   };

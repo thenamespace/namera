@@ -5,7 +5,7 @@ import { formatBlogDate } from "#/lib/blog/catalog";
 import { getBlogPosts } from "#/lib/blog/queries";
 import { articleHead } from "#/lib/blog/seo";
 
-import collections from "../../.source/browser";
+import collections from "../../../.source/browser";
 
 const content = collections.blog.createClientLoader({
   component: ({ default: MDX }) => <MDX components={blogMdxComponents} />,
@@ -23,9 +23,15 @@ export const Route = createFileRoute("/blog/$slug")({
 function BlogArticle() {
   const post = Route.useLoaderData();
   return (
-    <article className="mx-auto w-full max-w-6xl px-6 pt-20 pb-28 md:px-10 md:pt-24">
+    <article
+      aria-labelledby="article-title"
+      className="mx-auto w-full max-w-6xl px-6 pt-20 pb-28 md:px-10 md:pt-24"
+    >
       <header className="text-center">
-        <h1 className="mx-auto max-w-[28ch] text-balance text-3xl font-medium leading-[1.15] tracking-tight md:text-5xl">
+        <h1
+          id="article-title"
+          className="mx-auto max-w-[28ch] text-balance text-3xl font-medium leading-[1.15] tracking-tight md:text-5xl"
+        >
           {post.title}
         </h1>
         {post.cover ? (
@@ -53,6 +59,7 @@ function BlogArticle() {
               {author.url ? (
                 <a
                   href={author.url}
+                  rel="author"
                   className="hover:text-foreground underline-offset-4 hover:underline"
                 >
                   {author.name}

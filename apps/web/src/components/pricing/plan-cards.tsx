@@ -33,7 +33,7 @@ export const PlanCards = () => (
           </h2>
 
           <p className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-[1.25rem] tracking-[-0.02em] text-foreground">{plan.price}</span>
+            <span className="text-[1.25rem] tracking-[-0.02em] text-foreground">{plan.price}</span>{" "}
             {plan.cadence === undefined ? null : (
               <span className="text-[0.9375rem] text-ink-subtle">{plan.cadence}</span>
             )}

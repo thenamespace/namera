@@ -2,6 +2,7 @@
 @import "@namera-ai/ui/styles.css";
 @import "./marketing.css";
 @import "./blog-code.css";
+@import "./docs.css";
 
 @theme inline {
   --font-inter: "Inter Variable", sans-serif;
