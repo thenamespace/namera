@@ -9,8 +9,6 @@ import type {
   PrepareSignatureResponse,
   CompleteSignatureRequest,
   CompleteSignatureResponse,
-  PrepareManagedSignatureResponse,
-  CompleteManagedSignatureRequest,
 } from "@namera-ai/protocol/dto";
 
 import { makeCompleteSignature } from "./complete.js";
@@ -18,13 +16,6 @@ import { makePrepareSignature } from "./prepare.js";
 import { makeVerifySignature } from "./verify.js";
 
 export interface SignatureApplication {
-  readonly prepareManaged: (
-    input: Parameters<SignatureApplication["prepare"]>[0],
-  ) => Effect.Effect<PrepareManagedSignatureResponse, BillingError | SignatureError>;
-  readonly completeManaged: (input: {
-    readonly actor: GrantedActorData;
-    readonly request: CompleteManagedSignatureRequest;
-  }) => Effect.Effect<CompleteSignatureResponse, SignatureError>;
   readonly prepare: (input: {
     readonly actor: GrantedActorData;
     readonly idempotencyKey: string;
@@ -47,11 +38,6 @@ export const makeSignatureApplication = Effect.gen(function* () {
   return {
     prepare,
     complete,
-    prepareManaged: (input) =>
-      prepare({ ...input, custody: "namera-managed" }).pipe(
-        Effect.map(({ signing: _signing, ...result }) => result),
-      ),
-    completeManaged: (input) => complete({ ...input, custody: "namera-managed" }),
     verify,
   } satisfies SignatureApplication;
 });

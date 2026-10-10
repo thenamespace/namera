@@ -63,7 +63,7 @@ API-key management, and member invitations instead of the source chart. Recent e
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
 Free v2 includes separate self-owned and 1Claw-managed account/session capacities.
-1Claw account creation is available; managed session-key custody remains coming soon. Legacy organizations see the scheduled
+1Claw account and session-key creation are available. Legacy organizations see the scheduled
 Free v2 date from the API; over-limit capacity stays visible without implying
 that existing resources were removed. Paid upgrades remain unavailable.
 
@@ -84,7 +84,7 @@ user handle and RP ID remain server-issued. No private owner key enters API or
 form state. See [accounts](../wallets/accounts.md).
 
 Network installation/removal selects passkey approval or managed prepare/approve
-from the parent account, while the session key remains local. Managed approval
+from the parent account, independently of session-key custody. Managed approval
 independently reconstructs and validates the operation before an explicit
 confirmation dialog. Cancel signs nothing; retry retains the idempotency key,
 and signed operations use existing receipt polling. Quota feedback uses the
@@ -102,7 +102,18 @@ the account query. Failures retain the displayed snapshot and show feedback.
 The server's five-minute cache is independent of frontend query lifetime; see
 [portfolio](../evm/portfolio.md) for cache keys, paging and provider limits.
 
-## Session authority and local keys
+## Session authority and custody
+
+Creation offers Local key and 1Claw Managed independently of the parent account.
+Managed registration validates the returned public identity, permissions and
+networks before enabling approval. It skips generation/export/import and proceeds
+to network approval; it never downloads provider credentials. Ambiguous errors
+block resubmission and direct the user to inspect existing sessions or support.
+Members with billing read access see current custody-specific remaining capacity.
+Selectors, detail and success pages display custody; managed next steps require
+login/grants but no import. Namera Managed remains disabled.
+
+### Local keys
 
 Creation presents six capabilities: Contract access, Token spending, Native
 spending limit, Gas budget, Signatures and Unrestricted account access. Contract
@@ -171,7 +182,7 @@ available through filters. Detail pages fetch expanded relations separately.
 
 Settings provides local CLI stdio setup and authorization management. The agent
 launches `namera mcp serve`; browser OAuth consent is separate from CLI device
-login and API keys. Imported local keys provide signing. Credentials persist in
+login and API keys. Imported local keys or server-held 1Claw session keys provide signing. Credentials persist in
 the OS keyring across process restarts; see [local MCP](../clients/local-mcp.md).
 The setup selector includes Codex, Claude Code and Gemini CLI with
 add-server commands. Each uses a distinct

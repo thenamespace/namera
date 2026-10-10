@@ -121,7 +121,7 @@ describe("NameraClient", () => {
     expect((init.headers as Record<string, string>)["idempotency-key"]).toBeUndefined();
   });
 
-  it("requires local signing without calling the legacy route", async () => {
+  it("rejects a legacy sign response at the unified preparation boundary", async () => {
     const fetch = vi.fn<NameraFetch>().mockResolvedValue(
       jsonResponse({
         namespace: "eip155",
@@ -143,8 +143,9 @@ describe("NameraClient", () => {
       sessionKeyId,
     });
 
-    expect(result).toMatchObject({ success: false, error: { code: "LOCAL_SIGNER_REQUIRED" } });
-    expect(fetch).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ success: false, error: { kind: "contract" } });
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(String(fetch.mock.calls[0]?.[0])).toBe("https://api.namera.ai/signatures/prepare");
   });
 
   it("verifies smart-account signatures without an idempotency header", async () => {

@@ -6,6 +6,7 @@ import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 import { expect, it } from "vitest";
 
 import { recoverSessionRegistration } from "../../../src/components/session-key-installations/registration-recovery";
+import { validateManagedRegistration } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/managed-registration";
 
 const signer = privateKeyToAccount(generatePrivateKey());
 const wallet = {
@@ -89,6 +90,31 @@ it("rejects ambiguous, revoked or changed registrations before export", () => {
       },
       wallet,
       [registration],
+    ),
+  ).toThrow();
+});
+
+it("validates managed public identity and permissions without producing an export", () => {
+  const managed = {
+    ...request,
+    signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" } as const,
+  };
+  const created = { ...registration, signer: { ...managed.signer, publicKey: signer.publicKey } };
+  expect(validateManagedRegistration(managed, wallet, created)).toBeUndefined();
+  expect(() =>
+    validateManagedRegistration(managed, wallet, { ...created, status: "active" }),
+  ).toThrow();
+  expect(() =>
+    validateManagedRegistration(managed, wallet, {
+      ...created,
+      signer: { ...created.signer, publicKey: privateKeyToAccount(generatePrivateKey()).publicKey },
+    }),
+  ).toThrow();
+  expect(() =>
+    validateManagedRegistration(
+      { ...managed, onchain: { ...managed.onchain, allowSignatures: true } },
+      wallet,
+      created,
     ),
   ).toThrow();
 });

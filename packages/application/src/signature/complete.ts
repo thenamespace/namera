@@ -8,7 +8,6 @@ import type {
   CompleteSignatureResponse,
   GrantedActorData,
   PrepareSignatureRequest,
-  CompleteManagedSignatureRequest,
 } from "@namera-ai/protocol/dto";
 import { signatureDuration, signatureResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
@@ -28,19 +27,18 @@ export const makeCompleteSignature = Effect.gen(function* () {
   return Effect.fn("application.signature.complete")(
     function* (input: {
       readonly actor: GrantedActorData;
-      readonly request: CompleteSignatureRequest | CompleteManagedSignatureRequest;
-      readonly custody?: "local" | "namera-managed";
+      readonly request: CompleteSignatureRequest;
     }) {
       const { actor } = input;
-      const managed = input.custody === "namera-managed";
       const operation = yield* repository.core.signatureOperation.findByIdForActor(
         input.request.operationId,
         actor.organizationId,
         actor.actorId,
       );
+      const managed = operation?.data.managedSignerBinding !== undefined;
       if (
         operation === undefined ||
-        (operation.data.managedSignerBinding !== undefined) !== managed ||
+        managed === (input.request.signature !== undefined) ||
         (managed && operation.status === "succeeded") ||
         operation.status === "failed" ||
         (operation.status === "reserved" &&
@@ -54,7 +52,11 @@ export const makeCompleteSignature = Effect.gen(function* () {
         walletId: operation.walletId,
         sessionKeyId: operation.sessionKeyId,
       };
-      const scope = { ...request, actor, custody: input.custody ?? "local" };
+      const scope = {
+        ...request,
+        actor,
+        custody: managed ? ("namera-managed" as const) : ("local" as const),
+      };
       const selected = yield* authority.load(scope);
       if (
         selected.grant.id !== operation.sessionKeyGrantId ||
@@ -68,7 +70,7 @@ export const makeCompleteSignature = Effect.gen(function* () {
       const leaseToken = generateUniqueId();
       const rawSignature = yield* Effect.gen(function* () {
         if (!managed) {
-          if (!("signature" in input.request))
+          if (input.request.signature === undefined)
             return yield* new SignatureError({ code: "SIGNATURE_UNAVAILABLE" });
           return input.request.signature;
         }

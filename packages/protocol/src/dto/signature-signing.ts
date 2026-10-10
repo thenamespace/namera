@@ -1,4 +1,4 @@
-import { Schema, Struct } from "effect";
+import { Schema } from "effect";
 
 import {
   SessionKeyId,
@@ -19,7 +19,7 @@ export const PrepareSignatureRequest = Schema.Union(
 ).annotate({
   identifier: "PrepareSignatureRequest",
   description:
-    "Prepare a message or typed-data signature for one explicitly granted, installed local session. Never send private key material.",
+    "Prepare a message or typed-data signature for the selected installed session. The server resolves custody. Never send private key material.",
 });
 
 export const PrepareSignatureResponse = Schema.Struct({
@@ -28,10 +28,13 @@ export const PrepareSignatureResponse = Schema.Struct({
   installationId: SessionKeyInstallationId,
   signingKeyId: SigningKeyId,
   request: PrepareSignatureRequest,
-  signing: Schema.Struct({
-    method: Schema.Literal("eth_signTypedData_v4"),
-    typedData: EvmTypedData,
-  }),
+  signing: Schema.Union([
+    Schema.Struct({
+      method: Schema.Literal("eth_signTypedData_v4"),
+      typedData: EvmTypedData,
+    }),
+    Schema.Struct({ method: Schema.Literal("server") }),
+  ]),
   expiresAt: Schema.DateTimeUtcFromDate,
 }).annotate({
   identifier: "PrepareSignatureResponse",
@@ -42,10 +45,12 @@ export const PrepareSignatureResponse = Schema.Struct({
 export const CompleteSignatureRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   operationId: SignatureOperationId,
-  signature: Hex.check(Schema.isPattern(/^0x[0-9a-fA-F]{130}$/)).annotate({
-    description:
-      "Local session signer's raw 65-byte ECDSA signature of the prepared typed data, without the ERC-1271 validation envelope.",
-  }),
+  signature: Schema.optionalKey(
+    Hex.check(Schema.isPattern(/^0x[0-9a-fA-F]{130}$/)).annotate({
+      description:
+        "Local session signer's raw 65-byte ECDSA signature of the prepared typed data, without the ERC-1271 validation envelope.",
+    }),
+  ),
 }).annotate({ identifier: "CompleteSignatureRequest" });
 
 export const CompleteSignatureResponse = SignResponse.annotate({
@@ -56,23 +61,3 @@ export type PrepareSignatureRequest = typeof PrepareSignatureRequest.Type;
 export type PrepareSignatureResponse = typeof PrepareSignatureResponse.Type;
 export type CompleteSignatureRequest = typeof CompleteSignatureRequest.Type;
 export type CompleteSignatureResponse = typeof CompleteSignatureResponse.Type;
-
-export const PrepareManagedSignatureRequest = PrepareSignatureRequest.annotate({
-  identifier: "PrepareManagedSignatureRequest",
-  description:
-    "Reserve permitted message or typed-data signing by an installed 1Claw-managed session.",
-});
-export const PrepareManagedSignatureResponse = Schema.Struct(
-  Struct.omit(PrepareSignatureResponse.fields, ["signing"]),
-).annotate({ identifier: "PrepareManagedSignatureResponse" });
-export const CompleteManagedSignatureRequest = Schema.Struct({
-  namespace: Schema.Literal("eip155"),
-  operationId: SignatureOperationId,
-}).annotate({
-  identifier: "CompleteManagedSignatureRequest",
-  description:
-    "Sign only the stored payload. Results are not persisted. After a lost successful response, prepare a fresh authorized billable attempt.",
-});
-export type PrepareManagedSignatureResponse = typeof PrepareManagedSignatureResponse.Type;
-export type PrepareManagedSignatureRequest = typeof PrepareManagedSignatureRequest.Type;
-export type CompleteManagedSignatureRequest = typeof CompleteManagedSignatureRequest.Type;

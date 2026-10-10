@@ -16,14 +16,11 @@ for (const owner of ["passkey", "1claw"] as const) {
         expect(
           (yield* f.client.execution.simulate({ payload: f.executionRequest.payload })).allowed,
         ).toBe(true);
-        const prepared = yield* f.client.execution.prepareManaged(f.executionRequest);
-        expect(prepared).not.toHaveProperty("signing");
-        expect((yield* f.client.execution.prepareManaged(f.executionRequest)).submissionId).toBe(
+        const prepared = yield* f.client.execution.prepare(f.executionRequest);
+        expect(prepared.signing).toEqual({ method: "server" });
+        expect((yield* f.client.execution.prepare(f.executionRequest)).submissionId).toBe(
           prepared.submissionId,
         );
-        expect(
-          yield* f.client.execution.prepare(f.executionRequest).pipe(Effect.flip),
-        ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
         const payload = { namespace: "eip155" as const, submissionId: prepared.submissionId };
         expect(
           yield* f.client.execution
@@ -32,13 +29,13 @@ for (const owner of ["passkey", "1claw"] as const) {
         ).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
         const outcomes = yield* Effect.all(
           Array.from({ length: 8 }, () =>
-            f.client.execution.completeManaged({ payload }).pipe(Effect.result),
+            f.client.execution.complete({ payload }).pipe(Effect.result),
           ),
           { concurrency: 8 },
         );
         expect(outcomes.some(Result.isSuccess)).toBe(true);
         expect(yield* Ref.get(f.control.calls)).toEqual(["signing.signDigest"]);
-        expect(yield* f.client.execution.completeManaged({ payload })).toMatchObject({
+        expect(yield* f.client.execution.complete({ payload })).toMatchObject({
           status: "prepared",
         });
         yield* TestClock.adjust(Duration.seconds(2));
@@ -67,17 +64,17 @@ for (const owner of ["passkey", "1claw"] as const) {
       () =>
         Effect.gen(function* () {
           const f = yield* setupManagedOperations(owner);
-          const prepared = yield* f.client.execution.prepareManaged(f.executionRequest);
+          const prepared = yield* f.client.execution.prepare(f.executionRequest);
           const payload = { namespace: "eip155" as const, submissionId: prepared.submissionId };
           yield* Ref.set(f.control.failNext, "signing.signDigest");
-          expect(
-            yield* f.client.execution.completeManaged({ payload }).pipe(Effect.flip),
-          ).toMatchObject({ code: "EXECUTION_FAILED" });
-          expect(
-            yield* f.client.execution.completeManaged({ payload }).pipe(Effect.flip),
-          ).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
+          expect(yield* f.client.execution.complete({ payload }).pipe(Effect.flip)).toMatchObject({
+            code: "EXECUTION_FAILED",
+          });
+          expect(yield* f.client.execution.complete({ payload }).pipe(Effect.flip)).toMatchObject({
+            code: "EXECUTION_UNAVAILABLE",
+          });
           yield* TestClock.adjust(Duration.minutes(2));
-          expect(yield* f.client.execution.completeManaged({ payload })).toMatchObject({
+          expect(yield* f.client.execution.complete({ payload })).toMatchObject({
             status: "prepared",
             submissionId: prepared.submissionId,
           });
@@ -96,14 +93,14 @@ for (const owner of ["passkey", "1claw"] as const) {
       () =>
         Effect.gen(function* () {
           const f = yield* setupManagedOperations(owner);
-          const prepared = yield* f.client.execution.prepareManaged(f.executionRequest);
+          const prepared = yield* f.client.execution.prepare(f.executionRequest);
           yield* setApiKey();
           yield* setAuthToken(f.actor.cookie.value);
           yield* f.client.sessionKey.revoke({ params: { sessionKeyId: f.session.id } });
           yield* setAuthToken();
           yield* setApiKey(f.apiKey.key);
           yield* f.client.execution
-            .completeManaged({
+            .complete({
               payload: { namespace: "eip155", submissionId: prepared.submissionId },
             })
             .pipe(Effect.flip);

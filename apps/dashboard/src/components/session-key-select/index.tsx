@@ -5,6 +5,7 @@ import { Collection, Header, ListBox, Select, Typography } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
 import { MetadataDisplay } from "@/components/display";
+import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 
 import { sessionKeyPolicyCount } from "./policy-count";
 
@@ -123,10 +124,13 @@ export function SessionKeySelect({
                       textValue={`${sessionKey.metadata.name} ${group.wallet.metadata.name}`}
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pl-2">
-                        <MetadataDisplay
-                          fallbackName="Unnamed session key"
-                          metadata={sessionKey.metadata}
-                        />
+                        <div className="grid min-w-0 gap-1">
+                          <MetadataDisplay
+                            fallbackName="Unnamed session key"
+                            metadata={sessionKey.metadata}
+                          />
+                          <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
+                        </div>
                         <Typography className="shrink-0 text-xs! pr-6" color="muted">
                           {count} {count === 1 ? "policy" : "policies"}
                         </Typography>

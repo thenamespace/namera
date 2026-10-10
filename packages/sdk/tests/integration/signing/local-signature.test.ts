@@ -63,10 +63,67 @@ const fixture = (type: "message" | "typed-data" = "message") => {
     signing: { method: "eth_signTypedData_v4", typedData },
     expiresAt: DateTime.toDateUtc(DateTime.add(now, { minutes: 5 })),
   });
-  return { account, binding, request, response };
+  if (response.signing.method !== "eth_signTypedData_v4")
+    throw new Error("Expected local challenge");
+  return { account, binding, request, response: { ...response, signing: response.signing } };
 };
 
 describe("local session signatures", () => {
+  it.each(["message", "typed-data"] as const)(
+    "signs managed %s without a local key or alternate endpoint",
+    async (type) => {
+      const f = fixture(type);
+      const fetch = vi
+        .fn<NameraFetch>()
+        .mockImplementationOnce(async () =>
+          json(
+            Schema.encodeSync(PrepareSignatureResponse)({
+              ...f.response,
+              signing: { method: "server" },
+            }),
+          ),
+        )
+        .mockImplementation(async () =>
+          json({
+            namespace: "eip155",
+            walletId: f.request.walletId,
+            chainId: f.request.chainId,
+            account: f.binding.walletAddress,
+            type,
+            signature: "0x1234",
+          }),
+        );
+      const resolveSessionSigner = vi.fn();
+      const client = new NameraClient({ apiKey: "test-only", fetch, resolveSessionSigner });
+      expect((await client.sign(f.request)).success).toBe(true);
+      expect(resolveSessionSigner).not.toHaveBeenCalled();
+      expect(fetch.mock.calls.map(([url]) => String(url))).toEqual([
+        "https://api.namera.ai/signatures/prepare",
+        "https://api.namera.ai/signatures/complete",
+      ]);
+      expect(
+        JSON.parse(new TextDecoder().decode(fetch.mock.calls[1]?.[1]?.body as Uint8Array)),
+      ).toEqual({ namespace: "eip155", operationId: f.response.operationId });
+    },
+  );
+
+  it("does not retry managed signing after an ambiguous completion", async () => {
+    const f = fixture();
+    const fetch = vi
+      .fn<NameraFetch>()
+      .mockImplementationOnce(async () =>
+        json(
+          Schema.encodeSync(PrepareSignatureResponse)({
+            ...f.response,
+            signing: { method: "server" },
+          }),
+        ),
+      )
+      .mockRejectedValue(new Error("response lost"));
+    const client = new NameraClient({ apiKey: "test-only", fetch });
+    expect((await client.sign(f.request)).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
   it.each(["message", "typed-data"] as const)(
     "signs %s once across response-loss retries",
     async (type) => {
@@ -122,6 +179,8 @@ describe("local session signatures", () => {
     async (change) => {
       const f = fixture();
       const encoded = Schema.encodeSync(PrepareSignatureResponse)(f.response);
+      if (encoded.signing.method !== "eth_signTypedData_v4")
+        throw new Error("Expected local challenge");
       const response =
         change === "payload"
           ? { ...encoded, request: { ...encoded.request, message: "substituted" } }
@@ -160,7 +219,9 @@ describe("local session signatures", () => {
 
   it("refuses local bindings without explicit signature consent", async () => {
     const f = fixture();
-    const fetch = vi.fn<NameraFetch>();
+    const fetch = vi.fn<NameraFetch>(async () =>
+      json(Schema.encodeSync(PrepareSignatureResponse)(f.response)),
+    );
     const client = new NameraClient({
       apiKey: "test-only",
       fetch,
@@ -174,7 +235,7 @@ describe("local session signatures", () => {
       success: false,
       error: { code: "LOCAL_SIGNER_REQUIRED" },
     });
-    expect(fetch).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it("rejects a signature from the wrong local key without completing", async () => {
@@ -201,7 +262,9 @@ describe("local session signatures", () => {
 
   it("does not expose local keystore exceptions", async () => {
     const f = fixture();
-    const fetch = vi.fn<NameraFetch>();
+    const fetch = vi.fn<NameraFetch>(async () =>
+      json(Schema.encodeSync(PrepareSignatureResponse)(f.response)),
+    );
     const client = new NameraClient({
       apiKey: "test-only",
       fetch,
@@ -215,6 +278,6 @@ describe("local session signatures", () => {
       error: { code: "LOCAL_SIGNER_UNAVAILABLE", cause: null },
     });
     expect(JSON.stringify(result)).not.toContain("sensitive");
-    expect(fetch).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledOnce();
   });
 });

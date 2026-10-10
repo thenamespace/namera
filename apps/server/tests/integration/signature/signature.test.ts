@@ -17,6 +17,7 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { localSignatureChallenge } from "../../fixtures/local-signature-challenge.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const fixture = makeOwnerSessionTestFixture(
@@ -96,7 +97,12 @@ layer(delayedFixture.layer)("signature verification across expiry", (it) => {
         headers: { "idempotency-key": "slow-verification" },
         payload,
       });
-      const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+      const signature = yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared)));
+      expect(
+        yield* client.signature
+          .complete({ payload: { namespace: "eip155", operationId: prepared.operationId } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
       const completion = yield* client.signature
         .complete({
           payload: { namespace: "eip155", operationId: prepared.operationId, signature },
@@ -182,7 +188,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
           payload: {
             namespace: "eip155",
             operationId: prepared.operationId,
-            signature: yield* Effect.promise(() => signer.sign(prepared.signing.typedData)),
+            signature: yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared))),
           },
         }),
       ).toMatchObject({ type: "typed-data" });
@@ -201,7 +207,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
         headers: { "idempotency-key": "concurrent-success" },
         payload,
       });
-      const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+      const signature = yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared)));
       const results = yield* Effect.forEach(
         Array.from({ length: 8 }),
         () =>
@@ -248,7 +254,9 @@ layer(fixture.layer)("detached signature routes", (it) => {
             .prepare({ headers, payload: { ...payload, message: "different" } })
             .pipe(Effect.flip),
         ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
-        const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+        const signature = yield* Effect.promise(() =>
+          signer.sign(localSignatureChallenge(prepared)),
+        );
         const complete = {
           namespace: "eip155" as const,
           operationId: prepared.operationId,
@@ -278,7 +286,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
             payload: {
               namespace: "eip155",
               operationId: typed.operationId,
-              signature: yield* Effect.promise(() => signer.sign(typed.signing.typedData)),
+              signature: yield* Effect.promise(() => signer.sign(localSignatureChallenge(typed))),
             },
           }),
         ).toMatchObject({ type: "typed-data", signature: "0x1234" });
@@ -321,7 +329,9 @@ layer(fixture.layer)("detached signature routes", (it) => {
               payload: {
                 namespace: "eip155",
                 operationId: prepared.operationId,
-                signature: yield* Effect.promise(() => wrong.sign(prepared.signing.typedData)),
+                signature: yield* Effect.promise(() =>
+                  wrong.sign(localSignatureChallenge(prepared)),
+                ),
               },
             })
             .pipe(Effect.flip),
@@ -331,7 +341,9 @@ layer(fixture.layer)("detached signature routes", (it) => {
             payload: {
               namespace: "eip155",
               operationId: prepared.operationId,
-              signature: yield* Effect.promise(() => signer.sign(prepared.signing.typedData)),
+              signature: yield* Effect.promise(() =>
+                signer.sign(localSignatureChallenge(prepared)),
+              ),
             },
           }),
         ).toMatchObject({ signature: "0x1234" });
@@ -345,7 +357,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
         headers: { "idempotency-key": "expiry" },
         payload,
       });
-      const signature = yield* Effect.promise(() => signer.sign(prepared.signing.typedData));
+      const signature = yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared)));
       yield* TestClock.adjust(Duration.minutes(6));
       const application = yield* Application;
       const attempts = Array.from({ length: 8 });
@@ -441,7 +453,7 @@ layer(fixture.layer)("detached signature routes", (it) => {
       const complete = {
         namespace: "eip155" as const,
         operationId: prepared.operationId,
-        signature: yield* Effect.promise(() => signer.sign(prepared.signing.typedData)),
+        signature: yield* Effect.promise(() => signer.sign(localSignatureChallenge(prepared))),
       };
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);

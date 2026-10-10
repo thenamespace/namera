@@ -12,6 +12,7 @@ import { runInteractiveCli } from "../../fixtures/terminal.js";
 const requests: { path: string; body: unknown }[] = [];
 let wrongWallet = false;
 let emptyWallets = false;
+let managed = false;
 const server = createServer(async (request, response) => {
   const chunks: Buffer[] = [];
   for await (const chunk of request) chunks.push(Buffer.from(chunk));
@@ -35,9 +36,38 @@ const server = createServer(async (request, response) => {
     );
   else if (path === `/session-keys/${key.id}`)
     response.end(
-      JSON.stringify({ ...key, walletId: wrongWallet ? wallet.organizationId : wallet.id }),
+      JSON.stringify({
+        ...key,
+        ...(managed
+          ? { signer: { ...key.signer, custody: "namera-managed", provider: "1claw" } }
+          : {}),
+        walletId: wrongWallet ? wallet.organizationId : wallet.id,
+      }),
     );
   else if (path === "/executions/simulate") response.end(JSON.stringify(simulation));
+  else if (managed && path === "/signatures/prepare")
+    response.end(
+      JSON.stringify({
+        namespace: "eip155",
+        operationId: key.id,
+        installationId: key.id,
+        signingKeyId: key.signingKeyId,
+        request: body,
+        signing: { method: "server" },
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
+  else if (managed && path === "/signatures/complete")
+    response.end(
+      JSON.stringify({
+        namespace: "eip155",
+        walletId: wallet.id,
+        chainId: "eip155:8453",
+        account: wallet.address,
+        type: "message",
+        signature: "0x1234",
+      }),
+    );
   else if (path === "/signatures/verify")
     response.end(
       JSON.stringify({
@@ -68,6 +98,7 @@ beforeEach(() => {
   requests.length = 0;
   wrongWallet = false;
   emptyWallets = false;
+  managed = false;
 });
 const env = () => ({
   ...process.env,
@@ -90,6 +121,34 @@ const scope = [
 const call = ["--to", wallet.address, "--value", "0", "--data", "0x"];
 
 describe("operation flags and prompts", { timeout: 65_000 }, () => {
+  it("signs with a managed session using the existing command without importing a key", async () => {
+    managed = true;
+    const result = await run([
+      "sign",
+      ...scope,
+      "--type",
+      "message",
+      "--message",
+      "Hello",
+      "--output",
+      "json",
+    ]);
+    expect(JSON.parse(result.stdout)).toMatchObject({ signature: "0x1234", walletId: wallet.id });
+    expect(requests.filter(({ body }) => body !== undefined)).toEqual([
+      {
+        path: "/signatures/prepare",
+        body: {
+          namespace: "eip155",
+          walletId: wallet.id,
+          sessionKeyId: key.id,
+          chainId: "eip155:8453",
+          type: "message",
+          message: "Hello",
+        },
+      },
+      { path: "/signatures/complete", body: { namespace: "eip155", operationId: key.id } },
+    ]);
+  });
   it.each([["execution", "execute"], ["execution", "simulate"], ["sign"], ["verify-signature"]])(
     "reports missing namespace without opening a headless prompt: %j",
     async (...command) => {

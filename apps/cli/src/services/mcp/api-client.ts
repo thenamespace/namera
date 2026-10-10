@@ -23,6 +23,7 @@ export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* 
     readonly apiOrigin: string;
     readonly fetch?: NameraFetch;
     readonly resolveSessionSigner?: ResolveSessionSigner;
+    readonly maxGasCostWei?: bigint;
   },
   authorization: {
     readonly accessToken: Redacted.Redacted<string>;
@@ -34,6 +35,7 @@ export const makeMcpApiClient = Effect.fn("LocalMcpApi.authenticate")(function* 
   const client = new NameraClient({
     baseUrl: config.apiOrigin,
     accessToken: Redacted.value(authorization.accessToken),
+    ...(config.maxGasCostWei === undefined ? {} : { maxGasCostWei: config.maxGasCostWei }),
     fetch: (input, init) => {
       const timeout = AbortSignal.timeout(30_000);
       return (config.fetch ?? globalThis.fetch)(input, {

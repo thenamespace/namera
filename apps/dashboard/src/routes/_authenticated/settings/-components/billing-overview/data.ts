@@ -30,8 +30,8 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
   },
   {
     key: "oneclaw-session-keys",
-    label: "1Claw-managed session keys (coming soon)",
-    planLabel: "1Claw-managed session keys (coming soon)",
+    label: "1Claw-managed session keys",
+    planLabel: "1Claw-managed session keys",
   },
 ];
 

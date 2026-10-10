@@ -21,6 +21,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
@@ -31,7 +32,7 @@ import { CommandBlock } from "../../-components/create-session-key-form/command-
 const actions = [
   {
     title: "Connect MCP",
-    description: "Connect your agent to Namera using your imported local key.",
+    description: "Connect your agent to Namera with this session key.",
     icon: BotIcon,
     to: "/settings/workspace/mcp",
     permissions: ["mcp-authorization:read"],
@@ -147,6 +148,9 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                   metadata={sessionKey.wallet.metadata}
                 />
               </Property>
+              <Property label="Key custody">
+                <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
+              </Property>
               <Property label="Namespace">
                 <NamespaceDisplay namespace={sessionKey.namespace} />
               </Property>
@@ -194,7 +198,11 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                 <ActionContent
                   icon={CommandLineIcon}
                   title="Connect CLI"
-                  description="Authorize your terminal to use your imported session key."
+                  description={
+                    sessionKey.signer.custody === "local"
+                      ? "Authorize your terminal to use your imported session key."
+                      : "Authorize your terminal. No private-key import is needed."
+                  }
                 />
               </Button>
             ) : null}

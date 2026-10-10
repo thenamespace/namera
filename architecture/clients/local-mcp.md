@@ -7,7 +7,7 @@ revocation and authorization management.
 
 ## Setup
 
-After installing the CLI and importing the session key:
+After installing the CLI (and importing the key only for local custody):
 
 ```sh
 codex mcp add namera -- namera mcp serve --profile codex
@@ -24,6 +24,11 @@ identities: another process under the same OS user may select the same profile.
 CLI login and `NAMERA_API_KEY` are not used for MCP authorization.
 
 ## OAuth lifecycle
+
+Local and 1Claw-managed session keys use the same tools and scoped OAuth grants.
+The SDK resolves custody from the server preparation; only local challenges
+open the encrypted keystore. Managed signature completion is not automatically
+retried after response loss. Profiles store grants, not provider credentials.
 
 The stdio transport enables Effect's `2026-07-28`, `2025-11-25`, and
 `2025-06-18` adapters, in that order. The 2026 revision uses `server/discover`

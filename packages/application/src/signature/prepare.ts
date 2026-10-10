@@ -32,10 +32,10 @@ export const makePrepareSignature = Effect.gen(function* () {
       readonly actor: GrantedActorData;
       readonly idempotencyKey: string;
       readonly request: PrepareSignatureRequest;
-      readonly custody?: "local" | "namera-managed";
     }) {
       const { request, actor } = input;
-      const custody = input.custody ?? "local";
+      const selected = yield* authority.load({ ...request, actor, custody: "either" });
+      const custody = selected.signer.custody;
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.signatureRequest,
         value: JSON.stringify(Schema.encodeSync(PrepareSignatureRequest)(request)),
@@ -53,7 +53,6 @@ export const makePrepareSignature = Effect.gen(function* () {
       )
         return yield* new SignatureError({ code: "IDEMPOTENCY_CONFLICT" });
       const scope = { ...request, actor, custody };
-      const selected = yield* authority.load(scope);
       yield* authority.evaluate(selected, request);
       const typedData = yield* evm.sessionSignatures
         .prepare({
@@ -181,7 +180,10 @@ export const makePrepareSignature = Effect.gen(function* () {
         installationId: selected.installation.id,
         signingKeyId: selected.signer.id,
         request,
-        signing: { method: "eth_signTypedData_v4", typedData },
+        signing:
+          custody === "namera-managed"
+            ? { method: "server" }
+            : { method: "eth_signTypedData_v4", typedData },
         expiresAt: operation.reservationExpiresAt,
       } satisfies PrepareSignatureResponse;
     },

@@ -23,18 +23,18 @@ It must not accept replacement operation fields from the client. Cryptographic c
 
 `POST /executions/prepare` and `POST /executions/complete` now implement these
 contracts for granted delegated actors. The SDK, CLI and local MCP
-use prepare/complete with local signing.
+use the same prepare/complete endpoints for both session custodians.
 No routine execution falls back to the wallet owner's signing key.
 
 ### Managed sessions
 
-`POST /executions/managed/prepare` and `/executions/managed/complete` use the same
+`POST /executions/prepare` and `/executions/complete` resolve custody from the stored session, with the same
 API-key/CLI/MCP grants, OAuth scopes and actor rate limits as local execution.
 Preparation requires a 1Claw session-purpose signer and reuses policy, simulation,
-sponsorship and billing admission. Its response omits local signing instructions.
+sponsorship and billing admission. Its response has `signing: { method: "server" }` instead of a local challenge.
 Completion accepts only namespace and submission ID; clients cannot replace a
-digest, signature, calls or provider identity. Local endpoints reject managed
-attempts, including reuse of their idempotency keys.
+digest, signature, calls or provider identity. Local completion requires a signature;
+managed completion rejects one. Custody is not caller-selectable.
 
 The preparation retains an internal public signer-binding snapshot. Completion
 claims a two-minute database lease on the reserved row, then signs outside the
@@ -50,10 +50,12 @@ retry after timeout signs the same stored preparation, never a newly prepared
 economic action. Only the accepted envelope is saved; duplicate completion returns
 its durable status without another signature. Existing broadcast, uncertain-send,
 receipt and billing recovery remain unchanged. Unsigned expiry releases holds.
-SDK/CLI/MCP managed-custody selection is a separate client phase.
+SDK `executions.execute`, CLI and MCP branch on the returned signing method without
+requiring a local key for managed sessions. Self-funded managed execution requires
+the caller-configured `maxGasCostWei` ceiling.
 
 HTTP tests cover both parent custodians, real session ECDSA, concurrent completion,
-provider errors and lease retry, local/managed route isolation, policy admission,
+provider errors and lease retry, local/managed completion-mode isolation, policy admission,
 revocation/key/connection races and worker settlement on migrated PostgreSQL.
 Repository tests additionally reject stale-token acceptance after takeover.
 Chain RPC and 1Claw responses are substitutes, not live-provider validation.

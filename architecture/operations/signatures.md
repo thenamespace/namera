@@ -51,12 +51,16 @@ The server never signs with the wallet owner. Clients use prepare/complete.
 
 ### Managed session signing
 
-`POST /signatures/managed/prepare` reserves the same supported message or typed-data
-operation for an installed 1Claw session. `/signatures/managed/complete` accepts
+`POST /signatures/prepare` reserves the same supported message or typed-data
+operation for an installed 1Claw session. `/signatures/complete` accepts
 only namespace and operation ID, not a digest or signature. Both require the same
 machine-actor grants, OAuth scopes and rate limits as local signing. Preparation
 retains the installation ID and an internal public signer-binding snapshot, while
-the response omits local signing instructions.
+the response returns `signing: { method: "server" }`. The same endpoints serve
+local sessions with an EIP-712 challenge and mandatory completion signature.
+Custody comes from the stored session/preparation, never a caller flag.
+SDK `sign`, CLI and MCP select the path automatically; managed completion has no
+automatic transport retry, because its signature bytes are not stored.
 
 Completion exclusively claims a two-minute signing lease, loads the encrypted
 agent credential for the session-purpose key, and signs the EVM adapter's

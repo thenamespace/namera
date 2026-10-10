@@ -13,6 +13,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { SessionKeyActions } from "@/components/session-keys-table/actions";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -97,6 +98,9 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
                 metadata={sessionKey.wallet.metadata}
               />
             </Link>
+          </Property>
+          <Property label="Key custody">
+            <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
           </Property>
           <Property label="Namespace">
             <NamespaceDisplay namespace={sessionKey.namespace} />

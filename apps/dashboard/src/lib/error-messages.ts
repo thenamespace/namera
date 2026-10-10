@@ -189,6 +189,14 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     title: "Session key not found",
     description: "It may have been revoked or belongs to another workspace.",
   },
+  "SessionKeyCreationError:PROVIDER_SETUP_FAILED": {
+    title: "1Claw setup unavailable",
+    description: "Check workspace setup with an admin before trying again.",
+  },
+  "SessionKeyCreationError:PROVIDER_RECOVERY_REQUIRED": {
+    title: "Session key setup needs recovery",
+    description: "Do not create another key yet. Contact support to recover the provider setup.",
+  },
   "SessionKeyCreationError:TIME_WINDOW_EXPIRED": {
     title: "Invalid time window",
     description: "Choose an expiration time in the future.",

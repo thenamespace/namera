@@ -9,8 +9,8 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
   it.effect("requires the creating machine actor even when another actor has the same grant", () =>
     Effect.gen(function* () {
       const f = yield* setupManagedOperations("1claw");
-      const execution = yield* f.client.execution.prepareManaged(f.executionRequest);
-      const signature = yield* f.client.signature.prepareManaged(f.signatureRequest);
+      const execution = yield* f.client.execution.prepare(f.executionRequest);
+      const signature = yield* f.client.signature.prepare(f.signatureRequest);
       const executionCompletion = {
         payload: { namespace: "eip155" as const, submissionId: execution.submissionId },
       };
@@ -19,8 +19,8 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
       };
       yield* setApiKey();
       yield* setAuthToken(f.actor.cookie.value);
-      yield* f.client.execution.completeManaged(executionCompletion).pipe(Effect.flip);
-      yield* f.client.signature.completeManaged(signatureCompletion).pipe(Effect.flip);
+      yield* f.client.execution.complete(executionCompletion).pipe(Effect.flip);
+      yield* f.client.signature.complete(signatureCompletion).pipe(Effect.flip);
       const other = yield* f.client.apiKey.create({
         payload: {
           metadata: { version: 1, name: "Other actor" },
@@ -31,17 +31,17 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
       yield* setAuthToken();
       yield* setApiKey(other.key);
       expect(
-        yield* f.client.execution.completeManaged(executionCompletion).pipe(Effect.flip),
+        yield* f.client.execution.complete(executionCompletion).pipe(Effect.flip),
       ).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
       expect(
-        yield* f.client.signature.completeManaged(signatureCompletion).pipe(Effect.flip),
+        yield* f.client.signature.complete(signatureCompletion).pipe(Effect.flip),
       ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
       expect(yield* Ref.get(f.control.calls)).toEqual([]);
       yield* setApiKey();
       yield* signIn(f.client, testEmail(`other-${crypto.randomUUID()}@example.com`));
       // Organization membership cannot authorize either public managed operation.
-      yield* f.client.execution.prepareManaged(f.executionRequest).pipe(Effect.flip);
-      yield* f.client.signature.prepareManaged(f.signatureRequest).pipe(Effect.flip);
+      yield* f.client.execution.prepare(f.executionRequest).pipe(Effect.flip);
+      yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip);
       expect(yield* Ref.get(f.control.calls)).toEqual([]);
     }),
   );
@@ -55,12 +55,12 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
           { type: "evm.signature", version: 1, allowedTypes: ["message"] },
         ],
       });
-      expect(
-        yield* f.client.execution.prepareManaged(f.executionRequest).pipe(Effect.flip),
-      ).toMatchObject({ code: "POLICY_DENIED" });
-      expect(
-        yield* f.client.signature.prepareManaged(f.signatureRequest).pipe(Effect.flip),
-      ).toMatchObject({ code: "POLICY_DENIED" });
+      expect(yield* f.client.execution.prepare(f.executionRequest).pipe(Effect.flip)).toMatchObject(
+        { code: "POLICY_DENIED" },
+      );
+      expect(yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip)).toMatchObject(
+        { code: "POLICY_DENIED" },
+      );
       expect(
         yield* f.repository.core.executionSubmission.findByActorAndIdempotencyKey(
           f.organizationId,
@@ -82,17 +82,17 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
   it.effect("binds prepared signatures to the original payload and active installation", () =>
     Effect.gen(function* () {
       const f = yield* setupManagedOperations("passkey");
-      yield* f.client.signature.prepareManaged(f.signatureRequest);
+      yield* f.client.signature.prepare(f.signatureRequest);
       expect(
         yield* f.client.signature
-          .prepareManaged({
+          .prepare({
             ...f.signatureRequest,
             payload: { ...f.signatureRequest.payload, message: "Different payload" },
           })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
       yield* f.client.signature
-        .prepareManaged({
+        .prepare({
           ...f.signatureRequest,
           headers: { "idempotency-key": crypto.randomUUID() },
           payload: { ...f.signatureRequest.payload, chainId: "eip155:84532" },

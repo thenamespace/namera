@@ -60,6 +60,17 @@ the completed ERC-1271 envelope. `signatures.prepare/complete` expose transport
 for clients that implement their own equivalent validation. API signature
 quotas govern API completions, not direct signatures created by a local holder.
 
+## Unified session custody
+
+`executions.execute()` and `sign()` first prepare through the shared HTTP endpoints.
+A local challenge invokes the existing resolver and independent validation. A
+`server` signing instruction completes without local storage. The API determines
+custody and rejects the wrong completion mode. CLI/MCP keep existing commands,
+tools, grants and profiles; no provider credential or custody cache is added.
+Managed signature completion is never automatically retried; execution completion
+reuses its durable submission. Self-funded managed execution uses the existing
+user-configured fee cap.
+
 ## CLI
 
 The CLI uses OAuth device authorization for interactive profiles and the SDK for

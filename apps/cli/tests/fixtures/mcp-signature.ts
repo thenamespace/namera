@@ -92,5 +92,14 @@ export const mcpSignatureFixture = (privateKey = generatePrivateKey()) => {
     type: "message",
     signature: concatHex(["0x00", toHex(7, { size: 4 }), "0xff00", signature]),
   });
-  return { account, binding, request, response, grants, complete };
+  if (response.signing.method !== "eth_signTypedData_v4")
+    throw new Error("Expected local challenge");
+  return {
+    account,
+    binding,
+    request,
+    response: { ...response, signing: response.signing },
+    grants,
+    complete,
+  };
 };

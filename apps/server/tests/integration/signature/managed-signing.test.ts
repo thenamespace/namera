@@ -29,9 +29,9 @@ for (const owner of ["passkey", "1claw"] as const) {
                     },
                   },
                 };
-          const prepared = yield* f.client.signature.prepareManaged(request);
-          expect(prepared).not.toHaveProperty("signing");
-          expect((yield* f.client.signature.prepareManaged(request)).operationId).toBe(
+          const prepared = yield* f.client.signature.prepare(request);
+          expect(prepared.signing).toEqual({ method: "server" });
+          expect((yield* f.client.signature.prepare(request)).operationId).toBe(
             prepared.operationId,
           );
           const payload = { namespace: "eip155" as const, operationId: prepared.operationId };
@@ -42,7 +42,7 @@ for (const owner of ["passkey", "1claw"] as const) {
           ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
           const outcomes = yield* Effect.all(
             Array.from({ length: 8 }, () =>
-              f.client.signature.completeManaged({ payload }).pipe(Effect.result),
+              f.client.signature.complete({ payload }).pipe(Effect.result),
             ),
             { concurrency: 8 },
           );
@@ -65,18 +65,18 @@ for (const owner of ["passkey", "1claw"] as const) {
               prepared.operationId,
             ))[0]?.status,
           ).toBe("settled");
-          expect(
-            yield* f.client.signature.completeManaged({ payload }).pipe(Effect.flip),
-          ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
-          expect(yield* f.client.signature.prepareManaged(request).pipe(Effect.flip)).toMatchObject(
-            { code: "SIGNATURE_UNAVAILABLE" },
-          );
-          const fresh = yield* f.client.signature.prepareManaged({
+          expect(yield* f.client.signature.complete({ payload }).pipe(Effect.flip)).toMatchObject({
+            code: "SIGNATURE_UNAVAILABLE",
+          });
+          expect(yield* f.client.signature.prepare(request).pipe(Effect.flip)).toMatchObject({
+            code: "SIGNATURE_UNAVAILABLE",
+          });
+          const fresh = yield* f.client.signature.prepare({
             ...request,
             headers: { "idempotency-key": crypto.randomUUID() },
           });
           expect(fresh.operationId).not.toBe(prepared.operationId);
-          yield* f.client.signature.completeManaged({
+          yield* f.client.signature.complete({
             payload: { namespace: "eip155", operationId: fresh.operationId },
           });
           expect(
@@ -95,7 +95,7 @@ for (const owner of ["passkey", "1claw"] as const) {
       Effect.gen(function* () {
         const f = yield* setupManagedOperations(owner, { allowSignatures: false });
         expect(
-          yield* f.client.signature.prepareManaged(f.signatureRequest).pipe(Effect.flip),
+          yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip),
         ).toMatchObject({ code: "SIGNATURE_UNAVAILABLE" });
         expect(yield* Ref.get(f.control.calls)).toEqual([]);
       }),
@@ -104,12 +104,12 @@ for (const owner of ["passkey", "1claw"] as const) {
     it.effect("releases expired unsigned attempts and refuses late signing", () =>
       Effect.gen(function* () {
         const f = yield* setupManagedOperations(owner);
-        const prepared = yield* f.client.signature.prepareManaged(f.signatureRequest);
+        const prepared = yield* f.client.signature.prepare(f.signatureRequest);
         yield* TestClock.adjust(Duration.minutes(6));
         yield* f.app.billing.reconcile();
         expect(
           yield* f.client.signature
-            .completeManaged({
+            .complete({
               payload: { namespace: "eip155", operationId: prepared.operationId },
             })
             .pipe(Effect.flip),

@@ -15,6 +15,7 @@ export const makeCliClient = async (profile?: string, maxGasCostWei?: bigint) =>
       client: new NameraClient({
         apiKey,
         baseUrl,
+        ...(maxGasCostWei === undefined ? {} : { maxGasCostWei }),
         resolveSessionSigner: resolveCliSessionSigner(new URL(baseUrl).origin, maxGasCostWei),
       }),
     };
@@ -25,6 +26,7 @@ export const makeCliClient = async (profile?: string, maxGasCostWei?: bigint) =>
     ...resolved,
     client: new NameraClient({
       baseUrl: resolved.profile.baseUrl,
+      ...(maxGasCostWei === undefined ? {} : { maxGasCostWei }),
       getAccessToken: () => getValidAccessToken(resolved.profileName, resolved.profile.baseUrl),
       resolveSessionSigner: resolveCliSessionSigner(
         new URL(resolved.profile.baseUrl).origin,

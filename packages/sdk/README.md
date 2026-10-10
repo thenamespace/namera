@@ -68,19 +68,33 @@ session-key grants and the selected key's policies.
 | `wallets.list/get`          | Available accounts                                            |
 | `sessionKeys.list/get`      | Authorized session keys                                       |
 | `executions.simulate`       | Simulate calls and check policy eligibility                   |
-| `executions.execute`        | Prepare, validate, sign locally, and submit                   |
+| `executions.execute`        | Prepare, validate, sign by session custody, and submit        |
 | `executions.getStatus/list` | Submission status and execution history                       |
 | `executions.get`            | Confirmed execution details, receipt, and submitting actor    |
 | `sign`                      | Authorized message or EIP-712 signing                         |
 | `verifySignature`           | Verify a smart-account signature against its original payload |
 
 Execution and simulation require a wallet and session key. Gas sponsorship
-defaults to `true`; self-funded execution requires an explicit local fee ceiling.
+defaults to `true`; self-funded execution requires an explicit fee ceiling.
+For managed sessions set `maxGasCostWei` on `NameraClient`; local resolvers retain
+their `maxGasCostWei` setting.
 Submission is not confirmation: check the returned submission's status.
 
-## Local signing
+## Session signing
 
-Configure `resolveSessionSigner` to execute or sign. It returns a
+The same `executions.execute()` and `sign()` calls support local and 1Claw-managed
+session keys. The server resolves custody from the selected session; managed keys
+need no local import or `resolveSessionSigner`. Account ownership does not select
+the session signing path. All calls still require grants, policies and confirmed
+network installation.
+
+Managed signature completion is not automatically retried. If its response is
+lost, a new `sign()` call may charge another signature; results are not stored.
+Execution retries reuse the same submission, not a new transfer.
+
+### Local signing
+
+For local session keys, configure `resolveSessionSigner` to execute or sign. It returns a
 `LocalSessionSigner` with a trusted installation binding and callbacks backed
 by your local key store. The interface does not require exposing private-key bytes.
 
@@ -95,6 +109,11 @@ integrations can implement `ResolveSessionSigner` and use
 
 Low-level `executions.prepare/complete` and `signatures.prepare/complete` provide
 transport only; their callers must independently validate what they sign.
+A local preparation returns its existing challenge; managed preparation returns
+`signing: { method: "server" }`. Complete a managed operation with namespace and
+operation/submission ID only. A supplied signature is rejected for managed keys,
+and an omitted signature is rejected for local keys. There are no separate managed
+execution/signature endpoints.
 
 Browser owner-approval clients can use `validateOwnerApproval` for passkeys or
 `validateManagedOwnerApproval` for a 1Claw-managed owner. Both require an
@@ -120,9 +139,11 @@ if (!result.success) {
 }
 ```
 
-Declared errors preserve their typed cause. Transient execution/signature retries
-reuse one idempotency key; completion retries do not sign again. Validation,
-authorization and policy failures are not retried automatically.
+Declared errors preserve their typed cause. Preparation retries reuse one
+idempotency key. Local completion retries reuse the exact local signature;
+managed execution retries reuse the same stored operation. Managed signature
+completion is not automatically retried. Validation, authorization and policy
+failures are not retried automatically.
 
 See [client behavior](https://github.com/thenamespace/namera/blob/main/architecture/clients/sdk-cli-mcp.md)
 and [local key storage](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-keystore.md).

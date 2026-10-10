@@ -7,7 +7,6 @@ import type {
   CompleteExecutionRequest,
   CompleteExecutionResponse,
   GrantedActorData,
-  CompleteManagedExecutionRequest,
 } from "@namera-ai/protocol/dto";
 import { executionDuration, executionResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
@@ -27,8 +26,7 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
   return Effect.fn("application.execution.completeLocal")(
     function* (input: {
       readonly actor: GrantedActorData;
-      readonly request: CompleteExecutionRequest | CompleteManagedExecutionRequest;
-      readonly custody?: "local" | "namera-managed";
+      readonly request: CompleteExecutionRequest;
     }): Effect.fn.Return<
       CompleteExecutionResponse,
       ExecutionError | DatabaseError | EvmPolicyError
@@ -38,11 +36,10 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
         input.actor.organizationId,
         input.actor.actorId,
       );
-      const managed = input.custody === "namera-managed";
-      if (
-        submission === undefined ||
-        (submission.data.managedSignerBinding !== undefined) !== managed
-      )
+      if (submission === undefined)
+        return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
+      const managed = submission.data.managedSignerBinding !== undefined;
+      if (managed === (input.request.signature !== undefined))
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
       if (submission.status !== "reserved" && submission.data.signedExecution !== null)
         return {
@@ -66,7 +63,7 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
         walletId: grant.sessionKey.walletId,
         sessionKeyId: submission.sessionKeyId,
         chainId: submission.data.chainId,
-        custody: input.custody ?? "local",
+        custody: managed ? ("namera-managed" as const) : ("local" as const),
       };
       const authority = yield* loadAuthority(scope);
       if (authority.installation.id !== submission.installationId)
@@ -89,7 +86,7 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
       const leaseToken = generateUniqueId();
       const signature = yield* Effect.gen(function* () {
         if (!managed) {
-          if (!("signature" in input.request))
+          if (input.request.signature === undefined)
             return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
           return input.request.signature;
         }

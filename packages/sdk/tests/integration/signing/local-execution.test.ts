@@ -37,6 +37,53 @@ const setup = () => {
 };
 
 describe("local execution orchestration", () => {
+  it("executes a managed key through the same endpoints without opening a local key", async () => {
+    const f = setup();
+    f.fetch
+      .mockReset()
+      .mockImplementationOnce(async () =>
+        json(
+          Schema.encodeSync(PrepareExecutionResponse)({
+            ...f.response,
+            signing: { method: "server" },
+          }),
+        ),
+      )
+      .mockImplementation(async () => json(f.completed));
+    const resolveSessionSigner = vi.fn();
+    const client = new NameraClient({ apiKey: "test-only", fetch: f.fetch, resolveSessionSigner });
+    expect((await client.executions.execute(f.request)).success).toBe(true);
+    expect(resolveSessionSigner).not.toHaveBeenCalled();
+    expect(f.fetch.mock.calls.map(([url]) => String(url))).toEqual([
+      "https://api.namera.ai/executions/prepare",
+      "https://api.namera.ai/executions/complete",
+    ]);
+    expect(
+      JSON.parse(new TextDecoder().decode(f.fetch.mock.calls[1]?.[1]?.body as Uint8Array)),
+    ).toEqual({ namespace: "eip155", submissionId: f.response.submissionId });
+  });
+
+  it("does not complete a managed execution with substituted calls", async () => {
+    const f = setup();
+    f.fetch.mockReset().mockImplementation(async () =>
+      json(
+        Schema.encodeSync(PrepareExecutionResponse)({
+          ...f.response,
+          signing: { method: "server" },
+          prepared: {
+            ...f.response.prepared,
+            context: { ...f.response.prepared.context, calls: [] },
+          },
+        }),
+      ),
+    );
+    const client = new NameraClient({ apiKey: "test-only", fetch: f.fetch });
+    expect(await client.executions.execute(f.request)).toMatchObject({
+      success: false,
+      error: { code: "PREPARED_EXECUTION_INVALID" },
+    });
+    expect(f.fetch).toHaveBeenCalledOnce();
+  });
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-09-08T12:01:00Z"));
@@ -96,14 +143,14 @@ describe("local execution orchestration", () => {
     expect(fixture.fetch).toHaveBeenCalledOnce();
   });
 
-  it("does not contact the server when no local signer is configured", async () => {
+  it("does not complete when the server requires an unavailable local signer", async () => {
     const fixture = setup();
     const client = new NameraClient({ apiKey: "test-only", fetch: fixture.fetch });
     expect(await client.executions.execute(fixture.request)).toMatchObject({
       success: false,
       error: { code: "LOCAL_SIGNER_REQUIRED" },
     });
-    expect(fixture.fetch).not.toHaveBeenCalled();
+    expect(fixture.fetch).toHaveBeenCalledOnce();
   });
 
   it("does not submit signatures from a different local key", async () => {
@@ -160,6 +207,6 @@ describe("local execution orchestration", () => {
       error: { code: "LOCAL_SIGNER_UNAVAILABLE", cause: null },
     });
     expect(JSON.stringify(result)).not.toContain("sensitive keystore diagnostic");
-    expect(fixture.fetch).not.toHaveBeenCalled();
+    expect(fixture.fetch).toHaveBeenCalledOnce();
   });
 });

@@ -95,9 +95,9 @@ export const localExecutionFixture = () => {
     entryPointVersion: "0.7",
     chainId: 11155111,
   });
-  const response: PrepareExecutionResponse = {
+  const response = {
     ...decoded,
     signing: { method: "personal_sign", message: Bytes32.make(hash) },
-  };
+  } satisfies PrepareExecutionResponse;
   return { request, binding, response, now: DateTime.makeUnsafe("2026-09-08T12:01:00Z") };
 };

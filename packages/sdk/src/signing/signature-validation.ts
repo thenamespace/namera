@@ -23,6 +23,7 @@ export const validateLocalSignature = ({
   readonly now: DateTime.Utc;
 }) => {
   if (
+    response.signing.method !== "eth_signTypedData_v4" ||
     binding.allowSignatures !== true ||
     request.walletId !== binding.walletId ||
     request.sessionKeyId !== binding.sessionKeyId ||

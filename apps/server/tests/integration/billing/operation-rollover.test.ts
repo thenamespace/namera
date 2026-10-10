@@ -21,6 +21,7 @@ import {
   testEmail,
 } from "../../fixtures/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { localSignatureChallenge } from "../../fixtures/local-signature-challenge.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const provider = makeTestEvmExecutionService();
@@ -131,7 +132,7 @@ layer(fixture.layer)("operation billing across anniversaries", (it) => {
           },
         });
       }
-      const signed = yield* Effect.promise(() => signer.sign(signature.signing.typedData));
+      const signed = yield* Effect.promise(() => signer.sign(localSignatureChallenge(signature)));
       yield* client.signature.complete({
         payload: { namespace: "eip155", operationId: signature.operationId, signature: signed },
       });

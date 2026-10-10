@@ -136,8 +136,11 @@ the final transaction. Owner passkey
 or explicit 1Claw approval records an immutable signed attempt; receipt recovery
 activates it. Managed approval signs only a stored install/remove operation under
 a fenced signing lease. Public reconstruction and routine local-session use never
-load managed root credentials. Managed session creation is implemented; managed
-execution/signing and full lifecycle/client compatibility remain later work.
+load managed root credentials. Unified execution/signature preparation resolves
+session custody from the granted signer. Completion requires a local signature
+or invokes the managed session signer under a lease; it never uses a root key.
+SDK, CLI/MCP and dashboard support both custodians. Live provider verification
+remains separate from the substituted-provider integration suite.
 Revocation immediately removes API grants, then waits for owner-approved onchain
 removal before finalizing the session and notifying members. Signed installation
 attempts remain recoverable without restoring API authority. Policy hashes are purpose-separated and

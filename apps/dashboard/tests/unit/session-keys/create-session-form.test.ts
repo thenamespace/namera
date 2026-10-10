@@ -10,6 +10,7 @@ const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKe
 const options = { fields: {}, shouldUseNativeValidation: false };
 afterEach(() => vi.restoreAllMocks());
 const request = {
+  custody: "local",
   namespace: "eip155",
   walletId: "00000000-0000-7000-8000-000000000001",
   metadata: { version: 1, name: "Agent" },
@@ -40,6 +41,13 @@ it("rejects paused networks through the actual session creation form resolver", 
   const accepted = await resolve(request, undefined, options);
   expect(accepted.errors).toEqual({});
 });
+
+it.each(["local", "namera-managed"] as const)(
+  "accepts %s session custody independently of the account",
+  async (custody) => {
+    expect((await resolve({ ...request, custody }, undefined, options)).errors).toEqual({});
+  },
+);
 
 it("requires access with limits and keeps both signature layers consistent", async () => {
   const limitOnly = await resolve(

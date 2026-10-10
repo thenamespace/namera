@@ -1,7 +1,11 @@
 import { DateTime, Schema } from "effect";
 
 import { pack1271Signature } from "@alchemy/smart-accounts";
-import { CompleteSignatureRequest, type PrepareSignatureRequest } from "@namera-ai/protocol/dto";
+import {
+  CompleteSignatureRequest,
+  PrepareSignatureRequest as PrepareSignatureRequestSchema,
+  type PrepareSignatureRequest,
+} from "@namera-ai/protocol/dto";
 import { verifyTypedData } from "viem";
 
 import { failure } from "#/result";
@@ -25,12 +29,51 @@ export class SignatureClient {
   }
 
   complete(request: CompleteSignatureRequest) {
+    // Managed results are not stored, so do not automatically repeat an
+    // uncertain signing attempt or start a replacement billable operation.
+    if (request.signature === undefined)
+      return this.transport.request(this.transport.client.signature.complete({ payload: request }));
     return this.transport.requestWithRetry(
       this.transport.client.signature.complete({ payload: request }),
     );
   }
 
   async sign(request: PrepareSignatureRequest) {
+    const prepared = await this.prepare(request);
+    if (!prepared.success) return prepared;
+    if (prepared.data.signing.method === "server") {
+      const original = Schema.encodeSync(PrepareSignatureRequestSchema)(request);
+      const returned = Schema.encodeSync(PrepareSignatureRequestSchema)(prepared.data.request);
+      if (
+        JSON.stringify(original) !== JSON.stringify(returned) ||
+        DateTime.toEpochMillis(prepared.data.expiresAt) <= Date.now()
+      )
+        return failure({
+          kind: "signer",
+          code: "PREPARED_SIGNATURE_INVALID",
+          message: "The prepared signature does not match the request or has expired.",
+          status: null,
+          cause: null,
+        });
+      const completed = await this.complete({
+        namespace: request.namespace,
+        operationId: prepared.data.operationId,
+      });
+      if (
+        completed.success &&
+        (completed.data.walletId !== request.walletId ||
+          completed.data.chainId !== request.chainId ||
+          completed.data.type !== request.type)
+      )
+        return failure({
+          kind: "signer",
+          code: "PREPARED_SIGNATURE_INVALID",
+          message: "The signature response does not match the requested operation.",
+          status: null,
+          cause: null,
+        });
+      return completed;
+    }
     if (this.resolveSigner === undefined)
       return failure({
         kind: "signer",
@@ -60,8 +103,6 @@ export class SignatureClient {
         cause: null,
       });
 
-    const prepared = await this.prepare(request);
-    if (!prepared.success) return prepared;
     let challenge: ReturnType<typeof validateLocalSignature>;
     try {
       challenge = validateLocalSignature({
@@ -110,6 +151,8 @@ export class SignatureClient {
     // Retries reuse this exact signature; they never invoke the local signer again.
     const completed = await this.complete(completion);
     if (!completed.success) return completed;
+    if (completion.signature === undefined)
+      throw new Error("Local completion requires a signature");
     const expected = pack1271Signature({
       entityId: signer.binding.entityId,
       validationSignaturePrefix: "0x00",

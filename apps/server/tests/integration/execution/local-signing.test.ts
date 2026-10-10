@@ -106,6 +106,12 @@ layer(fixture.layer)("local execution HTTP flow", (it) => {
       });
       expect(yield* app.execution.reconcile()).toBe(0);
       const prepared = yield* client.execution.prepare(request);
+      expect(prepared.signing.method).toBe("personal_sign");
+      expect(
+        yield* client.execution
+          .complete({ payload: { namespace: "eip155", submissionId: prepared.submissionId } })
+          .pipe(Effect.flip),
+      ).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
       expect(
         (yield* client.execution.getSubmission({ params: { submissionId: prepared.submissionId } }))
           .status,

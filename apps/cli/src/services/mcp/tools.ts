@@ -113,7 +113,7 @@ export const localMcpTools = Effect.gen(function* () {
   yield* register(
     Tool.make("list_session_keys", {
       description:
-        "List delegated session keys and their wallet IDs. Execute and sign require both walletId and sessionKeyId; do not interchange them. The local key must also be imported on this machine.",
+        "List delegated session keys and their wallet IDs. Execute and sign require both walletId and sessionKeyId; do not interchange them. Local keys must be imported on this machine; managed keys require no import.",
       parameters: McpListSessionKeysRequest,
       success: Schema.Struct({ sessionKeys: ListSessionKeysForOrganizationResponse }),
     }),
@@ -154,7 +154,7 @@ export const localMcpTools = Effect.gen(function* () {
   yield* register(
     Tool.make("execute_transaction", {
       description:
-        "Execute exact calls using walletId and sessionKeyId from discovery tools. Simulate first. Signs locally using an imported session key. Gas is sponsored by default; sponsor:false requires a fee cap configured by the user when starting local MCP. Prepared means queued, not confirmed: poll get_transaction_status. Repeating this tool can transfer assets twice.",
+        "Execute exact calls using walletId and sessionKeyId from discovery tools. Simulate first. Local keys sign on this machine; managed keys sign on the server. Gas is sponsored by default; sponsor:false requires a fee cap configured by the user when starting local MCP. Prepared means queued, not confirmed: poll get_transaction_status. Repeating this tool can transfer assets twice.",
       parameters: McpExecuteTransactionRequest,
       success: Schema.Struct({ execution: CompleteExecutionResponse }),
     }),
@@ -193,7 +193,7 @@ export const localMcpTools = Effect.gen(function* () {
   yield* register(
     Tool.make("sign", {
       description:
-        "Sign an exact UTF-8 message or EIP-712 object locally, using an explicit walletId and sessionKeyId. Requires imported signature consent and installed onchain signature permission plus passing API policies. Does not submit a transaction.",
+        "Sign an exact UTF-8 message or EIP-712 object, using an explicit walletId and sessionKeyId. Local keys require imported signature consent. All keys require installed onchain signature permission plus passing API policies. Does not submit a transaction.",
       parameters: McpSignRequest,
       success: Schema.Struct({ signature: SignResponse }),
     }),

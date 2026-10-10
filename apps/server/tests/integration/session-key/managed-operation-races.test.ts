@@ -20,9 +20,9 @@ for (const kind of ["execution", "signature"] as const) {
           const f = yield* setupManagedOperations("1claw");
           const completion =
             kind === "execution"
-              ? f.client.execution.prepareManaged(f.executionRequest).pipe(
+              ? f.client.execution.prepare(f.executionRequest).pipe(
                   Effect.flatMap((prepared) =>
-                    f.client.execution.completeManaged({
+                    f.client.execution.complete({
                       payload: { namespace: "eip155", submissionId: prepared.submissionId },
                     }),
                   ),
@@ -31,9 +31,9 @@ for (const kind of ["execution", "signature"] as const) {
                     "code" in error ? String(error.code) : "unexpected-error",
                   ),
                 )
-              : f.client.signature.prepareManaged(f.signatureRequest).pipe(
+              : f.client.signature.prepare(f.signatureRequest).pipe(
                   Effect.flatMap((prepared) =>
-                    f.client.signature.completeManaged({
+                    f.client.signature.complete({
                       payload: { namespace: "eip155", operationId: prepared.operationId },
                     }),
                   ),
@@ -92,9 +92,9 @@ layer(
   it.effect("fences a stale result after a replacement claim without persisting bytes", () =>
     Effect.gen(function* () {
       const f = yield* setupManagedOperations("passkey");
-      const prepared = yield* f.client.signature.prepareManaged(f.signatureRequest);
+      const prepared = yield* f.client.signature.prepare(f.signatureRequest);
       const fiber = yield* f.client.signature
-        .completeManaged({ payload: { namespace: "eip155", operationId: prepared.operationId } })
+        .complete({ payload: { namespace: "eip155", operationId: prepared.operationId } })
         .pipe(Effect.flip, Effect.forkChild);
       yield* Deferred.await(verificationStarted);
       yield* TestClock.adjust(Duration.minutes(2));

@@ -6,7 +6,10 @@ import { concatHex } from "viem";
 import { entryPoint07Address, getUserOperationHash } from "viem/account-abstraction";
 import { describe, expect, it } from "vitest";
 
-import { validateLocalExecution } from "../../../src/signing/execution-validation.js";
+import {
+  validateLocalExecution,
+  validateManagedExecution,
+} from "../../../src/signing/execution-validation.js";
 import { localExecutionFixture } from "../../fixtures/local-execution.js";
 
 const rehash = (fixture: ReturnType<typeof localExecutionFixture>) => ({
@@ -28,6 +31,30 @@ const rehash = (fixture: ReturnType<typeof localExecutionFixture>) => ({
 });
 
 describe("local execution validation", () => {
+  it("requires a caller fee ceiling for managed self-funded operations", () => {
+    const f = localExecutionFixture();
+    const response = {
+      ...f.response,
+      signing: { method: "server" as const },
+      expiresAt: DateTime.add(DateTime.nowUnsafe(), { minutes: 1 }),
+      prepared: {
+        ...f.response.prepared,
+        sponsorship: "none" as const,
+        userOperation: {
+          ...f.response.prepared.userOperation,
+          maxFeePerGas: 2n,
+          maxPriorityFeePerGas: 1n,
+        },
+      },
+    };
+    const request = { ...f.request, sponsor: false };
+    const op = response.prepared.userOperation;
+    const cost = (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * 2n;
+    expect(() => validateManagedExecution(request, response)).toThrow();
+    expect(() => validateManagedExecution(request, response, cost - 1n)).toThrow();
+    expect(() => validateManagedExecution(request, response, cost)).not.toThrow();
+    expect(() => validateManagedExecution({ ...request, sponsor: true }, response, cost)).toThrow();
+  });
   it("recomputes the raw user operation hash from the local chain and canonical EntryPoint", () => {
     const fixture = localExecutionFixture();
     expect(validateLocalExecution(fixture)).toBe(fixture.response.signing.message);

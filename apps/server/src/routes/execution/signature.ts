@@ -12,48 +12,6 @@ export const SignatureRoutes = HttpApiBuilder.group(NameraApi, "signature", (han
     const app = yield* Application.Application;
 
     return handlers
-      .handle("prepareManaged", ({ headers, payload }) =>
-        Effect.gen(function* () {
-          const data = yield* enforceActor({
-            actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli", "mcp"],
-            requiredPermissions: {
-              "api-key": [],
-              cli: ["signature:create"],
-              mcp: ["mcp:execute"],
-            },
-          });
-          yield* consumeRateLimit(
-            "signature.prepare.actor",
-            data.actorId,
-            rateLimitPolicy.signature.byApiKey,
-          );
-          return yield* app.signature.prepareManaged({
-            actor: data,
-            request: payload,
-            idempotencyKey: headers["idempotency-key"],
-          });
-        }),
-      )
-      .handle("completeManaged", ({ payload }) =>
-        Effect.gen(function* () {
-          const data = yield* enforceActor({
-            actor: yield* CurrentActor,
-            allowedActors: ["api-key", "cli", "mcp"],
-            requiredPermissions: {
-              "api-key": [],
-              cli: ["signature:create"],
-              mcp: ["mcp:execute"],
-            },
-          });
-          yield* consumeRateLimit(
-            "signature.complete.actor",
-            data.actorId,
-            rateLimitPolicy.signature.byApiKey,
-          );
-          return yield* app.signature.completeManaged({ actor: data, request: payload });
-        }),
-      )
       .handle("prepare", ({ headers, payload }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({

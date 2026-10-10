@@ -45,13 +45,13 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
       readonly actor: GrantedActorData;
       readonly idempotencyKey: string;
       readonly request: PrepareExecutionRequest;
-      readonly custody?: "local" | "namera-managed";
     }): Effect.fn.Return<
       PrepareExecutionResponse,
       ExecutionError | DatabaseError | BillingError | EvmPolicyError
     > {
       const request = { ...input.request, sponsor: input.request.sponsor ?? true };
-      const custody = input.custody ?? "local";
+      const selected = yield* loadAuthority({ ...request, actor: input.actor, custody: "either" });
+      const custody = selected.signer.custody;
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.executionRequest,
         value: JSON.stringify(Schema.encodeSync(PrepareExecutionRequest)(request)),
@@ -251,7 +251,10 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
         installationId: submission.installationId,
         signingKeyId: authority.signer.id,
         prepared: submission.data.prepared,
-        signing: { method: "personal_sign", message: Schema.decodeSync(Bytes32)(message) },
+        signing:
+          custody === "namera-managed"
+            ? { method: "server" }
+            : { method: "personal_sign", message: Schema.decodeSync(Bytes32)(message) },
         expiresAt: submission.expiresAt,
       };
     },

@@ -14,7 +14,8 @@ the owner-approved configuration. Alchemy's execution time/spend hooks do not
 constrain ERC-1271 signatures; only onchain uninstall removes that authority.
 See [onchain session compilation](../evm/accounts/onchain-sessions.md).
 
-The SDK and local MCP sign delegated operations using client-held session keys.
+The SDK and local MCP use client-held local keys or server-held 1Claw session keys
+through the same execute/sign methods and HTTP endpoints.
 The dashboard can register/export a local signer and approve installation/removal.
 
 ## Persistence and policy references
@@ -90,14 +91,14 @@ quotas, encrypted/non-public credentials, permission/tenant/expiry rejection,
 ambiguous bootstrap, rate limits, disabled connections and transaction rollback.
 Disposable PostgreSQL verifies last-slot concurrent admission. Provider and chain
 services are substitutes; this is not live-provider or mainnet verification.
-Phase 13 verifies lifecycle compatibility. Phases 14–15 add managed execution and
-signature routes; Phase 16 remains responsible for client/dashboard selection.
+Lifecycle compatibility, managed execution/signing and client/dashboard custody
+selection are implemented. Development provider verification remains Phase 17.
 
 ### Managed operation recovery (Phases 14–15)
 
-Local prepare/complete APIs remain intact. The new `/executions/managed/*` and
-`/signatures/managed/*` endpoints accept only stored operation identifiers at
-completion, with the same actor, grant, installation, expiry and policy checks.
+The unified `/executions/prepare` and `/signatures/prepare` endpoints resolve
+custody from the granted session. Managed responses return `signing.method = server`;
+completion on the shared routes accepts only stored operation identifiers, with the same actor, grant, installation, expiry and policy checks.
 The shared 1Claw session resolver rejects wallet-root keys and verifies encrypted
 credential, tenant, connection, agent and public-key bindings.
 
@@ -192,8 +193,8 @@ managed-owner lease/concurrency suite also pass against disposable PostgreSQL.
 Passkey assertions use the real
 verifier; managed owner signatures use separate deterministic provider keys and
 the real signature verifier. Chain submission/receipts are substitutes, not live
-1Claw/bundler verification. Managed session execution and message signing remain
-unavailable until Phases 14–15; dashboard/client support remains Phase 16.
+1Claw/bundler verification. Managed session execution, message signing and
+dashboard/client support use the same delegated APIs as local sessions.
 
 `POST /session-keys/operations/prepare` takes an installation ID, install/uninstall
 kind, idempotency key and sponsorship choice. It accepts no arbitrary calldata.
@@ -368,7 +369,12 @@ Signature consent defaults off; execution expiry does not remove ERC-1271
 authority. The account picker admits active local P-256 owners and 1Claw-managed
 secp256k1 factory accounts; GCP and legacy 7702 owners are not selectable.
 
-Creation generates a local SDK draft on first submission and puts only its public
+Managed custody skips export/import and validates the returned public signer,
+account, networks and permissions before offering owner approval. Capacity is
+read from billing; ambiguous creation errors block blind retries. Local and
+managed sessions appear in the same grant selectors, with a distinct custody label.
+
+Local creation generates an SDK draft on first submission and puts only its public
 signer in form/API state. The draft stays in a ref and is disposed on unmount or
 after the user acknowledges importing/backing it up. Successful registration is
 checked against the submitted configuration and selected wallet before constructing
