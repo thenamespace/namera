@@ -1,4 +1,4 @@
-import { BigDecimal, DateTime, Effect, Option, Redacted, Schema } from "effect";
+import { Array, BigDecimal, DateTime, Effect, Option, Redacted, Schema } from "effect";
 import { HttpClientRequest, type HttpClient } from "effect/http";
 
 import { EthereumAddress, EvmPortfolioError, Hex } from "@namera-ai/protocol";
@@ -67,7 +67,12 @@ export const makeAlchemyPortfolioService = (
   config: EvmConfigValues,
   httpClient: HttpClient.HttpClient,
 ): EvmPortfolioService => {
-  const readChain = Effect.fnUntraced(function* (address: EthereumAddress, chain: ChainData) {
+  const readBatch = Effect.fnUntraced(function* (
+    address: EthereumAddress,
+    batch: ReadonlyArray<ChainData>,
+  ) {
+    const networks = new Map<string, ChainData>(batch.map((chain) => [chain.alchemyChain, chain]));
+    const failedChains = new Set<ChainData["chainId"]>();
     const assets = new Map<string, PortfolioAsset>();
     const cursors = new Set<string>();
     let pageKey: string | undefined;
@@ -76,7 +81,7 @@ export const makeAlchemyPortfolioService = (
         `https://api.g.alchemy.com/data/v1/${encodeURIComponent(Redacted.value(config.alchemyApiKey))}/assets/tokens/by-address`,
       ).pipe(
         HttpClientRequest.bodyJson({
-          addresses: [{ address, networks: [chain.alchemyChain] }],
+          addresses: [{ address, networks: batch.map((chain) => chain.alchemyChain) }],
           withMetadata: true,
           withPrices: true,
           includeNativeTokens: true,
@@ -89,15 +94,20 @@ export const makeAlchemyPortfolioService = (
       const body = yield* response.json.pipe(
         Effect.flatMap(Schema.decodeUnknownEffect(pageSchema)),
       );
-      if (body.error?.partialErrors?.length) return yield* unavailable();
+      for (const failure of body.error?.partialErrors ?? []) {
+        const chain = networks.get(failure.network);
+        if (!chain) return yield* unavailable();
+        failedChains.add(chain.chainId);
+      }
       for (const token of body.data.tokens) {
+        const chain = networks.get(token.network);
         if (
-          token.network !== chain.alchemyChain ||
+          !chain ||
           token.address.toLowerCase() !== address.toLowerCase() ||
           !/^0x[\da-f]+$/i.test(token.tokenBalance)
         )
           return yield* unavailable();
-        if (BigInt(token.tokenBalance) === 0n) continue;
+        if (failedChains.has(chain.chainId) || BigInt(token.tokenBalance) === 0n) continue;
         const native = token.tokenAddress === null;
         const decimals =
           token.tokenMetadata?.decimals ?? (native ? chain.chain.nativeCurrency.decimals : null);
@@ -147,10 +157,17 @@ export const makeAlchemyPortfolioService = (
                 )
               : null,
         };
-        assets.set(asset.tokenAddress ?? "native", asset);
+        assets.set(`${asset.chainId}:${asset.tokenAddress ?? "native"}`, asset);
       }
       const next = body.data.pageKey;
-      if (!next) return [...assets.values()];
+      if (!next)
+        return {
+          items: [...assets.values()].filter((asset) => !failedChains.has(asset.chainId)),
+          partialFailures: [...failedChains].map((chainId) => ({
+            chainId,
+            code: "PROVIDER_UNAVAILABLE" as const,
+          })),
+        };
       if (cursors.has(next)) return yield* unavailable();
       cursors.add(next);
       pageKey = next;
@@ -164,19 +181,19 @@ export const makeAlchemyPortfolioService = (
         (chain) => !chainIds || chainIds.includes(chain.chainId),
       );
       const results = yield* Effect.forEach(
-        selected,
-        (chain) =>
-          readChain(address, chain).pipe(
+        Array.chunksOf(selected, 4),
+        (batch) =>
+          readBatch(address, batch).pipe(
             Effect.timeout("30 seconds"),
             // Alchemy embeds the credential in its URL. Never export provider request traces/errors.
             Effect.withTracerEnabled(false),
-            Effect.map((items) => ({ items, partialFailures: [] })),
             Effect.catch(() =>
               Effect.succeed({
                 items: [],
-                partialFailures: [
-                  { chainId: chain.chainId, code: "PROVIDER_UNAVAILABLE" as const },
-                ],
+                partialFailures: batch.map((chain) => ({
+                  chainId: chain.chainId,
+                  code: "PROVIDER_UNAVAILABLE" as const,
+                })),
               }),
             ),
           ),

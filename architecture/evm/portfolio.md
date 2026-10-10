@@ -12,13 +12,15 @@ assembles summaries before offset pagination. Both return provider-neutral asset
 exact decimal USD values, and per-chain partial failures. There are no persistent
 portfolio writes, audit events, or background refresh jobs.
 
-The adapter requests one address and one network per call, with two concurrent
-chains. This stays within Alchemy's documented per-request address/network limits.
+The adapter requests one address and up to four networks per call, with two concurrent
+batches. Eight selected networks therefore need two initial calls; additional pages
+are fetched independently within each batch. This stays within Alchemy's per-request limits.
 It requests metadata, prices, native tokens, and ERC-20 tokens, follows all page
 keys, and deduplicates by chain and contract. Repeated cursors, more than 100 pages,
-invalid balance/identity fields, and a 30-second chain timeout fail that chain
+invalid balance/identity fields, and a 30-second batch timeout fail that batch
 instead of presenting an incomplete total as complete. HTTP-200 partial errors
-are failures too. Unsupported networks, including unavailable testnets, appear in
+are tracked per network across every page, excluding that network's incomplete balances
+while retaining successful networks from the same batch. Unsupported networks, including unavailable testnets, appear in
 `partialFailures`; total provider failure returns `PORTFOLIO_UNAVAILABLE`.
 
 Missing token metadata does not remove a balance. Unknown decimals produce a null
