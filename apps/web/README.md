@@ -41,7 +41,7 @@ can render, and unknown paths return 404. The docs route supplies these image
 URLs to both Open Graph and Twitter metadata. Other website images are unchanged.
 Production responses cache for one hour in browsers and one day at the CDN;
 development disables caching. Keep Takumi's native optional dependencies in the
-Node deployment. Build/deployment verification remains deferred during UI refinement.
+Node deployment. Verify the generated images in the target deployment as well as locally.
 
 Search appears below the section picker and opens with Cmd/Ctrl+K. The
 `/api/docs/search` endpoint uses Fumadocs' built-in search index over the docs
@@ -323,6 +323,8 @@ HTML advertises the LLM index, RSS, sitemap, and page-specific Markdown alternat
 Text exports cache for five minutes; HTML revalidates rather than using a shared
 public cache. Development discovery URLs use the request origin; production uses
 `SITE.origin`. RSS dates derive from published content, not the request time.
+Shared Markdown headers and portable links live in `src/lib/markdown/response.ts`,
+independently of the docs collection, so other exports need not load docs content.
 The manifest includes CDN icons and docs/blog shortcuts; it does not imply offline support.
 
 These access paths help agents retrieve authored content, but do not guarantee

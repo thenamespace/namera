@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { docsLlms, markdownResponse } from "#/lib/docs/llms.server";
+import { docsLlms } from "#/lib/docs/llms.server";
 import { docsSource } from "#/lib/docs/source.server";
+import { markdownResponse } from "#/lib/markdown/response";
 import { SITE } from "#/lib/seo";
 
 export const Route = createFileRoute("/api/docs/markdown/$")({

@@ -2,6 +2,8 @@ import { createMiddleware, createStart } from "@tanstack/react-start";
 
 import { isMarkdownPreferred } from "fumadocs-core/negotiation";
 
+import { markdownResponse } from "#/lib/markdown/response";
+
 const documentationAccess = createMiddleware().server(async ({ request, next, handlerType }) => {
   if (handlerType !== "router" || !["GET", "HEAD"].includes(request.method)) return next();
 
@@ -23,7 +25,6 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
   const isLegal = legalPath === "/terms" || legalPath === "/privacy-policy";
 
   if (isLegal && (path.endsWith(".md") || isMarkdownPreferred(request))) {
-    const { markdownResponse } = await import("#/lib/docs/llms.server");
     const { SITE } = await import("#/lib/seo");
     const content =
       legalPath === "/terms"
@@ -41,7 +42,6 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
 
   if (isBlog && (path.endsWith(".md") || isMarkdownPreferred(request))) {
     const { getPublishedPosts } = await import("#/lib/blog/source.server");
-    const { markdownResponse } = await import("#/lib/docs/llms.server");
     const { SITE } = await import("#/lib/seo");
     const slug = path.slice("/blog/".length).replace(/\.md$/, "");
     const post = (await getPublishedPosts()).find((entry) => entry.slug === slug);
@@ -61,7 +61,6 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
 
   if (isPricing && (path.endsWith(".md") || isMarkdownPreferred(request))) {
     const { pricingMarkdown } = await import("#/lib/pricing/markdown.server");
-    const { markdownResponse } = await import("#/lib/docs/llms.server");
     const { SITE } = await import("#/lib/seo");
     const response = markdownResponse(
       pricingMarkdown(import.meta.env.DEV ? url.origin : SITE.origin),
@@ -72,7 +71,7 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
   }
 
   if (isIndex || (isDocs && (path.endsWith(".md") || isMarkdownPreferred(request)))) {
-    const { docsIndex, docsLlms, markdownResponse } = await import("#/lib/docs/llms.server");
+    const { docsIndex, docsLlms } = await import("#/lib/docs/llms.server");
     const { docsSource } = await import("#/lib/docs/source.server");
     const { SITE } = await import("#/lib/seo");
     const origin = import.meta.env.DEV ? url.origin : SITE.origin;
