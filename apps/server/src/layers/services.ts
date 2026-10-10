@@ -10,6 +10,7 @@ import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
 import { GcpService } from "@namera-ai/wallet-provider-gcp";
 import { LocalService } from "@namera-ai/wallet-provider-local";
+import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-oneclaw";
 
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
@@ -42,6 +43,13 @@ const EvmLive = Layer.unwrap(
   ),
 ).pipe(Layer.provide(NodeHttpClient.layerUndici));
 
+export const OneClawLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* Config.String("ONECLAW_ORG_EMAIL_DOMAIN");
+    return Layer.merge(OneClawService.layer, OneClawOidcService.layer);
+  }),
+);
+
 export const ServicesLive = Layer.mergeAll(
   GoogleIdentityProvider.layer.pipe(Layer.provide(NodeHttpClient.layerUndici)),
   PersistenceLive,
@@ -49,6 +57,7 @@ export const ServicesLive = Layer.mergeAll(
   EmailJobsLive,
   GcpService.disabledLayer,
   LocalService.disabledLayer,
+  OneClawLive,
   EvmLive,
   Ens.layer,
   Passkeys.layer,

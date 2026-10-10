@@ -16,9 +16,11 @@ layers. Tests do not mock each application function independently.
 Application behavior exercised through the server boundary is not duplicated in
 a second application-only suite.
 
-Managed-wallet compatibility fixtures invoke the internal application directly:
-the beta HTTP create route rejects managed custody. A dedicated route regression
-covers that rejection without changing wallet, billing, or audit state; passkey
+Legacy GCP compatibility fixtures invoke the internal application directly; the
+HTTP route continues to reject GCP. 1Claw account suites compose its package-owned
+test layer with real HTTP/application/database boundaries. Owner callback tests
+live in application because no public arbitrary root-signing endpoint exists;
+they use migrated PGlite, real encryption and the EVM signature verifier. Passkey
 creation tests continue to use the public ceremony and create routes.
 
 Organize suites by boundary within their owning package: `tests/unit/` for pure

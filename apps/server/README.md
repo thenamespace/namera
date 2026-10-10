@@ -95,9 +95,11 @@ requests-per-minute actor rate limit.
 ceremony for a user with `wallet:create`. It returns ES256-only, resident-key,
 user-verification-required options and replaces that user's older pending
 ceremony in the active organization. `POST /wallets` completes that ceremony
-when its discriminated owner is `passkey`. Beta requests with a `namera-managed`
-owner return 403 `MANAGED_WALLETS_DISABLED` before provider or billing work.
-Managed creation remains an internal application capability for future use.
+when its discriminated owner is `passkey`. It also accepts
+`{type: "namera-managed", provider: "1claw"}` for account creation and internal
+owner signing. GCP requests still return 403 `MANAGED_WALLETS_DISABLED` before
+provider or billing work. Managed creation is limited to 20 attempts/org/hour.
+No public arbitrary owner-signing endpoint or managed session-key flow is added.
 The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
@@ -310,6 +312,7 @@ The composition root also loads:
 - cryptographic secrets from `@namera-ai/crypto`;
 - Alchemy RPC credentials and BSO policy configuration from `@namera-ai/evm`;
 - independent `GcpService.disabledLayer` and `LocalService.disabledLayer` managed signers (no configuration);
+- live 1Claw SDK and OIDC services with required Platform/template/trust configuration;
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.
 
@@ -321,13 +324,16 @@ The dashboard and internal admin surfaces each use their configured exact origin
 credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
 is a separate step; see the admin architecture for rollout limitations.
 
-All server environments use both provider-specific disabled layers. Owner passkeys and local
-session keys sign on the client; managed-key operations fail closed. Local and
-KMS provider implementations remain available for explicit package use and tests.
-The env examples also list optional `ONECLAW_*` fields for the SDK-backed
-`@namera-ai/wallet-provider-oneclaw` package. Filling them does not enable managed
-wallets. Its live service and OIDC discovery/JWKS HTTP routes are not composed by
-the server yet; see the [provider README](../../packages/wallet-providers/oneclaw/README.md).
+All environments keep GCP and local-file signing disabled. Owner passkeys and local
+session keys sign on the client. 1Claw is always composed, without an enable flag;
+missing required provider/OIDC configuration fails startup. The API URL and
+30-second provider timeout are code constants. Set `ONECLAW_ORG_EMAIL_DOMAIN`
+to a domain Namera controls, and configure the dashboard-created Platform app and
+pinned empty template. `ONECLAW_OIDC_ISSUER` must equal
+`${AUTH_API_PUBLIC_ORIGIN}/providers/1claw`. Discovery and `jwks.json` are hosted
+beneath that issuer and publish no private material or tokens. See the
+[provider README](../../packages/wallet-providers/oneclaw/README.md) and
+[account setup/recovery](../../architecture/wallets/accounts.md).
 Set `TELEMETRY_SERVICE_VERSION` to the deployed release tag or Git SHA to identify
 the version producing logs, traces, and metrics. It defaults to `development`
 when omitted, so supply a meaningful value in production.

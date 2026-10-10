@@ -139,12 +139,16 @@ layer(Persistence)("provider connection persistence", (it) => {
       const next = { ...lease, leaseToken: "next-owner" };
       expect(yield* connections.acquireLease(next)).toBe(false);
       expect(yield* connections.releaseLease(next)).toBe(false);
+      expect(yield* connections.renewLease(next)).toBe(false);
+      expect(yield* connections.renewLease(lease)).toBe(true);
       const db = yield* Database;
       yield* db
         .update(providerConnections)
         .set({ leaseExpiresAt: sql`now() - interval '1 second'` })
         .where(eq(providerConnections.id, id));
       expect(yield* connections.recordBootstrap(lease)).toBeUndefined();
+      expect(yield* connections.renewLease(lease)).toBe(false);
+      expect(yield* connections.startBootstrap(lease)).toBe(false);
       expect(yield* connections.acquireLease(next)).toBe(true);
       expect(yield* connections.releaseLease(lease)).toBe(false);
       expect(
@@ -155,6 +159,24 @@ layer(Persistence)("provider connection persistence", (it) => {
         }),
       ).toBeUndefined();
       expect(yield* connections.releaseLease(next)).toBe(true);
+    }),
+  );
+
+  it.effect("records a bootstrap attempt once and fences it to the live tenant lease", () =>
+    Effect.gen(function* () {
+      const { connections, lease, other } = yield* fixture();
+      yield* connections.acquireLease(lease);
+      yield* connections.reconcileIdentity({
+        ...lease,
+        externalConnectionId: "test-connection",
+        customerId: "test-customer",
+      });
+      expect(yield* connections.startBootstrap({ ...lease, organizationId: other.id })).toBe(false);
+      expect(yield* connections.startBootstrap(lease)).toBe(true);
+      expect(yield* connections.startBootstrap(lease)).toBe(false);
+      const current = yield* connections.findByIdForUpdate(lease.id, lease.organizationId);
+      expect(current?.data.bootstrapAttemptedAt).toBeDefined();
+      expect(yield* connections.findByIdForUpdate(lease.id, other.id)).toBeUndefined();
     }),
   );
 

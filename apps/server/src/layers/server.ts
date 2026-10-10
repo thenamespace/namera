@@ -31,6 +31,7 @@ import {
   RpcRoutes,
   TelemetryRoutes,
 } from "#/routes/index";
+import { OneClawDiscoveryRoutes } from "#/routes/oneclaw";
 
 import { bootstrapConfiguredAdminOwner } from "./admin-bootstrap.js";
 import { createHttpServer } from "./http-server.js";
@@ -50,6 +51,7 @@ const NodeServerLive = Layer.unwrap(
 ).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
 
 const Routes = Layer.mergeAll(
+  OneClawDiscoveryRoutes,
   ApiReferenceRoutes,
   ApiRoutes,
   CorsMiddleware,

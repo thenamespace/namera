@@ -63,7 +63,7 @@ identity. Ready rows require remote identity, customer credential, bootstrap and
 delegation timestamps. JSON/lease checks reject incomplete combinations.
 
 `repository.core.providerConnections` exposes reservation, organization/app lookup,
-lease acquisition/release, identity reconciliation, bootstrap recording, verified
+lease acquisition/renewal/release, identity reconciliation, bootstrap attempt/completion recording, verified
 customer-credential attachment, readiness and disablement. All methods join the
 ambient transaction. Credential attachment checks tenant, variant and every cleartext
 identity binding. The FK itself enforces tenant ownership, not JSON equality;
@@ -78,9 +78,11 @@ Disablement clears the lease and prevents further repository setup/renewal write
 
 Tests run on migrated PGlite and disposable PostgreSQL, including eight-way lease
 and ciphertext-CAS contention. Readiness/token changes roll back with an enclosing
-transaction. Application audit emission, encryption, token renewal HTTP, OIDC and
-live provisioning are not wired by this persistence phase. Future workflows must
-persist their audit rows in that same transaction.
+transaction. Phase 6 application workflows wire encryption, renewal, OIDC setup
+and same-transaction audits; see [accounts](../wallets/accounts.md). The optional
+`data.bootstrapAttemptedAt` timestamp fences ambiguous bootstrap attempts across
+restarts without a new table or migration. `findByIdForUpdate` supports the final
+account-persistence transaction's readiness check. No remote call holds that lock.
 
 ## `core.signing_key`
 

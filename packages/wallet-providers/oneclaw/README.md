@@ -71,13 +71,13 @@ organization ID, stable Namera-controlled org email, and display name. It issues
 a 120-second RS256 ID token with subject `namera:org:<id>`. Only use controlled
 emails: `email_verified` is asserted by Namera. `publicJwks` exposes public RSA
 fields only. It does not host discovery/JWKS HTTP routes or register app trust.
-Server routes, key rotation/overlap, and full OIDC empty-bootstrap deployment
-verification remain integration work. Do not use an arbitrary member's email.
+The server hosts discovery/JWKS routes. Key rotation/overlap and full OIDC
+empty-bootstrap deployment verification remain rollout work. Do not use an arbitrary member's email.
 
 ## Configuration
 
 The server env examples contain all fields. Values are loaded only when the
-corresponding layer is built; public runtime composition is unchanged.
+corresponding layer is built. The server always composes 1Claw for managed accounts.
 
 | Variable                         | Meaning                                        |
 | -------------------------------- | ---------------------------------------------- |
@@ -93,7 +93,7 @@ corresponding layer is built; public runtime composition is unchanged.
 The API base URL (`https://api.1claw.co`) and per-call timeout (30 seconds)
 are code constants, not deployment settings.
 
-Customer/agent credentials are not deployment env vars. Later application
+Customer/agent credentials are not deployment env vars. Application
 workflows protect them with the existing `CRYPTO_ENCRYPTION_KEY` and
 `cryptoPurpose.providerCredential`.
 
@@ -124,6 +124,9 @@ Tests exercise the real SDK over substituted fetch, without network or secrets.
 `oneClawTestLayer(scenario)` offers typed scenario overrides to downstream tests;
 unconfigured operations fail `UNSUPPORTED` (subject lookup defaults to none).
 `OneClawTestControl.calls` is an isolated Ref containing operation names only.
+`failNext` injects one bounded operation failure. `oneClawAccountTestLayer()`
+supplies deterministic org setup, per-agent test keys and real test signatures
+for downstream account tests; it never contacts 1Claw.
 
 The user-requested `@1claw/sdk` is pinned to the tested `0.61.38`. Existing repo
 libraries `jose`, `viem` and `ox` provide JWT issuance and public-key/signature

@@ -21,6 +21,8 @@ export class WalletCreationError extends Schema.TaggedError<WalletCreationError>
       "KEY_CREATION_FAILED",
       "ACCOUNT_CREATION_FAILED",
       "WALLET_PERSISTENCE_FAILED",
+      "PROVIDER_SETUP_FAILED",
+      "PROVIDER_RECOVERY_REQUIRED",
     ]),
     namespace: Schema.String,
   },

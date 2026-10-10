@@ -7,6 +7,7 @@ import { GcpService } from "@namera-ai/wallet-provider-gcp";
 import { LocalService } from "@namera-ai/wallet-provider-local";
 
 import { AuthConfig } from "#/auth/config";
+import { makeLoadOneClawOwner } from "#/oneclaw/owner";
 
 export class WalletAccountUnavailable extends Data.TaggedError("WalletAccountUnavailable")<{}> {}
 
@@ -14,14 +15,23 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
   const authConfig = yield* AuthConfig;
   const gcp = yield* GcpService;
   const local = yield* LocalService;
+  const loadOneClaw = yield* makeLoadOneClawOwner;
 
   return Effect.fnUntraced(function* (wallet: WalletView) {
+    if (wallet.signingKey.data.type === "1claw") {
+      const account = yield* loadOneClaw(wallet).pipe(
+        Effect.mapError(() => new WalletAccountUnavailable()),
+      );
+      return {
+        wallet: wallet.wallet.data,
+        owner: { validatorType: "ecdsa_secp256k1", account },
+      } as const;
+    }
     if (
       wallet.wallet.namespace !== "eip155" ||
       wallet.wallet.status !== "active" ||
       wallet.signingKey.status !== "active" ||
-      wallet.signingKey.custody !== "namera-managed" ||
-      wallet.signingKey.data.type === "1claw"
+      wallet.signingKey.custody !== "namera-managed"
     ) {
       return yield* new WalletAccountUnavailable();
     }

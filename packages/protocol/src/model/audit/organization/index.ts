@@ -34,6 +34,7 @@ import {
   OrganizationCreatedEventData,
   OrganizationUpdatedEventData,
 } from "./organization.js";
+import { ProviderConnectionEventData, ProviderCredentialEventData } from "./provider.js";
 import {
   SessionKeyCreatedEventData,
   SessionKeyRevokedEventData,
@@ -76,6 +77,8 @@ export const ExecutionSigningEvent = organizationEvent(ExecutionSigningEventData
 export const ExecutionConfirmedEvent = organizationEvent(ExecutionConfirmedEventData);
 export const ExecutionFailedEvent = organizationEvent(ExecutionFailedEventData);
 export const SignatureCreatedEvent = organizationEvent(SignatureCreatedEventData);
+export const ProviderConnectionEvent = organizationEvent(ProviderConnectionEventData);
+export const ProviderCredentialEvent = organizationEvent(ProviderCredentialEventData);
 
 export const OrganizationEvent = Schema.Union([
   OrganizationCreatedEvent,
@@ -105,6 +108,8 @@ export const OrganizationEvent = Schema.Union([
   ExecutionConfirmedEvent,
   ExecutionFailedEvent,
   SignatureCreatedEvent,
+  ProviderConnectionEvent,
+  ProviderCredentialEvent,
 ]);
 
 export const OrganizationEventInsert = createInsertSchema(

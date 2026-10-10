@@ -9,6 +9,7 @@ export const OneClawConnectionData = Schema.Struct({
   oidcSubject: Schema.NonEmptyString,
   email: Email,
   bootstrapCompletedAt: Schema.NullOr(Schema.DateTimeUtcFromString),
+  bootstrapAttemptedAt: Schema.optionalKey(Schema.DateTimeUtcFromString),
   delegationEnabledAt: Schema.NullOr(Schema.DateTimeUtcFromString),
 });
 

@@ -110,11 +110,12 @@ rules; application only coordinates their results with persistence. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 
-Managed wallet creation calls `GcpService` explicitly; reconstruction supplies
-GCP or local signing callbacks according to the persisted locator. These are
-independent services, not a shared provider facade. The server composes both
-disabled layers and continues to reject public managed-custody requests. 1Claw
-runtime provisioning is not implemented yet.
+Managed 1Claw account creation uses the focused operations in `src/oneclaw/`:
+organization setup/renewal, encrypted agent provisioning, and bound owner loading.
+It constructs factory smart accounts with a secp256k1 owner. The server enables
+1Claw only; legacy GCP/local services remain independent and disabled in runtime.
+There is no shared provider facade. See [accounts](../../architecture/wallets/accounts.md)
+for lease, credential, billing, audit and manual-recovery boundaries.
 
 Wallet creation performs a cheap quota precheck, creates the provider key and
 chain account, then repeats the locked quota check before atomically persisting

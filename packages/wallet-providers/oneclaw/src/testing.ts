@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Ref } from "effect";
 
-import type { OneClawError, OneClawOperation } from "@namera-ai/protocol";
+import { OneClawError, type OneClawOperation } from "@namera-ai/protocol";
 
 import { oneClawError } from "#/errors";
 import { OneClawService, type OneClawOperations } from "#/service";
@@ -9,6 +9,7 @@ export class OneClawTestControl extends Context.Service<
   OneClawTestControl,
   {
     readonly calls: Ref.Ref<ReadonlyArray<OneClawOperation>>;
+    readonly failNext: Ref.Ref<OneClawOperation | undefined>;
   }
 >()("@namera-ai/wallet-provider-oneclaw/OneClawTestControl") {}
 
@@ -25,17 +26,22 @@ export const oneClawTestLayer = (scenario: OneClawTestScenario = {}) =>
   Layer.effectContext(
     Effect.gen(function* () {
       const calls = yield* Ref.make<ReadonlyArray<OneClawOperation>>([]);
+      const failNext = yield* Ref.make<OneClawOperation | undefined>(undefined);
       const observe =
         <A extends ReadonlyArray<unknown>, B>(
           operation: OneClawOperation,
           run?: (...args: A) => Effect.Effect<B, OneClawError>,
         ) =>
         (...args: A) =>
-          Ref.update(calls, (previous) => [...previous, operation]).pipe(
-            Effect.andThen(() =>
-              run ? run(...args) : Effect.fail(oneClawError(operation, "UNSUPPORTED")),
-            ),
-          );
+          Effect.gen(function* () {
+            yield* Ref.update(calls, (previous) => [...previous, operation]);
+            const fail = yield* Ref.modify(failNext, (next) => [
+              next === operation,
+              next === operation ? undefined : next,
+            ]);
+            if (fail) return yield* new OneClawError({ operation, code: "TIMEOUT" });
+            return yield* run ? run(...args) : Effect.fail(oneClawError(operation, "UNSUPPORTED"));
+          });
       const service: OneClawOperations = {
         connections: {
           upsert: observe("connections.upsert", scenario.connections?.upsert),
@@ -73,6 +79,8 @@ export const oneClawTestLayer = (scenario: OneClawTestScenario = {}) =>
         },
         signing: { signDigest: observe("signing.signDigest", scenario.signing?.signDigest) },
       };
-      return Context.make(OneClawService, service).pipe(Context.add(OneClawTestControl, { calls }));
+      return Context.make(OneClawService, service).pipe(
+        Context.add(OneClawTestControl, { calls, failNext }),
+      );
     }),
   );

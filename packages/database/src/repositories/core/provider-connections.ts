@@ -17,6 +17,10 @@ type Scope = { readonly id: ProviderConnectionId; readonly organizationId: Organ
 type Lease = Scope & { readonly leaseToken: string };
 
 export interface ProviderConnectionsRepositoryService {
+  readonly findByIdForUpdate: (
+    id: ProviderConnectionId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<ProviderConnection | undefined, DatabaseError>;
   readonly reserve: (
     input: ProviderConnectionInsert,
   ) => Effect.Effect<ProviderConnection | undefined, DatabaseError>;
@@ -26,6 +30,8 @@ export interface ProviderConnectionsRepositoryService {
   ) => Effect.Effect<ProviderConnection | undefined, DatabaseError>;
   readonly acquireLease: (input: Lease) => Effect.Effect<boolean, DatabaseError>;
   readonly releaseLease: (input: Lease) => Effect.Effect<boolean, DatabaseError>;
+  readonly renewLease: (input: Lease) => Effect.Effect<boolean, DatabaseError>;
+  readonly startBootstrap: (input: Lease) => Effect.Effect<boolean, DatabaseError>;
   readonly reconcileIdentity: (
     input: Lease & { readonly externalConnectionId: string; readonly customerId: string },
   ) => Effect.Effect<ProviderConnection | undefined, DatabaseError>;
@@ -65,6 +71,18 @@ export class ProviderConnectionsRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return ProviderConnectionsRepository.of({
+        findByIdForUpdate: Effect.fn("database.providerConnections.findByIdForUpdate")(function* (
+          id,
+          organizationId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(providerConnections)
+            .where(scope({ id, organizationId }))
+            .for("update");
+          return decode(rows[0]);
+        }, mapRepositoryError),
         reserve: Effect.fn("database.providerConnections.reserve")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(ProviderConnectionInsert)(input);
@@ -131,6 +149,33 @@ export class ProviderConnectionsRepository extends Context.Service<
             .update(providerConnections)
             .set({ leaseToken: null, leaseExpiresAt: null })
             .where(and(scope(input), eq(providerConnections.leaseToken, input.leaseToken)))
+            .returning({ id: providerConnections.id });
+          return rows.length === 1;
+        }, mapRepositoryError),
+        renewLease: Effect.fn("database.providerConnections.renewLease")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(providerConnections)
+            .set({ leaseExpiresAt: sql`now() + interval '60 seconds'` })
+            .where(ownedLease(input))
+            .returning({ id: providerConnections.id });
+          return rows.length === 1;
+        }, mapRepositoryError),
+        startBootstrap: Effect.fn("database.providerConnections.startBootstrap")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(providerConnections)
+            .set({
+              data: sql`jsonb_set(${providerConnections.data}, '{bootstrapAttemptedAt}', to_jsonb(now()))`,
+            })
+            .where(
+              and(
+                ownedLease(input),
+                eq(providerConnections.status, "pending"),
+                sql`${providerConnections.data}->>'bootstrapAttemptedAt' IS NULL`,
+                sql`${providerConnections.data}->>'bootstrapCompletedAt' IS NULL`,
+              ),
+            )
             .returning({ id: providerConnections.id });
           return rows.length === 1;
         }, mapRepositoryError),

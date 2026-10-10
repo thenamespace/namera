@@ -11,6 +11,11 @@ import { Evm, type EvmTestOptions } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
 import { GcpService } from "@namera-ai/wallet-provider-gcp";
 import { LocalService } from "@namera-ai/wallet-provider-local";
+import type {
+  OneClawService,
+  OneClawOidcService,
+  OneClawTestControl,
+} from "@namera-ai/wallet-provider-oneclaw";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
@@ -71,9 +76,13 @@ export const makeTestServerLayer = (
   passkeysLayer: Layer.Layer<Passkeys> = Passkeys.testLayer,
   configLayer = TestConfigLayer,
   googleLayer = googleIdentityTestLayer(),
+  oneClawLayer:
+    | Layer.Layer<OneClawService | OneClawOidcService | OneClawTestControl>
+    | Layer.Layer<never> = Layer.empty,
 ) => {
   const TestServicesLayer = Layer.mergeAll(
     googleLayer,
+    oneClawLayer,
     Audit.layer,
     EmailJobs.layer,
     EnsTestLayer,

@@ -48,6 +48,8 @@ const staticHttpRoutes = new Set([
   "/executions/complete",
   "/executions/simulate",
   "/portfolios/assets/query",
+  "/providers/1claw/.well-known/openid-configuration",
+  "/providers/1claw/jwks.json",
   "/.well-known/oauth-authorization-server",
   "/.well-known/oauth-protected-resource",
   "/oauth/authorize",

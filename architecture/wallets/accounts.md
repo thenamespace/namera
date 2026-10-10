@@ -22,7 +22,7 @@ sequenceDiagram
   participant App as Application.wallet.create
   participant Billing
   participant Passkeys
-  participant Keys as GcpService
+  participant Keys as OneClawService
   participant EVM
   participant Tx as PostgreSQL transaction
 
@@ -50,21 +50,70 @@ concurrent requests from exceeding plan capacity. EntryPoint version,
 implementation version, entity ID, salt, and P-256 signing policy are
 server-owned constants rather than public input.
 
-The shared owner model is discriminated. The beta HTTP route `POST /wallets`
-permits only `passkey`; authenticated managed requests receive HTTP 403
-`WalletCustodyUnavailableError` / `MANAGED_WALLETS_DISABLED` before any billing,
-provider, or persistence work. The dashboard offers only passkey creation on EVM;
+The shared owner model is discriminated. `POST /wallets` permits `passkey` and
+`{type: "namera-managed", provider: "1claw"}` for users with `wallet:create`.
+GCP requests still receive HTTP 403 `MANAGED_WALLETS_DISABLED` before provider
+or billing work. Managed creation is limited to 20 attempts per organization per
+hour. The dashboard still offers only passkey creation on EVM;
 its ownership and network selectors display managed custody and Solana
 as disabled coming-soon options.
-Managed construction is an internal capability; the server provider is disabled.
+1Claw creation has no protection-level claim. The server always composes its
+SDK and OIDC services; there is no enable flag. Missing required configuration
+fails startup. GCP and local-file provider runtime layers remain disabled.
 
-The phase-2 contract additionally accepts `{type: "namera-managed", provider:
-"1claw"}` without a protection-level claim. It remains rejected by both the HTTP
-gate and the internal creation workflow before billing or provider calls. The
-managed account loader also rejects 1Claw until Phase 6 wires application provisioning
-and signer loading. Phase 3 adds encrypted credential persistence and a tenant-scoped
-signer reference without changing wallet rows. No new account namespace or runtime
-provider is enabled.
+### 1Claw organization setup and recovery
+
+Application reserves one `provider_connections` row per org/app, using subject
+`namera:org:<org-id>` and controlled email `org-<org-id>@ONECLAW_ORG_EMAIL_DOMAIN`.
+It acquires a token-owned 60-second lease, renewed every 20 seconds. Remote calls
+never hold a database transaction. Concurrent setup/renewal requests fail closed
+while the lease is occupied; callers may retry after that request finishes.
+
+Setup resolves a lost mapping by subject before upsert, records the remote
+customer identity, validates and bootstraps the dashboard-created empty template,
+redeems a claim, encrypts customer authority, and enables `agents:read`/`agents:write`
+delegation. Bootstrap is marked attempted **before** sending it. An attempt without
+recorded completion is ambiguous and requires operator reconciliation, not another
+bootstrap. An existing unmapped reservation whose remote identity cannot be found
+also requires investigation rather than another upsert.
+
+Every account follows the same delegated create path: create one dedicated agent,
+persist its one-time encrypted credential immediately, create an Ethereum wallet,
+enable raw signing and verify key metadata. EVM derives a normal factory smart
+account with that secp256k1 EOA owner (not EIP-7702). The final billing-locked
+transaction rechecks capacity, tenant bindings and connection readiness, then
+writes signer, account, audits, notification and outbox together. Free v2 admits
+three 1Claw accounts independently of its ten local accounts.
+
+Customer credentials expiring within two minutes are renewed under the connection
+lease by reissuing/redeeming a claim. The existing encrypted envelope is authenticated
+before replacement, and ciphertext CAS prevents a stale renewal overwriting newer
+authority. No human API key is used. `provider_connection.updated` and
+`provider_credential.saved` audits share the transactions of their state changes;
+they contain stages/identifiers, never tokens or ciphertext.
+
+Provider failure after agent creation, derivation failure or final persistence
+failure can leave remote resources. The durable agent credential and its audit
+remain, but account/signing-key/audit/notification writes roll back together.
+There is no exactly-once per-account request key or automatic orphan deletion.
+Do not blindly resubmit `PROVIDER_RECOVERY_REQUIRED`: inspect the connection,
+credential audits and remote agent, then explicitly reconcile or retire unused
+resources. Never delete a key that may control funds. Bootstrap ambiguities need
+provider confirmation before a privileged operator records completion; no public
+recovery endpoint is exposed.
+
+The internal owner loader authenticates encrypted agent credentials and rechecks
+wallet/key lifecycle, org/app connection readiness and pinned agent/key identity
+at signing time. Provider signing verifies the exact digest and returned signer;
+failures never fall back to GCP/local. No arbitrary root-signing HTTP endpoint is
+added. Managed session keys and managed-owner installation/removal remain later work.
+
+`/providers/1claw/.well-known/openid-configuration` and `/providers/1claw/jwks.json`
+publish issuer metadata and public RSA fields only. Configure the Platform app's
+trust with the exact issuer/audience. Issuer must equal the public API origin plus
+`/providers/1claw`. Use HTTPS in production; the private key is server-only.
+Overlapping signing-key rotation and live deployment trust validation remain
+operational rollout work. Provider calls are tested with substitutes, not live funds.
 
 The creation form starts WebAuthn registration after validating account metadata,
 without a recovery acknowledgement checkbox. The account overview retains the
@@ -99,7 +148,7 @@ reserve, or create an ENS subname.
 - Reconstruction derives the smart-account address and rejects persisted data
   when it does not match the stored address.
 - Managed owner signatures use application-supplied callbacks backed by explicit
-  GCP/local services and adapter-owned
+  1Claw (or legacy internal GCP/local) services and adapter-owned
   EVM formatting. A local root cannot be signed by the server.
 
 See [supported EVM chains](../evm/supported-chains.md) for registry/provider
@@ -121,13 +170,15 @@ The prepared 1Claw response variant exposes `provider: "1claw"` and
 `algorithm: "secp256k1"` instead of a protection level. Its mapper includes no
 credential ID, agent ID, key/version locator or encrypted payload and rejects
 non-Ethereum 1Claw owners. Existing passkey and local/GCP response shapes remain
-unchanged. Protocol validation, managed-route rejection and local-provider
-fallback regressions cover this preparation; full provisioning is not implemented.
+unchanged. HTTP integration tests cover provisioning, capacity, encryption,
+renewal, permission/rate-limit rejection, ambiguous bootstrap and GCP rejection.
+PostgreSQL tests additionally cover concurrent setup and last-slot admission.
+Internal owner tests cover verified signatures, revocation and mismatched bindings.
 
 Phase 5 adds an explicit factory ECDSA response variant with owner address, salt,
 factory and implementation versions. Its mapper preserves reconstruction metadata
 without exposing provider credentials or changing passkey/7702 responses. The EVM
-adapter and local-fork tests are implemented; public managed creation remains gated.
+adapter and local-fork tests are implemented; Phase 6 exposes 1Claw account creation.
 
 Routes are `POST /wallets`, `GET /wallets`, `GET /wallets/:walletId`,
 `GET /wallets/:walletId/portfolio`, and `POST /wallets/:walletId/update`. The

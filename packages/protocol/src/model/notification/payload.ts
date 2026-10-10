@@ -81,6 +81,14 @@ export const WalletCreatedNotificationPayload = Schema.Struct({
       custody: Schema.Literal("namera-managed"),
       protectionLevel: WalletKeyProtectionLevel,
     }),
+    Schema.Struct({
+      version: Schema.Literal(1),
+      address: EthereumAddress,
+      implementation: Schema.Literal("alchemy-modular-v2"),
+      custody: Schema.Literal("namera-managed"),
+      provider: Schema.Literal("1claw"),
+      protectionLevel: Schema.optionalKey(Schema.Never),
+    }),
   ]),
 });
 

@@ -594,6 +594,9 @@ importers:
       '@namera-ai/wallet-provider-local':
         specifier: workspace:*
         version: link:../../packages/wallet-providers/local
+      '@namera-ai/wallet-provider-oneclaw':
+        specifier: workspace:*
+        version: link:../../packages/wallet-providers/oneclaw
       effect:
         specifier: 'catalog:'
         version: 4.0.1
@@ -777,6 +780,9 @@ importers:
       '@namera-ai/wallet-provider-local':
         specifier: workspace:*
         version: link:../wallet-providers/local
+      '@namera-ai/wallet-provider-oneclaw':
+        specifier: workspace:*
+        version: link:../wallet-providers/oneclaw
       effect:
         specifier: 'catalog:'
         version: 4.0.1
