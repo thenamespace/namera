@@ -62,31 +62,45 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
         Effect.succeed(Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" })),
       ...billing,
     },
-    createAccount: Effect.fn("evm.test.createAccount")((props: CreateAccountProps) => {
-      const common = {
-        version: 1,
-        implementation: "alchemy-modular-v2",
-        modularAccountVersion: "2.0.0",
-        entryPointVersion: props.entryPointVersion,
-        address: Schema.decodeSync(EthereumAddress)("0x3333333333333333333333333333333333333333"),
-      } as const;
+    createAccount: Effect.fn("evm.test.createAccount")(
+      (props: CreateAccountProps): Effect.Effect<CreateAccountResult> => {
+        const common = {
+          version: 1,
+          implementation: "alchemy-modular-v2",
+          modularAccountVersion: "2.0.0",
+          entryPointVersion: props.entryPointVersion,
+          address: Schema.decodeSync(EthereumAddress)("0x3333333333333333333333333333333333333333"),
+        } as const;
 
-      return Effect.succeed(
-        "salt" in props
-          ? ({
-              ...common,
-              validatorType: "webauthn_p256",
-              salt: props.salt,
-              entityId: props.entityId,
-            } satisfies CreateAccountResult)
-          : ({
-              ...common,
-              validatorType: "ecdsa_secp256k1",
-              accountMode: "7702",
-              delegationVersion: props.delegationVersion,
-            } satisfies CreateAccountResult),
-      );
-    }),
+        if ("accountMode" in props) {
+          return Effect.succeed({
+            ...common,
+            validatorType: "ecdsa_secp256k1",
+            accountMode: "factory",
+            factoryVersion: "2.0.0",
+            implementationVersion: "v1.0.0",
+            ownerAddress: EthereumAddress.make(props.owner.account.address),
+            salt: props.salt,
+          } satisfies CreateAccountResult);
+        }
+
+        return Effect.succeed(
+          "salt" in props
+            ? ({
+                ...common,
+                validatorType: "webauthn_p256",
+                salt: props.salt,
+                entityId: props.entityId,
+              } satisfies CreateAccountResult)
+            : ({
+                ...common,
+                validatorType: "ecdsa_secp256k1",
+                accountMode: "7702",
+                delegationVersion: props.delegationVersion,
+              } satisfies CreateAccountResult),
+        );
+      },
+    ),
     getRpcUrl: Effect.fn("evm.test.getRpcUrl")(function* (chainId, type) {
       if (getChainDataByChainId(chainId) === undefined) {
         return yield* new UnsupportedChainError({

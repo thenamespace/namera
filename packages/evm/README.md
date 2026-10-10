@@ -18,7 +18,7 @@ remain under [operations](../../architecture/operations/executions.md).
   an isolated Rundler transport carrying the configured BSO policy header.
 - `src/accounts/` — shared smart-account creation, reconstruction, and
   wallet-key owner construction. Its discriminated owner boundary supports the
-  current P-256 WebAuthn account and secp256k1 EIP-7702 accounts without leaking
+  current P-256 WebAuthn account, factory ECDSA accounts, and legacy secp256k1 EIP-7702 accounts without leaking
   key-provider details into Alchemy account code.
 - `src/execution/` — EVM preparation, signing, submission, and normalized
   receipt operations exposed through `evm.execution`. Preparation combines
@@ -81,11 +81,24 @@ pre-BSO estimates.
 `application` only reserves and settles the generic meter amounts returned here,
 preserving the namespace boundary for future Solana support.
 
-Provider ECDSA signatures are DER encoded. Use
+GCP/local provider ECDSA signatures are DER encoded. Use
 `derSignatureToEvmSignature` to produce the validator representation:
 P-256 validators receive fixed-width `r || s`, while secp256k1 validators
 receive `r || s || v` after recovery parity is matched against the stored public
 key. The secp256k1 variant requires the exact digest that the provider signed.
+
+`createSecp256k1OwnerAccount({ publicKey, signatureEncoding: "recoverable", sign })`
+adapts 65-byte provider signatures (including 1Claw). It checks recovery against
+the exact digest/public key and normalizes high-S signatures. The callback receives
+an already-hashed 32-byte digest and must not hash it again. Message and typed-data
+hashing happens in the owner adapter. The new adapter exposes no 7702 authorization;
+`createWalletKeySecp256k1Account` preserves that legacy capability and DER default.
+
+Pass `accountMode: "factory"`, `salt`, `entryPointVersion: "0.7"`, `chainId` and an
+ECDSA owner to `evm.createAccount`. It returns version-pinned public reconstruction
+metadata, not a deployed account. The owner EOA and factory-derived account have
+different addresses. Application remains responsible for protecting credentials,
+persisting the metadata and enforcing organization permissions/billing.
 
 ## Environment
 
@@ -256,6 +269,12 @@ fork suite. The fixture also checks the Sepolia chain ID. Files run serially
 when the variable is set because lifetime tests advance the shared fork clock.
 Direct `handleOps` tests prove contract behavior, not hosted Alchemy
 Wallet APIs, bundler mempool rules or BSO sponsorship.
+
+`factory-ecdsa.test.ts` exercises the recoverable-signature callback through the
+real factory, EntryPoint, ERC-1271/ERC-6492 verification and restricted session
+installation/removal. It checks first-operation deployment and a reconstructed
+account's subsequent operation. The callback signs with an ephemeral local key;
+this test does not call 1Claw or enable public managed custody.
 
 The token-permission suite deploys a minimal test ERC-20 on the fork. It verifies
 selector denial, cumulative transfer/approval allowance exhaustion, and unchanged

@@ -29,9 +29,23 @@ export const AlchemyModularV2Eip7702WalletData = Schema.Struct({
   delegationVersion: AlchemyModularAccount7702Version,
 });
 
+export const AlchemyModularV2FactoryWalletData = Schema.Struct({
+  ...AlchemyModularV2WalletDataFields,
+  validatorType: Schema.Literal("ecdsa_secp256k1"),
+  accountMode: Schema.Literal("factory"),
+  factoryVersion: Schema.Literal("2.0.0"),
+  implementationVersion: Schema.Literal("v1.0.0"),
+  ownerAddress: EthereumAddress,
+  salt: Schema.BigIntFromString.check(
+    Schema.isGreaterThanOrEqualToBigInt(0n),
+    Schema.isLessThanOrEqualToBigInt((1n << 256n) - 1n),
+  ),
+});
+
 export const AlchemyModularV2WalletData = Schema.Union([
   AlchemyModularV2WebAuthnWalletData,
   AlchemyModularV2Eip7702WalletData,
+  AlchemyModularV2FactoryWalletData,
 ]);
 
 export const EvmWalletData = Schema.Struct({
@@ -42,4 +56,5 @@ export const EvmWalletData = Schema.Struct({
 export type AlchemyModularV2WalletData = typeof AlchemyModularV2WalletData.Type;
 export type AlchemyModularV2WebAuthnWalletData = typeof AlchemyModularV2WebAuthnWalletData.Type;
 export type AlchemyModularV2Eip7702WalletData = typeof AlchemyModularV2Eip7702WalletData.Type;
+export type AlchemyModularV2FactoryWalletData = typeof AlchemyModularV2FactoryWalletData.Type;
 export type EvmWalletData = typeof EvmWalletData.Type;

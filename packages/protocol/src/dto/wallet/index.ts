@@ -8,6 +8,7 @@ import {
   EthereumAddress,
 } from "#/evm/index";
 import {
+  AlchemyModularV2FactoryWalletData,
   TimestampFields,
   SigningKeyAlgorithm,
   WalletKeyProtectionLevel,
@@ -126,9 +127,28 @@ export const AlchemyModularV2Eip7702WalletResponse = Schema.Struct({
   description: "An Alchemy Modular Account V2 wallet using secp256k1 EIP-7702 validation",
 });
 
+export const AlchemyModularV2FactoryWalletResponse = Schema.Struct({
+  ...AlchemyModularV2ResponseFields,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    modularAccountVersion: AlchemyModularAccountVersion,
+    validatorType: Schema.Literal("ecdsa_secp256k1"),
+    entryPointVersion: EntryPointVersion,
+    accountMode: Schema.Literal("factory"),
+    factoryVersion: AlchemyModularV2FactoryWalletData.fields.factoryVersion,
+    implementationVersion: AlchemyModularV2FactoryWalletData.fields.implementationVersion,
+    ownerAddress: EthereumAddress,
+    salt: AlchemyModularV2FactoryWalletData.fields.salt,
+  }),
+}).annotate({
+  identifier: "AlchemyModularV2FactoryWalletResponse",
+  description: "A factory-deployed Alchemy Modular Account V2 wallet with a secp256k1 owner",
+});
+
 export const AlchemyModularV2WalletResponse = Schema.Union([
   AlchemyModularV2WebAuthnWalletResponse,
   AlchemyModularV2Eip7702WalletResponse,
+  AlchemyModularV2FactoryWalletResponse,
 ]).annotate({
   identifier: "AlchemyModularV2WalletResponse",
   description: "An Alchemy Modular Account V2 wallet",

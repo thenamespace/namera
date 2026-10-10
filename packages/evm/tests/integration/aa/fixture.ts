@@ -4,11 +4,6 @@ import { EthereumAddress } from "@namera-ai/protocol";
 import * as P256 from "ox/P256";
 import * as Signature from "ox/Signature";
 import {
-  createPublicClient,
-  createTestClient,
-  createWalletClient,
-  http,
-  parseEther,
   numberToHex,
   type Hex,
   type PublicClient,
@@ -17,14 +12,10 @@ import {
   type TransactionReceipt,
 } from "viem";
 import {
-  entryPoint07Abi,
-  toPackedUserOperation,
   type SmartAccount,
   type UserOperation,
   type WebAuthnAccount,
 } from "viem/account-abstraction";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { sepolia } from "viem/chains";
 
 import { makeAlchemyModularV2Account } from "../../../src/accounts/alchemy-modular-v2.js";
 import type { ReconstructEvmAccountInput } from "../../../src/accounts/types.js";
@@ -32,6 +23,7 @@ import {
   createPublicKeyWebAuthnAccount,
   createWalletKeyWebAuthnAccount,
 } from "../../../src/accounts/webauthn.js";
+import { makeAnvilChainFixture } from "./chain-fixture.js";
 
 export const makeAnvilFixture = async (
   url: string,
@@ -48,30 +40,15 @@ export const makeAnvilFixture = async (
   readonly advanceTime: (seconds: number) => Promise<void>;
   readonly deployContract: (bytecode: Hex) => Promise<`0x${string}`>;
 }> => {
-  const endpoint = new URL(url);
-  if (
-    endpoint.protocol !== "http:" ||
-    !["127.0.0.1", "localhost", "[::1]"].includes(endpoint.hostname)
-  ) {
-    throw new Error("AA tests require an explicit loopback Anvil URL");
-  }
-  const transport = http(url, { timeout: 30_000, retryCount: 0 });
-  const publicClient = createPublicClient({ chain: sepolia, transport });
-  const version = await publicClient.request({ method: "web3_clientVersion" });
-  if (!version.toLowerCase().includes("anvil")) throw new Error("AA tests only run on Anvil");
-  if ((await publicClient.getChainId()) !== sepolia.id)
-    throw new Error("AA tests require a Sepolia fork");
-  const testClient = createTestClient({ chain: sepolia, mode: "anvil", transport });
-  const relayer = privateKeyToAccount(generatePrivateKey());
-  await testClient.setBalance({ address: relayer.address, value: parseEther("100") });
-  const walletClient = createWalletClient({ account: relayer, chain: sepolia, transport });
+  const chain = await makeAnvilChainFixture(url);
+  const { publicClient } = chain;
   const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const jwk = publicKey.export({ format: "jwk" });
   if (jwk.x === undefined || jwk.y === undefined) throw new Error("Missing P-256 coordinates");
   const publicKeyHex =
     `0x04${Buffer.from(jwk.x, "base64url").toString("hex")}${Buffer.from(jwk.y, "base64url").toString("hex")}` as Hex;
   const owner = createWalletKeyWebAuthnAccount({
-    id: "local-aa-test",
+    id: Buffer.from("local-aa-test").toString("base64url"),
     publicKey: publicKeyHex,
     origin: "http://localhost:3000",
     rpId: "localhost",
@@ -96,46 +73,9 @@ export const makeAnvilFixture = async (
     },
     publicClient,
   );
-  await testClient.setBalance({ address: account.address, value: parseEther("10") });
-
-  const submit = async (
-    signer: SmartAccount,
-    callData: Hex,
-    signOperation?: (operation: UserOperation<"0.7">) => Promise<Hex>,
-  ) => {
-    const userOperation: UserOperation<"0.7"> = {
-      sender: signer.address,
-      nonce: await signer.getNonce(),
-      ...(await signer.getFactoryArgs()),
-      callData,
-      callGasLimit: 2_000_000n,
-      verificationGasLimit: 2_000_000n,
-      preVerificationGas: 100_000n,
-      maxFeePerGas: 10_000_000_000n,
-      maxPriorityFeePerGas: 1_000_000_000n,
-      signature: "0x",
-    };
-    userOperation.signature = await (signOperation === undefined
-      ? signer.signUserOperation(userOperation)
-      : signOperation(userOperation));
-    await publicClient.simulateContract({
-      account: relayer,
-      address: account.entryPoint.address,
-      abi: entryPoint07Abi,
-      functionName: "handleOps",
-      args: [[toPackedUserOperation(userOperation)], relayer.address],
-      gas: 8_000_000n,
-    });
-    const hash = await walletClient.writeContract({
-      address: account.entryPoint.address,
-      abi: entryPoint07Abi,
-      functionName: "handleOps",
-      args: [[toPackedUserOperation(userOperation)], relayer.address],
-      gas: 8_000_000n,
-    });
-    return await publicClient.waitForTransactionReceipt({ hash });
-  };
+  await chain.fundAccount(account.address);
   return {
+    ...chain,
     account,
     owner,
     reconstruction: {
@@ -153,23 +93,6 @@ export const makeAnvilFixture = async (
         validatorType: "webauthn_p256",
         account: createPublicKeyWebAuthnAccount(owner.publicKey),
       },
-    },
-    publicClient,
-    submit,
-    deployContract: async (bytecode) => {
-      const hash = await walletClient.deployContract({ abi: [], bytecode });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (
-        receipt.status !== "success" ||
-        receipt.contractAddress === null ||
-        receipt.contractAddress === undefined
-      )
-        throw new Error("Test contract deployment failed");
-      return receipt.contractAddress;
-    },
-    advanceTime: async (seconds) => {
-      await testClient.increaseTime({ seconds });
-      await testClient.mine({ blocks: 1 });
     },
   };
 };

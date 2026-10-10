@@ -55,6 +55,24 @@ export const toWalletResponse = (input: WalletView): WalletResponse => {
     };
   }
 
+  if (input.wallet.data.accountMode === "factory") {
+    return {
+      ...common,
+      implementation: "alchemy-modular-v2",
+      data: {
+        version: input.wallet.data.version,
+        modularAccountVersion: input.wallet.data.modularAccountVersion,
+        validatorType: input.wallet.data.validatorType,
+        entryPointVersion: input.wallet.data.entryPointVersion,
+        accountMode: input.wallet.data.accountMode,
+        factoryVersion: input.wallet.data.factoryVersion,
+        implementationVersion: input.wallet.data.implementationVersion,
+        ownerAddress: input.wallet.data.ownerAddress,
+        salt: input.wallet.data.salt,
+      },
+    };
+  }
+
   return {
     ...common,
     implementation: "alchemy-modular-v2",

@@ -61,8 +61,8 @@ Managed construction is an internal capability; the server provider is disabled.
 The phase-2 contract additionally accepts `{type: "namera-managed", provider:
 "1claw"}` without a protection-level claim. It remains rejected by both the HTTP
 gate and the internal creation workflow before billing or provider calls. The
-managed account loader also rejects 1Claw until the provider and EVM integration
-are implemented. Phase 3 adds encrypted credential persistence and a tenant-scoped
+managed account loader also rejects 1Claw until Phase 6 wires application provisioning
+and signer loading. Phase 3 adds encrypted credential persistence and a tenant-scoped
 signer reference without changing wallet rows. No new account namespace or runtime
 provider is enabled.
 
@@ -123,6 +123,11 @@ credential ID, agent ID, key/version locator or encrypted payload and rejects
 non-Ethereum 1Claw owners. Existing passkey and local/GCP response shapes remain
 unchanged. Protocol validation, managed-route rejection and local-provider
 fallback regressions cover this preparation; full provisioning is not implemented.
+
+Phase 5 adds an explicit factory ECDSA response variant with owner address, salt,
+factory and implementation versions. Its mapper preserves reconstruction metadata
+without exposing provider credentials or changing passkey/7702 responses. The EVM
+adapter and local-fork tests are implemented; public managed creation remains gated.
 
 Routes are `POST /wallets`, `GET /wallets`, `GET /wallets/:walletId`,
 `GET /wallets/:walletId/portfolio`, and `POST /wallets/:walletId/update`. The

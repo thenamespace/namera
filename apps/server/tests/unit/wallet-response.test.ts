@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 
+import { WalletResponse } from "@namera-ai/protocol/dto";
 import { SigningKey, Wallet } from "@namera-ai/protocol/model";
 import { describe, expect, it } from "vitest";
 
@@ -48,6 +49,38 @@ const signingKey = {
 };
 
 describe("1Claw wallet response mapping", () => {
+  it("serializes factory metadata without exposing provider credentials", () => {
+    const factoryWallet = Schema.decodeUnknownSync(Wallet)({
+      ...Schema.encodeSync(Wallet)(wallet),
+      data: {
+        ...wallet.data,
+        accountMode: "factory",
+        factoryVersion: "2.0.0",
+        implementationVersion: "v1.0.0",
+        ownerAddress: `0x${"22".repeat(20)}`,
+        salt: "12345678901234567890",
+      },
+    });
+    const response = toWalletResponse({
+      wallet: factoryWallet,
+      signingKey: Schema.decodeUnknownSync(SigningKey)(signingKey),
+    });
+    const encoded = Schema.encodeSync(WalletResponse)(response);
+    expect(encoded.data).toMatchObject({
+      accountMode: "factory",
+      factoryVersion: "2.0.0",
+      implementationVersion: "v1.0.0",
+      ownerAddress: `0x${"22".repeat(20)}`,
+      salt: "12345678901234567890",
+    });
+    expect(encoded.data).not.toHaveProperty("delegationVersion");
+    expect(Schema.decodeUnknownSync(WalletResponse)(encoded)).toEqual(response);
+    const serialized = JSON.stringify(encoded);
+    expect(serialized).not.toContain(signingKey.credentialId);
+    expect(serialized).not.toContain(signingKey.data.agentId);
+    expect(serialized).not.toContain(signingKey.data.providerKeyId);
+  });
+
   it("maps safe ownership without internal signer or credential references", () => {
     const response = toWalletResponse({
       wallet,

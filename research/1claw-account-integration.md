@@ -1,7 +1,7 @@
 # 1Claw managed account integration plan
 
-Status: phases 2, 3, 3A, 4A and 4B provider implementation completed; phase 2A connection/authority contracts
-aligned with empty organization bootstrap, with the factory-schema gate still open;
+Status: phases 2, 2A, 3, 3A, 4A, 4B and 5 adapter implementation completed;
+factory ECDSA compatibility verified on a local Sepolia fork;
 runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
@@ -31,10 +31,9 @@ unless explicitly selected during phase 1.
 - Keep UserOperation submission and receipt reconciliation in Namera.
 - Target a normal factory-deployed ERC-4337 smart account with the 1Claw
   Ethereum wallet as its ECDSA owner. Do not use EIP-7702 for this integration.
-- Prefer the existing Alchemy Modular Account V2 family, subject to verifying its
-  factory-based ECDSA owner and session-module compatibility. If unsupported,
-  stop for an explicit implementation decision; do not silently switch to Safe,
-  another implementation, or 7702.
+- Use Alchemy Modular Account V2's factory-deployed SemiModularAccountBytecode
+  with an ECDSA owner. Phase 5 verifies its factory and session compatibility on
+  a local Sepolia fork. Do not silently switch implementation or use 7702.
 - Do not migrate or rotate existing passkey account owners.
 
 ### Package decision
@@ -93,9 +92,9 @@ session permissions belong to the smart account, not the owner EOA. Do not set
 the account address to the provider wallet address or fund that EOA as an account
 setup step. The contract can remain counterfactual until its first UserOperation.
 
-Namera's existing internal secp256k1 path is 7702-only. This plan therefore
-requires a new factory-based account variant, not a change of label on existing
-records. Preserve existing 7702 and passkey reconstruction behavior. Provider
+Phase 5 adds a separate factory-based secp256k1 variant alongside the existing
+internal 7702 path, without relabeling existing records. It preserves existing
+7702 and passkey reconstruction behavior. Provider
 API delegation (connection permissions) remains required and is unrelated to
 EIP-7702 onchain delegation.
 
@@ -110,12 +109,12 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 
 - [ ] Phase 1: provider and account compatibility
 - [x] Phase 2: protocol contracts
-- [ ] Phase 2A: organization connection and customer-authority contracts
+- [x] Phase 2A: organization connection and customer-authority contracts (factory schema completed in Phase 5)
 - [x] Phase 3: persistence and recovery model
-- [x] Phase 3A: organization connection/customer authority persistence (factory data remains gated)
+- [x] Phase 3A: organization connection/customer authority persistence
 - [x] Phase 4A: provider package split and WalletKeys retirement
 - [x] Phase 4B: provider-specific 1Claw service implementation (package only)
-- [ ] Phase 5: EVM managed-owner integration
+- [x] Phase 5: EVM managed-owner integration (adapter and local-fork contracts)
 - [ ] Phase 6: account provisioning workflow
 - [ ] Phase 7: managed-owner session authorization
 - [ ] Phase 8: API and runtime exposure
@@ -459,11 +458,11 @@ unchanged. No additional table is required: reuse phase 3A provider
 connections, customer/agent credentials and signer linkage. Verify readiness
 transitions do not require a bootstrap-created signer.
 
-Phase 2A remains partially complete: factory reconstruction metadata is gated on
-phase 1 factory evidence, and vendor claim-response/status decoding will live in
-the phase 4B provider package rather than protocol. No arbitrary factory fields or
-shared provider service were introduced. Expiry-clock checks, token verification,
-revocation and transactional ownership checks remain runtime responsibilities.
+Phase 2A contract follow-up is complete: phase 4B owns vendor claim/status decoding,
+and phase 5 adds the verified factory reconstruction schema. No arbitrary factory
+addresses or shared provider service were introduced. Credential renewal,
+revocation orchestration and transactional ownership checks remain application
+runtime responsibilities.
 
 Verification: 66 protocol tests (including 26 new connection/provisioning cases),
 7 existing credential persistence tests, and `pnpm check` (74 tasks) passed.
@@ -538,10 +537,10 @@ must encrypt/decrypt using `cryptoPurpose.providerCredential`, validate the enve
 and emit transactional audits. Early agent-credential persistence is available, but
 the provider workflow that receives and encrypts it is not wired yet.
 
-**Deferred gate:** factory-based ECDSA reconstruction checks remain blocked on the
-phase 1 compatibility evidence, just as in phase 2A. This persistence change does
-not invent a factory schema or alter passkey/7702 data. Implement those checks with
-the verified factory adapter, before enabling account creation.
+**Factory follow-up completed in Phase 5:** the protocol wallet-data union now
+includes version-pinned factory ECDSA data and reconstruction validates it. The
+existing wallet JSON column and repository schema decoding accept the new variant;
+no table, migration or rewrite of passkey/7702 rows is needed.
 
 - Add `core.provider_connections` with a local
   ID, organization ID, provider, app ID, subject, email, provider customer ID,
@@ -554,9 +553,9 @@ the verified factory adapter, before enabling account creation.
   encrypted payloads using `cryptoPurpose.providerCredential` and
   `CRYPTO_ENCRYPTION_KEY`. Store a validated non-secret expiry alongside the
   encrypted envelope for renewal scheduling; compare both when decrypting.
-- Extend wallet JSON checks and persistence decoding for factory-based ECDSA
-  reconstruction data. Test round trips and migration compatibility for existing
-  passkey and 7702 rows. Do not migrate their owners, modes or addresses.
+- Extend wallet schema decoding for factory-based ECDSA reconstruction data.
+  Phase 5 covers protocol serialization without altering existing passkey/7702
+  data or database structure. Account persistence workflow coverage follows in Phase 6.
 - Add transaction-aware lookup by organization/app, insert/reconcile mapping,
   readiness transition, and compare-and-swap customer credential replacement.
   Add a cross-instance serialization strategy for initial setup and renewal.
@@ -573,7 +572,7 @@ the verified factory adapter, before enabling account creation.
 unique mappings, credential type/metadata binding checks, renewal contention,
 idempotent local reconciliation and transaction rollback. Audit emission and
 authenticated encrypted-envelope checks remain in the later application workflow.
-No runtime API enabled; factory reconstruction remains gated as noted above.
+No runtime API enabled; factory adapter verification is completed in Phase 5 below.
 
 ### Phase 4A: provider package split and WalletKeys retirement (completed)
 
@@ -676,7 +675,7 @@ probes delegated reads; the subsequent create proves write permission.
 
 Remaining integration work: public discovery/JWKS hosting and rotation, server
 layer composition, encrypted credential persistence/renewal orchestration,
-factory account verification, application authorization/billing/audits, and
+production-network account verification, application authorization/billing/audits, and
 production OIDC empty-bootstrap checks. This phase adds no tables, public routes,
 audit mutations, broadcast capability, or public managed-custody enablement.
 
@@ -684,7 +683,7 @@ Verification: 16 provider integration tests and 67 protocol tests passed, as did
 `pnpm check` (82 lint/typecheck/test-typecheck/build tasks). Provider tests use
 the real SDK with substituted transport; they are not a live enterprise rollout.
 
-### Phase 5: EVM managed-owner integration
+### Phase 5: EVM managed-owner integration (completed)
 
 Owner: `packages/evm`.
 
@@ -708,6 +707,39 @@ Owner: `packages/evm`.
 deployment, owner validation, reconstruction, and rejection of substituted
 factory/initialization/owner/account/network data. Existing P-256 and internal
 7702 behavior remains unchanged.
+
+Implemented `accountMode: "factory"` alongside existing variants. Stored metadata
+includes `ownerAddress`, uint256 `salt`, `factoryVersion: "2.0.0"`,
+`implementationVersion: "v1.0.0"`, EntryPoint `0.7`, and the existing MA family
+version/address. The pinned factory encodes `createSemiModularAccount(owner, salt)`
+and the implementation embeds the EOA owner. Reconstruction checks version,
+public-key/EOA identity and the derived smart-account address. No database table,
+migration, environment variable or dependency was added.
+
+The public response union and server mapper can project the factory metadata safely,
+with a serialization/privacy regression test. This additive response support does
+not enable the managed creation route or application provisioning.
+
+`createSecp256k1OwnerAccount` accepts DER or explicit recoverable 65-byte signatures,
+validates the exact digest/key, normalizes low-S/parity and exposes no authorization
+signing. The legacy adapter retains 7702 authorization. Prepared factory-owner
+operations additionally reject substituted init data, 7702 authorization and client
+network mismatches before signing. Deployment that changes after preparation
+requires re-preparation. EVM uses no provider import or credential persistence.
+
+Contract evidence: the local Sepolia Anvil test compares the predicted address with
+the deployed factory, deploys through the first UserOperation, reconstructs for a
+second operation without init data, validates ERC-1271/ERC-6492 message and typed-data
+signatures, and installs/executes/removes a restricted session. Signing uses an
+ephemeral local key with the same recoverable callback boundary as 1Claw, not a live
+provider credential. Unit/schema tests cover corrupted metadata, wrong signer/digest,
+high-S, recovery formats and factory/network substitutions. Existing passkey and
+legacy 7702 coverage is preserved.
+
+The existing eight-network registry is the adapter boundary; only Sepolia was
+contract-tested here. Other production networks, hosted bundling/BSO, live 1Claw
+composition, application audits/billing and the controlled rollout remain later
+gates. Public managed custody and dashboard behavior are unchanged.
 
 ### Phase 6: account provisioning workflow
 

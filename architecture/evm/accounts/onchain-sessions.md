@@ -108,6 +108,11 @@ allowance exhaustion, start/expiry enforcement and
 revocation. The adapter compilation path also rejects mismatched reconstructed
 addresses and unsafe account-target grants. It uses a public-key-only owner.
 This lane does not verify hosted bundling or BSO sponsorship.
+The factory ECDSA suite additionally installs a restricted local session on a
+normal SemiModularAccountBytecode account, executes an allowed transfer, rejects
+another target and verifies removal. Compilation uses public-only owner material;
+owner operations use an application-style recoverable digest-signing callback.
+Managed-owner application approval and managed-session custody remain separate work.
 The token tests deploy the checked-in test token and assert both UserOperation
 outcomes and token balances/allowances. They exercise Namera's compilation through
 the deployed permission modules, not a substitute policy evaluator.

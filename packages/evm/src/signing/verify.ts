@@ -10,7 +10,7 @@ import type { ExecutionClients } from "../clients/execution.js";
 import type { EvmSignatureService } from "./types.js";
 
 export const makeVerifyEvmSignature = (
-  getClients: (chain: ChainData) => ExecutionClients,
+  getClients: (chain: ChainData) => Pick<ExecutionClients, "publicClient">,
 ): EvmSignatureService["verify"] =>
   Effect.fn("evm.signature.verify")(function* (input) {
     const chain = getChainDataByCaip2(input.chainId);

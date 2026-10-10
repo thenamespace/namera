@@ -36,6 +36,11 @@ import {
 import { getChainDataByChainId } from "../chains/helpers.js";
 import { createPublicClient } from "../clients/helpers.js";
 import type { EvmConfigValues } from "../config.js";
+import {
+  ecdsaFactoryDeployment,
+  makeFactoryEcdsaAccount,
+  type MakeFactoryEcdsaAccountProps,
+} from "./factory-ecdsa.js";
 import { encodeWebAuthnSignature, webAuthnSignatureParameters } from "./passkey-signature.js";
 import type { AlchemyModularV2CreationOwner, AlchemyModularV2Owner } from "./types.js";
 import { createPublicKeyWebAuthnAccount } from "./webauthn.js";
@@ -168,6 +173,7 @@ type Make7702AlchemyModularV2AccountProps = {
 
 type MakeAlchemyModularV2AccountProps =
   | MakeWebAuthnAlchemyModularV2AccountProps
+  | MakeFactoryEcdsaAccountProps
   | Make7702AlchemyModularV2AccountProps;
 
 export type CreateAlchemyModularV2AccountProps =
@@ -175,7 +181,8 @@ export type CreateAlchemyModularV2AccountProps =
       readonly chainId: number;
       readonly owner: Extract<AlchemyModularV2CreationOwner, { validatorType: "webauthn_p256" }>;
     })
-  | (Make7702AlchemyModularV2AccountProps & { readonly chainId: number });
+  | (Make7702AlchemyModularV2AccountProps & { readonly chainId: number })
+  | (MakeFactoryEcdsaAccountProps & { readonly chainId: number });
 
 const makeWebAuthnAlchemyModularV2Account = async (
   props: MakeWebAuthnAlchemyModularV2AccountProps,
@@ -242,6 +249,9 @@ export const makeAlchemyModularV2Account = async (
   props: MakeAlchemyModularV2AccountProps,
   publicClient: PublicClient,
 ): Promise<SmartAccount> => {
+  if ("accountMode" in props) {
+    return makeFactoryEcdsaAccount(props, publicClient);
+  }
   if ("salt" in props) {
     return makeWebAuthnAlchemyModularV2Account(props, publicClient);
   }
@@ -272,7 +282,7 @@ export const createAlchemyModularV2Account = Effect.fn("evm.createAlchemyModular
     const account = yield* Effect.tryPromise({
       try: () =>
         makeAlchemyModularV2Account(
-          "salt" in props
+          "entityId" in props
             ? {
                 ...props,
                 owner: {
@@ -287,7 +297,23 @@ export const createAlchemyModularV2Account = Effect.fn("evm.createAlchemyModular
         new EvmAccountCreationError({ implementation: "alchemy-modular-v2", cause }),
     });
 
-    if ("salt" in props) {
+    if ("accountMode" in props) {
+      return {
+        version: 1,
+        implementation: "alchemy-modular-v2",
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: props.entryPointVersion,
+        validatorType: "ecdsa_secp256k1",
+        accountMode: "factory",
+        factoryVersion: ecdsaFactoryDeployment.factoryVersion,
+        implementationVersion: ecdsaFactoryDeployment.implementationVersion,
+        salt: props.salt,
+        ownerAddress: EthereumAddress.make(props.owner.account.address),
+        address: EthereumAddress.make(account.address),
+      } satisfies AlchemyModularV2WalletData;
+    }
+
+    if ("entityId" in props) {
       return {
         version: 1,
         implementation: "alchemy-modular-v2",
