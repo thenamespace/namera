@@ -12,7 +12,7 @@ export type SiteLink = string | null;
 
 export const SITE_LINKS = {
   /** The docs live in this app, so this one is real. */
-  docs: "/docs/dashboard",
+  docs: "/docs/sdk",
 
   /**
    * The dashboard. Taken from `apps/server/.env.prod`, where

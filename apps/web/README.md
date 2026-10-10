@@ -2,8 +2,8 @@
 
 Namera's public website, built with TanStack Start and React. `/` is the
 marketing landing page, `/pricing` the plan comparison, and `/blog` the MDX
-publication. `/docs` permanently redirects to `/docs/dashboard`. The Fumadocs preview has SDK,
-CLI, MCP, and Dashboard sections, with Dashboard first in the section picker.
+publication. `/docs` and the retired `/docs/dashboard` permanently redirect to
+`/docs/sdk`. The Fumadocs preview has SDK, CLI, and MCP sections, with SDK first.
 
 ## Documentation preview
 
@@ -17,8 +17,7 @@ The workspace aliases `fumadocs-ui` to `@fumadocs/base-ui`. Its core and UI
 versions are kept aligned.
 
 `src/styles/docs.css` owns the docs-only theme: Namera semantic tokens supply
-dark surfaces and neutral headings and links. Dashboard uses brand indigo,
-SDK uses blue, CLI uses mint,
+dark surfaces and neutral headings and links. SDK uses brand indigo, CLI uses mint,
 and MCP uses amber accents for section icons, active navigation, and focus.
 Route-scoped body tokens also reach portaled menus and search. Inter prose and
 Geist Mono code retain Fumadocs' native spacing and layout widths. Docs use
@@ -27,9 +26,9 @@ table-of-contents highlight. The top-right GitHub action uses `SITE_LINKS.github
 The scoped overrides do not change
 marketing or blog colors.
 
-The `dashboard/`, `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
+The `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
 `meta.json`, producing section-specific sidebars. A sidebar picker switches
-between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
+between SDK, CLI, and MCP, with an icon and description for each section.
 Each section has a starter page while the documentation is being refined.
 
 Docs have generated 1200×630 PNG share cards at `/og/docs/<page>/image.png`
@@ -46,7 +45,7 @@ Node deployment. Verify the generated images in the target deployment as well as
 Search appears below the section picker and opens with Cmd/Ctrl+K. The
 `/api/docs/search` endpoint uses Fumadocs' built-in search index over the docs
 collection's structured content. Theme switching is disabled for this preview.
-The search dialog filters results by All, Dashboard, SDK, CLI, or MCP. Page headers use
+The search dialog filters results by All, SDK, CLI, or MCP. Page headers use
 Fumadocs' Copy Markdown and Open controls. Appending `.md` to a docs URL serves bundled
 processed Markdown, including the page title and description, without runtime
 filesystem access. External AI options need the docs to be publicly deployed

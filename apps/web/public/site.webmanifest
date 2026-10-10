@@ -41,7 +41,7 @@
     {
       "name": "Documentation",
       "short_name": "Docs",
-      "url": "/docs/dashboard",
+      "url": "/docs/sdk",
       "description": "Namera developer documentation"
     },
     { "name": "Blog", "url": "/blog", "description": "Namera updates and engineering" }

@@ -23,8 +23,7 @@
 /* Portaled menus and search inherit the active docs theme from the body. */
 body:has(.namera-docs) {
   --radius: 0.55rem;
-  --docs-sdk-accent: var(--chart-2);
-  --docs-dashboard-accent: color-mix(in oklab, var(--accent) 65%, var(--foreground));
+  --docs-sdk-accent: color-mix(in oklab, var(--accent) 65%, var(--foreground));
   --docs-cli-accent: var(--chart-3);
   --docs-mcp-accent: var(--chart-4);
   --docs-section-accent: var(--docs-sdk-accent);
@@ -37,10 +36,6 @@ body:has(.namera-docs) {
 
 body:has(.namera-docs[data-docs-section="cli"]) {
   --docs-section-accent: var(--docs-cli-accent);
-}
-
-body:has(.namera-docs[data-docs-section="dashboard"]) {
-  --docs-section-accent: var(--docs-dashboard-accent);
 }
 
 body:has(.namera-docs[data-docs-section="mcp"]) {
@@ -78,10 +73,6 @@ body:has(.namera-docs) :is(.docs-section-icon, span:has(> .docs-section-icon)) {
 
 .docs-section-icon--sdk {
   color: var(--docs-sdk-accent);
-}
-
-.docs-section-icon--dashboard {
-  color: var(--docs-dashboard-accent);
 }
 
 .docs-section-icon--cli {

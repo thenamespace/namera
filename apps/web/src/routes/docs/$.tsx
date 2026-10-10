@@ -5,7 +5,6 @@ import {
   BotIcon,
   CommandLineIcon,
   BrandGithubIcon,
-  DashboardSquare01Icon,
   Icon,
   NameraIcon,
   PencilEdit02Icon,
@@ -94,8 +93,9 @@ export const Route = createFileRoute("/docs/$")({
   beforeLoad: ({ params }) => {
     // TanStack Router names its catch-all route parameter `_splat`.
     // eslint-disable-next-line no-underscore-dangle
-    if (!params._splat?.split("/").some(Boolean)) {
-      throw redirect({ to: "/docs/$", params: { _splat: "dashboard" }, statusCode: 308 });
+    const path = params._splat?.split("/").filter(Boolean).join("/");
+    if (!path || path === "dashboard") {
+      throw redirect({ to: "/docs/$", params: { _splat: "sdk" }, statusCode: 308 });
     }
   },
   loader: async ({ params }) => {
@@ -113,7 +113,7 @@ function DocumentationPage() {
   const page = useFumadocsLoader(Route.useLoaderData());
   return (
     <RootProvider search={{ SearchDialog: DocsSearchDialog }} theme={{ enabled: false }}>
-      <div className="namera-docs" data-docs-section={page.url.split("/")[2] || "dashboard"}>
+      <div className="namera-docs" data-docs-section={page.url.split("/")[2] || "sdk"}>
         <DocsLayout
           slots={{ actions: DocsHeaderActions }}
           tree={page.tree}
@@ -128,18 +128,6 @@ function DocumentationPage() {
           }}
           themeSwitch={{ enabled: false }}
           tabs={[
-            {
-              title: "Dashboard",
-              description: "Manage wallets and permissions",
-              url: "/docs/dashboard",
-              icon: (
-                <Icon
-                  icon={DashboardSquare01Icon}
-                  className="docs-section-icon docs-section-icon--dashboard"
-                />
-              ),
-              ...(page.url === "/docs" ? { urls: new Set(["/docs", "/docs/dashboard"]) } : {}),
-            },
             {
               title: "SDK",
               description: "Wallet APIs for TypeScript",

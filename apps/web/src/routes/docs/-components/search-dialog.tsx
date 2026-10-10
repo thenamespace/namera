@@ -20,7 +20,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "fumadocs-ui/components/
 
 const filters = [
   { name: "All", value: undefined, description: "Search all documentation" },
-  { name: "Dashboard", value: "dashboard", description: "Dashboard documentation" },
   { name: "SDK", value: "sdk", description: "TypeScript SDK documentation" },
   { name: "CLI", value: "cli", description: "Command-line documentation" },
   { name: "MCP", value: "mcp", description: "Agent connection documentation" },

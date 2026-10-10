@@ -1,16 +1,8 @@
-import {
-  BotIcon,
-  CommandLineIcon,
-  DashboardSquare01Icon,
-  Icon,
-  NameraIcon,
-  SourceCodeIcon,
-} from "@namera-ai/ui/icons";
+import { BotIcon, CommandLineIcon, Icon, NameraIcon, SourceCodeIcon } from "@namera-ai/ui/icons";
 
 const sections = {
-  docs: { name: "Documentation", color: "#a3a9ef", icon: DashboardSquare01Icon },
-  dashboard: { name: "Dashboard", color: "#a3a9ef", icon: DashboardSquare01Icon },
-  sdk: { name: "SDK", color: "#85bbdf", icon: SourceCodeIcon },
+  docs: { name: "Documentation", color: "#a3a9ef", icon: SourceCodeIcon },
+  sdk: { name: "SDK", color: "#a3a9ef", icon: SourceCodeIcon },
   cli: { name: "CLI", color: "#83c9b3", icon: CommandLineIcon },
   mcp: { name: "MCP", color: "#ddbf79", icon: BotIcon },
 } as const;

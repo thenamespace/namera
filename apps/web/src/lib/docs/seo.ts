@@ -8,7 +8,6 @@ type DocsMetadata = {
 };
 
 const sections: Record<string, string> = {
-  dashboard: "Dashboard",
   sdk: "SDK",
   cli: "CLI",
   mcp: "MCP",
@@ -58,9 +57,9 @@ export function docsHead(page: DocsMetadata) {
             "@type": "ListItem",
             position: 2,
             name: "Documentation",
-            item: `${SITE.origin}/docs/dashboard`,
+            item: `${SITE.origin}/docs/sdk`,
           },
-          ...(page.url !== "/docs/dashboard"
+          ...(page.url !== "/docs/sdk"
             ? [
                 {
                   "@type": "ListItem",

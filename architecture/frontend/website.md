@@ -28,16 +28,16 @@ Article reads do not mutate application state. The landing-page waitlist form
 calls the public waitlist API; admission, deduplication and confirmation email
 are owned by the [waitlist workflow](../auth/waitlist.md). `/docs/$` renders the
 repository-owned Fumadocs content. `/docs` redirects permanently (308) to
-`/docs/dashboard`, including client-side navigation; `/docs.md` redirects to
-the dashboard Markdown export. There is no root introduction page. Dashboard,
-SDK, CLI, and MCP root folders in `content/docs` each contain a starter page.
+`/docs/sdk`, including client-side navigation; `/docs.md` redirects to
+the SDK Markdown export. Retired Dashboard URLs also redirect to SDK. There is
+no root introduction page. SDK, CLI, and MCP folders each contain a starter page.
 The source-derived sitemap, search, and LLM index list only those actual pages.
 The Spacious layout uses Fumadocs' native rounded inset panel and highlighted table of contents,
-a Dashboard-first section picker, a section-specific responsive sidebar,
+an SDK-first section picker, a section-specific responsive sidebar,
 and heading-derived table of contents. A server function resolves the page and
 serializes its tree; the route preloads only the selected MDX module. Unknown
 paths return not found. `/api/docs/search` serves Fumadocs search results from
-the repository-owned collection's structured content, tagged by Dashboard, SDK, CLI, or MCP
+the repository-owned collection's structured content, tagged by SDK, CLI, or MCP
 for the search dialog's section filter. Search sits below the section picker.
 Page header actions copy or open processed Markdown served by
 the page's `.md` URL; content is bundled at build time rather than read from
