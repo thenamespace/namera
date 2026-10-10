@@ -31,6 +31,7 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   background delivery, and the Resend provider adapter.
 - [`packages/wallet-providers/gcp`](packages/wallet-providers/gcp/README.md) — Google Cloud KMS lifecycle and signing through `GcpService`.
 - [`packages/wallet-providers/local`](packages/wallet-providers/local/README.md) — development filesystem keys through `LocalService`.
+- [`packages/wallet-providers/oneclaw`](packages/wallet-providers/oneclaw/README.md) — SDK-backed Platform/customer/agent operations through `OneClawService`, plus org OIDC issuance; not yet wired into public custody.
 - [`packages/ens`](packages/ens/README.md) — Namespace-backed offchain ENS
   subname and record management.
 - [`packages/passkeys`](packages/passkeys/README.md) — provider-neutral

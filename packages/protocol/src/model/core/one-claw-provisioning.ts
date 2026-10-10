@@ -43,33 +43,29 @@ const OwnerProvisioningFields = {
   connection: ProviderConnection,
 };
 
-export const OneClawOwnerProvisioningRequest = Schema.Union([
-  Schema.Struct({
-    ...OwnerProvisioningFields,
-    mode: Schema.Literal("bootstrap"),
-    templateId: Schema.NonEmptyString,
-  }).check(
-    Schema.makeFilter(({ connection }) =>
-      connection.status === "pending" &&
-      connection.externalConnectionId !== null &&
-      connection.data.customerId !== null &&
-      connection.data.bootstrapCompletedAt === null
-        ? undefined
-        : "Bootstrap requires a reconciled, unbootstrapped pending connection",
-    ),
+export const OneClawOrganizationSetupRequest = Schema.Struct({
+  connection: ProviderConnection,
+}).check(
+  Schema.makeFilter(({ connection }) =>
+    connection.status === "pending" &&
+    connection.externalConnectionId !== null &&
+    connection.data.customerId !== null &&
+    connection.data.bootstrapCompletedAt === null
+      ? undefined
+      : "Bootstrap requires a reconciled, unbootstrapped pending connection",
   ),
-  Schema.Struct({
-    ...OwnerProvisioningFields,
-    mode: Schema.Literal("incremental"),
-    templateId: Schema.optionalKey(Schema.Never),
-  }).check(
-    Schema.makeFilter(({ connection }) =>
-      connection.status === "ready"
-        ? undefined
-        : "Incremental provisioning requires a ready connection",
-    ),
+);
+
+// Organization bootstrap creates no signer. Every owner uses this same request.
+export const OneClawOwnerProvisioningRequest = Schema.Struct({
+  ...OwnerProvisioningFields,
+  mode: Schema.optionalKey(Schema.Never),
+  templateId: Schema.optionalKey(Schema.Never),
+}).check(
+  Schema.makeFilter(({ connection }) =>
+    connection.status === "ready" ? undefined : "Agent provisioning requires a ready connection",
   ),
-]);
+);
 
 // Returned immediately after agent creation, before further key provisioning,
 // so application can protect the one-time credential without waiting for a wallet.
@@ -86,5 +82,6 @@ export const OneClawProvisionedOwnerAgent = Schema.Struct({
 );
 
 export type OneClawCustomerAuthority = typeof OneClawCustomerAuthority.Type;
+export type OneClawOrganizationSetupRequest = typeof OneClawOrganizationSetupRequest.Type;
 export type OneClawOwnerProvisioningRequest = typeof OneClawOwnerProvisioningRequest.Type;
 export type OneClawProvisionedOwnerAgent = typeof OneClawProvisionedOwnerAgent.Type;

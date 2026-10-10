@@ -7,6 +7,7 @@ import { ProviderConnectionError } from "../../../src/errors/index.js";
 import {
   CredentialInsert,
   OneClawCustomerAuthority,
+  OneClawOrganizationSetupRequest,
   OneClawOwnerProvisioningRequest,
   OneClawProvisionedOwnerAgent,
   ProviderConnection,
@@ -197,12 +198,11 @@ describe("provider connection and customer authority", () => {
 
 describe("1Claw provisioning contracts", () => {
   const request = {
-    mode: "incremental",
     signingKeyId: otherId,
     agentCredentialId: otherId,
     connection,
   };
-  it("separates first bootstrap from incremental account creation", () => {
+  it("requires ready organization setup for every agent and keeps bootstrap signer-free", () => {
     expect(() => Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)(request)).not.toThrow();
     expect(() =>
       Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)({
@@ -219,8 +219,6 @@ describe("1Claw provisioning contracts", () => {
     ).toThrow();
     const first = {
       ...request,
-      mode: "bootstrap",
-      templateId: "template",
       connection: {
         ...connection,
         status: "pending",
@@ -228,11 +226,15 @@ describe("1Claw provisioning contracts", () => {
         data: { ...connection.data, bootstrapCompletedAt: null, delegationEnabledAt: null },
       },
     };
-    expect(() => Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)(first)).not.toThrow();
+    expect(() => Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)(first)).toThrow();
     expect(() =>
-      Schema.decodeUnknownSync(OneClawOwnerProvisioningRequest)({
-        ...first,
-        templateId: undefined,
+      Schema.decodeUnknownSync(OneClawOrganizationSetupRequest)({
+        connection: first.connection,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      Schema.decodeUnknownSync(OneClawOrganizationSetupRequest)({
+        connection,
       }),
     ).toThrow();
   });

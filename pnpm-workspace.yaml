@@ -88,6 +88,7 @@ minimumReleaseAgeExclude:
   - fumadocs-core@16.15.10
   - fumadocs-ui@16.15.10
   - klarity@0.3.0
+  - "@1claw/sdk@0.61.38"
 
 overrides:
   "@namera-ai/cli": link:apps/cli

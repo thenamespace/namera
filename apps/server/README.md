@@ -324,6 +324,10 @@ is a separate step; see the admin architecture for rollout limitations.
 All server environments use both provider-specific disabled layers. Owner passkeys and local
 session keys sign on the client; managed-key operations fail closed. Local and
 KMS provider implementations remain available for explicit package use and tests.
+The env examples also list optional `ONECLAW_*` fields for the SDK-backed
+`@namera-ai/wallet-provider-oneclaw` package. Filling them does not enable managed
+wallets. Its live service and OIDC discovery/JWKS HTTP routes are not composed by
+the server yet; see the [provider README](../../packages/wallet-providers/oneclaw/README.md).
 Set `TELEMETRY_SERVICE_VERSION` to the deployed release tag or Git SHA to identify
 the version producing logs, traces, and metrics. It defaults to `development`
 when omitted, so supply a meaningful value in production.

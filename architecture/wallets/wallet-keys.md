@@ -14,7 +14,7 @@ active managed-custody product flow.
 
 ## Service contract
 
-Each independent service currently exposes `createKey`, `signMessage`,
+The GCP and local services expose `createKey`, `signMessage`,
 `signDigest`, `disableKey`, and `destroyKey` to:
 
 - create key material for a protocol-typed algorithm/protection input;
@@ -60,79 +60,76 @@ provide authentication.
 Each package owns a deterministic test layer supplying stable public keys and signatures
 for server boundary tests. Consumers do not invent separate wallet-key mocks.
 
-### 1Claw contract preparation
+### 1Claw provider (internal, not wired)
 
-Protocol has an explicit `1claw` variant, but there is no provider implementation
-or live layer yet. Local/GCP live creation rejects provider-discriminated requests instead of
-creating substitute material. Application rejects 1Claw before any provider call.
-The server still uses both disabled layers.
+`@namera-ai/wallet-provider-oneclaw` uses SDK `0.61.38` and exposes grouped
+connection, customer, agent, signing-key and digest-signing operations through
+`OneClawService`. `OneClawOidcService` independently issues short-lived RS256 org
+identity tokens and exposes public JWKS. There is no universal provider facade.
+Application still rejects 1Claw before provider work, and server composition
+remains unchanged. See the [package README](../../packages/wallet-providers/oneclaw/README.md)
+for operation signatures, configuration and tests.
 
-The deprecated accounts-first operation contract describes Ethereum/secp256k1 creation,
-32-byte digest signing and disablement only. It does not require or claim HSM
-protection. Message signing and destruction exclude 1Claw; deactivation is not
-destruction. Existing GCP/local contracts and their HSM restriction are unchanged.
-Legacy operation schemas and `WalletKeyError` remain deprecated published protocol
-exports only. They are not a runtime provider interface. New packages own their
-operation schemas and `GcpKeyError`/`LocalKeyError`; shared persisted models and
-locators remain in protocol. The future 1Claw service will own its vendor decoding
-and errors.
+Organization setup validates a dashboard-created active empty template, app ID
+and version, then bootstraps without resources. Claims are redacted and redeemed
+without the Platform credential; the returned customer token is verified through
+authenticated identity lookup before use. Customer operations validate the
+`OneClawCustomerAuthority` connection/credential/payload bindings, configured
+app and expiration. Delegation grants only `agents:read` and `agents:write`.
 
-Creation takes an organization ID and preallocated credential ID. Its result
-contains public material, pinned agent/key/version metadata and a credential
-envelope with a redacted API key for later application-owned encryption. Signing
-and disablement take tenant-scoped credential references, never public API
-credentials. The future provider must validate the requested organization,
-credential, agent, key/version and public identity before signing.
+Every account uses the same delegated Platform agent creation. The internal
+`OneClawOrganizationSetupRequest` is distinct from the ready-connection
+`OneClawOwnerProvisioningRequest`; the latter no longer accepts bootstrap/
+incremental modes. The early credential result remains bound to its preallocated
+credential and organization IDs. Application must encrypt/save this one-time
+agent key before any later provider call. Customer auth creates the Ethereum
+key and updates raw signing. Raw-signing changes are read back, including
+approval/deny outcomes.
 
-The canonical `SigningKey` model correlates metadata chain families with algorithms:
-Ethereum/Bitcoin/Tron use secp256k1 and Solana/XRP/Cardano use Ed25519. This is model
-support only, not non-EVM account or operation support. The legacy standalone
-`WalletKey` model remains local/GCP-only; 1Claw does not get a competing identity.
+Signing receives the decoded agent credential, pinned key ID/version/public
+identity and 32 digest bytes. It explicitly exchanges the credential for a fresh
+token, validates current Ethereum/secp256k1 metadata and the public curve point,
+then verifies the returned signature against the exact digest and expected
+public key. It does not hash again, broadcast, or claim HSM guarantees.
+The result is a verified 65-byte recoverable provider signature; EVM owns
+validator-specific encoding. Key destruction returns `UNSUPPORTED`.
 
-Protocol also defines `Credential`/`CredentialInsert` for the generic
-`core.credentials` table. The first variant is `1claw-agent`, containing versioned
-non-secret agent metadata and encrypted payload. The decrypted envelope binds
-credential ID, organization ID and agent ID to the API key. Encryption will use
-`cryptoPurpose.providerCredential` with existing `CRYPTO_ENCRYPTION_KEY`. Binding
-verification and key rotation are not implemented by these schemas. Phase 3 adds
-the table, ciphertext-only repository and organization-scoped signer foreign key.
-1Claw signers require top-level `credentialId`; existing records migrate to null.
-No encryption/decryption workflow, provisioning-attempt table or provider API call
-is wired. Database checks validate metadata shape and chain/algorithm pairing;
-the future provider must still verify credential type and agent identity.
+`OneClawError` lives in protocol. Central SDK-envelope/exception conversion
+retains only bounded operation/code and optional HTTP status. It never attaches
+provider messages, response bodies, parse errors, URLs, or credentials. Stable
+`wallet-providers.oneclaw.*` spans have no payload attributes; there are no new
+logs or metrics. OIDC issuance is untraced. HTTP instrumentation must not capture
+claim-token paths or auth headers.
 
-Phase 2A adds internal `ProviderConnection` readiness/identity schemas, a
-`1claw-customer` credential variant with required expiration and redacted token,
-and `OneClawCustomerAuthority` binding checks across connection, credential row
-and decrypted payload. Bootstrap and incremental owner requests are distinct;
-the early agent result binds its one-time credential to the request's organization
-and credential ID. `ProviderConnectionError` carries bounded internal failure codes.
-These schemas do not verify token signatures, current-time expiry, provider
-revocation or database ownership by themselves. JSON encoding of decrypted
-envelopes is only for encryption, never public responses or logging.
+The SDK cannot cancel in-flight requests. Effect timeouts bound the caller's
+wait, not remote execution. No calls retry automatically. An ambiguous mutation
+requires reconciliation/manual recovery, not another create. Template version
+checking cannot be atomic with bootstrap; freeze the configured template.
+Delegated read access is probed after enabling scopes; create proves write
+permission. Scope/identity checks do not replace application tenant authorization.
 
-Phase 3A adds customer credential expiry/storage, organization/provider connections,
-nullable legacy signer linkage, tenant-safe foreign keys and transaction-aware
-repositories. A pending local reservation may omit remote/customer IDs until
-reconciled; bootstrap requests require those IDs. Token-owned setup/renewal leases
-and ciphertext compare-and-swap protect local transitions, tested on PostgreSQL.
-See the [table catalog](../database/core-wallets-operations.md) for invariants and
-recovery limits. No customer-token renewal HTTP, OIDC endpoint or public capability
-is enabled here. The
-factory-based ECDSA schema remains gated on factory compatibility evidence; current
-passkey and 7702 shapes are unchanged. Vendor claim-response decoding belongs in
-the future 1Claw package. The phase 4A provider-specific split is complete; 1Claw runtime work remains
-phase 4B.
+Protocol persists `1claw` signer locators and separate `1claw-agent` and
+`1claw-customer` credentials. The customer variant has required expiration;
+decrypted payloads are redacted and bound to organization/connection identity.
+Phase 3A already provides ciphertext-only repositories, org-scoped foreign keys,
+connection setup/renewal leases and ciphertext compare-and-swap. See the
+[table catalog](../database/core-wallets-operations.md). This provider phase adds
+no tables or migrations. Encryption/renewal workflows and transactional audits
+remain application integration work using `cryptoPurpose.providerCredential`
+and the existing encryption key.
 
-Next steps are provider implementation and managed EVM
-workflows. Partial remote provisioning will use manual recovery in this iteration;
-no automatic retry of ambiguous creation or automatic key destruction is allowed.
+Managed factory-based ERC-4337 owner reconstruction, public OIDC discovery/JWKS
+hosting and rotation, server composition, and live OIDC empty-bootstrap
+verification remain open. Current passkey/local signing and internal 7702
+behavior are unchanged. Persisted non-Ethereum chain variants are schema
+preparation, not adapter support. Deprecated WalletKeys operation schemas remain
+published compatibility exports, not a runtime interface.
 
 ## Signing semantics
 
-ECDSA message signing hashes with SHA-256; Ed25519 signs the message directly.
+For GCP/local, ECDSA message signing hashes with SHA-256; Ed25519 signs the message directly.
 `signDigest` accepts an already-computed digest for P-256 and secp256k1 so EVM can
-provide Keccak-256 without double hashing. ECDSA signatures are DER encoded and
+provide Keccak-256 without double hashing. Their ECDSA signatures are DER encoded and
 converted by the EVM adapter where required; Ed25519 signatures are raw 64-byte
 values.
 

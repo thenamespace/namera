@@ -14,7 +14,14 @@ Rules:
 
 ## `packages/wallet-providers/*`
 
-Independent GCP and local packages expose `GcpService` and `LocalService`. Each owns its operation schemas, errors, configuration and test layer. Application calls the explicit provider and supplies signing callbacks to EVM; no shared provider interface or registry is used. Provider clients/private keys stay inside the owning package. A future OneClawService can expose provider-specific capabilities without conforming to a universal lifecycle.
+Independent GCP and local packages expose `GcpService` and `LocalService`. Each owns its operation schemas, errors, configuration and test layer. Application calls the explicit provider and supplies signing callbacks to EVM; no shared provider interface or registry is used. Provider clients/private keys stay inside the owning package.
+
+`@namera-ai/wallet-provider-oneclaw` now exposes `OneClawService` for empty org
+bootstrap, claims, delegation, agents, Ethereum keys and digest signing, with
+`OneClawOidcService` for org JWT issuance/public JWKS. It uses the 1Claw SDK;
+bounded `OneClawError` contracts live in protocol. It has no database/application
+dependencies and is not yet composed by server or application. See
+[wallet-key providers](../wallets/wallet-keys.md) for authentication and safety boundaries.
 
 The server installs both provider-specific disabled layers in every environment. Public
 wallets use browser passkeys, and routine session execution/signing uses local

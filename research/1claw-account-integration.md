@@ -1,7 +1,7 @@
 # 1Claw managed account integration plan
 
-Status: phases 2, 3, 3A and 4A implemented; phase 2A connection/authority contracts
-implemented with factory-schema gate open and empty-bootstrap contract alignment pending;
+Status: phases 2, 3, 3A, 4A and 4B provider implementation completed; phase 2A connection/authority contracts
+aligned with empty organization bootstrap, with the factory-schema gate still open;
 runtime integration not enabled. Updated: 10 October 2026.
 
 Implement 1Claw-managed account owners first. Managed session-key custody is a
@@ -73,7 +73,7 @@ universal provider interface. Share small helpers only where actual reuse warran
 it, preserving existing crypto/utils boundaries.
 
 The GCP/local split is implemented in phase 4A, including repository dependency
-rules and architecture documents. The `oneclaw/` package remains phase 4B work;
+rules and architecture documents. The `oneclaw/` package is implemented in phase 4B;
 no 1Claw runtime is enabled yet.
 
 Custody, provider, algorithm, and account implementation are separate concepts:
@@ -114,7 +114,7 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 - [x] Phase 3: persistence and recovery model
 - [x] Phase 3A: organization connection/customer authority persistence (factory data remains gated)
 - [x] Phase 4A: provider package split and WalletKeys retirement
-- [ ] Phase 4B: provider-specific 1Claw service implementation
+- [x] Phase 4B: provider-specific 1Claw service implementation (package only)
 - [ ] Phase 5: EVM managed-owner integration
 - [ ] Phase 6: account provisioning workflow
 - [ ] Phase 7: managed-owner session authorization
@@ -451,11 +451,11 @@ results and bounded connection error codes. Existing agent credential shapes and
 public owner projections remain compatible. Database types/repositories remain
 explicitly agent-only until phase 3A; no table, migration or live call was added.
 
-**Contract follow-up before phase 4B:** the implemented bootstrap-first-owner
-request/result split predates the empty-template experiment. Update internal
-contracts/tests for empty organization setup plus uniform agent creation; preserve
-public contracts and tenant binding checks. This document does not implement that
-change. No additional table is currently required: reuse phase 3A provider
+**Contract follow-up completed with phase 4B:** `OneClawOrganizationSetupRequest`
+models reconciled pending setup independently. `OneClawOwnerProvisioningRequest`
+now requires a ready connection for every agent and rejects the old mode/template
+fields. Tenant-bound early credential results and public API projections remain
+unchanged. No additional table is required: reuse phase 3A provider
 connections, customer/agent credentials and signer linkage. Verify readiness
 transitions do not require a bootstrap-created signer.
 
@@ -623,7 +623,7 @@ GCP/local lifecycle tests, EVM signer tests and application boundary tests pass.
 Run `pnpm check` for this cross-package migration. Existing passkey/local-session
 flows, stored keys and public managed-custody gates retain their behavior.
 
-### Phase 4B: provider-specific 1Claw service implementation
+### Phase 4B: provider-specific 1Claw service implementation (completed, package only)
 
 Owner: `packages/wallet-providers/oneclaw`, with application orchestration.
 
@@ -652,8 +652,37 @@ Owner: `packages/wallet-providers/oneclaw`, with application orchestration.
 **Exit gate:** provider tests cover wrong-key responses, rotation, invalid encoding,
 auth expiry, rate limits, outages, empty-bootstrap responses without agent fields,
 claim response validation, delegation denial, and two successive agents through
-the same creation path. No credentials appear
+the same creation path. No live credentials appear
 in logs, traces, errors, or fixtures.
+
+Implemented `@namera-ai/wallet-provider-oneclaw` with SDK `0.61.38`, the operation
+groups above, separate RS256 org OIDC/JWKS service, protocol `OneClawError`, and
+central sanitized envelope/exception conversion. Configuration and both server
+env examples use a dashboard-created Platform app and pinned empty template;
+there is no runtime app/template creation or human-key fallback.
+
+Customer operations validate decoded authority bindings, clock expiry and remote
+identity. Agent creation returns the one-time redacted key before any follow-up
+call. Signing explicitly obtains a fresh agent token, checks pinned key metadata
+and public material, and verifies the exact digest signature. Destruction is
+unsupported. Package-owned test layers and real-SDK/substituted-transport tests
+cover these boundaries without live resources or transactions.
+
+SDK limitation: no AbortSignal/custom fetch support. Timeouts bound waiting but
+do not cancel remote work; there are no automatic retries. Ambiguous writes need
+reconciliation/manual recovery. Template validation precedes bootstrap but cannot
+atomically pin its version; freeze the dashboard template. Scope verification
+probes delegated reads; the subsequent create proves write permission.
+
+Remaining integration work: public discovery/JWKS hosting and rotation, server
+layer composition, encrypted credential persistence/renewal orchestration,
+factory account verification, application authorization/billing/audits, and
+production OIDC empty-bootstrap checks. This phase adds no tables, public routes,
+audit mutations, broadcast capability, or public managed-custody enablement.
+
+Verification: 16 provider integration tests and 67 protocol tests passed, as did
+`pnpm check` (82 lint/typecheck/test-typecheck/build tasks). Provider tests use
+the real SDK with substituted transport; they are not a live enterprise rollout.
 
 ### Phase 5: EVM managed-owner integration
 
