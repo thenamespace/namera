@@ -86,8 +86,8 @@ account-persistence transaction's readiness check. No remote call holds that loc
 
 ## `core.signing_key`
 
-Provider-neutral signing identity used by wallets and, in a later slice,
-cryptographic session keys. Private and encrypted local key material is never
+Signing identity used by wallets and cryptographic session keys.
+Private and encrypted local key material is never
 persisted by the server.
 
 | Column                   | PostgreSQL type | Required | Default  | Description                                                                                |
@@ -109,6 +109,7 @@ persisted by the server.
 
 - Primary key: `id`.
 - Unique (`id`, `organization_id`) supports tenant-safe wallet references.
+- Unique (`id`, `organization_id`, `purpose`) supports purpose-bound session references.
 - Unique (`organization_id`, `algorithm`, `public_key_hex`) prevents duplicate
   registration of one cryptographic key inside a tenant.
 - Partial unique organization/agent/provider-key/numeric-key-version identity for 1Claw.
@@ -134,6 +135,8 @@ persisted by the server.
   identifiers and a positive integer key version. Ethereum/Bitcoin/Tron require
   secp256k1; Solana/XRP/Cardano require Ed25519. Other variants require a null reference.
 - Passkeys are P-256 wallet-root signing keys.
+- 1Claw session-purpose keys require a non-null provider connection. Legacy
+  unlinked root keys remain readable; new session keys cannot use that exception.
 
 ### Indexes
 
@@ -202,7 +205,8 @@ Immutable policy envelope granting bounded authority over one wallet. Revocation
 | `id`                  | `text`          | Yes      | UUIDv7    | Session-key identifier.                                                       |
 | `organization_id`     | `text`          | Yes      | —         | Owning tenant.                                                                |
 | `wallet_id`           | `text`          | Yes      | —         | Controlled wallet.                                                            |
-| `signing_key_id`      | `text`          | Yes      | —         | Dedicated session signing key; registration stores only a local public key.   |
+| `signing_key_id`      | `text`          | Yes      | —         | Dedicated session signing key.                                                |
+| `signing_key_purpose` | `text`          | Yes      | `session` | Internal constant enforcing the referenced key purpose.                       |
 | `created_by_actor_id` | `text`          | Yes      | —         | Actor that created the delegation.                                            |
 | `namespace`           | `text`          | Yes      | —         | Policy namespace matching the wallet.                                         |
 | `metadata`            | `jsonb`         | Yes      | —         | Session-key display name and description.                                     |
@@ -224,12 +228,17 @@ Immutable policy envelope granting bounded authority over one wallet. Revocation
 
 - `organization_id` → `auth.organization.id`, `ON DELETE RESTRICT`.
 - (`wallet_id`, `organization_id`) → `core.wallet`, `ON DELETE RESTRICT`.
-- (`signing_key_id`, `organization_id`) → `core.signing_key`, `ON DELETE RESTRICT`.
+- (`signing_key_id`, `organization_id`, `signing_key_purpose`) →
+  `core.signing_key` (`id`, `organization_id`, `purpose`), `ON DELETE RESTRICT`.
 - (`created_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 - (`revoked_by_actor_id`, `organization_id`) → `auth.actor`, `ON DELETE RESTRICT`.
 
 ### Checks
 
+- `signing_key_purpose` must equal `session`; callers cannot bypass the purpose
+  foreign key by changing the constant. The additive managed-session migration
+  defaults existing rows to this value and rejects invalid historical root-key
+  bindings rather than silently changing their signing identity.
 - Status is one of `pending`, `active`, `revoking`, `revoked`.
 - Revoking/revoked states require both revocation timestamp and actor; pending/active require neither.
 - The activation repository conditionally updates pending rows only when a

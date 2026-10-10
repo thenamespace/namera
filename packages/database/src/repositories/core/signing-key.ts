@@ -9,13 +9,17 @@ import {
   type SigningKeyInsert as SigningKeyInsertModel,
   type SigningKeyStatus,
 } from "@namera-ai/protocol/model";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { signingKey } from "#/schema/index";
 
 export interface SigningKeyRepositoryService {
+  readonly findForSessions: (
+    organizationId: OrganizationId,
+    ids: ReadonlyArray<SigningKeyId>,
+  ) => Effect.Effect<ReadonlyArray<SigningKeyModel>, DatabaseError>;
   readonly insert: (input: SigningKeyInsertModel) => Effect.Effect<SigningKeyModel, DatabaseError>;
   readonly insertIfPublicKeyAvailable: (
     input: SigningKeyInsertModel,
@@ -56,6 +60,24 @@ export class SigningKeyRepository extends Context.Service<
       const database = yield* Database;
 
       return SigningKeyRepository.of({
+        findForSessions: Effect.fn("database.signingKeyRepository.findForSessions")(function* (
+          organizationId,
+          ids,
+        ) {
+          if (ids.length === 0) return [];
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(signingKey)
+            .where(
+              and(
+                eq(signingKey.organizationId, organizationId),
+                eq(signingKey.purpose, "session"),
+                inArray(signingKey.id, ids),
+              ),
+            );
+          return rows.map(decodeSigningKey);
+        }, mapRepositoryError),
         insert: Effect.fn("database.signingKeyRepository.insert")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           const encoded = Schema.encodeSync(SigningKeyInsert)(input);

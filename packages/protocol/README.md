@@ -63,6 +63,10 @@ Local key-material schemas belong only in trusted client code, never in logs,
 analytics, or server payloads.
 
 Schemas validate structure, not authorization, installation, or signature validity.
+Full session responses include a public `signer` descriptor independent of account
+ownership. The creation schema reserves `namera-managed` custody with provider
+`1claw`, but runtime creation currently returns `MANAGED_SESSION_KEYS_UNAVAILABLE`.
+Continue using local session signers until managed provisioning is enabled.
 Use the [SDK](https://www.npmjs.com/package/@namera-ai/sdk) for API operations.
 API, protocol, SDK and CLI share a version starting with 1.0.0.
 [Contributor architecture](https://github.com/thenamespace/namera/blob/main/architecture/packages/contracts.md).

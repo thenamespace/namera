@@ -29,6 +29,58 @@ codes.
 
 ## Creation
 
+### Managed-custody contract foundation (Phase 11)
+
+The creation schema accepts either the existing local signer or
+`{ custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" }`.
+Managed input must not contain public/private key material, agent IDs, credential
+IDs or connection IDs. Runtime creation still rejects this variant with
+`MANAGED_SESSION_KEYS_UNAVAILABLE` before persistence or provider calls. Phase 12
+will wire provisioning; schema support is not live managed-session support.
+
+Full session responses expose `signer` with custody, algorithm and public key,
+plus provider for managed custody. Mapping explicitly excludes credential and
+provider-resource references. Summary projections remain unchanged: consumers
+must load a full session before selecting its signing path. Parent account
+ownership determines installation approval, not session signer custody. Local
+SDK bindings and dashboard registration recovery reject managed requests.
+
+The signing-key lookup is tenant- and session-purpose-scoped. The database binds
+each session to a `purpose = session` signer and requires a provider connection
+for 1Claw session signers. Existing credential/connection foreign keys enforce
+tenant ownership; encrypted credential-to-agent binding remains a provisioning
+and signing boundary check, not a JSON foreign-key guarantee. Typed creation
+errors reserve `PROVIDER_SETUP_FAILED` and `PROVIDER_RECOVERY_REQUIRED` for that
+later application boundary; vendor responses must not become public errors.
+
+Contract, mapper, local compatibility and database boundary tests cover these
+invariants, including root-key substitution and cross-tenant references. No new
+provider calls, environment variables or managed signing endpoints are enabled.
+
+### Recovery requirements for Phases 14–15
+
+Keep existing local prepare/complete APIs. Managed completion should accept only
+the prepared operation identifier, not arbitrary digests or caller signatures,
+and must enforce the same actor, grant, installation, expiry and policy checks.
+Define the concrete transport schemas alongside those runtime phases before
+changing clients.
+
+- Execution submissions already contain actor-bound idempotency, lease tokens,
+  lease expiry, prepared data, signed execution and a broadcast-attempt marker.
+  Phase 14 must add fenced claim/accept transitions for provider signing and
+  ensure cleanup cannot expire an in-flight signing lease. Reuse these records;
+  do not introduce a second submission/provisioning table. Persist the signer
+  identity in the prepared snapshot if the existing snapshot is insufficient.
+- Signature operations contain idempotency and request data, but no signing
+  lease or replayable signature result. Phase 15 must add lease token/expiry
+  columns with a paired-null constraint, a durable protected result and a bound
+  signer snapshot. Completion/retries must return the accepted result without
+  another provider call or billing settlement. These columns are deferred until
+  their transitions and cleanup behavior are implemented and tested.
+
+Neither path may expose a general-purpose raw-signing API or substitute a root
+owner signature for a session signature.
+
 ```mermaid
 sequenceDiagram
   actor Admin

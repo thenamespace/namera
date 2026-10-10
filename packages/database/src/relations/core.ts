@@ -94,8 +94,12 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
   sessionKey: {
     // Delegated signing material is separate from the wallet's owner key.
     signingKey: r.one.signingKey({
-      from: [r.sessionKey.signingKeyId, r.sessionKey.organizationId],
-      to: [r.signingKey.id, r.signingKey.organizationId],
+      from: [
+        r.sessionKey.signingKeyId,
+        r.sessionKey.organizationId,
+        r.sessionKey.signingKeyPurpose,
+      ],
+      to: [r.signingKey.id, r.signingKey.organizationId, r.signingKey.purpose],
       optional: false,
     }),
     // A logical session has one independently confirmed installation per chain.

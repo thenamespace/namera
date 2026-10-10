@@ -59,7 +59,10 @@ it("recovers the original pending signer registration and leaves unknown signers
   const other = privateKeyToAccount(generatePrivateKey());
   expect(
     recoverSessionRegistration(
-      { ...request, signer: { ...request.signer, publicKey: other.publicKey } },
+      {
+        ...request,
+        signer: { custody: "local", algorithm: "secp256k1", publicKey: other.publicKey },
+      },
       wallet,
       [registration],
     ),

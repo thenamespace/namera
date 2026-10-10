@@ -59,6 +59,11 @@ export const signingKey = coreSchema.table(
       )
       .where(sql`${table.data}->>'type' = '1claw'`),
     uniqueIndex("signing_key_id_organization_uidx").on(table.id, table.organizationId),
+    uniqueIndex("signing_key_id_organization_purpose_uidx").on(
+      table.id,
+      table.organizationId,
+      table.purpose,
+    ),
     uniqueIndex("signing_key_organization_public_key_uidx").on(
       table.organizationId,
       table.algorithm,
@@ -70,6 +75,10 @@ export const signingKey = coreSchema.table(
       table.status,
     ),
     check("signing_key_purpose_check", sql`${table.purpose} IN ('wallet-root', 'session')`),
+    check(
+      "signing_key_session_connection_check",
+      sql`${table.purpose} <> 'session' OR ${table.data}->>'type' <> '1claw' OR ${table.providerConnectionId} IS NOT NULL`,
+    ),
     check("signing_key_custody_check", sql`${table.custody} IN ('local', 'namera-managed')`),
     check(
       "signing_key_algorithm_check",

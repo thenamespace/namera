@@ -155,7 +155,13 @@ export const SigningKeyInsert = Schema.Union([
     algorithm: SigningKeyAlgorithm,
     data: Schema.Union([GcpSigningKeyData, ManagedLocalSigningKeyData]),
   }),
-]);
+]).check(
+  Schema.makeFilter((key) =>
+    key.purpose === "session" && key.data.type === "1claw" && !key.providerConnectionId
+      ? "A 1Claw session key requires an organization provider connection"
+      : undefined,
+  ),
+);
 
 export type SigningKeyPurpose = typeof SigningKeyPurpose.Type;
 export type SigningKeyCustody = typeof SigningKeyCustody.Type;

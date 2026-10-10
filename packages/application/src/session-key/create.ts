@@ -56,6 +56,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
       readonly actorId: ActorId;
       readonly request: CreateSessionKeyRequest;
     }) {
+      if (input.request.signer.custody !== "local") {
+        return yield* new SessionKeyCreationError({ code: "MANAGED_SESSION_KEYS_UNAVAILABLE" });
+      }
       const creationResults = Metric.withAttributes(sessionKeyCreationResults, {
         namespace: input.request.namespace,
       });

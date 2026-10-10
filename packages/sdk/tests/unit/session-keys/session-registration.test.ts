@@ -53,6 +53,18 @@ const fixture = () => {
 };
 
 describe("session registration bindings", () => {
+  it("does not create local export bindings for managed custody", () => {
+    const input = fixture();
+    expect(() =>
+      createLocalSessionBindings({
+        ...input,
+        request: {
+          ...input.request,
+          signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+        },
+      }),
+    ).toThrow(expect.objectContaining({ code: "UNSUPPORTED_CUSTODY" }));
+  });
   it("derives root and execution-hook flags from the reviewed permission types", () => {
     const input = fixture();
     const installation = input.registration.installations[0];

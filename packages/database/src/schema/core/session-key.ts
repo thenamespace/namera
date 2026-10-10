@@ -27,6 +27,8 @@ export const sessionKey = coreSchema.table(
       .references(() => organization.id, { onDelete: "restrict" }),
     walletId: text("wallet_id").notNull().$type<WalletId>(),
     signingKeyId: text("signing_key_id").notNull().$type<SigningKeyId>(),
+    // Constant discriminator lets the FK enforce purpose even for direct SQL writers.
+    signingKeyPurpose: text("signing_key_purpose").notNull().default("session").$type<"session">(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
     namespace: text("namespace").notNull().$type<SessionKey["namespace"]>(),
     metadata: jsonb("metadata").notNull().$type<SessionKey["metadata"]>(),
@@ -41,10 +43,11 @@ export const sessionKey = coreSchema.table(
     unique("session_key_id_organization_unique").on(table.id, table.organizationId),
     unique("session_key_signing_key_unique").on(table.signingKeyId),
     foreignKey({
-      name: "session_key_signing_key_organization_fk",
-      columns: [table.signingKeyId, table.organizationId],
-      foreignColumns: [signingKey.id, signingKey.organizationId],
+      name: "session_key_signing_key_purpose_fk",
+      columns: [table.signingKeyId, table.organizationId, table.signingKeyPurpose],
+      foreignColumns: [signingKey.id, signingKey.organizationId, signingKey.purpose],
     }).onDelete("restrict"),
+    check("session_key_signing_key_purpose_check", sql`${table.signingKeyPurpose} = 'session'`),
     check(
       "session_key_status_check",
       sql`${table.status} IN ('pending', 'active', 'revoking', 'revoked')`,
