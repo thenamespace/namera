@@ -76,8 +76,8 @@ permission-aware session-key shortcut. The shortcut preselects only an eligible
 account from the current workspace's wallet list; invalid or unavailable search
 IDs do not select an account. Normal account links still open the overview.
 
-Account creation offers User-owned passkey and 1Claw Managed; Namera Managed
-remains disabled. Managed creation posts the 1Claw owner variant without a
+Account creation defaults to 1Claw Managed, followed by User-owned passkey in the
+selector; Namera Managed remains last and disabled. Managed creation posts the 1Claw owner variant without a
 WebAuthn ceremony and uses the existing success page. Ownership displays show
 the provider logo, without an HSM claim. WebAuthn display labels use the account name; the challenge,
 user handle and RP ID remain server-issued. No private owner key enters API or
@@ -104,7 +104,8 @@ The server's five-minute cache is independent of frontend query lifetime; see
 
 ## Session authority and custody
 
-Creation offers User Owned and 1Claw Managed independently of the parent account.
+Creation defaults to 1Claw Managed independently of the parent account. The selector
+lists 1Claw Managed, User Owned, then disabled Namera Managed (coming soon).
 Managed registration validates the returned public identity, permissions and
 networks before enabling approval. It skips generation/export/import and proceeds
 to network approval; it never downloads provider credentials. Ambiguous errors

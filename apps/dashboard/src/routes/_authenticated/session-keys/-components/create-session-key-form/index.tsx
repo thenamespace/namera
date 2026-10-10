@@ -43,7 +43,7 @@ import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./ty
 
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
 const defaultValues = {
-  custody: "local",
+  custody: "namera-managed",
   namespace: "eip155",
   metadata: {
     version: 1,

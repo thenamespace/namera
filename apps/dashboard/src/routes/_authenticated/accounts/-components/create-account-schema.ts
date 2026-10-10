@@ -16,7 +16,7 @@ export type CreateAccountFormValues = typeof CreateAccountFormValues.Type;
 export type CreateAccountFormValuesEncoded = typeof CreateAccountFormValues.Encoded;
 
 export const defaultAccountValues: CreateAccountFormValuesEncoded = {
-  ownership: "local",
+  ownership: "1claw",
   metadata: {
     version: 1,
     name: "",

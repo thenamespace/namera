@@ -224,11 +224,11 @@ export function CreateAccountForm() {
                     </Select.Trigger>
                     <Select.Popover>
                       <ListBox>
-                        <ListBox.Item id="local" textValue="User-owned passkey">
-                          <WalletOwnerDisplay custody="local" />
-                        </ListBox.Item>
                         <ListBox.Item id="1claw" textValue="1Claw Managed">
                           <WalletOwnerDisplay custody="namera-managed" provider="1claw" />
+                        </ListBox.Item>
+                        <ListBox.Item id="local" textValue="User-owned passkey">
+                          <WalletOwnerDisplay custody="local" />
                         </ListBox.Item>
                         <ListBox.Item id="namera-managed" textValue="Namera managed" isDisabled>
                           <span className="flex w-full items-center gap-2">

@@ -48,14 +48,6 @@ export function CustodyField({
                   </Select.Trigger>
                   <Select.Popover>
                     <ListBox>
-                      <ListBox.Item id="local" textValue="User Owned" isDisabled={limits.local}>
-                        <SessionKeyCustodyDisplay custody="local" />
-                        {limits.local ? (
-                          <Chip size="sm" variant="soft" className="ml-auto shrink-0">
-                            Limit reached
-                          </Chip>
-                        ) : null}
-                      </ListBox.Item>
                       <ListBox.Item
                         id="namera-managed"
                         textValue="1Claw Managed"
@@ -63,6 +55,14 @@ export function CustodyField({
                       >
                         <SessionKeyCustodyDisplay custody="namera-managed" />
                         {limits.managed ? (
+                          <Chip size="sm" variant="soft" className="ml-auto shrink-0">
+                            Limit reached
+                          </Chip>
+                        ) : null}
+                      </ListBox.Item>
+                      <ListBox.Item id="local" textValue="User Owned" isDisabled={limits.local}>
+                        <SessionKeyCustodyDisplay custody="local" />
+                        {limits.local ? (
                           <Chip size="sm" variant="soft" className="ml-auto shrink-0">
                             Limit reached
                           </Chip>
