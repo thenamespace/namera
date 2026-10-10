@@ -36,23 +36,42 @@ unless explicitly selected during phase 1.
 
 ### Package decision
 
-Extend `packages/wallet-keys` with a focused 1Claw provider implementation. Its
-existing service already owns key creation, signing, disablement, and destruction.
-Follow the package's current provider layout; do not reorganize other providers
-solely to add this one.
+Retire `packages/wallet-keys` and its shared `WalletKeys` service. Use independent
+workspace packages under `packages/wallet-providers/`, each exposing its own
+Effect service and real provider capabilities. Do not add a shared provider
+interface, `core` package, generic provider registry or mandatory lifecycle API.
 
 ```text
-server: configuration and live provider composition
-  application: account provisioning and owner authorization
-    wallet-keys: 1Claw client, authentication, key lifecycle, signing
-    evm: account construction, digests, signature formatting, submission
-    database: tenant-scoped signer and encrypted credential persistence
-  api / protocol: public contracts and typed models
+packages/wallet-providers/
+  oneclaw/  -> OneClawService: Platform, customers, claims, agents, keys, signing
+  gcp/      -> GcpService: Cloud KMS key lifecycle and signing
+  local/    -> LocalService: development file-backed keys and signing
+
+server -> provider configuration and live layers
+application -> provider-specific services + database + EVM
+EVM -> chain-compatible signing callback, not provider services
 ```
 
-Do not create `packages/oneclaw` initially. Reconsider only if independent 1Claw
-capabilities, such as vault management, need a shared provider package. Application
-and EVM must not import a 1Claw SDK or HTTP client directly.
+Application workflows select the provider explicitly, for example
+`const oneClaw = yield* OneClawService`. Keep selection in focused provisioning
+and signing workflows instead of scattering provider switches across the codebase.
+1Claw customer bootstrap and claim renewal stay 1Claw-specific; GCP/local do not
+implement dummy equivalents. Add a future `turnkey/` sibling only when integrating
+it, with its own service and capability model.
+
+Provider packages own vendor clients, authentication, external-response decoding,
+provider-specific errors and test layers. They do not import application, database
+or server packages. Application owns Namera permissions, billing, organization
+mapping, encrypted persistence, renewal coordination, transactions and audits.
+Application may import provider services, but not the vendor SDK/HTTP client.
+Server supplies secrets and layers. EVM receives a narrow signer/callback and
+owns account construction and chain-specific encoding; this is not a replacement
+universal provider interface. Share small helpers only where actual reuse warrants
+it, preserving existing crypto/utils boundaries.
+
+This is the target architecture, not the current implementation. Existing
+repository dependency rules and architecture documents still describe WalletKeys;
+update them together with the phase 4A migration, not as if already migrated.
 
 Custody, provider, algorithm, and account implementation are separate concepts:
 
@@ -91,7 +110,8 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 - [ ] Phase 2A: organization connection and customer-authority contracts
 - [x] Phase 3: persistence and recovery model
 - [ ] Phase 3A: organization connections and encrypted customer authority
-- [ ] Phase 4: 1Claw key-provider implementation
+- [ ] Phase 4A: provider package split and WalletKeys retirement
+- [ ] Phase 4B: provider-specific 1Claw service implementation
 - [ ] Phase 5: EVM managed-owner integration
 - [ ] Phase 6: account provisioning workflow
 - [ ] Phase 7: managed-owner session authorization
@@ -101,7 +121,7 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 
 The completed phase 2/3 checkboxes describe the original signer work only. They
 do not imply that Platform connections, OIDC issuance, customer-token renewal or
-provider calls exist. Implement 2A then 3A before phase 4; keep the phase 1
+provider calls exist. Implement 2A, 3A, 4A, then 4B; keep the phase 1
 production gates open until their evidence is recorded.
 
 ## Selected Platform flow
@@ -366,7 +386,9 @@ Owner: `packages/protocol`. This is new work, not part of completed phase 2.
 - Extend provisioning contracts to distinguish bootstrap-first-owner from
   incremental-owner creation, and to return one-time credentials for immediate
   application-owned encryption. Expose connection management through a focused
-  capability owned by wallet-keys, not an SDK imported into application.
+  capability exposed by `OneClawService`, not a universal provider contract or
+  an SDK imported into application. Keep vendor request/response schemas inside
+  the provider package; protocol owns shared domain/persistence/public contracts.
 - Define bounded errors for linking required, ambiguous recovery, revoked
   connection, expired authority, identity mismatch and incomplete provisioning.
 - Add a factory-based secp256k1 wallet-data discriminator alongside the existing
@@ -466,9 +488,47 @@ Owners: database, protocol and existing application encryption boundary.
 encrypted credential type/binding checks, renewal contention, idempotent local
 reconciliation and atomic readiness/audit transitions. No runtime API enabled.
 
-### Phase 4: 1Claw key-provider implementation
+### Phase 4A: provider package split and WalletKeys retirement
 
-Owner: `packages/wallet-keys`.
+Owners: existing wallet-keys consumers, provider packages, application, EVM and
+server composition. Perform this as a behavior-preserving migration before
+enabling the new 1Claw runtime flow.
+
+- Inventory WalletKeys imports, creation/signing inputs, local/GCP implementations,
+  test substitutes, configuration, package exports and disabled-layer consumers.
+- Move GCP and local implementations into independent `gcp/` and `local/` packages,
+  each with provider-specific service/configuration/errors and package-owned
+  tests. Preserve key locators, local file format/path, GCP CRC checks, algorithms,
+  digest semantics and existing protection caveats. Do not regenerate keys.
+- Add the nested `packages/wallet-providers/*` workspace glob. Give each package
+  its own manifest, exports, build/typecheck/test configuration and README,
+  following existing `namera-source` and unbundled build conventions. Update
+  package dependencies, lockfile and any tooling that assumes flat packages.
+- Replace application `yield* WalletKeys` with the appropriate explicit service
+  in focused provider-specific workflows. Translate vendor errors at the
+  application boundary into domain errors; do not force a shared provider error
+  taxonomy or retain a renamed generic dispatch service.
+- Change EVM constructors that depend on WalletKeys to accept the required
+  chain-compatible signer/callback. Application supplies that signer using its
+  chosen service. EVM must not import OneClawService, GcpService or LocalService.
+- Move provider-only operation schemas out of shared protocol where appropriate;
+  retain shared signer/credential models and preserve public contracts. Phase 2
+  contracts were written for the old boundary and require this explicit review.
+- Replace generic test layers with provider-owned substitutes and narrow EVM
+  signer fixtures. Preserve fail-closed managed-custody gating in application and
+  server without depending on `WalletKeys.disabledLayer` or fallback providers.
+- Remove the old package/service only after all consumers and tooling migrate.
+  Update AGENTS dependency rules, package map, READMEs and owning architecture
+  documents in the same implementation change. No permanent compatibility facade.
+
+**Exit gate:** no runtime WalletKeys imports or shared provider lifecycle remain;
+GCP/local lifecycle tests, EVM signer tests and application boundary tests pass.
+Run `pnpm check` for this cross-package migration. Existing passkey/local-session
+flows, stored keys and public managed-custody gates retain their behavior.
+
+### Phase 4B: provider-specific 1Claw service implementation
+
+Owner: `packages/wallet-providers/oneclaw`, with application orchestration.
 
 - Implement OIDC JWT issuance/JWKS material handling, upsert and subject lookup,
   bootstrap, claim redemption/reissue, authenticated customer identity checks,
@@ -480,8 +540,9 @@ Owner: `packages/wallet-keys`.
   receives decoded, bound credentials without importing database/application.
 - Validate external public material and derive/compare the returned signer address.
 - Implement exact digest signing and only other operations genuinely supported.
-- Adapt signature formats to the existing provider boundary; keep Ethereum-specific
-  encoding and parity handling in EVM. Avoid double hashing or prefixing.
+- Decode the provider signature format and return validated signing material;
+  adapt it to the EVM signing callback without imposing GCP's response format on
+  1Claw. Keep Ethereum-specific encoding/parity in EVM. Avoid double hashing.
 - Implement bounded timeouts/retries and typed failures. Do not retry ambiguous
   non-idempotent provisioning blindly.
 - Fail explicitly for unsupported destruction; never claim deactivation destroyed
@@ -498,6 +559,8 @@ Owner: `packages/evm`.
 
 - Reuse compatible secp256k1 signing primitives, but add a factory-based smart
   account constructor/reconstructor rather than calling the 7702 constructor.
+- Accept the application-supplied owner signer without importing any provider
+  service or resurrecting the retired WalletKeys dependency.
 - Derive the owner EOA from its public key, encode the verified owner-validator
   initialization and salt, and compute the counterfactual smart-account address.
   Compare reconstructed address with persisted address on every account load.
@@ -518,6 +581,10 @@ factory/initialization/owner/account/network data. Existing P-256 and internal
 ### Phase 6: account provisioning workflow
 
 Owner: `packages/application`.
+
+The 1Claw workflow obtains `OneClawService` directly. It coordinates the provider
+operations below with encryption, repositories and EVM; the provider package does
+not own Namera's organization records or database transactions.
 
 1. Authorize the actor and precheck managed-account entitlement/capacity.
 2. Resolve/recover or create the organization connection using the selected flow;
@@ -577,6 +644,9 @@ Owners: `packages/api`, `apps/server`, configuration and feature gating.
 - Expose managed account creation behind explicit deployment/organization gating.
 - Replace the blanket managed-custody rejection only for supported configurations.
 - Compose the provider without enabling unavailable custody modes accidentally.
+- Compose explicit OneClawService/GcpService/LocalService layers only where
+  needed. Do not introduce a replacement universal WalletKeys layer. Keep
+  provider selection server-controlled and reject unavailable configurations.
 - Configure Platform app ID/key, template ID/version, stable OIDC issuer/audience,
   private signing key/key ID, public JWKS and organization email convention. Keep
   all private material server-only; never expose a public JWT-minting endpoint.
@@ -649,7 +719,7 @@ conventions before editing their code. Commit each coherent phase separately.
 ## References
 
 - [Broader 1Claw signer research](1claw-managed-signers.md)
-- [Wallet-key provider boundary](../architecture/wallets/wallet-keys.md)
+- [Current wallet-key boundary, to be migrated in phase 4A](../architecture/wallets/wallet-keys.md)
 - [Account creation](../architecture/wallets/accounts.md)
 - [EVM account modes](../architecture/evm/accounts/README.md)
 - [Session authorization and revocation](../architecture/wallets/session-keys.md)
