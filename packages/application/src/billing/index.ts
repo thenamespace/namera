@@ -5,3 +5,4 @@ export * from "./initialize.js";
 export * from "./metering.js";
 export * from "./periods.js";
 export * from "./reconciliation.js";
+export * from "./upgrade-free-v2.js";

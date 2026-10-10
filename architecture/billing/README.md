@@ -78,6 +78,33 @@ users above three retain their organizations but cannot create another.
 
 ### Rollout and historical periods
 
+The temporary `BillingStartupUpgrade` now runs after migrations and before HTTP
+or any worker starts. It immediately upgrades all current Free v1 subscriptions,
+including unmarked ones, through `upgradeExistingFreeSubscriptions`. Each
+organization uses its existing billing-account row lock and a separate transaction.
+It catches up expired periods normally, then changes only the current period and
+subscription to v2 without changing the period ID or anniversary. Closed periods,
+usage events, reservations, consumed and reserved amounts remain unchanged.
+
+The current balances receive v2 included amounts. To retain already-authorized
+work and satisfy the balance constraint, each hard limit is the greater of the v2
+limit and consumed plus reserved usage at upgrade time. This exceptional ceiling
+lasts only for that period; releasing a reservation can free headroom below that
+ceiling. Renewal creates ordinary v2 limits. No existing accounts or keys are deleted.
+
+The saved subscription version is the durable skip marker; immediate transitions
+also merge `data.freeV2UpgradedAt` and append `billing.plan_changed` in the same
+transaction. Concurrent replicas recheck the version under the row lock, so only
+one applies the change. Failures stop startup; completed organizations remain
+committed and retries resume the rest. Startup logs aggregate upgraded/skipped
+counts, not tenant identifiers. No new environment variables or tables are needed.
+
+Remove the startup hook and temporary application/repository methods only after
+every environment has no current Free v1 subscriptions. Keep the existing SQL
+migration history, saved markers and audit rows. The anniversary fallback below
+remains available after this temporary hook is removed. Tests cover preservation,
+over-limit holds, renewal, rollback/retry and PostgreSQL concurrent startup.
+
 Migration `20261010121514_free-v2-rollout` adds `freeV2RolloutAt` to existing
 active Free v1 subscription JSON. No new table or column is needed. It does not
 rewrite period balances, reservations, or usage. Deploy with old server writers
