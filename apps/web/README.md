@@ -227,8 +227,8 @@ Structured data is JSON-LD in each route's `scripts`. `Organization` and
 `WebSite` come from the root route; page entities reference their stable IDs.
 The landing page adds `SoftwareApplication` and a `FAQPage` generated from
 visible questions, without an offer while the CTA is a waitlist. Pricing adds
-`BreadcrumbList`, `Product` and its own `FAQPage`, with planned offers marked
-`PreOrder`. Blog discovery emits `CollectionPage`, `Blog` and a visible-page
+`BreadcrumbList`, `Product` and its own `FAQPage`, without purchasable offers
+while admission is waitlisted and paid plans are unavailable. Blog discovery emits `CollectionPage`, `Blog` and a visible-page
 `ItemList`; each pagination URL has its own canonical and empty later pages
 are noindex. Articles retain their authored SEO overrides and `BlogPosting`.
 

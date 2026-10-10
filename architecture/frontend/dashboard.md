@@ -56,6 +56,10 @@ permission-aware quick-action links for account/session-key creation, MCP setup,
 API-key management, and member invitations instead of the source chart. Recent executions reuse the Activity table; quota and period consumption
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
+Free v2 includes separate self-owned and 1Claw-managed account/session capacities.
+Managed creation is labeled coming soon. Legacy organizations see the scheduled
+Free v2 date from the API; over-limit capacity stays visible without implying
+that existing resources were removed. Paid upgrades remain unavailable.
 
 ## Account creation and portfolio
 

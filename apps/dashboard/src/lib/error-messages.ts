@@ -135,6 +135,22 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "BillingError:LIMIT_EXCEEDED": (error) => {
     const limit = Reflect.get(error, "limit");
+    if (limit === "ownedOrganizations")
+      return {
+        title: "Workspace limit reached",
+        description:
+          "You can own up to 3 workspaces, including Personal. You can still join other workspaces.",
+      };
+    if (limit === "localSessionKeys" || limit === "oneClawSessionKeys")
+      return {
+        title: "Session key limit reached",
+        description: "Revoke an unused key or wait for a key to expire before creating another.",
+      };
+    if (limit === "oneClawWallets")
+      return {
+        title: "Managed account limit reached",
+        description: "Your workspace has reached its 1Claw-managed account allowance.",
+      };
     const resource =
       limit === "members"
         ? "member"

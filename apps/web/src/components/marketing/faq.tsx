@@ -20,7 +20,7 @@ export const FAQ_QUESTIONS: readonly AccordionItem[] = [
   },
   {
     q: "What will it cost?",
-    a: "There is a free plan, and it is the only one you will be able to pick when Namera opens. The paid tiers are still being written; the pricing page carries their allowances as they stand.",
+    a: "Free includes 10 self-owned accounts, 100 self-owned session keys, 100 mainnet executions, 500 testnet executions, 1,000 signatures and $3 in sponsored gas per workspace. You can own up to 3 workspaces with 5 members each. 1Claw-managed creation and paid plans are coming later; see Pricing for the details.",
   },
   {
     q: "How do agent clients connect?",

@@ -18,6 +18,21 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
     label: "User-owned accounts",
     planLabel: "user-owned accounts",
   },
+  {
+    key: "local-session-keys",
+    label: "Self-owned session keys",
+    planLabel: "self-owned session keys",
+  },
+  {
+    key: "oneclaw-wallets",
+    label: "1Claw-managed accounts (coming soon)",
+    planLabel: "1Claw-managed accounts (coming soon)",
+  },
+  {
+    key: "oneclaw-session-keys",
+    label: "1Claw-managed session keys (coming soon)",
+    planLabel: "1Claw-managed session keys (coming soon)",
+  },
 ];
 
 export const meterDefinitions: ReadonlyArray<UsageDefinition<BillingMeterKey>> = [

@@ -30,7 +30,7 @@ function UsageRow({ label, maximum, pending = 0n, unit, value }: UsageRowProps) 
 
   return (
     <div className="min-w-0">
-      <div className="mb-2 flex items-baseline justify-between gap-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <Typography className="text-sm!" weight="medium">
           {label}
         </Typography>
@@ -45,12 +45,18 @@ function UsageRow({ label, maximum, pending = 0n, unit, value }: UsageRowProps) 
         color={getMeterColor(value, maximum)}
         maxValue={Number(displayMaximum)}
         size="sm"
-        value={Number(hasAllowance ? value : 0n)}
+        value={Number(hasAllowance ? (value > maximum ? maximum : value) : 0n)}
+        valueLabel={`${formatBillingAmount(value, unit)} of ${formatBillingAmount(maximum, unit)}`}
       >
         <Meter.Track>
           <Meter.Fill />
         </Meter.Track>
       </Meter>
+      {hasAllowance && value > maximum ? (
+        <p className="mt-1.5 text-xs text-muted">
+          Over the current allowance. Existing resources are retained; new creation is blocked.
+        </p>
+      ) : null}
       {pending > 0n ? (
         <p className="mt-1.5 text-xs tabular-nums text-muted">
           Includes {formatBillingAmount(pending, unit)} reserved
@@ -117,11 +123,11 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
           <div>
             <div className="flex items-center gap-2.5">
               <Typography.Heading className="text-base" level={3} weight="medium">
-                Free plan
+                Free plan{billing.planVersion === 1 ? " (legacy)" : ""}
               </Typography.Heading>
             </div>
             <Typography.Paragraph className="mt-1" color="muted" size="xs">
-              Everything you need to build and test with Namera.
+              Allowances per workspace. Paid plans are not available yet.
             </Typography.Paragraph>
           </div>
           <div className="shrink-0 text-right">
@@ -156,6 +162,24 @@ function CurrentPlan({ billing }: { billing: GetBillingResponse }) {
             );
           })}
         </ul>
+        <div className="space-y-2 border-t border-border px-5 py-4 sm:px-6">
+          <Typography.Paragraph color="muted" size="xs">
+            You can own up to 3 workspaces, including Personal. Joined workspaces do not count.
+            Members include pending invitations. Sponsored gas includes provider fees.
+          </Typography.Paragraph>
+          {billing.scheduledChange ? (
+            <Typography.Paragraph size="sm">
+              Free v2 starts{" "}
+              {DateTime.formatLocal(billing.scheduledChange.effectiveAt, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+              . Your current allowances stay in place until then. Existing accounts and keys will
+              not be deleted.
+            </Typography.Paragraph>
+          ) : null}
+        </div>
       </Surface>
     </section>
   );
@@ -170,14 +194,16 @@ function CurrentUsage({ billing }: { billing: GetBillingResponse }) {
 
   return (
     <section aria-labelledby="current-usage-heading">
-      <div className="mb-4 flex items-end justify-between gap-6">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <HeadingGroup>
           <HeadingGroup.Title id="current-usage-heading">Current usage</HeadingGroup.Title>
           <HeadingGroup.Description>
-            Current accounts and members, plus this period’s operation usage.
+            Accounts, unexpired session keys and members are capacity limits, not monthly quotas.
           </HeadingGroup.Description>
         </HeadingGroup>
-        <span className="shrink-0 pb-0.5 text-xs tabular-nums text-muted">Resets {resetDate}</span>
+        <span className="pb-0.5 text-xs tabular-nums text-muted">
+          Monthly usage resets {resetDate}
+        </span>
       </div>
 
       <Surface className="rounded-xl border px-5 py-5 sm:px-6" variant="secondary">
