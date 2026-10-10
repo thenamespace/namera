@@ -38,7 +38,7 @@ appear in trace attributes. See [Google authentication](../auth/core/google.md).
 - Use stable names such as `http.server POST /wallets`, never raw identifiers or
   query strings.
 - Project span namespaces are lowercase owning boundaries: `server.*`,
-  `application.*`, `database.*`, `emails.*`, `wallet-keys.*`, and `evm.*`.
+  `application.*`, `database.*`, `emails.*`, `wallet-providers.*`, and `evm.*`.
 - Repository spans are the normal database detail boundary. Low-level Drizzle
   and SQL-execute spans stay suppressed to avoid duplication.
 - Context lookup, decoding, field construction, cryptographic primitives, idle

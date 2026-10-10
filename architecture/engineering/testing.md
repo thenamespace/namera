@@ -226,7 +226,7 @@ NAMERA_TEST_OS_KEYRING=1 pnpm --filter @namera-ai/cli test tests/e2e/os-keyring.
 ```sh
 pnpm --filter @namera-ai/server test
 pnpm --filter @namera-ai/server typecheck:test
-pnpm --filter @namera-ai/wallet-keys test
+pnpm --filter '@namera-ai/wallet-provider-*' test
 pnpm test
 pnpm typecheck:test
 pnpm check

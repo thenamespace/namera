@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/wallet-keys",
+  "name": "@namera-ai/wallet-provider-local",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -39,8 +39,6 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
-    "@aws-crypto/crc32c": "5.2.0",
-    "@google-cloud/kms": "6.2.1",
     "@namera-ai/protocol": "workspace:*",
     "@noble/curves": "2.4.0",
     "effect": "catalog:"

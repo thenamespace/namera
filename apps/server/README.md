@@ -309,7 +309,7 @@ The composition root also loads:
 - authentication origins from `@namera-ai/application`;
 - cryptographic secrets from `@namera-ai/crypto`;
 - Alchemy RPC credentials and BSO policy configuration from `@namera-ai/evm`;
-- a disabled managed signer from `@namera-ai/wallet-keys` (no configuration);
+- independent `GcpService.disabledLayer` and `LocalService.disabledLayer` managed signers (no configuration);
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.
 
@@ -321,7 +321,7 @@ The dashboard and internal admin surfaces each use their configured exact origin
 credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
 is a separate step; see the admin architecture for rollout limitations.
 
-All server environments use `WalletKeys.disabledLayer`. Owner passkeys and local
+All server environments use both provider-specific disabled layers. Owner passkeys and local
 session keys sign on the client; managed-key operations fail closed. Local and
 KMS provider implementations remain available for explicit package use and tests.
 Set `TELEMETRY_SERVICE_VERSION` to the deployed release tag or Git SHA to identify

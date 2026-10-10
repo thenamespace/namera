@@ -70,9 +70,9 @@ owns account construction and chain-specific encoding; this is not a replacement
 universal provider interface. Share small helpers only where actual reuse warrants
 it, preserving existing crypto/utils boundaries.
 
-This is the target architecture, not the current implementation. Existing
-repository dependency rules and architecture documents still describe WalletKeys;
-update them together with the phase 4A migration, not as if already migrated.
+The GCP/local split is implemented in phase 4A, including repository dependency
+rules and architecture documents. The `oneclaw/` package remains phase 4B work;
+no 1Claw runtime is enabled yet.
 
 Custody, provider, algorithm, and account implementation are separate concepts:
 
@@ -111,7 +111,7 @@ verification evidence; later phases must not bypass an unresolved earlier gate.
 - [ ] Phase 2A: organization connection and customer-authority contracts
 - [x] Phase 3: persistence and recovery model
 - [x] Phase 3A: organization connection/customer authority persistence (factory data remains gated)
-- [ ] Phase 4A: provider package split and WalletKeys retirement
+- [x] Phase 4A: provider package split and WalletKeys retirement
 - [ ] Phase 4B: provider-specific 1Claw service implementation
 - [ ] Phase 5: EVM managed-owner integration
 - [ ] Phase 6: account provisioning workflow
@@ -531,7 +531,7 @@ idempotent local reconciliation and transaction rollback. Audit emission and
 authenticated encrypted-envelope checks remain in the later application workflow.
 No runtime API enabled; factory reconstruction remains gated as noted above.
 
-### Phase 4A: provider package split and WalletKeys retirement
+### Phase 4A: provider package split and WalletKeys retirement (completed)
 
 Owners: existing wallet-keys consumers, provider packages, application, EVM and
 server composition. Perform this as a behavior-preserving migration before
@@ -563,6 +563,16 @@ enabling the new 1Claw runtime flow.
 - Remove the old package/service only after all consumers and tooling migrate.
   Update AGENTS dependency rules, package map, READMEs and owning architecture
   documents in the same implementation change. No permanent compatibility facade.
+
+Implemented: independent `@namera-ai/wallet-provider-gcp` and
+`@namera-ai/wallet-provider-local` packages with explicit services, local operation
+schemas, errors, live/test/disabled layers and provider tests. Application creation
+uses GCP explicitly; persisted signing locators choose GCP or local callbacks.
+EVM already accepted callbacks and required no API change. Server composition
+remains fail-closed. The old package is removed, with no replacement facade.
+Legacy published protocol operation schemas/errors remain deprecated compatibility
+exports, unused by the new services. Shared signer/credential contracts are intact.
+No keys, database rows, public routes or managed-custody gates were changed.
 
 **Exit gate:** no runtime WalletKeys imports or shared provider lifecycle remain;
 GCP/local lifecycle tests, EVM signer tests and application boundary tests pass.
@@ -762,7 +772,7 @@ conventions before editing their code. Commit each coherent phase separately.
 ## References
 
 - [Broader 1Claw signer research](1claw-managed-signers.md)
-- [Current wallet-key boundary, to be migrated in phase 4A](../architecture/wallets/wallet-keys.md)
+- [Independent wallet-provider boundary](../architecture/wallets/wallet-keys.md)
 - [Account creation](../architecture/wallets/accounts.md)
 - [EVM account modes](../architecture/evm/accounts/README.md)
 - [Session authorization and revocation](../architecture/wallets/session-keys.md)

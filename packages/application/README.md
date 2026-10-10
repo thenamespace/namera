@@ -110,6 +110,12 @@ rules; application only coordinates their results with persistence. See
 [Billing and entitlements](../../architecture/billing/README.md) for the exact
 semantics.
 
+Managed wallet creation calls `GcpService` explicitly; reconstruction supplies
+GCP or local signing callbacks according to the persisted locator. These are
+independent services, not a shared provider facade. The server composes both
+disabled layers and continues to reject public managed-custody requests. 1Claw
+runtime provisioning is not implemented yet.
+
 Wallet creation performs a cheap quota precheck, creates the provider key and
 chain account, then repeats the locked quota check before atomically persisting
 the key, wallet, audit events, notification recipients, and durable email jobs.

@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 
+/** @deprecated Compatibility export. Provider services expose their own typed errors. */
 export class WalletKeyError extends Schema.TaggedError<WalletKeyError>()("WalletKeyError", {
   operation: Schema.Literals(["create", "sign", "disable", "destroy"]),
   code: Schema.optionalKey(

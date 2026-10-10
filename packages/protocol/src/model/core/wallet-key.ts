@@ -28,6 +28,7 @@ export const GcpWalletKeyData = Schema.Struct({
 });
 export const WalletKeyData = Schema.Union([LocalWalletKeyData, GcpWalletKeyData]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const CreateWalletKeyInput = Schema.Union([
   Schema.Struct({
     id: SigningKeyId,
@@ -52,6 +53,7 @@ export const CreateWalletKeyInput = Schema.Union([
   }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const CreatedWalletKey = Schema.Union([
   Schema.Struct({
     provider: Schema.Literal("1claw"),
@@ -86,6 +88,7 @@ export const WalletKeyHash = Schema.Uint8Array.check(
   Schema.isBetweenLength(32, 32, { message: "Wallet key hashes must be 32 bytes" }),
 );
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const SignWalletKeyMessageInput = Schema.Union([
   Schema.Struct({
     provider: Schema.Literal("local"),
@@ -101,6 +104,7 @@ export const SignWalletKeyMessageInput = Schema.Union([
   }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const SignWalletKeyHashInput = Schema.Union([
   Schema.Struct({
     provider: Schema.Literal("1claw"),
@@ -124,6 +128,7 @@ export const SignWalletKeyHashInput = Schema.Union([
   }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const DisableWalletKeyInput = Schema.Union([
   Schema.Struct({
     provider: Schema.Literal("1claw"),
@@ -135,6 +140,7 @@ export const DisableWalletKeyInput = Schema.Union([
   Schema.Struct({ provider: Schema.Literal("gcp-kms"), data: GcpWalletKeyData }),
 ]);
 
+/** @deprecated Compatibility export. Use operation schemas from the specific provider package. */
 export const DestroyWalletKeyInput = Schema.Union([
   Schema.Struct({ provider: Schema.Literal("local"), data: LocalWalletKeyData }),
   Schema.Struct({ provider: Schema.Literal("gcp-kms"), data: GcpWalletKeyData }),

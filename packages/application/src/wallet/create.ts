@@ -16,7 +16,7 @@ import type { CreateWalletRequest } from "@namera-ai/protocol/dto";
 import type { SigningKeyInsert } from "@namera-ai/protocol/model";
 import { walletCreationDuration, walletCreationResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
@@ -38,7 +38,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
-  const walletKeys = yield* WalletKeys;
+  const gcp = yield* GcpService;
   const createNotification = yield* makeCreateNotification;
   const verifyPasskeyRegistration = yield* makeVerifyPasskeyRegistration;
 
@@ -105,8 +105,8 @@ export const makeCreateWallet = Effect.gen(function* () {
           } as const;
         })
       : Effect.gen(function* () {
-          const createdKey = yield* walletKeys
-            .create({
+          const createdKey = yield* gcp
+            .createKey({
               id: signingKeyId,
               algorithm: walletPolicy.eip155.algorithm,
               protectionLevel: requestedOwner.protectionLevel,
@@ -123,27 +123,13 @@ export const makeCreateWallet = Effect.gen(function* () {
                   }),
               ),
             );
-          if (createdKey.provider === "1claw") {
-            return yield* new WalletCreationError({
-              code: "KEY_CREATION_FAILED",
-              namespace: input.request.namespace,
-            });
-          }
-          const data =
-            createdKey.provider === "gcp-kms"
-              ? {
-                  version: 1 as const,
-                  type: "gcp-kms" as const,
-                  protectionLevel: createdKey.protectionLevel,
-                  providerAlgorithm: createdKey.data.providerAlgorithm,
-                  keyVersionName: createdKey.data.keyVersionName,
-                }
-              : {
-                  version: 1 as const,
-                  type: "local-provider" as const,
-                  protectionLevel: createdKey.protectionLevel,
-                  fileName: createdKey.data.fileName,
-                };
+          const data = {
+            version: 1 as const,
+            type: "gcp-kms" as const,
+            protectionLevel: createdKey.protectionLevel,
+            providerAlgorithm: createdKey.data.providerAlgorithm,
+            keyVersionName: createdKey.data.keyVersionName,
+          };
           return {
             publicKeyHex: createdKey.publicKeyHex,
             signingKey: {

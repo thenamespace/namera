@@ -1,17 +1,21 @@
 # Wallet-key providers
 
-`@namera-ai/wallet-keys` owns asymmetric key creation, signing, disablement, and
-destruction behind one provider-neutral Effect service. Application and EVM code
-never import a provider client directly.
+Independent `@namera-ai/wallet-provider-gcp` and
+`@namera-ai/wallet-provider-local` packages own asymmetric key creation, signing,
+disablement and destruction through `GcpService` and `LocalService`. There is no
+shared provider service or fallback. Application selects the explicit service;
+EVM receives signing callbacks and imports neither provider. Provider clients and
+private material remain package-owned.
 
-The server composes `WalletKeys.disabledLayer` in every environment. Public
+The server composes both provider-specific `disabledLayer` implementations in every environment. Public
 wallets use browser passkeys, while routine execution and signatures use local
 session keys. This document describes the retained provider package, not an
 active managed-custody product flow.
 
 ## Service contract
 
-`WalletKeys` exposes:
+Each independent service currently exposes `createKey`, `signMessage`,
+`signDigest`, `disableKey`, and `destroyKey` to:
 
 - create key material for a protocol-typed algorithm/protection input;
 - sign a message;
@@ -19,7 +23,7 @@ active managed-custody product flow.
 - disable a key;
 - destroy a key.
 
-The service returns public key material, raw provider signatures, and opaque
+Each service returns public key material, raw provider signatures, and opaque
 provider data. Chain-specific message hashing, signature formatting, smart-
 account construction, and policy evaluation remain in the chain adapter.
 
@@ -38,7 +42,8 @@ provide hardware isolation.
 
 ### Local development
 
-Creates PKCS#8 files below `.data/wallet-keys` by default. The directory uses
+Creates PKCS#8 files below `.data/wallet-keys` by default. The split preserves
+that path in source and unbundled builds, every existing locator and version-1 file. The directory uses
 mode `0700` and files mode `0600`. Active/disabled state is persisted with the
 local key record; destruction removes the file.
 
@@ -52,21 +57,25 @@ provide authentication.
 
 ### Test layer
 
-A package-owned deterministic layer supplies stable public keys and signatures
+Each package owns a deterministic test layer supplying stable public keys and signatures
 for server boundary tests. Consumers do not invent separate wallet-key mocks.
 
 ### 1Claw contract preparation
 
 Protocol has an explicit `1claw` variant, but there is no provider implementation
-or live layer yet. Local, GCP and test creation reject this variant instead of
-creating substitute local/KMS material. The server still uses the disabled layer.
+or live layer yet. Local/GCP live creation rejects provider-discriminated requests instead of
+creating substitute material. Application rejects 1Claw before any provider call.
+The server still uses both disabled layers.
 
-The accounts-first operation contract supports Ethereum/secp256k1 creation,
+The deprecated accounts-first operation contract describes Ethereum/secp256k1 creation,
 32-byte digest signing and disablement only. It does not require or claim HSM
 protection. Message signing and destruction exclude 1Claw; deactivation is not
 destruction. Existing GCP/local contracts and their HSM restriction are unchanged.
-Provider failures can carry bounded `WalletKeyError.code` categories without
-changing existing error construction; provider response mapping is not wired yet.
+Legacy operation schemas and `WalletKeyError` remain deprecated published protocol
+exports only. They are not a runtime provider interface. New packages own their
+operation schemas and `GcpKeyError`/`LocalKeyError`; shared persisted models and
+locators remain in protocol. The future 1Claw service will own its vendor decoding
+and errors.
 
 Creation takes an organization ID and preallocated credential ID. Its result
 contains public material, pinned agent/key/version metadata and a credential
@@ -112,8 +121,8 @@ recovery limits. No customer-token renewal HTTP, OIDC endpoint or public capabil
 is enabled here. The
 factory-based ECDSA schema remains gated on factory compatibility evidence; current
 passkey and 7702 shapes are unchanged. Vendor claim-response decoding belongs in
-the future 1Claw package. The planned provider-specific package split is also
-not implemented by these protocol contracts.
+the future 1Claw package. The phase 4A provider-specific split is complete; 1Claw runtime work remains
+phase 4B.
 
 Next steps are provider implementation and managed EVM
 workflows. Partial remote provisioning will use manual recovery in this iteration;
@@ -122,16 +131,27 @@ no automatic retry of ambiguous creation or automatic key destruction is allowed
 ## Signing semantics
 
 ECDSA message signing hashes with SHA-256; Ed25519 signs the message directly.
-`signHash` accepts an already-computed digest for P-256 and secp256k1 so EVM can
+`signDigest` accepts an already-computed digest for P-256 and secp256k1 so EVM can
 provide Keccak-256 without double hashing. ECDSA signatures are DER encoded and
 converted by the EVM adapter where required; Ed25519 signatures are raw 64-byte
 values.
 
+## Verification and compatibility
+
+Provider tests verify local signatures, exact-digest signing, persisted-key reopening,
+permissions, duplicate-create protection, disabled keys and destruction. GCP tests
+substitute the SDK transport to check CRCs, identity/algorithm checks, lifecycle
+requests and client release without cloud access. Both disabled layers need no
+configuration. Application/server tests retain public custody gates and passkey
+flows. No schema migration, key regeneration or new public API is part of the split.
+Provider spans now use the `wallet-providers.*` namespace.
+
 ## Runtime configuration
 
-The self-custodial server composes `WalletKeys.disabledLayer` in every environment.
+The self-custodial server composes `GcpService.disabledLayer` and
+`LocalService.disabledLayer` in every environment.
 It needs no wallet-key provider configuration and rejects all managed-key operations
-with `WalletKeyError`. Passkey and session signing happen on clients. The local and
+with the corresponding provider-specific error. Passkey and session signing happen on clients. The local and
 GCP providers below remain available only through explicit layer composition.
 
 | Variable                      | Purpose                         |

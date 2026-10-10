@@ -1,5 +1,5 @@
 {
-  "name": "@namera-ai/application",
+  "name": "@namera-ai/wallet-provider-gcp",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -33,24 +33,16 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
-    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "test:watch": "NODE_OPTIONS=--conditions=namera-source vitest",
     "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
-    "test": "NODE_OPTIONS=--conditions=namera-source vitest run"
+    "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
-    "@namera-ai/crypto": "workspace:*",
-    "@namera-ai/database": "workspace:*",
-    "@namera-ai/emails": "workspace:*",
-    "@namera-ai/ens": "workspace:*",
-    "@namera-ai/evm": "workspace:*",
-    "@namera-ai/passkeys": "workspace:*",
+    "@aws-crypto/crc32c": "5.2.0",
+    "@google-cloud/kms": "6.2.1",
     "@namera-ai/protocol": "workspace:*",
-    "@namera-ai/telemetry": "workspace:*",
-    "@namera-ai/utils": "workspace:*",
-    "@namera-ai/wallet-provider-gcp": "workspace:*",
-    "@namera-ai/wallet-provider-local": "workspace:*",
-    "effect": "catalog:",
-    "jose": "^6.2.12"
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",

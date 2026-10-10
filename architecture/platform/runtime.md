@@ -38,7 +38,7 @@ See [admin authorization](../auth/admin.md) for rollout and audit details.
 
 The live graph includes PostgreSQL repositories and transactions, Node Crypto,
 the encrypted EmailJobs service, the selected email provider, disabled
-WalletKeys layer, EVM clients, passkey and Google verification, ENS, application workflows, route handlers, and
+GcpService and LocalService layers, EVM clients, passkey and Google verification, ENS, application workflows, route handlers, and
 telemetry. Provider selection is environment-owned:
 
 - wallet keys: disabled in every server environment for the self-custodial beta;

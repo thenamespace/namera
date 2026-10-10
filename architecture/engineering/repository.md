@@ -36,7 +36,7 @@ flowchart TD
   Server --> Crypto[packages/crypto]
   Server --> Emails[packages/emails]
   Server --> EVM[packages/evm]
-  Server --> WalletKeys[packages/wallet-keys]
+  Server --> Providers[packages/wallet-providers/*]
   Server --> Telemetry
 
   Application --> Protocol
@@ -44,7 +44,7 @@ flowchart TD
   Application --> Crypto
   Application --> Emails
   Application --> EVM
-  Application --> WalletKeys
+  Application --> Providers
   Application --> Telemetry
   Application --> Utils[packages/utils]
   Application --> Passkeys[packages/passkeys]
@@ -56,7 +56,7 @@ flowchart TD
   Crypto --> Protocol
   EVM --> Protocol
   Emails --> Protocol
-  WalletKeys --> Protocol
+  Providers --> Protocol
   UI --> Protocol
 
   SDK[packages/sdk] --> API
@@ -70,29 +70,29 @@ do not import application workflows.
 
 ## Workspace responsibilities
 
-| Workspace              | Responsibility                                                                                                          |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `apps/server`          | Node runtime, middleware, actor authentication, rate limits, HTTP handlers, workers, live Layer composition.            |
-| `apps/dashboard`       | Vite/React dashboard, route loaders, Effect Atom queries, forms, and product presentation.                              |
-| `apps/web`             | Public website, waitlist form, documentation and MDX blog.                                                              |
-| `apps/admin-portal`    | Static platform administration over internal APIs.                                                                      |
-| `apps/cli`             | Effect CLI, OAuth device login, keyring profiles, interactive prompts, output formatting, local signing, and stdio MCP. |
-| `apps/email-templates` | React Email preview and generation of email-safe PNG assets.                                                            |
-| `packages/protocol`    | Effect Schemas, branded identities, models, public DTOs, and expected errors.                                           |
-| `packages/database`    | Drizzle schemas, migrations, PostgreSQL/PGlite layers, transactions, repositories.                                      |
-| `packages/application` | Business workflows, transaction boundaries, billing enforcement, audit and notification orchestration.                  |
-| `packages/api`         | Public typed `HttpApi` declaration and authentication middleware contracts.                                             |
-| `packages/crypto`      | Purpose-separated HMAC, AES-GCM encryption, tokens, and numeric codes.                                                  |
-| `packages/emails`      | Encrypted durable email jobs, worker, Resend provider, and runtime React Email templates.                               |
-| `packages/wallet-keys` | Provider-neutral key lifecycle with local and Google Cloud KMS layers.                                                  |
-| `packages/passkeys`    | WebAuthn ceremony generation and verification.                                                                          |
-| `packages/ens`         | Namespace offchain ENS provider boundary.                                                                               |
-| `packages/template`    | Workspace starter without product runtime behavior.                                                                     |
-| `packages/evm`         | Chain registry, clients, smart accounts, simulations, execution, signing, verification, and policy handlers.            |
-| `packages/telemetry`   | OTLP exporters, service identity, HTTP normalization, and shared bounded metrics.                                       |
-| `packages/sdk`         | Fetch-based Promise client over the generated API contract.                                                             |
-| `packages/ui`          | Shared source-only React components and Namespace UIKit exports.                                                        |
-| `packages/utils`       | Dependency-light deterministic helpers without Effect services or application state.                                    |
+| Workspace                     | Responsibility                                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `apps/server`                 | Node runtime, middleware, actor authentication, rate limits, HTTP handlers, workers, live Layer composition.            |
+| `apps/dashboard`              | Vite/React dashboard, route loaders, Effect Atom queries, forms, and product presentation.                              |
+| `apps/web`                    | Public website, waitlist form, documentation and MDX blog.                                                              |
+| `apps/admin-portal`           | Static platform administration over internal APIs.                                                                      |
+| `apps/cli`                    | Effect CLI, OAuth device login, keyring profiles, interactive prompts, output formatting, local signing, and stdio MCP. |
+| `apps/email-templates`        | React Email preview and generation of email-safe PNG assets.                                                            |
+| `packages/protocol`           | Effect Schemas, branded identities, models, public DTOs, and expected errors.                                           |
+| `packages/database`           | Drizzle schemas, migrations, PostgreSQL/PGlite layers, transactions, repositories.                                      |
+| `packages/application`        | Business workflows, transaction boundaries, billing enforcement, audit and notification orchestration.                  |
+| `packages/api`                | Public typed `HttpApi` declaration and authentication middleware contracts.                                             |
+| `packages/crypto`             | Purpose-separated HMAC, AES-GCM encryption, tokens, and numeric codes.                                                  |
+| `packages/emails`             | Encrypted durable email jobs, worker, Resend provider, and runtime React Email templates.                               |
+| `packages/wallet-providers/*` | Independent GCP/local key services with provider-owned schemas and tests.                                               |
+| `packages/passkeys`           | WebAuthn ceremony generation and verification.                                                                          |
+| `packages/ens`                | Namespace offchain ENS provider boundary.                                                                               |
+| `packages/template`           | Workspace starter without product runtime behavior.                                                                     |
+| `packages/evm`                | Chain registry, clients, smart accounts, simulations, execution, signing, verification, and policy handlers.            |
+| `packages/telemetry`          | OTLP exporters, service identity, HTTP normalization, and shared bounded metrics.                                       |
+| `packages/sdk`                | Fetch-based Promise client over the generated API contract.                                                             |
+| `packages/ui`                 | Shared source-only React components and Namespace UIKit exports.                                                        |
+| `packages/utils`              | Dependency-light deterministic helpers without Effect services or application state.                                    |
 
 ## Source organization
 
@@ -117,5 +117,8 @@ platform membership through `/internal`; see [administration](../auth/admin.md).
 
 The server is the composition root. It selects live providers, supplies secrets
 through Effect `Config`, runs migrations and workers, and exposes transport.
-Application workflows receive interfaces such as repositories, `WalletKeys`,
-EVM, EmailJobs, and telemetry; they do not select concrete providers.
+Application workflows receive repositories, EVM, EmailJobs, telemetry and explicit
+provider services such as `GcpService` or `LocalService`. They choose the service
+from the requested or persisted provider; the server supplies live, disabled or test
+implementations. There is no universal wallet-provider interface or fallback.
+Nested provider packages are included through `packages/wallet-providers/*`.

@@ -31,7 +31,8 @@
     "@namera-ai/passkeys": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
     "@namera-ai/telemetry": "workspace:*",
-    "@namera-ai/wallet-keys": "workspace:*",
+    "@namera-ai/wallet-provider-gcp": "workspace:*",
+    "@namera-ai/wallet-provider-local": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

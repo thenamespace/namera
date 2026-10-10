@@ -1,22 +1,21 @@
 import { createHash } from "node:crypto";
 
-import { Effect, type Config, type Scope } from "effect";
+import { Effect, Schema, type Config, type Scope } from "effect";
 
 import { crc32c } from "@aws-crypto/crc32c";
 import { KeyManagementServiceClient } from "@google-cloud/kms";
 import type { protos } from "@google-cloud/kms";
-import { WalletKeyError } from "@namera-ai/protocol";
-import type {
-  CreateWalletKeyInput,
-  DestroyWalletKeyInput,
-  DisableWalletKeyInput,
-  SignWalletKeyHashInput,
-  SignWalletKeyMessageInput,
-} from "@namera-ai/protocol/model";
 
-import { GcpWalletKeysConfig } from "./config.js";
-import { publicKeyHexFromPem } from "./helpers.js";
-import type { WalletKeysService } from "./service.js";
+import { GcpConfig } from "#/config";
+import { GcpKeyError } from "#/errors";
+import { publicKeyHexFromPem } from "#/key-material";
+import {
+  CreateKeyInput,
+  type KeyReference,
+  SignDigestInput,
+  type SignMessageInput,
+} from "#/schemas";
+import type { GcpOperations } from "#/service";
 
 const providerAlgorithms = {
   p256: "EC_SIGN_P256_SHA256",
@@ -29,27 +28,22 @@ const checksumValue = (value: { readonly value?: unknown } | null | undefined) =
 
 // KMS request and response CRCs are checked explicitly because a successful RPC
 // alone does not prove the bytes received by either side were unchanged.
-export const makeGcpWalletKeys: Effect.Effect<
-  WalletKeysService,
-  Config.ConfigError | WalletKeyError,
+export const makeGcpService: Effect.Effect<
+  GcpOperations,
+  Config.ConfigError | GcpKeyError,
   Scope.Scope
 > = Effect.gen(function* () {
-  const config = yield* GcpWalletKeysConfig;
+  const config = yield* GcpConfig;
   const client = yield* Effect.acquireRelease(
     Effect.sync(() => new KeyManagementServiceClient()),
     (kmsClient) => Effect.promise(() => kmsClient.close()).pipe(Effect.orDie),
   );
   const keyRingName = client.keyRingPath(config.projectId, config.location, config.keyRing);
 
-  const create = Effect.fn("wallet-keys.gcp.create")(function* (input: CreateWalletKeyInput) {
-    if (input.provider === "1claw") {
-      return yield* new WalletKeyError({
-        operation: "create",
-        code: "UNSUPPORTED_OPERATION",
-        cause: new Error("The GCP provider cannot provision 1Claw keys"),
-      });
-    }
-
+  const create = Effect.fn("wallet-providers.gcp.create")(function* (encoded: CreateKeyInput) {
+    const input = yield* Schema.decodeUnknownEffect(CreateKeyInput)(encoded, {
+      onExcessProperty: "error",
+    }).pipe(Effect.mapError((cause) => new GcpKeyError({ operation: "create", cause })));
     const providerAlgorithm = providerAlgorithms[input.algorithm];
     const [key] = yield* Effect.tryPromise({
       try: () =>
@@ -64,12 +58,12 @@ export const makeGcpWalletKeys: Effect.Effect<
             },
           },
         }),
-      catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "create", cause }),
     });
 
     const keyVersionName = key.primary?.name;
     if (keyVersionName === null || keyVersionName === undefined) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "create",
         cause: new Error("Google Cloud KMS did not return the created key version"),
       });
@@ -77,10 +71,10 @@ export const makeGcpWalletKeys: Effect.Effect<
 
     const [publicKey] = yield* Effect.tryPromise({
       try: () => client.getPublicKey({ name: keyVersionName }),
-      catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "create", cause }),
     });
     if (publicKey.pem === null || publicKey.pem === undefined) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "create",
         cause: new Error("Google Cloud KMS did not return a public key"),
       });
@@ -91,7 +85,7 @@ export const makeGcpWalletKeys: Effect.Effect<
       publicKeyChecksum === undefined ||
       publicKeyChecksum !== crc32c(Buffer.from(publicKey.pem, "utf8"))
     ) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "create",
         cause: new Error("Google Cloud KMS public key integrity verification failed"),
       });
@@ -100,7 +94,6 @@ export const makeGcpWalletKeys: Effect.Effect<
     const publicKeyHex = yield* publicKeyHexFromPem(publicKey.pem, input.algorithm);
 
     return {
-      provider: "gcp-kms",
       algorithm: input.algorithm,
       protectionLevel: input.protectionLevel,
       publicKeyHex,
@@ -113,17 +106,10 @@ export const makeGcpWalletKeys: Effect.Effect<
   });
 
   const validateSigningInput = Effect.fnUntraced(function* (
-    input: SignWalletKeyMessageInput | SignWalletKeyHashInput,
+    input: SignMessageInput | SignDigestInput,
   ) {
-    if (input.provider !== "gcp-kms") {
-      return yield* new WalletKeyError({
-        operation: "sign",
-        cause: new Error("Google Cloud KMS wallet keys require GCP provider data"),
-      });
-    }
-
     if (input.data.providerAlgorithm !== providerAlgorithms[input.algorithm]) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "sign",
         cause: new Error("Wallet key algorithm does not match the stored GCP algorithm"),
       });
@@ -138,14 +124,14 @@ export const makeGcpWalletKeys: Effect.Effect<
     integrityVerified: boolean | null | undefined,
   ) {
     if (response.name !== keyVersionName || integrityVerified !== true) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "sign",
         cause: new Error("Google Cloud KMS did not verify the signing request integrity"),
       });
     }
 
     if (response.signature === null || response.signature === undefined) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "sign",
         cause: new Error("Google Cloud KMS did not return a signature"),
       });
@@ -157,7 +143,7 @@ export const makeGcpWalletKeys: Effect.Effect<
         : new Uint8Array(response.signature);
     const signatureChecksum = checksumValue(response.signatureCrc32c);
     if (signatureChecksum === undefined || signatureChecksum !== crc32c(signature)) {
-      return yield* new WalletKeyError({
+      return yield* new GcpKeyError({
         operation: "sign",
         cause: new Error("Google Cloud KMS signature integrity verification failed"),
       });
@@ -166,7 +152,7 @@ export const makeGcpWalletKeys: Effect.Effect<
     return signature;
   });
 
-  const signDigest = Effect.fnUntraced(function* (keyVersionName: string, hash: Uint8Array) {
+  const kmsSignDigest = Effect.fnUntraced(function* (keyVersionName: string, hash: Uint8Array) {
     const [response] = yield* Effect.tryPromise({
       try: () =>
         client.asymmetricSign({
@@ -174,18 +160,18 @@ export const makeGcpWalletKeys: Effect.Effect<
           digest: { sha256: hash },
           digestCrc32c: { value: crc32c(hash) },
         }),
-      catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "sign", cause }),
     });
 
     return yield* validateSignature(response, keyVersionName, response.verifiedDigestCrc32c);
   });
 
-  const signMessage = Effect.fn("wallet-keys.gcp.signMessage")(function* (
-    input: SignWalletKeyMessageInput,
+  const signMessage = Effect.fn("wallet-providers.gcp.signMessage")(function* (
+    input: SignMessageInput,
   ) {
     const data = yield* validateSigningInput(input);
     if (input.algorithm !== "ed25519") {
-      return yield* signDigest(
+      return yield* kmsSignDigest(
         data.keyVersionName,
         createHash("sha256").update(input.message).digest(),
       );
@@ -198,48 +184,39 @@ export const makeGcpWalletKeys: Effect.Effect<
           data: input.message,
           dataCrc32c: { value: crc32c(input.message) },
         }),
-      catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "sign", cause }),
     });
 
     return yield* validateSignature(response, data.keyVersionName, response.verifiedDataCrc32c);
   });
 
-  const signHash = Effect.fn("wallet-keys.gcp.signHash")(function* (input: SignWalletKeyHashInput) {
+  const signDigest = Effect.fn("wallet-providers.gcp.signDigest")(function* (
+    encoded: SignDigestInput,
+  ) {
+    const input = yield* Schema.decodeUnknownEffect(SignDigestInput)(encoded).pipe(
+      Effect.mapError((cause) => new GcpKeyError({ operation: "sign", cause })),
+    );
     const data = yield* validateSigningInput(input);
-    return yield* signDigest(data.keyVersionName, input.hash);
+    return yield* kmsSignDigest(data.keyVersionName, input.hash);
   });
 
-  const disable = Effect.fn("wallet-keys.gcp.disable")(function* (input: DisableWalletKeyInput) {
-    if (input.provider !== "gcp-kms") {
-      return yield* new WalletKeyError({
-        operation: "disable",
-        cause: new Error("Google Cloud KMS wallet keys require GCP provider data"),
-      });
-    }
-
+  const disable = Effect.fn("wallet-providers.gcp.disable")(function* (input: KeyReference) {
     yield* Effect.tryPromise({
       try: () =>
         client.updateCryptoKeyVersion({
           cryptoKeyVersion: { name: input.data.keyVersionName, state: "DISABLED" },
           updateMask: { paths: ["state"] },
         }),
-      catch: (cause) => new WalletKeyError({ operation: "disable", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "disable", cause }),
     });
   });
 
-  const destroy = Effect.fn("wallet-keys.gcp.destroy")(function* (input: DestroyWalletKeyInput) {
-    if (input.provider !== "gcp-kms") {
-      return yield* new WalletKeyError({
-        operation: "destroy",
-        cause: new Error("Google Cloud KMS wallet keys require GCP provider data"),
-      });
-    }
-
+  const destroy = Effect.fn("wallet-providers.gcp.destroy")(function* (input: KeyReference) {
     yield* Effect.tryPromise({
       try: () => client.destroyCryptoKeyVersion({ name: input.data.keyVersionName }),
-      catch: (cause) => new WalletKeyError({ operation: "destroy", cause }),
+      catch: (cause) => new GcpKeyError({ operation: "destroy", cause }),
     });
   });
 
-  return { create, signMessage, signHash, disable, destroy };
+  return { createKey: create, signMessage, signDigest, disableKey: disable, destroyKey: destroy };
 });

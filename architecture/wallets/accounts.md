@@ -22,7 +22,7 @@ sequenceDiagram
   participant App as Application.wallet.create
   participant Billing
   participant Passkeys
-  participant Keys as Managed WalletKeys
+  participant Keys as GcpService
   participant EVM
   participant Tx as PostgreSQL transaction
 
@@ -79,8 +79,8 @@ Owner variants:
   response. The server verifies user presence, user verification, challenge,
   origin, RP ID, and ES256 before storing only the credential identifier and
   public key.
-- Internally, `namera-managed` includes `software` or `hsm` protection. The configured
-  `WalletKeys` provider creates the private key; only its opaque locator and
+- Internally, `namera-managed` includes `software` or `hsm` protection. The explicit
+  `GcpService` creates the private key; only its opaque locator and
   public key are persisted.
 
 Free v1 allows 50 local passkey wallets. They do not consume a periodic meter
@@ -98,7 +98,8 @@ reserve, or create an ENS subname.
   reconstruction. Application does not contain chain-specific derivation code.
 - Reconstruction derives the smart-account address and rejects persisted data
   when it does not match the stored address.
-- Managed owner signatures use provider-neutral key operations and adapter-owned
+- Managed owner signatures use application-supplied callbacks backed by explicit
+  GCP/local services and adapter-owned
   EVM formatting. A local root cannot be signed by the server.
 
 See [supported EVM chains](../evm/supported-chains.md) for registry/provider

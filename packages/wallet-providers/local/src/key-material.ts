@@ -2,13 +2,15 @@ import { createPrivateKey, createPublicKey, generateKeyPair } from "node:crypto"
 
 import { Effect, Schema } from "effect";
 
-import { Hex, WalletKeyError } from "@namera-ai/protocol";
-import type { CreateWalletKeyInput, WalletKey } from "@namera-ai/protocol/model";
+import { Hex } from "@namera-ai/protocol";
 import { p256 } from "@noble/curves/nist.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 
+import { LocalKeyError } from "#/errors";
+import type { CreateKeyInput } from "#/schemas";
+
 export const generateLocalKeyPair = Effect.fnUntraced(function* (
-  algorithm: CreateWalletKeyInput["algorithm"],
+  algorithm: CreateKeyInput["algorithm"],
 ) {
   return yield* Effect.tryPromise({
     try: () =>
@@ -46,7 +48,7 @@ export const generateLocalKeyPair = Effect.fnUntraced(function* (
           );
         },
       ),
-    catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+    catch: (cause) => new LocalKeyError({ operation: "create", cause }),
   });
 });
 
@@ -57,11 +59,11 @@ export const signLocalHash = Effect.fnUntraced(function* (
 ) {
   const privateKey = yield* Effect.try({
     try: () => createPrivateKey(privateKeyPem).export({ format: "jwk" }),
-    catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+    catch: (cause) => new LocalKeyError({ operation: "sign", cause }),
   });
 
   if (privateKey.d === undefined) {
-    return yield* new WalletKeyError({
+    return yield* new LocalKeyError({
       operation: "sign",
       cause: new Error("Private key material is missing"),
     });
@@ -76,21 +78,21 @@ export const signLocalHash = Effect.fnUntraced(function* (
         prehash: false,
         format: "der",
       }),
-    catch: (cause) => new WalletKeyError({ operation: "sign", cause }),
+    catch: (cause) => new LocalKeyError({ operation: "sign", cause }),
   });
 });
 
 export const publicKeyHexFromPem = Effect.fnUntraced(function* (
   pem: string,
-  algorithm: WalletKey["algorithm"],
+  algorithm: CreateKeyInput["algorithm"],
 ) {
   const jwk = yield* Effect.try({
     try: () => createPublicKey(pem).export({ format: "jwk" }),
-    catch: (cause) => new WalletKeyError({ operation: "create", cause }),
+    catch: (cause) => new LocalKeyError({ operation: "create", cause }),
   });
 
   if (jwk.x === undefined) {
-    return yield* new WalletKeyError({
+    return yield* new LocalKeyError({
       operation: "create",
       cause: new Error("Public key coordinates are missing"),
     });
@@ -99,12 +101,12 @@ export const publicKeyHexFromPem = Effect.fnUntraced(function* (
   const x = Buffer.from(jwk.x, "base64url").toString("hex");
   if (algorithm === "ed25519") {
     return yield* Schema.decodeUnknownEffect(Hex)(`0x${x}`).pipe(
-      Effect.mapError((cause) => new WalletKeyError({ operation: "create", cause })),
+      Effect.mapError((cause) => new LocalKeyError({ operation: "create", cause })),
     );
   }
 
   if (jwk.y === undefined) {
-    return yield* new WalletKeyError({
+    return yield* new LocalKeyError({
       operation: "create",
       cause: new Error("Public key coordinates are missing"),
     });
@@ -113,6 +115,6 @@ export const publicKeyHexFromPem = Effect.fnUntraced(function* (
   const value = `0x04${x}${Buffer.from(jwk.y, "base64url").toString("hex")}`;
 
   return yield* Schema.decodeUnknownEffect(Hex)(value).pipe(
-    Effect.mapError((cause) => new WalletKeyError({ operation: "create", cause })),
+    Effect.mapError((cause) => new LocalKeyError({ operation: "create", cause })),
   );
 });

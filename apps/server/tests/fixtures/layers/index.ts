@@ -9,7 +9,8 @@ import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { EnsTestLayer } from "@namera-ai/ens";
 import { Evm, type EvmTestOptions } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
+import { LocalService } from "@namera-ai/wallet-provider-local";
 
 import { AuthCookieConfig } from "#/helpers/auth-cookie";
 import { AdminAuthorizationLive, PlatformSessionAuthorizationLive } from "#/middlewares/admin";
@@ -76,7 +77,8 @@ export const makeTestServerLayer = (
     EmailJobs.layer,
     EnsTestLayer,
     Evm.testLayerWith(evmOptions),
-    WalletKeys.testLayer,
+    GcpService.testLayer,
+    LocalService.testLayer,
     passkeysLayer,
   ).pipe(
     Layer.provideMerge(EmailService.testLayer),

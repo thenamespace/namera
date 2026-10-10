@@ -2,12 +2,9 @@ import { Data, Effect, Schema } from "effect";
 
 import type { WalletView } from "@namera-ai/database";
 import { createWalletKeySecp256k1Account, createWalletKeyWebAuthnAccount } from "@namera-ai/evm";
-import {
-  GcpSigningKeyData,
-  ManagedLocalSigningKeyData,
-  WalletKeyHash,
-} from "@namera-ai/protocol/model";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpSigningKeyData, ManagedLocalSigningKeyData } from "@namera-ai/protocol/model";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
+import { LocalService } from "@namera-ai/wallet-provider-local";
 
 import { AuthConfig } from "#/auth/config";
 
@@ -15,7 +12,8 @@ export class WalletAccountUnavailable extends Data.TaggedError("WalletAccountUna
 
 export const makeLoadEvmAccount = Effect.gen(function* () {
   const authConfig = yield* AuthConfig;
-  const walletKeys = yield* WalletKeys;
+  const gcp = yield* GcpService;
+  const local = yield* LocalService;
 
   return Effect.fnUntraced(function* (wallet: WalletView) {
     if (
@@ -64,7 +62,9 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
         rpId: authConfig.dashboardPublicOrigin.hostname,
         validatorType: "webauthn_p256",
         sign: (payload) =>
-          Effect.runPromise(walletKeys.signMessage({ ...signer, message: payload })),
+          signer.provider === "gcp-kms"
+            ? Effect.runPromise(gcp.signMessage({ ...signer, message: payload }))
+            : Effect.runPromise(local.signMessage({ ...signer, message: payload })),
       });
 
       return {
@@ -80,13 +80,9 @@ export const makeLoadEvmAccount = Effect.gen(function* () {
     const owner = createWalletKeySecp256k1Account({
       publicKey: wallet.signingKey.publicKeyHex,
       sign: (hash) =>
-        Effect.runPromise(
-          walletKeys.signHash({
-            ...signer,
-            algorithm: "secp256k1",
-            hash: Schema.decodeSync(WalletKeyHash)(hash),
-          }),
-        ),
+        signer.provider === "gcp-kms"
+          ? Effect.runPromise(gcp.signDigest({ ...signer, algorithm: "secp256k1", hash }))
+          : Effect.runPromise(local.signDigest({ ...signer, algorithm: "secp256k1", hash })),
     });
 
     return {

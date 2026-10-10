@@ -1,0 +1,43 @@
+import { expect, it } from "@effect/vitest";
+import { ConfigProvider, Effect, Layer, Schema } from "effect";
+
+import { SigningKeyId } from "@namera-ai/protocol";
+
+import { GcpService, GcpKeyError } from "../../src/index.js";
+
+it.effect("needs no provider configuration and rejects every managed-key operation", () =>
+  Effect.gen(function* () {
+    const keys = yield* GcpService;
+    const stored = {
+      algorithm: "p256",
+      data: { version: 1, providerAlgorithm: "EC_SIGN_P256_SHA256", keyVersionName: "unused" },
+    } as const;
+    const operations: ReadonlyArray<
+      readonly [Effect.Effect<unknown, GcpKeyError>, GcpKeyError["operation"]]
+    > = [
+      [
+        keys.createKey({
+          id: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000001"),
+          algorithm: "p256",
+          protectionLevel: "software",
+        }),
+        "create",
+      ],
+      [keys.signMessage({ ...stored, message: new Uint8Array(1) }), "sign"],
+      [keys.signDigest({ ...stored, hash: new Uint8Array(32) }), "sign"],
+      [keys.disableKey(stored), "disable"],
+      [keys.destroyKey(stored), "destroy"],
+    ] as const;
+    for (const [operation, name] of operations) {
+      const error = yield* Effect.flip(operation);
+      expect(error).toBeInstanceOf(GcpKeyError);
+      expect(error.operation).toBe(name);
+    }
+  }).pipe(
+    Effect.provide(
+      GcpService.disabledLayer.pipe(
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromUnknown({}))),
+      ),
+    ),
+  ),
+);

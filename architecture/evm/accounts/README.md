@@ -16,8 +16,9 @@ implemented internally; public creation does not expose 7702 accounts.
 
 The database stores only the public data needed to reconstruct the account.
 Public wallet creation uses a browser passkey; its private key remains with
-the authenticator. Internal managed-provider adapters belong to `wallet-keys`,
-whose server layer is disabled.
+the authenticator. Internal managed-provider adapters belong to independent
+`wallet-providers/gcp` and `wallet-providers/local` packages, whose server layers
+are disabled. Application supplies their signing callbacks to EVM.
 
 ## Stored account data
 
@@ -92,7 +93,7 @@ WebAuthn account expected by the Alchemy SDK:
 
 1. create a WebAuthn sign payload for the requested hash and configured origin
    and RP ID;
-2. ask `WalletKeys` to sign the payload bytes;
+2. invoke the application-supplied callback to sign the payload bytes;
 3. decode the provider's DER P-256 signature;
 4. construct the serialized WebAuthn response metadata;
 5. expose `sign`, `signMessage`, and `signTypedData` without exposing private
@@ -121,7 +122,7 @@ reconciliation updates installation state; see [session keys](../../wallets/sess
 the Viem local account required by Alchemy's 7702 mode:
 
 1. derive the EOA address from the stored uncompressed secp256k1 public key;
-2. ask `WalletKeys` to sign exact Keccak-256 digests;
+2. invoke the application-supplied callback to sign exact Keccak-256 digests;
 3. normalize DER signatures to low-S Ethereum signatures and recover parity
    against the stored public key;
 4. implement message, typed-data, and EIP-7702 authorization signing;

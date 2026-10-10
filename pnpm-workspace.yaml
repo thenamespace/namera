@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - packages/wallet-providers/*
 
 allowBuilds:
   esbuild: true

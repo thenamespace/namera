@@ -8,7 +8,8 @@ import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { WalletKeys } from "@namera-ai/wallet-keys";
+import { GcpService } from "@namera-ai/wallet-provider-gcp";
+import { LocalService } from "@namera-ai/wallet-provider-local";
 
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
@@ -46,7 +47,8 @@ export const ServicesLive = Layer.mergeAll(
   PersistenceLive,
   CryptoLive,
   EmailJobsLive,
-  WalletKeys.disabledLayer,
+  GcpService.disabledLayer,
+  LocalService.disabledLayer,
   EvmLive,
   Ens.layer,
   Passkeys.layer,
