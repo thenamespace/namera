@@ -27,6 +27,7 @@ export interface SigningKeyRepositoryService {
   readonly findById: (
     id: SigningKeyId,
     organizationId: OrganizationId,
+    forUpdate?: boolean,
   ) => Effect.Effect<SigningKeyModel | undefined, DatabaseError>;
   readonly findByPublicKey: (input: {
     readonly organizationId: OrganizationId;
@@ -116,8 +117,18 @@ export class SigningKeyRepository extends Context.Service<
         findById: Effect.fn("database.signingKeyRepository.findById")(function* (
           id,
           organizationId,
+          forUpdate = false,
         ) {
           const db = yield* transactionOrDatabase(database);
+          if (forUpdate) {
+            const rows = yield* db
+              .select()
+              .from(signingKey)
+              .where(and(eq(signingKey.id, id), eq(signingKey.organizationId, organizationId)))
+              .limit(1)
+              .for("update");
+            return rows[0] === undefined ? undefined : decodeSigningKey(rows[0]);
+          }
           const row = yield* db.query.signingKey.findFirst({
             where: {
               id: { eq: id },

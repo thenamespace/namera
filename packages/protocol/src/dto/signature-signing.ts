@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import {
   SessionKeyId,
@@ -56,3 +56,23 @@ export type PrepareSignatureRequest = typeof PrepareSignatureRequest.Type;
 export type PrepareSignatureResponse = typeof PrepareSignatureResponse.Type;
 export type CompleteSignatureRequest = typeof CompleteSignatureRequest.Type;
 export type CompleteSignatureResponse = typeof CompleteSignatureResponse.Type;
+
+export const PrepareManagedSignatureRequest = PrepareSignatureRequest.annotate({
+  identifier: "PrepareManagedSignatureRequest",
+  description:
+    "Reserve permitted message or typed-data signing by an installed 1Claw-managed session.",
+});
+export const PrepareManagedSignatureResponse = Schema.Struct(
+  Struct.omit(PrepareSignatureResponse.fields, ["signing"]),
+).annotate({ identifier: "PrepareManagedSignatureResponse" });
+export const CompleteManagedSignatureRequest = Schema.Struct({
+  namespace: Schema.Literal("eip155"),
+  operationId: SignatureOperationId,
+}).annotate({
+  identifier: "CompleteManagedSignatureRequest",
+  description:
+    "Sign only the stored payload. Results are not persisted. After a lost successful response, prepare a fresh authorized billable attempt.",
+});
+export type PrepareManagedSignatureResponse = typeof PrepareManagedSignatureResponse.Type;
+export type PrepareManagedSignatureRequest = typeof PrepareManagedSignatureRequest.Type;
+export type CompleteManagedSignatureRequest = typeof CompleteManagedSignatureRequest.Type;

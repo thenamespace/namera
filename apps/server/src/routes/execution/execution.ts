@@ -17,6 +17,48 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
     const app = yield* Application.Application;
 
     return handlers
+      .handle("prepareManaged", ({ headers, payload }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
+          });
+          yield* consumeRateLimit(
+            "execution.prepare.actor",
+            data.actorId,
+            rateLimitPolicy.execution.byApiKey,
+          );
+          return yield* app.execution.prepareManaged({
+            actor: data,
+            request: payload,
+            idempotencyKey: headers["idempotency-key"],
+          });
+        }),
+      )
+      .handle("completeManaged", ({ payload }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
+          });
+          yield* consumeRateLimit(
+            "execution.complete.actor",
+            data.actorId,
+            rateLimitPolicy.execution.byApiKey,
+          );
+          return yield* app.execution.completeManaged({ actor: data, request: payload });
+        }),
+      )
       .handle("prepare", ({ headers, payload }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({

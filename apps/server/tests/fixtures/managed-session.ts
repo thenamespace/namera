@@ -5,6 +5,7 @@ import { Repository } from "@namera-ai/database";
 import {
   makeTestEvmExecutionService,
   makeTestEvmSessionService,
+  makeTestEvmSessionSignatureService,
   type EvmExecutionService,
 } from "@namera-ai/evm";
 import { EthereumAddress, Hex } from "@namera-ai/protocol";
@@ -19,10 +20,12 @@ const execution = makeTestEvmExecutionService({}, { signWithOwner: true });
 export const managedSessionLayer = (
   overrides: Partial<EvmExecutionService> = {},
   passkeysLayer?: Parameters<typeof makeTestServerLayer>[1],
+  signatureOptions: Parameters<typeof makeTestEvmSessionSignatureService>[0] = {},
 ) =>
   makeTestServerLayer(
     {
       sessions: makeTestEvmSessionService(),
+      sessionSignatures: makeTestEvmSessionSignatureService(signatureOptions),
       execution: {
         sign: execution.sign,
         sessionSigningMessage: () => Effect.succeed(Hex.make(`0x${"22".repeat(32)}`)),

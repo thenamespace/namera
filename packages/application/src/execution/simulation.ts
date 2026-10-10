@@ -38,6 +38,7 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
       const { prepared, authority } = yield* prepareExecution({
         actor: input.actor,
         request: { ...input.request, sponsor: false },
+        custody: "either",
       });
       const sessionKey = authority.sessionKey;
       const seeds = yield* evm.policy.getStateSeeds({

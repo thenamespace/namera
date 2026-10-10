@@ -28,6 +28,7 @@ export const EvmExecutionSubmissionData = Schema.Struct({
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signedExecution: Schema.NullOr(EvmSignedExecution),
   broadcastAttempted: Schema.optionalKey(Schema.Literal(true)),
+  managedSignerBinding: Schema.optionalKey(NonEmptyString),
 });
 
 const ExecutionSubmissionCommon = Schema.Struct({

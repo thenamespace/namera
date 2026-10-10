@@ -181,7 +181,9 @@ grants. Both session custody types use the existing owner-operation endpoints:
 passkey prepare/complete for passkey parents and managed prepare/approve for
 1Claw parents. Only receipt confirmation activates an installation; revocation
 immediately removes grants before owner-approved onchain removal. Managed session
-execution/signing and client integration remain deferred.
+execution/signing is available through the explicit `/executions/managed/*` and
+`/signatures/managed/*` prepare/complete routes. They retain the existing delegated
+actor scopes and rate limits. Managed client selection remains a separate phase.
 Local creation is unchanged. No additional environment configuration is required.
 
 Session-key revocation is limited to 60 attempts per active organization per

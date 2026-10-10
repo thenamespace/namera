@@ -26,6 +26,38 @@ contracts for granted delegated actors. The SDK, CLI and local MCP
 use prepare/complete with local signing.
 No routine execution falls back to the wallet owner's signing key.
 
+### Managed sessions
+
+`POST /executions/managed/prepare` and `/executions/managed/complete` use the same
+API-key/CLI/MCP grants, OAuth scopes and actor rate limits as local execution.
+Preparation requires a 1Claw session-purpose signer and reuses policy, simulation,
+sponsorship and billing admission. Its response omits local signing instructions.
+Completion accepts only namespace and submission ID; clients cannot replace a
+digest, signature, calls or provider identity. Local endpoints reject managed
+attempts, including reuse of their idempotency keys.
+
+The preparation retains an internal public signer-binding snapshot. Completion
+claims a two-minute database lease on the reserved row, then signs outside the
+transaction. The EVM secp256k1 adapter applies EIP-191 to the canonical stored
+UserOperation hash and verifies recovery against the session public key. No
+wallet-root credential is used. Final acceptance locks the wallet, grant,
+session signer and provider connection, rechecks live authority and the snapshot,
+and requires the current unexpired lease. A revoked or replaced signer, disabled
+connection, expired reservation or stale lease cannot enqueue the result.
+
+Provider errors and interrupted requests retain their lease until timeout. A
+retry after timeout signs the same stored preparation, never a newly prepared
+economic action. Only the accepted envelope is saved; duplicate completion returns
+its durable status without another signature. Existing broadcast, uncertain-send,
+receipt and billing recovery remain unchanged. Unsigned expiry releases holds.
+SDK/CLI/MCP managed-custody selection is a separate client phase.
+
+HTTP tests cover both parent custodians, real session ECDSA, concurrent completion,
+provider errors and lease retry, local/managed route isolation, policy admission,
+revocation/key/connection races and worker settlement on migrated PostgreSQL.
+Repository tests additionally reject stale-token acceptance after takeover.
+Chain RPC and 1Claw responses are substitutes, not live-provider validation.
+
 The complete `core.execution_submission` and `core.execution` definitions are
 in the [core database catalog](../database/core-wallets-operations.md). The
 mutable submission makes retries/reconciliation explicit; the confirmed
@@ -181,7 +213,7 @@ injects Effect interruption, not an OS process kill or live bundler crash.
 ## Simulation
 
 `POST /executions/simulate` requires wallet, chain, calls and an explicit
-`sessionKeyId`. It resolves the same active grant and installed local signer as
+`sessionKeyId`. It resolves the same active grant and installed local or 1Claw signer as
 execution, then runs shared public-only preparation and API policy preview.
 It returns call outcomes and either approval for that session or its first
 policy ID/denial code. It does not

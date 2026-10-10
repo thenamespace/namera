@@ -12,6 +12,9 @@ import {
   PrepareExecutionResponse,
   CompleteExecutionRequest,
   CompleteExecutionResponse,
+  PrepareManagedExecutionRequest,
+  PrepareManagedExecutionResponse,
+  CompleteManagedExecutionRequest,
   GetExecutionRequest,
   GetExecutionResponse,
   GetExecutionSubmissionRequest,
@@ -27,6 +30,17 @@ import { Authorization } from "#/middlewares/index";
 
 export class ExecutionGroup extends HttpApiGroup.make("execution")
   .add(
+    HttpApiEndpoint.post("prepareManaged", "/managed/prepare", {
+      payload: PrepareManagedExecutionRequest,
+      headers: ExecuteRequestHeaders,
+      success: PrepareManagedExecutionResponse,
+      error: [ExecutionError, ...BillingErrors, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Prepare an execution for a 1Claw-managed session"),
+    HttpApiEndpoint.post("completeManaged", "/managed/complete", {
+      payload: CompleteManagedExecutionRequest,
+      success: CompleteExecutionResponse,
+      error: [ExecutionError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Sign the stored managed execution and queue it for broadcast"),
     HttpApiEndpoint.post("prepare", "/prepare", {
       payload: PrepareExecutionRequest,
       headers: ExecuteRequestHeaders,

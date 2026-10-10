@@ -5,6 +5,7 @@ import {
   OrganizationId,
   SessionKeyGrantId,
   SessionKeyId,
+  SessionKeyInstallationId,
   SignatureOperationId,
   WalletId,
 } from "#/common/index";
@@ -20,6 +21,8 @@ export const SignatureOperationFailureCode = Schema.Literals([
 ]);
 
 const EvmSignatureOperationDataCommon = {
+  managedSignerBinding: Schema.optionalKey(NonEmptyString),
+  installationId: Schema.optionalKey(SessionKeyInstallationId),
   version: Schema.Literal(1),
   chainId: SupportedEvmChainId,
   account: EthereumAddress,
@@ -55,6 +58,8 @@ const SignatureOperationCommon = Schema.Struct({
   requestHash: NonEmptyString,
   policyHash: NonEmptyString,
   status: SignatureOperationStatus,
+  leaseToken: Schema.NullOr(NonEmptyString),
+  leaseExpiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   failureCode: Schema.NullOr(SignatureOperationFailureCode),
   reservationExpiresAt: Schema.DateTimeUtcFromDate,
   succeededAt: Schema.NullOr(Schema.DateTimeUtcFromDate),

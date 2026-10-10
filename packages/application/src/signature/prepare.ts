@@ -14,6 +14,7 @@ import { utf8ByteLength } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { makeBillingMetering } from "#/billing/index";
+import { sessionSignerBinding } from "#/oneclaw/session-signer";
 
 import { makeSignatureAuthority } from "./authority.js";
 
@@ -31,8 +32,10 @@ export const makePrepareSignature = Effect.gen(function* () {
       readonly actor: GrantedActorData;
       readonly idempotencyKey: string;
       readonly request: PrepareSignatureRequest;
+      readonly custody?: "local" | "namera-managed";
     }) {
       const { request, actor } = input;
+      const custody = input.custody ?? "local";
       const requestHash = yield* crypto.hash({
         purpose: cryptoPurpose.signatureRequest,
         value: JSON.stringify(Schema.encodeSync(PrepareSignatureRequest)(request)),
@@ -44,7 +47,12 @@ export const makePrepareSignature = Effect.gen(function* () {
       );
       if (prior !== undefined && prior.requestHash !== requestHash)
         return yield* new SignatureError({ code: "IDEMPOTENCY_CONFLICT" });
-      const scope = { ...request, actor };
+      if (
+        prior !== undefined &&
+        (prior.data.managedSignerBinding !== undefined) !== (custody === "namera-managed")
+      )
+        return yield* new SignatureError({ code: "IDEMPOTENCY_CONFLICT" });
+      const scope = { ...request, actor, custody };
       const selected = yield* authority.load(scope);
       yield* authority.evaluate(selected, request);
       const typedData = yield* evm.sessionSignatures
@@ -102,6 +110,12 @@ export const makePrepareSignature = Effect.gen(function* () {
               namespace: "eip155" as const,
             };
             const commonData = {
+              ...(custody === "namera-managed"
+                ? {
+                    managedSignerBinding: sessionSignerBinding(current.signer),
+                    installationId: current.installation.id,
+                  }
+                : {}),
               version: 1 as const,
               chainId: request.chainId,
               account: current.wallet.wallet.data.address,
@@ -156,6 +170,7 @@ export const makePrepareSignature = Effect.gen(function* () {
         ));
       if (
         operation.status === "failed" ||
+        (custody === "namera-managed" && operation.status === "succeeded") ||
         DateTime.toEpochMillis(operation.reservationExpiresAt) <=
           DateTime.toEpochMillis(yield* DateTime.now)
       )

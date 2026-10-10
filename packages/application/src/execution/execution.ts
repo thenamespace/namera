@@ -7,6 +7,8 @@ import type {
   GrantedActorData,
   PrepareExecutionRequest,
   PrepareExecutionResponse,
+  PrepareManagedExecutionResponse,
+  CompleteManagedExecutionRequest,
 } from "@namera-ai/protocol/dto";
 
 import { makeCompleteLocalExecution } from "./complete-local.js";
@@ -30,6 +32,13 @@ export interface ExecutionApplication
     readonly request: CompleteExecutionRequest;
   }) => Effect.Effect<CompleteExecutionResponse, ExecutionError>;
   readonly reconcile: () => Effect.Effect<number>;
+  readonly prepareManaged: (
+    input: Parameters<ExecutionApplication["prepare"]>[0],
+  ) => Effect.Effect<PrepareManagedExecutionResponse, BillingError | ExecutionError>;
+  readonly completeManaged: (input: {
+    readonly actor: GrantedActorData;
+    readonly request: CompleteManagedExecutionRequest;
+  }) => Effect.Effect<CompleteExecutionResponse, ExecutionError>;
 }
 
 export const makeExecutionApplication = Effect.gen(function* () {
@@ -41,6 +50,11 @@ export const makeExecutionApplication = Effect.gen(function* () {
   return {
     prepare,
     complete,
+    prepareManaged: (input) =>
+      prepare({ ...input, custody: "namera-managed" }).pipe(
+        Effect.map(({ signing: _signing, ...result }) => result),
+      ),
+    completeManaged: (input) => complete({ ...input, custody: "namera-managed" }),
     reconcile: reconciliation.reconcile,
     ...read,
     ...simulation,

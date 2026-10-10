@@ -5,7 +5,10 @@ import { Repository } from "@namera-ai/database";
 import { makeTestEvmExecutionService } from "@namera-ai/evm";
 import { createTestAuthenticator } from "@namera-ai/passkeys/testing";
 import { Hex } from "@namera-ai/protocol";
-import type { PrepareSessionKeyOperationRequest } from "@namera-ai/protocol/dto";
+import type {
+  PrepareSessionKeyOperationRequest,
+  CreateSessionKeyRequest,
+} from "@namera-ai/protocol/dto";
 import { OneClawTestControl } from "@namera-ai/wallet-provider-oneclaw";
 
 import type { TestApiClient } from "./api.js";
@@ -14,18 +17,38 @@ import { createTestPasskeyWallet, localSessionRequest } from "./local-session.js
 import { managedSessionLayer } from "./managed-session.js";
 
 const authenticator = createTestAuthenticator();
-const execution = makeTestEvmExecutionService();
-export const sessionCustodyLayer = managedSessionLayer(
-  {
-    ownerApprovalChallenge: () => Effect.succeed(Hex.make(`0x${"11".repeat(32)}`)),
-    completeOwnerApproval: execution.sign,
-  },
-  authenticator.layer,
-);
+const execution = makeTestEvmExecutionService({}, { verifySessionSignature: true });
+export const makeSessionCustodyLayer = (
+  delay?: "10 seconds" | "3 minutes",
+  onVerification: Effect.Effect<void> = Effect.void,
+) => {
+  const sessionExecution = makeTestEvmExecutionService(
+    {},
+    {
+      verifySessionSignature: true,
+      onSessionVerification: onVerification,
+      ...(delay === undefined ? {} : { sessionVerificationDelay: delay }),
+    },
+  );
+  return managedSessionLayer(
+    {
+      ownerApprovalChallenge: () => Effect.succeed(Hex.make(`0x${"11".repeat(32)}`)),
+      completeOwnerApproval: execution.sign,
+      completeSessionExecution: sessionExecution.completeSessionExecution,
+    },
+    authenticator.layer,
+    { onVerification, ...(delay === undefined ? {} : { verificationDelay: delay }) },
+  );
+};
+export const sessionCustodyLayer = makeSessionCustodyLayer();
 
 export const setupSessionCustody = Effect.fn("test.setupSessionCustody")(function* (
   owner: "passkey" | "1claw",
   custody: "local" | "1claw",
+  options: {
+    readonly allowSignatures?: boolean;
+    readonly policies?: CreateSessionKeyRequest["policies"];
+  } = {},
 ) {
   yield* resetTestState();
   yield* TestClock.setTime(Date.now());
@@ -47,6 +70,8 @@ export const setupSessionCustody = Effect.fn("test.setupSessionCustody")(functio
   const session = yield* client.sessionKey.create({
     payload: {
       ...local,
+      onchain: { ...local.onchain, allowSignatures: options.allowSignatures ?? false },
+      policies: options.policies ?? local.policies,
       signer:
         custody === "local"
           ? local.signer

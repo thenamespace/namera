@@ -561,6 +561,14 @@ Idempotent execution attempt and orchestration state. It exists before external 
 
 ### Local signature acceptance
 
+Managed preparation adds an optional internal `data.managedSignerBinding`
+snapshot of public signer identity. Absence denotes the legacy/local path.
+`claimForSigning` atomically leases only live reserved managed submissions for
+their actor and tenant. `acceptSignature` requires an unexpired matching token
+for managed attempts, and rejects the tokenless local path on managed rows.
+The existing lease columns serve signing before acceptance and reconciliation
+after acceptance; no execution table migration is needed.
+
 The version-1 EVM payload now retains the full `prepared` operation alongside
 `signedExecution`. `acceptSignature` changes only the signed envelope and
 lifecycle fields; it never replaces prepared calls or gas. Its conditional write
@@ -616,6 +624,16 @@ Confirmed namespace execution fact. It is one-to-zero-or-one with an execution s
 - (`organization_id`, `session_key_grant_id`, `created_at`) for delegated-authority history.
 
 ## `core.signature_operation`
+
+Managed attempts additionally retain optional `data.managedSignerBinding` and
+`data.installationId`. Nullable `lease_token` and `lease_expires_at` columns fence
+provider work. A check permits either both null or both present on a reserved
+row. Claims require actor/tenant ownership, reserved state, unexpired reservation
+and absent/expired lease. Managed success requires the current unexpired token;
+success and failure clear both columns. Billing recovery may expire an attempt
+while a provider is in flight, preventing its late result from settling. No
+signature-result column, cache or table is added. The additive Drizzle migration
+leaves existing local operations with null leases.
 
 Auditable, idempotent signature attempt. `data` is a discriminated message or typed-data operation and stores signable request context/result metadata, not merely an unstructured blob.
 

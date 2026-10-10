@@ -2,7 +2,11 @@ import { Schema } from "effect";
 
 import { describe, expect, it } from "vitest";
 
-import { CompleteExecutionRequest } from "../../../src/dto/execution-signing.js";
+import {
+  CompleteExecutionRequest,
+  CompleteManagedExecutionRequest,
+} from "../../../src/dto/execution-signing.js";
+import { CompleteManagedSignatureRequest } from "../../../src/dto/signature-signing.js";
 
 const prepare = {
   namespace: "eip155",
@@ -13,6 +17,39 @@ const prepare = {
 };
 
 describe("local execution wire contracts", () => {
+  it("managed completion cannot replace the stored payload or signer", () => {
+    const replacement = {
+      digest: `0x${"11".repeat(32)}`,
+      signature: `0x${"11".repeat(65)}`,
+      calls: prepare.calls,
+      agentId: "different-agent",
+      signingKeyId: prepare.sessionKeyId,
+    };
+    const execution = { namespace: "eip155", submissionId: "01950000-0000-7000-8000-000000000003" };
+    const signature = { namespace: "eip155", operationId: "01950000-0000-7000-8000-000000000004" };
+    expect(
+      Schema.decodeUnknownSync(CompleteManagedExecutionRequest)({ ...execution, ...replacement }),
+    ).toEqual(execution);
+    expect(
+      Schema.decodeUnknownSync(CompleteManagedSignatureRequest)({
+        ...signature,
+        ...replacement,
+        message: "replacement",
+      }),
+    ).toEqual(signature);
+    expect(() =>
+      Schema.decodeUnknownSync(CompleteManagedExecutionRequest)({
+        namespace: "eip155",
+        ...replacement,
+      }),
+    ).toThrow();
+    expect(() =>
+      Schema.decodeUnknownSync(CompleteManagedSignatureRequest)({
+        namespace: "eip155",
+        ...replacement,
+      }),
+    ).toThrow();
+  });
   it("only returns stored-operation identity and raw signature from completion input", () => {
     // Shape validation is separate from cryptographic verification in EVM.
     const input = {

@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import {
   ExecutionSubmissionId,
@@ -81,6 +81,26 @@ export const CompleteExecutionResponse = Schema.Struct({
 }).annotate({
   identifier: "CompleteExecutionResponse",
   description:
-    "Durable local-signature acceptance. Prepared means queued for broadcast, not submitted or confirmed. Poll submission status for the chain outcome.",
+    "Durable session-signature acceptance. Prepared means queued for broadcast, not submitted or confirmed. Poll submission status for the chain outcome.",
 });
 export type CompleteExecutionResponse = typeof CompleteExecutionResponse.Type;
+
+export const PrepareManagedExecutionRequest = PrepareExecutionRequest.annotate({
+  identifier: "PrepareManagedExecutionRequest",
+  description:
+    "Reserve an execution for an installed 1Claw-managed session key. Does not sign or broadcast.",
+});
+export const PrepareManagedExecutionResponse = Schema.Struct({
+  ...Struct.omit(PrepareEvmExecutionResponse.fields, ["signing"]),
+}).annotate({ identifier: "PrepareManagedExecutionResponse" });
+export const CompleteManagedExecutionRequest = Schema.Struct({
+  namespace: Schema.Literal("eip155"),
+  submissionId: ExecutionSubmissionId,
+}).annotate({
+  identifier: "CompleteManagedExecutionRequest",
+  description:
+    "Sign and queue only the stored managed preparation. Retry this submission after uncertain responses.",
+});
+export type PrepareManagedExecutionResponse = typeof PrepareManagedExecutionResponse.Type;
+export type PrepareManagedExecutionRequest = typeof PrepareManagedExecutionRequest.Type;
+export type CompleteManagedExecutionRequest = typeof CompleteManagedExecutionRequest.Type;

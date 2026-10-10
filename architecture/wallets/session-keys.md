@@ -90,33 +90,33 @@ quotas, encrypted/non-public credentials, permission/tenant/expiry rejection,
 ambiguous bootstrap, rate limits, disabled connections and transaction rollback.
 Disposable PostgreSQL verifies last-slot concurrent admission. Provider and chain
 services are substitutes; this is not live-provider or mainnet verification.
-Phase 13 verifies lifecycle compatibility; Phases 14–16 still own managed
-execution/signing and clients.
+Phase 13 verifies lifecycle compatibility. Phases 14–15 add managed execution and
+signature routes; Phase 16 remains responsible for client/dashboard selection.
 
-### Recovery requirements for Phases 14–15
+### Managed operation recovery (Phases 14–15)
 
-Keep existing local prepare/complete APIs. Managed completion should accept only
-the prepared operation identifier, not arbitrary digests or caller signatures,
-and must enforce the same actor, grant, installation, expiry and policy checks.
-Define the concrete transport schemas alongside those runtime phases before
-changing clients.
+Local prepare/complete APIs remain intact. The new `/executions/managed/*` and
+`/signatures/managed/*` endpoints accept only stored operation identifiers at
+completion, with the same actor, grant, installation, expiry and policy checks.
+The shared 1Claw session resolver rejects wallet-root keys and verifies encrypted
+credential, tenant, connection, agent and public-key bindings.
 
 - Execution submissions already contain actor-bound idempotency, lease tokens,
   lease expiry, prepared data, signed execution and a broadcast-attempt marker.
-  Phase 14 must add fenced claim/accept transitions for provider signing and
-  ensure cleanup cannot expire an in-flight signing lease. Reuse these records;
-  do not introduce a second submission/provisioning table. Persist the signer
-  identity in the prepared snapshot if the existing snapshot is insufficient.
+  Phase 14 adds fenced claim/accept transitions, a public signer-binding snapshot,
+  and two-minute exclusive signing leases. Existing reconciliation and signed
+  envelope storage are reused without a second submission/provisioning table.
 - Returned message/typed-data signatures must not be persisted in the database,
   including encrypted result caches, or written to logs. Keep operation metadata,
   authorization, billing and audit state, but do not promise response replay.
   If provider signing succeeds and the response is lost, an explicit retry may
   sign again and incur another signature charge. This is an accepted product
-  trade-off, not an exactly-once delivery guarantee. Phase 15 must define a fresh
-  attempt with renewed authorization, quota and policy checks; never double-settle
-  one billing reservation or blindly retry an ambiguous provider response.
-  Concurrency/expiry fencing remains necessary, but recovery columns should be
-  added only where needed for those transitions, not for storing signature bytes.
+  trade-off, not an exactly-once delivery guarantee. A succeeded managed operation
+  cannot replay; a fresh idempotency key reserves a fresh authorized billable
+  attempt. Two nullable signature-operation lease columns fence provider work.
+  Expiry recovery clears the lease and holds; late results cannot settle them.
+  See [executions](../operations/executions.md) and
+  [signatures](../operations/signatures.md) for the exact transitions.
 
 This no-result-storage decision applies to message/typed-data signing. It does
 not change existing signed execution submission persistence or broadcast recovery;
