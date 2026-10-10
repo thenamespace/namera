@@ -335,9 +335,8 @@ The composition root also loads:
 - local LGTM or production Axiom configuration from `@namera-ai/telemetry`;
 - Resend configuration from `@namera-ai/emails` outside development.
 
-The complete local set and provider-specific comments are kept in
-`apps/server/.env.example`. Package READMEs remain authoritative for each
-service's variables.
+Local configuration defaults are kept in `apps/server/.env.example`.
+Package READMEs remain authoritative for each service's variables.
 
 The dashboard and internal admin surfaces each use their configured exact origin;
 credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
