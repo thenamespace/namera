@@ -74,21 +74,25 @@ export function McpAuthorizationActions({
       <AlertDialog>
         <AlertDialog.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
           <AlertDialog.Container size="md">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog className="rounded-xl">
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
                 <AlertDialog.Icon status="danger" />
                 <AlertDialog.Heading>Revoke access for {clientName}?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                This client will stop working immediately and lose access to every session key
-                granted through this connection. This action cannot be undone.
+                This connection loses all session-key access immediately. This cannot be undone.
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button slot="close" variant="tertiary">
+                <Button slot="close" variant="tertiary" size="sm">
                   Cancel
                 </Button>
-                <Button isDisabled={revoke.isPending} variant="danger" onPress={handleRevoke}>
+                <Button
+                  size="sm"
+                  isDisabled={revoke.isPending}
+                  variant="danger"
+                  onPress={handleRevoke}
+                >
                   {revoke.isPending ? "Revoking…" : "Revoke access"}
                 </Button>
               </AlertDialog.Footer>

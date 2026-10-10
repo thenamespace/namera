@@ -61,21 +61,25 @@ export function ApiKeyActions({ apiKey }: ApiKeyActionsProps) {
       <AlertDialog>
         <AlertDialog.Backdrop isOpen={isOpen} onOpenChange={setIsOpen}>
           <AlertDialog.Container size="md">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog className="rounded-xl">
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
                 <AlertDialog.Icon status="danger" />
                 <AlertDialog.Heading>Revoke {apiKey.metadata.name}?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                This API key will stop working immediately. All of its session-key grants will be
-                revoked. This action cannot be undone.
+                This key loses all session-key access immediately. This cannot be undone.
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button slot="close" variant="tertiary">
+                <Button slot="close" variant="tertiary" size="sm">
                   Cancel
                 </Button>
-                <Button isDisabled={revokeApiKey.isPending} variant="danger" onPress={handleRevoke}>
+                <Button
+                  size="sm"
+                  isDisabled={revokeApiKey.isPending}
+                  variant="danger"
+                  onPress={handleRevoke}
+                >
                   {revokeApiKey.isPending ? "Revoking…" : "Revoke API key"}
                 </Button>
               </AlertDialog.Footer>

@@ -367,19 +367,19 @@ function SessionKeyForm({
           }}
         >
           <AlertDialog.Container size="md">
-            <AlertDialog.Dialog>
+            <AlertDialog.Dialog className="rounded-xl">
               <AlertDialog.Header>
                 <AlertDialog.Heading>Leave without saving your key?</AlertDialog.Heading>
               </AlertDialog.Header>
               <AlertDialog.Body>
-                The local key will be lost. Namera cannot recover it. Any pending registration will
-                remain, but it will not activate without account-owner approval.
+                Your local key will be lost permanently. Pending registrations stay inactive until
+                the account owner approves them.
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button variant="tertiary" onPress={() => blocker.reset?.()}>
+                <Button size="sm" variant="tertiary" onPress={() => blocker.reset?.()}>
                   Stay and save key
                 </Button>
-                <Button variant="danger" onPress={() => blocker.proceed?.()}>
+                <Button size="sm" variant="danger" onPress={() => blocker.proceed?.()}>
                   Discard local key
                 </Button>
               </AlertDialog.Footer>
