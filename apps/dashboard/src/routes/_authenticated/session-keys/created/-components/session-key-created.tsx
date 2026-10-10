@@ -180,7 +180,7 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
                 <ActionContent
                   icon={Globe02Icon}
                   title="Enable networks"
-                  description="Approve network access with your account’s passkey."
+                  description="Approve network access with your account owner."
                 />
               </Link>
             ) : null}

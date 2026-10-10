@@ -29,7 +29,7 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
       <section className="grid gap-3">
         <HeadingGroup.Title size="sm">Enable networks</HeadingGroup.Title>
         <Typography.Paragraph color="muted" size="sm">
-          Enable networks now with your passkey, or do this later from the session key overview.
+          Approve network access now, or do this later from the session key overview.
         </Typography.Paragraph>
         <Typography.Paragraph size="xs" color="muted" aria-live="polite" aria-atomic="true">
           {installed} of {session.installations.length} networks enabled. You can enable the rest

@@ -138,7 +138,7 @@ isolation, expiry, revoked sessions, disabled connections, calldata substitution
 and billing rollback. Routine local-session preparation/simulation is tested
 without owner signing. Network submission remains substituted; live 1Claw and
 bundler end-to-end verification is still required. Dashboard managed-owner
-selection and approval UI remain a separate phase.
+selection and explicit approval UI are wired.
 
 ## Receipt recovery
 
@@ -239,7 +239,8 @@ optional API policies. Native/gas budgets serialize exact base units and apply
 per network over the installation lifetime. Dates use local midnight. Root
 requires explicit acknowledgement and does not implicitly enable signatures.
 Signature consent defaults off; execution expiry does not remove ERC-1271
-authority. Only active local P-256 owners appear in the account picker.
+authority. The account picker admits active local P-256 owners and 1Claw-managed
+secp256k1 factory accounts; GCP and legacy 7702 owners are not selectable.
 
 Creation generates a local SDK draft on first submission and puts only its public
 signer in form/API state. The draft stays in a ref and is disposed on unmount or
@@ -287,6 +288,16 @@ consent and API policies must match the submitted request before export.
 Lookup failure retains the same draft for retry. This reuses the existing
 authorized list endpoint; it does not send private material or create a second
 signer. Closing the page still loses an unexported local key.
+
+Managed-owner review reconstructs the factory account from public owner address,
+salt and pinned versions and compiles the selected installation independently.
+`validateManagedOwnerApproval` applies the same account, chain, owner nonce,
+factory, self-call, expiry and sponsored-gas checks as passkey approval, without
+a WebAuthn challenge. The confirmation dialog shows the account, network,
+permissions, lifetime and signature authority. Only explicit confirmation calls
+managed approve with the operation ID. Cancellation does not sign; retries retain
+the preparation identity. Expiry is checked again after confirmation. Accepted
+operations use existing receipt polling; no optimistic activation is added.
 
 ### Recovering an owner approval
 

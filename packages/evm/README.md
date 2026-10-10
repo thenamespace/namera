@@ -187,7 +187,10 @@ as the backend. It returns expected install/uninstall calldata and factory data
 for independent approval validation. It cannot sign or broadcast; it does not
 read runtime secrets. Callers must trust their RPC and retain the reviewed
 configuration instead of taking it from the preparation response. Dashboard
-integration still needs the public owner descriptor and approval UI.
+integration uses the public owner descriptor and approval UI.
+`reviewManagedEvmSessionOperation` provides equivalent read-only review for
+factory ECDSA accounts from their public owner address and pinned derivation
+metadata. It supplies no provider credential and cannot sign or broadcast.
 
 `evm.policy` evaluates one complete decoded EVM policy set and owns its
 `reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and

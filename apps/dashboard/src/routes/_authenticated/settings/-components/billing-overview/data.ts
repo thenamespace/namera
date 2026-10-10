@@ -25,8 +25,8 @@ export const resourceDefinitions: ReadonlyArray<UsageDefinition<BillingResourceK
   },
   {
     key: "oneclaw-wallets",
-    label: "1Claw-managed accounts (coming soon)",
-    planLabel: "1Claw-managed accounts (coming soon)",
+    label: "1Claw-managed accounts",
+    planLabel: "1Claw-managed accounts",
   },
   {
     key: "oneclaw-session-keys",

@@ -54,9 +54,11 @@ The shared owner model is discriminated. `POST /wallets` permits `passkey` and
 `{type: "namera-managed", provider: "1claw"}` for users with `wallet:create`.
 GCP requests still receive HTTP 403 `MANAGED_WALLETS_DISABLED` before provider
 or billing work. Managed creation is limited to 20 attempts per organization per
-hour. The dashboard still offers only passkey creation on EVM;
-its ownership and network selectors display managed custody and Solana
-as disabled coming-soon options.
+hour. The dashboard offers User-owned passkey and 1Claw Managed on EVM.
+Namera Managed and Solana remain disabled coming-soon choices. The 1Claw
+selection skips WebAuthn, preserves the account-created next steps, and shows
+the provider logo in account ownership displays. No provider credentials enter
+the browser. Creation failures do not automatically retry remote provisioning.
 1Claw creation has no protection-level claim. The server always composes its
 SDK and OIDC services; there is no enable flag. Missing required configuration
 fails startup. GCP and local-file provider runtime layers remain disabled.
@@ -108,8 +110,8 @@ at signing time. Provider signing verifies the exact digest and returned signer;
 failures never fall back to GCP/local. No arbitrary root-signing HTTP endpoint is
 added. Managed-owner installation/removal of local session keys is implemented
 through explicit user approval and the existing receipt worker; see
-[session keys](session-keys.md). Managed session-key custody and dashboard
-managed-owner approval remain later work.
+[session keys](session-keys.md). Managed session-key custody/signing remain
+later work; dashboard managed-owner approval is wired.
 
 `/providers/1claw/.well-known/openid-configuration` and `/providers/1claw/jwks.json`
 publish issuer metadata and public RSA fields only. Configure the Platform app's

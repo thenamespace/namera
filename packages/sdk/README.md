@@ -96,6 +96,13 @@ integrations can implement `ResolveSessionSigner` and use
 Low-level `executions.prepare/complete` and `signatures.prepare/complete` provide
 transport only; their callers must independently validate what they sign.
 
+Browser owner-approval clients can use `validateOwnerApproval` for passkeys or
+`validateManagedOwnerApproval` for a 1Claw-managed owner. Both require an
+independently reconstructed account and compiled permission change, and reject
+altered chain, authority, calls, deployment data, expiry and gas consent. The
+managed guard does not sign: obtain explicit user confirmation before calling the
+managed approval endpoint, and validate expiry again after that confirmation.
+
 Namera's signature rules do not constrain direct local signing. Transaction
 expiry does not itself expire ERC-1271 signature authority; uninstall that
 authority onchain to revoke it.

@@ -22,6 +22,7 @@ import { reconstructEvmAccount } from "../../../src/accounts/reconstruct.js";
 import { createSecp256k1OwnerAccount } from "../../../src/accounts/secp256k1.js";
 import { makeReconstructPreparedAccount } from "../../../src/execution/prepared-account.js";
 import { normalizeEvmUserOperation } from "../../../src/execution/user-operation.js";
+import { reviewManagedEvmSessionOperation } from "../../../src/sessions/review.js";
 import { preparedExecutionFixture } from "../../fixtures/prepared-execution.js";
 
 const setup = async (deployed = false) => {
@@ -64,6 +65,64 @@ const setup = async (deployed = false) => {
 };
 
 describe("factory ECDSA account", () => {
+  it.each([false, true])(
+    "reviews install/removal without signing (deployed=%s)",
+    async (deployed) => {
+      const { client, wallet, sign } = await setup(deployed);
+      const input = {
+        wallet,
+        chainId: "eip155:11155111",
+        kind: "install",
+        authorization: {
+          version: 1,
+          entityId: 7,
+          signerAddress: EthereumAddress.make("0x2222222222222222222222222222222222222222"),
+          validAfter: 0,
+          validUntil: 2_000_000_000,
+          permissions: [{ type: "root" }],
+          allowSignatures: false,
+        },
+      } as const;
+      const installed = await Effect.runPromise(reviewManagedEvmSessionOperation(input, client));
+      const removed = await Effect.runPromise(
+        reviewManagedEvmSessionOperation({ ...input, kind: "uninstall" }, client),
+      );
+      const signatures = await Effect.runPromise(
+        reviewManagedEvmSessionOperation(
+          { ...input, authorization: { ...input.authorization, allowSignatures: true } },
+          client,
+        ),
+      );
+      expect(installed.walletAddress.toLowerCase()).toBe(wallet.address.toLowerCase());
+      expect(installed.factory).toBe(ecdsaFactoryDeployment.factory);
+      expect(installed.factoryData.length).toBeGreaterThan(10);
+      expect(removed.factoryData).toBe(installed.factoryData);
+      expect(removed.callData).not.toBe(installed.callData);
+      expect(signatures.callData).not.toBe(installed.callData);
+      expect(sign).not.toHaveBeenCalled();
+      await Promise.all(
+        [
+          { address: input.authorization.signerAddress },
+          { ownerAddress: input.authorization.signerAddress },
+          { salt: wallet.salt + 1n },
+        ].map((change) =>
+          expect(
+            Effect.runPromise(
+              reviewManagedEvmSessionOperation(
+                { ...input, wallet: { ...wallet, ...change } },
+                client,
+              ),
+            ),
+          ).rejects.toThrow(),
+        ),
+      );
+      await expect(
+        Effect.runPromise(
+          reviewManagedEvmSessionOperation({ ...input, chainId: "eip155:1" }, client),
+        ),
+      ).rejects.toThrow();
+    },
+  );
   it("derives a stable address distinct from its owner and reconstructs without 7702 authority", async () => {
     const { client, props, wallet, owner, sign } = await setup();
     const first = await makeAlchemyModularV2Account(props, client);

@@ -1,7 +1,10 @@
 import { DateTime, Schema } from "effect";
 import * as Base64Url from "effect/encoding/Base64Url";
 
-import type { PrepareSessionKeyOperationResponse } from "@namera-ai/protocol/dto";
+import type {
+  PrepareSessionKeyOperationResponse,
+  PrepareManagedSessionKeyOperationResponse,
+} from "@namera-ai/protocol/dto";
 import { hashMessage, hexToBytes, isAddressEqual, type Address, type Hex } from "viem";
 import { entryPoint07Address, getUserOperationHash } from "viem/account-abstraction";
 
@@ -25,16 +28,18 @@ export type ReviewedOwnerOperation = {
 };
 
 /** Validate decoded transport data before opening the authenticator prompt. */
-export const validateOwnerApproval = ({
+export type ReviewedManagedOwnerOperation = Omit<ReviewedOwnerOperation, "credentialId" | "rpId">;
+
+const validateOwnerOperation = ({
   reviewed,
   response,
   now,
 }: {
-  readonly reviewed: ReviewedOwnerOperation;
-  readonly response: PrepareSessionKeyOperationResponse;
+  readonly reviewed: ReviewedManagedOwnerOperation;
+  readonly response: PrepareSessionKeyOperationResponse | PrepareManagedSessionKeyOperationResponse;
   readonly now: DateTime.Utc;
 }) => {
-  const { prepared, options } = response;
+  const { prepared } = response;
   const operation = prepared.userOperation;
   if (
     prepared.chainId !== reviewed.chainId ||
@@ -94,12 +99,34 @@ export const validateOwnerApproval = ({
   )
     throw new OwnerApprovalValidationError({ reason: "gas" });
 
-  const hash = getUserOperationHash({
+  return getUserOperationHash({
     userOperation: operation,
     chainId: Number(reviewed.chainId.slice("eip155:".length)),
     entryPointAddress: entryPoint07Address,
     entryPointVersion: "0.7",
   });
+};
+
+export const validateManagedOwnerApproval = (input: {
+  readonly reviewed: ReviewedManagedOwnerOperation;
+  readonly response: PrepareManagedSessionKeyOperationResponse;
+  readonly now: DateTime.Utc;
+}) => {
+  if (input.response.approval !== "1claw")
+    throw new OwnerApprovalValidationError({ reason: "identity" });
+  return validateOwnerOperation(input);
+};
+
+export const validateOwnerApproval = (input: {
+  readonly reviewed: ReviewedOwnerOperation;
+  readonly response: PrepareSessionKeyOperationResponse;
+  readonly now: DateTime.Utc;
+}) => {
+  const hash = validateOwnerOperation(input);
+  const {
+    reviewed,
+    response: { options },
+  } = input;
   const challenge = Base64Url.encode(hexToBytes(hashMessage({ raw: hash })));
   if (
     options.challenge !== challenge ||

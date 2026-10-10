@@ -45,7 +45,7 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
         description:
           result.status === "revoked"
             ? "This session no longer authorizes operations."
-            : "Open the session to remove its onchain permissions with your passkey.",
+            : "Open the session to approve removal of its onchain permissions.",
       });
       setIsRevokeOpen(false);
     },
@@ -120,7 +120,7 @@ export function SessionKeyActions({ sessionKey, showOpenAction = true }: Session
               <AlertDialog.Body>
                 Namera will immediately revoke its API, CLI, and MCP grants. Onchain permissions
                 remain until you approve their removal on every installed network using the account
-                owner’s passkey. Revoked grants cannot be restored.
+                owner. Revoked grants cannot be restored.
               </AlertDialog.Body>
               <AlertDialog.Footer>
                 <Button slot="close" variant="tertiary">

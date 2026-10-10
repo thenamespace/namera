@@ -7,6 +7,8 @@ import {
 } from "@namera-ai/protocol/dto";
 import { describe, expect, it } from "vitest";
 
+import { isOneClawAccount, supportsSessionKeys } from "../../../src/lib/session-owner";
+
 const wallet = Schema.decodeUnknownSync(WalletResponse)({
   id: "01950000-0000-7000-8000-000000000001",
   organizationId: "01950000-0000-7000-8000-000000000002",
@@ -58,6 +60,57 @@ const descriptor = Schema.decodeUnknownSync(GetWalletPasskeyOwnerResponse)({
 });
 
 describe("browser approval owner binding", () => {
+  it("selects only active supported owners, including 1Claw factory accounts", () => {
+    const managed = Schema.decodeUnknownSync(Schema.toType(WalletResponse))({
+      ...wallet,
+      owner: {
+        ...wallet.owner,
+        custody: "namera-managed",
+        provider: "1claw",
+        algorithm: "secp256k1",
+      },
+      data: {
+        version: 1,
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: "0.7",
+        validatorType: "ecdsa_secp256k1",
+        accountMode: "factory",
+        factoryVersion: "2.0.0",
+        implementationVersion: "v1.0.0",
+        salt: 0n,
+        ownerAddress: wallet.address,
+      },
+    });
+    expect(supportsSessionKeys(wallet)).toBe(true);
+    expect(isOneClawAccount(managed)).toBe(true);
+    expect(supportsSessionKeys(managed)).toBe(true);
+    expect(supportsSessionKeys({ ...managed, status: "frozen" })).toBe(false);
+    expect(
+      supportsSessionKeys(
+        Schema.decodeUnknownSync(Schema.toType(WalletResponse))({
+          ...wallet,
+          owner: {
+            ...wallet.owner,
+            custody: "namera-managed",
+            protectionLevel: "hsm",
+          },
+        }),
+      ),
+    ).toBe(false);
+  });
+  it("rejects passkey owners in the managed review path", async () => {
+    const { reviewManagedSessionInstallation } =
+      await import("../../../src/components/session-key-installations/review");
+    await expect(
+      reviewManagedSessionInstallation(
+        wallet,
+        installation,
+        "install",
+        new AbortController().signal,
+        "http://localhost:8080",
+      ),
+    ).rejects.toThrow("Managed owner does not match");
+  });
   it("rejects another account's descriptor before RPC or a passkey prompt", async () => {
     const { reviewSessionInstallation } =
       await import("../../../src/components/session-key-installations/review");

@@ -90,6 +90,9 @@ export function AccountOverview({ account, variant = "full" }: AccountOverviewPr
           <Property label="Ownership">
             <WalletOwnerDisplay
               custody={account.owner.custody}
+              provider={
+                account.owner.custody === "namera-managed" ? account.owner.provider : undefined
+              }
               protectionLevel={
                 account.owner.custody === "namera-managed"
                   ? account.owner.protectionLevel

@@ -7,6 +7,7 @@ import type {
   GetWalletPasskeyOwnerResponse,
   PrepareSessionKeyOperationRequest,
   PrepareSessionKeyOperationResponse,
+  PrepareManagedSessionKeyOperationResponse,
   SessionKeyResponse,
 } from "@namera-ai/protocol/dto";
 import { validateOwnerApproval } from "@namera-ai/sdk";
@@ -14,9 +15,15 @@ import { startAuthentication } from "@simplewebauthn/browser";
 
 import { env } from "@/env";
 import { useCompleteSessionKeyOperation, usePrepareSessionKeyOperation } from "@/hooks/session-key";
+import {
+  usePrepareManagedSessionKeyOperation,
+  useApproveManagedSessionKeyOperation,
+} from "@/hooks/session-key/operation";
+import { isOneClawAccount } from "@/lib/session-owner";
 import { showErrorToast } from "@/lib/toasts";
 
-import { reviewSessionInstallation } from "./review";
+import { confirmManagedApproval } from "./confirm-managed-approval";
+import { reviewSessionInstallation, reviewManagedSessionInstallation } from "./review";
 
 export function useInstallationApproval(
   session: SessionKeyResponse,
@@ -26,11 +33,22 @@ export function useInstallationApproval(
 ) {
   const prepare = usePrepareSessionKeyOperation();
   const complete = useCompleteSessionKeyOperation();
+  const prepareManaged = usePrepareManagedSessionKeyOperation();
+  const approveManaged = useApproveManagedSessionKeyOperation();
+  const managed = isOneClawAccount(session.wallet);
+  const confirmation = useRef<((confirmed: boolean) => void) | undefined>(undefined);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const confirm = (confirmed: boolean) => {
+    setReviewOpen(false);
+    confirmation.current?.(confirmed);
+    confirmation.current = undefined;
+  };
   const attempt = useRef<
     | {
         key: string;
         prepared?: PrepareSessionKeyOperationResponse;
         assertion?: CompleteSessionKeyOperationRequest;
+        managedPrepared?: PrepareManagedSessionKeyOperationResponse;
       }
     | undefined
   >(undefined);
@@ -43,12 +61,13 @@ export function useInstallationApproval(
   useEffect(
     () => () => {
       controller.current?.abort();
+      confirmation.current?.(false);
     },
     [],
   );
 
   const approve = async (recovered?: PrepareSessionKeyOperationRequest) => {
-    if (busy.current || !descriptor) return;
+    if (busy.current || (!managed && !descriptor)) return;
     // The dashboard currently reviews sponsored approvals only. Never silently
     // change a recovered self-funded request or resume a different installation.
     if (
@@ -67,6 +86,42 @@ export function useInstallationApproval(
       const current = (attempt.current ??= {
         key: recovered?.idempotencyKey ?? crypto.randomUUID(),
       });
+      if (managed) {
+        const reviewed = await reviewManagedSessionInstallation(
+          session.wallet,
+          installation,
+          kind,
+          abort.signal,
+          env.backendUrl,
+        );
+        if (abort.signal.aborted) return;
+        current.managedPrepared ??= await prepareManaged.mutateAsync({
+          payload: {
+            installationId: installation.id,
+            kind,
+            idempotencyKey: current.key,
+            sponsor: true,
+          },
+        });
+        if (abort.signal.aborted) return;
+        const response = current.managedPrepared;
+        setOperationId(response.operationId);
+        const confirmed = await confirmManagedApproval({
+          reviewed,
+          response,
+          signal: abort.signal,
+          requestConfirmation: () =>
+            new Promise<boolean>((resolve) => {
+              confirmation.current = resolve;
+              setReviewOpen(true);
+            }),
+          approve: (payload) => approveManaged.mutateAsync({ payload }),
+        });
+        if (abort.signal.aborted) return;
+        if (!confirmed) setError(true);
+        return;
+      }
+      if (!descriptor) return;
       if (!current.assertion) {
         const reviewed = await reviewSessionInstallation(
           session.wallet,
@@ -128,5 +183,5 @@ export function useInstallationApproval(
     attempt.current = undefined;
     setOperationId(undefined);
   };
-  return { approve, pending, operationId, error, finish };
+  return { approve, pending, operationId, error, finish, reviewOpen, confirm };
 }

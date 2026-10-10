@@ -210,6 +210,9 @@ export function WalletCreatedNotificationDetail({
         <DetailRow label="Ownership">
           <WalletOwnerDisplay
             custody={item.notification.data.custody}
+            provider={
+              "provider" in item.notification.data ? item.notification.data.provider : undefined
+            }
             protectionLevel={
               item.notification.data.custody === "namera-managed"
                 ? item.notification.data.protectionLevel
@@ -243,7 +246,7 @@ function SessionKeyNotificationDetail({
       description={
         revoked
           ? "Namera API, CLI, and MCP access for this session key was revoked, including its active grants. The local key can still exercise installed onchain permissions until the account owner removes them on each network. Open the session key to review removal status."
-          : "A local session key was registered. Its onchain permissions require the account owner’s passkey approval before use. Additional API policies apply to operations sent through Namera."
+          : "A local session key was registered. Its onchain permissions require account-owner approval before use. Additional API policies apply to operations sent through Namera."
       }
       item={item}
     >

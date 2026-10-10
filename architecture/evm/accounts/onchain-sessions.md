@@ -90,6 +90,13 @@ caller supplies a trusted chain-aware RPC; a chain mismatch or reconstructed
 address mismatch fails closed. No owner signing callback is supplied. Unit tests
 run real account construction and encoding with substituted RPC reads, including
 signature-consent changes and installation/removal differences.
+`reviewManagedEvmSessionOperation` provides the equivalent review for factory
+ECDSA accounts using public owner address and pinned factory/implementation
+versions. It rejects address or chain substitutions and supplies throwing signing
+callbacks. Its factory calldata stays available after deployment. Tests cover
+both deployment states, changed signature authority, install/removal and owner
+substitution without invoking a signer.
+
 Factory arguments are derived from the public passkey, salt and owner entity,
 independent of deployment status. Viem's `getFactoryArgs` omits them for deployed
 wallets; using it for review would block subsequent installation and removal.
@@ -115,7 +122,7 @@ owner operations use an application-style recoverable digest-signing callback.
 Managed-owner application approval is wired through explicit 1Claw prepare/approve
 API endpoints and the existing receipt worker; see
 [session keys](../../wallets/session-keys.md). Managed-session custody and
-dashboard managed-owner approval remain separate work. Server boundary tests
+live dashboard managed-owner verification remain separate work. Server boundary tests
 exercise real test-provider signatures with substituted chain submission; live
 1Claw/bundler verification remains outstanding.
 The token tests deploy the checked-in test token and assert both UserOperation

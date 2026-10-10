@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   validateOwnerApproval,
+  validateManagedOwnerApproval,
   type ReviewedOwnerOperation,
 } from "../../../src/signing/owner-approval.js";
 import { localExecutionFixture } from "../../fixtures/local-execution.js";
@@ -63,6 +64,40 @@ const fixture = () => {
 };
 
 describe("owner approval validation", () => {
+  it("validates managed approval without a WebAuthn challenge and rejects altered authority", () => {
+    const original = fixture();
+    const { options: _options, ...prepared } = original.response;
+    const input = { ...original, response: { ...prepared, approval: "1claw" as const } };
+    expect(validateManagedOwnerApproval(input)).toBe(original.hash);
+    expect(() => validateManagedOwnerApproval({ ...input, now: input.response.expiresAt })).toThrow(
+      expect.objectContaining({ reason: "expiry" }),
+    );
+    expect(() =>
+      validateManagedOwnerApproval({
+        ...input,
+        reviewed: { ...input.reviewed, chainId: "eip155:1" },
+      }),
+    ).toThrow(expect.objectContaining({ reason: "identity" }));
+    for (const change of [
+      { callData: Hex.make("0xdeadbeef") },
+      { nonce: 7n << 72n },
+      { factoryData: Hex.make("0xdeadbeef") },
+      { maxFeePerGas: 1n },
+    ]) {
+      expect(() =>
+        validateManagedOwnerApproval({
+          ...input,
+          response: {
+            ...input.response,
+            prepared: {
+              ...input.response.prepared,
+              userOperation: { ...input.response.prepared.userOperation, ...change },
+            },
+          },
+        }),
+      ).toThrow();
+    }
+  });
   it("binds the passkey challenge to the locally reviewed owner operation", () => {
     const input = fixture();
     expect(validateOwnerApproval(input)).toBe(input.hash);

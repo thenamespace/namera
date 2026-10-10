@@ -21,8 +21,10 @@ import {
 } from "@/hooks/session-key";
 import { useWalletPasskeyOwner } from "@/hooks/wallet";
 import { isChainOperationEnabled } from "@/lib/chain-availability";
+import { isOneClawAccount } from "@/lib/session-owner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
+import { ManagedReviewDialog } from "./managed-review-dialog";
 import { recoverSponsoredApproval } from "./recovery";
 import { useInstallationApproval } from "./use-approval";
 
@@ -78,7 +80,7 @@ function ReceiptStatus({
       {operation.isError
         ? "Unable to check receipt. Retrying…"
         : status === "awaiting-signature"
-          ? "Awaiting passkey approval"
+          ? "Awaiting owner approval"
           : "Waiting for onchain confirmation…"}
     </output>
   );
@@ -161,7 +163,7 @@ function Installation({
                   !networkAvailable ||
                   waitingForConfirmation ||
                   working ||
-                  !owner?.owner ||
+                  (!isOneClawAccount(session.wallet) && !owner?.owner) ||
                   !active.isSuccess ||
                   active.isFetching ||
                   Boolean(recovered && !resumable) ||
@@ -178,7 +180,9 @@ function Installation({
                         ? "Retry removal"
                         : "Retry approval"
                       : kind === "uninstall"
-                        ? "Remove with passkey"
+                        ? isOneClawAccount(session.wallet)
+                          ? "Remove with 1Claw"
+                          : "Remove with passkey"
                         : "Approve"}
               </Button>
             </div>
@@ -214,6 +218,13 @@ function Installation({
           onTerminal={finish}
         />
       ) : null}
+      <ManagedReviewDialog
+        session={session}
+        installation={installation}
+        kind={kind}
+        isOpen={approval.reviewOpen}
+        confirm={approval.confirm}
+      />
     </article>
   );
 }
@@ -265,7 +276,7 @@ export function SessionKeyInstallations({
           onchain authority.
         </Typography.Paragraph>
       ) : null}
-      {owner.isError ? (
+      {owner.isError && !isOneClawAccount(session.wallet) ? (
         <Typography.Paragraph size="sm" role="alert">
           Couldn’t load the passkey owner.{" "}
           <Button variant="tertiary" size="sm" onPress={owner.refetch}>

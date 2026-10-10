@@ -57,7 +57,7 @@ API-key management, and member invitations instead of the source chart. Recent e
 belong to Billing. The billing page presents the Free plan, anniversary date,
 resource capacity and settled/reserved meters with permission-aware access.
 Free v2 includes separate self-owned and 1Claw-managed account/session capacities.
-Managed creation is labeled coming soon. Legacy organizations see the scheduled
+1Claw account creation is available; managed session-key custody remains coming soon. Legacy organizations see the scheduled
 Free v2 date from the API; over-limit capacity stays visible without implying
 that existing resources were removed. Paid upgrades remain unavailable.
 
@@ -70,10 +70,21 @@ permission-aware session-key shortcut. The shortcut preselects only an eligible
 account from the current workspace's wallet list; invalid or unavailable search
 IDs do not select an account. Normal account links still open the overview.
 
-Account creation requires a form-only recovery acknowledgement before the browser
-passkey ceremony. WebAuthn display labels use the account name; the challenge,
+Account creation offers User-owned passkey and 1Claw Managed; Namera Managed
+remains disabled. Managed creation posts the 1Claw owner variant without a
+WebAuthn ceremony and uses the existing success page. Ownership displays show
+the provider logo, without an HSM claim. WebAuthn display labels use the account name; the challenge,
 user handle and RP ID remain server-issued. No private owner key enters API or
 form state. See [accounts](../wallets/accounts.md).
+
+Network installation/removal selects passkey approval or managed prepare/approve
+from the parent account, while the session key remains local. Managed approval
+independently reconstructs and validates the operation before an explicit
+confirmation dialog. Cancel signs nothing; retry retains the idempotency key,
+and signed operations use existing receipt polling. Quota feedback uses the
+current subscription response, not hardcoded Free v2 limits. Browser checks
+cover ownership selection and fallback layout; live provisioning, encrypted
+import and onchain approval still require the configured development environment.
 
 Assets prefetches the account's paginated portfolio into the shared registry and
 loads all pages. Token rows display the token icon with a chain badge, balance,

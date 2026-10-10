@@ -25,6 +25,7 @@ import { HeadingGroup } from "@/components/heading-group";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
+import { supportsSessionKeys } from "@/lib/session-owner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { SessionKeyDetailsCard } from "./details-card";
@@ -61,13 +62,8 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
   const [initialValues] = useState(() => ({
     ...defaultValues,
     walletId:
-      wallets.find(
-        (wallet) =>
-          wallet.id === initialAccountId &&
-          wallet.status === "active" &&
-          wallet.owner.custody === "local" &&
-          wallet.owner.algorithm === "p256",
-      )?.id ?? "",
+      wallets.find((wallet) => wallet.id === initialAccountId && supportsSessionKeys(wallet))?.id ??
+      "",
     onchain: {
       ...defaultValues.onchain,
       validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
@@ -291,7 +287,7 @@ export function CreateSessionKeyForm({ wallets, initialAccountId }: CreateSessio
               </AlertDialog.Header>
               <AlertDialog.Body>
                 The local key will be lost. Namera cannot recover it. Any pending registration will
-                remain, but it will not activate without your passkey approval.
+                remain, but it will not activate without account-owner approval.
               </AlertDialog.Body>
               <AlertDialog.Footer>
                 <Button variant="tertiary" onPress={() => blocker.reset?.()}>

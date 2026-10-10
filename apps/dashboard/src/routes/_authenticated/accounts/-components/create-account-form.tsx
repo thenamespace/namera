@@ -1,4 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import { useState } from "react";
+
 import { useNavigate } from "@tanstack/react-router";
 
 import { Schema } from "effect";
@@ -20,7 +22,7 @@ import {
 } from "@namera-ai/ui";
 import { ChainIcon, NameraIcon, SolanaIcon } from "@namera-ai/ui/icons";
 import { startRegistration } from "@simplewebauthn/browser";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import {
   DashboardCardContent,
@@ -41,6 +43,7 @@ import {
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 
 export function CreateAccountForm() {
+  const [managedCreationFailed, setManagedCreationFailed] = useState(false);
   const navigate = useNavigate();
   const registrationOptions = useCreatePasskeyRegistrationOptions({
     onError: (error) =>
@@ -50,11 +53,16 @@ export function CreateAccountForm() {
       }),
   });
   const createWallet = useCreateWallet({
-    onError: (error) =>
+    onError: (error, input) => {
+      if (input.payload.owner.type === "namera-managed") setManagedCreationFailed(true);
       showErrorToast(error, {
         title: "Couldn’t create account",
-        description: "Review the account details and try again.",
-      }),
+        description:
+          input.payload.owner.type === "namera-managed"
+            ? "Check Accounts before trying again. Provider setup may have completed."
+            : "Review the account details and try again.",
+      });
+    },
     onSuccess: (account) => {
       void navigate({
         to: "/accounts/created/$accountId",
@@ -68,7 +76,19 @@ export function CreateAccountForm() {
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateAccountFormValues)),
   });
+  const ownership = useWatch({ control: form.control, name: "ownership" });
   const handleSubmit = form.handleSubmit(async (values) => {
+    if (values.ownership === "1claw") {
+      if (managedCreationFailed) return;
+      createWallet.mutate({
+        payload: {
+          namespace: "eip155",
+          owner: { type: "namera-managed", provider: "1claw" },
+          metadata: values.metadata,
+        },
+      });
+      return;
+    }
     const ceremony = await registrationOptions.mutateAsync().catch(() => undefined);
     if (ceremony === undefined) return;
     const passkeyName = `${values.metadata.name} - Namera`;
@@ -185,30 +205,51 @@ export function CreateAccountForm() {
 
             <DashboardCardRow>
               <Typography.Paragraph size="sm">Ownership</Typography.Paragraph>
-              <Select aria-label="Ownership" selectedKey="local" variant="secondary" fullWidth>
-                <Select.Trigger>
-                  <Select.Value className="flex items-center gap-2" />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    <ListBox.Item id="local" textValue="User-owned passkey">
-                      <WalletOwnerDisplay custody="local" />
-                    </ListBox.Item>
-                    <ListBox.Item id="namera-managed" textValue="Namera managed" isDisabled>
-                      <span className="flex w-full items-center gap-2">
-                        <span className="grid size-4 shrink-0 place-items-center">
-                          <NameraIcon aria-hidden className="size-3 fill-current" />
-                        </span>
-                        <span>Namera managed</span>
-                        <Chip className="ml-auto h-4 px-1.5 text-[10px]" size="sm" variant="soft">
-                          Coming soon
-                        </Chip>
-                      </span>
-                    </ListBox.Item>
-                  </ListBox>
-                </Select.Popover>
-              </Select>
+              <Controller
+                control={form.control}
+                name="ownership"
+                render={({ field }) => (
+                  <Select
+                    aria-label="Ownership"
+                    name={field.name}
+                    onSelectionChange={field.onChange}
+                    selectedKey={field.value}
+                    isDisabled={isPending}
+                    variant="secondary"
+                    fullWidth
+                  >
+                    <Select.Trigger ref={field.ref} onBlur={field.onBlur}>
+                      <Select.Value className="flex items-center gap-2" />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        <ListBox.Item id="local" textValue="User-owned passkey">
+                          <WalletOwnerDisplay custody="local" />
+                        </ListBox.Item>
+                        <ListBox.Item id="1claw" textValue="1Claw Managed">
+                          <WalletOwnerDisplay custody="namera-managed" provider="1claw" />
+                        </ListBox.Item>
+                        <ListBox.Item id="namera-managed" textValue="Namera managed" isDisabled>
+                          <span className="flex w-full items-center gap-2">
+                            <span className="grid size-4 shrink-0 place-items-center">
+                              <NameraIcon aria-hidden className="size-3 fill-current" />
+                            </span>
+                            <span>Namera Managed</span>
+                            <Chip
+                              className="ml-auto h-4 px-1.5 text-[10px]"
+                              size="sm"
+                              variant="soft"
+                            >
+                              Coming soon
+                            </Chip>
+                          </span>
+                        </ListBox.Item>
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
+                )}
+              />
             </DashboardCardRow>
 
             <DashboardCardRow>
@@ -241,14 +282,28 @@ export function CreateAccountForm() {
         </DashboardCardContent>
       </DashboardCardRoot>
 
+      {managedCreationFailed ? (
+        <Typography.Paragraph role="alert" size="sm" color="muted" className="mt-4">
+          1Claw account creation could not be confirmed. Check your Accounts list before creating
+          another account. If it is missing, contact support to check the provider setup.
+        </Typography.Paragraph>
+      ) : null}
+
       <Button
         className="mt-4"
         form="create-account-form"
         fullWidth
-        isDisabled={isPending || !form.formState.isValid}
+        isPending={isPending}
+        isDisabled={
+          isPending || !form.formState.isValid || (managedCreationFailed && ownership === "1claw")
+        }
         type="submit"
       >
-        {isPending ? "Waiting for passkey…" : "Create account"}
+        {isPending
+          ? createWallet.isPending
+            ? "Creating account…"
+            : "Waiting for passkey…"
+          : "Create account"}
       </Button>
     </form>
   );

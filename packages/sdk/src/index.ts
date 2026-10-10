@@ -16,6 +16,8 @@ export {
 export type { LocalEvmSessionBinding } from "./signing/execution-validation.js";
 export {
   validateOwnerApproval,
+  validateManagedOwnerApproval,
+  type ReviewedManagedOwnerOperation,
   OwnerApprovalValidationError,
   type ReviewedOwnerOperation,
 } from "./signing/owner-approval.js";

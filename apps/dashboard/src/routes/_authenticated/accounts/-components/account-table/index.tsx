@@ -35,6 +35,7 @@ import { AccountActions } from "./actions";
 import { AccountsTableControls, type AccountGrouping } from "./controls";
 import {
   createDefaultAccountFilters,
+  accountOwnership,
   type AccountFilterCounts,
   type AccountFilters,
 } from "./filter-menu";
@@ -94,7 +95,14 @@ function AccountGroupLabel({ group }: { group: AccountGroupRow }) {
     if (group.grouping === "status") {
       return <WalletStatusDisplay status={group.value as WalletResponse["status"]} />;
     }
-    return <WalletOwnerDisplay custody={group.value as "local" | "namera-managed"} />;
+    return (
+      <WalletOwnerDisplay
+        custody={
+          group.value === "1claw" ? "namera-managed" : (group.value as "local" | "namera-managed")
+        }
+        provider={group.value === "1claw" ? "1claw" : undefined}
+      />
+    );
   })();
 
   return (
@@ -115,7 +123,8 @@ const accountSorters: Record<
   address: (left, right) => accountCollator.compare(left.address, right.address),
   implementation: (left, right) =>
     accountCollator.compare(left.implementation, right.implementation),
-  ownership: (left, right) => accountCollator.compare(left.owner.custody, right.owner.custody),
+  ownership: (left, right) =>
+    accountCollator.compare(accountOwnership(left), accountOwnership(right)),
   createdAt: (left, right) =>
     DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
 };
@@ -173,6 +182,7 @@ const columns: ReadonlyArray<DataGridColumn<AccountTableRow>> = [
       isAccountGroup(row) ? null : (
         <WalletOwnerDisplay
           custody={row.owner.custody}
+          provider={row.owner.custody === "namera-managed" ? row.owner.provider : undefined}
           protectionLevel={
             row.owner.custody === "namera-managed" ? row.owner.protectionLevel : undefined
           }
@@ -225,7 +235,7 @@ function groupAccounts(
 ): AccountGroupRow[] {
   const groups = new Map<string, WalletResponse[]>();
   for (const account of accounts) {
-    const value = grouping === "ownership" ? account.owner.custody : account.status;
+    const value = grouping === "ownership" ? accountOwnership(account) : account.status;
     const group = groups.get(value);
     if (group) group.push(account);
     else groups.set(value, [account]);
@@ -267,7 +277,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
           account.id.toLowerCase().includes(normalizedQuery);
         const matchesStatus = filters.status.size === 0 || filters.status.has(account.status);
         const matchesOwnership =
-          filters.ownership.size === 0 || filters.ownership.has(account.owner.custody);
+          filters.ownership.size === 0 || filters.ownership.has(accountOwnership(account));
 
         return matchesQuery && matchesStatus && matchesOwnership;
       }),
@@ -292,12 +302,12 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
   const filterCounts = useMemo<AccountFilterCounts>(() => {
     const counts: AccountFilterCounts = {
       status: { active: 0, archived: 0, frozen: 0 },
-      ownership: { local: 0, "namera-managed": 0 },
+      ownership: { local: 0, "namera-managed": 0, "1claw": 0 },
     };
 
     for (const account of accountData) {
       counts.status[account.status] += 1;
-      counts.ownership[account.owner.custody] += 1;
+      counts.ownership[accountOwnership(account)] += 1;
     }
 
     return counts;
