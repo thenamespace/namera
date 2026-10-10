@@ -177,7 +177,11 @@ operations use only the global limit.
 Managed session creation accepts the 1Claw signer variant and is limited to 20
 attempts per active organization per hour, before any provider call. It creates
 pending sessions under either passkey or 1Claw accounts, never approvals or active
-grants. Managed session execution/signing and client integration remain deferred.
+grants. Both session custody types use the existing owner-operation endpoints:
+passkey prepare/complete for passkey parents and managed prepare/approve for
+1Claw parents. Only receipt confirmation activates an installation; revocation
+immediately removes grants before owner-approved onchain removal. Managed session
+execution/signing and client integration remain deferred.
 Local creation is unchanged. No additional environment configuration is required.
 
 Session-key revocation is limited to 60 attempts per active organization per

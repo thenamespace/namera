@@ -90,7 +90,8 @@ quotas, encrypted/non-public credentials, permission/tenant/expiry rejection,
 ambiguous bootstrap, rate limits, disabled connections and transaction rollback.
 Disposable PostgreSQL verifies last-slot concurrent admission. Provider and chain
 services are substitutes; this is not live-provider or mainnet verification.
-Phases 13–16 still own lifecycle compatibility, managed execution/signing and clients.
+Phase 13 verifies lifecycle compatibility; Phases 14–16 still own managed
+execution/signing and clients.
 
 ### Recovery requirements for Phases 14–15
 
@@ -161,8 +162,38 @@ Registration and delegated execution reconstruct the parent account using only
 public owner material: either a local passkey or a 1Claw-managed Ethereum
 secp256k1 factory-account owner. Compilation, simulation and local session
 preparation do not decrypt provider credentials or invoke the root signer.
-Session keys themselves remain locally held; managed session custody is not
-implemented.
+Session signers may be local or 1Claw-managed. Installation and removal use the
+stored public authorization and parent owner only, never the session credential.
+
+### Custody compatibility (Phase 13)
+
+Both session custody types use the existing owner-operation routes and ledger:
+
+| Parent account | Session key | Installation/removal approval |
+| -------------- | ----------- | ----------------------------- |
+| Passkey        | Local       | Passkey prepare/complete      |
+| Passkey        | 1Claw       | Passkey prepare/complete      |
+| 1Claw          | Local       | Managed prepare/approve       |
+| 1Claw          | 1Claw       | Managed prepare/approve       |
+
+No additional route, table, configuration or provider-signing path is needed.
+The dedicated session key remains distinct from the wallet-root signing key;
+managed owner operations snapshot the latter. Operation audits identify the
+session, installation and operation; the operation's wallet identifies its owner.
+Revocation does not destroy either provider key or disable the owner. A disabled
+session signer does not prevent its owner approving removal.
+
+The HTTP custody matrix covers two-network installation/removal, wrong owner
+route rejection, idempotent preparation/approval, pending-to-active receipt
+transitions, missing receipt recovery, settled billing, expired approval and
+session lifetime, immediate grant revocation, late installation after revocation,
+failed installation/removal retries and single final audit. The matrix and
+managed-owner lease/concurrency suite also pass against disposable PostgreSQL.
+Passkey assertions use the real
+verifier; managed owner signatures use separate deterministic provider keys and
+the real signature verifier. Chain submission/receipts are substitutes, not live
+1Claw/bundler verification. Managed session execution and message signing remain
+unavailable until Phases 14–15; dashboard/client support remains Phase 16.
 
 `POST /session-keys/operations/prepare` takes an installation ID, install/uninstall
 kind, idempotency key and sponsorship choice. It accepts no arbitrary calldata.

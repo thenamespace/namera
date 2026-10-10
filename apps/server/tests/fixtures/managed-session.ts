@@ -16,7 +16,10 @@ import { makeTestServerLayer } from "./layers/index.js";
 import { localSessionRequest } from "./local-session.js";
 
 const execution = makeTestEvmExecutionService({}, { signWithOwner: true });
-export const managedSessionLayer = (overrides: Partial<EvmExecutionService> = {}) =>
+export const managedSessionLayer = (
+  overrides: Partial<EvmExecutionService> = {},
+  passkeysLayer?: Parameters<typeof makeTestServerLayer>[1],
+) =>
   makeTestServerLayer(
     {
       sessions: makeTestEvmSessionService(),
@@ -35,7 +38,7 @@ export const managedSessionLayer = (overrides: Partial<EvmExecutionService> = {}
         ...overrides,
       },
     },
-    undefined,
+    passkeysLayer,
     makeTestConfigLayer({
       ONECLAW_PLATFORM_APP_ID: "test-app",
       ONECLAW_ORG_EMAIL_DOMAIN: "example.invalid",
