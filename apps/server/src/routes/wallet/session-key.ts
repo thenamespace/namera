@@ -130,6 +130,13 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
             allowedActors: ["user"],
             requiredPermissions: { user: ["session-key:create"] },
           });
+          if (payload.signer.custody === "namera-managed") {
+            yield* consumeRateLimit(
+              "session_key.create_managed.organization",
+              data.organization.id,
+              rateLimitPolicy.sessionKey.createManagedByOrganization,
+            );
+          }
           return toSessionKeyResponse(
             yield* app.sessionKey.create({
               organizationId: data.organization.id,

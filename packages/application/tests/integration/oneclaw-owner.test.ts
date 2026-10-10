@@ -68,7 +68,11 @@ const fixture = Effect.gen(function* () {
   });
   const actor = yield* repository.auth.actor.insert({ organizationId: org.id, type: "user" });
   const provision = yield* makeProvisionOneClawSigner;
-  const prepared = yield* provision({ organizationId: org.id, actorId: actor.id });
+  const prepared = yield* provision({
+    organizationId: org.id,
+    actorId: actor.id,
+    purpose: "wallet-root",
+  });
   const signingKey = yield* repository.core.signingKey.insert(prepared.signingKey);
   const data = yield* (yield* Evm).createAccount({
     accountMode: "factory",

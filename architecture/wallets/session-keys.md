@@ -1,8 +1,9 @@
 # Session keys and grants
 
 A session key is an immutable delegation attached to one wallet and one
-`signing_key`. Registration accepts a local secp256k1 public key; Namera never
-receives its private key. Chain installations store the compiled onchain
+`signing_key`. Registration accepts a local secp256k1 public key or provisions a
+dedicated 1Claw-managed session key; local private keys never reach Namera.
+Chain installations store the compiled onchain
 authorization separately from additional API policies. Registration is pending,
 not authority to execute. Machine actors additionally require an active grant.
 
@@ -34,9 +35,9 @@ codes.
 The creation schema accepts either the existing local signer or
 `{ custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" }`.
 Managed input must not contain public/private key material, agent IDs, credential
-IDs or connection IDs. Runtime creation still rejects this variant with
-`MANAGED_SESSION_KEYS_UNAVAILABLE` before persistence or provider calls. Phase 12
-will wire provisioning; schema support is not live managed-session support.
+IDs or connection IDs. Phase 12 enables pending managed-session creation through
+the existing endpoint. `MANAGED_SESSION_KEYS_UNAVAILABLE` remains the failure
+when the provider services are absent, not a deployment feature flag.
 
 Full session responses expose `signer` with custody, algorithm and public key,
 plus provider for managed custody. Mapping explicitly excludes credential and
@@ -50,12 +51,46 @@ each session to a `purpose = session` signer and requires a provider connection
 for 1Claw session signers. Existing credential/connection foreign keys enforce
 tenant ownership; encrypted credential-to-agent binding remains a provisioning
 and signing boundary check, not a JSON foreign-key guarantee. Typed creation
-errors reserve `PROVIDER_SETUP_FAILED` and `PROVIDER_RECOVERY_REQUIRED` for that
-later application boundary; vendor responses must not become public errors.
+errors map setup failures to `PROVIDER_SETUP_FAILED` and ambiguous/partial
+provisioning to `PROVIDER_RECOVERY_REQUIRED`; vendor responses are not public errors.
 
 Contract, mapper, local compatibility and database boundary tests cover these
-invariants, including root-key substitution and cross-tenant references. No new
-provider calls, environment variables or managed signing endpoints are enabled.
+invariants, including root-key substitution and cross-tenant references.
+
+### Managed provisioning (Phase 12)
+
+User authorization precedes the application call. Managed creation is limited to
+20 attempts per organization per hour; local creation retains its existing behavior.
+The application validates the parent, lifetime, policy cardinality and the managed
+session allowance. A discarded public-only compilation using the account address
+checks network/permission eligibility before provider allocation. It is never
+stored or signed; final installation calldata is compiled with the new session key.
+
+The shared 1Claw provisioner receives explicit `session` purpose (`wallet-root`
+for account creation). It reuses or initializes the organization's empty-bootstrap
+connection, saves the one-time agent credential encrypted with its audit, creates
+one Ethereum key, enables raw signing and verifies key metadata. The session
+agent/key is separate from the account owner, regardless of owner custody.
+
+The final transaction locks billing, repeats the custody-specific capacity and
+account/lifetime checks, validates the agent credential binding and ready tenant
+connection, and inserts signer, pending session, pending installations, audit,
+notifications and email jobs atomically. No installation approval, activation,
+grant or signature is performed. No new table, migration or configuration is needed.
+
+Remote resources cannot roll back with the final transaction. Persisted encrypted
+credentials and their audits survive later failure for operator reconciliation;
+there is no automatic agent-create retry or orphan deletion. Compilation/storage
+failure after provisioning returns `PROVIDER_RECOVERY_REQUIRED`. A lost final quota
+race or expiry still returns the corresponding domain error and may leave an
+unreferenced agent; inspect saved credential audits before manual cleanup.
+
+HTTP tests cover both parent owners, first setup and connection reuse, independent
+quotas, encrypted/non-public credentials, permission/tenant/expiry rejection,
+ambiguous bootstrap, rate limits, disabled connections and transaction rollback.
+Disposable PostgreSQL verifies last-slot concurrent admission. Provider and chain
+services are substitutes; this is not live-provider or mainnet verification.
+Phases 13–16 still own lifecycle compatibility, managed execution/signing and clients.
 
 ### Recovery requirements for Phases 14–15
 

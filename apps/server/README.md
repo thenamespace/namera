@@ -99,7 +99,7 @@ when its discriminated owner is `passkey`. It also accepts
 `{type: "namera-managed", provider: "1claw"}` for account creation and internal
 owner signing. GCP requests still return 403 `MANAGED_WALLETS_DISABLED` before
 provider or billing work. Managed creation is limited to 20 attempts/org/hour.
-No public arbitrary owner-signing endpoint or managed session-key flow is added.
+No public arbitrary owner-signing endpoint is exposed.
 The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
@@ -173,6 +173,12 @@ their own IP/email policies.
 API-key creation is limited to 20 attempts per active organization per hour.
 Revocation is limited to 60 attempts per active organization per hour. Read
 operations use only the global limit.
+
+Managed session creation accepts the 1Claw signer variant and is limited to 20
+attempts per active organization per hour, before any provider call. It creates
+pending sessions under either passkey or 1Claw accounts, never approvals or active
+grants. Managed session execution/signing and client integration remain deferred.
+Local creation is unchanged. No additional environment configuration is required.
 
 Session-key revocation is limited to 60 attempts per active organization per
 hour. It revokes the key and every active grant in one application transaction.

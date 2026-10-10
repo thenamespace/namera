@@ -126,7 +126,7 @@ export const makeCreateWallet = Effect.gen(function* () {
         })
       : requestedOwner.provider === "1claw"
         ? Effect.gen(function* () {
-            const prepared = yield* provisionOneClaw(input);
+            const prepared = yield* provisionOneClaw({ ...input, purpose: "wallet-root" });
             return {
               signingKey: prepared.signingKey,
               publicKeyHex: prepared.signingKey.publicKeyHex,

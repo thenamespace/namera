@@ -77,7 +77,7 @@ export const makeTestServerLayer = (
   configLayer = TestConfigLayer,
   googleLayer = googleIdentityTestLayer(),
   oneClawLayer:
-    | Layer.Layer<OneClawService | OneClawOidcService | OneClawTestControl>
+    | Layer.Layer<OneClawService | OneClawOidcService | OneClawTestControl, never, Repository>
     | Layer.Layer<never> = Layer.empty,
 ) => {
   const TestServicesLayer = Layer.mergeAll(

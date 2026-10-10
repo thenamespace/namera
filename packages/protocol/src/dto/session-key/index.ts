@@ -60,7 +60,7 @@ export const CreateEvmSessionKeyRequest = Schema.Struct({
 }).annotate({
   identifier: "CreateEvmSessionKeyRequest",
   description:
-    "Register a secp256k1 session with mandatory onchain permissions and optional API policies. Managed custody is reserved by this contract but currently returns MANAGED_SESSION_KEYS_UNAVAILABLE. The key remains pending until its owner-approved installation is confirmed. Never send private key material.",
+    "Register a local or 1Claw-managed secp256k1 session with mandatory onchain permissions and optional API policies. The key remains pending until its owner-approved installation is confirmed. Managed execution and signing are not yet available. Never send private key material.",
 });
 
 export const CreateSessionKeyRequest = Schema.Union([CreateEvmSessionKeyRequest], {

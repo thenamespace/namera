@@ -31,6 +31,7 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
   return Effect.fn("application.oneclaw.provisionSigner")(function* (input: {
     organizationId: OrganizationId;
     actorId: ActorId;
+    purpose: "wallet-root" | "session";
   }) {
     if (Option.isNone(provider) || Option.isNone(identity))
       return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
@@ -139,7 +140,7 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
       signingKey: {
         id: signingKeyId,
         organizationId: input.organizationId,
-        purpose: "wallet-root",
+        purpose: input.purpose,
         custody: "namera-managed",
         algorithm: "secp256k1",
         status: "active",

@@ -109,6 +109,11 @@ export const rateLimitPolicy = {
     },
   },
   sessionKey: {
+    createManagedByOrganization: {
+      limit: 20,
+      window: Duration.hours(1),
+      algorithm: "fixed-window",
+    },
     revokeByOrganization: {
       limit: 60,
       window: Duration.hours(1),

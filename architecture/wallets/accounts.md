@@ -110,8 +110,9 @@ at signing time. Provider signing verifies the exact digest and returned signer;
 failures never fall back to GCP/local. No arbitrary root-signing HTTP endpoint is
 added. Managed-owner installation/removal of local session keys is implemented
 through explicit user approval and the existing receipt worker; see
-[session keys](session-keys.md). Managed session-key custody/signing remain
-later work; dashboard managed-owner approval is wired.
+[session keys](session-keys.md). The provisioner also creates dedicated session-purpose
+keys through pending managed-session creation. Managed session execution/signing
+and client integration remain later work; dashboard managed-owner approval is wired.
 
 `/providers/1claw/.well-known/openid-configuration` and `/providers/1claw/jwks.json`
 publish issuer metadata and public RSA fields only. Configure the Platform app's
