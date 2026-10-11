@@ -38,6 +38,9 @@ marketing or blog colors.
 The `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
 `meta.json`, producing section-specific sidebars. A sidebar picker switches
 between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
+The Dashboard sidebar includes a Core Concepts section with Accounts, Session
+Keys, Permissions and Policies, Networks, and Organizations and Workspaces.
+These pages explain the domain without depending on unfinished UI walkthroughs.
 The SDK Introduction group contains Overview, Installation, and Getting Started.
 The Essentials group follows with Authentication, Accounts and Session Keys,
 Permissions, Supported Networks, and Handling Results and Errors. These pages

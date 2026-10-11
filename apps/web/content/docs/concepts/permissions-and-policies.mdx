@@ -1,0 +1,88 @@
+---
+title: Permissions and Policies
+description: Understand the checks that determine what a session key can do.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Permissions define the authority you give a session key. API policies add
+restrictions to requests made through Namera. An operation must satisfy both.
+
+## What Allows an Operation
+
+A client needs an active grant to an active session key. That key must have a
+confirmed installation on the requested network, and the operation must meet
+its permissions and every applicable API policy.
+
+A valid login is not enough. Neither is a funded account or an active key on a
+different network.
+
+## Onchain Permissions
+
+The account owner approves these permissions, and the smart account's contracts
+enforce them. Depending on the configuration, they govern:
+
+- Which recipients, contracts, and functions the key can use.
+- Which tokens it can transfer or approve and the available allowances.
+- How much native currency it can send and the gas budget it can use.
+- When execution authority starts and expires.
+- Whether it has signature authority.
+
+For example, a key intended to send **0.001 ETH** to one recipient needs both
+permission to call that recipient and a sufficient native-currency allowance.
+A gas budget is separate from the amount transferred.
+
+Unrestricted account access is broad execution authority. It is not equivalent
+to a narrow transfer permission and does not implicitly enable signatures.
+
+## API Policies
+
+API policies apply when an operation goes through Namera. They can restrict
+networks, time windows, contract calls, spending, gas, and signing requests.
+
+All applicable policies must pass. For example, an operation below a lifetime
+budget can still be denied because its daily budget is exhausted. Adding a more
+permissive policy does not override another policy's denial.
+
+<Callout type="info" title="Different enforcement boundaries">
+  API policies cannot expand onchain authority. They also do not restrict an operation submitted
+  outside Namera. Use onchain permissions for restrictions that must be enforced by the account
+  itself.
+</Callout>
+
+## Amounts and Budgets
+
+Native spending measures the currency sent with calls. Token allowances apply
+to the specified token, and gas budgets cover execution costs. These are not
+interchangeable limits.
+
+Cumulative API budgets can reserve capacity while an operation is pending.
+Another request may therefore be denied even before the first transaction
+appears as confirmed activity. Budget windows and network scope depend on the
+configured policy; do not assume a daily limit resets per request.
+
+## Signature Permissions
+
+Signing requires explicit onchain signature authority and an API policy allowing
+the requested message or typed-data signature. Transaction access alone does
+not permit signing.
+
+Typed-data policies can match a network, verifying contract, primary type, and
+domain. Matching those fields does not constrain amounts inside the message.
+A signature can authorize a later action even though signing it submits no
+transaction at that moment.
+
+<Callout type="warn" title="Signature authority has a separate lifetime">
+  Onchain transaction spending limits and execution expiry do not constrain onchain signature
+  authority. Remove the installed authority onchain to end it; revoking Namera access alone only
+  blocks requests through Namera.
+</Callout>
+
+## Simulation and Confirmation
+
+Simulation previews the calls and checks the applicable policies without
+submitting the transaction. It is not a promise that execution will succeed:
+balances, budgets, and network state can change.
+
+A successful submission is also not confirmation. Use the returned submission
+ID to follow its status rather than repeating the operation.

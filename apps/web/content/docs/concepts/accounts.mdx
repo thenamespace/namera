@@ -1,0 +1,67 @@
+---
+title: Accounts
+description: Understand where assets live and how account ownership differs from delegated access.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+An **account** is a smart wallet that holds assets and executes transactions.
+It belongs to a [workspace](/docs/concepts/organizations-and-workspaces) and has
+an owner that authorizes changes to its onchain permissions.
+
+Namera currently supports EVM smart accounts. The dashboard calls them
+**accounts**; the SDK and API use **wallets** for the same resource.
+
+## Account Ownership
+
+The owner approves installing and removing session-key permissions. Agents use
+session keys instead of acting as that owner.
+
+Namera supports two account owner types:
+
+- **User-owned passkey:** you approve owner operations with your passkey.
+- **1Claw-managed:** owner signing uses a key managed through 1Claw, following
+  an authorized user's approval in Namera.
+
+An account owner is not the same as a workspace's Owner role. Workspace roles
+control management access in Namera; account ownership controls the smart
+account's onchain authority.
+
+<Callout type="warn" title="Keep access to your passkey">
+  Signing in to Namera does not recover an account's owner passkey. Losing every copy can prevent
+  owner approvals and onchain permission removal, and may lock funds in the account.
+</Callout>
+
+## Account Address and Account ID
+
+The **address** identifies the smart account on a network. Use it when receiving
+assets or looking up the account in a block explorer.
+
+The **account ID** identifies the account in Namera. SDK, CLI, and MCP requests
+use this ID to select it. The ID is not a blockchain address, and the account's
+display name is not a unique identifier.
+
+Always pair an address with the intended [network](/docs/concepts/networks).
+Balances and activity on one network are separate from those on another.
+
+## Delegated Access
+
+One account can have multiple [session keys](/docs/concepts/session-keys), each
+with its own permissions and lifetime. For example, one key might allow payments
+to a specific recipient while another permits calls to a particular contract.
+
+Creating a key does not move assets into it. Assets remain in the account;
+the key gives a client limited authority to act on that account.
+
+An API key or connected app sees only the accounts reachable through its active
+session-key grants. Access to one key does not automatically reveal every account
+in the workspace.
+
+## Separate Ownership from Key Storage
+
+Account ownership and session-key storage are independent. A passkey-owned
+account can use a managed session key, and a managed account can use a locally
+held session key. Neither arrangement makes the session key an account owner.
+
+Next, learn how [session keys](/docs/concepts/session-keys) become usable and
+how their access ends.
