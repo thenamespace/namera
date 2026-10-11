@@ -1,0 +1,51 @@
+---
+title: Zed
+description: Add Namera to Zed's Agent Panel as a context server.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+Open Zed's settings JSON and add a `context_servers` entry:
+
+```json
+{
+  "context_servers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "zed"]
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+Zed calls these **context servers**. Use `context_servers`, not `mcpServers`.
+See [Zed's MCP documentation](https://zed.dev/docs/ai/mcp).
+
+## Authorize
+
+```sh
+namera mcp login --profile zed
+namera mcp status --profile zed
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Open **Settings → AI → MCP Servers** and check that Namera is active. In the
+Agent Panel, select a profile that includes its tools. Keep the tool permission
+policy on confirmation rather than allowing every tool automatically.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile zed
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

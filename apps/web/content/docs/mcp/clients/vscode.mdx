@@ -1,0 +1,56 @@
+---
+title: VS Code
+description: Connect Namera to agent chat in Visual Studio Code.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+In your workspace, create or edit `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "namera": {
+      "type": "stdio",
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "vscode"]
+    }
+  }
+}
+```
+
+VS Code uses **`servers`**, not `mcpServers`, in this file. Use the editor's
+**Start** control above the server entry and approve server trust when prompted.
+See [VS Code's MCP configuration](https://code.visualstudio.com/docs/agents/reference/mcp-configuration).
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+## Authorize
+
+```sh
+namera mcp login --profile vscode
+namera mcp status --profile vscode
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+If you use a remote workspace, confirm where VS Code launches the server.
+Namera must have its installation, keyring, and browser-login access in that
+environment. Start with a local workspace if those are unavailable remotely.
+
+## Use Namera
+
+Open agent chat and enable Namera's tools in the tools picker. MCP access may be
+restricted by your organization's VS Code policies.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile vscode
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

@@ -1,0 +1,57 @@
+---
+title: Permissions and Limits
+description: Decide what an agent can access before connecting it.
+---
+
+Namera checks both the connection's access and the selected session key's
+permissions. A successful client connection does not give the agent unrestricted
+access to your account.
+
+## Choose Connection Access
+
+Browser consent separates reading accounts, keys, and history from executing
+transactions and signing. Simulation also requires execution access. Select only
+the active session keys this client needs.
+
+For an inspection-only client, grant read access without execute/sign access.
+Hiding a tool in the client's UI is useful, but does not replace limiting its
+Namera authorization.
+
+## Set Session-Key Permissions
+
+In the dashboard, configure the allowed networks, recipients or contracts,
+amount limits, and expiry for the intended work. The session key must be active
+and installed on the requested network. Message signing requires its own
+permission; permission to transfer does not imply permission to sign.
+
+The agent can inspect these permissions. It cannot create accounts, install
+session keys, or approve a wider permission set through Namera's MCP tools.
+
+## Keep Approval in the Client
+
+Review your client's tool approval settings before allowing asset movement.
+Keep confirmations enabled for execution and signing where the client supports
+them. A prompt such as “ask me first” is not a substitute for enforced limits.
+
+Do not paste a private key, encrypted export, passphrase, or API key into a chat.
+Complete any dashboard-provided import in your terminal.
+
+## Gas Limits
+
+The default server configuration permits sponsored executions only, subject to
+Namera's sponsorship checks. To permit self-funded gas, set a ceiling in the
+server arguments yourself:
+
+```sh
+namera mcp serve --profile agent --max-gas-cost-wei 1000000000000000
+```
+
+That ceiling is **0.001 ETH** in wei. It limits gas cost, not the transfer amount.
+Add the flag to the command your client launches; do not start a second server
+in a terminal. Agents cannot raise this ceiling through tools.
+
+## Submission Is Not Confirmation
+
+Ask the agent to track a submission until it is confirmed or failed. If the
+response is interrupted, check the known submission ID before requesting another
+execution. Repeating an execution can move assets twice.

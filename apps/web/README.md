@@ -71,7 +71,13 @@ names and document Usage, Output, Arguments, and Options. Shared Markdown in
 Output comes from CLI formatters with schema-validated fixtures; verify ordinary
 commands against a loopback API fixture, never live transactions. Shell examples
 must match the actual CLI flags, wei units, and non-interactive requirements.
-MCP also retains its separate overview page.
+MCP contains Introduction, Essentials, and client connection guides only, without
+transaction/signing guides or tool reference. Client pages document the actual
+local stdio configuration, matching Namera login profile, a read-only first
+request, and disconnection. Shared copy lives in `content/snippets/mcp/`.
+Verify client-specific settings against upstream documentation and distinguish
+documented compatibility from end-to-end testing. URL-only clients cannot
+connect directly to the current local server.
 
 ### Docs writing conventions
 

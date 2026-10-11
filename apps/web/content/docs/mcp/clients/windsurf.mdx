@@ -1,0 +1,55 @@
+---
+title: Windsurf / Devin Desktop
+description: Connect Namera to the Cascade agent's local MCP configuration.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera to Cascade
+
+This setup is for **Cascade**. The current Windsurf documentation redirects to
+Devin Desktop and distinguishes Cascade from the newer Devin Local agent, which
+uses a different configuration. See the
+[current Cascade MCP documentation](https://docs.devin.ai/desktop/cascade/mcp).
+
+In Cascade's **…** actions menu, open the MCP configuration file. Add:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "windsurf"]
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+Open the file through the app so you edit the configuration used by your installed
+version, rather than assuming an older Windsurf directory is still active.
+
+## Authorize
+
+```sh
+namera mcp login --profile windsurf
+namera mcp status --profile windsurf
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Enable Namera in Cascade's MCP controls and start a new conversation. If tools
+are missing, check the server toggle and any organization-level MCP restrictions.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile windsurf
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

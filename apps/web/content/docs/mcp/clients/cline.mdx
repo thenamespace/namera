@@ -1,0 +1,52 @@
+---
+title: Cline
+description: Add Namera to the Cline extension's MCP configuration.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+In Cline, open **MCP Servers → Configure → Configure MCP Servers**. Add this
+entry to the settings JSON opened by the extension:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "cline"]
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+Use Cline's configuration, not VS Code's `.vscode/mcp.json`; these configure
+different clients. See [Cline's MCP documentation](https://github.com/cline/cline/blob/main/docs/mcp/mcp-overview.mdx).
+
+## Authorize
+
+```sh
+namera mcp login --profile cline
+namera mcp status --profile cline
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Check Namera in Cline's MCP Servers panel. Reconnect the server if needed, then
+start a task with MCP tool access enabled. Do not add execution or signing to an
+auto-approve list just to get the first read request working.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile cline
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

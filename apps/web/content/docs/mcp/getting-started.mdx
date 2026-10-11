@@ -1,0 +1,67 @@
+---
+title: Getting Started
+icon: Rocket01Icon
+description: Prepare an account, connect your client, and make your first read-only request.
+---
+
+## Install Namera
+
+```sh
+npm install -g @namera-ai/cli
+```
+
+Use Node.js 24.14+ and an unlocked OS keyring. See
+[Installation](/docs/mcp/installation) for other package managers.
+
+## Prepare Your Account
+
+In the [Namera dashboard](https://dashboard.namera.ai):
+
+1. Create or choose an account.
+2. Create a session key with the permissions you want the agent to have.
+3. If the dashboard provides an encrypted import command, run it on the machine
+   that will run your MCP client. Enter the export passphrase privately.
+4. Approve the key's installation on your chosen network and wait until it is active.
+
+You select active session keys during connection approval. You do not need to
+fund the account to list it or inspect its permissions.
+
+## Connect Your Client
+
+Choose a [client setup guide](/docs/mcp/clients). Each guide provides its exact
+command or configuration, plus a named profile for the connection.
+
+For example, with Codex installed:
+
+```sh
+codex mcp add namera -- namera mcp serve --profile codex
+namera mcp login --profile codex
+```
+
+Approve the connection in your browser and select the session keys it can use.
+Use the same profile name shown in your client's configuration.
+
+## Make Your First Request
+
+Start a new conversation in the client and ask:
+
+> Use Namera to list my accounts and their session keys. Summarize the available
+> networks and permissions. Do not submit transactions or sign anything.
+
+Allow the read tools if the client asks. The answer depends on the accounts
+and keys you authorized; it should come from Namera tools, not the agent's memory.
+
+If you skipped login, the first authenticated tool call starts browser consent.
+Approve it, then ask the agent to retry the read request.
+
+## Manage Access
+
+Change permissions in the dashboard. To disconnect the example Codex profile:
+
+```sh
+namera mcp logout --profile codex
+```
+
+Remove the server from your client's configuration separately to stop it from
+launching. See [Authentication](/docs/mcp/authentication) for connection lifecycle
+and [Troubleshooting](/docs/mcp/troubleshooting) if a tool fails.

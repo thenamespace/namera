@@ -1,0 +1,53 @@
+---
+title: Codex
+description: Connect Codex to Namera with a local MCP server.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+With Codex CLI installed, register the server:
+
+```sh
+codex mcp add namera -- namera mcp serve --profile codex
+```
+
+Alternatively, add this to `~/.codex/config.toml`. Use one method, not both:
+
+```toml
+[mcp_servers.namera]
+command = "namera"
+args = ["mcp", "serve", "--profile", "codex"]
+```
+
+Codex uses this configuration for its local clients. In the IDE extension, you
+can also add a **STDIO** server through **MCP servers** in the gear menu. See the
+[official Codex MCP setup](https://developers.openai.com/codex/mcp).
+
+## Authorize
+
+```sh
+namera mcp login --profile codex
+namera mcp status --profile codex
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+Use Namera's login command, not `codex mcp login namera`: this local server owns
+its browser authorization flow.
+
+## Use Namera
+
+Start a new Codex session. Run `/mcp` in the CLI to inspect active servers, or
+`codex mcp list` from your terminal to check the saved registration.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile codex
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

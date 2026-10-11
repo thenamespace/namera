@@ -1,0 +1,67 @@
+---
+title: Installation
+icon: Download04Icon
+description: Install the local MCP server included in the Namera CLI.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Requirements
+
+Use **Node.js 24.14+**, an accessible OS keyring, and a client that can launch
+local stdio MCP servers. Install Namera on the machine where that client runs.
+On Linux, use a persistent Secret Service session so saved credentials and
+imported keys remain available after reboot.
+
+## Install
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+<Tab value="npm">
+
+```sh
+npm install -g @namera-ai/cli
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```sh
+pnpm add -g @namera-ai/cli
+```
+
+</Tab>
+<Tab value="yarn">
+
+```sh
+yarn global add @namera-ai/cli
+```
+
+</Tab>
+<Tab value="bun">
+
+```sh
+bun add -g @namera-ai/cli
+```
+
+</Tab>
+</Tabs>
+
+Use one command. The Yarn command requires Yarn Classic; with modern Yarn, use
+npm or pnpm for the global install. Bun installs the package, but the executable
+still runs on Node.js.
+
+```sh
+namera --version
+```
+
+Continue to [Getting Started](/docs/mcp/getting-started) or go directly to
+[your client's setup page](/docs/mcp/clients).
+
+## Update
+
+```sh
+npm install -g @namera-ai/cli@latest
+```
+
+Restart the MCP server in your client after updating. Saved connections and
+imported keys are retained.

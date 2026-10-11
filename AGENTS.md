@@ -155,6 +155,22 @@ Installation, and Getting Started pages as the reference structure.
   non-interactive requirements, profile/host precedence, and separate MCP login
   where relevant. Do not imply SDK-only options exist in the CLI.
 
+### MCP documentation
+
+- Keep MCP docs setup-focused: Introduction, Essentials, and client connection
+  guides. Do not add transaction/signing walkthroughs or a tool reference;
+  agents discover the tool schemas themselves.
+- Each client guide covers prerequisites, its exact registration command or
+  config format, authorization with a matching profile, a read-only first
+  request, and disconnection. Cite the client's official setup documentation.
+- Verify each client's transport, config wrapper, location, and approval
+  behavior. Do not copy one client's JSON format into all clients. Distinguish
+  documented setup from a connection actually tested in that application.
+- Be explicit when a URL-only client cannot use the local stdio server. Never
+  invent a hosted MCP endpoint or present an unauthenticated bridge as setup.
+- Reuse common instructions in `apps/web/content/snippets/mcp/`. Keep
+  client-specific configuration and profile commands in each page.
+
 ## Architecture knowledge base
 
 Stable technical architecture is recorded in [`architecture/`](architecture/README.md).

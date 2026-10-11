@@ -1,0 +1,54 @@
+---
+title: OpenCode
+description: Configure Namera as a local MCP server in OpenCode.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+Add this to your project's `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "namera": {
+      "type": "local",
+      "command": ["namera", "mcp", "serve", "--profile", "opencode"],
+      "enabled": true
+    }
+  }
+}
+```
+
+OpenCode uses **`mcp`** and a single command array, not a separate `args` field.
+See [OpenCode's MCP configuration](https://opencode.ai/docs/mcp-servers/).
+
+Merge the entry with existing settings. If needed, replace the first command
+array element with Namera's [absolute path](/docs/mcp/troubleshooting#the-client-cannot-find-namera).
+
+## Authorize
+
+```sh
+namera mcp login --profile opencode
+namera mcp status --profile opencode
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Start OpenCode from the project containing the configuration. Make sure the
+selected agent's tool settings do not disable Namera's tools, then open a new
+conversation.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile opencode
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>
