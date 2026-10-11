@@ -33,7 +33,7 @@ export function AddressIdentity({
             )}
           </Avatar.Fallback>
         </Avatar>
-        {network && metadata?.type !== "contract" ? (
+        {network ? (
           <ChainIcon
             aria-hidden
             namespace="eip155"
@@ -68,7 +68,11 @@ export function AddressIdentity({
             <span className="text-muted text-xs">{metadata.details.symbol}</span>
           ) : null}
         </span>
-        <span className="text-muted block truncate text-xs">
+        <span
+          className={
+            metadata?.type === "contract" ? "sr-only" : "text-muted block truncate text-xs"
+          }
+        >
           {network?.chain.name ?? value.chainId}
         </span>
       </span>
