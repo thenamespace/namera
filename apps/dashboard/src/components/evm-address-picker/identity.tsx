@@ -47,11 +47,11 @@ export function AddressIdentity({
           ) : null}
         </span>
         <span className="text-muted block truncate text-xs">
-          {network?.chain.name ?? value.chainId} ·{" "}
-          <span className="font-mono" title={value.address}>
-            {value.address.slice(0, 6)}…{value.address.slice(-4)}
-          </span>
+          {network?.chain.name ?? value.chainId}
         </span>
+      </span>
+      <span className="text-muted ml-auto shrink-0 font-mono text-xs" title={value.address}>
+        {value.address.slice(0, 6)}…{value.address.slice(-4)}
       </span>
     </span>
   );
