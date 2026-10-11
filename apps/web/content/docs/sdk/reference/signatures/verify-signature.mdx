@@ -3,18 +3,19 @@ title: Verify Signature
 description: Verify a smart-account signature against its original payload.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.verifySignature(request)` performs read-only verification. It requires access to the account, but no session-key ID.
 
 ## Usage
 
-This example signs a message, then verifies the returned signature. If you already have a signature, call only `verifySignature()` with its original payload.
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
 
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+import { namera } from "./client";
 const message = "Hello from Namera";
 
 const signed = await namera.sign({
@@ -42,91 +43,26 @@ if (!verification.success) throw new Error(verification.error.message);
 console.log(verification.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-`request` is a `VerifySignatureRequest`:
+<include>../../../../snippets/sdk/client.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      typeDescriptionLink: "/docs/sdk/supported-networks",
-      description: "CAIP-2 network ID, such as eip155:84532.",
-      required: true,
-    },
-    type: {
-      type: '"message" | "typed-data"',
-      description: "Selects the payload shape.",
-      required: true,
-    },
-    message: {
-      type: "string",
-      description: "Required for message. Exact UTF-8 text, not raw bytes.",
-    },
-    typedData: {
-      type: "EvmTypedData",
-      description: "Required for typed-data; omit message.",
-    },
-    signature: {
-      type: "`0x${string}`",
-      description: "Smart-account signature to verify.",
-      required: true,
-    },
-  }}
-/>
-
-For `type: "typed-data"`, supply the original [EvmTypedData fields](/docs/sdk/reference/signatures/sign#typed-data) instead of message.
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-These fields describe successful `data`. JSON values are illustrative; date-time
-values use ISO strings and bigint values use decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      description: "Verification network.",
-      required: true,
-    },
-    account: {
-      type: "`0x${string}`",
-      description: "Smart-account address.",
-      required: true,
-    },
-    valid: {
-      type: "boolean",
-      description: "Whether the account accepts this signature for the payload.",
-      required: true,
-    },
-    type: {
-      type: '"message" | "typed-data"',
-      description: "Payload kind.",
-      required: true,
-    },
-  }}
-/>
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`walletId`** (`string`): Account UUID.
+- **`chainId`** (`SupportedEvmChainId`): Verification network.
+- **`account`** (`` `0x${string}` ``): Smart-account address.
+- **`valid`** (`boolean`): Whether the account accepts this signature for the payload.
+- **`type`** (`"message" | "typed-data"`): Payload kind.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -143,7 +79,142 @@ values use ISO strings and bigint values use decimal strings in JSON.
 
 </div>
 
-`success: true` does not imply a valid signature. Check `data.valid`.
+## Parameters
+
+Pass a `VerifySignatureRequest` object. No session-key ID is needed. For `type: "typed-data"`, provide `typedData` instead of `message`.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<include>../../../../snippets/sdk/signature-payload.md</include>
+
+### signature
+
+- **Type:** `` `0x${string}` ``
+- **Required**
+
+The complete signature returned by `sign()`, including its validation envelope. Do not strip it to a bare EOA signature. Supply the original payload, account, and network.
+
+A successful request can return `valid: false`; only `data.valid: true` means the signature was accepted.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature, // [!code focus]
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
 
 ## Errors
 

@@ -3,19 +3,21 @@ title: Simulate
 description: Simulate calls and evaluate the selected session key’s API policies.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.executions.simulate(request)` does not sign, submit, or sponsor an operation.
 
 ## Usage
 
-Install `viem` for `parseEther`. Replace the example IDs and recipient.
+Install `@namera-ai/sdk` and `viem`. Replace the example IDs and recipient with your own. The selected session must permit these calls on Base Sepolia.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
 
 ```ts title="index.ts"
-import { NameraClient, type SimulateExecutionRequest } from "@namera-ai/sdk";
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
 import { parseEther } from "viem";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
 
 const request = {
   namespace: "eip155",
@@ -37,109 +39,29 @@ if (!simulation.success) throw new Error(simulation.error.message);
 console.log(simulation.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-`request` is a `SimulateExecutionRequest`. It has no `sponsor` parameter.
+<include>../../../../snippets/sdk/client.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Required chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    sessionKeyId: {
-      type: "string",
-      description: "Authorized session-key UUID installed on chainId.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      typeDescriptionLink: "/docs/sdk/supported-networks",
-      description: "Supported CAIP-2 chain ID, such as eip155:84532. See Supported Networks.",
-      required: true,
-    },
-    calls: {
-      type: "readonly Call[]",
-      description: "One or more calls, executed in array order.",
-      required: true,
-    },
-    "calls[].to": {
-      type: "`0x${string}`",
-      description: "20-byte recipient or contract address.",
-      required: true,
-    },
-    "calls[].value": {
-      type: "bigint",
-      description: "Nonnegative native-token amount in wei. Use parseEther for ETH.",
-      required: true,
-    },
-    "calls[].data": {
-      type: "`0x${string}`",
-      description: "Encoded calldata; use 0x for a native transfer.",
-      required: true,
-    },
-  }}
-/>
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-The fields below describe successful `data`. JSON values are illustrative;
-SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      description: "Simulation network.",
-      required: true,
-    },
-    account: {
-      type: "`0x${string}`",
-      description: "Smart-account address.",
-      required: true,
-    },
-    callsSucceeded: {
-      type: "boolean",
-      description: "Whether the simulated calls succeeded.",
-      required: true,
-    },
-    simulation: {
-      type: "EvmIntentSimulation",
-      description: "userOperation gas estimates and calls results, assetChanges, and transfers.",
-      required: true,
-    },
-    allowed: {
-      type: "boolean",
-      description: "Point-in-time policy decision; not a guarantee of later execution.",
-      required: true,
-    },
-    sessionKeyId: {
-      type: "string",
-      description: "Present when allowed is true.",
-    },
-    denials: {
-      type: "readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]",
-      description: "Nonempty when allowed is false; absent when allowed is true.",
-    },
-  }}
-/>
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`walletId`** (`string`): Account UUID.
+- **`chainId`** (`SupportedEvmChainId`): Simulation network.
+- **`account`** (`` `0x${string}` ``): Smart-account address.
+- **`callsSucceeded`** (`boolean`): Whether the simulated calls succeeded.
+- **`simulation`** (`EvmIntentSimulation`): userOperation gas estimates and calls results, assetChanges, and transfers.
+- **`allowed`** (`boolean`): Point-in-time policy decision; not a guarantee of later execution.
+- **`sessionKeyId`** (`string`): Present when allowed is true.
+- **`denials`** (`readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]`): Nonempty when allowed is false; absent when allowed is true.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -186,7 +108,119 @@ SDK timestamps are decoded date-time values and bigint fields are decimal string
 
 </div>
 
-Both `callsSucceeded` and `allowed` must be true before proceeding. A denied policy decision can still be a successful SDK response.
+## Parameters
+
+Pass a `SimulateExecutionRequest` object. Simulation does not accept a `sponsor` field.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/simulate-calls.md</include>
 
 ## Errors
 

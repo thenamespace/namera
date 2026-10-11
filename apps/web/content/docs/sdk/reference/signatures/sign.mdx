@@ -3,18 +3,19 @@ title: Sign
 description: Sign a UTF-8 message or EIP-712 typed data.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.sign(request)` prepares, validates, and completes a signature using the selected session key. It does not send a transaction.
 
 ## Usage
 
-Replace the example IDs with an account and installed session key that allow message signing.
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
 
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+import { namera } from "./client";
 const message = "Hello from Namera";
 
 const signed = await namera.sign({
@@ -31,136 +32,26 @@ if (!signed.success) throw new Error(signed.error.message);
 console.log(signed.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-`request` is a `SignRequest`:
+<include>../../../../snippets/sdk/client.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    sessionKeyId: {
-      type: "string",
-      description: "Authorized session-key UUID installed for this account and network.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      typeDescriptionLink: "/docs/sdk/supported-networks",
-      description: "CAIP-2 network ID, such as eip155:84532.",
-      required: true,
-    },
-    type: {
-      type: '"message" | "typed-data"',
-      description: "Selects the payload shape.",
-      required: true,
-    },
-    message: {
-      type: "string",
-      description: "Required for message. Exact UTF-8 text, not raw bytes.",
-    },
-    typedData: {
-      type: "EvmTypedData",
-      description: "Required for typed-data; omit message.",
-    },
-  }}
-/>
-
-### Typed Data
-
-<TypeTable
-  type={{
-    "typedData.domain": {
-      type: "object",
-      description: "EIP-712 domain. All domain fields are optional.",
-      required: true,
-    },
-    "typedData.domain.name": {
-      type: "string",
-      description: "Domain name.",
-    },
-    "typedData.domain.version": {
-      type: "string",
-      description: "Domain version.",
-    },
-    "typedData.domain.chainId": {
-      type: "number",
-      description: "Nonnegative integer chain ID, such as 84532, not a CAIP-2 string.",
-    },
-    "typedData.domain.verifyingContract": {
-      type: "`0x${string}`",
-      description: "20-byte contract address.",
-    },
-    "typedData.domain.salt": {
-      type: "`0x${string}`",
-      description: "32-byte domain salt.",
-    },
-    "typedData.types": {
-      type: "Record<string, readonly { name: string; type: string }[]>",
-      description: "Named structs with nonempty field arrays.",
-      required: true,
-    },
-    "typedData.primaryType": {
-      type: "string",
-      description: "Nonempty root struct name.",
-      required: true,
-    },
-    "typedData.message": {
-      type: "Record<string, Json>",
-      description: "JSON-compatible values. Encode large integers as decimal strings, not bigint.",
-      required: true,
-    },
-  }}
-/>
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-These fields describe successful `data`. JSON values are illustrative; date-time
-values use ISO strings and bigint values use decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      description: "Signing network.",
-      required: true,
-    },
-    account: {
-      type: "`0x${string}`",
-      description: "Smart-account address.",
-      required: true,
-    },
-    signature: {
-      type: "`0x${string}`",
-      description: "Smart-account signature, not a bare EOA signature.",
-      required: true,
-    },
-    type: {
-      type: '"message" | "typed-data"',
-      description: "Payload kind.",
-      required: true,
-    },
-  }}
-/>
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`walletId`** (`string`): Account UUID.
+- **`chainId`** (`SupportedEvmChainId`): Signing network.
+- **`account`** (`` `0x${string}` ``): Smart-account address.
+- **`signature`** (`` `0x${string}` ``): Smart-account signature, not a bare EOA signature.
+- **`type`** (`"message" | "typed-data"`): Payload kind.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -177,7 +68,116 @@ values use ISO strings and bigint values use decimal strings in JSON.
 
 </div>
 
-The signature value above is illustrative. Verify the actual returned signature against the original payload.
+## Parameters
+
+Pass a `SignRequest` object. The selected session needs installed signature authority and an API policy permitting the payload.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/signature-payload.md</include>
+
+#### Sign typed data
+
+Use `type: "typed-data"` with the complete payload. The session’s signature policy
+must permit its domain and primary type. Replace the domain’s contract address
+with the one expected by your application.
+
+```ts title="index.ts"
+import type { EvmTypedData } from "@namera-ai/sdk";
+import { namera } from "./client";
+
+const typedData = {
+  domain: {
+    name: "Namera Example",
+    version: "1",
+    chainId: 84532,
+    verifyingContract: "0x3333333333333333333333333333333333333333",
+  },
+  types: {
+    Greeting: [{ name: "contents", type: "string" }],
+  },
+  primaryType: "Greeting",
+  message: { contents: "Hello from Namera" },
+} satisfies EvmTypedData;
+```
 
 ## Errors
 

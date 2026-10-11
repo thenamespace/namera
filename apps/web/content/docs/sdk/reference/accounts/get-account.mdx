@@ -3,102 +3,50 @@ title: Get Account
 description: Read one account by its ID.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.wallets.get(walletId)` returns an account available to your credential.
 
 ## Usage
 
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
-
+import { namera } from "./client";
 const result = await namera.wallets.get("0199dfe1-0000-7000-8000-000000000001");
 if (!result.success) throw new Error(result.error.message);
 
 console.log(result.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-<TypeTable
-  type={{
-    walletId: {
-      type: "string",
-      description: "Required account UUID, not its onchain address.",
-      required: true,
-    },
-  }}
-/>
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-The fields below describe successful `data`. JSON values are illustrative;
-SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    id: {
-      type: "string",
-      description: "Account ID.",
-      required: true,
-    },
-    organizationId: {
-      type: "string",
-      description: "Owning organization ID.",
-      required: true,
-    },
-    metadata: {
-      type: "object",
-      description: "version and name, with optional logo and description.",
-      required: true,
-    },
-    status: {
-      type: '"active" | "frozen" | "archived"',
-      description: "Account lifecycle status.",
-      required: true,
-    },
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    address: {
-      type: "`0x${string}`",
-      description: "Smart-account address.",
-      required: true,
-    },
-    owner: {
-      type: "object",
-      description:
-        "Public signing-key identity, custody, algorithm, and provider-specific protection details.",
-      required: true,
-    },
-    implementation: {
-      type: '"alchemy-modular-v2"',
-      description: "Smart-account implementation.",
-      required: true,
-    },
-    data: {
-      type: "object",
-      description:
-        "Account configuration, discriminated by validatorType and accountMode. Includes deployment and version fields.",
-      required: true,
-    },
-    createdAt: {
-      type: "DateTime.Utc",
-      description: "Creation time.",
-      required: true,
-    },
-    updatedAt: {
-      type: "DateTime.Utc",
-      description: "Last update time.",
-      required: true,
-    },
-  }}
-/>
+- **`id`** (`string`): Account ID.
+- **`organizationId`** (`string`): Owning organization ID.
+- **`metadata`** (`object`): version and name, with optional logo and description.
+- **`status`** (`"active" | "frozen" | "archived"`): Account lifecycle status.
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`address`** (`` `0x${string}` ``): Smart-account address.
+- **`owner`** (`object`): Public signing-key identity, custody, algorithm, and provider-specific protection details.
+- **`implementation`** (`"alchemy-modular-v2"`): Smart-account implementation.
+- **`data`** (`object`): Account configuration, discriminated by validatorType and accountMode. Includes deployment and version fields.
+- **`createdAt`** (`DateTime.Utc`): Creation time.
+- **`updatedAt`** (`DateTime.Utc`): Last update time.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -139,6 +87,18 @@ SDK timestamps are decoded date-time values and bigint fields are decimal string
 ```
 
 </div>
+
+## Parameters
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.get("0199dfe1-0000-7000-8000-000000000001"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
 
 ## Errors
 

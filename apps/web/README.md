@@ -49,8 +49,14 @@ and sponsorship. Signing guides cover messages, typed data, and smart-account
 verification. Examples use Base Sepolia and illustrative IDs and response values;
 verify TypeScript against the SDK and JSON against the protocol response schemas.
 Reference follows Guides with Client, Accounts, Session Keys, Executions, and
-Signatures groups. Method pages use Fumadocs type tables for parameters and return
-fields, typed examples, and complete illustrative response data. SDK metadata
+Signatures groups. Method pages follow Usage, Returns, and Parameters with
+two-file examples and individual parameter sections, not type tables. Shared
+Markdown in `content/snippets/sdk/` is expanded by Fumadocs `<include>` at build
+time, including in search and Markdown exports. `expand-snippets.ts` expands
+authored Markdown includes before parsing: the installed Fumadocs include
+transform renders HTML but does not register embedded source for its Markdown
+stringifier. The pre-parse hook preserves one source for every output and
+registers snippet dependencies for rebuilds. SDK metadata
 uses section separators and extracted folders so Essentials, Guides, and Reference
 share the same heading style and spacing without changing page URLs.
 The walkthrough uses current SDK exports to discover resources, execute a managed-session

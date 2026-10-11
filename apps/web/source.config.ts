@@ -9,6 +9,7 @@ import { remarkMdxMermaid } from "fumadocs-core/mdx-plugins";
 import { applyMdxPreset, defineCollections, defineConfig, defineDocs } from "fumadocs-mdx/config";
 
 import { BlogFrontmatter } from "./src/lib/blog/schema";
+import { expandDocSnippets } from "./src/lib/docs/expand-snippets";
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -48,5 +49,6 @@ export const blog = defineCollections({
 });
 
 export default defineConfig({
+  plugins: [{ name: "expand-documentation-snippets", doc: { vfile: expandDocSnippets } }],
   mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false },
 });

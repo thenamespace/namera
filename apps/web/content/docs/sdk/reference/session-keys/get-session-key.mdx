@@ -3,121 +3,54 @@ title: Get Session Key
 description: Read a session key and its network installations.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.sessionKeys.get(sessionKeyId)` returns the key, its account, creator, and installations.
 
 ## Usage
 
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
-
+import { namera } from "./client";
 const result = await namera.sessionKeys.get("0199dfe1-0000-7000-8000-000000000002");
 if (!result.success) throw new Error(result.error.message);
 
 console.log(result.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-<TypeTable
-  type={{
-    sessionKeyId: {
-      type: "string",
-      description: "Required session-key UUID.",
-      required: true,
-    },
-  }}
-/>
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-The fields below describe successful `data`. JSON values are illustrative;
-SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    id: {
-      type: "string",
-      description: "Session-key ID.",
-      required: true,
-    },
-    organizationId: {
-      type: "string",
-      description: "Owning organization.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account ID.",
-      required: true,
-    },
-    signingKeyId: {
-      type: "string",
-      description: "Signing-key identity.",
-      required: true,
-    },
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    metadata: {
-      type: "object",
-      description: "version and name, with optional logo and description.",
-      required: true,
-    },
-    policies: {
-      type: "readonly Policy[]",
-      description: "Additional API policies.",
-      required: true,
-    },
-    policyHash: {
-      type: "string",
-      description: "Stored policy hash.",
-      required: true,
-    },
-    status: {
-      type: '"pending" | "active" | "revoking" | "revoked"',
-      description: "Session lifecycle status.",
-      required: true,
-    },
-    revokedAt: {
-      type: "DateTime.Utc | null",
-      description: "Revocation time, if revoked.",
-      required: true,
-    },
-    createdAt: {
-      type: "DateTime.Utc",
-      description: "Creation time.",
-      required: true,
-    },
-    signer: {
-      type: "object",
-      description: "Public signer identity and custody. No private key.",
-      required: true,
-    },
-    wallet: {
-      type: "WalletResponse",
-      description: "Complete account record.",
-      required: true,
-    },
-    creator: {
-      type: "object",
-      description: "Creating organizationMember, user, and organizationRole.",
-      required: true,
-    },
-    installations: {
-      type: "readonly Installation[]",
-      description:
-        "Each has id, chainId, status, authorization, installTransactionHash, and uninstallTransactionHash. Authorization includes permissions, signature authority, and validity timestamps.",
-      required: true,
-    },
-  }}
-/>
+- **`id`** (`string`): Session-key ID.
+- **`organizationId`** (`string`): Owning organization.
+- **`walletId`** (`string`): Account ID.
+- **`signingKeyId`** (`string`): Signing-key identity.
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`metadata`** (`object`): version and name, with optional logo and description.
+- **`policies`** (`readonly Policy[]`): Additional API policies.
+- **`policyHash`** (`string`): Stored policy hash.
+- **`status`** (`"pending" | "active" | "revoking" | "revoked"`): Session lifecycle status.
+- **`revokedAt`** (`DateTime.Utc | null`): Revocation time, if revoked.
+- **`createdAt`** (`DateTime.Utc`): Creation time.
+- **`signer`** (`object`): Public signer identity and custody. No private key.
+- **`wallet`** (`WalletResponse`): Complete account record.
+- **`creator`** (`object`): Creating organizationMember, user, and organizationRole.
+- **`installations`** (`readonly Installation[]`): Each has id, chainId, status, authorization, installTransactionHash, and uninstallTransactionHash. Authorization includes permissions, signature authority, and validity timestamps.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -258,7 +191,17 @@ SDK timestamps are decoded date-time values and bigint fields are decimal string
 
 </div>
 
-An active key must also have an `installed` installation on the requested network before use.
+## Parameters
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.get("0199dfe1-0000-7000-8000-000000000002"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
 
 ## Errors
 

@@ -3,68 +3,44 @@ title: Get Submission Status
 description: Read the current state of an execution submission.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.executions.getStatus(submissionId)` tracks a submission before and after confirmation.
 
 ## Usage
 
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
-
+import { namera } from "./client";
 const result = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003");
 if (!result.success) throw new Error(result.error.message);
 
 console.log(result.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-<TypeTable
-  type={{
-    submissionId: {
-      type: "string",
-      description: "Submission UUID returned by execute. Not an execution ID or transaction hash.",
-      required: true,
-    },
-  }}
-/>
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-These fields describe successful `data`. JSON values are illustrative; date-time
-values use ISO strings and bigint values use decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    submissionId: {
-      type: "string",
-      description: "Requested submission UUID.",
-      required: true,
-    },
-    status: {
-      type: '"reserved" | "prepared" | "submitted" | "confirmed" | "failed"',
-      description: "Discriminator for the response shape.",
-      required: true,
-    },
-    userOperationHash: {
-      type: "`0x${string}` | null",
-      description: "Present only for reserved, prepared, and submitted.",
-    },
-    execution: {
-      type: "ExecutionResponse",
-      description: "Complete confirmed execution record. Present only for confirmed.",
-    },
-  }}
-/>
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`submissionId`** (`string`): Requested submission UUID.
+- **`status`** (`"reserved" | "prepared" | "submitted" | "confirmed" | "failed"`): Discriminator for the response shape.
+- **`userOperationHash`** (`` `0x${string}` | null ``): Present only for reserved, prepared, and submitted.
+- **`execution`** (`ExecutionResponse`): Complete confirmed execution record. Present only for confirmed.
+
+### Pending Response
 
 <div className="docs-response">
 
@@ -79,7 +55,7 @@ values use ISO strings and bigint values use decimal strings in JSON.
 
 </div>
 
-### Confirmed
+### Confirmed Response
 
 <div className="docs-response">
 
@@ -131,7 +107,7 @@ values use ISO strings and bigint values use decimal strings in JSON.
 
 </div>
 
-### Failed
+### Failed Response
 
 <div className="docs-response">
 
@@ -145,15 +121,26 @@ values use ISO strings and bigint values use decimal strings in JSON.
 
 </div>
 
-## States
+## Parameters
 
-- `reserved`: awaiting authorization.
-- `prepared`: signed and queued for broadcast.
-- `submitted`: observed by the bundler.
-- `confirmed`: includes the successful execution record.
-- `failed`: terminal failure; no execution or hash field.
+### submissionId
 
-Poll the same ID while pending; stop on confirmed or failed. This method does not poll automatically.
+- **Type:** `string`
+- **Required**
+
+The `submissionId` returned by `execute()`. Save it to resume tracking after a restart. It is neither the confirmed execution ID nor an onchain transaction hash.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Polling
+
+Check the same submission while its status is `reserved`, `prepared`, or `submitted`. Stop on `confirmed` or `failed`. This method performs one read; it does not poll automatically. Do not call `execute()` again to check progress.
 
 ## Errors
 

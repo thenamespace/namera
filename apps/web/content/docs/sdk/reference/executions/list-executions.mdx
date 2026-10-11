@@ -3,17 +3,19 @@ title: List Executions
 description: List confirmed executions with cursor pagination.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.executions.list(options?)` returns confirmed history. Pending submissions are not included.
 
 ## Usage
 
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
-
+import { namera } from "./client";
 const result = await namera.executions.list({
   walletId: "0199dfe1-0000-7000-8000-000000000001",
 });
@@ -22,72 +24,26 @@ if (!result.success) throw new Error(result.error.message);
 console.log(result.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-<TypeTable
-  type={{
-    options: {
-      type: "ListExecutionsOptions",
-      description: "Optional filters.",
-      default: "{}",
-    },
-    "options.walletId": {
-      type: "string",
-      description: "Filter by account UUID.",
-    },
-    "options.sessionKeyId": {
-      type: "string",
-      description: "Filter by session-key UUID.",
-    },
-    "options.cursor": {
-      type: "string",
-      description: "nextCursor from the previous response. Omit for the first page.",
-    },
-  }}
-/>
+<include>../../../../snippets/sdk/client.md</include>
 
-There is no page-size parameter. Keep the same filters when requesting the next cursor.
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-These fields describe successful `data`. JSON values are illustrative; date-time
-values use ISO strings and bigint values use decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    items: {
-      type: "readonly ExecutionListItemResponse[]",
-      description: "Confirmed records accessible to your credential.",
-      required: true,
-    },
-    "items[].details": {
-      type: "object",
-      description: "id, namespace, chainId, transactionHash, and createdAt.",
-      required: true,
-    },
-    "items[].wallet": {
-      type: "object",
-      description: "id, namespace, address, and metadata.",
-      required: true,
-    },
-    "items[].sessionKey": {
-      type: "object",
-      description: "id, namespace, and metadata.",
-      required: true,
-    },
-    "items[].actorType": {
-      type: '"user" | "api-key" | "mcp" | "cli"',
-      description: "Submitting actor kind.",
-      required: true,
-    },
-    nextCursor: {
-      type: "string | null",
-      description: "Pass as cursor for the next page; null ends pagination.",
-      required: true,
-    },
-  }}
-/>
+- **`items`** (`readonly ExecutionListItemResponse[]`): Confirmed records accessible to your credential.
+- **`items[].details`** (`object`): id, namespace, chainId, transactionHash, and createdAt.
+- **`items[].wallet`** (`object`): id, namespace, address, and metadata.
+- **`items[].sessionKey`** (`object`): id, namespace, and metadata.
+- **`items[].actorType`** (`"user" | "api-key" | "mcp" | "cli"`): Submitting actor kind.
+- **`nextCursor`** (`string | null`): Pass as cursor for the next page; null ends pagination.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -137,6 +93,68 @@ values use ISO strings and bigint values use decimal strings in JSON.
 ```
 
 </div>
+
+## Parameters
+
+The optional `options` object defaults to `{}`.
+
+### walletId
+
+- **Type:** `string`
+- **Optional**
+
+Restricts results to the account UUID, not its address. Combine with `sessionKeyId` to narrow the results further.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.executions.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### sessionKeyId
+
+- **Type:** `string`
+- **Optional**
+
+Restricts results to confirmed executions authorized by this session. Pending submissions are excluded.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.executions.list({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### cursor
+
+- **Type:** `string`
+- **Optional**
+
+Use `nextCursor` from the previous page. Omit for the first page and stop when it is `null`. Preserve the same filters across pages. There is no configurable page-size parameter.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const first = await namera.executions.list();
+if (!first.success) throw new Error(first.error.message);
+
+if (first.data.nextCursor !== null) {
+  const next = await namera.executions.list({
+    cursor: first.data.nextCursor, // [!code focus]
+  });
+  if (!next.success) throw new Error(next.error.message);
+  console.log(next.data);
+}
+```
 
 ## Errors
 

@@ -106,6 +106,41 @@ Installation, and Getting Started pages as the reference structure.
 - Write finished documentation, not preview filler. Do not describe unsupported
   functionality as available; omit it or state the actual limitation concisely.
 
+### Guides and reference pages
+
+- Guides teach one task: state the outcome and prerequisites, then show the
+  working code and full response in task order. Explain decisions that affect
+  the outcome and link to reference for exhaustive parameter details. Use plain
+  headings, not Steps wrappers, and do not hide separate tasks in tabs.
+- Reference pages document one constructor or method. Follow this order:
+  method name and purpose, Usage, Returns, Parameters, then relevant behavior
+  and errors. Use viem-style prose sections, not TypeTable components.
+- Usage examples show `index.ts` and `client.ts` as two file tabs for the same
+  example. Export the authenticated client from `client.ts`; import it in
+  `index.ts`. File tabs are not tabs for unrelated tasks. Include all helper
+  imports and identify additional dependencies such as viem.
+- Give each parameter an H3 heading using its exact SDK name, a type, required
+  or conditional status, and its default when one exists. Explain what it does,
+  where its value comes from, constraints, and omission behavior. Avoid one-word
+  descriptions. Add a working method-call example with the relevant lines
+  focused using `[!code focus]`; do not imply that a code fragment is a complete
+  script or silently depend on variables from another example.
+- Use H4 sections for nested parameter fields. Distinguish identifiers from
+  addresses and hashes, wei from token units, and CAIP-2 IDs from numeric chain
+  IDs. Document discriminated payloads and conditional return fields explicitly.
+- Returns describes the successful SDK data and includes complete illustrative
+  JSON without a response-block title. Explain the result envelope and decoded
+  date-time/bigint representation once through the shared result snippet.
+- Reuse genuinely repeated Markdown through Fumadocs `<include>` snippets in
+  `apps/web/content/snippets/sdk/`, outside the routed docs collection. Keep
+  method-specific examples in the page. Includes must appear in rendered pages,
+  headings, search, and processed Markdown; never replace readable content with
+  an opaque runtime-only component.
+- Typecheck both usage files and parameter examples against SDK source. Validate
+  JSON examples against protocol response schemas. Check Markdown exports and
+  internal links, not just the visual page. Do not send live transactions to
+  verify documentation examples.
+
 ## Architecture knowledge base
 
 Stable technical architecture is recorded in [`architecture/`](architecture/README.md).

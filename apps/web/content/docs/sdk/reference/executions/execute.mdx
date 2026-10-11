@@ -3,20 +3,20 @@ title: Execute
 description: Prepare, authorize, and submit one or more EVM calls.
 ---
 
-import { TypeTable } from "fumadocs-ui/components/type-table";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.executions.execute(request)` validates and signs the prepared operation, then queues it for broadcast. Each invocation starts a new submission.
 
 ## Usage
 
-Install `viem` for `parseEther`. Replace the example IDs and recipient with your own.
-The account needs 0.001 test ETH and a session key that permits this transfer on Base Sepolia.
+Install `@namera-ai/sdk` and `viem`. Replace the example IDs and recipient with your own. The selected session must permit these calls on Base Sepolia.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
 
 ```ts title="index.ts"
-import { NameraClient } from "@namera-ai/sdk";
+import { namera } from "./client";
 import { parseEther } from "viem";
-
-const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
 
 const execution = await namera.executions.execute({
   namespace: "eip155",
@@ -38,92 +38,24 @@ if (!execution.success) throw new Error(execution.error.message);
 console.log(execution.data);
 ```
 
-## Parameters
+</Tab>
+<Tab value="client.ts">
 
-`request` is an `ExecuteRequest`:
+<include>../../../../snippets/sdk/client.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Required chain namespace.",
-      required: true,
-    },
-    walletId: {
-      type: "string",
-      description: "Account UUID.",
-      required: true,
-    },
-    sessionKeyId: {
-      type: "string",
-      description: "Authorized session-key UUID installed on chainId.",
-      required: true,
-    },
-    chainId: {
-      type: "SupportedEvmChainId",
-      typeDescriptionLink: "/docs/sdk/supported-networks",
-      description: "Supported CAIP-2 chain ID, such as eip155:84532. See Supported Networks.",
-      required: true,
-    },
-    calls: {
-      type: "readonly Call[]",
-      description: "One or more calls, executed in array order.",
-      required: true,
-    },
-    "calls[].to": {
-      type: "`0x${string}`",
-      description: "20-byte recipient or contract address.",
-      required: true,
-    },
-    "calls[].value": {
-      type: "bigint",
-      description: "Nonnegative native-token amount in wei. Use parseEther for ETH.",
-      required: true,
-    },
-    "calls[].data": {
-      type: "`0x${string}`",
-      description: "Encoded calldata; use 0x for a native transfer.",
-      required: true,
-    },
-    sponsor: {
-      type: "boolean",
-      description:
-        "Sponsor gas. Set false to pay from the account; configure maxGasCostWei on the client.",
-      default: "true",
-    },
-  }}
-/>
+</Tab>
+</Tabs>
 
 ## Returns
 
-Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
-The fields below describe successful `data`. JSON values are illustrative;
-SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+<include>../../../../snippets/sdk/result.md</include>
 
-<TypeTable
-  type={{
-    namespace: {
-      type: '"eip155"',
-      description: "Chain namespace.",
-      required: true,
-    },
-    submissionId: {
-      type: "string",
-      description: "ID to pass to executions.getStatus().",
-      required: true,
-    },
-    status: {
-      type: '"prepared" | "submitted" | "confirmed" | "failed"',
-      description: "Current submission state. Prepared is queued, not confirmed.",
-      required: true,
-    },
-    userOperationHash: {
-      type: "`0x${string}`",
-      description: "ERC-4337 user-operation hash, not a transaction hash.",
-      required: true,
-    },
-  }}
-/>
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`submissionId`** (`string`): ID to pass to executions.getStatus().
+- **`status`** (`"prepared" | "submitted" | "confirmed" | "failed"`): Current submission state. Prepared is queued, not confirmed.
+- **`userOperationHash`** (`` `0x${string}` ``): ERC-4337 user-operation hash, not a transaction hash.
+
+### Example Response
 
 <div className="docs-response">
 
@@ -137,6 +69,152 @@ SDK timestamps are decoded date-time values and bigint fields are decimal string
 ```
 
 </div>
+
+## Parameters
+
+Pass an `ExecuteRequest` object. Fields below are required unless marked optional.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/calls.md</include>
+
+### sponsor
+
+- **Type:** `boolean`
+- **Optional**
+- **Default:** `true`
+
+Sponsorship covers gas, not transferred assets, and remains subject to workspace allowances and policies.
+
+Set `false` to pay from the account. Fund both the transfer and gas, and configure [maxGasCostWei](/docs/sdk/reference/client/namera-client#maxgascostwei). A custom signer must carry its own fee ceiling.
+
+See [Sponsor Gas](/docs/sdk/guides/transactions/sponsor-gas) for a complete self-funded example.
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true, // [!code focus]
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
 
 ## Behavior
 
