@@ -1,0 +1,99 @@
+---
+title: Authentication
+description: Connect the SDK with an API key or OAuth access token.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Use an **API key** for server-side scripts and services, or an **OAuth access
+token** for an authorized integration. Choose one authentication method per client.
+
+## API Key
+
+Create an API key in the [Namera dashboard](https://dashboard.namera.ai) and
+select the session keys your application needs. Copy the key when it is shown
+and save it in your environment:
+
+```dotenv title=".env"
+NAMERA_API_KEY=your_api_key
+```
+
+Pass it to the client:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+```
+
+For a local script, load `.env` when running it:
+
+```sh
+node --env-file=.env index.ts
+```
+
+<Callout type="warn" title="Keep your API key private">
+  Keep API keys on your server and `.env` out of Git. Never include a key in browser code.
+</Callout>
+
+An API key can only access accounts through its granted session keys. It does
+not inherit the permissions of the person who created it.
+
+## OAuth Access Token
+
+If your integration already has a Namera OAuth access token, pass it as
+`accessToken`:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  accessToken: process.env.NAMERA_ACCESS_TOKEN!,
+});
+```
+
+Use the access token, not the refresh token. The client uses the scopes and
+session-key grants approved for that authorization.
+
+### Refreshable Tokens
+
+For a long-running integration, use `getAccessToken`. The SDK calls it before
+each request so your application can supply a current token.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export async function listAccounts(getAccessToken: () => Promise<string>) {
+  const namera = new NameraClient({ getAccessToken });
+  const wallets = await namera.wallets.list();
+
+  if (!wallets.success) throw new Error(wallets.error.message);
+
+  return wallets.data;
+}
+```
+
+Pass your application's token-loading function to `listAccounts`. That function
+should refresh an expired token before returning it. The SDK does not run the
+OAuth flow or refresh tokens for you.
+
+## Check Your Connection
+
+With either client, inspect the authenticated identity and its grants:
+
+```ts title="index.ts"
+const actor = await namera.auth.currentActor();
+if (!actor.success) throw new Error(actor.error.message);
+
+console.log(actor.data);
+```
+
+If authentication fails, check that the credential has not expired or been
+revoked. If an account is missing, check its session-key grants.
+
+To rotate an API key, create a replacement with the required session keys,
+update your application, then revoke the old key in the dashboard.
+
+Next, [find your accounts and session keys](/docs/sdk/accounts-and-session-keys).

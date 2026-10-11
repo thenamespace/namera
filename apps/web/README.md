@@ -39,6 +39,10 @@ The `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
 `meta.json`, producing section-specific sidebars. A sidebar picker switches
 between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
 The SDK Introduction group contains Overview, Installation, and Getting Started.
+The Essentials group follows with Authentication, Accounts and Session Keys,
+Permissions, Supported Networks, and Handling Results and Errors. These pages
+document the current client inputs, grant-scoped access, policy boundaries,
+chain identifiers, and result handling without duplicating method reference.
 The walkthrough uses current SDK exports to discover resources, execute a managed-session
 test transaction on Base Sepolia, and read its submission status. Example JSON is
 illustrative; snippets log complete result `.data`, and the response examples

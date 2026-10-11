@@ -1,5 +1,16 @@
 {
   "title": "SDK",
   "root": true,
-  "pages": ["---Introduction---", "index", "installation", "getting-started"]
+  "pages": [
+    "---Introduction---",
+    "index",
+    "installation",
+    "getting-started",
+    "---Essentials---",
+    "authentication",
+    "accounts-and-session-keys",
+    "permissions",
+    "supported-networks",
+    "handling-results-and-errors"
+  ]
 }

@@ -1,0 +1,112 @@
+---
+title: Permissions
+description: Understand what your session key is allowed to execute and sign.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+A valid credential is only the first requirement. Your application also needs
+access to a session key whose permissions allow the operation.
+
+## What Allows a Transaction
+
+Before executing, check that:
+
+- Your API key or OAuth authorization has a grant to the selected session key.
+- The key is active and its installation is confirmed on the target network.
+- The installation is within its validity period and allows the recipient,
+  contract calls, and amounts you want to use.
+- Every applicable API policy allows the operation.
+
+Configure these in the [Namera dashboard](https://dashboard.namera.ai).
+For a **0.001 ETH** transfer, allow the recipient and a native-token allowance
+that covers the transfer, then approve the installation on that network.
+
+## Onchain Permissions and API Policies
+
+**Onchain permissions** are approved by the account owner and enforced by the
+account's contracts. They define transaction authority, including allowed
+targets, functions, spending allowances, and validity periods.
+
+**API policies** add restrictions to operations made through Namera, such as
+allowed networks, daily spending limits, and gas budgets. All applicable
+policies must pass; one policy cannot override another denial.
+
+<Callout title="Policies cannot expand authority">
+  An API policy cannot allow a transaction that the onchain permissions reject. API policies apply
+  to requests through Namera, not calls made outside it.
+</Callout>
+
+## Inspect a Session Key
+
+Replace the example ID with the session key you plan to use:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+
+const result = await namera.sessionKeys.get("0199dfe1-0000-7000-8000-000000000002");
+if (!result.success) throw new Error(result.error.message);
+
+const session = result.data;
+console.log(result.data);
+```
+
+Read `policies` for API restrictions. Each entry in `installations` includes its
+`chainId`, `status`, and approved `authorization`. A usable installation has
+status `installed`; also check its validity period and permissions.
+
+## Check a Call Before Sending
+
+Install `viem` if you have not already, then simulate with the same account,
+session key, network, and calls you intend to execute:
+
+```sh
+npm install viem
+```
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+
+const simulation = await namera.executions.simulate({
+  namespace: "eip155",
+  walletId: session.walletId,
+  sessionKeyId: session.id,
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+});
+
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+Replace the recipient with the address allowed by your key. Simulation does not
+submit a transaction. Check `simulation.data.allowed` for the policy decision;
+`success: true` alone does not mean the call is allowed. Balances and available
+budgets can change before execution.
+
+## Message and Typed Data Signing
+
+Signing needs explicit signature authority in the installation
+(`allowSignatures`) and an API signature policy permitting the requested type:
+`message` or `typed-data`. Transaction permissions alone do not enable signing.
+
+Typed-data policies can restrict the chain, verifying contract, primary type,
+and domain. They do not limit the amounts inside a signed message.
+
+<Callout type="warn" title="Signature authority is separate">
+  Transaction spending limits and expiry do not constrain onchain signature authority. Uninstall
+  that authority onchain to revoke it.
+</Callout>
+
+Next, choose a [supported network](/docs/sdk/supported-networks).

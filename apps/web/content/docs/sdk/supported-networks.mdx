@@ -1,0 +1,63 @@
+---
+title: Supported Networks
+description: Choose a mainnet or testnet for your SDK calls.
+---
+
+Namera supports eight EVM networks. Use `namespace: "eip155"` and the full
+`chainId` string when executing, simulating, or signing.
+
+## Mainnets
+
+| Network      | Chain ID       |
+| ------------ | -------------- |
+| Ethereum     | `eip155:1`     |
+| Base         | `eip155:8453`  |
+| Arbitrum One | `eip155:42161` |
+| OP Mainnet   | `eip155:10`    |
+
+## Testnets
+
+| Network          | Chain ID          |
+| ---------------- | ----------------- |
+| Ethereum Sepolia | `eip155:11155111` |
+| Base Sepolia     | `eip155:84532`    |
+| Arbitrum Sepolia | `eip155:421614`   |
+| OP Sepolia       | `eip155:11155420` |
+
+The [Getting Started](/docs/sdk/getting-started) walkthrough uses **Base Sepolia**.
+Fund the account with test ETH on that network before sending a transfer.
+
+## Select a Network
+
+Import `SupportedEvmChainId` from the SDK to type a network in your configuration:
+
+```ts title="index.ts"
+import { NameraClient, type SupportedEvmChainId } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+
+const chainId: SupportedEvmChainId = "eip155:84532";
+const result = await namera.sessionKeys.get("0199dfe1-0000-7000-8000-000000000002");
+
+if (!result.success) throw new Error(result.error.message);
+
+const installation = result.data.installations.find(
+  (entry) => entry.chainId === chainId && entry.status === "installed",
+);
+
+if (!installation) throw new Error("Install this session key on Base Sepolia first.");
+```
+
+Replace the example session-key ID with your own. An installation on one network
+does not authorize another. Its validity period and permissions must also allow
+your operation.
+
+Changing `chainId` selects a network; it does not move funds between networks.
+Use the recipient or contract address for the network you selected.
+
+If a request returns `NETWORK_PAUSED`, wait for that network to be re-enabled
+before submitting a new operation. You can still check existing submissions.
+
+Next, learn how to [handle results and errors](/docs/sdk/handling-results-and-errors).
