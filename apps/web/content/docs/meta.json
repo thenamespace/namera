@@ -1,4 +1,13 @@
 {
   "title": "Documentation",
-  "pages": ["index", "why-namera", "---Core Concepts---", "...concepts", "sdk", "cli", "mcp"]
+  "pages": [
+    "index",
+    "why-namera",
+    "getting-started",
+    "---Core Concepts---",
+    "...concepts",
+    "sdk",
+    "cli",
+    "mcp"
+  ]
 }
