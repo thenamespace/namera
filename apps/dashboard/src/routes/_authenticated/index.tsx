@@ -8,7 +8,7 @@ import { walletsAtom } from "@/atoms/wallet";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
-import { AddressPickerPreview } from "./-components/address-picker-preview";
+import { AddressPickerPreview, ContractPickerPreview } from "./-components/address-picker-preview";
 import { Overview } from "./-components/overview";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -33,6 +33,7 @@ function OverviewPage() {
       </DashboardPage.Header>
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
         <AddressPickerPreview />
+        <ContractPickerPreview />
         <Overview />
       </DashboardPage.Content>
     </DashboardPage>
