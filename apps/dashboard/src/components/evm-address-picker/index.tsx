@@ -1,7 +1,7 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-object-as-prop
 import { useState } from "react";
 
-import { Button, Command, Popover } from "@namera-ai/ui";
+import { Button, Command, Popover, Skeleton } from "@namera-ai/ui";
 import { Add01Icon, ArrowDown01Icon, HugeiconsIcon, Search01Icon } from "@namera-ai/ui/icons";
 import { useDebounceValue } from "usehooks-ts";
 
@@ -53,7 +53,7 @@ export function EvmAddressPicker({
         aria-invalid={isInvalid || (Boolean(value) && !eligible)}
         isDisabled={disabled}
         variant="secondary"
-        className="h-[calc(2.5rem+2*var(--border-width-field))] min-h-9 w-full justify-between rounded-lg px-3 py-0 sm:h-[calc(2.25rem+2*var(--border-width-field))]"
+        className="h-[calc(2.5rem+2*var(--border-width-field))] min-h-9 w-full transform-none! justify-between rounded-lg px-3 py-0 sm:h-[calc(2.25rem+2*var(--border-width-field))]"
       >
         {eligible ? (
           <AddressIdentity value={value} compact />
@@ -67,7 +67,7 @@ export function EvmAddressPicker({
       </Button>
       <Popover.Content
         placement="bottom start"
-        className="w-[min(30rem,calc(100vw-2rem))] overflow-hidden p-0"
+        className="w-(--trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden rounded-b-lg p-0"
       >
         {open && !disabled ? (
           <PickerContent
@@ -106,6 +106,7 @@ function PickerContent({
   return (
     <Command>
       <Command.Dialog
+        className="max-w-none rounded-b-lg"
         aria-label="Find an EVM address"
         inputValue={query}
         onInputChange={setQuery}
@@ -130,7 +131,7 @@ function PickerContent({
           pending={query.trim() !== debounced}
           onSelect={onSelect}
         />
-        <Command.Footer className="border-separator shrink-0 border-t p-2">
+        <Command.Footer className="border-separator shrink-0 border-t bg-transparent p-2">
           <Button
             variant="tertiary"
             className="w-full justify-start rounded-md"
@@ -163,7 +164,9 @@ function SearchResults({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <output
-        className={matches.length ? "sr-only" : "text-muted block shrink-0 px-3 pt-2 text-xs"}
+        className={
+          loading || matches.length ? "sr-only" : "text-muted block shrink-0 px-3 pt-2 text-xs"
+        }
         aria-live="polite"
       >
         {loading
@@ -174,6 +177,18 @@ function SearchResults({
               ? `${matches.length} addresses found.`
               : "No matching addresses. Try another search or add a custom address."}
       </output>
+      {loading ? (
+        <div aria-hidden="true" className="grid gap-1 overflow-hidden p-1.5">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex h-9 items-center gap-3 px-3">
+              <Skeleton className="size-5 shrink-0 rounded-full motion-reduce:animate-none" />
+              <Skeleton className="h-3 w-14 rounded motion-reduce:animate-none" />
+              <Skeleton className="h-3 w-20 rounded motion-reduce:animate-none" />
+              <Skeleton className="ml-auto h-3 w-24 rounded motion-reduce:animate-none" />
+            </div>
+          ))}
+        </div>
+      ) : null}
       {search.isError ? (
         <Button className="m-2" size="sm" variant="tertiary" onPress={search.refetch}>
           Retry
