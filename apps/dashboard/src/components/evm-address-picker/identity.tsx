@@ -31,14 +31,14 @@ export function AddressIdentity({
             chain={network.name}
             className={
               compact
-                ? "bg-surface absolute -right-1 -bottom-1 size-3 rounded-full ring-1 ring-surface"
-                : "bg-surface absolute -right-1 -bottom-1 size-4 rounded-full ring-2 ring-surface"
+                ? "bg-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-1 ring-surface"
+                : "bg-surface absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-1 ring-surface"
             }
           />
         ) : null}
       </span>
       <span className={compact ? "flex min-w-0 flex-1 items-center gap-2" : "min-w-0 flex-1"}>
-        <span className="flex items-center gap-2">
+        <span className="flex min-w-0 items-center gap-2">
           <span className="text-foreground truncate text-sm font-medium">
             {metadata?.display.name ?? "Custom address"}
           </span>

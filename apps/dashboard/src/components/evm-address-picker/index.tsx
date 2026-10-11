@@ -111,7 +111,7 @@ function PickerContent({
         onInputChange={setQuery}
         filter={keepServerResults}
       >
-        <Command.Header>
+        <Command.Header className="shrink-0">
           <Command.InputGroup aria-label="Search tokens, contracts, or addresses">
             <Command.InputGroup.Prefix>
               <HugeiconsIcon icon={Search01Icon} className="size-4" />
@@ -130,7 +130,7 @@ function PickerContent({
           pending={query.trim() !== debounced}
           onSelect={onSelect}
         />
-        <Command.Footer className="border-separator border-t p-2">
+        <Command.Footer className="border-separator shrink-0 border-t p-2">
           <Button
             variant="tertiary"
             className="w-full justify-start rounded-md"
@@ -161,14 +161,17 @@ function SearchResults({
   const loading = pending || search.isPending;
   const matches = loading || search.isError ? [] : (search.data?.matches ?? []);
   return (
-    <>
-      <output className="text-muted block px-3 pt-2 text-xs" aria-live="polite">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <output
+        className={matches.length ? "sr-only" : "text-muted block shrink-0 px-3 pt-2 text-xs"}
+        aria-live="polite"
+      >
         {loading
           ? "Searching catalog…"
           : search.isError
             ? "Couldn’t load the catalog."
             : matches.length
-              ? "Catalog addresses"
+              ? `${matches.length} addresses found.`
               : "No matching addresses. Try another search or add a custom address."}
       </output>
       {search.isError ? (
@@ -176,7 +179,7 @@ function SearchResults({
           Retry
         </Button>
       ) : null}
-      <Command.List aria-label="Catalog addresses" className="max-h-72 overflow-y-auto">
+      <Command.List aria-label="Address suggestions" className="min-h-0 max-h-72 overflow-y-auto">
         {matches.map((match) => {
           const selection: EvmAddressSelection = {
             source: "catalog",
@@ -190,16 +193,16 @@ function SearchResults({
               key={match.entry.id}
               id={match.entry.id}
               textValue={`${match.catalog.data.display.name} ${match.entry.chainId} ${match.entry.address}`}
-              className="px-3 py-3"
+              className="px-3 py-2"
               onAction={() => onSelect(selection)}
             >
-              <AddressIdentity value={selection} />
+              <AddressIdentity value={selection} compact />
             </Command.Item>
           );
         })}
       </Command.List>
       {offset > 0 || search.data?.hasMore ? (
-        <div className="flex justify-between px-2 pb-2">
+        <div className="flex shrink-0 justify-between px-2 pb-2">
           <Button
             size="sm"
             variant="tertiary"
@@ -218,6 +221,6 @@ function SearchResults({
           </Button>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
