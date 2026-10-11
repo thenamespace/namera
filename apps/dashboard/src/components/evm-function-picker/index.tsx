@@ -1,9 +1,16 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import { useMemo, useState, type ComponentProps } from "react";
 
-import { Button, Command, Popover } from "@namera-ai/ui";
-import { ArrowDown01Icon, Tick02Icon, HugeiconsIcon, Search01Icon } from "@namera-ai/ui/icons";
+import { Button, Command, Popover, Tooltip } from "@namera-ai/ui";
+import {
+  ArrowDown01Icon,
+  Tick02Icon,
+  HugeiconsIcon,
+  Search01Icon,
+  InformationCircleIcon,
+} from "@namera-ai/ui/icons";
 import type { Abi } from "viem";
+import { formatAbiItem } from "viem/utils";
 
 import { abiFunctionOptions, filterFunctions, selectFunctions } from "./functions";
 
@@ -33,6 +40,12 @@ export type EvmFunctionPickerProps = CommonProps &
   );
 
 const keepFilteredFunctions = () => true;
+const functionGroups = [
+  { mutability: "view", title: "View functions" },
+  { mutability: "pure", title: "Pure functions" },
+  { mutability: "nonpayable", title: "Write functions" },
+  { mutability: "payable", title: "Payable functions" },
+] as const;
 
 export function EvmFunctionPicker({
   triggerRef,
@@ -91,7 +104,7 @@ export function EvmFunctionPicker({
         aria-label={label}
         aria-invalid={isInvalid || invalidSelection}
         isDisabled={isDisabled}
-        variant="secondary"
+        variant="tertiary"
         className="h-[calc(2.5rem+2*var(--border-width-field))] min-h-9 w-full transform-none! justify-between rounded-lg px-3 py-0 sm:h-[calc(2.25rem+2*var(--border-width-field))]"
       >
         <span className="min-w-0 truncate text-left" title={summary}>
@@ -128,31 +141,49 @@ export function EvmFunctionPicker({
                 functions.length ? "No matching functions." : "This ABI has no functions."
               }
             >
-              {filtered.map((fn) => (
-                <Command.Item
-                  key={fn.signature}
-                  id={fn.signature}
-                  textValue={fn.signature}
-                  onAction={() => choose(fn.signature)}
-                  shouldCloseOnSelect={false}
-                  className="gap-3 px-3 py-2"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-mono text-xs" title={fn.signature}>
-                      {fn.signature}
-                    </span>
-                    <span className="text-muted mt-1 flex items-center gap-2 text-xs">
-                      <span>{fn.abi.stateMutability}</span>
-                      <span className="font-mono">{fn.selector}</span>
-                    </span>
-                  </span>
-                  <span className="size-4 shrink-0" aria-hidden="true">
-                    {selected.has(fn.signature) ? (
-                      <HugeiconsIcon icon={Tick02Icon} className="text-accent size-4" />
-                    ) : null}
-                  </span>
-                </Command.Item>
-              ))}
+              {functionGroups.map((group) => {
+                const entries = filtered.filter(
+                  (fn) => fn.abi.stateMutability === group.mutability,
+                );
+                if (!entries.length) return null;
+                return (
+                  <Command.Group key={group.mutability} heading={group.title}>
+                    {entries.map((fn) => (
+                      <Command.Item
+                        key={fn.signature}
+                        id={fn.signature}
+                        textValue={fn.signature}
+                        aria-label={`${formatAbiItem(fn.abi, { includeName: true })}, ${fn.selector}`}
+                        onAction={() => choose(fn.signature)}
+                        shouldCloseOnSelect={false}
+                        className="gap-3 px-3 py-2"
+                      >
+                        <span className="size-4 shrink-0" aria-hidden="true">
+                          {selected.has(fn.signature) ? (
+                            <HugeiconsIcon icon={Tick02Icon} className="text-accent size-4" />
+                          ) : null}
+                        </span>
+                        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                          <span className="truncate text-sm">{fn.abi.name}</span>
+                          <Tooltip delay={200}>
+                            <Tooltip.Trigger
+                              role="presentation"
+                              tabIndex={-1}
+                              className="text-muted inline-flex shrink-0"
+                            >
+                              <HugeiconsIcon icon={InformationCircleIcon} className="size-3.5" />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content className="max-w-sm break-words font-mono text-xs">
+                              {formatAbiItem(fn.abi, { includeName: true })}
+                            </Tooltip.Content>
+                          </Tooltip>
+                        </span>
+                        <span className="text-muted shrink-0 font-mono text-xs">{fn.selector}</span>
+                      </Command.Item>
+                    ))}
+                  </Command.Group>
+                );
+              })}
             </Command.List>
             <Command.Footer className="flex shrink-0 flex-wrap justify-between gap-2 bg-transparent p-2">
               <output aria-live="polite" className="text-muted text-xs">
