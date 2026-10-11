@@ -140,6 +140,15 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 2 MiB, apply a 10-second upstream timeout, disable caching, and use a dedicated
 600 requests-per-minute per-IP limit.
 
+## Address catalog API
+
+Authenticated `/catalog` routes provide search, deployment lookup, batch address
+resolution and separate ABI retrieval. `/internal/catalog/import` accepts curated
+JSON from owner/operator sessions, with a `dryRun` query option. It uses the
+existing request-body and admin-write limits. See the
+[catalog contract](../../architecture/database/address-catalog.md) for fields,
+visibility, validation and import semantics. No seed data or UI is installed.
+
 ## Waitlist API
 
 `POST /waitlist` accepts an email publicly. New joins atomically queue a waitlist

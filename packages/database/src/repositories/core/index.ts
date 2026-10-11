@@ -13,3 +13,6 @@ export * from "./session-key-operation.js";
 export * from "./signing-key.js";
 export * from "./signature-operation.js";
 export * from "./wallet.js";
+export * from "./catalog/catalog.js";
+export * from "./catalog/entry.js";
+export * from "./catalog/interface.js";

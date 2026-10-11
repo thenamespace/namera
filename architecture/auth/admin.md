@@ -23,6 +23,7 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | `waitlist:read`                     | Yes   | Yes      | Yes    |
 | `waitlist:accept`                   | Yes   | Yes      | No     |
 | `overview:read`                     | Yes   | Yes      | Yes    |
+| `catalog:manage`                    | Yes   | Yes      | No     |
 
 Only implemented permissions are defined.
 
@@ -39,24 +40,25 @@ All routes below are excluded from published OpenAPI. `/internal/*` carries
 `AdminAuthorization`; invitation acceptance uses `PlatformSessionAuthorization`
 because the invitee is not a member yet.
 
-| Method | Path                                | Access                                              |
-| ------ | ----------------------------------- | --------------------------------------------------- |
-| GET    | `/internal/me`                      | Active member; identity and effective permissions   |
-| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity |
-| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters   |
-| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one  |
-| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code               |
-| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters         |
-| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite      |
-| GET    | `/internal/members`                 | Owner; team including historical removed members    |
-| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                      |
-| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                          |
-| DELETE | `/internal/members/:id`             | Owner; soft removal                                 |
-| POST   | `/internal/ownership/transfer`      | Owner; active target member                         |
-| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor          |
-| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend  |
-| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                    |
-| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body          |
+| Method | Path                                | Access                                                |
+| ------ | ----------------------------------- | ----------------------------------------------------- |
+| GET    | `/internal/me`                      | Active member; identity and effective permissions     |
+| POST   | `/internal/catalog/import`          | Owner/operator; atomic curated JSON import or dry run |
+| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity   |
+| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters     |
+| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one    |
+| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code                 |
+| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters           |
+| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite        |
+| GET    | `/internal/members`                 | Owner; team including historical removed members      |
+| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                        |
+| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                            |
+| DELETE | `/internal/members/:id`             | Owner; soft removal                                   |
+| POST   | `/internal/ownership/transfer`      | Owner; active target member                           |
+| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor            |
+| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend    |
+| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                      |
+| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body            |
 
 Team writes, beta-invite writes and acceptance require an active verified session,
 with no additional recent-sign-in window. New browser sessions last seven days.
@@ -89,6 +91,10 @@ transfer makes the former owner's outstanding invitations unusable; the new owne
 can resend them. Expired invitations remain historical and can be replaced.
 
 ## Transactions and audit
+
+Catalog imports also take the platform team lock, recheck `catalog:manage`, and
+append `catalog.imported` with changed record IDs in the same transaction. See
+[address catalog](../database/address-catalog.md) for import and discovery contracts.
 
 Team mutations and bootstrap take PostgreSQL transaction advisory lock
 `(719204, 1)` before rechecking session/owner authority and changing records.

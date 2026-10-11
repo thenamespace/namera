@@ -8,7 +8,7 @@ Platform membership, team invitations and their audit events are documented in
 [platform administration](auth-platform.md).
 
 Global curated token/contract metadata and shared ABI documents are documented in
-[address catalog](address-catalog.md) (schemas and tables only).
+[address catalog](address-catalog.md) (schemas, repositories, discovery and imports).
 
 | Schema         | Responsibility                                                                         | Catalog                                                                                      |
 | -------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |

@@ -80,9 +80,10 @@ pnpm --filter @namera-ai/database db:studio
 Change tables and protocol models together. Business workflows belong in
 `@namera-ai/application`, not repositories.
 
-The [address catalog](../../architecture/database/address-catalog.md) currently
-provides tables and relations for EVM ERC-20/contract metadata and shared JSON
-ABIs. Repositories, ingestion and search workflows are not implemented yet.
+The [address catalog](../../architecture/database/address-catalog.md) provides
+tables and repositories for EVM ERC-20/contract metadata, curated search and shared
+JSON ABIs. `Repository.core.catalog`, `.catalogEntry` and `.contractInterface`
+support the application-owned atomic import and authenticated discovery API.
 
 ## Adding persistence
 

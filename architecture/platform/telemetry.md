@@ -156,6 +156,9 @@ labels.
 - HTTP templates cover the typed API, raw OAuth endpoints and proxy routes.
   A contract-reflection regression test guards new typed routes against falling
   into `/*`. Unknown paths still use that bounded fallback.
+- Catalog discovery and import routes have static/parameterized templates; search
+  text, addresses, IDs and ABI contents are not metric attributes. Imports rely
+  on the existing HTTP metrics, workflow spans and transactional platform audit.
 - Beta invite `namera.beta_invite.transitions` records committed
   `created|revoked|redeemed` transitions. Creation counts each code in a batch;
   no-op revocations emit nothing. Invite routes use bounded templates, including
