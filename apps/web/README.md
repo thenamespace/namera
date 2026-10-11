@@ -43,6 +43,11 @@ The Essentials group follows with Authentication, Accounts and Session Keys,
 Permissions, Supported Networks, and Handling Results and Errors. These pages
 document the current client inputs, grant-scoped access, policy boundaries,
 chain identifiers, and result handling without duplicating method reference.
+Guides contains Transactions and Signing groups under `sdk/guides/`. Transaction
+guides cover asset transfers, contract calls, batching, simulation, tracking,
+and sponsorship. Signing guides cover messages, typed data, and smart-account
+verification. Examples use Base Sepolia and illustrative IDs and response values;
+verify TypeScript against the SDK and JSON against the protocol response schemas.
 The walkthrough uses current SDK exports to discover resources, execute a managed-session
 test transaction on Base Sepolia, and read its submission status. Example JSON is
 illustrative; snippets log complete result `.data`, and the response examples

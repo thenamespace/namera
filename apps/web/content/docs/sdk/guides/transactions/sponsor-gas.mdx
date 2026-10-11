@@ -1,0 +1,116 @@
+---
+title: Sponsor Gas
+description: Choose sponsored execution or pay gas from your account.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Namera sponsors gas by default. Set `sponsor: false` to pay gas from your account
+instead. The same execution method supports both options.
+
+## Set Up the Transfer
+
+Set up [authentication](/docs/sdk/authentication) and a session key installed on
+**Base Sepolia** with permission to send **0.001 test ETH**. Replace the IDs and
+recipient below with your own.
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+```ts title="index.ts"
+import { NameraClient, type ExecuteRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const transfer = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies ExecuteRequest;
+```
+
+Choose one of the following options. Each example submits a new transfer.
+
+## Use Sponsored Gas
+
+```ts title="index.ts"
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const sponsored = await namera.executions.execute({ ...transfer, sponsor: true });
+if (!sponsored.success) throw new Error(sponsored.error.message);
+
+console.log(sponsored.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+Omitting `sponsor` has the same effect as `sponsor: true`. Sponsorship is subject
+to your workspace's plan and available allowance.
+
+<Callout title="Sponsorship only covers gas">
+  The account still needs the assets being transferred. Session-key permissions and API policies,
+  including gas budgets, still apply.
+</Callout>
+
+## Pay Gas from Your Account
+
+Set `maxGasCostWei` on the client and pass `sponsor: false` to the execution.
+Here, **0.0001 ETH** is the maximum gas cost you approve for the operation:
+
+```ts title="index.ts"
+const selfFundedClient = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+  maxGasCostWei: parseEther("0.0001"),
+});
+
+const selfFunded = await selfFundedClient.executions.execute({
+  ...transfer,
+  sponsor: false,
+});
+
+if (!selfFunded.success) throw new Error(selfFunded.error.message);
+
+console.log(selfFunded.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000011",
+  "status": "prepared",
+  "userOperationHash": "0x2222222222222222222222222222222222222222222222222222222222222222"
+}
+```
+
+</div>
+
+Fund the account with enough ETH on the selected network for the transfer and
+gas. The ceiling is not a gas price or an extra payment. The SDK rejects a
+prepared operation that exceeds it; choose a ceiling you are willing to pay.
+
+Self-funded execution does not use sponsored-gas credits, but still counts
+toward execution usage.
+
+With either option, [track the submission](/docs/sdk/guides/transactions/track-transactions)
+to read the final outcome.

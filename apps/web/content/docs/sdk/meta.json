@@ -11,6 +11,7 @@
     "accounts-and-session-keys",
     "permissions",
     "supported-networks",
-    "handling-results-and-errors"
+    "handling-results-and-errors",
+    "guides"
   ]
 }

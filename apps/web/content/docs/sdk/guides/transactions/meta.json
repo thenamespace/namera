@@ -1,0 +1,11 @@
+{
+  "title": "Transactions",
+  "pages": [
+    "transfer-assets",
+    "interact-with-contracts",
+    "batch-transactions",
+    "simulate-transactions",
+    "track-transactions",
+    "sponsor-gas"
+  ]
+}

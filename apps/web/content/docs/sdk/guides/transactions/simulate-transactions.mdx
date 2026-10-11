@@ -1,0 +1,132 @@
+---
+title: Simulate Transactions
+description: Preview calls and check session-key policies before submitting.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Use `executions.simulate()` to inspect a transaction without signing or
+submitting it. Simulation does not reserve spending or gas budgets.
+
+## Simulate a Transfer
+
+Use an [authenticated client](/docs/sdk/authentication) and a session key
+installed on **Base Sepolia**. The account needs the test ETH being transferred.
+Replace the example IDs and recipient with your own.
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+```ts title="index.ts"
+import { NameraClient, type SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "callsSucceeded": true,
+  "simulation": {
+    "userOperation": {
+      "source": "eth_estimateUserOperationGas",
+      "callGasLimit": "50000",
+      "verificationGasLimit": "100000",
+      "preVerificationGas": "50000",
+      "maxFeePerGas": "1000000000",
+      "maxPriorityFeePerGas": "1000000"
+    },
+    "calls": {
+      "source": "viem.simulateCalls",
+      "results": [{ "status": "success", "returnData": "0x", "gasUsed": "21000" }],
+      "assetChanges": [],
+      "transfers": [
+        {
+          "callIndex": 0,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000"
+        }
+      ]
+    }
+  },
+  "allowed": true,
+  "sessionKeyId": "0199dfe1-0000-7000-8000-000000000002"
+}
+```
+
+</div>
+
+Gas estimates are illustrative. Quantities shown as decimal strings in JSON
+are `bigint` values in the SDK.
+
+## Read the Result
+
+- `callsSucceeded` reports whether the simulated calls succeeded.
+- `allowed` reports the policy decision for the selected session key.
+- `simulation.calls` contains per-call results, detected asset changes, and native transfers.
+- If `allowed` is `false`, `denials` identifies the session key, policy, and denial code.
+
+If simulation itself fails, the SDK returns `success: false`; handle it as an
+[error](/docs/sdk/handling-results-and-errors).
+
+## Execute the Same Calls
+
+After reviewing the result, submit the same request with sponsorship enabled:
+
+```ts title="index.ts"
+if (!simulation.data.callsSucceeded || !simulation.data.allowed) {
+  throw new Error("Review the simulation before executing.");
+}
+
+const execution = await namera.executions.execute({ ...request, sponsor: true });
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+<Callout title="A preview is not a guarantee">
+  Balances, permissions, and available budgets can change after simulation. Execution checks them
+  again. The second snippet submits a real testnet transaction.
+</Callout>
+
+Next, [track the submission](/docs/sdk/guides/transactions/track-transactions).

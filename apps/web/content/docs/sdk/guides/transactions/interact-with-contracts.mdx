@@ -1,0 +1,87 @@
+---
+title: Interact with Contracts
+description: Encode and execute a smart-contract function call.
+---
+
+Pass a contract address and encoded function call to `executions.execute()`.
+The contract receives the call from your Namera account.
+
+## Before You Start
+
+Use an [authenticated client](/docs/sdk/authentication) and a session key
+installed on **Base Sepolia**. Its permissions must allow the target contract
+and function.
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+## Call a Function
+
+This example calls `setGreeting(string)` on a contract you have deployed.
+Replace the IDs and contract address with your own, and use the ABI of the
+contract you are calling.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+import { encodeFunctionData, parseAbi } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const abi = parseAbi(["function setGreeting(string greeting)"]);
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x3333333333333333333333333333333333333333",
+      value: 0n,
+      data: encodeFunctionData({
+        abi,
+        functionName: "setGreeting",
+        args: ["Hello from Namera"],
+      }),
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+The response identifies the submission, not the function's return value.
+[Track it](/docs/sdk/guides/transactions/track-transactions) to confirm execution.
+
+## Send ETH with a Call
+
+For a **payable** function, set the call's `value` with `parseEther`:
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+
+const value = parseEther("0.001");
+```
+
+Use this value in place of `0n` only when the target function accepts ETH.
+The `setGreeting` example above is not payable. The account needs enough ETH
+and the session key must allow the native transfer as well as the function call.
+
+Before submitting a new contract interaction,
+[simulate the transaction](/docs/sdk/guides/transactions/simulate-transactions).
