@@ -89,7 +89,8 @@ export class SignatureClient {
       return failure({
         kind: "signer",
         code: "LOCAL_SIGNER_UNAVAILABLE",
-        message: "The local session signer could not be opened.",
+        message:
+          "Unable to open the local signer. Import the session key on this machine and unlock the OS keyring, or check your custom resolver.",
         status: null,
         cause: null,
       });

@@ -1079,6 +1079,9 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@napi-rs/keyring':
+        specifier: 'catalog:'
+        version: 2.1.0
       effect:
         specifier: 'catalog:'
         version: 4.0.1

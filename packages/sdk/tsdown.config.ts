@@ -5,9 +5,9 @@ export default defineConfig({
   alias: {
     "#/": "./src/",
   },
-  exports: {
-    devExports: "namera-source",
-  },
+  // Preserve separate Node and browser entry points and the Node-only storage export.
+  exports: false,
+  deps: { neverBundle: [/^node:/] },
   attw: {
     enabled: "ci-only",
     level: "error",
@@ -15,6 +15,8 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
+    "index.node": "src/index.node.ts",
+    node: "src/node/index.ts",
   },
   publint: "ci-only",
   unbundle: true,

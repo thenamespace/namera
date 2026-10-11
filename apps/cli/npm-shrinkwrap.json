@@ -108,6 +108,7 @@
         "@alchemy/smart-accounts": "5.2.7",
         "@namera-ai/api": "1.2.0",
         "@namera-ai/protocol": "1.2.0",
+        "@napi-rs/keyring": "2.1.0",
         "effect": "4.0.1",
         "viem": "2.57.2"
       },

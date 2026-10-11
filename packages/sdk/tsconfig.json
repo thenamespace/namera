@@ -3,6 +3,7 @@
   "compilerOptions": {
     "customConditions": ["namera-source"],
     "lib": ["ES2022", "DOM"],
+    "types": ["node"],
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"]
