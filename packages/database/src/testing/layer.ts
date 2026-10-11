@@ -12,6 +12,9 @@ import { systemRoles } from "#/migrations/data";
 import { runDatabaseMigrations } from "#/migrations/layer";
 import {
   account,
+  addressCatalog,
+  addressCatalogEntry,
+  contractInterface,
   apiKey,
   actor,
   billingAccount,
@@ -99,6 +102,9 @@ export class TestDatabase extends Context.Service<
       const database = yield* Database;
 
       const reset = Effect.fn("database.testDatabase.reset")(function* () {
+        yield* database.delete(addressCatalogEntry);
+        yield* database.delete(addressCatalog);
+        yield* database.delete(contractInterface);
         yield* database.delete(analyticsJob);
         yield* database.delete(notificationRecipient);
         yield* database.delete(betaInviteEvent);

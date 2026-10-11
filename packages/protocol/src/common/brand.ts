@@ -29,6 +29,9 @@ export const InvitationId = createBrandedId("InvitationId");
 export const SystemRoleId = createBrandedId("SystemRoleId");
 
 // Core Tables
+export const AddressCatalogId = createBrandedId("AddressCatalogId");
+export const AddressCatalogEntryId = createBrandedId("AddressCatalogEntryId");
+export const ContractInterfaceId = createBrandedId("ContractInterfaceId");
 export const WalletKeyId = createBrandedId("WalletKeyId");
 export const SigningKeyId = createBrandedId("SigningKeyId");
 export const CredentialId = createBrandedId("CredentialId");
@@ -66,6 +69,9 @@ export const BillingUsageDeliveryId = createBrandedId("BillingUsageDeliveryId");
 export const BillingProviderEventId = createBrandedId("BillingProviderEventId");
 
 export type UserId = typeof UserId.Type;
+export type AddressCatalogId = typeof AddressCatalogId.Type;
+export type AddressCatalogEntryId = typeof AddressCatalogEntryId.Type;
+export type ContractInterfaceId = typeof ContractInterfaceId.Type;
 export type SessionId = typeof SessionId.Type;
 export type AccountId = typeof AccountId.Type;
 export type VerificationId = typeof VerificationId.Type;

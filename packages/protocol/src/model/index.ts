@@ -3,6 +3,7 @@ export * from "./auth/platform.js";
 export * from "./billing/index.js";
 export * from "./audit/index.js";
 export * from "./common.js";
+export * from "./catalog/index.js";
 export * from "./core/index.js";
 export * from "./jobs/index.js";
 export * from "./notification/index.js";
