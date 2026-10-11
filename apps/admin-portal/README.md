@@ -22,20 +22,22 @@ not a portal callback URI.
 - `/auth`: Google sign-in or email link/eight-digit code.
 - `/auth/verify`: explicit confirmation of an emailed link; opening a link does
   not automatically consume it.
-- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day selection.
+- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day and All time selection.
 - `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
-- `/team`: Owner-only admin members table, invitations, role updates, and removal.
+- `/team`: All-role admin members table; only the owner can invite, update roles, or remove members.
 - `/catalog`: All-role catalog listing with name/symbol/address search, status/type
   filters, 25-row pagination and deployment details. Owner-only JSON uploads run a
   server dry-run before explicit confirmation; validation errors remain in the dialog.
+- `/catalog/:catalogId`: Catalog properties and all deployments, with chain icons,
+  copyable IDs/addresses, explorer links and supplied verification evidence.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 
 Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
 Inter typography, icons, and compact spacing follow the dashboard. The sidebar
-header menu offers owner-only member management and logout; successful logout
+header menu offers Team navigation and logout; successful logout
 discards the in-memory query cache through a document navigation.
 Team uses the dashboard's DataGrid,
 profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.

@@ -1,3 +1,4 @@
+import type { AddressCatalogId } from "@namera-ai/protocol";
 import type { ListAdminCatalogRequest } from "@namera-ai/protocol/dto";
 
 import { NameraClient } from "@/atoms/client";
@@ -10,3 +11,9 @@ export const catalogAtom = (query: ListAdminCatalogRequest = { namespace: "eip15
     timeToLive: "30 seconds",
   });
 export const importCatalogMutation = NameraClient.mutation("adminCatalog", "import");
+export const catalogDetailAtom = (catalogId: AddressCatalogId) =>
+  NameraClient.query("adminCatalog", "get", {
+    params: { catalogId },
+    reactivityKeys: QueryKeys.catalog.list,
+    timeToLive: "30 seconds",
+  });

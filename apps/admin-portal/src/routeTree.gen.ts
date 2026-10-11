@@ -19,6 +19,7 @@ import { Route as AuthenticatedWaitlistRouteImport } from './routes/_authenticat
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
+import { Route as AuthenticatedCatalogCatalogIdRouteImport } from './routes/_authenticated/catalog_.$catalogId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -69,6 +70,12 @@ const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   path: '/invitations/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCatalogCatalogIdRoute =
+  AuthenticatedCatalogCatalogIdRouteImport.update({
+    id: '/catalog_/$catalogId',
+    path: '/catalog/$catalogId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/auth/': typeof AuthIndexRoute
+  '/catalog/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
 }
 export interface FileRoutesByTo {
   '/catalog': typeof AuthenticatedCatalogRoute
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/catalog/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_authenticated/catalog_/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/invitations/accept'
     | '/auth/'
+    | '/catalog/$catalogId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/catalog'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/'
     | '/auth'
+    | '/catalog/$catalogId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/_authenticated/'
     | '/auth/'
+    | '/_authenticated/catalog_/$catalogId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvitationsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/catalog_/$catalogId': {
+      id: '/_authenticated/catalog_/$catalogId'
+      path: '/catalog/$catalogId'
+      fullPath: '/catalog/$catalogId'
+      preLoaderRoute: typeof AuthenticatedCatalogCatalogIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -227,6 +247,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedWaitlistRoute: typeof AuthenticatedWaitlistRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCatalogCatalogIdRoute: typeof AuthenticatedCatalogCatalogIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -235,6 +256,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedWaitlistRoute: AuthenticatedWaitlistRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCatalogCatalogIdRoute: AuthenticatedCatalogCatalogIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

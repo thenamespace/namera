@@ -18,6 +18,7 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | Permission                          | Owner | Operator | Viewer |
 | ----------------------------------- | ----- | -------- | ------ |
 | `team:manage`, `ownership:transfer` | Yes   | No       | No     |
+| `team:read`                         | Yes   | Yes      | Yes    |
 | `invites:read`                      | Yes   | Yes      | Yes    |
 | `invites:manage`                    | Yes   | Yes      | No     |
 | `waitlist:read`                     | Yes   | Yes      | Yes    |
@@ -28,7 +29,7 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 
 Only implemented permissions are defined.
 
-The sidebar's owner-only member action opens Team. Logout uses
+The sidebar's all-role member action opens Team; mutation controls remain owner-only. Logout uses
 `DELETE /auth/platform/logout` with `PlatformSessionAuthorization`, exact-origin
 protection and the existing session-revocation workflow/cookie clearing.
 It does not require customer organization membership or active platform membership,
@@ -41,26 +42,27 @@ All routes below are excluded from published OpenAPI. `/internal/*` carries
 `AdminAuthorization`; invitation acceptance uses `PlatformSessionAuthorization`
 because the invitee is not a member yet.
 
-| Method | Path                                | Access                                              |
-| ------ | ----------------------------------- | --------------------------------------------------- |
-| GET    | `/internal/me`                      | Active member; identity and effective permissions   |
-| GET    | `/internal/catalog`                 | All roles; all catalog statuses and deployments     |
-| POST   | `/internal/catalog/import`          | Owner; atomic curated JSON import or dry run        |
-| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity |
-| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters   |
-| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one  |
-| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code               |
-| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters         |
-| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite      |
-| GET    | `/internal/members`                 | Owner; team including historical removed members    |
-| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                      |
-| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                          |
-| DELETE | `/internal/members/:id`             | Owner; soft removal                                 |
-| POST   | `/internal/ownership/transfer`      | Owner; active target member                         |
-| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor          |
-| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend  |
-| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                    |
-| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body          |
+| Method | Path                                | Access                                                          |
+| ------ | ----------------------------------- | --------------------------------------------------------------- |
+| GET    | `/internal/me`                      | Active member; identity and effective permissions               |
+| GET    | `/internal/catalog`                 | All roles; all catalog statuses and deployments                 |
+| GET    | `/internal/catalog/:catalogId`      | All roles; one record and every deployment                      |
+| POST   | `/internal/catalog/import`          | Owner; atomic curated JSON import or dry run                    |
+| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day or all-time activity |
+| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters               |
+| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one              |
+| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code                           |
+| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters                     |
+| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite                  |
+| GET    | `/internal/members`                 | All roles; team including historical removed members            |
+| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                                  |
+| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                                      |
+| DELETE | `/internal/members/:id`             | Owner; soft removal                                             |
+| POST   | `/internal/ownership/transfer`      | Owner; active target member                                     |
+| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor                      |
+| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend              |
+| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                                |
+| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body                      |
 
 Team writes, beta-invite writes and acceptance require an active verified session,
 with no additional recent-sign-in window. New browser sessions last seven days.
@@ -147,11 +149,11 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
 protected page set at `/`, `/waitlist`, `/invites`, `/catalog`, and `/team`.
 All share one membership-guarded layout and the dashboard-style UIKit sidebar;
-Team implements an owner-only member table, invite-by-email, role updates and
+Team implements an all-role member table with owner-only invite-by-email, role updates and
 confirmed soft removal. Member rows include user display metadata from the existing
 user join (no new table). Owner and removed rows have no generic edit/remove actions.
-Permission guards hide Team navigation from other roles and prevent member fetching
-on denied direct visits. Mutation hooks own query invalidation; rejected access
+Permission guards keep team mutations owner-only; all active roles can navigate to
+and read Team. Mutation hooks own query invalidation; rejected access
 suppresses stale results and rechecks membership. Invites implements all-role
 listing, email/status filters, cursor pagination, single/batch creation, one-time
 code/link copying, redeemer display metadata and confirmed revocation. Its atoms,
@@ -161,7 +163,8 @@ an email-bound invite and durable email job. Overview shows six lifetime totals,
 selected-period counts and daily growth/activity charts;
 the portal exposes only implemented navigation destinations. Address Catalog uses
 an all-role internal listing, including unpublished records, and shows logo/name,
-type, status, networks and deployment details. Only the owner sees upload controls.
+type and status. Three-dot row menus copy IDs or open a dedicated properties page
+with chain icons, all deployments, explorer links and verification evidence. Only the owner sees upload controls.
 The import dialog validates a bounded JSON file, previews counts through a dry run,
 then requires explicit confirmation before writing. Server authorization remains
 authoritative for both preview and import; browser data is kept in memory only.
@@ -197,9 +200,12 @@ disposable PostgreSQL lane as well as PGlite.
 
 ## Overview
 
-`GET /internal/overview?period=30d` accepts `7d`, `30d` (default), or `90d`.
-The application shares one 90-day snapshot per process for sixty seconds across
-all periods and roles. Concurrent misses share the refresh; failures are not
+`GET /internal/overview?period=30d` accepts `7d`, `30d` (default), `90d`, or `all`.
+The application shares one 90-day snapshot per process for recent periods and
+loads a separate all-time snapshot only when requested. Both are cached for sixty
+seconds across roles. All-time daily buckets start at the earliest retained record
+across the six metrics and end today; an empty database returns today's zero bucket.
+Concurrent misses share the refresh; failures are not
 cached. Session and current membership/permission checks run on every request,
 including cache hits. The protected loader and hooks share the browser atom
 registry; no background polling is added.

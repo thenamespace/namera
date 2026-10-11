@@ -4,7 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getRouter } from "../../src/router";
 
-const paths = ["/", "/waitlist", "/invites", "/team", "/catalog"];
+const paths = [
+  "/",
+  "/waitlist",
+  "/invites",
+  "/team",
+  "/catalog",
+  "/catalog/01950000-0000-7000-8000-000000000001",
+];
 const fetchMock = vi.fn<typeof fetch>();
 
 afterEach(() => vi.unstubAllGlobals());
@@ -49,11 +56,11 @@ describe("admin page access", () => {
     }
   });
 
-  it("prefetches the owner member table with display metadata", async () => {
+  it.each(["owner", "operator", "viewer"])("prefetches the member table for %s", async (role) => {
     const member = {
       id: "member-1",
       userId: "01900000-0000-7000-8000-000000000001",
-      role: "owner",
+      role,
       status: "active",
       createdAt: "2026-10-01T00:00:00.000Z",
       updatedAt: "2026-10-01T00:00:00.000Z",
@@ -75,7 +82,7 @@ describe("admin page access", () => {
             : {
                 member,
                 email: "owner@example.com",
-                permissions: ["team:manage", "ownership:transfer"],
+                permissions: ["team:read"],
               },
         ),
       );

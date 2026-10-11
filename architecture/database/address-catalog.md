@@ -2,8 +2,8 @@
 
 The global curated address catalog supports `eip155` and `erc20` / `contract`
 records. Protocol schemas, tables, transaction-aware repositories, discovery
-routes and an operator JSON import workflow are implemented. UI, seed data,
-SDK convenience methods and policy-page integration remain separate work.
+routes, an owner-only JSON import workflow and admin catalog UI are implemented.
+Seed data, SDK convenience methods and policy-page integration remain separate work.
 
 Sources: `packages/protocol/src/model/catalog/`,
 `packages/database/src/schema/core/catalog/`, and
@@ -222,6 +222,12 @@ discovery filters plus optional parent `status`, uses literal substring metadata
 search or exact address matching, and sorts by slug/ID. Pagination defaults to 25
 records with a next offset. Reads recheck membership and do not create audit events.
 Public discovery visibility remains unchanged.
+
+`GET /internal/catalog/:catalogId` uses the same read permission and returns one
+record with every deployment, including disabled entries and unpublished parents.
+Missing IDs return `CatalogNotFoundError`. The admin detail route loads this endpoint
+directly, so bookmarks and refreshes do not depend on the listing cache. Reads do
+not fetch ABI documents or create audit events.
 
 ## Remaining boundaries
 

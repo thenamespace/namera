@@ -34,6 +34,15 @@ export const makeCatalogApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
   return {
+    getAdmin: Effect.fn("application.catalog.getAdmin")(
+      function* (context: PlatformSession, id: AddressCatalogId) {
+        yield* requirePlatformPermission(repository, context, "catalog:read");
+        const record = yield* catalog.getById(id);
+        if (!record) return yield* new CatalogNotFoundError({ resource: "catalog", id });
+        return { ...record, entries: yield* catalogEntry.listByCatalogId(id) };
+      },
+      Effect.catchTag("DatabaseError", Effect.die),
+    ),
     listAdmin: Effect.fn("application.catalog.listAdmin")(
       function* (context: PlatformSession, input: ListAdminCatalogRequest) {
         yield* requirePlatformPermission(repository, context, "catalog:read");

@@ -481,6 +481,18 @@ layer(TestServerLayer)("catalog API", (it) => {
         });
         expect(first.entries[0]?.status).toBe("draft");
         expect(first.entries[0]?.entries[0]?.status).toBe("disabled");
+        const record = first.entries[0];
+        if (!record) throw new Error("Expected a catalog record");
+        expect(yield* admin.client.adminCatalog.get({ params: { catalogId: record.id } })).toEqual(
+          record,
+        );
+        expect(
+          yield* admin.client.adminCatalog
+            .get({
+              params: { catalogId: AddressCatalogId.make("01950000-0000-7000-8000-000000000099") },
+            })
+            .pipe(Effect.flip),
+        ).toMatchObject({ _tag: "CatalogNotFoundError" });
         expect(first.nextOffset).toBe(1);
         const second = yield* admin.client.adminCatalog.list({
           query: { namespace: "eip155", offset: 1, limit: 1 },
@@ -511,6 +523,11 @@ layer(TestServerLayer)("catalog API", (it) => {
           { status: "removed" },
           admin.session.createdAt,
         );
+        expect(
+          yield* admin.client.adminCatalog
+            .get({ params: { catalogId: record.id } })
+            .pipe(Effect.flip),
+        ).toBeDefined();
         expect(
           yield* admin.client.adminCatalog
             .list({ query: { namespace: "eip155" } })

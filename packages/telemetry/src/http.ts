@@ -45,6 +45,7 @@ const staticHttpRoutes = new Set([
   "/catalog/resolve",
   "/internal/catalog/import",
   "/internal/catalog",
+  "/internal/catalog/:catalogId",
   "/dashboard/overview",
   "/ens/availability",
   "/executions",

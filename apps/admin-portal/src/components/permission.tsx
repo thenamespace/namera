@@ -32,6 +32,7 @@ export function PermissionGuard({
 }
 
 export const manageTeamPermission = ["team:manage"] as const;
+export const readTeamPermission = ["team:read"] as const;
 export const readCatalogPermission = ["catalog:read"] as const;
 export const manageCatalogPermission = ["catalog:manage"] as const;
 export const readOverviewPermission = ["overview:read"] as const;

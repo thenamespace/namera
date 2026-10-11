@@ -65,6 +65,12 @@ describe("admin overview", () => {
       expect(quarter.periodCounts.waitlist).toBe(4);
       expect(week.totals).toEqual(quarter.totals);
       expect(week.generatedAt).toEqual(quarter.generatedAt);
+      const all = yield* owner.client.adminOverview.get({ query: { period: "all" } });
+      expect(all.activity[0]).toMatchObject({ date: "2026-01-01", users: 1 });
+      expect(all.activity.at(-1)?.date).toBe("2026-10-08");
+      expect(all.activity).toHaveLength(281);
+      expect(all.periodCounts).toEqual(all.totals);
+      expect(all.periodCounts.waitlist).toBe(5);
       for (const period of ["1d", "365d", "", "../"]) {
         expect(Schema.is(GetAdminOverviewRequest)({ period })).toBe(false);
       }

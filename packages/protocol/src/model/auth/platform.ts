@@ -13,6 +13,7 @@ export const PlatformPermission = Schema.Literals([
   "catalog:manage",
   "overview:read",
   "team:manage",
+  "team:read",
   "ownership:transfer",
   "invites:read",
   "invites:manage",
@@ -27,6 +28,7 @@ export const platformPermissions: Readonly<Record<PlatformRole, readonly Platfor
     "catalog:manage",
     "overview:read",
     "team:manage",
+    "team:read",
     "ownership:transfer",
     "invites:read",
     "invites:manage",
@@ -34,6 +36,7 @@ export const platformPermissions: Readonly<Record<PlatformRole, readonly Platfor
     "waitlist:accept",
   ],
   operator: [
+    "team:read",
     "catalog:read",
     "overview:read",
     "invites:read",
@@ -41,7 +44,7 @@ export const platformPermissions: Readonly<Record<PlatformRole, readonly Platfor
     "waitlist:read",
     "waitlist:accept",
   ],
-  viewer: ["catalog:read", "overview:read", "invites:read", "waitlist:read"],
+  viewer: ["team:read", "catalog:read", "overview:read", "invites:read", "waitlist:read"],
 };
 
 export const PlatformMember = Schema.Struct({

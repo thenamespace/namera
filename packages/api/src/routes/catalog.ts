@@ -62,6 +62,11 @@ export class CatalogGroup extends HttpApiGroup.make("catalog")
 
 export class AdminCatalogGroup extends HttpApiGroup.make("adminCatalog")
   .add(
+    HttpApiEndpoint.get("get", "/internal/catalog/:catalogId", {
+      params: Schema.Struct({ catalogId: AddressCatalogId }),
+      success: CatalogView,
+      error: [CatalogNotFoundError, PlatformAuthError, ...CommonErrors],
+    }),
     HttpApiEndpoint.get("list", "/internal/catalog", {
       query: ListAdminCatalogRequest,
       success: SearchCatalogResponse,

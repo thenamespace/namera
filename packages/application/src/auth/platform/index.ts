@@ -43,7 +43,7 @@ export const makePlatformApplication = Effect.gen(function* () {
 
   const members = Effect.fn("application.platform.members")(
     function* (context: PlatformSession) {
-      yield* requirePlatformPermission(repository, context, "team:manage");
+      yield* requirePlatformPermission(repository, context, "team:read");
       return yield* store.listMembers();
     },
     Effect.catchTag("DatabaseError", Effect.die),

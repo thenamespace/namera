@@ -16,8 +16,8 @@ import { PermissionGuard, manageCatalogPermission } from "@/components/permissio
 import { useCatalog } from "@/hooks/catalog";
 
 import { InviteDate } from "../invites/invite-display";
-import { CatalogDetails } from "./catalog-details";
-import { CatalogIdentity, CatalogStatus, chainNames, type CatalogRecord } from "./catalog-display";
+import { CatalogActions } from "./catalog-actions";
+import { CatalogIdentity, CatalogStatus, type CatalogRecord } from "./catalog-display";
 import { ImportCatalogDialog } from "./import-dialog";
 
 const statuses = [
@@ -33,7 +33,7 @@ const types = [
 ] as const;
 const getId = (record: CatalogRecord) => record.id;
 
-const columnsFor = (inspect: (record: CatalogRecord) => void): DataGridColumn<CatalogRecord>[] => [
+const columns: DataGridColumn<CatalogRecord>[] = [
   {
     id: "name",
     header: "Name",
@@ -59,27 +59,6 @@ const columnsFor = (inspect: (record: CatalogRecord) => void): DataGridColumn<Ca
     cell: (record) => <CatalogStatus status={record.status} />,
   },
   {
-    id: "networks",
-    header: "Networks",
-    minWidth: 200,
-    width: "1fr",
-    cell: (record) => {
-      const networks = [...new Set(record.entries.map((entry) => chainNames[entry.chainId]))];
-      return (
-        <div className="min-w-0">
-          <p className="truncate text-sm" title={networks.join(", ")}>
-            {networks.slice(0, 2).join(", ") || "No deployments"}
-            {networks.length > 2 ? ` +${networks.length - 2}` : ""}
-          </p>
-          <p className="text-muted text-xs">
-            {record.entries.length} deployments ·{" "}
-            {record.entries.filter((entry) => entry.status === "active").length} active
-          </p>
-        </div>
-      );
-    },
-  },
-  {
     id: "updated",
     header: "Updated",
     width: 135,
@@ -88,19 +67,10 @@ const columnsFor = (inspect: (record: CatalogRecord) => void): DataGridColumn<Ca
   {
     id: "actions",
     header: "",
-    width: 85,
+    width: 48,
     align: "end",
     pinned: "end",
-    cell: (record) => (
-      <Button
-        size="sm"
-        variant="tertiary"
-        aria-label={`View ${record.data.display.name}`}
-        onPress={() => inspect(record)}
-      >
-        View
-      </Button>
-    ),
+    cell: (record) => <CatalogActions record={record} />,
   },
 ];
 
@@ -110,7 +80,6 @@ export function CatalogTable() {
   const [type, setType] = useState<(typeof types)[number]["id"]>("all");
   const [offset, setOffset] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [selected, setSelected] = useState<CatalogRecord | null>(null);
   const catalog = useCatalog({
     namespace: "eip155",
     offset,
@@ -119,7 +88,6 @@ export function CatalogTable() {
     ...(type === "all" ? {} : { types: [type] }),
   });
   const rows = useMemo(() => [...(catalog.data?.entries ?? [])], [catalog.data]);
-  const columns = useMemo(() => columnsFor(setSelected), []);
   const filtered = Boolean(query.trim()) || status !== "all" || type !== "all";
   const nextOffset = catalog.data?.nextOffset;
 
@@ -262,7 +230,6 @@ export function CatalogTable() {
           </Button>
         </div>
       ) : null}
-      {selected ? <CatalogDetails record={selected} onClose={() => setSelected(null)} /> : null}
       <PermissionGuard required={manageCatalogPermission}>
         {uploading ? <ImportCatalogDialog onClose={() => setUploading(false)} /> : null}
       </PermissionGuard>

@@ -46,6 +46,11 @@ export const AdminCatalogRoutes = HttpApiBuilder.group(NameraApi, "adminCatalog"
   Effect.gen(function* () {
     const app = yield* Application;
     return handlers
+      .handle("get", ({ params }) =>
+        Effect.gen(function* () {
+          return yield* app.catalog.getAdmin(yield* CurrentAdmin, params.catalogId);
+        }),
+      )
       .handle("list", ({ query }) =>
         Effect.gen(function* () {
           return yield* app.catalog.listAdmin(yield* CurrentAdmin, query);

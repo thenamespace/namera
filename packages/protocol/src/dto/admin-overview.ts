@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 const Count = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 
-export const AdminOverviewPeriod = Schema.Literals(["7d", "30d", "90d"]);
+export const AdminOverviewPeriod = Schema.Literals(["7d", "30d", "90d", "all"]);
 export type AdminOverviewPeriod = typeof AdminOverviewPeriod.Type;
 export const GetAdminOverviewRequest = Schema.Struct({
   period: Schema.optional(AdminOverviewPeriod),
