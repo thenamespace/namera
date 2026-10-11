@@ -1,29 +1,29 @@
 import { DateTime, Schema } from "effect";
 
-import type {
-  ExecutionId,
-  ExecutionSubmissionId,
-  SessionKeyId,
-  WalletId,
-} from "@namera-ai/protocol";
+import { ExecutionId, ExecutionSubmissionId } from "@namera-ai/protocol";
 import {
-  type ExecuteRequest as ExecuteRequestType,
-  type SimulateExecutionRequest,
-  type PrepareExecutionRequest,
+  SimulateExecutionRequest,
+  PrepareExecutionRequest,
   CompleteExecutionRequest,
+  ListExecutionsRequest,
 } from "@namera-ai/protocol/dto";
 import { verifyMessage } from "viem";
 
+import { inputDecoder } from "#/input-validation";
+import type * as Input from "#/inputs";
 import { failure } from "#/result";
 import { validateLocalExecution, validateManagedExecution } from "#/signing/execution-validation";
 import type { ResolveSessionSigner, LocalSessionSigner } from "#/signing/local-session";
 import type { NameraTransport } from "#/transport";
 
-export type ListExecutionsOptions = {
-  readonly cursor?: ExecutionId;
-  readonly walletId?: WalletId;
-  readonly sessionKeyId?: SessionKeyId;
-};
+export type { ListExecutionsOptions } from "#/inputs";
+
+const decodePrepare = inputDecoder(PrepareExecutionRequest);
+const decodeComplete = inputDecoder(CompleteExecutionRequest);
+const decodeSimulate = inputDecoder(SimulateExecutionRequest);
+const decodeList = inputDecoder(ListExecutionsRequest);
+const decodeSubmissionId = inputDecoder(ExecutionSubmissionId);
+const decodeExecutionId = inputDecoder(ExecutionId);
 
 export class ExecutionClient {
   constructor(
@@ -32,7 +32,13 @@ export class ExecutionClient {
     private readonly maxGasCostWei?: bigint,
   ) {}
 
-  prepare(request: PrepareExecutionRequest) {
+  async prepare(input: Input.PrepareExecutionRequest) {
+    const decoded = decodePrepare(input);
+    if (!decoded.success) return decoded;
+    return this.#prepare(decoded.data);
+  }
+
+  #prepare(request: PrepareExecutionRequest) {
     const idempotencyKey = globalThis.crypto.randomUUID();
 
     return this.transport.requestWithRetry(
@@ -43,16 +49,21 @@ export class ExecutionClient {
     );
   }
 
-  complete(request: CompleteExecutionRequest) {
+  async complete(input: Input.CompleteExecutionRequest) {
+    const decoded = decodeComplete(input);
+    if (!decoded.success) return decoded;
     // The submission already identifies the immutable operation. Retries send
     // the same signature; they must never prepare or sign another operation.
     return this.transport.requestWithRetry(
-      this.transport.client.execution.complete({ payload: request }),
+      this.transport.client.execution.complete({ payload: decoded.data }),
     );
   }
 
-  async execute(request: ExecuteRequestType) {
-    const prepared = await this.prepare(request);
+  async execute(input: Input.ExecuteRequest) {
+    const decoded = decodePrepare(input);
+    if (!decoded.success) return decoded;
+    const request = decoded.data;
+    const prepared = await this.#prepare(request);
     if (!prepared.success) return prepared;
     if (prepared.data.signing.method === "server") {
       try {
@@ -157,28 +168,36 @@ export class ExecutionClient {
     return this.complete(completion);
   }
 
-  simulate(request: SimulateExecutionRequest) {
-    return this.transport.request(this.transport.client.execution.simulate({ payload: request }));
-  }
-
-  getStatus(submissionId: ExecutionSubmissionId) {
+  async simulate(input: Input.SimulateExecutionRequest) {
+    const decoded = decodeSimulate(input);
+    if (!decoded.success) return decoded;
     return this.transport.request(
-      this.transport.client.execution.getSubmission({ params: { submissionId } }),
+      this.transport.client.execution.simulate({ payload: decoded.data }),
     );
   }
 
-  get(executionId: ExecutionId) {
-    return this.transport.request(this.transport.client.execution.get({ params: { executionId } }));
+  async getStatus(submissionId: string) {
+    const decoded = decodeSubmissionId(submissionId);
+    if (!decoded.success) return decoded;
+    return this.transport.request(
+      this.transport.client.execution.getSubmission({ params: { submissionId: decoded.data } }),
+    );
   }
 
-  list(options: ListExecutionsOptions = {}) {
+  async get(executionId: string) {
+    const decoded = decodeExecutionId(executionId);
+    if (!decoded.success) return decoded;
+    return this.transport.request(
+      this.transport.client.execution.get({ params: { executionId: decoded.data } }),
+    );
+  }
+
+  async list(options: Input.ListExecutionsOptions = {}) {
+    const decoded = decodeList(options);
+    if (!decoded.success) return decoded;
     return this.transport.request(
       this.transport.client.execution.list({
-        query: {
-          ...(options.cursor === undefined ? {} : { cursor: options.cursor }),
-          ...(options.walletId === undefined ? {} : { walletId: options.walletId }),
-          ...(options.sessionKeyId === undefined ? {} : { sessionKeyId: options.sessionKeyId }),
-        },
+        query: decoded.data,
       }),
     );
   }

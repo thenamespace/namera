@@ -8,10 +8,15 @@ import {
 } from "@namera-ai/protocol/dto";
 import { verifyTypedData } from "viem";
 
+import { inputDecoder } from "#/input-validation";
+import type * as Input from "#/inputs";
 import { failure } from "#/result";
 import type { LocalSessionSigner, ResolveSessionSigner } from "#/signing/local-session";
 import { validateLocalSignature } from "#/signing/signature-validation";
 import type { NameraTransport } from "#/transport";
+
+const decodePrepare = inputDecoder(PrepareSignatureRequestSchema);
+const decodeComplete = inputDecoder(CompleteSignatureRequest);
 
 export class SignatureClient {
   constructor(
@@ -19,7 +24,13 @@ export class SignatureClient {
     private readonly resolveSigner?: ResolveSessionSigner,
   ) {}
 
-  prepare(request: PrepareSignatureRequest) {
+  async prepare(input: Input.PrepareSignatureRequest) {
+    const decoded = decodePrepare(input);
+    if (!decoded.success) return decoded;
+    return this.#prepare(decoded.data);
+  }
+
+  #prepare(request: PrepareSignatureRequest) {
     const headers = { "idempotency-key": globalThis.crypto.randomUUID() };
     return this.transport.requestWithRetry(
       request.type === "message"
@@ -28,7 +39,10 @@ export class SignatureClient {
     );
   }
 
-  complete(request: CompleteSignatureRequest) {
+  async complete(input: Input.CompleteSignatureRequest) {
+    const decoded = decodeComplete(input);
+    if (!decoded.success) return decoded;
+    const request = decoded.data;
     // Managed results are not stored, so do not automatically repeat an
     // uncertain signing attempt or start a replacement billable operation.
     if (request.signature === undefined)
@@ -38,8 +52,11 @@ export class SignatureClient {
     );
   }
 
-  async sign(request: PrepareSignatureRequest) {
-    const prepared = await this.prepare(request);
+  async sign(input: Input.PrepareSignatureRequest) {
+    const decoded = decodePrepare(input);
+    if (!decoded.success) return decoded;
+    const request = decoded.data;
+    const prepared = await this.#prepare(request);
     if (!prepared.success) return prepared;
     if (prepared.data.signing.method === "server") {
       const original = Schema.encodeSync(PrepareSignatureRequestSchema)(request);

@@ -80,6 +80,41 @@ For managed sessions set `maxGasCostWei` on `NameraClient`; local resolvers reta
 their `maxGasCostWei` setting.
 Submission is not confirmation: check the returned submission's status.
 
+### Send a transaction
+
+Use an account and session key from your workspace. The session must allow the
+recipient, amount, and selected network. Install `viem` to use `parseEther`.
+
+```ts
+import { NameraClient, type ExecuteRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+} satisfies ExecuteRequest;
+
+const result = await namera.executions.execute(request);
+if (result.success) {
+  console.log(await namera.executions.getStatus(result.data.submissionId));
+}
+```
+
+Replace the example IDs and recipient with your own. This sends test ETH on Base
+Sepolia; gas sponsorship does not fund the transfer.
+
 ## Session signing
 
 The same `executions.execute()` and `sign()` calls support local and 1Claw-managed

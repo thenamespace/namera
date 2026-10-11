@@ -10,6 +10,16 @@ and `api`; adapters do not hand-build competing request schemas.
 returning a discriminated `NameraResult`. It supports `x-api-key`, a fixed bearer
 token, or an asynchronous bearer supplier for refreshable interactive clients.
 
+SDK client input types are derived from protocol DTOs with brands removed:
+IDs are strings, addresses and bytes are `0x`-prefixed strings, and amounts are
+bigints. Namespace and the eight supported CAIP-2 chain literals stay narrow.
+The SDK exports these input types directly. A shared type-side schema decoder
+validates inputs before transport or signer access, retaining bigint values for
+the generated client's wire encoder. Invalid inputs return a `contract` result
+without a request, retry, or signing callback. Protocol/server contracts and
+decoded response types remain unchanged. Transport tests cover plain inputs,
+malformed values, and retained compile-time literal constraints.
+
 Supported surface:
 
 - `wallets.list` and `wallets.get`;

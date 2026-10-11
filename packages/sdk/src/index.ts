@@ -7,6 +7,7 @@ export * from "./session-keys.js";
 export * from "./wallets.js";
 export type { NameraClientConfig, NameraFetch } from "./transport.js";
 export * from "./auth.js";
+export type * from "./inputs.js";
 export type { LocalSessionSigner, ResolveSessionSigner } from "./signing/local-session.js";
 export {
   createLocalSessionKeyDraft,
