@@ -4,12 +4,12 @@ import { useId } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { chains } from "@namera-ai/evm/chains";
 import type { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
-import { Button, Field, FieldError, FieldLabel, Input, ListBox, Select } from "@namera-ai/ui";
-import { ChainIcon } from "@namera-ai/ui/icons";
+import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 import { getAddress } from "viem";
+
+import { EvmChainSelect } from "@/components/evm-chain-select";
 
 import { customAddressSchema } from "./schema";
 import type { EvmAddressSelection } from "./types";
@@ -34,7 +34,6 @@ export function CustomAddress({
     },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
   });
-  const networks = Object.values(chains).filter((chain) => chainIds.includes(chain.chainId));
   return (
     <form
       id={id}
@@ -52,22 +51,18 @@ export function CustomAddress({
         )(event);
       }}
     >
-      <div>
-        <p className="text-sm font-medium">Custom address</p>
-        <p className="text-muted mt-1 text-xs">
-          Not verified by the catalog. Check the address and network before using it in a policy.
-        </p>
-      </div>
+      <p className="text-sm font-medium">Custom address</p>
       <Controller
         control={form.control}
         name="address"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={`${id}-address`}>EVM address</FieldLabel>
+            <FieldLabel htmlFor={`${id}-address`}>Title</FieldLabel>
             <Input
               {...field}
               id={`${id}-address`}
               placeholder="0x…"
+              variant="secondary"
               autoComplete="off"
               spellCheck={false}
               className="font-mono text-sm"
@@ -84,33 +79,18 @@ export function CustomAddress({
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel id={`${id}-network`}>Network</FieldLabel>
-            <Select
+            <EvmChainSelect
               aria-labelledby={`${id}-network`}
+              {...(fieldState.error ? { "aria-describedby": `${id}-network-error` } : {})}
+              chainIds={chainIds}
+              name={field.name}
               value={field.value}
               onChange={field.onChange}
-              fullWidth
-            >
-              <Select.Trigger ref={field.ref} onBlur={field.onBlur}>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  {networks.map((network) => (
-                    <ListBox.Item
-                      key={network.chainId}
-                      id={network.chainId}
-                      textValue={network.chain.name}
-                    >
-                      <ChainIcon namespace="eip155" chain={network.name} className="size-4" />
-                      {network.chain.name}
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  ))}
-                </ListBox>
-              </Select.Popover>
-            </Select>
-            <FieldError>{fieldState.error?.message}</FieldError>
+              onBlur={field.onBlur}
+              triggerRef={field.ref}
+              isInvalid={fieldState.invalid}
+            />
+            <FieldError id={`${id}-network-error`}>{fieldState.error?.message}</FieldError>
           </Field>
         )}
       />

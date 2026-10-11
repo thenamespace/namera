@@ -35,6 +35,9 @@ Workspace package imports continue to use their package names.
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
   email addresses, dates, roles, and future table cells.
+- `src/components/evm-chain-select.tsx` — controlled single-chain selector scoped
+  by allowed CAIP-2 chain IDs, with Mainnets/Testnets groups and chain icons.
+  Supports field variants and React Hook Form trigger refs and blur handling.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.
