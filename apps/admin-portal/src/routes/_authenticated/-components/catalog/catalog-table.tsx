@@ -44,7 +44,7 @@ const columns: DataGridColumn<CatalogRecord>[] = [
     minWidth: 240,
     width: "1fr",
     cell: (record) => (
-      <Link to="/catalog/$catalogId" params={{ catalogId: record.id }} className="hover:underline">
+      <Link to="/catalog/$catalogId" params={{ catalogId: record.id }} className="no-underline">
         <CatalogIdentity record={record} />
       </Link>
     ),

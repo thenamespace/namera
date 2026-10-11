@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@namera-ai/ui";
-import { ArrowUpRight01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { LinkSquare02Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { copyCatalogValue } from "./catalog-actions";
 
@@ -48,7 +48,7 @@ export function CatalogCopyValue({
           title="View on explorer"
           className="text-muted hover:text-foreground focus-visible:outline-accent inline-flex size-7 shrink-0 items-center justify-center rounded-md focus-visible:outline-2"
         >
-          <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-4" />
+          <HugeiconsIcon icon={LinkSquare02Icon} className="size-4" aria-hidden="true" />
         </a>
       ) : null}
     </div>

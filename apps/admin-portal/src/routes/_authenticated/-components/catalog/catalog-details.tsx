@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { Avatar, Typography } from "@namera-ai/ui";
-import { ChainIcon } from "@namera-ai/ui/icons";
+import { ChainIcon, HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
 
 import { CatalogDeployments } from "./catalog-deployments";
 import { CatalogStatus, type CatalogRecord } from "./catalog-display";
@@ -68,12 +68,17 @@ export function CatalogDetails({ record }: { record: CatalogRecord }) {
           {display.website ? (
             <CatalogProperty label="Website">
               <a
-                className="text-accent break-all underline"
+                className="text-accent inline-flex items-center gap-1.5 break-all underline"
                 href={display.website.href}
                 target="_blank"
                 rel="noreferrer"
               >
                 {display.website.hostname}
+                <HugeiconsIcon
+                  icon={LinkSquare02Icon}
+                  className="size-4 shrink-0"
+                  aria-hidden="true"
+                />
               </a>
             </CatalogProperty>
           ) : null}

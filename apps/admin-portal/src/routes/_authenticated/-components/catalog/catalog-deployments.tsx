@@ -2,7 +2,7 @@
 import { Link } from "@tanstack/react-router";
 
 import type { EvmChainName, SupportedEvmChainId } from "@namera-ai/protocol/evm";
-import { ChainIcon } from "@namera-ai/ui/icons";
+import { ChainIcon, HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
 
 import { chainNames, type CatalogRecord } from "./catalog-display";
 import { CatalogCopyValue, CatalogProperty } from "./catalog-property";
@@ -57,7 +57,7 @@ export function CatalogDeployments({ entries }: { entries: CatalogRecord["entrie
                   {entry.status}
                 </span>
               </header>
-              <dl className="grid gap-2">
+              <dl className="grid gap-1 [&>div]:min-h-7">
                 <CatalogProperty label="Address">
                   <CatalogCopyValue
                     value={entry.address}
@@ -85,12 +85,17 @@ export function CatalogDeployments({ entries }: { entries: CatalogRecord["entrie
                   <>
                     <CatalogProperty label="Source">
                       <a
-                        className="text-accent break-all underline"
+                        className="text-accent inline-flex items-center gap-1.5 break-all underline"
                         href={verification.sourceUrl.href}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {verification.sourceUrl.hostname} ↗
+                        {verification.sourceUrl.hostname}
+                        <HugeiconsIcon
+                          icon={LinkSquare02Icon}
+                          className="size-4 shrink-0"
+                          aria-hidden="true"
+                        />
                       </a>
                     </CatalogProperty>
                     {verification.implementationAddress ? (

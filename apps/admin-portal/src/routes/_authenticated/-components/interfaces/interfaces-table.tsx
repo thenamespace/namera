@@ -71,7 +71,7 @@ const columns: DataGridColumn<ContractInterfaceSummary>[] = [
       <Link
         to="/interface/$interfaceId"
         params={{ interfaceId: artifact.id }}
-        className="text-sm font-medium hover:underline"
+        className="text-sm font-medium no-underline"
       >
         {artifact.data.name}
       </Link>
