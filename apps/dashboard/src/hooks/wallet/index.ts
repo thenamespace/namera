@@ -15,6 +15,7 @@ export const useWallet = toQuery(walletAtom);
 export const useWalletPasskeyOwner = toQuery(walletPasskeyOwnerAtom);
 export const useWalletPortfolio = toQuery(walletPortfolioAtom);
 export const useCreateWallet = toMutation(createWalletMutation, {
+  analyticsAction: "account_create",
   invalidates: [...QueryKeys.wallet.all, ...QueryKeys.wallet.lists, ...QueryKeys.billing.current],
 });
 export const useCreatePasskeyRegistrationOptions = toMutation(
@@ -22,5 +23,6 @@ export const useCreatePasskeyRegistrationOptions = toMutation(
 );
 
 export const useRefreshWalletPortfolio = toMutation(refreshWalletPortfolioMutation, {
+  analyticsAction: "portfolio_refresh",
   invalidates: (input) => QueryKeys.wallet.assets(input.params.walletId),
 });

@@ -15,6 +15,7 @@ export const useWalletSessionKeys = toQuery(walletSessionKeysAtom);
 export const useSessionKey = toQuery(sessionKeyAtom);
 
 export const useCreateSessionKey = toMutation(createSessionKeyMutation, {
+  analyticsAction: "session_key_create",
   invalidates: ({ payload }) => [
     ...QueryKeys.billing.current,
     ...QueryKeys.sessionKey.all,
@@ -26,6 +27,7 @@ export const useCreateSessionKey = toMutation(createSessionKeyMutation, {
 });
 
 export const useRevokeSessionKey = toMutation(revokeSessionKeyMutation, {
+  analyticsAction: "session_key_revoke",
   invalidates: [
     ...QueryKeys.sessionKey.all,
     ...QueryKeys.apiKey.all,

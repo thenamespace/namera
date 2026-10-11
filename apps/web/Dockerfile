@@ -26,7 +26,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 ARG DOTENV=""
 RUN printf '%s\n' "${DOTENV:-VITE_API_URL=https://api.namera.ai}" > apps/web/.env.production
 
-RUN NITRO_PRESET=node-server pnpm --filter @namera-ai/web build
+ARG POSTHOG_CLI_PROJECT_ID=""
+ARG POSTHOG_RELEASE_VERSION=""
+RUN pnpm rebuild @posthog/cli
+RUN --mount=type=secret,id=posthog_api_key \
+    export POSTHOG_CLI_API_KEY="$(cat /run/secrets/posthog_api_key 2>/dev/null || true)"; \
+    NITRO_PRESET=node-server pnpm --filter @namera-ai/web build
+RUN test -z "$(find apps/web/.output/public -name '*.map' -print -quit)"
 
 FROM node:24-bookworm-slim AS runner
 ENV NODE_ENV="production"

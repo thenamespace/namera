@@ -4,6 +4,8 @@ import { useAtom, useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-
 import { Option } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
+import { analyticsContext, captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
+
 import { revalidateRejectedAccess } from "@/atoms/auth/browser-session";
 import { currentUserAtom } from "@/atoms/auth/session";
 import type { QueryKey } from "@/atoms/query-keys";
@@ -75,6 +77,7 @@ export const toMutation = <
 >(
   atom: Atom.AtomResultFn<Input, A, E>,
   options?: {
+    readonly analyticsAction?: string;
     readonly invalidates?:
       | ReadonlyArray<QueryKey>
       | ((input: MutationVariables<Input>) => ReadonlyArray<QueryKey>);
@@ -106,11 +109,24 @@ export const toMutation = <
     const mutateAsync = useCallback(
       async (...args: MutationArguments<Input>) => {
         const variables = (args[0] ?? {}) as MutationVariables<Input>;
+        const started = performance.now();
+        const analyticsActor = analyticsContext();
+        if (options?.analyticsAction)
+          captureAnalytics("dashboard_action_started", { action: options.analyticsAction });
         let data: A;
 
         try {
           data = await setAsync(withInvalidation(variables));
         } catch (error) {
+          if (options?.analyticsAction && analyticsActor === analyticsContext())
+            captureAnalytics("dashboard_action_failed", {
+              action: options.analyticsAction,
+              duration_ms: Math.round(performance.now() - started),
+              error_code:
+                error instanceof Error && error.name === "AbortError"
+                  ? "cancelled"
+                  : "request_failed",
+            });
           revalidateRejectedAccess(error, refreshSession);
           await callbacksRef.current.onError?.(error as E, variables);
           await callbacksRef.current.onSettled?.(undefined, error as E, variables);
@@ -118,6 +134,11 @@ export const toMutation = <
           throw error;
         }
 
+        if (options?.analyticsAction && analyticsActor === analyticsContext())
+          captureAnalytics("dashboard_action_succeeded", {
+            action: options.analyticsAction,
+            duration_ms: Math.round(performance.now() - started),
+          });
         await callbacksRef.current.onSuccess?.(data, variables);
         await callbacksRef.current.onSettled?.(data, null, variables);
 

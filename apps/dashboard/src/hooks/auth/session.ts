@@ -11,6 +11,7 @@ export const useCurrentUser = toQuery(() => currentUserAtom);
 export const useSessions = toQuery(() => sessionsAtom);
 
 export const useLogout = toMutation(logoutMutation, {
+  analyticsAction: "logout",
   invalidates: [
     ...QueryKeys.session.current,
     ...QueryKeys.session.lists,
@@ -19,5 +20,6 @@ export const useLogout = toMutation(logoutMutation, {
 });
 
 export const useRevokeOtherSessions = toMutation(revokeOtherSessionsMutation, {
+  analyticsAction: "sessions_revoke",
   invalidates: QueryKeys.session.lists,
 });

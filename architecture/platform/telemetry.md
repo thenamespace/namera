@@ -206,6 +206,55 @@ not a claim of successful production ingestion or verification.
 
 ## Verification
 
+### Product analytics
+
+PostHog is independent of Axiom and audit records. The web and dashboard apps
+initialize the shared `@namera-ai/telemetry/analytics/browser` module with the
+public `VITE_POSTHOG_KEY`. Production collection is enabled on `namera.ai`,
+`www.namera.ai`, and `dashboard.namera.ai`; development and preview hosts are
+excluded. Events go through the managed `https://t.namera.ai` proxy.
+
+The dashboard identifies only verified user IDs, with an optional display name.
+Workspace IDs/names are event properties, not a paid Groups integration. An
+identity change resets the SDK before identifying the new user. Mutation
+completion events are discarded if identity/workspace changes during the request.
+UI success means the request succeeded, not onchain confirmation or a unique
+resource creation. Never use UI counts as authoritative billing or audit data.
+
+Session replay, arbitrary DOM autocapture, and application feature flags are
+disabled. Public home/pricing heatmaps are coordinate-only. The event boundary
+excludes credentials, request bodies, URL queries/fragments, arbitrary profile
+metadata, free-text survey responses, and raw exception messages. Explicit IDs
+and names are allowed. Exception frames retain asset paths and line/column data.
+
+Survey delivery samples 10% of browser app instances, waits 60 seconds on an
+eligible visible page, and enforces a cross-subdomain 30-day cooldown. Auth,
+settings, creation, account-detail, execution, and approval routes are excluded.
+The footer and dashboard profile settings expose browser analytics preferences;
+Do Not Track and Global Privacy Control also prevent collection.
+
+Provider dashboards, billing caps, survey definitions, deployment verification,
+and privacy/terms reconciliation are tracked in the ignored research plan.
+Provider query retention must not be described as a physical deletion guarantee.
+
+The server `ProductAnalytics` layer uses `POSTHOG_PROJECT_TOKEN` only when
+`NODE_ENV=production`. Authorization registers a pre-response observer after
+resolving the actor. It records normalized routes, status, duration, actor kind,
+and workspace context, never request/response bodies. DNT, GPC, and the browser
+opt-out cookie suppress these observations. Internal routes and actor/session
+polling are excluded. These are HTTP outcomes, not deduplicated domain milestones:
+retries and reads count separately. PostHog has a bounded queue, two retries and
+a five-second shutdown flush; delivery failure must not fail wallet operations.
+
+Web/dashboard production builds upload hidden source maps with
+`@posthog/rollup-plugin`, then remove maps before assembling runtime images.
+The reusable build workflow reads `VITE_POSTHOG_KEY` and `POSTHOG_CLI_PROJECT_ID`
+from GitHub environment variables and `POSTHOG_CLI_API_KEY` from its environment
+secrets. The personal token enters Docker only through a BuildKit secret mount,
+never DOTENV or a build argument. Releases use the dispatch commit SHA. Staging
+clears the public token and does not upload maps. Runtime images reject public
+`.map` files. Test the upload in CI; ordinary local builds never upload symbols.
+
 After instrumentation changes, inspect one read and one mutation. Confirm one
 cross-service trace, stable route names, bounded metric attributes, structured
 log fields with trace correlation, no `/t/*` trace loop, and no idle-worker or

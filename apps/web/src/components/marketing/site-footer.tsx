@@ -11,6 +11,7 @@ import {
 } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
+import { AnalyticsPreference } from "#/components/analytics-preference";
 import { Container } from "#/components/marketing/primitives";
 import { linked, SITE_LINKS } from "#/lib/site-links";
 
@@ -143,6 +144,7 @@ export const SiteFooter = () => {
             © {year} Namespace Inc. All rights reserved.
           </p>
           <nav aria-label="Legal" className="flex items-center gap-5">
+            <AnalyticsPreference />
             {SITE_LINKS.privacy ? (
               <Link to={SITE_LINKS.privacy} className={cn(linkClass, "tap-target text-xs")}>
                 Privacy Policy

@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 
 import { useNavigate } from "@tanstack/react-router";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Button, Command } from "@namera-ai/ui";
 import { Icon, Search01Icon } from "@namera-ai/ui/icons";
 
@@ -13,6 +14,18 @@ export function BlogSearch({ posts }: { posts: readonly BlogPost[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = filterPosts(posts, useDeferredValue(query));
+  useEffect(() => {
+    if (!open || !query.trim()) return;
+    const timer = setTimeout(
+      () =>
+        captureAnalytics("blog_search_completed", {
+          query_length: query.length,
+          result_count: results.length,
+        }),
+      750,
+    );
+    return () => clearTimeout(timer);
+  }, [open, query, results.length]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -51,6 +64,10 @@ export function BlogSearch({ posts }: { posts: readonly BlogPost[] }) {
                 items={results}
                 renderEmptyState={() => "No articles match. Try a different phrase."}
                 onAction={(slug) => {
+                  captureAnalytics("blog_search_result_clicked", {
+                    destination: String(slug),
+                    result_rank: results.findIndex((post) => post.slug === slug) + 1,
+                  });
                   setOpen(false);
                   void navigate({ to: "/blog/$slug", params: { slug: String(slug) } });
                 }}

@@ -1,5 +1,6 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 
+import { ProductAnalytics } from "#/components/product-analytics";
 import { jsonLd, ORGANIZATION, SITE, WEBSITE } from "#/lib/seo";
 
 import styles from "#/styles/index.css?url";
@@ -81,6 +82,7 @@ function RootComponent() {
           text/markdown.
         </p>
         <Outlet />
+        <ProductAnalytics />
         <Scripts />
       </body>
     </html>

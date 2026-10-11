@@ -15,10 +15,12 @@ export const useOrganizationInvitations = toQuery(() => organizationInvitationsA
 export const useUserInvitations = toQuery(() => userInvitationsAtom);
 
 export const useInviteMember = toMutation(inviteMemberMutation, {
+  analyticsAction: "member_invite",
   invalidates: QueryKeys.invitation.lists,
 });
 
 export const useAcceptInvitation = toMutation(acceptInvitationMutation, {
+  analyticsAction: "invitation_accept",
   invalidates: ({ payload }) => [
     ...QueryKeys.session.current,
     ...QueryKeys.session.lists,
@@ -31,6 +33,7 @@ export const useAcceptInvitation = toMutation(acceptInvitationMutation, {
 });
 
 export const useRejectInvitation = toMutation(rejectInvitationMutation, {
+  analyticsAction: "invitation_reject",
   invalidates: ({ payload }) => [
     ...QueryKeys.invitation.userLists,
     ...QueryKeys.invitation.detail(payload.invitationId),
@@ -38,6 +41,7 @@ export const useRejectInvitation = toMutation(rejectInvitationMutation, {
 });
 
 export const useCancelInvitation = toMutation(cancelInvitationMutation, {
+  analyticsAction: "invitation_cancel",
   invalidates: ({ payload }) => [
     ...QueryKeys.invitation.lists,
     ...QueryKeys.invitation.detail(payload.invitationId),

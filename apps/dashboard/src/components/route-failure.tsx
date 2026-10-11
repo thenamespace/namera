@@ -1,3 +1,9 @@
+import { useEffect } from "react";
+
+import {
+  captureAnalytics,
+  captureAnalyticsException,
+} from "@namera-ai/telemetry/analytics/browser";
 import { Button, Typography } from "@namera-ai/ui";
 
 import { RouteState } from "@/components/page/route-state";
@@ -35,7 +41,10 @@ function RouteFailure({ notFound = false }: { readonly notFound?: boolean }) {
 
 // Do not render router error messages: they can contain request URLs or details
 // from provider failures. Reload also clears failed atom results before retrying.
-export function RouterError() {
+export function RouterError({ error }: { error?: unknown }) {
+  useEffect(() => {
+    if (error) captureAnalyticsException(error);
+  }, [error]);
   return (
     <RouteState>
       <RouteFailure />
@@ -44,6 +53,9 @@ export function RouterError() {
 }
 
 export function RouterNotFound() {
+  useEffect(() => {
+    captureAnalytics("page_not_found");
+  }, []);
   return (
     <RouteState>
       <RouteFailure notFound />

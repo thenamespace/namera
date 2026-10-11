@@ -17,6 +17,7 @@ import {
   toSessionResponse,
   toUserResponse,
 } from "#/helpers/dto";
+import { observeProductOperation } from "#/helpers/product-analytics";
 
 export const AuthorizationLive = Layer.effect(
   Authorization,
@@ -71,6 +72,7 @@ export const AuthorizationLive = Layer.effect(
           Metric.withAttributes(authenticationResults, { method: "api_key", result: "success" }),
           1,
         );
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       bearer: Effect.fn("server.authorization.bearer")(function* (httpEffect, { credential }) {
@@ -155,6 +157,7 @@ export const AuthorizationLive = Layer.effect(
           Metric.withAttributes(authenticationResults, { method: "bearer", result: "success" }),
           1,
         );
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       // A user session is valid only while its active organization membership
@@ -217,6 +220,7 @@ export const AuthorizationLive = Layer.effect(
           },
         };
 
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
     });

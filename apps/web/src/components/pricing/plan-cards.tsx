@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { cn } from "@namera-ai/ui/utils";
 
 import { ActionAnchor, Reveal } from "#/components/marketing/primitives";
@@ -52,6 +53,9 @@ export const PlanCards = () => (
             {plan.action === "waitlist" ? (
               <ActionAnchor
                 href="/#waitlist"
+                onClick={() =>
+                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "waitlist" })
+                }
                 variant="light"
                 className="h-11 w-full justify-center text-[0.9375rem]"
               >
@@ -60,6 +64,9 @@ export const PlanCards = () => (
             ) : plan.action === "contact" && SITE_LINKS.contact !== null ? (
               <ActionAnchor
                 href={SITE_LINKS.contact}
+                onClick={() =>
+                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "contact" })
+                }
                 variant="secondary"
                 className="h-11 w-full justify-center text-[0.9375rem]"
               >

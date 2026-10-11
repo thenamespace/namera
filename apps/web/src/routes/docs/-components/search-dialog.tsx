@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { IconChevronDown } from "@namera-ai/ui/icons";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import { fetchClient } from "fumadocs-core/search/client/fetch";
@@ -32,11 +33,26 @@ export function DocsSearchDialog(props: SharedProps) {
   const search = useDocsSearch({
     client: fetchClient({ api: "/api/docs/search", ...(tag ? { tag } : {}) }),
   });
+  useEffect(() => {
+    if (!search.data?.query || search.isLoading || search.error) return;
+    captureAnalytics("docs_search_completed", {
+      query_length: search.data.query.length,
+      result_count: search.data.items.length,
+      section: tag ?? "all",
+    });
+  }, [search.data, search.isLoading, search.error, tag]);
 
   return (
     <SearchDialog {...search} {...props}>
       <SearchDialogOverlay />
-      <SearchDialogContent className="rounded-[0.75rem]">
+      <SearchDialogContent
+        className="rounded-[0.75rem]"
+        onClick={(event) => {
+          const link = event.target instanceof Element ? event.target.closest("a") : null;
+          if (link?.pathname.startsWith("/docs"))
+            captureAnalytics("docs_search_result_clicked", { destination: link.pathname });
+        }}
+      >
         <SearchDialogHeader>
           <SearchDialogIcon />
           <SearchDialogInput />
