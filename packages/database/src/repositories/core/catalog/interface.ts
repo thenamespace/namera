@@ -1,8 +1,9 @@
 import { Context, Effect, Layer, Schema } from "effect";
 
 import type { ContractInterfaceId } from "@namera-ai/protocol";
+import { ContractInterfaceSummary, type ListAdminInterfacesRequest } from "@namera-ai/protocol/dto";
 import { ContractInterface, ContractInterfaceInsert } from "@namera-ai/protocol/model";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ilike, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -22,6 +23,35 @@ const make = Effect.gen(function* () {
       .where(inArray(contractInterface.id, ids))).map(decode);
   }, mapRepositoryError);
   return {
+    listAdmin: Effect.fn("database.contractInterface.listAdmin")(function* (
+      input: ListAdminInterfacesRequest,
+    ) {
+      const db = yield* transactionOrDatabase(database);
+      const query = input.query?.trim();
+      const pattern = `%${query?.replace(/[\\%_]/g, "\\$&") ?? ""}%`;
+      const rows = yield* db
+        .select({
+          id: contractInterface.id,
+          format: contractInterface.format,
+          contentHash: contractInterface.contentHash,
+          sourceUrl: contractInterface.sourceUrl,
+          createdAt: contractInterface.createdAt,
+        })
+        .from(contractInterface)
+        .where(
+          query
+            ? or(
+                ilike(contractInterface.id, pattern),
+                ilike(contractInterface.contentHash, pattern),
+                ilike(contractInterface.sourceUrl, pattern),
+              )
+            : undefined,
+        )
+        .orderBy(desc(contractInterface.createdAt), desc(contractInterface.id))
+        .limit((input.limit ?? 25) + 1)
+        .offset(input.offset ?? 0);
+      return rows.map((row) => Schema.decodeUnknownSync(ContractInterfaceSummary)(row));
+    }, mapRepositoryError),
     getByIds,
     getById: Effect.fn("database.contractInterface.getById")(function* (id: ContractInterfaceId) {
       return (yield* getByIds([id]))[0];

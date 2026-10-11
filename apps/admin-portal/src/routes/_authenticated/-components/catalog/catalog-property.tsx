@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@namera-ai/ui";
-import { Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { ArrowUpRight01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { copyCatalogValue } from "./catalog-actions";
 
@@ -15,7 +15,15 @@ export function CatalogProperty({ label, children }: { label: string; children: 
   );
 }
 
-export function CatalogCopyValue({ value, label }: { value: string; label: string }) {
+export function CatalogCopyValue({
+  value,
+  label,
+  explorerUrl,
+}: {
+  value: string;
+  label: string;
+  explorerUrl?: string;
+}) {
   return (
     <div className="flex min-w-0 items-center gap-2">
       <code className="break-all text-xs">{value}</code>
@@ -31,6 +39,18 @@ export function CatalogCopyValue({ value, label }: { value: string; label: strin
       >
         <HugeiconsIcon icon={Copy01Icon} />
       </Button>
+      {explorerUrl ? (
+        <a
+          href={explorerUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`View ${label} on explorer`}
+          title="View on explorer"
+          className="text-muted hover:text-foreground focus-visible:outline-accent inline-flex size-7 shrink-0 items-center justify-center rounded-md focus-visible:outline-2"
+        >
+          <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-4" />
+        </a>
+      ) : null}
     </div>
   );
 }

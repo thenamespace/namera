@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
 import { Avatar, Typography } from "@namera-ai/ui";
+import { ChainIcon } from "@namera-ai/ui/icons";
 
-import { InviteDate } from "../invites/invite-display";
 import { CatalogDeployments } from "./catalog-deployments";
 import { CatalogStatus, type CatalogRecord } from "./catalog-display";
 import { CatalogCopyValue, CatalogProperty } from "./catalog-property";
@@ -37,7 +37,17 @@ export function CatalogDetails({ record }: { record: CatalogRecord }) {
           <CatalogProperty label="Type">
             {record.data.type === "erc20" ? "ERC-20 token" : "Contract"}
           </CatalogProperty>
-          <CatalogProperty label="Namespace">Ethereum / EVM · eip155</CatalogProperty>
+          <CatalogProperty label="Namespace">
+            <span className="inline-flex items-center gap-2">
+              <ChainIcon
+                namespace="eip155"
+                chain="ethereum"
+                className="size-4"
+                aria-hidden="true"
+              />
+              EVM
+            </span>
+          </CatalogProperty>
           {record.data.type === "erc20" ? (
             <CatalogProperty label="Symbol">{record.data.details.symbol}</CatalogProperty>
           ) : (
@@ -52,7 +62,6 @@ export function CatalogDetails({ record }: { record: CatalogRecord }) {
               ) : null}
             </>
           )}
-          <CatalogProperty label="Slug">{record.slug}</CatalogProperty>
           <CatalogProperty label="Catalog ID">
             <CatalogCopyValue value={record.id} label="Catalog ID" />
           </CatalogProperty>
@@ -83,13 +92,6 @@ export function CatalogDetails({ record }: { record: CatalogRecord }) {
             </CatalogProperty>
           ) : null}
           <CatalogProperty label="Search terms">{record.search.join(", ")}</CatalogProperty>
-          <CatalogProperty label="Revision">{record.revision}</CatalogProperty>
-          <CatalogProperty label="Created">
-            <InviteDate label="Created" value={record.createdAt} />
-          </CatalogProperty>
-          <CatalogProperty label="Updated">
-            <InviteDate label="Updated" value={record.updatedAt} />
-          </CatalogProperty>
         </dl>
       </section>
       <CatalogDeployments entries={record.entries} />

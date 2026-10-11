@@ -11,20 +11,27 @@ const paths = [
   "/team",
   "/catalog",
   "/catalog/01950000-0000-7000-8000-000000000001",
+  "/interface",
+  "/interface/01950000-0000-7000-8000-000000000003",
 ];
 const fetchMock = vi.fn<typeof fetch>();
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("admin page access", () => {
-  it.each(["owner", "operator", "viewer"])("prefetches the catalog for %s", async (role) => {
+  it.each(
+    ["owner", "operator", "viewer"].flatMap((role) =>
+      ["catalog", "interface"].map((resource) => ({ role, resource })),
+    ),
+  )("prefetches $resource for $role", async ({ role, resource }) => {
+    const endpoint = resource === "interface" ? "/internal/interfaces" : "/internal/catalog";
     const requests: string[] = [];
     fetchMock.mockImplementation((input) => {
       const url = String(input instanceof Request ? input.url : input);
       requests.push(url);
       return Promise.resolve(
         Response.json(
-          url.includes("/internal/catalog")
+          url.includes(endpoint)
             ? { entries: [], nextOffset: null }
             : {
                 member: {
@@ -45,12 +52,12 @@ describe("admin page access", () => {
     const router = getRouter();
     router.update({
       context: router.options.context,
-      history: createMemoryHistory({ initialEntries: ["/catalog"] }),
+      history: createMemoryHistory({ initialEntries: [`/${resource}`] }),
     });
     try {
       await router.load();
       expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
-      expect(requests.filter((url) => url.includes("/internal/catalog"))).toHaveLength(1);
+      expect(requests.filter((url) => url.includes(endpoint))).toHaveLength(1);
     } finally {
       router.options.context.atomRegistry.dispose();
     }

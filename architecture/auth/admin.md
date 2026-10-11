@@ -47,6 +47,8 @@ because the invitee is not a member yet.
 | GET    | `/internal/me`                      | Active member; identity and effective permissions               |
 | GET    | `/internal/catalog`                 | All roles; all catalog statuses and deployments                 |
 | GET    | `/internal/catalog/:catalogId`      | All roles; one record and every deployment                      |
+| GET    | `/internal/interfaces`              | All roles; paginated metadata without ABI documents             |
+| GET    | `/internal/interfaces/:interfaceId` | All roles; full interface including unpublished references      |
 | POST   | `/internal/catalog/import`          | Owner; atomic curated JSON import or dry run                    |
 | GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day or all-time activity |
 | GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters               |

@@ -31,6 +31,9 @@ not a portal callback URI.
   server dry-run before explicit confirmation; validation errors remain in the dialog.
 - `/catalog/:catalogId`: Catalog properties and all deployments, with chain icons,
   copyable IDs/addresses, explorer links and supplied verification evidence.
+- `/interface`: All-role interface metadata table with ID/source/hash search,
+  pagination and row actions. No ABI documents are fetched by the list.
+- `/interface/:interfaceId`: Interface properties and scrollable, copyable ABI JSON.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 
 Protected pages use a shared UIKit inset sidebar,

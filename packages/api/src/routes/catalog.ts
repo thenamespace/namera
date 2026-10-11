@@ -12,6 +12,8 @@ import {
 import {
   SearchCatalogRequest,
   ListAdminCatalogRequest,
+  ListAdminInterfacesRequest,
+  ListAdminInterfacesResponse,
   SearchCatalogResponse,
   CatalogView,
   CatalogEntryView,
@@ -62,6 +64,16 @@ export class CatalogGroup extends HttpApiGroup.make("catalog")
 
 export class AdminCatalogGroup extends HttpApiGroup.make("adminCatalog")
   .add(
+    HttpApiEndpoint.get("listInterfaces", "/internal/interfaces", {
+      query: ListAdminInterfacesRequest,
+      success: ListAdminInterfacesResponse,
+      error: [PlatformAuthError, ...CommonErrors],
+    }),
+    HttpApiEndpoint.get("getInterface", "/internal/interfaces/:interfaceId", {
+      params: Schema.Struct({ interfaceId: ContractInterfaceId }),
+      success: ContractInterface,
+      error: [CatalogNotFoundError, PlatformAuthError, ...CommonErrors],
+    }),
     HttpApiEndpoint.get("get", "/internal/catalog/:catalogId", {
       params: Schema.Struct({ catalogId: AddressCatalogId }),
       success: CatalogView,

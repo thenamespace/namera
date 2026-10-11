@@ -229,6 +229,21 @@ Missing IDs return `CatalogNotFoundError`. The admin detail route loads this end
 directly, so bookmarks and refreshes do not depend on the listing cache. Reads do
 not fetch ABI documents or create audit events.
 
+`GET /internal/interfaces` uses the same all-role read permission. It returns
+only `id`, `format`, `contentHash`, `sourceUrl`, and `createdAt`; the repository
+projects these columns without fetching the ABI document. Optional `query`
+matches literal substrings of the ID, hash or source URL, case-insensitively.
+Pagination defaults to 25, supports up to 100 rows, and sorts by creation time
+then ID descending. The response includes `nextOffset`.
+
+`GET /internal/interfaces/:interfaceId` returns the full stored interface,
+including its ABI document. Unlike public discovery, both internal endpoints
+include unreferenced interfaces and those linked only to unpublished records.
+They recheck active membership, return the existing typed not-found error for
+missing IDs, remain excluded from public OpenAPI, and do not create audit events.
+The portal's `/interface` table loads metadata only; `/interface/:interfaceId`
+loads the document on demand. Catalog deployments link to that detail page.
+
 ## Remaining boundaries
 
 - Null

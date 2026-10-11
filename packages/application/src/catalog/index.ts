@@ -11,6 +11,7 @@ import type {
   CatalogAddress,
   SearchCatalogRequest,
   ListAdminCatalogRequest,
+  ListAdminInterfacesRequest,
 } from "@namera-ai/protocol/dto";
 
 import { requirePlatformPermission, type PlatformSession } from "#/auth/platform/access";
@@ -34,6 +35,27 @@ export const makeCatalogApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
   return {
+    listAdminInterfaces: Effect.fn("application.catalog.listAdminInterfaces")(
+      function* (context: PlatformSession, input: ListAdminInterfacesRequest) {
+        yield* requirePlatformPermission(repository, context, "catalog:read");
+        const limit = input.limit ?? 25;
+        const rows = yield* contractInterface.listAdmin(input);
+        return {
+          entries: rows.slice(0, limit),
+          nextOffset: rows.length > limit ? (input.offset ?? 0) + limit : null,
+        };
+      },
+      Effect.catchTag("DatabaseError", Effect.die),
+    ),
+    getAdminInterface: Effect.fn("application.catalog.getAdminInterface")(
+      function* (context: PlatformSession, id: ContractInterfaceId) {
+        yield* requirePlatformPermission(repository, context, "catalog:read");
+        const artifact = yield* contractInterface.getById(id);
+        if (!artifact) return yield* new CatalogNotFoundError({ resource: "interface", id });
+        return artifact;
+      },
+      Effect.catchTag("DatabaseError", Effect.die),
+    ),
     getAdmin: Effect.fn("application.catalog.getAdmin")(
       function* (context: PlatformSession, id: AddressCatalogId) {
         yield* requirePlatformPermission(repository, context, "catalog:read");

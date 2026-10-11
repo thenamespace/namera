@@ -97,6 +97,97 @@ const setup = Effect.gen(function* () {
 });
 
 layer(TestServerLayer)("catalog API", (it) => {
+  it.effect("lists interface metadata and restricts full documents to authorized readers", () =>
+    Effect.gen(function* () {
+      const { owner, client, repository } = yield* setup;
+      const secondId = ContractInterfaceId.make("01950000-0000-7000-8000-000000000099");
+      const batch = Schema.decodeUnknownSync(ImportCatalogRequest)({
+        version: 1,
+        catalog: [],
+        entries: [],
+        interfaces: [
+          ...Schema.encodeSync(ImportCatalogRequest)(payload).interfaces,
+          {
+            id: secondId,
+            format: "evm-abi",
+            sourceUrl: "https://example.test/second.json",
+            document: [
+              {
+                type: "function",
+                name: "balanceOf",
+                stateMutability: "view",
+                inputs: [{ name: "account", type: "address" }],
+                outputs: [{ name: "", type: "uint256" }],
+              },
+            ],
+          },
+        ],
+      });
+      yield* owner.client.adminCatalog.import({ payload: batch, query: {} });
+      const first = yield* owner.client.adminCatalog.listInterfaces({ query: { limit: 1 } });
+      const second = yield* owner.client.adminCatalog.listInterfaces({
+        query: { limit: 1, offset: first.nextOffset ?? 0 },
+      });
+      expect(first.nextOffset).toBe(1);
+      expect(second.nextOffset).toBeNull();
+      expect(new Set([...first.entries, ...second.entries].map((entry) => entry.id)).size).toBe(2);
+      expect(Object.keys(first.entries[0] ?? {}).toSorted()).toEqual([
+        "contentHash",
+        "createdAt",
+        "format",
+        "id",
+        "sourceUrl",
+      ]);
+      for (const role of ["operator", "viewer"] as const) {
+        const admin = yield* platformIdentity(`interface-${role}@example.com`, role);
+        const artifact = yield* admin.client.adminCatalog.getInterface({
+          params: { interfaceId: secondId },
+        });
+        expect(artifact.document).toEqual(batch.interfaces[1]?.document);
+        for (const query of [secondId, artifact.contentHash, "SECOND.JSON"]) {
+          const result = yield* admin.client.adminCatalog.listInterfaces({ query: { query } });
+          expect(result.entries.map((entry) => entry.id)).toEqual([secondId]);
+          expect(JSON.stringify(result)).not.toContain('"document"');
+        }
+        expect(
+          (yield* admin.client.adminCatalog.listInterfaces({ query: { query: "%_" } })).entries,
+        ).toEqual([]);
+        expect(
+          yield* admin.client.adminCatalog
+            .getInterface({
+              params: {
+                interfaceId: ContractInterfaceId.make("01950000-0000-7000-8000-000000000098"),
+              },
+            })
+            .pipe(Effect.flip),
+        ).toMatchObject({ _tag: "CatalogNotFoundError" });
+        if (!admin.member) throw new Error("Expected an active platform member");
+        yield* repository.auth.platform.changeMember(
+          admin.member.id,
+          { status: "removed" },
+          admin.session.createdAt,
+        );
+        expect(
+          yield* admin.client.adminCatalog.listInterfaces({ query: {} }).pipe(Effect.flip),
+        ).toBeDefined();
+        expect(
+          yield* admin.client.adminCatalog
+            .getInterface({ params: { interfaceId: secondId } })
+            .pipe(Effect.flip),
+        ).toBeDefined();
+      }
+      expect(
+        yield* client.adminCatalog.listInterfaces({ query: {} }).pipe(Effect.flip),
+      ).toBeDefined();
+      expect(
+        yield* client.adminCatalog.getInterface({ params: { interfaceId } }).pipe(Effect.flip),
+      ).toBeDefined();
+      expect(
+        yield* client.catalog.getInterface({ params: { interfaceId } }).pipe(Effect.flip),
+      ).toMatchObject({ _tag: "CatalogNotFoundError" });
+    }),
+  );
+
   it.effect("ranks exact symbols, curated terms, prefixes and typos with stable pagination", () =>
     Effect.gen(function* () {
       const { owner, client } = yield* setup;

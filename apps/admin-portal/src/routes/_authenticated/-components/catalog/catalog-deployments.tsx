@@ -1,26 +1,24 @@
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
+import { Link } from "@tanstack/react-router";
+
 import type { EvmChainName, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { ChainIcon } from "@namera-ai/ui/icons";
 
-import { InviteDate } from "../invites/invite-display";
 import { chainNames, type CatalogRecord } from "./catalog-display";
 import { CatalogCopyValue, CatalogProperty } from "./catalog-property";
 
-const chains: Record<
-  SupportedEvmChainId,
-  { icon: EvmChainName; explorer: string; testnet: boolean }
-> = {
-  "eip155:1": { icon: "ethereum", explorer: "https://etherscan.io", testnet: false },
-  "eip155:10": { icon: "optimism", explorer: "https://optimistic.etherscan.io", testnet: false },
-  "eip155:8453": { icon: "base", explorer: "https://basescan.org", testnet: false },
-  "eip155:42161": { icon: "arbitrum", explorer: "https://arbiscan.io", testnet: false },
-  "eip155:11155111": { icon: "ethereum", explorer: "https://sepolia.etherscan.io", testnet: true },
+const chains: Record<SupportedEvmChainId, { icon: EvmChainName; explorer: string }> = {
+  "eip155:1": { icon: "ethereum", explorer: "https://etherscan.io" },
+  "eip155:10": { icon: "optimism", explorer: "https://optimistic.etherscan.io" },
+  "eip155:8453": { icon: "base", explorer: "https://basescan.org" },
+  "eip155:42161": { icon: "arbitrum", explorer: "https://arbiscan.io" },
+  "eip155:11155111": { icon: "ethereum", explorer: "https://sepolia.etherscan.io" },
   "eip155:11155420": {
     icon: "optimism",
     explorer: "https://sepolia-optimism.etherscan.io",
-    testnet: true,
   },
-  "eip155:84532": { icon: "base", explorer: "https://sepolia.basescan.org", testnet: true },
-  "eip155:421614": { icon: "arbitrum", explorer: "https://sepolia.arbiscan.io", testnet: true },
+  "eip155:84532": { icon: "base", explorer: "https://sepolia.basescan.org" },
+  "eip155:421614": { icon: "arbitrum", explorer: "https://sepolia.arbiscan.io" },
 };
 
 export function CatalogDeployments({ entries }: { entries: CatalogRecord["entries"] }) {
@@ -51,9 +49,6 @@ export function CatalogDeployments({ entries }: { entries: CatalogRecord["entrie
                   />
                   <div>
                     <h4 className="text-sm font-medium">{chainNames[entry.chainId]}</h4>
-                    <p className="text-muted text-xs">
-                      {chain.testnet ? "Testnet" : "Mainnet"} · {entry.chainId}
-                    </p>
                   </div>
                 </div>
                 <span
@@ -67,28 +62,24 @@ export function CatalogDeployments({ entries }: { entries: CatalogRecord["entrie
                   <CatalogCopyValue
                     value={entry.address}
                     label={`${chainNames[entry.chainId]} address`}
+                    explorerUrl={`${chain.explorer}/address/${entry.address}`}
                   />
-                  <a
-                    href={`${chain.explorer}/address/${entry.address}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent text-xs underline"
-                  >
-                    View on explorer ↗
-                  </a>
                 </CatalogProperty>
                 {entry.data.type === "erc20" ? (
                   <CatalogProperty label="Decimals">{entry.data.decimals}</CatalogProperty>
                 ) : null}
                 <CatalogProperty label="Interface">
                   {entry.interfaceId ? (
-                    <CatalogCopyValue value={entry.interfaceId} label="Interface ID" />
+                    <Link
+                      to="/interface/$interfaceId"
+                      params={{ interfaceId: entry.interfaceId }}
+                      className="text-accent underline"
+                    >
+                      View ABI
+                    </Link>
                   ) : (
                     <span className="text-muted">No ABI linked</span>
                   )}
-                </CatalogProperty>
-                <CatalogProperty label="Deployment ID">
-                  <CatalogCopyValue value={entry.id} label="Deployment ID" />
                 </CatalogProperty>
                 {verification ? (
                   <>
@@ -101,9 +92,6 @@ export function CatalogDeployments({ entries }: { entries: CatalogRecord["entrie
                       >
                         {verification.sourceUrl.hostname} ↗
                       </a>
-                    </CatalogProperty>
-                    <CatalogProperty label="Last checked">
-                      <InviteDate label="Last checked" value={verification.checkedAt} />
                     </CatalogProperty>
                     {verification.implementationAddress ? (
                       <CatalogProperty label="Implementation">

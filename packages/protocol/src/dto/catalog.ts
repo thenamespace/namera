@@ -25,6 +25,21 @@ export const ListAdminCatalogRequest = Schema.Struct({
 });
 export type ListAdminCatalogRequest = typeof ListAdminCatalogRequest.Type;
 
+export const ContractInterfaceSummary = Schema.Struct(
+  Struct.omit(ContractInterface.fields, ["document"]),
+);
+export type ContractInterfaceSummary = typeof ContractInterfaceSummary.Type;
+export const ListAdminInterfacesRequest = Schema.Struct({
+  query: SearchCatalogRequest.fields.query,
+  limit: SearchCatalogRequest.fields.limit,
+  offset: SearchCatalogRequest.fields.offset,
+});
+export type ListAdminInterfacesRequest = typeof ListAdminInterfacesRequest.Type;
+export const ListAdminInterfacesResponse = Schema.Struct({
+  entries: Schema.Array(ContractInterfaceSummary),
+  nextOffset: Schema.NullOr(Schema.Int),
+});
+
 export const CatalogView = Schema.Struct({
   ...AddressCatalog.fields,
   entries: Schema.Array(AddressCatalogEntry),
