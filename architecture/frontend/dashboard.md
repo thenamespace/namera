@@ -169,6 +169,20 @@ browser builds. See [session lifecycle](../wallets/session-keys.md).
 
 ## Forms and shared components
 
+`components/evm-address-picker` provides a controlled, single-deployment picker
+with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),
+`value` and `onChange`. Empty filter arrays disable selection. Catalog selections
+include the parent/entry metadata and an explicit network/address; custom values
+are discriminated separately and do not claim a token type, decimals or ABI.
+The dropdown queries only while open, debounces search, preserves server ranking
+within each network, and pages 20 parents per network. Its atom uses the existing
+authenticated discovery endpoint with at most four concurrent chain requests;
+it does not fetch ABI documents. Errors expose retry rather than stale options.
+Custom input checks EVM address syntax/checksum and requires an allowed network.
+The home-page preview is temporary and saves nothing; policy editors are not yet
+wired to the picker. Consumers must validate their current filter scope before
+submission if the allowed chains/types change after selection.
+
 Forms use Effect Schema via `Schema.toStandardSchemaV1`, the Standard Schema
 React Hook Form resolver, native forms, `Controller` and UIKit fields. Controls
 adapt selection/value handlers explicitly. Read-only forms do not autosave or
