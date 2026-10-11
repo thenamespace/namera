@@ -67,17 +67,26 @@ describe("address catalog schemas", () => {
         "",
         "https://cdn.namera.ai/example.svg",
         "../example.svg",
+        "address-catalog/../example.svg",
+        "address-catalog/eip155/../../example.svg",
+        "address-catalog//example.svg",
+        "address-catalog/eip155/%2e%2e/example.svg",
+        "address-catalog/example.svg?redirect=elsewhere",
+        "address-catalog/example.svg#fragment",
+        "address-catalog/eip155\\example.svg",
       ]) {
         expect(() =>
           decodeCatalog({ ...catalog, data: { ...data, display: { ...display, logo } } }),
         ).toThrow();
       }
       for (const extension of ["svg", "png", "webp"]) {
-        const logo = `address-catalog/example.${extension}`;
-        expect(
-          decodeCatalog({ ...catalog, data: { ...data, display: { ...display, logo } } }).data
-            .display.logo,
-        ).toBe(logo);
+        for (const directory of ["", "eip155/", "eip155/erc20/"]) {
+          const logo = `address-catalog/${directory}example.${extension}`;
+          expect(
+            decodeCatalog({ ...catalog, data: { ...data, display: { ...display, logo } } }).data
+              .display.logo,
+          ).toBe(logo);
+        }
       }
     }
   });

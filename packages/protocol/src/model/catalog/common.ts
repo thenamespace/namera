@@ -17,7 +17,7 @@ export const CatalogDisplay = Schema.Struct({
   name: Schema.String,
   logo: Schema.String.check(
     Schema.isMaxLength(255),
-    Schema.isPattern(/^address-catalog\/[a-z0-9-]+\.(svg|png|webp)$/),
+    Schema.isPattern(/^address-catalog\/(?:[a-z0-9-]+\/)*[a-z0-9-]+\.(svg|png|webp)$/),
   ),
   description: Schema.optionalKey(Schema.String),
   website: Schema.optionalKey(CatalogSourceUrl),

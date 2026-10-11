@@ -27,7 +27,10 @@ One namespace-scoped resource, such as a token or a specific contract product.
 
 Metadata shares `display` with required name and logo, optional description/website,
 aliases and tags. Logos are CDN-relative paths matching
-`address-catalog/<lowercase-name>.(svg|png|webp)`, not full URLs. Both resource types
+`address-catalog/<lowercase-name>.(svg|png|webp)`, with optional nested folders such
+as `address-catalog/eip155/erc20/usdc.png`, not full URLs. Folder and file names
+contain only lowercase letters, digits and hyphens; empty segments, traversal,
+query strings and fragments are rejected. Both resource types
 require a logo at import and persistence decoding boundaries; the operator uploads
 the asset to the CDN separately. Existing records without logos must be corrected
 before being read with this schema. ERC-20 `details` contains a symbol. Contract `details` has optional
